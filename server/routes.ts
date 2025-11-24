@@ -427,6 +427,10 @@ export function registerRoutes(app: Express): Server {
       const validatedData = updateRepairStatusSchema.parse(req.body);
       const repair = await storage.updateRepairOrderStatus(req.params.id, validatedData.status);
       setActivityEntity(res, { type: 'repairs', id: req.params.id });
+      
+      await storage.invalidateCache('overview_%');
+      await storage.invalidateCache('centers_%');
+      
       res.json(repair);
     } catch (error: any) {
       res.status(400).send(error.message);
@@ -515,6 +519,10 @@ export function registerRoutes(app: Express): Server {
       const validatedData = insertInvoiceSchema.parse(req.body);
       const invoice = await storage.createInvoice(validatedData);
       setActivityEntity(res, { type: 'invoices', id: invoice.id });
+      
+      await storage.invalidateCache('overview_%');
+      await storage.invalidateCache('revenue_%');
+      
       res.status(201).json(invoice);
     } catch (error: any) {
       res.status(400).send(error.message);
@@ -713,6 +721,125 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Analytics (Admin)
+  app.get("/api/admin/analytics/overview", requireRole("admin"), async (req, res) => {
+    try {
+      const { startDate, endDate } = req.query;
+      
+      const cacheKey = `overview_${startDate || 'all'}_${endDate || 'all'}`;
+      const cached = await storage.getCachedAnalytics(cacheKey);
+      
+      if (cached) {
+        return res.json(cached);
+      }
+      
+      const period = startDate && endDate ? {
+        start: new Date(startDate as string),
+        end: new Date(endDate as string)
+      } : undefined;
+      
+      const data = await storage.getOverviewKPIs(period);
+      
+      const expiresAt = new Date();
+      expiresAt.setMinutes(expiresAt.getMinutes() + 15);
+      await storage.setCachedAnalytics(cacheKey, data, expiresAt);
+      
+      res.json(data);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  app.get("/api/admin/analytics/revenue", requireRole("admin"), async (req, res) => {
+    try {
+      const { startDate, endDate, groupBy = 'month' } = req.query;
+      
+      if (!startDate || !endDate) {
+        return res.status(400).send("startDate and endDate are required");
+      }
+      
+      const cacheKey = `revenue_${startDate}_${endDate}_${groupBy}`;
+      const cached = await storage.getCachedAnalytics(cacheKey);
+      
+      if (cached) {
+        return res.json(cached);
+      }
+      
+      const data = await storage.getRevenueByPeriod(
+        new Date(startDate as string),
+        new Date(endDate as string),
+        groupBy as 'day' | 'week' | 'month'
+      );
+      
+      const expiresAt = new Date();
+      expiresAt.setMinutes(expiresAt.getMinutes() + 30);
+      await storage.setCachedAnalytics(cacheKey, data, expiresAt);
+      
+      res.json(data);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  app.get("/api/admin/analytics/repair-centers/performance", requireRole("admin"), async (req, res) => {
+    try {
+      const { centerId, startDate, endDate } = req.query;
+      
+      const cacheKey = `centers_${centerId || 'all'}_${startDate || 'all'}_${endDate || 'all'}`;
+      const cached = await storage.getCachedAnalytics(cacheKey);
+      
+      if (cached) {
+        return res.json(cached);
+      }
+      
+      const period = startDate && endDate ? {
+        start: new Date(startDate as string),
+        end: new Date(endDate as string)
+      } : undefined;
+      
+      const data = await storage.getRepairCenterPerformance(
+        centerId as string | undefined,
+        period
+      );
+      
+      const expiresAt = new Date();
+      expiresAt.setMinutes(expiresAt.getMinutes() + 20);
+      await storage.setCachedAnalytics(cacheKey, data, expiresAt);
+      
+      res.json(data);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  app.get("/api/admin/analytics/products/top", requireRole("admin"), async (req, res) => {
+    try {
+      const { limit = '10', startDate, endDate } = req.query;
+      
+      const cacheKey = `products_${limit}_${startDate || 'all'}_${endDate || 'all'}`;
+      const cached = await storage.getCachedAnalytics(cacheKey);
+      
+      if (cached) {
+        return res.json(cached);
+      }
+      
+      const period = startDate && endDate ? {
+        start: new Date(startDate as string),
+        end: new Date(endDate as string)
+      } : undefined;
+      
+      const data = await storage.getTopProducts(parseInt(limit as string), period);
+      
+      const expiresAt = new Date();
+      expiresAt.setMinutes(expiresAt.getMinutes() + 30);
+      await storage.setCachedAnalytics(cacheKey, data, expiresAt);
+      
+      res.json(data);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
   // ============ RESELLER ROUTES ============
 
   app.get("/api/reseller/stats", requireRole("reseller"), async (req, res) => {
@@ -776,6 +903,10 @@ export function registerRoutes(app: Express): Server {
         customerId: validatedData.customerId || req.user.id,
       });
       setActivityEntity(res, { type: 'repairs', id: repair.id });
+      
+      await storage.invalidateCache('overview_%');
+      await storage.invalidateCache('centers_%');
+      
       res.status(201).json(repair);
     } catch (error: any) {
       res.status(400).send(error.message);
