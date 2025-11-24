@@ -14,6 +14,28 @@ The platform follows a role-based architecture with four distinct user types:
 
 Preferred communication style: Simple, everyday language.
 
+## Recent Changes
+
+### November 2024
+
+**Task 1: Activity Logs & Audit Trail (Completed)**
+- Added `activity_logs` table in database schema tracking all mutations with userId, action, entityType, entityId, changes (JSON), ipAddress, userAgent, timestamp
+- Implemented automatic logging middleware using `res.locals` pattern (`setActivityEntity` helper)
+- Created Admin Activity Logs page with comprehensive filters (user, action, entity type, date range)
+- Implemented 90-day retention policy with automatic cleanup job
+- All 14 POST/PATCH/DELETE endpoints now automatically log activities
+
+**Task 2: Export CSV/Excel with Filters (Completed)**
+- Installed and integrated ExcelJS library for Excel workbook generation
+- Created `/api/admin/export/:type` endpoint supporting 4 datasets: invoices, inventory, repairs, users
+- Implemented comprehensive filtering system:
+  - Date range filtering (startDate/endDate) for all datasets
+  - Status filtering for invoices, repairs, users
+  - Center filtering for inventory
+- Added date range picker UI components on all 4 admin pages using Popover + Calendar (shadcn/ui)
+- Export buttons integrated with toast notifications, loading states, and data validation
+- Excel files include styled headers (bold, gray background), auto-fit columns, proper filenames with date stamps
+
 ## System Architecture
 
 ### Frontend Architecture
