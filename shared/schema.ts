@@ -111,12 +111,34 @@ export const repairOrders = pgTable("repair_orders", {
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 
+// Device Types Lookup (Admin-managed categories)
+export const deviceTypes = pgTable("device_types", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull().unique(), // es: "Smartphone", "Tablet", "Laptop"
+  description: text("description"), // Descrizione categoria
+  isActive: boolean("is_active").notNull().default(true), // Solo attivi appaiono nei dropdown
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+// Device Brands Lookup (Admin-managed brands)
+export const deviceBrands = pgTable("device_brands", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull().unique(), // es: "Apple", "Samsung", "Huawei"
+  logoUrl: text("logo_url"), // URL logo brand (opzionale)
+  isActive: boolean("is_active").notNull().default(true), // Solo attivi appaiono nei dropdown
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
 // Device Models Catalog
 export const deviceModels = pgTable("device_models", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   modelName: text("model_name").notNull(), // es: "iPhone 12", "Samsung Galaxy S21"
-  brand: text("brand").notNull(), // es: "Apple", "Samsung"
-  deviceClass: text("device_class").notNull(), // smartphone, tablet, laptop, tv, etc.
+  brandId: varchar("brand_id").references(() => deviceBrands.id), // FK to brands (nullable for backward compat)
+  typeId: varchar("type_id").references(() => deviceTypes.id), // FK to types (nullable for backward compat)
+  brand: text("brand"), // Legacy text column (kept for backward compatibility)
+  deviceClass: text("device_class"), // Legacy text column (kept for backward compatibility)
   marketCode: text("market_code"), // Codice markettario
   photoUrl: text("photo_url"), // URL foto dispositivo (da API o manuale)
   createdAt: timestamp("created_at").notNull().defaultNow(),
@@ -334,6 +356,25 @@ export const repairAcceptanceRelations = relations(repairAcceptance, ({ one }) =
   }),
 }));
 
+export const deviceTypesRelations = relations(deviceTypes, ({ many }) => ({
+  models: many(deviceModels),
+}));
+
+export const deviceBrandsRelations = relations(deviceBrands, ({ many }) => ({
+  models: many(deviceModels),
+}));
+
+export const deviceModelsRelations = relations(deviceModels, ({ one }) => ({
+  brand: one(deviceBrands, {
+    fields: [deviceModels.brandId],
+    references: [deviceBrands.id],
+  }),
+  type: one(deviceTypes, {
+    fields: [deviceModels.typeId],
+    references: [deviceTypes.id],
+  }),
+}));
+
 export const ticketsRelations = relations(tickets, ({ one, many }) => ({
   customer: one(users, {
     fields: [tickets.customerId],
@@ -466,6 +507,18 @@ export const insertInventoryStockSchema = createInsertSchema(inventoryStock).omi
 export const insertRepairOrderSchema = createInsertSchema(repairOrders).omit({
   id: true,
   orderNumber: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertDeviceTypeSchema = createInsertSchema(deviceTypes).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertDeviceBrandSchema = createInsertSchema(deviceBrands).omit({
+  id: true,
   createdAt: true,
   updatedAt: true,
 });
@@ -613,6 +666,12 @@ export type InsertInventoryStock = z.infer<typeof insertInventoryStockSchema>;
 
 export type RepairOrder = typeof repairOrders.$inferSelect;
 export type InsertRepairOrder = z.infer<typeof insertRepairOrderSchema>;
+
+export type DeviceType = typeof deviceTypes.$inferSelect;
+export type InsertDeviceType = z.infer<typeof insertDeviceTypeSchema>;
+
+export type DeviceBrand = typeof deviceBrands.$inferSelect;
+export type InsertDeviceBrand = z.infer<typeof insertDeviceBrandSchema>;
 
 export type DeviceModel = typeof deviceModels.$inferSelect;
 export type InsertDeviceModel = z.infer<typeof insertDeviceModelSchema>;
