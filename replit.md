@@ -50,3 +50,31 @@ Development uses Vite for HMR. Production builds use Vite for client assets and 
     *   `exceljs`: Excel file generation.
     *   `recharts`: Charting library.
 *   **Development Dependencies**: `tsx`, `esbuild`, `drizzle-kit`.
+
+## Implementation Status
+
+### Phase 3: Ticketing System (✅ COMPLETED)
+- RESTful ticketing API with role-based ACL and real-time WebSocket notifications
+- Customer/Admin/Reseller/Repair Center ticket management with conversation threads
+- WebSocket events: status changes, assignments, priority updates, new messages
+- Security: Customer ID forced from session, singleton WebSocket provider with cleanup guards
+
+### Phase 4: Repair Orders Management (✅ COMPLETED)
+- Consolidated `/api/repair-orders` endpoint with role-based filtering
+- Customer/Reseller order creation (IDs forced from session)
+- Admin full update access, Repair Center limited to assigned orders
+- Security: Triple null-safety for repair centers, early role gates, ID injection prevention
+
+### Phase 5: Inventory Management (✅ COMPLETED)
+- Products catalog API: All users view, only admin CRUD operations
+- Inventory API: Role-based filtering (admin all, repair center own, customer/reseller blocked)
+- Movement creation with enum validation ("in", "out", "adjustment")
+- Security: Early role gates, nested data hydration (product/repairCenter), null-safe repair center access
+
+### Phase 6: Dashboard & Analytics (✅ COMPLETED)
+- Unified `/api/stats` endpoint with role-based data aggregation
+- **Admin Dashboard**: Overview KPIs, PieChart (tickets), BarChart (repairs), top products table
+- **Repair Center Dashboard**: Assigned repairs, low stock alerts with inventory table, status charts
+- **Reseller Dashboard**: Orders stats, customers count, revenue calculation, quick actions
+- **Customer Dashboard**: Own tickets/repairs with PieChart/BarChart, empty state handling
+- Uses recharts for visualizations, leverages existing analytics helpers (getOverviewKPIs, getRepairCenterPerformance, getTopProducts)
