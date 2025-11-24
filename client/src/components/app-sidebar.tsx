@@ -11,6 +11,7 @@ import {
   ShoppingCart,
   LogOut,
   Shield,
+  BarChart3,
 } from "lucide-react";
 import {
   Sidebar,
@@ -33,6 +34,7 @@ import { Link, useLocation } from "wouter";
 const menuItems = {
   admin: [
     { title: "Dashboard", url: "/", icon: LayoutDashboard, group: "Principale" },
+    { title: "Analytics", url: "/admin/analytics", icon: BarChart3, group: "Principale" },
     { title: "Utenti", url: "/admin/users", icon: Users, group: "Principale" },
     { title: "Centri di Riparazione", url: "/admin/repair-centers", icon: Building, group: "Centri" },
     { title: "Lavorazioni", url: "/admin/repairs", icon: Wrench, group: "Centri" },

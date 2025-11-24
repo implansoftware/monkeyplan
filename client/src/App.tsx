@@ -22,6 +22,7 @@ import AdminProducts from "@/pages/admin/products";
 import AdminInvoices from "@/pages/admin/invoices";
 import AdminChat from "@/pages/admin/chat";
 import AdminActivityLogs from "@/pages/admin/activity-logs";
+import AdminAnalytics from "@/pages/admin/analytics";
 
 // Reseller pages
 import ResellerDashboard from "@/pages/reseller/dashboard";
@@ -52,6 +53,7 @@ function Router() {
       <ProtectedRoute path="/admin/invoices" component={AdminInvoices} />
       <ProtectedRoute path="/admin/chat" component={AdminChat} />
       <ProtectedRoute path="/admin/activity-logs" component={AdminActivityLogs} />
+      <ProtectedRoute path="/admin/analytics" component={AdminAnalytics} />
       
       {/* Reseller routes */}
       <ProtectedRoute path="/reseller" component={ResellerDashboard} />
