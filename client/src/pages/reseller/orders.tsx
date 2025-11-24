@@ -18,7 +18,7 @@ export default function ResellerOrders() {
   const [drawerOpen, setDrawerOpen] = useState(false);
 
   const { data: orders = [], isLoading } = useQuery<RepairOrder[]>({
-    queryKey: ["/api/reseller/repairs"],
+    queryKey: ["/api/repair-orders"],
   });
 
   const filteredOrders = orders.filter((order) => {

@@ -41,6 +41,7 @@ export interface IStorage {
   listRepairOrders(filters?: { customerId?: string; resellerId?: string; repairCenterId?: string; status?: string }): Promise<RepairOrder[]>;
   getRepairOrder(id: string): Promise<RepairOrder | undefined>;
   createRepairOrder(order: InsertRepairOrder): Promise<RepairOrder>;
+  updateRepairOrder(id: string, updates: Partial<Pick<RepairOrder, 'status' | 'estimatedCost' | 'finalCost' | 'notes' | 'repairCenterId'>>): Promise<RepairOrder>;
   updateRepairOrderStatus(id: string, status: string): Promise<RepairOrder>;
   
   // Tickets
@@ -232,6 +233,14 @@ export class DatabaseStorage implements IStorage {
   async updateRepairOrderStatus(id: string, status: string): Promise<RepairOrder> {
     const [order] = await db.update(repairOrders)
       .set({ status: status as any, updatedAt: new Date() })
+      .where(eq(repairOrders.id, id))
+      .returning();
+    return order;
+  }
+
+  async updateRepairOrder(id: string, updates: Partial<Pick<RepairOrder, 'status' | 'estimatedCost' | 'finalCost' | 'notes' | 'repairCenterId'>>): Promise<RepairOrder> {
+    const [order] = await db.update(repairOrders)
+      .set({ ...updates, updatedAt: new Date() })
       .where(eq(repairOrders.id, id))
       .returning();
     return order;

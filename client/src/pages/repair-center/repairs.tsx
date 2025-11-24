@@ -38,16 +38,16 @@ export default function RepairCenterRepairs() {
   const { toast } = useToast();
 
   const { data: repairs = [], isLoading } = useQuery<RepairOrder[]>({
-    queryKey: ["/api/repair-center/repairs"],
+    queryKey: ["/api/repair-orders"],
   });
 
   const updateStatusMutation = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: string }) => {
-      const res = await apiRequest("PATCH", `/api/repair-center/repairs/${id}/status`, { status });
+      const res = await apiRequest("PATCH", `/api/repair-orders/${id}`, { status });
       return await res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/repair-center/repairs"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/repair-orders"] });
       queryClient.invalidateQueries({ queryKey: ["/api/repair-center/stats"] });
       toast({ title: "Stato aggiornato" });
     },

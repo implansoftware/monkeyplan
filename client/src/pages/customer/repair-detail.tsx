@@ -40,10 +40,10 @@ export default function CustomerRepairDetail() {
   const { user } = useAuth();
 
   const { data: repair, isLoading } = useQuery<RepairOrder>({
-    queryKey: ["/api/customer/repairs", repairId],
+    queryKey: ["/api/repair-orders", repairId],
     queryFn: async ({ queryKey }) => {
       const id = queryKey[1];
-      const response = await fetch(`/api/customer/repairs/${id}`, {
+      const response = await fetch(`/api/repair-orders/${id}`, {
         credentials: "include",
       });
       if (!response.ok) {

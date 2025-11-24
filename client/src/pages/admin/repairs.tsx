@@ -28,7 +28,7 @@ export default function AdminRepairs() {
   const { toast } = useToast();
 
   const { data: repairs = [], isLoading } = useQuery<RepairOrder[]>({
-    queryKey: ["/api/admin/repairs"],
+    queryKey: ["/api/repair-orders"],
   });
 
   const handleExport = async () => {
@@ -72,11 +72,11 @@ export default function AdminRepairs() {
 
   const updateStatusMutation = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: string }) => {
-      const res = await apiRequest("PATCH", `/api/admin/repairs/${id}/status`, { status });
+      const res = await apiRequest("PATCH", `/api/repair-orders/${id}`, { status });
       return await res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/repairs"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/repair-orders"] });
       toast({ title: "Stato aggiornato" });
     },
   });

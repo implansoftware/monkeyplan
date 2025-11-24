@@ -12,26 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
-
-type User = {
-  id: string;
-  username: string;
-  email: string;
-  fullName: string;
-  role: string;
-  isActive: boolean;
-  repairCenterId: string | null;
-  createdAt: string;
-};
-
-type RepairOrder = {
-  id: string;
-  orderNumber: string;
-  deviceType: string;
-  deviceModel: string;
-  status: string;
-  createdAt: string;
-};
+import { User, RepairOrder } from "@shared/schema";
 
 export default function ResellerCustomers() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -44,7 +25,7 @@ export default function ResellerCustomers() {
   });
 
   const { data: allRepairs = [] } = useQuery<RepairOrder[]>({
-    queryKey: ["/api/reseller/repairs"],
+    queryKey: ["/api/repair-orders"],
   });
 
   const customers = allUsers.filter(user => user.role === "customer");

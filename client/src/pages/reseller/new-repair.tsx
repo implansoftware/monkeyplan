@@ -18,11 +18,11 @@ export default function ResellerNewRepair() {
 
   const createRepairMutation = useMutation({
     mutationFn: async (data: Partial<InsertRepairOrder>) => {
-      const res = await apiRequest("POST", "/api/reseller/repairs", data);
+      const res = await apiRequest("POST", "/api/repair-orders", data);
       return await res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/reseller/repairs"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/repair-orders"] });
       toast({ title: "Riparazione creata con successo" });
       setLocation("/reseller/orders");
     },

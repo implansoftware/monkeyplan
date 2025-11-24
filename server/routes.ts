@@ -1802,6 +1802,180 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // ============ REPAIR ORDERS ============
+  
+  // List repair orders with role-based filtering
+  app.get("/api/repair-orders", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const filters: { customerId?: string; resellerId?: string; repairCenterId?: string; status?: string } = {};
+      
+      // Role-based filtering
+      if (req.user.role === 'customer') {
+        // Customers see only their own orders
+        filters.customerId = req.user.id;
+      } else if (req.user.role === 'reseller') {
+        // Resellers see orders they created
+        filters.resellerId = req.user.id;
+      } else if (req.user.role === 'repair_center') {
+        // Repair centers see only orders explicitly assigned to their center
+        if (!req.user.repairCenterId) {
+          // Repair center without configured ID sees nothing
+          return res.json([]);
+        }
+        filters.repairCenterId = req.user.repairCenterId;
+      }
+      // Admin sees all orders (no filter)
+      
+      // Apply status filter if provided
+      if (req.query.status && typeof req.query.status === 'string') {
+        filters.status = req.query.status;
+      }
+      
+      const orders = await storage.listRepairOrders(filters);
+      res.json(orders);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+  
+  // Get single repair order details
+  app.get("/api/repair-orders/:id", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const order = await storage.getRepairOrder(req.params.id);
+      if (!order) return res.status(404).send("Repair order not found");
+      
+      // Check access based on role
+      const hasAccess = 
+        req.user.role === 'admin' ||
+        order.customerId === req.user.id ||
+        order.resellerId === req.user.id ||
+        (req.user.role === 'repair_center' && 
+         req.user.repairCenterId && 
+         order.repairCenterId && 
+         order.repairCenterId === req.user.repairCenterId);
+      
+      if (!hasAccess) return res.status(403).send("Forbidden");
+      
+      res.json(order);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+  
+  // Create new repair order (customers and resellers)
+  app.post("/api/repair-orders", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      // Only customers and resellers can create orders
+      if (req.user.role !== 'customer' && req.user.role !== 'reseller') {
+        return res.status(403).send("Only customers and resellers can create repair orders");
+      }
+      
+      const orderSchema = insertRepairOrderSchema.pick({
+        deviceType: true,
+        deviceModel: true,
+        issueDescription: true,
+        notes: true,
+      });
+      
+      const validatedData = orderSchema.parse(req.body);
+      
+      // Force customerId and resellerId from server based on role
+      const orderData: any = {
+        ...validatedData,
+        customerId: req.user.role === 'customer' ? req.user.id : req.body.customerId,
+        status: 'pending',
+      };
+      
+      // If user is reseller, set resellerId
+      if (req.user.role === 'reseller') {
+        orderData.resellerId = req.user.id;
+        // Reseller must provide customerId in request
+        if (!req.body.customerId) {
+          return res.status(400).send("Customer ID is required for reseller orders");
+        }
+        // Validate customer exists
+        const customer = await storage.getUser(req.body.customerId);
+        if (!customer || customer.role !== 'customer') {
+          return res.status(400).send("Invalid customer ID");
+        }
+      }
+      
+      const order = await storage.createRepairOrder(orderData);
+      
+      setActivityEntity(res, { type: 'repair_order', id: order.id });
+      res.json(order);
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+  
+  // Update repair order (status, costs, notes, assignment)
+  app.patch("/api/repair-orders/:id", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      // Only admin and repair_center can update orders
+      if (req.user.role !== 'admin' && req.user.role !== 'repair_center') {
+        return res.status(403).send("Only admins and repair centers can update orders");
+      }
+      
+      const order = await storage.getRepairOrder(req.params.id);
+      if (!order) return res.status(404).send("Repair order not found");
+      
+      const updates: any = {};
+      
+      // Determine what can be updated based on role
+      if (req.user.role === 'admin') {
+        // Admin can update everything
+        if (req.body.status) updates.status = req.body.status;
+        if (req.body.estimatedCost !== undefined) updates.estimatedCost = req.body.estimatedCost;
+        if (req.body.finalCost !== undefined) updates.finalCost = req.body.finalCost;
+        if (req.body.notes !== undefined) updates.notes = req.body.notes;
+        if (req.body.repairCenterId !== undefined) {
+          // Validate repair center exists
+          if (req.body.repairCenterId) {
+            const repairCenter = await storage.getRepairCenter(req.body.repairCenterId);
+            if (!repairCenter) return res.status(400).send("Invalid repair center ID");
+          }
+          updates.repairCenterId = req.body.repairCenterId;
+        }
+      } else if (req.user.role === 'repair_center') {
+        // Repair center can only update orders assigned to their center
+        if (!req.user.repairCenterId) {
+          return res.status(403).send("Repair center ID not configured");
+        }
+        if (!order.repairCenterId) {
+          return res.status(403).send("Order not yet assigned to a repair center");
+        }
+        if (order.repairCenterId !== req.user.repairCenterId) {
+          return res.status(403).send("Not assigned to your repair center");
+        }
+        
+        if (req.body.status) updates.status = req.body.status;
+        if (req.body.estimatedCost !== undefined) updates.estimatedCost = req.body.estimatedCost;
+        if (req.body.finalCost !== undefined) updates.finalCost = req.body.finalCost;
+        if (req.body.notes !== undefined) updates.notes = req.body.notes;
+      }
+      
+      if (Object.keys(updates).length === 0) {
+        return res.status(400).send("No valid updates provided");
+      }
+      
+      const updatedOrder = await storage.updateRepairOrder(req.params.id, updates);
+      setActivityEntity(res, { type: 'repair_order', id: updatedOrder.id });
+      
+      res.json(updatedOrder);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
   // ============ WEBSOCKET FOR LIVECHAT & NOTIFICATIONS ============
 
   const httpServer = createServer(app);

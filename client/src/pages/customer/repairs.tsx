@@ -12,7 +12,7 @@ import { useLocation } from "wouter";
 export default function CustomerRepairs() {
   const [, setLocation] = useLocation();
   const { data: repairs = [], isLoading } = useQuery<RepairOrder[]>({
-    queryKey: ["/api/customer/repairs"],
+    queryKey: ["/api/repair-orders"],
   });
 
   const getStatusBadge = (status: string) => {
