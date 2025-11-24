@@ -60,6 +60,8 @@ export default function AdminAnalytics() {
 
   const { data: overview, isLoading: overviewLoading } = useQuery<OverviewKPIs>({
     queryKey: ["/api/admin/analytics/overview"],
+    refetchInterval: 30000,
+    refetchOnWindowFocus: false,
   });
 
   const { data: revenue, isLoading: revenueLoading } = useQuery<RevenueData[]>({
@@ -69,14 +71,20 @@ export default function AdminAnalytics() {
       if (!res.ok) throw new Error('Failed to fetch revenue data');
       return res.json();
     },
+    refetchInterval: 30000,
+    refetchOnWindowFocus: false,
   });
 
   const { data: centers, isLoading: centersLoading } = useQuery<CenterPerformance[]>({
     queryKey: ["/api/admin/analytics/repair-centers/performance"],
+    refetchInterval: 30000,
+    refetchOnWindowFocus: false,
   });
 
   const { data: products, isLoading: productsLoading } = useQuery<TopProduct[]>({
     queryKey: ["/api/admin/analytics/products/top"],
+    refetchInterval: 30000,
+    refetchOnWindowFocus: false,
   });
 
   const kpiCards = [
