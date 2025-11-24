@@ -21,10 +21,11 @@ export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
-  updateUser(id: string, updates: Partial<Pick<User, 'username' | 'email' | 'firstName' | 'lastName' | 'role' | 'isActive' | 'repairCenterId'>>): Promise<User>;
+  updateUser(id: string, updates: Partial<Pick<User, 'username' | 'email' | 'fullName' | 'role' | 'isActive' | 'repairCenterId'>>): Promise<User>;
   listUsers(): Promise<User[]>;
   listStaffUsers(): Promise<{ id: string; username: string; role: string }[]>;
   deleteUser(id: string): Promise<void>;
+  createCustomerWithBilling(userData: InsertUser, billingInfo: InsertBillingData): Promise<{ user: User; billing: BillingData }>;
   
   // Repair Centers
   listRepairCenters(): Promise<RepairCenter[]>;
@@ -133,7 +134,7 @@ export class DatabaseStorage implements IStorage {
     return user;
   }
 
-  async updateUser(id: string, updates: Partial<Pick<User, 'username' | 'email' | 'firstName' | 'lastName' | 'role' | 'isActive' | 'repairCenterId'>>): Promise<User> {
+  async updateUser(id: string, updates: Partial<Pick<User, 'username' | 'email' | 'fullName' | 'role' | 'isActive' | 'repairCenterId'>>): Promise<User> {
     const [user] = await db.update(users)
       .set(updates)
       .where(eq(users.id, id))
@@ -144,6 +145,21 @@ export class DatabaseStorage implements IStorage {
     }
     
     return user;
+  }
+
+  async createCustomerWithBilling(userData: InsertUser, billingInfo: InsertBillingData): Promise<{ user: User; billing: BillingData }> {
+    return await db.transaction(async (tx) => {
+      // Create user first
+      const [user] = await tx.insert(users).values(userData).returning();
+      
+      // Create billing data with user ID
+      const [billing] = await tx.insert(billingData).values({
+        ...billingInfo,
+        userId: user.id,
+      }).returning();
+      
+      return { user, billing };
+    });
   }
 
   async listUsers(): Promise<User[]> {
@@ -343,7 +359,7 @@ export class DatabaseStorage implements IStorage {
       conditions.push(eq(invoices.customerId, filters.customerId));
     }
     if (filters?.paymentStatus) {
-      conditions.push(eq(invoices.paymentStatus, filters.paymentStatus));
+      conditions.push(eq(invoices.paymentStatus, filters.paymentStatus as any));
     }
     
     let query = db.select().from(invoices);

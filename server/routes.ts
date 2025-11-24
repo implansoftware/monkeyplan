@@ -13,6 +13,7 @@ import {
   updateRepairStatusSchema, updateTicketStatusSchema, createTicketMessageSchema,
   insertInventoryMovementSchema, insertBillingDataSchema, insertChatMessageSchema,
   insertNotificationPreferencesSchema, insertRepairAttachmentSchema,
+  customerWizardSchema,
   type Product
 } from "@shared/schema";
 import { ObjectStorageService, objectStorageClient, parseObjectPath } from "./objectStorage";
@@ -581,14 +582,14 @@ export function registerRoutes(app: Express): Server {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
-      const validatedData = insertInventoryMovementSchema.omit({
-        id: true,
-        createdAt: true,
-        createdBy: true, // Will be forced from session
-      }).parse(req.body);
+      const validatedData = insertInventoryMovementSchema.parse(req.body);
 
       const movement = await storage.createInventoryMovement({
-        ...validatedData,
+        productId: validatedData.productId,
+        repairCenterId: validatedData.repairCenterId,
+        movementType: validatedData.movementType,
+        quantity: validatedData.quantity,
+        notes: validatedData.notes,
         createdBy: req.user.id, // Force from authenticated session
       });
       setActivityEntity(res, { type: 'inventory', id: movement.id });
@@ -630,7 +631,6 @@ export function registerRoutes(app: Express): Server {
               'Amount': inv.amount,
               'Payment Status': inv.paymentStatus,
               'Payment Method': inv.paymentMethod,
-              'Bank Transfer Details': inv.bankTransferDetails,
               'Created At': new Date(inv.createdAt).toLocaleString(),
             }));
           fileName = 'invoices_export.xlsx';
@@ -641,16 +641,16 @@ export function registerRoutes(app: Express): Server {
           const inventory = await storage.listInventoryStock(centerId as string | undefined);
           data = inventory
             .filter(item => {
-              if (startDate && new Date(item.lastUpdated) < new Date(startDate as string)) return false;
-              if (endDate && new Date(item.lastUpdated) > new Date(endDate as string)) return false;
+              if (startDate && new Date(item.updatedAt) < new Date(startDate as string)) return false;
+              if (endDate && new Date(item.updatedAt) > new Date(endDate as string)) return false;
               if (centerId && item.repairCenterId !== centerId) return false;
               return true;
             })
             .map(item => ({
-              'Product SKU': item.productSku,
+              'Product ID': item.productId,
               'Repair Center ID': item.repairCenterId,
               'Quantity': item.quantity,
-              'Last Updated': new Date(item.lastUpdated).toLocaleString(),
+              'Last Updated': new Date(item.updatedAt).toLocaleString(),
             }));
           fileName = 'inventory_export.xlsx';
           sheetName = 'Inventory';
@@ -912,17 +912,14 @@ export function registerRoutes(app: Express): Server {
       if (!req.user) return res.status(401).send("Unauthorized");
 
       // Validate with Zod schema - enforce reseller ownership
-      const baseSchema = insertRepairOrderSchema.omit({ 
-        orderNumber: true,
-        resellerId: true, // Will be forced from session
-        status: true,
-        estimatedCost: true,
-        finalCost: true,
-        createdAt: true,
-        updatedAt: true 
-      });
-
-      const validatedData = baseSchema.parse(req.body);
+      const validatedData = insertRepairOrderSchema.pick({
+        customerId: true,
+        repairCenterId: true,
+        deviceType: true,
+        deviceModel: true,
+        issueDescription: true,
+        notes: true,
+      }).parse(req.body);
 
       // Verify customer exists if provided
       if (validatedData.customerId) {
@@ -933,9 +930,13 @@ export function registerRoutes(app: Express): Server {
       }
 
       const repair = await storage.createRepairOrder({
-        ...validatedData,
+        customerId: validatedData.customerId,
         resellerId: req.user.id, // Force reseller ID from session
-        customerId: validatedData.customerId || req.user.id,
+        repairCenterId: validatedData.repairCenterId,
+        deviceType: validatedData.deviceType,
+        deviceModel: validatedData.deviceModel,
+        issueDescription: validatedData.issueDescription,
+        notes: validatedData.notes,
       });
       setActivityEntity(res, { type: 'repairs', id: repair.id });
       
@@ -960,11 +961,13 @@ export function registerRoutes(app: Express): Server {
 
   app.post("/api/reseller/customers", requireRole("reseller"), async (req, res) => {
     try {
-      const baseSchema = insertUserSchema.omit({ 
-        id: true, 
-        role: true, 
-        repairCenterId: true,
-        createdAt: true 
+      const baseSchema = insertUserSchema.pick({
+        username: true,
+        password: true,
+        email: true,
+        fullName: true,
+        phone: true,
+        isActive: true,
       });
       const validatedData = baseSchema.parse(req.body);
 
@@ -972,8 +975,12 @@ export function registerRoutes(app: Express): Server {
       const hashedPassword = await hashPassword(validatedData.password);
 
       const user = await storage.createUser({
-        ...validatedData,
+        username: validatedData.username,
         password: hashedPassword,
+        email: validatedData.email,
+        fullName: validatedData.fullName,
+        phone: validatedData.phone,
+        isActive: validatedData.isActive,
         role: "customer", // Force customer role
       });
       setActivityEntity(res, { type: 'users', id: user.id });
@@ -1059,16 +1066,21 @@ export function registerRoutes(app: Express): Server {
         return res.status(401).send("Unauthorized or no repair center assigned");
       }
 
-      const baseSchema = insertInventoryMovementSchema.omit({ 
-        id: true, 
-        centerId: true, 
-        createdAt: true 
+      const baseSchema = insertInventoryMovementSchema.pick({
+        productId: true,
+        movementType: true,
+        quantity: true,
+        notes: true,
       });
       const validatedData = baseSchema.parse(req.body);
 
       const movement = await storage.createInventoryMovement({
-        ...validatedData,
-        centerId: req.user.repairCenterId, // Force center ID from session
+        productId: validatedData.productId,
+        repairCenterId: req.user.repairCenterId, // Force center ID from session
+        movementType: validatedData.movementType,
+        quantity: validatedData.quantity,
+        notes: validatedData.notes,
+        createdBy: req.user.id,
       });
       setActivityEntity(res, { type: 'inventory', id: movement.id });
       res.status(201).json(movement);
@@ -1141,20 +1153,19 @@ export function registerRoutes(app: Express): Server {
       if (!req.user) return res.status(401).send("Unauthorized");
 
       // Validate with Zod schema - enforce customer ownership
-      const baseSchema = insertTicketSchema.omit({
-        ticketNumber: true,
-        customerId: true,
-        status: true,
-        assignedTo: true,
-        createdAt: true,
-        updatedAt: true
+      const baseSchema = insertTicketSchema.pick({
+        subject: true,
+        description: true,
+        priority: true,
       });
 
       const validatedData = baseSchema.parse(req.body);
 
       const ticket = await storage.createTicket({
-        ...validatedData,
         customerId: req.user.id, // Force customer ID from session
+        subject: validatedData.subject,
+        description: validatedData.description,
+        priority: validatedData.priority,
       });
       setActivityEntity(res, { type: 'tickets', id: ticket.id });
       res.status(201).json(ticket);
@@ -1216,11 +1227,10 @@ export function registerRoutes(app: Express): Server {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
-      const updateSchema = insertNotificationPreferencesSchema.omit({
-        id: true,
-        userId: true,
-        createdAt: true,
-        updatedAt: true,
+      const updateSchema = insertNotificationPreferencesSchema.pick({
+        emailEnabled: true,
+        pushEnabled: true,
+        types: true,
       }).partial();
       
       const validatedData = updateSchema.parse(req.body);
@@ -1555,8 +1565,10 @@ export function registerRoutes(app: Express): Server {
       
       // Force customerId and status from server
       const ticket = await storage.createTicket({
-        ...validatedData,
         customerId: req.user.id,
+        subject: validatedData.subject,
+        description: validatedData.description,
+        priority: validatedData.priority,
         status: 'open',
       });
       
@@ -2090,8 +2102,8 @@ export function registerRoutes(app: Express): Server {
       }
       
       // Hydrate with product and repair center details
-      const productIds = [...new Set(inventory.map(item => item.productId))];
-      const repairCenterIds = [...new Set(inventory.map(item => item.repairCenterId))];
+      const productIds = Array.from(new Set(inventory.map(item => item.productId)));
+      const repairCenterIds = Array.from(new Set(inventory.map(item => item.repairCenterId)));
       
       const products = await Promise.all(productIds.map(id => storage.getProduct(id)));
       const repairCenters = await Promise.all(repairCenterIds.map(id => storage.getRepairCenter(id)));
@@ -2157,16 +2169,18 @@ export function registerRoutes(app: Express): Server {
         return res.status(403).send("Only admins and repair centers can create inventory movements");
       }
       
-      const schema = insertInventoryMovementSchema.omit({
-        id: true,
-        createdAt: true,
-        createdBy: true, // Will be forced from session
+      const schema = insertInventoryMovementSchema.pick({
+        productId: true,
+        repairCenterId: true,
+        movementType: true,
+        quantity: true,
+        notes: true,
       });
       
       const validatedData = schema.parse(req.body);
       
       // For repair center, force repairCenterId from session
-      let repairCenterId = req.body.repairCenterId;
+      let repairCenterId = validatedData.repairCenterId;
       if (req.user.role === 'repair_center') {
         if (!req.user.repairCenterId) {
           return res.status(403).send("Repair center ID not configured");
@@ -2185,17 +2199,17 @@ export function registerRoutes(app: Express): Server {
       }
       
       // Validate product exists
-      const product = await storage.getProduct(req.body.productId);
+      const product = await storage.getProduct(validatedData.productId);
       if (!product) {
         return res.status(400).send("Invalid product ID");
       }
       
       const movement = await storage.createInventoryMovement({
-        productId: req.body.productId,
+        productId: validatedData.productId,
         repairCenterId,
-        movementType: req.body.movementType,
-        quantity: req.body.quantity,
-        notes: req.body.notes,
+        movementType: validatedData.movementType,
+        quantity: validatedData.quantity,
+        notes: validatedData.notes,
         createdBy: req.user.id, // Force from authenticated session
       });
       
@@ -2264,10 +2278,16 @@ export function registerRoutes(app: Express): Server {
         return res.status(403).send("Only admins can create invoices");
       }
       
-      const schema = insertInvoiceSchema.omit({
-        id: true,
-        createdAt: true,
-        invoiceNumber: true, // Auto-generated in storage
+      const schema = insertInvoiceSchema.pick({
+        customerId: true,
+        repairOrderId: true,
+        amount: true,
+        tax: true,
+        total: true,
+        paymentStatus: true,
+        paymentMethod: true,
+        dueDate: true,
+        notes: true,
       });
       
       const validatedData = schema.parse(req.body);
@@ -2280,7 +2300,17 @@ export function registerRoutes(app: Express): Server {
         }
       }
       
-      const invoice = await storage.createInvoice(validatedData);
+      const invoice = await storage.createInvoice({
+        customerId: validatedData.customerId,
+        repairOrderId: validatedData.repairOrderId,
+        amount: validatedData.amount,
+        tax: validatedData.tax,
+        total: validatedData.total,
+        paymentStatus: validatedData.paymentStatus,
+        paymentMethod: validatedData.paymentMethod,
+        dueDate: validatedData.dueDate,
+        notes: validatedData.notes,
+      });
       
       setActivityEntity(res, { type: 'invoice', id: invoice.id });
       res.status(201).json(invoice);
@@ -2570,8 +2600,8 @@ export function registerRoutes(app: Express): Server {
       }
       
       const allowedUpdates = req.user.role === 'admin' 
-        ? ['username', 'email', 'firstName', 'lastName', 'role', 'isActive', 'repairCenterId'] as const
-        : ['email', 'firstName', 'lastName'] as const; // Non-admin can only update own profile fields
+        ? ['username', 'email', 'fullName', 'role', 'isActive', 'repairCenterId'] as const
+        : ['email', 'fullName'] as const; // Non-admin can only update own profile fields
       
       const updates: any = {};
       
@@ -2598,6 +2628,95 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // ============ CUSTOMER REGISTRATION WIZARD ============
+
+  app.post("/api/customers", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      // Only admin, reseller, and repair_center can create customers via wizard
+      if (!['admin', 'reseller', 'repair_center'].includes(req.user.role)) {
+        return res.status(403).send("Forbidden");
+      }
+      
+      // Validate wizard data
+      const validatedData = customerWizardSchema.parse(req.body);
+      
+      // Generate unique username from email
+      const emailPrefix = validatedData.email.split('@')[0];
+      let username = emailPrefix.toLowerCase().replace(/[^a-z0-9]/g, '');
+      let counter = 1;
+      
+      // Ensure username is unique
+      while (await storage.getUserByUsername(username)) {
+        username = `${emailPrefix.toLowerCase().replace(/[^a-z0-9]/g, '')}${counter}`;
+        counter++;
+      }
+      
+      // Generate temporary password
+      const tempPassword = randomBytes(8).toString('hex');
+      const hashedPassword = await hashPassword(tempPassword);
+      
+      // Prepare user data
+      const userData = {
+        username,
+        password: hashedPassword,
+        email: validatedData.email,
+        fullName: validatedData.customerType === 'private' ? validatedData.fullName : validatedData.companyName,
+        phone: validatedData.phone,
+        role: 'customer' as const,
+        isActive: true,
+      };
+      
+      // Prepare billing data
+      const billingInfo = {
+        customerType: validatedData.customerType,
+        companyName: validatedData.customerType === 'company' ? validatedData.companyName : null,
+        vatNumber: validatedData.customerType === 'company' ? (validatedData.vatNumber || null) : null,
+        fiscalCode: validatedData.customerType === 'company' ? (validatedData.fiscalCode || null) : null,
+        pec: validatedData.customerType === 'company' ? (validatedData.pec || null) : null,
+        codiceUnivoco: validatedData.customerType === 'company' ? (validatedData.codiceUnivoco || null) : null,
+        iban: validatedData.iban || null,
+        address: validatedData.address,
+        city: validatedData.city,
+        zipCode: validatedData.zipCode,
+        country: validatedData.country || 'IT',
+        googlePlaceId: validatedData.googlePlaceId || null,
+      };
+      
+      // Create customer with billing data in transaction
+      const result = await storage.createCustomerWithBilling(userData, billingInfo);
+      
+      // Log activity
+      await logActivity(
+        req.user.id,
+        'CREATE',
+        'customer',
+        result.user.id,
+        { customerType: validatedData.customerType },
+        req
+      );
+      
+      // Return created customer with temporary password
+      res.status(201).json({
+        customer: {
+          id: result.user.id,
+          username: result.user.username,
+          email: result.user.email,
+          fullName: result.user.fullName,
+          phone: result.user.phone,
+        },
+        tempPassword,
+        billing: result.billing,
+      });
+    } catch (error: any) {
+      if (error.name === 'ZodError') {
+        return res.status(400).json({ error: "Validation failed", details: error.errors });
+      }
+      res.status(500).send(error.message);
+    }
+  });
+
   // ============ DASHBOARD STATISTICS ============
 
   app.get("/api/stats", requireAuth, async (req, res) => {
@@ -2617,7 +2736,6 @@ export function registerRoutes(app: Express): Server {
         const ticketsByStatus = {
           open: allTickets.filter(t => t.status === 'open').length,
           in_progress: allTickets.filter(t => t.status === 'in_progress').length,
-          resolved: allTickets.filter(t => t.status === 'resolved').length,
           closed: allTickets.filter(t => t.status === 'closed').length,
         };
         
@@ -2710,7 +2828,6 @@ export function registerRoutes(app: Express): Server {
         const ticketsByStatus = {
           open: ownTickets.filter(t => t.status === 'open').length,
           in_progress: ownTickets.filter(t => t.status === 'in_progress').length,
-          resolved: ownTickets.filter(t => t.status === 'resolved').length,
           closed: ownTickets.filter(t => t.status === 'closed').length,
         };
         
@@ -2769,7 +2886,7 @@ export function registerRoutes(app: Express): Server {
           if (user) {
             userId = data.userId;
             authenticated = true;
-            clients.set(userId, ws);
+            clients.set(data.userId, ws);
             
             // Send auth confirmation
             ws.send(JSON.stringify({ type: 'auth_success' }));
@@ -2779,18 +2896,24 @@ export function registerRoutes(app: Express): Server {
           }
         } else if (data.type === 'message' && userId && authenticated) {
           // Validate message with Zod schema
-          const messageSchema = insertChatMessageSchema.omit({
-            id: true,
-            senderId: true, // Will be forced from session
-            createdAt: true,
+          const messageSchema = insertChatMessageSchema.pick({
+            receiverId: true,
+            message: true,
+            isRead: true,
           });
 
           const validatedData = messageSchema.parse({
             receiverId: data.receiverId,
             message: data.message,
+            isRead: false,
           });
 
           // Verify receiver exists
+          if (!validatedData.receiverId) {
+            ws.send(JSON.stringify({ type: 'error', error: 'Receiver ID required' }));
+            return;
+          }
+          
           const receiver = await storage.getUser(validatedData.receiverId);
           if (!receiver) {
             ws.send(JSON.stringify({ type: 'error', error: 'Receiver not found' }));
@@ -2802,6 +2925,7 @@ export function registerRoutes(app: Express): Server {
             senderId: userId, // Force from authenticated session
             receiverId: validatedData.receiverId,
             message: validatedData.message,
+            isRead: false,
           });
 
           // Send to receiver if online

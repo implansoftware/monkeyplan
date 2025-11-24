@@ -403,12 +403,14 @@ export const insertInventoryStockSchema = createInsertSchema(inventoryStock).omi
 
 export const insertRepairOrderSchema = createInsertSchema(repairOrders).omit({
   id: true,
+  orderNumber: true,
   createdAt: true,
   updatedAt: true,
 });
 
 export const insertTicketSchema = createInsertSchema(tickets).omit({
   id: true,
+  ticketNumber: true,
   createdAt: true,
   updatedAt: true,
 });
@@ -420,6 +422,7 @@ export const insertTicketMessageSchema = createInsertSchema(ticketMessages).omit
 
 export const insertInvoiceSchema = createInsertSchema(invoices).omit({
   id: true,
+  invoiceNumber: true,
   createdAt: true,
 });
 
@@ -472,6 +475,52 @@ export const updateTicketStatusSchema = z.object({
 export const createTicketMessageSchema = z.object({
   message: z.string().min(1).trim(),
   isInternal: z.boolean().optional().default(false),
+});
+
+// Customer Registration Wizard Schemas
+const baseCustomerSchema = z.object({
+  email: z.string().email(),
+  phone: z.string().min(1).trim(),
+  address: z.string().min(1).trim(),
+  city: z.string().min(1).trim(),
+  zipCode: z.string().min(1).trim(),
+  country: z.string().default("IT"),
+  googlePlaceId: z.string().optional(),
+  iban: z.string().optional(),
+});
+
+export const privateCustomerSchema = baseCustomerSchema.extend({
+  customerType: z.literal("private"),
+  fullName: z.string().min(1).trim(),
+});
+
+const companyCustomerSchemaBase = baseCustomerSchema.extend({
+  customerType: z.literal("company"),
+  companyName: z.string().min(1).trim(),
+  vatNumber: z.string().optional(),
+  fiscalCode: z.string().optional(),
+  pec: z.string().email().optional(),
+  codiceUnivoco: z.string().optional(),
+});
+
+export const companyCustomerSchema = companyCustomerSchemaBase.refine(
+  (data) => data.pec || data.codiceUnivoco,
+  { message: "Almeno uno tra PEC o Codice Univoco è richiesto", path: ["pec"] }
+);
+
+export const customerWizardSchema = z.discriminatedUnion("customerType", [
+  privateCustomerSchema,
+  companyCustomerSchemaBase,
+]).superRefine((data, ctx) => {
+  if (data.customerType === "company") {
+    if (!data.pec && !data.codiceUnivoco) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Almeno uno tra PEC o Codice Univoco è richiesto",
+        path: ["pec"],
+      });
+    }
+  }
 });
 
 // Types
