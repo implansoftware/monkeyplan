@@ -6,6 +6,7 @@ import { z } from "zod";
 
 // Enums
 export const userRoleEnum = pgEnum("user_role", ["admin", "reseller", "repair_center", "customer"]);
+export const customerTypeEnum = pgEnum("customer_type", ["private", "company"]);
 export const ticketStatusEnum = pgEnum("ticket_status", ["open", "in_progress", "closed"]);
 export const ticketPriorityEnum = pgEnum("ticket_priority", ["low", "medium", "high"]);
 export const repairStatusEnum = pgEnum("repair_status", ["pending", "in_progress", "waiting_parts", "completed", "delivered", "cancelled"]);
@@ -20,6 +21,7 @@ export const users = pgTable("users", {
   password: text("password").notNull(),
   email: text("email").notNull().unique(),
   fullName: text("full_name").notNull(),
+  phone: text("phone"),
   role: userRoleEnum("role").notNull().default("customer"),
   isActive: boolean("is_active").notNull().default(true),
   repairCenterId: varchar("repair_center_id"),
@@ -145,13 +147,18 @@ export const invoices = pgTable("invoices", {
 export const billingData = pgTable("billing_data", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   userId: varchar("user_id").notNull().unique(),
+  customerType: customerTypeEnum("customer_type").notNull().default("private"),
   companyName: text("company_name"),
   vatNumber: text("vat_number"),
   fiscalCode: text("fiscal_code"),
+  pec: text("pec"),
+  codiceUnivoco: text("codice_univoco"),
+  iban: text("iban"),
   address: text("address").notNull(),
   city: text("city").notNull(),
   zipCode: text("zip_code").notNull(),
   country: text("country").notNull().default("IT"),
+  googlePlaceId: text("google_place_id"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
