@@ -1399,6 +1399,51 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Download/preview attachment with signed URL
+  app.get("/api/repair-orders/attachments/:id/download", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const attachment = await storage.getRepairAttachment(req.params.id);
+      if (!attachment) return res.status(404).send("Attachment not found");
+      
+      // Check access via repair order
+      const repairOrder = await storage.getRepairOrder(attachment.repairOrderId);
+      if (!repairOrder) return res.status(404).send("Repair order not found");
+      
+      const hasAccess = 
+        req.user.role === 'admin' ||
+        (req.user.role === 'customer' && repairOrder.customerId === req.user.id) ||
+        (req.user.role === 'reseller' && repairOrder.resellerId === req.user.id) ||
+        (req.user.role === 'repair_center' && repairOrder.repairCenterId === req.user.repairCenterId);
+      
+      if (!hasAccess) return res.status(403).send("Forbidden");
+      
+      // Generate signed URL for download or preview (valid for 1 hour)
+      const { bucketName, objectName } = parseObjectPath(attachment.objectKey);
+      const bucket = objectStorageClient.bucket(bucketName);
+      const file = bucket.file(objectName);
+      
+      // Use inline disposition for preview, attachment for download
+      const isPreview = req.query.preview === 'true';
+      const disposition = isPreview
+        ? 'inline'
+        : `attachment; filename="${encodeURIComponent(attachment.fileName)}"`;
+      
+      const [signedUrl] = await file.getSignedUrl({
+        version: 'v4',
+        action: 'read',
+        expires: Date.now() + 60 * 60 * 1000, // 1 hour
+        responseDisposition: disposition,
+      });
+      
+      res.json({ signedUrl });
+    } catch (error: any) {
+      console.error('Download error:', error);
+      res.status(500).send(error.message);
+    }
+  });
+
   // ============ WEBSOCKET FOR LIVECHAT & NOTIFICATIONS ============
 
   const httpServer = createServer(app);
