@@ -2,11 +2,18 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { InventoryStock, RepairCenter } from "@shared/schema";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Package, AlertTriangle } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { Package, AlertTriangle, Download, CalendarIcon } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
+import { useToast } from "@/hooks/use-toast";
+import { format } from "date-fns";
+import { it } from "date-fns/locale";
+import type { DateRange } from "react-day-picker";
 
 type InventoryWithDetails = InventoryStock & {
   product?: { name: string; sku: string; category: string };
@@ -15,6 +22,9 @@ type InventoryWithDetails = InventoryStock & {
 
 export default function AdminInventory() {
   const [centerFilter, setCenterFilter] = useState<string>("all");
+  const [dateRange, setDateRange] = useState<DateRange | undefined>();
+  const [isExporting, setIsExporting] = useState(false);
+  const { toast } = useToast();
 
   const { data: centers = [] } = useQuery<RepairCenter[]>({
     queryKey: ["/api/admin/repair-centers"],
@@ -23,6 +33,45 @@ export default function AdminInventory() {
   const { data: inventory = [], isLoading } = useQuery<InventoryWithDetails[]>({
     queryKey: ["/api/admin/inventory"],
   });
+
+  const handleExport = async () => {
+    try {
+      setIsExporting(true);
+      const params = new URLSearchParams();
+      if (centerFilter !== "all") params.append("centerId", centerFilter);
+      if (dateRange?.from) params.append("startDate", format(dateRange.from, "yyyy-MM-dd"));
+      if (dateRange?.to) params.append("endDate", format(dateRange.to, "yyyy-MM-dd"));
+      
+      const response = await fetch(`/api/admin/export/inventory?${params.toString()}`, {
+        credentials: "include",
+      });
+      
+      if (!response.ok) throw new Error("Export failed");
+      
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `inventory_${new Date().toISOString().split('T')[0]}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      
+      toast({
+        title: "Export completato",
+        description: "Il file Excel è stato scaricato con successo",
+      });
+    } catch (error) {
+      toast({
+        title: "Errore",
+        description: "Impossibile esportare i dati",
+        variant: "destructive",
+      });
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
   const filteredInventory = inventory.filter((item) => {
     const matchesCenter = centerFilter === "all" || item.repairCenterId === centerFilter;
@@ -80,9 +129,9 @@ export default function AdminInventory() {
 
       <Card>
         <CardHeader>
-          <div className="flex items-center gap-4">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
             <Select value={centerFilter} onValueChange={setCenterFilter}>
-              <SelectTrigger className="w-64" data-testid="select-filter-center">
+              <SelectTrigger className="w-full sm:w-64" data-testid="select-filter-center">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -94,6 +143,40 @@ export default function AdminInventory() {
                 ))}
               </SelectContent>
             </Select>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" className="w-full sm:w-64" data-testid="button-date-range">
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {dateRange?.from ? (
+                    dateRange.to ? (
+                      `${format(dateRange.from, "dd MMM yyyy", { locale: it })} - ${format(dateRange.to, "dd MMM yyyy", { locale: it })}`
+                    ) : (
+                      format(dateRange.from, "dd MMM yyyy", { locale: it })
+                    )
+                  ) : (
+                    "Seleziona periodo"
+                  )}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="end">
+                <Calendar
+                  mode="range"
+                  selected={dateRange}
+                  onSelect={setDateRange}
+                  numberOfMonths={2}
+                  locale={it}
+                />
+              </PopoverContent>
+            </Popover>
+            <Button
+              onClick={handleExport}
+              disabled={isExporting || inventory.length === 0}
+              variant="outline"
+              data-testid="button-export-inventory"
+            >
+              <Download className="h-4 w-4 mr-2" />
+              {isExporting ? "Esportazione..." : "Esporta Excel"}
+            </Button>
           </div>
         </CardHeader>
         <CardContent>

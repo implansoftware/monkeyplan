@@ -5,6 +5,7 @@ import { storage } from "./storage";
 import { setupAuth } from "./auth";
 import { scrypt, randomBytes } from "crypto";
 import { promisify } from "util";
+import ExcelJS from "exceljs";
 import {
   insertUserSchema, insertRepairCenterSchema, insertProductSchema,
   insertRepairOrderSchema, insertTicketSchema, insertInvoiceSchema,
@@ -551,6 +552,164 @@ export function registerRoutes(app: Express): Server {
       res.status(201).json(movement);
     } catch (error: any) {
       res.status(400).send(error.message);
+    }
+  });
+
+  // Export Data (Admin)
+  app.get("/api/admin/export/:type", requireRole("admin"), async (req, res) => {
+    try {
+      const { type } = req.params;
+      const { startDate, endDate, status, centerId } = req.query;
+
+      // Create workbook
+      const workbook = new ExcelJS.Workbook();
+      workbook.creator = 'MonkeyPlan Admin';
+      workbook.created = new Date();
+
+      let data: any[] = [];
+      let fileName = '';
+      let sheetName = '';
+
+      // Fetch and format data based on type
+      switch (type) {
+        case 'invoices':
+          const invoices = await storage.listInvoices();
+          data = invoices
+            .filter(inv => {
+              if (startDate && new Date(inv.createdAt) < new Date(startDate as string)) return false;
+              if (endDate && new Date(inv.createdAt) > new Date(endDate as string)) return false;
+              if (status && inv.paymentStatus !== status) return false;
+              return true;
+            })
+            .map(inv => ({
+              'Invoice Number': inv.invoiceNumber,
+              'Repair Order ID': inv.repairOrderId,
+              'Amount': inv.amount,
+              'Payment Status': inv.paymentStatus,
+              'Payment Method': inv.paymentMethod,
+              'Bank Transfer Details': inv.bankTransferDetails,
+              'Created At': new Date(inv.createdAt).toLocaleString(),
+            }));
+          fileName = 'invoices_export.xlsx';
+          sheetName = 'Invoices';
+          break;
+
+        case 'inventory':
+          const inventory = await storage.listInventoryStock(centerId as string | undefined);
+          data = inventory
+            .filter(item => {
+              if (startDate && new Date(item.lastUpdated) < new Date(startDate as string)) return false;
+              if (endDate && new Date(item.lastUpdated) > new Date(endDate as string)) return false;
+              if (centerId && item.repairCenterId !== centerId) return false;
+              return true;
+            })
+            .map(item => ({
+              'Product SKU': item.productSku,
+              'Repair Center ID': item.repairCenterId,
+              'Quantity': item.quantity,
+              'Last Updated': new Date(item.lastUpdated).toLocaleString(),
+            }));
+          fileName = 'inventory_export.xlsx';
+          sheetName = 'Inventory';
+          break;
+
+        case 'repairs':
+          const repairs = await storage.listRepairOrders();
+          data = repairs
+            .filter(rep => {
+              if (startDate && new Date(rep.createdAt) < new Date(startDate as string)) return false;
+              if (endDate && new Date(rep.createdAt) > new Date(endDate as string)) return false;
+              if (status && rep.status !== status) return false;
+              return true;
+            })
+            .map(rep => ({
+              'Order Number': rep.orderNumber,
+              'Customer ID': rep.customerId,
+              'Reseller ID': rep.resellerId,
+              'Repair Center ID': rep.repairCenterId,
+              'Device Type': rep.deviceType,
+              'Issue Description': rep.issueDescription,
+              'Status': rep.status,
+              'Estimated Cost': rep.estimatedCost,
+              'Final Cost': rep.finalCost,
+              'Created At': new Date(rep.createdAt).toLocaleString(),
+              'Updated At': new Date(rep.updatedAt).toLocaleString(),
+            }));
+          fileName = 'repairs_export.xlsx';
+          sheetName = 'Repairs';
+          break;
+
+        case 'users':
+          const users = await storage.listUsers();
+          data = users
+            .filter(user => {
+              if (startDate && new Date(user.createdAt) < new Date(startDate as string)) return false;
+              if (endDate && new Date(user.createdAt) > new Date(endDate as string)) return false;
+              if (status && user.role !== status) return false;
+              return true;
+            })
+            .map(user => ({
+              'Username': user.username,
+              'Full Name': user.fullName,
+              'Email': user.email,
+              'Phone': user.phone,
+              'Role': user.role,
+              'Repair Center ID': user.repairCenterId,
+              'Created At': new Date(user.createdAt).toLocaleString(),
+            }));
+          fileName = 'users_export.xlsx';
+          sheetName = 'Users';
+          break;
+
+        default:
+          return res.status(400).send('Invalid export type');
+      }
+
+      // Create worksheet
+      const worksheet = workbook.addWorksheet(sheetName);
+
+      if (data.length > 0) {
+        // Add headers
+        const headers = Object.keys(data[0]);
+        worksheet.addRow(headers);
+
+        // Style header row
+        worksheet.getRow(1).font = { bold: true };
+        worksheet.getRow(1).fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'FFE0E0E0' }
+        };
+
+        // Add data rows
+        data.forEach(row => {
+          worksheet.addRow(Object.values(row));
+        });
+
+        // Auto-fit columns
+        worksheet.columns.forEach(column => {
+          let maxLength = 0;
+          column.eachCell?.({ includeEmpty: true }, (cell) => {
+            const length = cell.value ? cell.value.toString().length : 10;
+            if (length > maxLength) maxLength = length;
+          });
+          column.width = Math.min(maxLength + 2, 50);
+        });
+      }
+
+      // Set response headers
+      res.setHeader(
+        'Content-Type',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+      );
+      res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
+
+      // Write to response
+      await workbook.xlsx.write(res);
+      res.end();
+    } catch (error: any) {
+      console.error('Export error:', error);
+      res.status(500).send(error.message);
     }
   });
 
