@@ -958,6 +958,31 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  app.patch("/api/repair-center/repairs/:id/status", requireRole("repair_center"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const validatedData = updateRepairStatusSchema.parse(req.body);
+      
+      const repair = await storage.getRepairOrder(req.params.id);
+      if (!repair) return res.status(404).send("Repair order not found");
+      
+      if (repair.repairCenterId !== req.user.repairCenterId) {
+        return res.status(403).send("Cannot update repairs from other centers");
+      }
+      
+      const updated = await storage.updateRepairOrderStatus(req.params.id, validatedData.status);
+      setActivityEntity(res, { type: 'repairs', id: req.params.id });
+      
+      await storage.invalidateCache('overview_%');
+      await storage.invalidateCache('centers_%');
+      
+      res.json(updated);
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+
   // ============ CUSTOMER ROUTES ============
 
   app.get("/api/customer/stats", requireRole("customer"), async (req, res) => {
