@@ -78,3 +78,39 @@ Development uses Vite for HMR. Production builds use Vite for client assets and 
 - **Reseller Dashboard**: Orders stats, customers count, revenue calculation, quick actions
 - **Customer Dashboard**: Own tickets/repairs with PieChart/BarChart, empty state handling
 - Uses recharts for visualizations, leverages existing analytics helpers (getOverviewKPIs, getRepairCenterPerformance, getTopProducts)
+
+### Phase 7: Invoicing & Billing (✅ BACKEND, 🔧 FRONTEND)
+**Backend API (✅ COMPLETED):**
+- `GET /api/invoices` - List with RBAC (admin all, customer own only, reseller/RC blocked)
+- `GET /api/invoices/:id` - Detail with access control
+- `POST /api/invoices` - Create invoice (admin only, auto-generates invoiceNumber INV-timestamp-count)
+- `PATCH /api/invoices/:id` - Update payment status (admin only, auto-sets paidDate when paid)
+- Storage methods: listInvoices (conditional .where()), createInvoice, updateInvoice, getInvoice
+**Frontend (🔧 PARTIAL):**
+- Admin invoices page: List view with filters (status, date range), export to Excel via `/api/reports/repairs?format=excel`
+
+### Phase 8: User Management (✅ BACKEND, 🔧 FRONTEND)
+**Backend API (✅ COMPLETED):**
+- `GET /api/users` - List all users (admin only)
+- `PATCH /api/users/:id` - Update user (admin updates all fields, users update own profile: email, fullName)
+- Storage methods: updateUser (username, email, fullName, role, isActive, repairCenterId)
+**Frontend (🔧 PARTIAL):**
+- Admin users page: List view with filters (role, date range), create/edit dialog (fullName not firstName/lastName per schema), CSV export (no backend Excel endpoint)
+
+### Phase 9: File Uploads & Attachments (✅ BACKEND, ⏳ FRONTEND)
+**Backend API (✅ COMPLETED):**
+- `GET /api/repair-orders/:repairOrderId/attachments` - List attachments (RBAC: customer/reseller own, RC assigned, admin all)
+- `POST /api/repair-orders/:repairOrderId/attachments` - Upload attachment record (uploadedBy forced from session)
+- `DELETE /api/repair-attachments/:id` - Delete attachment (admin all, uploader own only)
+- Storage methods: addRepairAttachment, listRepairAttachments, getRepairAttachment, deleteRepairAttachment
+- Triple null-check for repair center access (same pattern as repair orders)
+**Frontend (⏳ TODO):**
+- Upload component for repair orders with file preview
+
+### Phase 10: Reports & Export (✅ BACKEND, ⏳ FRONTEND)
+**Backend API (✅ COMPLETED):**
+- `GET /api/reports/repairs?format=excel` - Export repairs to Excel (admin only, filters: status, repairCenterId)
+- `GET /api/reports/inventory?format=excel` - Export inventory movements to Excel (admin only)
+- Uses exceljs library for .xlsx generation with Italian headers, formatted currency (cents→euros)
+**Frontend (⏳ TODO):**
+- Admin reports page with date filters and download buttons

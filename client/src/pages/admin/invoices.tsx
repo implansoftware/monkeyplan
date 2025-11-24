@@ -24,7 +24,7 @@ export default function AdminInvoices() {
   const { toast } = useToast();
 
   const { data: invoices = [], isLoading } = useQuery<Invoice[]>({
-    queryKey: ["/api/admin/invoices"],
+    queryKey: ["/api/invoices"],
   });
 
   const handleExport = async () => {
@@ -35,7 +35,7 @@ export default function AdminInvoices() {
       if (dateRange?.from) params.append("startDate", format(dateRange.from, "yyyy-MM-dd"));
       if (dateRange?.to) params.append("endDate", format(dateRange.to, "yyyy-MM-dd"));
       
-      const response = await fetch(`/api/admin/export/invoices?${params.toString()}`, {
+      const response = await fetch(`/api/reports/repairs?format=excel&${params.toString()}`, {
         credentials: "include",
       });
       

@@ -29,28 +29,30 @@ export default function AdminUsers() {
   const { toast } = useToast();
 
   const { data: users = [], isLoading } = useQuery<User[]>({
-    queryKey: ["/api/admin/users"],
+    queryKey: ["/api/users"],
   });
 
   const handleExport = async () => {
+    // Export users as CSV (no backend endpoint for Excel export yet)
     try {
       setIsExporting(true);
-      const params = new URLSearchParams();
-      if (roleFilter !== "all") params.append("status", roleFilter);
-      if (dateRange?.from) params.append("startDate", format(dateRange.from, "yyyy-MM-dd"));
-      if (dateRange?.to) params.append("endDate", format(dateRange.to, "yyyy-MM-dd"));
       
-      const response = await fetch(`/api/admin/export/users?${params.toString()}`, {
-        credentials: "include",
-      });
+      const csv = [
+        ['Nome Completo', 'Email', 'Username', 'Ruolo', 'Stato'].join(','),
+        ...filteredUsers.map(u => [
+          u.fullName,
+          u.email,
+          u.username,
+          getRoleLabel(u.role),
+          u.isActive ? 'Attivo' : 'Inattivo'
+        ].join(','))
+      ].join('\n');
       
-      if (!response.ok) throw new Error("Export failed");
-      
-      const blob = await response.blob();
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `users_${new Date().toISOString().split('T')[0]}.xlsx`;
+      a.download = `users_${new Date().toISOString().split('T')[0]}.csv`;
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
@@ -58,7 +60,7 @@ export default function AdminUsers() {
       
       toast({
         title: "Export completato",
-        description: "Il file Excel è stato scaricato con successo",
+        description: "Il file CSV è stato scaricato con successo",
       });
     } catch (error) {
       toast({
@@ -73,11 +75,11 @@ export default function AdminUsers() {
 
   const createUserMutation = useMutation({
     mutationFn: async (data: InsertUser) => {
-      const res = await apiRequest("POST", "/api/admin/users", data);
+      const res = await apiRequest("POST", "/api/auth/register", data);
       return await res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/users"] });
       setDialogOpen(false);
       toast({ title: "Utente creato con successo" });
     },
@@ -86,12 +88,28 @@ export default function AdminUsers() {
     },
   });
 
-  const deleteUserMutation = useMutation({
-    mutationFn: async (id: string) => {
-      await apiRequest("DELETE", `/api/admin/users/${id}`);
+  const updateUserMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: Partial<User> }) => {
+      const res = await apiRequest("PATCH", `/api/users/${id}`, data);
+      return await res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/users"] });
+      setDialogOpen(false);
+      setEditingUser(null);
+      toast({ title: "Utente aggiornato con successo" });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Errore", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const deleteUserMutation = useMutation({
+    mutationFn: async (id: string) => {
+      await apiRequest("DELETE", `/api/users/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/users"] });
       toast({ title: "Utente eliminato" });
     },
   });
@@ -99,19 +117,33 @@ export default function AdminUsers() {
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
-    const data: InsertUser = {
-      username: formData.get("username") as string,
-      password: formData.get("password") as string,
-      email: formData.get("email") as string,
-      fullName: formData.get("fullName") as string,
-      role: formData.get("role") as any,
-      isActive: true,
-    };
-    createUserMutation.mutate(data);
+    
+    if (editingUser) {
+      // Update existing user
+      const updates: Partial<User> = {
+        email: formData.get("email") as string,
+        fullName: formData.get("fullName") as string,
+        role: formData.get("role") as any,
+        isActive: formData.get("isActive") === "true",
+      };
+      updateUserMutation.mutate({ id: editingUser.id, data: updates });
+    } else {
+      // Create new user
+      const data: InsertUser = {
+        username: formData.get("username") as string,
+        password: formData.get("password") as string,
+        email: formData.get("email") as string,
+        fullName: formData.get("fullName") as string,
+        role: formData.get("role") as any,
+        isActive: true,
+      };
+      createUserMutation.mutate(data);
+    }
   };
 
   const filteredUsers = users.filter((user) => {
-    const matchesSearch = user.fullName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    const matchesSearch = 
+      user.fullName.toLowerCase().includes(searchQuery.toLowerCase()) ||
       user.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
       user.username.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesRole = roleFilter === "all" || user.role === roleFilter;
@@ -156,7 +188,7 @@ export default function AdminUsers() {
             <Download className="h-4 w-4 mr-2" />
             {isExporting ? "Esportazione..." : "Esporta"}
           </Button>
-          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+          <Dialog open={dialogOpen} onOpenChange={(open) => { setDialogOpen(open); if (!open) setEditingUser(null); }}>
             <DialogTrigger asChild>
               <Button data-testid="button-new-user">
                 <Plus className="h-4 w-4 mr-2" />
@@ -165,28 +197,32 @@ export default function AdminUsers() {
             </DialogTrigger>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Crea Nuovo Utente</DialogTitle>
+              <DialogTitle>{editingUser ? 'Modifica Utente' : 'Crea Nuovo Utente'}</DialogTitle>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="fullName">Nome Completo</Label>
-                <Input id="fullName" name="fullName" required data-testid="input-fullname" />
+                <Input id="fullName" name="fullName" defaultValue={editingUser?.fullName || ''} required data-testid="input-fullname" />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
-                <Input id="email" name="email" type="email" required data-testid="input-email" />
+                <Input id="email" name="email" type="email" defaultValue={editingUser?.email || ''} required data-testid="input-email" />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="username">Username</Label>
-                <Input id="username" name="username" required data-testid="input-username" />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
-                <Input id="password" name="password" type="password" required data-testid="input-password" />
-              </div>
+              {!editingUser && (
+                <>
+                  <div className="space-y-2">
+                    <Label htmlFor="username">Username</Label>
+                    <Input id="username" name="username" required data-testid="input-username" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="password">Password</Label>
+                    <Input id="password" name="password" type="password" required data-testid="input-password" />
+                  </div>
+                </>
+              )}
               <div className="space-y-2">
                 <Label htmlFor="role">Ruolo</Label>
-                <Select name="role" defaultValue="customer">
+                <Select name="role" defaultValue={editingUser?.role || "customer"}>
                   <SelectTrigger id="role" data-testid="select-role">
                     <SelectValue />
                   </SelectTrigger>
@@ -198,8 +234,30 @@ export default function AdminUsers() {
                   </SelectContent>
                 </Select>
               </div>
-              <Button type="submit" className="w-full" disabled={createUserMutation.isPending} data-testid="button-submit-user">
-                {createUserMutation.isPending ? "Creazione..." : "Crea Utente"}
+              {editingUser && (
+                <div className="space-y-2">
+                  <Label htmlFor="isActive">Stato</Label>
+                  <Select name="isActive" defaultValue={editingUser.isActive ? "true" : "false"}>
+                    <SelectTrigger id="isActive" data-testid="select-active">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="true">Attivo</SelectItem>
+                      <SelectItem value="false">Inattivo</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+              <Button 
+                type="submit" 
+                className="w-full" 
+                disabled={createUserMutation.isPending || updateUserMutation.isPending} 
+                data-testid="button-submit-user"
+              >
+                {editingUser 
+                  ? (updateUserMutation.isPending ? "Aggiornamento..." : "Aggiorna Utente")
+                  : (createUserMutation.isPending ? "Creazione..." : "Crea Utente")
+                }
               </Button>
             </form>
           </DialogContent>
@@ -264,7 +322,7 @@ export default function AdminUsers() {
               data-testid="button-export-users"
             >
               <Download className="h-4 w-4 mr-2" />
-              {isExporting ? "Esportazione..." : "Esporta Excel"}
+              {isExporting ? "Esportazione..." : "Esporta CSV"}
             </Button>
           </div>
         </CardHeader>
@@ -313,6 +371,7 @@ export default function AdminUsers() {
                         <Button
                           variant="ghost"
                           size="icon"
+                          onClick={() => { setEditingUser(user); setDialogOpen(true); }}
                           data-testid={`button-edit-${user.id}`}
                         >
                           <Pencil className="h-4 w-4" />

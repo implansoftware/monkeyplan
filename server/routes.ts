@@ -2539,6 +2539,22 @@ export function registerRoutes(app: Express): Server {
 
   // ============ USER MANAGEMENT ============
 
+  app.get("/api/users", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      // Only admin can list all users
+      if (req.user.role !== 'admin') {
+        return res.status(403).send("Only admins can list users");
+      }
+      
+      const users = await storage.listUsers();
+      res.json(users);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
   app.patch("/api/users/:id", requireAuth, async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
