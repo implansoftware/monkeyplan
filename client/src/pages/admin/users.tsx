@@ -228,12 +228,11 @@ export default function AdminUsers() {
               )}
               <div className="space-y-2">
                 <Label htmlFor="role">Ruolo</Label>
-                <Select name="role" defaultValue={editingUser?.role || "customer"}>
+                <Select name="role" defaultValue={editingUser?.role || "reseller"}>
                   <SelectTrigger id="role" data-testid="select-role">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="customer">Cliente</SelectItem>
                     <SelectItem value="reseller">Rivenditore</SelectItem>
                     <SelectItem value="repair_center">Centro Riparazione</SelectItem>
                     <SelectItem value="admin">Amministratore</SelectItem>
