@@ -3,16 +3,19 @@ import { createServer, type Server } from "http";
 import { WebSocketServer, WebSocket } from "ws";
 import { storage } from "./storage";
 import { setupAuth } from "./auth";
-import { scrypt, randomBytes } from "crypto";
+import { scrypt, randomBytes, randomUUID } from "crypto";
 import { promisify } from "util";
 import ExcelJS from "exceljs";
+import multer from "multer";
 import {
   insertUserSchema, insertRepairCenterSchema, insertProductSchema,
   insertRepairOrderSchema, insertTicketSchema, insertInvoiceSchema,
   updateRepairStatusSchema, updateTicketStatusSchema, createTicketMessageSchema,
   insertInventoryMovementSchema, insertBillingDataSchema, insertChatMessageSchema,
-  insertNotificationPreferencesSchema
+  insertNotificationPreferencesSchema, insertRepairAttachmentSchema
 } from "@shared/schema";
+import { ObjectStorageService, objectStorageClient, parseObjectPath } from "./objectStorage";
+import { canAccessObject, ObjectPermission } from "./objectAcl";
 
 const scryptAsync = promisify(scrypt);
 
@@ -21,6 +24,36 @@ async function hashPassword(password: string) {
   const buf = (await scryptAsync(password, salt, 64)) as Buffer;
   return `${buf.toString("hex")}.${salt}`;
 }
+
+// Configure multer for file uploads (memory storage)
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 10 * 1024 * 1024, // 10MB max file size
+  },
+  fileFilter: (req, file, cb) => {
+    // Allow images and common document types
+    const allowedMimes = [
+      'image/jpeg',
+      'image/jpg',
+      'image/png',
+      'image/gif',
+      'image/webp',
+      'application/pdf',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    ];
+    
+    if (allowedMimes.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error('Invalid file type. Only images and PDF/DOC files are allowed.'));
+    }
+  },
+});
+
+// Object Storage Service instance
+const objectStorage = new ObjectStorageService();
 
 // Middleware to check if user is authenticated
 function requireAuth(req: Request, res: Response, next: Function) {
@@ -1196,6 +1229,173 @@ export function registerRoutes(app: Express): Server {
       res.json(preferences);
     } catch (error: any) {
       res.status(400).send(error.message);
+    }
+  });
+
+  // ============ REPAIR ORDER ATTACHMENTS ============
+  
+  // Upload attachment to repair order
+  app.post("/api/repair-orders/:id/attachments", requireAuth, upload.single('file'), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      if (!req.file) return res.status(400).send("No file uploaded");
+      
+      const repairOrderId = req.params.id;
+      
+      // Check if user has access to this repair order
+      const repairOrder = await storage.getRepairOrder(repairOrderId);
+      if (!repairOrder) return res.status(404).send("Repair order not found");
+      
+      // Check access based on role
+      const hasAccess = 
+        req.user.role === 'admin' ||
+        (req.user.role === 'customer' && repairOrder.customerId === req.user.id) ||
+        (req.user.role === 'reseller' && repairOrder.resellerId === req.user.id) ||
+        (req.user.role === 'repair_center' && repairOrder.repairCenterId === req.user.repairCenterId);
+      
+      if (!hasAccess) return res.status(403).send("Forbidden");
+      
+      // Generate unique object key
+      const objectId = randomUUID();
+      const privateDir = objectStorage.getPrivateObjectDir();
+      const objectKey = `${privateDir}/repair-attachments/${repairOrderId}/${objectId}`;
+      
+      // Parse bucket and object name
+      const { bucketName, objectName } = parseObjectPath(objectKey);
+      
+      // Upload to Google Cloud Storage
+      const bucket = objectStorageClient.bucket(bucketName);
+      const file = bucket.file(objectName);
+      
+      await file.save(req.file.buffer, {
+        contentType: req.file.mimetype,
+        metadata: {
+          metadata: {
+            originalName: req.file.originalname,
+            uploadedBy: req.user.id,
+            repairOrderId: repairOrderId,
+          }
+        }
+      });
+      
+      // Set ACL policy based on repair order access
+      const acl = await import('./objectAcl');
+      const aclPolicy: any = {
+        visibility: 'private',
+        repairOrderAccessGroup: {
+          repairOrderId: repairOrderId,
+          permissions: ['read']
+        }
+      };
+      
+      await acl.setObjectAclPolicy(file, aclPolicy);
+      
+      // Save metadata to database
+      const attachment = await storage.addRepairAttachment({
+        repairOrderId,
+        objectKey,
+        fileName: req.file.originalname,
+        fileType: req.file.mimetype,
+        fileSize: req.file.size,
+        uploadedBy: req.user.id,
+      });
+      
+      setActivityEntity(res, { type: 'repair_attachments', id: attachment.id });
+      res.json(attachment);
+    } catch (error: any) {
+      console.error('Upload error:', error);
+      res.status(500).send(error.message);
+    }
+  });
+  
+  // List attachments for repair order
+  app.get("/api/repair-orders/:id/attachments", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const repairOrderId = req.params.id;
+      
+      // Check if user has access to this repair order
+      const repairOrder = await storage.getRepairOrder(repairOrderId);
+      if (!repairOrder) return res.status(404).send("Repair order not found");
+      
+      const hasAccess = 
+        req.user.role === 'admin' ||
+        (req.user.role === 'customer' && repairOrder.customerId === req.user.id) ||
+        (req.user.role === 'reseller' && repairOrder.resellerId === req.user.id) ||
+        (req.user.role === 'repair_center' && repairOrder.repairCenterId === req.user.repairCenterId);
+      
+      if (!hasAccess) return res.status(403).send("Forbidden");
+      
+      const attachments = await storage.listRepairAttachments(repairOrderId);
+      res.json(attachments);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+  
+  // Get attachment details
+  app.get("/api/repair-orders/attachments/:id", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const attachment = await storage.getRepairAttachment(req.params.id);
+      if (!attachment) return res.status(404).send("Attachment not found");
+      
+      // Check access via repair order
+      const repairOrder = await storage.getRepairOrder(attachment.repairOrderId);
+      if (!repairOrder) return res.status(404).send("Repair order not found");
+      
+      const hasAccess = 
+        req.user.role === 'admin' ||
+        (req.user.role === 'customer' && repairOrder.customerId === req.user.id) ||
+        (req.user.role === 'reseller' && repairOrder.resellerId === req.user.id) ||
+        (req.user.role === 'repair_center' && repairOrder.repairCenterId === req.user.repairCenterId);
+      
+      if (!hasAccess) return res.status(403).send("Forbidden");
+      
+      res.json(attachment);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+  
+  // Delete attachment
+  app.delete("/api/repair-orders/attachments/:id", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const attachment = await storage.getRepairAttachment(req.params.id);
+      if (!attachment) return res.status(404).send("Attachment not found");
+      
+      // Check access - only uploader, admin, or repair center staff can delete
+      const repairOrder = await storage.getRepairOrder(attachment.repairOrderId);
+      if (!repairOrder) return res.status(404).send("Repair order not found");
+      
+      const canDelete = 
+        req.user.role === 'admin' ||
+        attachment.uploadedBy === req.user.id ||
+        (req.user.role === 'repair_center' && repairOrder.repairCenterId === req.user.repairCenterId);
+      
+      if (!canDelete) return res.status(403).send("Forbidden");
+      
+      // Delete from Google Cloud Storage
+      const { bucketName, objectName } = parseObjectPath(attachment.objectKey);
+      const bucket = objectStorageClient.bucket(bucketName);
+      const file = bucket.file(objectName);
+      
+      await file.delete().catch(err => {
+        console.error('Error deleting from GCS:', err);
+        // Continue even if GCS delete fails (file might already be deleted)
+      });
+      
+      // Delete from database
+      await storage.deleteRepairAttachment(req.params.id);
+      
+      setActivityEntity(res, { type: 'repair_attachments', id: attachment.id });
+      res.json({ message: 'Attachment deleted successfully' });
+    } catch (error: any) {
+      res.status(500).send(error.message);
     }
   });
 

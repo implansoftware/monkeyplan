@@ -4,10 +4,10 @@ import {
   Invoice, InsertInvoice, BillingData, InsertBillingData, ChatMessage, InsertChatMessage,
   InventoryMovement, InsertInventoryMovement, InventoryStock, ActivityLog, InsertActivityLog,
   AnalyticsCache, InsertAnalyticsCache, Notification, InsertNotification,
-  NotificationPreferences, InsertNotificationPreferences,
+  NotificationPreferences, InsertNotificationPreferences, RepairAttachment, InsertRepairAttachment,
   users, repairCenters, products, repairOrders, tickets, ticketMessages,
   invoices, billingData, chatMessages, inventoryMovements, inventoryStock, activityLogs, analyticsCache,
-  notifications, notificationPreferences
+  notifications, notificationPreferences, repairAttachments
 } from "@shared/schema";
 import { db, pool } from "./db";
 import { eq, and, or, desc, lt, sql } from "drizzle-orm";
@@ -91,6 +91,12 @@ export interface IStorage {
   getNotificationPreferences(userId: string): Promise<NotificationPreferences | undefined>;
   createNotificationPreferences(preferences: InsertNotificationPreferences): Promise<NotificationPreferences>;
   updateNotificationPreferences(userId: string, updates: { emailEnabled?: boolean; pushEnabled?: boolean; types?: string[] }): Promise<NotificationPreferences>;
+  
+  // Repair Attachments
+  addRepairAttachment(attachment: InsertRepairAttachment): Promise<RepairAttachment>;
+  listRepairAttachments(repairOrderId: string): Promise<RepairAttachment[]>;
+  getRepairAttachment(id: string): Promise<RepairAttachment | undefined>;
+  deleteRepairAttachment(id: string): Promise<void>;
   
   sessionStore: session.Store;
 }
@@ -674,6 +680,27 @@ export class DatabaseStorage implements IStorage {
     }
     
     return preferences;
+  }
+
+  // Repair Attachments
+  async addRepairAttachment(insertAttachment: InsertRepairAttachment): Promise<RepairAttachment> {
+    const [attachment] = await db.insert(repairAttachments).values(insertAttachment).returning();
+    return attachment;
+  }
+
+  async listRepairAttachments(repairOrderId: string): Promise<RepairAttachment[]> {
+    return await db.select().from(repairAttachments)
+      .where(eq(repairAttachments.repairOrderId, repairOrderId))
+      .orderBy(desc(repairAttachments.uploadedAt));
+  }
+
+  async getRepairAttachment(id: string): Promise<RepairAttachment | undefined> {
+    const [attachment] = await db.select().from(repairAttachments).where(eq(repairAttachments.id, id));
+    return attachment || undefined;
+  }
+
+  async deleteRepairAttachment(id: string): Promise<void> {
+    await db.delete(repairAttachments).where(eq(repairAttachments.id, id));
   }
 }
 
