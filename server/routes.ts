@@ -2657,7 +2657,7 @@ export function registerRoutes(app: Express): Server {
       const tempPassword = randomBytes(8).toString('hex');
       const hashedPassword = await hashPassword(tempPassword);
       
-      // Prepare user data
+      // Prepare user data with reseller assignment
       const userData = {
         username,
         password: hashedPassword, // Hash password before storing (consistent with other user creation routes)
@@ -2666,6 +2666,8 @@ export function registerRoutes(app: Express): Server {
         phone: validatedData.phone,
         role: 'customer' as const,
         isActive: true,
+        // Assign reseller from session - resellers create customers for themselves, admin can create unassigned
+        resellerId: req.user.role === 'reseller' ? req.user.id : null,
       };
       
       // Prepare billing data

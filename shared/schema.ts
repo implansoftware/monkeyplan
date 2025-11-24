@@ -25,6 +25,7 @@ export const users = pgTable("users", {
   role: userRoleEnum("role").notNull().default("customer"),
   isActive: boolean("is_active").notNull().default(true),
   repairCenterId: varchar("repair_center_id"),
+  resellerId: varchar("reseller_id"), // Which reseller created this customer (only for customers)
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 

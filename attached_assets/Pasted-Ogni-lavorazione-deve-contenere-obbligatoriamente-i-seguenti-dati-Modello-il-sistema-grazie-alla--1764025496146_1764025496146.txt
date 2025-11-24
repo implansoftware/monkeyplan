@@ -1,0 +1,41 @@
+Ogni lavorazione deve contenere obbligatoriamente i seguenti dati:
+Modello: il sistema, grazie alla libreria integrata, seleziona automaticamente la marca collegata al modello. In caso di modello non presente nel database, l’operatore può cliccare su “+ Crea Modello” per inserirlo, specificando marca e codice markettario. La foto del dispositivo viene reperita automaticamente tramite API di riconoscimento modelli.
+IMEI o Seriale: campo obbligatorio con controlli di validità. Se l’IMEI non è presente o non leggibile, l’operatore può flaggare una delle opzioni:
+Non leggibile
+Non presente
+Presente solo seriale In caso di selezione “Presente solo seriale”, il sistema apre il campo di compilazione seriale.
+Il sistema verifica inoltre che l’IMEI o il seriale non siano già registrati in altre lavorazioni aperte, evitando duplicazioni accidentali.
+🧾 CHECK DI ACCETTAZIONE
+Durante l’accettazione, il sistema guida l’operatore con un wizard obbligatorio che serve a ridurre gli errori e garantire la tracciabilità completa del dispositivo. I passaggi principali comprendono:
+Check guasti dichiarati L’operatore indica i sintomi o i guasti riscontrati. L’interfaccia adatta dinamicamente le opzioni in base alla classe del dispositivo.
+Esempio per Smartphone: No Display, No Touch, No Altoparlante (non sente), No Suoneria/Vivavoce, No Microfono, Non Vibra, No Tasti Volume, No Tasto Accensione, Non Carica, No Bluetooth, No Wi-Fi, No NFC, Batteria Dura Poco, Si Blocca, Si Riavvia, Si Spegne.
+Esempio per TV: No Segnale, No Telecomando, No Retroilluminazione, Audio Assente.
+L’elenco dei guasti è organizzato per classi di difetto e multiselezionabile.
+Check stato estetico Il sistema chiede di indicare la condizione estetica del dispositivo. Le opzioni e i parametri possono essere impostati dal manager o dal livello superiore. Se le foto sono obbligatorie (secondo le impostazioni), l’interfaccia apre automaticamente la fotocamera del dispositivo associato all’account utente. È possibile scattare nuove foto o caricarne di già presenti. Se non vengono segnalati difetti estetici, il sistema mostra un popup di conferma: “Il telefono è perfetto esteticamente?” L’operatore deve rispondere Sì per procedere.
+Accessori in dotazione Tutti gli accessori vengono registrati e sono selezionabili tramite il pulsante “+ Accessorio”. L’elenco include: alimentatore, cavo, custodia, scheda SIM, pellicola, penna, ecc. Gli accessori “compositi” (ad esempio cavo + presa) vengono stampati come un unico elemento. Nella stampa etichetta è possibile specificare il numero di etichette per accessorio o per combinazione.
+Codice di blocco o pattern Il sistema chiede esplicitamente all’operatore di verificare la presenza di un codice di blocco, password o pattern. Per i dispositivi con pattern, viene richiesto di disegnare la sequenza direttamente su un’area touch del terminale. Prima di chiudere l’accettazione, Monkey Plan mostra due popup di sicurezza:
+“Hai chiesto se il cliente ha un codice di blocco?”
+“Hai rimosso tutti gli accessori non necessari?” Solo dopo la doppia conferma il sistema consente di salvare.
+🕓 STATO “INGRESSATO” E FLUSSI TECNICI
+Dopo l’accettazione del dispositivo, il ticket passa automaticamente nello stato Ingressato. Questo rappresenta la fase in cui il prodotto è fisicamente presente in laboratorio, ma non ancora diagnosticato. A questo punto, il dispositivo entra nella lista “Apparati da Controllare”, visibile a tutti i tecnici e ai responsabili di reparto.
+La lista adotta un codice colore che consente di individuare immediatamente le priorità operative:
+🟢 In Time – dispositivo in lavorazione da meno di 1 giorno (nessuna urgenza)
+🟡 In Ritardo – dispositivo fermo da oltre 1 giorno (da verificare con priorità media)
+🔴 Urgente – dispositivo fermo da oltre 2 giorni (richiede intervento immediato)
+Le soglie di tempo sono configurabili nelle impostazioni generali del laboratorio, in base ai flussi di lavoro e ai carichi di riparazione medi.
+Quando un dispositivo passa automaticamente allo stato Urgente, Monkey Plan genera una notifica visiva e sonora sia sul browser che sull’app mobile. Le notifiche possono essere inviate a singoli tecnici, gruppi o ruoli specifici (ad esempio, “Gestore Ordini” o “Responsabile Tecnico”), secondo quanto impostato in Gestione Ruoli.
+🧰 FASE DI DIAGNOSI
+Il tecnico, accedendo al dispositivo dallo stato Ingressato, può scegliere di aprire la diagnosi. La diagnosi è la prima vera fase tecnica, in cui viene definito il problema e stimato l’intervento necessario. Il sistema guida il tecnico con un’interfaccia a step chiari e strutturati.
+Verifica iniziale automatica Se il dispositivo ha un codice IMEI, il sistema può opzionalmente collegarsi alle API del costruttore o a database tecnici (per dispositivi Android o Apple) per verificare garanzia residua, stato iCloud, blocchi operatori, eventuali richiami o riparazioni pregresse. I risultati vengono mostrati in un riquadro informativo e archiviati nella scheda.
+Controlli base e note operative Il tecnico compila i campi relativi ai sintomi effettivamente riscontrati. Le voci disponibili si adattano automaticamente al tipo di dispositivo, secondo la classe merceologica selezionata in fase di accettazione. Esempio per smartphone: No Display, No Touch, No Audio, Non Carica, Batteria Dura Poco, Si Blocca, Si Riavvia, Non Vibra, No Wi-Fi, No Bluetooth, ecc. Esempio per TV: Nessun Segnale, No Audio, No Telecomando, Pannello Nero, Linee Verticali, ecc.
+Foto e documentazione Le regole di caricamento foto sono sempre le stesse:
+Se le foto sono obbligatorie (impostazione a livello manager o superiore), il sistema apre automaticamente la fotocamera dello smartphone collegato all’account.
+L’utente può scegliere uno dei dispositivi collegati se ne ha più di uno.
+Le foto possono essere scattate o caricate da file.
+Tutte le immagini vengono salvate con timestamp, ID tecnico, e – se attivo – geolocalizzazione.
+Note di diagnosi È possibile aggiungere note tecniche, annotate anche vocalmente (se attiva la funzione dettatura vocale). Le note vengono archiviate cronologicamente e possono essere consultate da chiunque abbia i permessi.
+Esito diagnosi Al termine, il tecnico decide se:
+Passare direttamente all’emissione del preventivo
+Mettere il dispositivo in Attesa Ricambi per Test (se necessita di pezzi per proseguire la verifica)
+Passare la diagnosi a un altro tecnico o gruppo di diagnosi avanzata
+Il sistema registra ogni passaggio nel log interno della lavorazione, tracciando utente, data e ora, operazione e durata stimata.
