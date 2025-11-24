@@ -31,7 +31,7 @@ export default function AdminInventory() {
   });
 
   const { data: inventory = [], isLoading } = useQuery<InventoryWithDetails[]>({
-    queryKey: ["/api/admin/inventory"],
+    queryKey: ["/api/inventory"],
   });
 
   const handleExport = async () => {

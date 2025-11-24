@@ -21,16 +21,16 @@ export default function AdminProducts() {
   const { toast } = useToast();
 
   const { data: products = [], isLoading } = useQuery<Product[]>({
-    queryKey: ["/api/admin/products"],
+    queryKey: ["/api/products"],
   });
 
   const createProductMutation = useMutation({
     mutationFn: async (data: InsertProduct) => {
-      const res = await apiRequest("POST", "/api/admin/products", data);
+      const res = await apiRequest("POST", "/api/products", data);
       return await res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/products"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/products"] });
       setDialogOpen(false);
       toast({ title: "Prodotto creato" });
     },
@@ -41,10 +41,10 @@ export default function AdminProducts() {
 
   const deleteProductMutation = useMutation({
     mutationFn: async (id: string) => {
-      await apiRequest("DELETE", `/api/admin/products/${id}`);
+      await apiRequest("DELETE", `/api/products/${id}`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/products"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/products"] });
       toast({ title: "Prodotto eliminato" });
     },
   });

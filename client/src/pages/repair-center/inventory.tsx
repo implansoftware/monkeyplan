@@ -38,12 +38,12 @@ export default function RepairCenterInventory() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const { toast } = useToast();
 
-  const { data: inventory = [], isLoading } = useQuery<InventoryWithDetails[]>({
-    queryKey: ["/api/repair-center/inventory"],
+  const { data: inventory = [], isLoading} = useQuery<InventoryWithDetails[]>({
+    queryKey: ["/api/inventory"],
   });
 
   const { data: products = [] } = useQuery<Product[]>({
-    queryKey: ["/api/admin/products"],
+    queryKey: ["/api/products"],
   });
 
   const createMovementMutation = useMutation({
@@ -53,12 +53,11 @@ export default function RepairCenterInventory() {
       quantity: number;
       notes?: string;
     }) => {
-      const res = await apiRequest("POST", "/api/repair-center/inventory/movements", data);
+      const res = await apiRequest("POST", "/api/inventory/movements", data);
       return await res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/repair-center/inventory"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/repair-center/stats"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/inventory"] });
       setDialogOpen(false);
       toast({ title: "Movimento registrato con successo" });
     },
@@ -147,9 +146,9 @@ export default function RepairCenterInventory() {
                     <SelectValue placeholder="Seleziona tipo" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="IN">Carico (IN)</SelectItem>
-                    <SelectItem value="OUT">Scarico (OUT)</SelectItem>
-                    <SelectItem value="TRANSFER">Trasferimento</SelectItem>
+                    <SelectItem value="in">Carico (IN)</SelectItem>
+                    <SelectItem value="out">Scarico (OUT)</SelectItem>
+                    <SelectItem value="adjustment">Aggiustamento</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

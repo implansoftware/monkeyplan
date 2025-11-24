@@ -12,7 +12,8 @@ import {
   insertRepairOrderSchema, insertTicketSchema, insertInvoiceSchema,
   updateRepairStatusSchema, updateTicketStatusSchema, createTicketMessageSchema,
   insertInventoryMovementSchema, insertBillingDataSchema, insertChatMessageSchema,
-  insertNotificationPreferencesSchema, insertRepairAttachmentSchema
+  insertNotificationPreferencesSchema, insertRepairAttachmentSchema,
+  type Product
 } from "@shared/schema";
 import { ObjectStorageService, objectStorageClient, parseObjectPath } from "./objectStorage";
 import { canAccessObject, ObjectPermission } from "./objectAcl";
@@ -1973,6 +1974,235 @@ export function registerRoutes(app: Express): Server {
       res.json(updatedOrder);
     } catch (error: any) {
       res.status(500).send(error.message);
+    }
+  });
+
+  // ============ PRODUCTS ============
+  
+  // List all products (all roles can view)
+  app.get("/api/products", requireAuth, async (req, res) => {
+    try {
+      const products = await storage.listProducts();
+      res.json(products);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+  
+  // Create product (admin only)
+  app.post("/api/products", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      // Only admins can create products
+      if (req.user.role !== 'admin') {
+        return res.status(403).send("Only admins can create products");
+      }
+      
+      const validatedData = insertProductSchema.parse(req.body);
+      const product = await storage.createProduct(validatedData);
+      setActivityEntity(res, { type: 'product', id: product.id });
+      
+      res.status(201).json(product);
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+  
+  // Update product (admin only)
+  app.patch("/api/products/:id", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      // Only admins can update products
+      if (req.user.role !== 'admin') {
+        return res.status(403).send("Only admins can update products");
+      }
+      
+      const product = await storage.getProduct(req.params.id);
+      if (!product) return res.status(404).send("Product not found");
+      
+      const updates: Partial<Pick<Product, 'name' | 'sku' | 'category' | 'description' | 'unitPrice'>> = {};
+      if (req.body.name !== undefined) updates.name = req.body.name;
+      if (req.body.sku !== undefined) updates.sku = req.body.sku;
+      if (req.body.category !== undefined) updates.category = req.body.category;
+      if (req.body.description !== undefined) updates.description = req.body.description;
+      if (req.body.unitPrice !== undefined) updates.unitPrice = req.body.unitPrice;
+      
+      if (Object.keys(updates).length === 0) {
+        return res.status(400).send("No valid updates provided");
+      }
+      
+      const updated = await storage.updateProduct(req.params.id, updates);
+      setActivityEntity(res, { type: 'product', id: updated.id });
+      
+      res.json(updated);
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+  
+  // Delete product (admin only)
+  app.delete("/api/products/:id", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      // Only admins can delete products
+      if (req.user.role !== 'admin') {
+        return res.status(403).send("Only admins can delete products");
+      }
+      
+      const product = await storage.getProduct(req.params.id);
+      if (!product) return res.status(404).send("Product not found");
+      
+      await storage.deleteProduct(req.params.id);
+      setActivityEntity(res, { type: 'product', id: req.params.id });
+      
+      res.status(204).send();
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // ============ INVENTORY ============
+  
+  // List inventory stock with role-based filtering
+  app.get("/api/inventory", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      let inventory;
+      
+      // Only admin and repair_center can view inventory
+      if (req.user.role !== 'admin' && req.user.role !== 'repair_center') {
+        return res.status(403).send("Only admins and repair centers can view inventory");
+      }
+      
+      if (req.user.role === 'admin') {
+        // Admin sees all inventory
+        inventory = await storage.listInventoryStock();
+      } else {
+        // Repair center sees only their own inventory
+        if (!req.user.repairCenterId) {
+          return res.json([]);
+        }
+        inventory = await storage.listInventoryStock(req.user.repairCenterId);
+      }
+      
+      // Hydrate with product and repair center details
+      const productIds = [...new Set(inventory.map(item => item.productId))];
+      const repairCenterIds = [...new Set(inventory.map(item => item.repairCenterId))];
+      
+      const products = await Promise.all(productIds.map(id => storage.getProduct(id)));
+      const repairCenters = await Promise.all(repairCenterIds.map(id => storage.getRepairCenter(id)));
+      
+      const productMap = new Map(products.filter(p => p).map(p => [p!.id, p]));
+      const repairCenterMap = new Map(repairCenters.filter(rc => rc).map(rc => [rc!.id, rc]));
+      
+      const enrichedInventory = inventory.map(item => ({
+        ...item,
+        product: productMap.get(item.productId),
+        repairCenter: repairCenterMap.get(item.repairCenterId),
+      }));
+      
+      res.json(enrichedInventory);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+  
+  // List inventory movements with role-based filtering
+  app.get("/api/inventory/movements", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      // Only admin and repair_center can view movements
+      if (req.user.role !== 'admin' && req.user.role !== 'repair_center') {
+        return res.status(403).send("Only admins and repair centers can view inventory movements");
+      }
+      
+      let movements;
+      
+      if (req.user.role === 'admin') {
+        // Admin sees all movements (optionally filtered by query params)
+        const filters: { repairCenterId?: string; productId?: string } = {};
+        if (req.query.repairCenterId && typeof req.query.repairCenterId === 'string') {
+          filters.repairCenterId = req.query.repairCenterId;
+        }
+        if (req.query.productId && typeof req.query.productId === 'string') {
+          filters.productId = req.query.productId;
+        }
+        movements = await storage.listInventoryMovements(filters);
+      } else {
+        // Repair center sees only their own movements
+        if (!req.user.repairCenterId) {
+          return res.json([]);
+        }
+        movements = await storage.listInventoryMovements({ repairCenterId: req.user.repairCenterId });
+      }
+      
+      res.json(movements);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+  
+  // Create inventory movement
+  app.post("/api/inventory/movements", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      // Only admin and repair_center can create movements
+      if (req.user.role !== 'admin' && req.user.role !== 'repair_center') {
+        return res.status(403).send("Only admins and repair centers can create inventory movements");
+      }
+      
+      const schema = insertInventoryMovementSchema.omit({
+        id: true,
+        createdAt: true,
+        createdBy: true, // Will be forced from session
+      });
+      
+      const validatedData = schema.parse(req.body);
+      
+      // For repair center, force repairCenterId from session
+      let repairCenterId = req.body.repairCenterId;
+      if (req.user.role === 'repair_center') {
+        if (!req.user.repairCenterId) {
+          return res.status(403).send("Repair center ID not configured");
+        }
+        repairCenterId = req.user.repairCenterId; // Force from session
+      } else if (req.user.role === 'admin') {
+        // Admin must provide repairCenterId in body
+        if (!repairCenterId) {
+          return res.status(400).send("repairCenterId is required");
+        }
+        // Validate repair center exists
+        const center = await storage.getRepairCenter(repairCenterId);
+        if (!center) {
+          return res.status(400).send("Invalid repair center ID");
+        }
+      }
+      
+      // Validate product exists
+      const product = await storage.getProduct(req.body.productId);
+      if (!product) {
+        return res.status(400).send("Invalid product ID");
+      }
+      
+      const movement = await storage.createInventoryMovement({
+        productId: req.body.productId,
+        repairCenterId,
+        movementType: req.body.movementType,
+        quantity: req.body.quantity,
+        notes: req.body.notes,
+        createdBy: req.user.id, // Force from authenticated session
+      });
+      
+      setActivityEntity(res, { type: 'inventory_movement', id: movement.id });
+      res.status(201).json(movement);
+    } catch (error: any) {
+      res.status(400).send(error.message);
     }
   });
 
