@@ -2,7 +2,7 @@ import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { WebSocketServer, WebSocket } from "ws";
 import { storage } from "./storage";
-import { setupAuth } from "./auth";
+import { setupAuth, hashPassword } from "./auth";
 import { scrypt, randomBytes, randomUUID } from "crypto";
 import { promisify } from "util";
 import ExcelJS from "exceljs";
@@ -2660,7 +2660,7 @@ export function registerRoutes(app: Express): Server {
       // Prepare user data
       const userData = {
         username,
-        password: hashedPassword,
+        password: hashedPassword, // Hash password before storing (consistent with other user creation routes)
         email: validatedData.email,
         fullName: validatedData.customerType === 'private' ? validatedData.fullName : validatedData.companyName,
         phone: validatedData.phone,

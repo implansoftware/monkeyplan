@@ -19,7 +19,6 @@ type AdminStats = {
   ticketsByStatus: {
     open: number;
     in_progress: number;
-    resolved: number;
     closed: number;
   };
   repairsByStatus: {
@@ -65,8 +64,7 @@ export default function AdminDashboard() {
   const ticketsChartData = stats ? [
     { name: "Aperti", value: stats.ticketsByStatus.open, fill: COLORS[0] },
     { name: "In Corso", value: stats.ticketsByStatus.in_progress, fill: COLORS[1] },
-    { name: "Risolti", value: stats.ticketsByStatus.resolved, fill: COLORS[2] },
-    { name: "Chiusi", value: stats.ticketsByStatus.closed, fill: COLORS[3] },
+    { name: "Chiusi", value: stats.ticketsByStatus.closed, fill: COLORS[2] },
   ] : [];
 
   const repairsChartData = stats ? [

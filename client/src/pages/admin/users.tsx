@@ -11,13 +11,14 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Search, Pencil, Trash2, Download, Users, CalendarIcon } from "lucide-react";
+import { Plus, Search, Pencil, Trash2, Download, Users, CalendarIcon, UserPlus } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
 import type { DateRange } from "react-day-picker";
+import { CustomerWizardDialog } from "@/components/CustomerWizardDialog";
 
 export default function AdminUsers() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -26,6 +27,7 @@ export default function AdminUsers() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [isExporting, setIsExporting] = useState(false);
+  const [wizardOpen, setWizardOpen] = useState(false);
   const { toast } = useToast();
 
   const { data: users = [], isLoading } = useQuery<User[]>({
@@ -187,6 +189,10 @@ export default function AdminUsers() {
           >
             <Download className="h-4 w-4 mr-2" />
             {isExporting ? "Esportazione..." : "Esporta"}
+          </Button>
+          <Button variant="default" onClick={() => setWizardOpen(true)} data-testid="button-new-customer">
+            <UserPlus className="h-4 w-4 mr-2" />
+            Nuovo Cliente
           </Button>
           <Dialog open={dialogOpen} onOpenChange={(open) => { setDialogOpen(open); if (!open) setEditingUser(null); }}>
             <DialogTrigger asChild>
@@ -394,6 +400,18 @@ export default function AdminUsers() {
           )}
         </CardContent>
       </Card>
+
+      <CustomerWizardDialog
+        open={wizardOpen}
+        onOpenChange={setWizardOpen}
+        onSuccess={(customer) => {
+          queryClient.invalidateQueries({ queryKey: ["/api/users"] });
+          toast({
+            title: "Cliente creato",
+            description: `Cliente ${customer.customer.fullName} creato con successo`,
+          });
+        }}
+      />
     </div>
   );
 }
