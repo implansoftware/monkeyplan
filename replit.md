@@ -60,6 +60,40 @@ Preferred communication style: Simple, everyday language.
 - Added skeleton loading states for all charts and KPI cards
 - Registered `/admin/analytics` route and added Analytics navigation item to admin sidebar
 
+**Task 4: Complete Missing Frontend Pages (Completed)**
+- Created 4 new role-specific pages to complete frontend coverage across all user roles
+- **Repair Center Repairs Page** (`/repair-center/repairs`):
+  - List all repairs assigned to center with status badges and filtering
+  - PATCH endpoint `/api/repair-center/repairs/:id/status` with ownership verification
+  - Status update form with validation and query invalidation
+  - Skeleton loading states and empty state handling
+- **Repair Center Inventory Page** (`/repair-center/inventory`):
+  - Display stock levels for center with low-stock badges
+  - Movement creation dialog (IN/OUT/TRANSFER types)
+  - POST endpoint `/api/repair-center/inventory/movements` enforcing center ownership
+  - Integrated with products catalog for dropdown selection
+- **Reseller Customers Page** (`/reseller/customers`):
+  - List all customers (global pool - business rule: customers not owned by specific reseller)
+  - Customer creation with password hashing using `hashPassword()`
+  - GET/POST endpoints `/api/reseller/customers` with role-based auth
+  - Display repair count per customer, customer detail dialog
+  - Search and filter functionality
+- **Customer Repair Detail Page** (`/customer/repairs/:id`):
+  - Complete repair information with status timeline visualization
+  - Device info, cost breakdown (estimated vs final), notes display
+  - GET endpoint `/api/customer/repairs/:id` with ownership verification
+  - Status progression UI with step indicators
+  - Back navigation to repairs list
+- All pages registered in App.tsx routing with ProtectedRoute wrapper
+- All mutations properly invalidate React Query cache
+- All pages follow shadcn/ui design system with consistent spacing and components
+
+**Business Rules & Security**
+- Customers are global: all resellers can create orders for any customer (no reseller ownership)
+- Repair centers only access their own repairs and inventory (enforced by repairCenterId)
+- All password hashing uses secure `scrypt` with random salts before storage
+- Activity logging captures all mutations from new endpoints
+
 ## System Architecture
 
 ### Frontend Architecture
