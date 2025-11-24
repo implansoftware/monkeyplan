@@ -16,7 +16,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 export default function AdminResellers() {
   const [searchQuery, setSearchQuery] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [editingReseller, setEditingReseller] = useState<User | null>(null);
+  const [editingReseller, setEditingReseller] = useState<Omit<User, 'password'> | null>(null);
   const { toast } = useToast();
 
   type ResellerWithCount = Omit<User, 'password'> & { customerCount: number };

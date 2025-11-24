@@ -89,13 +89,21 @@ Development uses Vite for HMR. Production builds use Vite for client assets and 
 **Frontend (🔧 PARTIAL):**
 - Admin invoices page: List view with filters (status, date range), export to Excel via `/api/reports/repairs?format=excel`
 
-### Phase 8: User Management (✅ BACKEND, 🔧 FRONTEND)
+### Phase 8: User Management (✅ COMPLETED)
 **Backend API (✅ COMPLETED):**
 - `GET /api/users` - List all users (admin only)
+- `GET /api/admin/resellers` - List resellers with aggregated customer counts (admin only, password sanitized)
 - `PATCH /api/users/:id` - Update user (admin updates all fields, users update own profile: email, fullName)
-- Storage methods: updateUser (username, email, fullName, role, isActive, repairCenterId)
-**Frontend (🔧 PARTIAL):**
-- Admin users page: List view with filters (role, date range), create/edit dialog (fullName not firstName/lastName per schema), CSV export (no backend Excel endpoint)
+- Storage methods: updateUser (username, email, fullName, role, isActive, repairCenterId, resellerId)
+**Frontend (✅ COMPLETED):**
+- Admin users page: List view with filters (role, date range), create/edit dialog, CSV export
+- Admin resellers page: List view with customer counts, create/edit dialog
+- Customer registration wizard: 3-step UI (type selection, details form, review/confirm) with discriminated union validation for private/company customers
+**Tenant Ownership (✅ COMPLETED):**
+- Database: `users.resellerId` field tracks which reseller created a customer (nullable)
+- API Security: POST `/api/customers` enforces resellerId from session for reseller/repair_center roles, admin can override via body
+- Schema: InsertUser includes optional resellerId field for type consistency
+- Frontend: CustomerWizardDialog automatically assigns reseller from session, no manual selection needed
 
 ### Phase 9: File Uploads & Attachments (✅ BACKEND, ⏳ FRONTEND)
 **Backend API (✅ COMPLETED):**
