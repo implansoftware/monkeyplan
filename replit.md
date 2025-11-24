@@ -54,36 +54,42 @@ The development workflow uses `npm run dev` for Vite HMR and live reloading. Pro
 
 ## Current Implementation Status
 
-### Phase 3: Ticketing System (In Progress)
+### Phase 3: Ticketing System (✅ COMPLETED)
 
-**Completed Tasks:**
-- **Task 3.1-3.3**: Backend API + Customer Tickets
-  - RESTful ticketing API with role-based ACL
-  - Customer tickets list/creation pages
-  - Ticket detail with conversation thread
-  - Security: Customer ID derived from auth session, internal message filtering
+**Task 3.1-3.3: Backend API + Customer Tickets**
+- ✅ RESTful ticketing API with role-based ACL
+- ✅ Customer tickets list/creation pages
+- ✅ Ticket detail with conversation thread
+- ✅ Security: Customer ID derived from auth session, internal message filtering
 
-- **Task 3.4**: Admin/Reseller/RC Ticket Management (MVP Complete with Limitations)
-  - Admin tickets list page with filters (search, status, priority)
-  - Ticket detail pages for all roles with RBAC UI gating
-  - Sidebar navigation for all roles
-  - Routing: Regex-based ticket ID extraction, role-aware back navigation
-  - Reply form with internal notes toggle (admin/assigned only)
-  
-**Refactoring Completed (Task 3.4):**
+**Task 3.4: Admin/Reseller/RC Ticket Management**
+- ✅ Admin tickets list page with filters (search, status, priority)
+- ✅ Ticket detail pages for all roles with RBAC UI gating
 - ✅ Separated components: `TicketDetailManageView` (Admin) vs `TicketDetailReadView` (Reseller/RC)
 - ✅ Admin mutation hooks physically absent in ReadView (no privilege escalation risk)
-- ✅ Real staff users data: `GET /api/users/staff` endpoint + `listStaffUsers()` storage method  
+- ✅ Real staff users data: `GET /api/users/staff` endpoint + `listStaffUsers()` storage method
 - ✅ Assignment dropdown with real data (admin-only)
-- ✅ RBAC hardened: Backend security + physical hook separation
+- ✅ Sidebar navigation for all roles
+- ✅ Routing: Regex-based ticket ID extraction, role-aware back navigation
 
-**Minor UI Polish (non-blocking):**
-- ReadView still shows internal note toggle (backend blocks anyway, UI-only cosmetic issue)
-
-**Next Task:**
-- Task 3.5: WebSocket notifications for real-time ticket updates
+**Task 3.5: Real-Time WebSocket Notifications**
+- ✅ Backend broadcast system for 4 ticket events:
+  - `ticket_status_changed`: Status updates → notify customer + assigned staff
+  - `ticket_assigned`: Assignment changes → notify customer + old/new assignee
+  - `ticket_priority_changed`: Priority updates → notify customer + assigned staff
+  - `ticket_new_message`: New messages → notify all participants (exclude sender)
+- ✅ Frontend singleton WebSocket Provider (`TicketNotificationsContext`)
+  - One shared connection per user session
+  - Exponential backoff reconnection (max 5 attempts: 1s→2s→4s→8s→16s)
+  - **Cleanup guards fix**: `shouldReconnectRef` + `userRef` set false/null BEFORE socket.close()
+  - Prevents logout race condition (zero stale reconnections)
+- ✅ React Query cache invalidation for real-time UI updates
+- ✅ Provider nesting order: `QueryClient → Tooltip → Auth → TicketNotifications`
+- ✅ WebSocket authentication: userId-based connection Map, auth message validation
 
 **Technical Patterns:**
-- Security: User/Customer ID forced from `req.user`, never from request body
-- ACL: Single `/api/tickets` endpoint with role-based filtering
-- Routing: Multi-role pattern matching with `useLocation` + regex extraction
+- **Security**: User/Customer ID forced from `req.user`, never from request body
+- **ACL**: Single `/api/tickets` endpoint with role-based filtering
+- **Routing**: Multi-role pattern matching with `useLocation` + regex extraction
+- **WebSocket**: Singleton pattern with double-guard cleanup (race condition proof)
+- **Real-time**: Broadcast → Cache invalidation → UI auto-update flow
