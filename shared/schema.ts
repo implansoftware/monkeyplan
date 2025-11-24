@@ -88,6 +88,18 @@ export const repairOrders = pgTable("repair_orders", {
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 
+// Repair Order Attachments (Photos and documents for repair orders)
+export const repairAttachments = pgTable("repair_attachments", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  repairOrderId: varchar("repair_order_id").notNull(),
+  objectKey: text("object_key").notNull(), // Key in object storage
+  fileName: text("file_name").notNull(), // Original file name
+  fileType: text("file_type").notNull(), // MIME type
+  fileSize: integer("file_size").notNull(), // Size in bytes
+  uploadedBy: varchar("uploaded_by").notNull(),
+  uploadedAt: timestamp("uploaded_at").notNull().defaultNow(),
+});
+
 // Support Tickets
 export const tickets = pgTable("tickets", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -241,6 +253,18 @@ export const repairOrdersRelations = relations(repairOrders, ({ one, many }) => 
     references: [repairCenters.id],
   }),
   invoices: many(invoices),
+  attachments: many(repairAttachments),
+}));
+
+export const repairAttachmentsRelations = relations(repairAttachments, ({ one }) => ({
+  repairOrder: one(repairOrders, {
+    fields: [repairAttachments.repairOrderId],
+    references: [repairOrders.id],
+  }),
+  uploadedByUser: one(users, {
+    fields: [repairAttachments.uploadedBy],
+    references: [users.id],
+  }),
 }));
 
 export const ticketsRelations = relations(tickets, ({ one, many }) => ({
@@ -419,6 +443,11 @@ export const insertNotificationPreferencesSchema = createInsertSchema(notificati
   updatedAt: true,
 });
 
+export const insertRepairAttachmentSchema = createInsertSchema(repairAttachments).omit({
+  id: true,
+  uploadedAt: true,
+});
+
 // Update schemas for PATCH endpoints
 export const updateRepairStatusSchema = z.object({
   status: z.enum(["pending", "in_progress", "waiting_parts", "completed", "delivered", "cancelled"]),
@@ -477,3 +506,6 @@ export type InsertNotification = z.infer<typeof insertNotificationSchema>;
 
 export type NotificationPreferences = typeof notificationPreferences.$inferSelect;
 export type InsertNotificationPreferences = z.infer<typeof insertNotificationPreferencesSchema>;
+
+export type RepairAttachment = typeof repairAttachments.$inferSelect;
+export type InsertRepairAttachment = z.infer<typeof insertRepairAttachmentSchema>;
