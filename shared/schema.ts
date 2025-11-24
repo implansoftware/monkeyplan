@@ -380,6 +380,8 @@ export const notificationPreferencesRelations = relations(notificationPreference
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
   createdAt: true,
+}).extend({
+  resellerId: z.string().nullable().optional(),
 });
 
 export const insertRepairCenterSchema = createInsertSchema(repairCenters).omit({

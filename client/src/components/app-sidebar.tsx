@@ -12,6 +12,7 @@ import {
   LogOut,
   Shield,
   BarChart3,
+  Store,
 } from "lucide-react";
 import {
   Sidebar,
@@ -36,6 +37,7 @@ const menuItems = {
     { title: "Dashboard", url: "/", icon: LayoutDashboard, group: "Principale" },
     { title: "Analytics", url: "/admin/analytics", icon: BarChart3, group: "Principale" },
     { title: "Utenti", url: "/admin/users", icon: Users, group: "Principale" },
+    { title: "Rivenditori", url: "/admin/resellers", icon: Store, group: "Principale" },
     { title: "Centri di Riparazione", url: "/admin/repair-centers", icon: Building, group: "Centri" },
     { title: "Lavorazioni", url: "/admin/repairs", icon: Wrench, group: "Centri" },
     { title: "Ticket", url: "/admin/tickets", icon: Ticket, group: "Assistenza" },

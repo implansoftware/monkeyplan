@@ -350,6 +350,28 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Resellers with aggregated customer counts
+  app.get("/api/admin/resellers", requireRole("admin"), async (req, res) => {
+    try {
+      const users = await storage.listUsers();
+      const resellers = users.filter(u => u.role === 'reseller');
+      const customers = users.filter(u => u.role === 'customer');
+      
+      // Aggregate customer counts per reseller, omit password
+      const resellersWithCounts = resellers.map(reseller => {
+        const { password, ...safeReseller } = reseller;
+        return {
+          ...safeReseller,
+          customerCount: customers.filter(c => c.resellerId === reseller.id).length,
+        };
+      });
+      
+      res.json(resellersWithCounts);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
   app.post("/api/admin/users", requireRole("admin"), async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
@@ -2657,6 +2679,17 @@ export function registerRoutes(app: Express): Server {
       const tempPassword = randomBytes(8).toString('hex');
       const hashedPassword = await hashPassword(tempPassword);
       
+      // Determine resellerId based on role
+      // - Reseller/Repair Center: Force their own ID (cannot be overridden)
+      // - Admin: Can specify resellerId in body or leave null
+      let assignedResellerId: string | null = null;
+      if (req.user.role === 'reseller' || req.user.role === 'repair_center') {
+        assignedResellerId = req.user.id;
+      } else if (req.user.role === 'admin') {
+        // Admin can optionally specify resellerId from body
+        assignedResellerId = (req.body.resellerId as string) || null;
+      }
+      
       // Prepare user data with reseller assignment
       const userData = {
         username,
@@ -2666,8 +2699,7 @@ export function registerRoutes(app: Express): Server {
         phone: validatedData.phone,
         role: 'customer' as const,
         isActive: true,
-        // Assign reseller from session - resellers create customers for themselves, admin can create unassigned
-        resellerId: req.user.role === 'reseller' ? req.user.id : null,
+        resellerId: assignedResellerId,
       };
       
       // Prepare billing data
