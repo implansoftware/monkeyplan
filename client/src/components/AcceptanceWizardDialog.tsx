@@ -177,7 +177,19 @@ export function AcceptanceWizardDialog({
   };
 
   const handleSubmit = form.handleSubmit((data) => {
-    createOrderMutation.mutate(data);
+    const payload = {
+      ...data,
+      acceptance: {
+        ...data.acceptance,
+        declaredDefects: data.acceptance.declaredDefects 
+          ? data.acceptance.declaredDefects.split('\n').filter(d => d.trim())
+          : [],
+        accessories: data.acceptance.accessories
+          ? data.acceptance.accessories.split(',').map(a => a.trim()).filter(a => a)
+          : [],
+      }
+    };
+    createOrderMutation.mutate(payload as any);
   });
 
   const handleClose = () => {
@@ -403,11 +415,14 @@ export function AcceptanceWizardDialog({
             <FormControl>
               <Textarea 
                 {...field} 
-                placeholder="Difetti estetici o funzionali dichiarati dal cliente"
+                placeholder="Un difetto per riga (es: Schermo rotto, Batteria non si ricarica)"
                 rows={3}
                 data-testid="textarea-declared-defects"
               />
             </FormControl>
+            <FormDescription>
+              Inserisci un difetto per riga
+            </FormDescription>
             <FormMessage />
           </FormItem>
         )}
@@ -484,13 +499,13 @@ export function AcceptanceWizardDialog({
             <FormControl>
               <Textarea 
                 {...field} 
-                placeholder="es. Caricabatterie, custodia, cavo USB..."
+                placeholder="Separa con virgole (es: Caricabatterie, Custodia, Cavo USB)"
                 rows={2}
                 data-testid="textarea-accessories"
               />
             </FormControl>
             <FormDescription>
-              Elenco degli accessori consegnati insieme al dispositivo
+              Separa gli accessori con virgole
             </FormDescription>
             <FormMessage />
           </FormItem>
