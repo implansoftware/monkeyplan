@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/not-found";
 import AuthPage from "@/pages/auth-page";
+import ProfilePage from "@/pages/profile";
 import { AuthProvider } from "@/hooks/use-auth";
 import { ProtectedRoute } from "@/lib/protected-route";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
@@ -23,6 +24,7 @@ import AdminRepairs from "@/pages/admin/repairs";
 import AdminInventory from "@/pages/admin/inventory";
 import AdminProducts from "@/pages/admin/products";
 import AdminInvoices from "@/pages/admin/invoices";
+import AdminReports from "@/pages/admin/reports";
 import AdminChat from "@/pages/admin/chat";
 import AdminActivityLogs from "@/pages/admin/activity-logs";
 import AdminAnalytics from "@/pages/admin/analytics";
@@ -48,11 +50,15 @@ import CustomerRepairs from "@/pages/customer/repairs";
 import CustomerRepairDetail from "@/pages/customer/repair-detail";
 import CustomerTickets from "@/pages/customer/tickets";
 import CustomerTicketDetail from "@/pages/customer/ticket-detail";
+import CustomerInvoices from "@/pages/customer/invoices";
 
 function Router() {
   return (
     <Switch>
       <Route path="/auth" component={AuthPage} />
+      
+      {/* Shared routes (all roles) */}
+      <ProtectedRoute path="/profile" component={ProfilePage} />
       
       {/* Admin routes */}
       <ProtectedRoute path="/" component={AdminDashboard} />
@@ -64,6 +70,7 @@ function Router() {
       <ProtectedRoute path="/admin/inventory" component={AdminInventory} />
       <ProtectedRoute path="/admin/products" component={AdminProducts} />
       <ProtectedRoute path="/admin/invoices" component={AdminInvoices} />
+      <ProtectedRoute path="/admin/reports" component={AdminReports} />
       <ProtectedRoute path="/admin/chat" component={AdminChat} />
       <ProtectedRoute path="/admin/activity-logs" component={AdminActivityLogs} />
       <ProtectedRoute path="/admin/analytics" component={AdminAnalytics} />
@@ -89,6 +96,7 @@ function Router() {
       <ProtectedRoute path="/customer/repairs/:id" component={CustomerRepairDetail} />
       <ProtectedRoute path="/customer/tickets" component={CustomerTickets} />
       <ProtectedRoute path="/customer/tickets/:id" component={CustomerTicketDetail} />
+      <ProtectedRoute path="/customer/invoices" component={CustomerInvoices} />
       
       <Route component={NotFound} />
     </Switch>
