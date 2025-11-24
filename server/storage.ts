@@ -21,6 +21,7 @@ export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
+  updateUser(id: string, updates: Partial<Pick<User, 'username' | 'email' | 'firstName' | 'lastName' | 'role' | 'isActive' | 'repairCenterId'>>): Promise<User>;
   listUsers(): Promise<User[]>;
   listStaffUsers(): Promise<{ id: string; username: string; role: string }[]>;
   deleteUser(id: string): Promise<void>;
@@ -57,9 +58,10 @@ export interface IStorage {
   createTicketMessage(message: InsertTicketMessage): Promise<TicketMessage>;
   
   // Invoices
-  listInvoices(): Promise<Invoice[]>;
+  listInvoices(filters?: { customerId?: string; paymentStatus?: string }): Promise<Invoice[]>;
   getInvoice(id: string): Promise<Invoice | undefined>;
   createInvoice(invoice: InsertInvoice): Promise<Invoice>;
+  updateInvoice(id: string, updates: Partial<Pick<Invoice, 'paymentStatus' | 'paidDate' | 'notes' | 'paymentMethod'>>): Promise<Invoice>;
   
   // Billing Data
   getBillingDataByUserId(userId: string): Promise<BillingData | undefined>;
@@ -128,6 +130,19 @@ export class DatabaseStorage implements IStorage {
 
   async createUser(insertUser: InsertUser): Promise<User> {
     const [user] = await db.insert(users).values(insertUser).returning();
+    return user;
+  }
+
+  async updateUser(id: string, updates: Partial<Pick<User, 'username' | 'email' | 'firstName' | 'lastName' | 'role' | 'isActive' | 'repairCenterId'>>): Promise<User> {
+    const [user] = await db.update(users)
+      .set(updates)
+      .where(eq(users.id, id))
+      .returning();
+    
+    if (!user) {
+      throw new Error("User not found");
+    }
+    
     return user;
   }
 
@@ -321,8 +336,23 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Invoices
-  async listInvoices(): Promise<Invoice[]> {
-    return await db.select().from(invoices).orderBy(desc(invoices.createdAt));
+  async listInvoices(filters?: { customerId?: string; paymentStatus?: string }): Promise<Invoice[]> {
+    const conditions = [];
+    
+    if (filters?.customerId) {
+      conditions.push(eq(invoices.customerId, filters.customerId));
+    }
+    if (filters?.paymentStatus) {
+      conditions.push(eq(invoices.paymentStatus, filters.paymentStatus));
+    }
+    
+    let query = db.select().from(invoices);
+    
+    if (conditions.length > 0) {
+      query = query.where(and(...conditions)) as any;
+    }
+    
+    return await query.orderBy(desc(invoices.createdAt));
   }
 
   async getInvoice(id: string): Promise<Invoice | undefined> {
@@ -339,6 +369,19 @@ export class DatabaseStorage implements IStorage {
       ...insertInvoice,
       invoiceNumber,
     }).returning();
+    return invoice;
+  }
+
+  async updateInvoice(id: string, updates: Partial<Pick<Invoice, 'paymentStatus' | 'paidDate' | 'notes' | 'paymentMethod'>>): Promise<Invoice> {
+    const [invoice] = await db.update(invoices)
+      .set(updates)
+      .where(eq(invoices.id, id))
+      .returning();
+    
+    if (!invoice) {
+      throw new Error("Invoice not found");
+    }
+    
     return invoice;
   }
 

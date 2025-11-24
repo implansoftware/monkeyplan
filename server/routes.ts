@@ -2206,6 +2206,382 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // ============ INVOICES ============
+
+  app.get("/api/invoices", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      let invoices;
+      
+      if (req.user.role === 'admin') {
+        // Admin sees all invoices
+        const paymentStatus = req.query.paymentStatus as string | undefined;
+        invoices = await storage.listInvoices({ paymentStatus });
+      } else if (req.user.role === 'customer') {
+        // Customer sees only own invoices
+        invoices = await storage.listInvoices({ customerId: req.user.id });
+      } else {
+        // Reseller/Repair Center: no access to invoices
+        return res.status(403).send("Access denied");
+      }
+      
+      res.json(invoices);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  app.get("/api/invoices/:id", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const invoice = await storage.getInvoice(req.params.id);
+      if (!invoice) {
+        return res.status(404).send("Invoice not found");
+      }
+      
+      // Access control: admin sees all, customer sees own only
+      if (req.user.role === 'customer' && invoice.customerId !== req.user.id) {
+        return res.status(403).send("Access denied");
+      }
+      if (req.user.role !== 'admin' && req.user.role !== 'customer') {
+        return res.status(403).send("Access denied");
+      }
+      
+      res.json(invoice);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  app.post("/api/invoices", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      // Only admin can create invoices
+      if (req.user.role !== 'admin') {
+        return res.status(403).send("Only admins can create invoices");
+      }
+      
+      const schema = insertInvoiceSchema.omit({
+        id: true,
+        createdAt: true,
+        invoiceNumber: true, // Auto-generated in storage
+      });
+      
+      const validatedData = schema.parse(req.body);
+      
+      // If linked to repair order, validate it exists
+      if (validatedData.repairOrderId) {
+        const order = await storage.getRepairOrder(validatedData.repairOrderId);
+        if (!order) {
+          return res.status(400).send("Invalid repair order ID");
+        }
+      }
+      
+      const invoice = await storage.createInvoice(validatedData);
+      
+      setActivityEntity(res, { type: 'invoice', id: invoice.id });
+      res.status(201).json(invoice);
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+
+  app.patch("/api/invoices/:id", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      // Only admin can update invoices
+      if (req.user.role !== 'admin') {
+        return res.status(403).send("Only admins can update invoices");
+      }
+      
+      const invoice = await storage.getInvoice(req.params.id);
+      if (!invoice) {
+        return res.status(404).send("Invoice not found");
+      }
+      
+      const allowedUpdates = ['paymentStatus', 'paidDate', 'notes', 'paymentMethod'] as const;
+      const updates: any = {};
+      
+      for (const key of allowedUpdates) {
+        if (req.body[key] !== undefined) {
+          updates[key] = req.body[key];
+        }
+      }
+      
+      // Auto-set paidDate when marking as paid
+      if (updates.paymentStatus === 'paid' && !updates.paidDate) {
+        updates.paidDate = new Date();
+      }
+      
+      const updatedInvoice = await storage.updateInvoice(req.params.id, updates);
+      
+      setActivityEntity(res, { type: 'invoice', id: updatedInvoice.id });
+      res.json(updatedInvoice);
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+
+  // ============ REPAIR ATTACHMENTS (File Uploads) ============
+
+  app.get("/api/repair-orders/:repairOrderId/attachments", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      // Verify user has access to this repair order
+      const order = await storage.getRepairOrder(req.params.repairOrderId);
+      if (!order) {
+        return res.status(404).send("Repair order not found");
+      }
+      
+      // Role-based access control
+      if (req.user.role === 'customer' && order.customerId !== req.user.id) {
+        return res.status(403).send("Access denied");
+      }
+      if (req.user.role === 'reseller' && order.resellerId !== req.user.id) {
+        return res.status(403).send("Access denied");
+      }
+      if (req.user.role === 'repair_center') {
+        if (!req.user.repairCenterId || order.repairCenterId !== req.user.repairCenterId) {
+          return res.status(403).send("Access denied");
+        }
+      }
+      
+      const attachments = await storage.listRepairAttachments(req.params.repairOrderId);
+      res.json(attachments);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  app.post("/api/repair-orders/:repairOrderId/attachments", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      // Verify user has access to this repair order
+      const order = await storage.getRepairOrder(req.params.repairOrderId);
+      if (!order) {
+        return res.status(404).send("Repair order not found");
+      }
+      
+      // Role-based access control
+      if (req.user.role === 'customer' && order.customerId !== req.user.id) {
+        return res.status(403).send("Access denied");
+      }
+      if (req.user.role === 'reseller' && order.resellerId !== req.user.id) {
+        return res.status(403).send("Access denied");
+      }
+      if (req.user.role === 'repair_center') {
+        if (!req.user.repairCenterId || order.repairCenterId !== req.user.repairCenterId) {
+          return res.status(403).send("Access denied");
+        }
+      }
+      if (req.user.role !== 'admin' && req.user.role !== 'customer' && req.user.role !== 'reseller' && req.user.role !== 'repair_center') {
+        return res.status(403).send("Access denied");
+      }
+      
+      // Create attachment record (file upload handled separately by frontend via object storage)
+      const attachment = await storage.addRepairAttachment({
+        repairOrderId: req.params.repairOrderId,
+        objectKey: req.body.objectKey,
+        fileName: req.body.fileName,
+        fileType: req.body.fileType,
+        fileSize: req.body.fileSize,
+        uploadedBy: req.user.id,
+      });
+      
+      setActivityEntity(res, { type: 'repair_attachment', id: attachment.id });
+      res.status(201).json(attachment);
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+
+  app.delete("/api/repair-attachments/:id", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const attachment = await storage.getRepairAttachment(req.params.id);
+      if (!attachment) {
+        return res.status(404).send("Attachment not found");
+      }
+      
+      // Verify user has access
+      const order = await storage.getRepairOrder(attachment.repairOrderId);
+      if (!order) {
+        return res.status(404).send("Repair order not found");
+      }
+      
+      // Only admin or attachment uploader can delete
+      if (req.user.role !== 'admin' && attachment.uploadedBy !== req.user.id) {
+        return res.status(403).send("Access denied");
+      }
+      
+      await storage.deleteRepairAttachment(req.params.id);
+      res.status(204).send();
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // ============ REPORTS & EXPORT ============
+
+  app.get("/api/reports/repairs", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      // Only admin can generate reports
+      if (req.user.role !== 'admin') {
+        return res.status(403).send("Only admins can generate reports");
+      }
+      
+      const filters: any = {};
+      
+      if (req.query.status) filters.status = req.query.status as string;
+      if (req.query.repairCenterId) filters.repairCenterId = req.query.repairCenterId as string;
+      
+      const repairs = await storage.listRepairOrders(filters);
+      
+      // If Excel export requested
+      if (req.query.format === 'excel') {
+        const ExcelJS = await import('exceljs');
+        const workbook = new ExcelJS.Workbook();
+        const worksheet = workbook.addWorksheet('Riparazioni');
+        
+        worksheet.columns = [
+          { header: 'Numero Ordine', key: 'orderNumber', width: 15 },
+          { header: 'Tipo Dispositivo', key: 'deviceType', width: 15 },
+          { header: 'Modello', key: 'deviceModel', width: 20 },
+          { header: 'Stato', key: 'status', width: 15 },
+          { header: 'Costo Stimato', key: 'estimatedCost', width: 15 },
+          { header: 'Costo Finale', key: 'finalCost', width: 15 },
+          { header: 'Data Creazione', key: 'createdAt', width: 20 },
+        ];
+        
+        repairs.forEach(repair => {
+          worksheet.addRow({
+            orderNumber: repair.orderNumber,
+            deviceType: repair.deviceType,
+            deviceModel: repair.deviceModel,
+            status: repair.status,
+            estimatedCost: repair.estimatedCost ? (repair.estimatedCost / 100).toFixed(2) : '',
+            finalCost: repair.finalCost ? (repair.finalCost / 100).toFixed(2) : '',
+            createdAt: repair.createdAt,
+          });
+        });
+        
+        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        res.setHeader('Content-Disposition', 'attachment; filename=riparazioni.xlsx');
+        
+        await workbook.xlsx.write(res);
+        res.end();
+      } else {
+        res.json(repairs);
+      }
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  app.get("/api/reports/inventory", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      // Only admin can generate reports
+      if (req.user.role !== 'admin') {
+        return res.status(403).send("Only admins can generate reports");
+      }
+      
+      const movements = await storage.listInventoryMovements();
+      
+      // If Excel export requested
+      if (req.query.format === 'excel') {
+        const ExcelJS = await import('exceljs');
+        const workbook = new ExcelJS.Workbook();
+        const worksheet = workbook.addWorksheet('Movimenti Inventario');
+        
+        worksheet.columns = [
+          { header: 'Prodotto ID', key: 'productId', width: 36 },
+          { header: 'Centro Riparazione ID', key: 'repairCenterId', width: 36 },
+          { header: 'Tipo Movimento', key: 'movementType', width: 15 },
+          { header: 'Quantità', key: 'quantity', width: 10 },
+          { header: 'Note', key: 'notes', width: 30 },
+          { header: 'Data Creazione', key: 'createdAt', width: 20 },
+        ];
+        
+        movements.forEach(movement => {
+          worksheet.addRow({
+            productId: movement.productId,
+            repairCenterId: movement.repairCenterId,
+            movementType: movement.movementType,
+            quantity: movement.quantity,
+            notes: movement.notes || '',
+            createdAt: movement.createdAt,
+          });
+        });
+        
+        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        res.setHeader('Content-Disposition', 'attachment; filename=inventario.xlsx');
+        
+        await workbook.xlsx.write(res);
+        res.end();
+      } else {
+        res.json(movements);
+      }
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // ============ USER MANAGEMENT ============
+
+  app.patch("/api/users/:id", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      // Only admin can update other users
+      if (req.user.role !== 'admin' && req.user.id !== req.params.id) {
+        return res.status(403).send("Only admins can update other users");
+      }
+      
+      const user = await storage.getUser(req.params.id);
+      if (!user) {
+        return res.status(404).send("User not found");
+      }
+      
+      const allowedUpdates = req.user.role === 'admin' 
+        ? ['username', 'email', 'firstName', 'lastName', 'role', 'isActive', 'repairCenterId'] as const
+        : ['email', 'firstName', 'lastName'] as const; // Non-admin can only update own profile fields
+      
+      const updates: any = {};
+      
+      for (const key of allowedUpdates) {
+        if (req.body[key] !== undefined) {
+          updates[key] = req.body[key];
+        }
+      }
+      
+      // Validate repairCenterId if provided
+      if (updates.repairCenterId) {
+        const center = await storage.getRepairCenter(updates.repairCenterId);
+        if (!center) {
+          return res.status(400).send("Invalid repair center ID");
+        }
+      }
+      
+      const updatedUser = await storage.updateUser(req.params.id, updates);
+      
+      setActivityEntity(res, { type: 'user', id: updatedUser.id });
+      res.json(updatedUser);
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+
   // ============ DASHBOARD STATISTICS ============
 
   app.get("/api/stats", requireAuth, async (req, res) => {
