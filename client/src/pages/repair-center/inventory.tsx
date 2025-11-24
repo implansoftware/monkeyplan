@@ -53,7 +53,7 @@ export default function RepairCenterInventory() {
       quantity: number;
       notes?: string;
     }) => {
-      const res = await apiRequest("POST", "/api/admin/inventory/movements", data);
+      const res = await apiRequest("POST", "/api/repair-center/inventory/movements", data);
       return await res.json();
     },
     onSuccess: () => {

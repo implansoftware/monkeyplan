@@ -913,6 +913,41 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  app.get("/api/reseller/customers", requireRole("reseller"), async (req, res) => {
+    try {
+      const allUsers = await storage.listUsers();
+      const customers = allUsers.filter(user => user.role === "customer");
+      res.json(customers);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  app.post("/api/reseller/customers", requireRole("reseller"), async (req, res) => {
+    try {
+      const baseSchema = insertUserSchema.omit({ 
+        id: true, 
+        role: true, 
+        repairCenterId: true,
+        createdAt: true 
+      });
+      const validatedData = baseSchema.parse(req.body);
+
+      // Hash password before storing
+      const hashedPassword = await hashPassword(validatedData.password);
+
+      const user = await storage.createUser({
+        ...validatedData,
+        password: hashedPassword,
+        role: "customer", // Force customer role
+      });
+      setActivityEntity(res, { type: 'users', id: user.id });
+      res.status(201).json(user);
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+
   // ============ REPAIR CENTER ROUTES ============
 
   app.get("/api/repair-center/stats", requireRole("repair_center"), async (req, res) => {
@@ -978,6 +1013,30 @@ export function registerRoutes(app: Express): Server {
       await storage.invalidateCache('centers_%');
       
       res.json(updated);
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+
+  app.post("/api/repair-center/inventory/movements", requireRole("repair_center"), async (req, res) => {
+    try {
+      if (!req.user || !req.user.repairCenterId) {
+        return res.status(401).send("Unauthorized or no repair center assigned");
+      }
+
+      const baseSchema = insertInventoryMovementSchema.omit({ 
+        id: true, 
+        centerId: true, 
+        createdAt: true 
+      });
+      const validatedData = baseSchema.parse(req.body);
+
+      const movement = await storage.createInventoryMovement({
+        ...validatedData,
+        centerId: req.user.repairCenterId, // Force center ID from session
+      });
+      setActivityEntity(res, { type: 'inventory', id: movement.id });
+      res.status(201).json(movement);
     } catch (error: any) {
       res.status(400).send(error.message);
     }

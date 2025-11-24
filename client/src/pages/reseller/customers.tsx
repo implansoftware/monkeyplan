@@ -40,7 +40,7 @@ export default function ResellerCustomers() {
   const { toast } = useToast();
 
   const { data: allUsers = [], isLoading } = useQuery<User[]>({
-    queryKey: ["/api/admin/users"],
+    queryKey: ["/api/reseller/customers"],
   });
 
   const { data: allRepairs = [] } = useQuery<RepairOrder[]>({
@@ -56,15 +56,14 @@ export default function ResellerCustomers() {
       password: string;
       fullName: string;
     }) => {
-      const res = await apiRequest("POST", "/api/admin/users", {
+      const res = await apiRequest("POST", "/api/reseller/customers", {
         ...data,
-        role: "customer",
         isActive: true,
       });
       return await res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/reseller/customers"] });
       setDialogOpen(false);
       toast({ title: "Cliente creato con successo" });
     },
@@ -97,7 +96,7 @@ export default function ResellerCustomers() {
   );
 
   const getCustomerRepairs = (customerId: string) => {
-    return allRepairs.filter(repair => repair.id === customerId);
+    return allRepairs.filter(repair => repair.customerId === customerId);
   };
 
   const getStatusBadge = (status: string) => {
