@@ -36,6 +36,30 @@ Preferred communication style: Simple, everyday language.
 - Export buttons integrated with toast notifications, loading states, and data validation
 - Excel files include styled headers (bold, gray background), auto-fit columns, proper filenames with date stamps
 
+**Task 3: Analytics & KPI System (Completed)**
+- Added `analytics_cache` table for caching aggregated data with automatic TTL-based expiration
+- Implemented 7 storage methods for analytics aggregations:
+  - `getRevenueByPeriod`: Revenue trends grouped by day/month with invoice counts
+  - `getRepairCenterPerformance`: Per-center metrics (total repairs, completion rate, avg repair time, revenue)
+  - `getTopProducts`: Most-used products across inventory with usage counts and stock levels
+  - `getOverviewKPIs`: Dashboard-level metrics (revenue, repairs, tickets, avg repair time)
+  - Cache layer methods: `getCachedAnalytics`, `setCachedAnalytics`, `invalidateAnalyticsCache`
+- Created 4 REST API endpoints under `/api/admin/analytics`:
+  - `GET /overview` - Dashboard KPI summary
+  - `GET /revenue?startDate=X&endDate=Y&groupBy=day|month` - Revenue trends with filtering
+  - `GET /repair-centers/performance` - All repair centers performance metrics
+  - `GET /products/top?limit=10` - Top N most-used products
+- Implemented automatic cache invalidation on repair_orders and invoices mutations (14 endpoints total)
+- Built comprehensive Admin Analytics dashboard with Recharts visualizations:
+  - 6 KPI cards: Total Revenue, Active Repairs, Avg Repair Time, Total Tickets, Open Tickets, Completed Repairs
+  - LineChart: Revenue trends over time with period selector (week/month/year)
+  - PieChart: Repair status distribution (in progress, completed, cancelled)
+  - BarChart: Top performing repair centers by revenue
+  - BarChart: Top 10 most-used products
+- Integrated auto-refresh with 30-second polling interval on all analytics queries
+- Added skeleton loading states for all charts and KPI cards
+- Registered `/admin/analytics` route and added Analytics navigation item to admin sidebar
+
 ## System Architecture
 
 ### Frontend Architecture
