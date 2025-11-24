@@ -2206,6 +2206,145 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // ============ DASHBOARD STATISTICS ============
+
+  app.get("/api/stats", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const stats: any = {};
+      
+      if (req.user.role === 'admin') {
+        // Admin sees comprehensive dashboard stats
+        const overviewKPIs = await storage.getOverviewKPIs();
+        const topProducts = await storage.getTopProducts(5);
+        const repairCenterPerformance = await storage.getRepairCenterPerformance();
+        
+        // Get ticket counts by status
+        const allTickets = await storage.listTickets();
+        const ticketsByStatus = {
+          open: allTickets.filter(t => t.status === 'open').length,
+          in_progress: allTickets.filter(t => t.status === 'in_progress').length,
+          resolved: allTickets.filter(t => t.status === 'resolved').length,
+          closed: allTickets.filter(t => t.status === 'closed').length,
+        };
+        
+        // Get repair orders by status
+        const allRepairs = await storage.listRepairOrders();
+        const repairsByStatus = {
+          pending: allRepairs.filter(r => r.status === 'pending').length,
+          in_progress: allRepairs.filter(r => r.status === 'in_progress').length,
+          completed: allRepairs.filter(r => r.status === 'completed').length,
+          cancelled: allRepairs.filter(r => r.status === 'cancelled').length,
+        };
+        
+        stats.overview = overviewKPIs;
+        stats.ticketsByStatus = ticketsByStatus;
+        stats.repairsByStatus = repairsByStatus;
+        stats.topProducts = topProducts;
+        stats.repairCenterPerformance = repairCenterPerformance;
+        
+      } else if (req.user.role === 'repair_center') {
+        // Repair center sees own stats
+        if (!req.user.repairCenterId) {
+          return res.json({
+            overview: { assignedRepairs: 0, completedRepairs: 0, assignedTickets: 0 },
+            repairsByStatus: { pending: 0, in_progress: 0, completed: 0, cancelled: 0 },
+            lowStockProducts: [],
+          });
+        }
+        
+        const assignedRepairs = await storage.listRepairOrders({ repairCenterId: req.user.repairCenterId });
+        const assignedTickets = await storage.listTickets({ assignedTo: req.user.id });
+        
+        const repairsByStatus = {
+          pending: assignedRepairs.filter(r => r.status === 'pending').length,
+          in_progress: assignedRepairs.filter(r => r.status === 'in_progress').length,
+          completed: assignedRepairs.filter(r => r.status === 'completed').length,
+          cancelled: assignedRepairs.filter(r => r.status === 'cancelled').length,
+        };
+        
+        // Get low stock alerts (quantity < 5)
+        const inventory = await storage.listInventoryStock(req.user.repairCenterId);
+        const products = await Promise.all(inventory.map(item => storage.getProduct(item.productId)));
+        const lowStockProducts = inventory
+          .filter(item => item.quantity < 5)
+          .map((item, index) => ({
+            ...item,
+            product: products[index],
+          }))
+          .filter(item => item.product);
+        
+        stats.overview = {
+          assignedRepairs: assignedRepairs.length,
+          completedRepairs: assignedRepairs.filter(r => r.status === 'completed').length,
+          assignedTickets: assignedTickets.length,
+        };
+        stats.repairsByStatus = repairsByStatus;
+        stats.lowStockProducts = lowStockProducts;
+        
+      } else if (req.user.role === 'reseller') {
+        // Reseller sees own orders and customers stats
+        const ownOrders = await storage.listRepairOrders({ resellerId: req.user.id });
+        
+        const repairsByStatus = {
+          pending: ownOrders.filter(r => r.status === 'pending').length,
+          in_progress: ownOrders.filter(r => r.status === 'in_progress').length,
+          completed: ownOrders.filter(r => r.status === 'completed').length,
+          cancelled: ownOrders.filter(r => r.status === 'cancelled').length,
+        };
+        
+        // Count unique customers
+        const uniqueCustomers = new Set(ownOrders.map(o => o.customerId));
+        
+        // Calculate revenue from completed orders
+        const revenue = ownOrders
+          .filter(o => o.status === 'completed' && o.finalCost)
+          .reduce((sum, o) => sum + (o.finalCost || 0), 0);
+        
+        stats.overview = {
+          totalOrders: ownOrders.length,
+          completedOrders: ownOrders.filter(r => r.status === 'completed').length,
+          totalCustomers: uniqueCustomers.size,
+          totalRevenue: revenue,
+        };
+        stats.repairsByStatus = repairsByStatus;
+        
+      } else if (req.user.role === 'customer') {
+        // Customer sees own tickets and repairs stats
+        const ownTickets = await storage.listTickets({ customerId: req.user.id });
+        const ownRepairs = await storage.listRepairOrders({ customerId: req.user.id });
+        
+        const ticketsByStatus = {
+          open: ownTickets.filter(t => t.status === 'open').length,
+          in_progress: ownTickets.filter(t => t.status === 'in_progress').length,
+          resolved: ownTickets.filter(t => t.status === 'resolved').length,
+          closed: ownTickets.filter(t => t.status === 'closed').length,
+        };
+        
+        const repairsByStatus = {
+          pending: ownRepairs.filter(r => r.status === 'pending').length,
+          in_progress: ownRepairs.filter(r => r.status === 'in_progress').length,
+          completed: ownRepairs.filter(r => r.status === 'completed').length,
+          cancelled: ownRepairs.filter(r => r.status === 'cancelled').length,
+        };
+        
+        stats.overview = {
+          totalTickets: ownTickets.length,
+          openTickets: ownTickets.filter(t => t.status === 'open').length,
+          totalRepairs: ownRepairs.length,
+          activeRepairs: ownRepairs.filter(r => r.status === 'in_progress').length,
+        };
+        stats.ticketsByStatus = ticketsByStatus;
+        stats.repairsByStatus = repairsByStatus;
+      }
+      
+      res.json(stats);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
   // ============ WEBSOCKET FOR LIVECHAT & NOTIFICATIONS ============
 
   const httpServer = createServer(app);
