@@ -9,7 +9,7 @@ import ExcelJS from "exceljs";
 import multer from "multer";
 import {
   insertUserSchema, insertRepairCenterSchema, insertProductSchema,
-  insertRepairOrderSchema, insertTicketSchema, insertInvoiceSchema,
+  insertRepairOrderSchema, insertRepairAcceptanceSchema, insertTicketSchema, insertInvoiceSchema,
   updateRepairStatusSchema, updateTicketStatusSchema, createTicketMessageSchema,
   insertInventoryMovementSchema, insertBillingDataSchema, insertChatMessageSchema,
   insertNotificationPreferencesSchema, insertRepairAttachmentSchema,
@@ -1901,50 +1901,139 @@ export function registerRoutes(app: Express): Server {
     }
   });
   
-  // Create new repair order (customers and resellers)
+  // Create new repair order (customers, resellers, admins, repair centers)
   app.post("/api/repair-orders", requireAuth, async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
-      // Only customers and resellers can create orders
-      if (req.user.role !== 'customer' && req.user.role !== 'reseller') {
-        return res.status(403).send("Only customers and resellers can create repair orders");
-      }
+      // Check if this is an acceptance wizard submission (has acceptance data)
+      const hasAcceptance = req.body.acceptance && Object.keys(req.body.acceptance).length > 0;
       
-      const orderSchema = insertRepairOrderSchema.pick({
+      // Define schemas based on whether it's acceptance wizard or simple order
+      const basicOrderSchema = insertRepairOrderSchema.pick({
         deviceType: true,
         deviceModel: true,
         issueDescription: true,
         notes: true,
       });
       
+      const acceptanceOrderSchema = insertRepairOrderSchema.pick({
+        deviceType: true,
+        deviceModel: true,
+        issueDescription: true,
+        notes: true,
+        imei: true,
+        serial: true,
+        imeiNotReadable: true,
+        imeiNotPresent: true,
+        serialOnly: true,
+        brand: true,
+      });
+      
+      const orderSchema = hasAcceptance ? acceptanceOrderSchema : basicOrderSchema;
       const validatedData = orderSchema.parse(req.body);
       
-      // Force customerId and resellerId from server based on role
-      const orderData: any = {
-        ...validatedData,
-        customerId: req.user.role === 'customer' ? req.user.id : req.body.customerId,
-        status: 'pending',
-      };
-      
-      // If user is reseller, set resellerId
-      if (req.user.role === 'reseller') {
-        orderData.resellerId = req.user.id;
-        // Reseller must provide customerId in request
-        if (!req.body.customerId) {
-          return res.status(400).send("Customer ID is required for reseller orders");
-        }
-        // Validate customer exists
-        const customer = await storage.getUser(req.body.customerId);
-        if (!customer || customer.role !== 'customer') {
-          return res.status(400).send("Invalid customer ID");
+      // Check IMEI/Serial duplicate if provided (only for acceptance wizard)
+      if (hasAcceptance && ('imei' in validatedData || 'serial' in validatedData)) {
+        const imeiValue = 'imei' in validatedData ? (validatedData as any).imei : undefined;
+        const serialValue = 'serial' in validatedData ? (validatedData as any).serial : undefined;
+        const duplicate = await storage.checkImeiSerialDuplicate(
+          imeiValue || undefined,
+          serialValue || undefined
+        );
+        if (duplicate) {
+          return res.status(409).send({
+            error: "IMEI or Serial number already exists in an open repair order",
+            existingOrder: {
+              id: duplicate.id,
+              orderNumber: duplicate.orderNumber,
+              status: duplicate.status,
+              imei: duplicate.imei,
+              serial: duplicate.serial,
+            }
+          });
         }
       }
       
-      const order = await storage.createRepairOrder(orderData);
+      // Determine customerId based on role and validate
+      let customerId: string;
       
-      setActivityEntity(res, { type: 'repair_order', id: order.id });
-      res.json(order);
+      if (req.user.role === 'customer') {
+        // Customer is creating order for themselves
+        customerId = req.user.id;
+      } else if (req.user.role === 'reseller') {
+        // Reseller must provide customerId
+        if (!req.body.customerId) {
+          return res.status(400).send("Customer ID is required for reseller orders");
+        }
+        customerId = req.body.customerId;
+        
+        // Validate customer exists
+        const customer = await storage.getUser(customerId);
+        if (!customer || customer.role !== 'customer') {
+          return res.status(400).send("Invalid customer ID");
+        }
+      } else if (req.user.role === 'admin' || req.user.role === 'repair_center') {
+        // Admin/repair_center must provide customerId for acceptance wizard
+        if (!req.body.customerId) {
+          return res.status(400).send("Customer ID is required");
+        }
+        customerId = req.body.customerId;
+        
+        // Validate customer exists
+        const customer = await storage.getUser(customerId);
+        if (!customer || customer.role !== 'customer') {
+          return res.status(400).send("Invalid customer ID");
+        }
+      } else {
+        return res.status(403).send("Unauthorized role");
+      }
+      
+      // Build order data
+      const orderData: any = {
+        ...validatedData,
+        customerId,
+        status: hasAcceptance ? 'ingressato' : 'pending',
+      };
+      
+      // Set resellerId if user is reseller
+      if (req.user.role === 'reseller') {
+        orderData.resellerId = req.user.id;
+      }
+      
+      // Create order with or without acceptance data
+      if (hasAcceptance) {
+        // Validate and prepare acceptance data
+        const acceptanceSchema = insertRepairAcceptanceSchema.pick({
+          declaredDefects: true,
+          aestheticCondition: true,
+          aestheticNotes: true,
+          aestheticPhotosMandatory: true,
+          accessories: true,
+          lockCode: true,
+          lockPattern: true,
+          hasLockCode: true,
+          accessoriesRemoved: true,
+        });
+        
+        const parsedAcceptance = acceptanceSchema.parse(req.body.acceptance);
+        
+        // Prepare acceptance data with required fields
+        const acceptanceData: any = {
+          ...parsedAcceptance,
+          acceptedBy: req.user.id,
+        };
+        
+        const { order, acceptance } = await storage.createRepairWithAcceptance(orderData, acceptanceData);
+        
+        setActivityEntity(res, { type: 'repair_order', id: order.id });
+        res.json({ order, acceptance });
+      } else {
+        const order = await storage.createRepairOrder(orderData);
+        
+        setActivityEntity(res, { type: 'repair_order', id: order.id });
+        res.json(order);
+      }
     } catch (error: any) {
       res.status(400).send(error.message);
     }

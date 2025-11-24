@@ -5,9 +5,10 @@ import {
   InventoryMovement, InsertInventoryMovement, InventoryStock, ActivityLog, InsertActivityLog,
   AnalyticsCache, InsertAnalyticsCache, Notification, InsertNotification,
   NotificationPreferences, InsertNotificationPreferences, RepairAttachment, InsertRepairAttachment,
+  RepairAcceptance, InsertRepairAcceptance,
   users, repairCenters, products, repairOrders, tickets, ticketMessages,
   invoices, billingData, chatMessages, inventoryMovements, inventoryStock, activityLogs, analyticsCache,
-  notifications, notificationPreferences, repairAttachments
+  notifications, notificationPreferences, repairAttachments, repairAcceptance
 } from "@shared/schema";
 import { db, pool } from "./db";
 import { eq, and, or, desc, lt, sql, not } from "drizzle-orm";
@@ -43,6 +44,7 @@ export interface IStorage {
   listRepairOrders(filters?: { customerId?: string; resellerId?: string; repairCenterId?: string; status?: string }): Promise<RepairOrder[]>;
   getRepairOrder(id: string): Promise<RepairOrder | undefined>;
   createRepairOrder(order: InsertRepairOrder): Promise<RepairOrder>;
+  createRepairWithAcceptance(order: InsertRepairOrder, acceptance: InsertRepairAcceptance): Promise<{ order: RepairOrder; acceptance: RepairAcceptance }>;
   updateRepairOrder(id: string, updates: Partial<Pick<RepairOrder, 'status' | 'estimatedCost' | 'finalCost' | 'notes' | 'repairCenterId'>>): Promise<RepairOrder>;
   updateRepairOrderStatus(id: string, status: string): Promise<RepairOrder>;
   checkImeiSerialDuplicate(imei?: string, serial?: string, excludeId?: string): Promise<RepairOrder | undefined>;
@@ -263,6 +265,34 @@ export class DatabaseStorage implements IStorage {
       orderNumber,
     }).returning();
     return order;
+  }
+
+  async createRepairWithAcceptance(
+    insertOrder: InsertRepairOrder,
+    insertAcceptance: InsertRepairAcceptance
+  ): Promise<{ order: RepairOrder; acceptance: RepairAcceptance }> {
+    // Use transaction to ensure atomicity
+    return await db.transaction(async (tx) => {
+      // Generate order number
+      const count = await tx.select().from(repairOrders);
+      const orderNumber = `ORD-${Date.now()}-${count.length + 1}`;
+      
+      // Create repair order with 'ingressato' status
+      const [order] = await tx.insert(repairOrders).values({
+        ...insertOrder,
+        orderNumber,
+        status: 'ingressato' as any,
+        ingressatoAt: new Date(),
+      }).returning();
+      
+      // Create acceptance record linked to the repair order
+      const [acceptance] = await tx.insert(repairAcceptance).values({
+        ...insertAcceptance,
+        repairOrderId: order.id,
+      }).returning();
+      
+      return { order, acceptance };
+    });
   }
 
   async updateRepairOrderStatus(id: string, status: string): Promise<RepairOrder> {
