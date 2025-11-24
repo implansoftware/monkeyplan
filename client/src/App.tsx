@@ -17,6 +17,7 @@ import AdminDashboard from "@/pages/admin/dashboard";
 import AdminUsers from "@/pages/admin/users";
 import AdminRepairCenters from "@/pages/admin/repair-centers";
 import AdminTickets from "@/pages/admin/tickets";
+import AdminTicketDetail from "@/pages/admin/ticket-detail";
 import AdminRepairs from "@/pages/admin/repairs";
 import AdminInventory from "@/pages/admin/inventory";
 import AdminProducts from "@/pages/admin/products";
@@ -30,11 +31,15 @@ import ResellerDashboard from "@/pages/reseller/dashboard";
 import ResellerOrders from "@/pages/reseller/orders";
 import ResellerNewRepair from "@/pages/reseller/new-repair";
 import ResellerCustomers from "@/pages/reseller/customers";
+import ResellerTickets from "@/pages/reseller/tickets";
+import ResellerTicketDetail from "@/pages/reseller/ticket-detail";
 
 // Repair Center pages
 import RepairCenterDashboard from "@/pages/repair-center/dashboard";
 import RepairCenterRepairs from "@/pages/repair-center/repairs";
 import RepairCenterInventory from "@/pages/repair-center/inventory";
+import RepairCenterTickets from "@/pages/repair-center/tickets";
+import RepairCenterTicketDetail from "@/pages/repair-center/ticket-detail";
 
 // Customer pages
 import CustomerDashboard from "@/pages/customer/dashboard";
@@ -54,6 +59,7 @@ function Router() {
       <ProtectedRoute path="/admin/repair-centers" component={AdminRepairCenters} />
       <ProtectedRoute path="/admin/repairs" component={AdminRepairs} />
       <ProtectedRoute path="/admin/tickets" component={AdminTickets} />
+      <ProtectedRoute path="/admin/tickets/:id" component={AdminTicketDetail} />
       <ProtectedRoute path="/admin/inventory" component={AdminInventory} />
       <ProtectedRoute path="/admin/products" component={AdminProducts} />
       <ProtectedRoute path="/admin/invoices" component={AdminInvoices} />
@@ -66,11 +72,15 @@ function Router() {
       <ProtectedRoute path="/reseller/orders" component={ResellerOrders} />
       <ProtectedRoute path="/reseller/customers" component={ResellerCustomers} />
       <ProtectedRoute path="/reseller/new-repair" component={ResellerNewRepair} />
+      <ProtectedRoute path="/reseller/tickets" component={ResellerTickets} />
+      <ProtectedRoute path="/reseller/tickets/:id" component={ResellerTicketDetail} />
       
       {/* Repair Center routes */}
       <ProtectedRoute path="/repair-center" component={RepairCenterDashboard} />
       <ProtectedRoute path="/repair-center/repairs" component={RepairCenterRepairs} />
       <ProtectedRoute path="/repair-center/inventory" component={RepairCenterInventory} />
+      <ProtectedRoute path="/repair-center/tickets" component={RepairCenterTickets} />
+      <ProtectedRoute path="/repair-center/tickets/:id" component={RepairCenterTicketDetail} />
       
       {/* Customer routes */}
       <ProtectedRoute path="/customer" component={CustomerDashboard} />

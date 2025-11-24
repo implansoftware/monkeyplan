@@ -51,11 +51,13 @@ const menuItems = {
     { title: "Ordini", url: "/reseller/orders", icon: ShoppingCart, group: "Principale" },
     { title: "Clienti", url: "/reseller/customers", icon: Users, group: "Gestione" },
     { title: "Nuova Riparazione", url: "/reseller/new-repair", icon: Wrench, group: "Riparazioni" },
+    { title: "Ticket", url: "/reseller/tickets", icon: Ticket, group: "Assistenza" },
   ],
   repair_center: [
     { title: "Dashboard", url: "/repair-center", icon: LayoutDashboard, group: "Principale" },
     { title: "Lavorazioni", url: "/repair-center/repairs", icon: Wrench, group: "Principale" },
     { title: "Magazzino", url: "/repair-center/inventory", icon: Package, group: "Magazzino" },
+    { title: "Ticket", url: "/repair-center/tickets", icon: Ticket, group: "Assistenza" },
   ],
   customer: [
     { title: "Dashboard", url: "/customer", icon: LayoutDashboard, group: "Principale" },
