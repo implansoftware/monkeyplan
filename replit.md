@@ -93,3 +93,59 @@ The development workflow uses `npm run dev` for Vite HMR and live reloading. Pro
 - **Routing**: Multi-role pattern matching with `useLocation` + regex extraction
 - **WebSocket**: Singleton pattern with double-guard cleanup (race condition proof)
 - **Real-time**: Broadcast → Cache invalidation → UI auto-update flow
+
+### Phase 4: Repair Orders Management (✅ COMPLETED)
+
+**Task 4.1: Backend Storage Interface**
+- ✅ Added `updateRepairOrder()` to IStorage for multipurpose updates (status, costs, assignment, notes)
+- ✅ Implemented in DatabaseStorage with automatic `updatedAt` timestamp
+- ✅ Maintains existing CRUD methods (listRepairOrders, getRepairOrder, createRepairOrder, updateRepairOrderStatus)
+
+**Task 4.2: Backend API Routes with RBAC** (server/routes.ts lines 1808-1966)
+- ✅ `GET /api/repair-orders` - List with role-based filtering:
+  - Customer: Own orders only (customerId filter)
+  - Reseller: Created orders only (resellerId filter)
+  - Repair Center: Assigned orders only (repairCenterId filter with triple null-check)
+  - Admin: All orders (no filter)
+- ✅ `GET /api/repair-orders/:id` - Detail with access control (triple null-check for repair centers)
+- ✅ `POST /api/repair-orders` - Create order (customer/reseller only):
+  - Customer: customerId forced from session
+  - Reseller: resellerId forced from session, customerId validated
+- ✅ `PATCH /api/repair-orders/:id` - Update multipurpose:
+  - Admin: Full access (status, costs, notes, repairCenterId with validation)
+  - Repair Center: Limited to assigned orders (status, costs, notes only)
+  - Triple null-check: user.repairCenterId + order.repairCenterId + equality
+
+**Task 4.3-4.6: Frontend Pages Consolidated**
+All existing pages updated from separate role-specific endpoints to unified `/api/repair-orders`:
+- ✅ `customer/repairs.tsx` - Lista ordini customer
+- ✅ `customer/repair-detail.tsx` - Dettaglio ordine
+- ✅ `reseller/new-repair.tsx` - Form creazione ordine
+- ✅ `reseller/orders.tsx` - Lista ordini reseller
+- ✅ `reseller/customers.tsx` - Lista clienti con ordini (type import fix)
+- ✅ `admin/repairs.tsx` - Lista tutti ordini + update status
+- ✅ `repair-center/repairs.tsx` - Lista ordini assegnati + update status/costs
+
+**Security Architecture (Architect-Verified):**
+- **ID Injection Prevention**: customerId/resellerId forced from `req.user` session (never trusted from body)
+- **Triple Null-Safety**: Repair center endpoints require:
+  1. `req.user.repairCenterId` exists (not null/undefined)
+  2. `order.repairCenterId` exists (order is assigned)
+  3. IDs match exactly
+- **Early Role Gates**: Unauthorized roles blocked BEFORE database queries (performance + security)
+- **No Data Leakage**: Repair centers with null ID see empty arrays, unassigned orders return 403
+- **Validated Assignments**: Admin repair center assignments validated against storage before update
+
+**RBAC Matrix:**
+| Role | GET list | GET detail | POST create | PATCH update |
+|------|----------|------------|-------------|--------------|
+| Customer | Own only | Own only | ✅ (ID forced) | ❌ BLOCKED |
+| Reseller | Own only | Own only | ✅ (ID forced) | ❌ BLOCKED |
+| Repair Center | Assigned only (null-safe) | Assigned only (triple-check) | ❌ BLOCKED | Assigned only (triple-check) |
+| Admin | All | All | ❌ BLOCKED | All (full access) |
+
+**Technical Patterns:**
+- **Endpoint Consolidation**: Single `/api/repair-orders` endpoint for all roles (pattern from tickets)
+- **Backend RBAC**: Role-based filtering at API layer, frontend agnostic
+- **Type Safety**: Import types from `@shared/schema` (no local duplicates)
+- **Cache Invalidation**: TanStack Query `queryKey: ["/api/repair-orders"]` shared across all pages
