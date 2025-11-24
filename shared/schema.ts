@@ -389,6 +389,11 @@ export const insertInventoryMovementSchema = createInsertSchema(inventoryMovemen
   createdAt: true,
 });
 
+export const insertInventoryStockSchema = createInsertSchema(inventoryStock).omit({
+  id: true,
+  updatedAt: true,
+});
+
 export const insertRepairOrderSchema = createInsertSchema(repairOrders).omit({
   id: true,
   createdAt: true,
@@ -476,6 +481,7 @@ export type InventoryMovement = typeof inventoryMovements.$inferSelect;
 export type InsertInventoryMovement = z.infer<typeof insertInventoryMovementSchema>;
 
 export type InventoryStock = typeof inventoryStock.$inferSelect;
+export type InsertInventoryStock = z.infer<typeof insertInventoryStockSchema>;
 
 export type RepairOrder = typeof repairOrders.$inferSelect;
 export type InsertRepairOrder = z.infer<typeof insertRepairOrderSchema>;

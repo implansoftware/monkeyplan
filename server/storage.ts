@@ -71,7 +71,10 @@ export interface IStorage {
   
   // Inventory
   listInventoryStock(repairCenterId?: string): Promise<InventoryStock[]>;
+  getInventoryStock(productId: string, repairCenterId: string): Promise<InventoryStock | undefined>;
   createInventoryMovement(movement: InsertInventoryMovement): Promise<InventoryMovement>;
+  listInventoryMovements(filters?: { repairCenterId?: string; productId?: string }): Promise<InventoryMovement[]>;
+  updateProduct(id: string, updates: Partial<Pick<Product, 'name' | 'sku' | 'category' | 'description' | 'unitPrice'>>): Promise<Product>;
   
   // Activity Logs
   createActivityLog(log: InsertActivityLog): Promise<ActivityLog>;
@@ -410,6 +413,41 @@ export class DatabaseStorage implements IStorage {
     }
     
     return movement;
+  }
+
+  async getInventoryStock(productId: string, repairCenterId: string): Promise<InventoryStock | undefined> {
+    const [stock] = await db.select().from(inventoryStock)
+      .where(
+        and(
+          eq(inventoryStock.productId, productId),
+          eq(inventoryStock.repairCenterId, repairCenterId)
+        )
+      );
+    return stock || undefined;
+  }
+
+  async listInventoryMovements(filters?: { repairCenterId?: string; productId?: string }): Promise<InventoryMovement[]> {
+    let query = db.select().from(inventoryMovements);
+    
+    if (filters) {
+      const conditions = [];
+      if (filters.repairCenterId) conditions.push(eq(inventoryMovements.repairCenterId, filters.repairCenterId));
+      if (filters.productId) conditions.push(eq(inventoryMovements.productId, filters.productId));
+      
+      if (conditions.length > 0) {
+        query = query.where(and(...conditions)) as any;
+      }
+    }
+    
+    return await query.orderBy(desc(inventoryMovements.createdAt));
+  }
+
+  async updateProduct(id: string, updates: Partial<Pick<Product, 'name' | 'sku' | 'category' | 'description' | 'unitPrice'>>): Promise<Product> {
+    const [updated] = await db.update(products)
+      .set(updates)
+      .where(eq(products.id, id))
+      .returning();
+    return updated;
   }
 
   // Activity Logs
