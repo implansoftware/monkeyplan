@@ -9,7 +9,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
-import { useTicketNotifications } from "@/hooks/useTicketNotifications";
 
 type TicketType = {
   id: string;
@@ -25,7 +24,6 @@ type TicketType = {
 };
 
 export default function AdminTickets() {
-  useTicketNotifications(); // Enable real-time WebSocket updates
   const [, setLocation] = useLocation();
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");

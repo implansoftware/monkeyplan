@@ -16,7 +16,6 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
-import { useTicketNotifications } from "@/hooks/useTicketNotifications";
 
 type Ticket = {
   id: string;
@@ -67,7 +66,6 @@ function getPriorityBadge(priority: string) {
 
 // Admin ticket detail view WITH management controls
 function TicketDetailManageView({ basePath }: { basePath: string }) {
-  useTicketNotifications(); // Enable real-time WebSocket updates
   const [location, setLocation] = useLocation();
   const { toast } = useToast();
   const { user } = useAuth();
@@ -369,7 +367,6 @@ function TicketDetailManageView({ basePath }: { basePath: string }) {
 
 // Read-only ticket detail view WITHOUT management controls (for Reseller/RC)
 function TicketDetailReadView({ basePath }: { basePath: string }) {
-  useTicketNotifications(); // Enable real-time WebSocket updates
   const [location, setLocation] = useLocation();
   const { toast } = useToast();
   const { user } = useAuth();
