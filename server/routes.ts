@@ -1469,6 +1469,18 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // ============ USERS ============
+  
+  // Get staff users (admin-only) - for ticket assignment
+  app.get("/api/users/staff", requireRole("admin"), async (req, res) => {
+    try {
+      const staffUsers = await storage.listStaffUsers();
+      res.json(staffUsers);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
   // ============ TICKETS ============
   
   // List tickets with role-based filtering

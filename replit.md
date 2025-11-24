@@ -70,10 +70,15 @@ The development workflow uses `npm run dev` for Vite HMR and live reloading. Pro
   - Routing: Regex-based ticket ID extraction, role-aware back navigation
   - Reply form with internal notes toggle (admin/assigned only)
   
-**Known Limitations (Task 3.4):**
-- Assignment dropdown uses placeholder values (not data-driven, requires staff users API)
-- Shared component architecture maintains mutation hooks in non-admin views (UI gating only, no physical removal)
-- Recommended post-MVP refactor: Props-driven component or separate role-specific components
+**Refactoring Completed (Task 3.4):**
+- ✅ Separated components: `TicketDetailManageView` (Admin) vs `TicketDetailReadView` (Reseller/RC)
+- ✅ Admin mutation hooks physically absent in ReadView (no privilege escalation risk)
+- ✅ Real staff users data: `GET /api/users/staff` endpoint + `listStaffUsers()` storage method  
+- ✅ Assignment dropdown with real data (admin-only)
+- ✅ RBAC hardened: Backend security + physical hook separation
+
+**Minor UI Polish (non-blocking):**
+- ReadView still shows internal note toggle (backend blocks anyway, UI-only cosmetic issue)
 
 **Next Task:**
 - Task 3.5: WebSocket notifications for real-time ticket updates

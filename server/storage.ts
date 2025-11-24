@@ -22,6 +22,7 @@ export interface IStorage {
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   listUsers(): Promise<User[]>;
+  listStaffUsers(): Promise<{ id: string; username: string; role: string }[]>;
   deleteUser(id: string): Promise<void>;
   
   // Repair Centers
@@ -128,6 +129,26 @@ export class DatabaseStorage implements IStorage {
 
   async listUsers(): Promise<User[]> {
     return await db.select().from(users).orderBy(desc(users.createdAt));
+  }
+
+  async listStaffUsers(): Promise<{ id: string; username: string; role: string }[]> {
+    const staffUsers = await db
+      .select({
+        id: users.id,
+        username: users.username,
+        role: users.role,
+      })
+      .from(users)
+      .where(
+        or(
+          eq(users.role, 'admin'),
+          eq(users.role, 'reseller'),
+          eq(users.role, 'repair_center')
+        )
+      )
+      .orderBy(users.username);
+    
+    return staffUsers;
   }
 
   async deleteUser(id: string): Promise<void> {

@@ -1,2 +1,2 @@
-// Repair Center ticket detail - usa le stesse API role-filtered
-export { default } from "@/pages/admin/ticket-detail";
+// Repair Center ticket detail - read-only view with role-specific permissions
+export { RepairCenterTicketDetail as default } from "@/pages/admin/ticket-detail";

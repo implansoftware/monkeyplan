@@ -1,2 +1,2 @@
-// Reseller ticket detail - usa le stesse API role-filtered
-export { default } from "@/pages/admin/ticket-detail";
+// Reseller ticket detail - read-only view with role-specific permissions
+export { ResellerTicketDetail as default } from "@/pages/admin/ticket-detail";
