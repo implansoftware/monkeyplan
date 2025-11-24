@@ -21,6 +21,7 @@ import AdminInventory from "@/pages/admin/inventory";
 import AdminProducts from "@/pages/admin/products";
 import AdminInvoices from "@/pages/admin/invoices";
 import AdminChat from "@/pages/admin/chat";
+import AdminActivityLogs from "@/pages/admin/activity-logs";
 
 // Reseller pages
 import ResellerDashboard from "@/pages/reseller/dashboard";
@@ -50,6 +51,7 @@ function Router() {
       <ProtectedRoute path="/admin/products" component={AdminProducts} />
       <ProtectedRoute path="/admin/invoices" component={AdminInvoices} />
       <ProtectedRoute path="/admin/chat" component={AdminChat} />
+      <ProtectedRoute path="/admin/activity-logs" component={AdminActivityLogs} />
       
       {/* Reseller routes */}
       <ProtectedRoute path="/reseller" component={ResellerDashboard} />

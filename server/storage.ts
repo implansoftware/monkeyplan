@@ -2,12 +2,12 @@ import {
   User, InsertUser, RepairCenter, InsertRepairCenter, Product, InsertProduct,
   RepairOrder, InsertRepairOrder, Ticket, InsertTicket, TicketMessage, InsertTicketMessage,
   Invoice, InsertInvoice, BillingData, InsertBillingData, ChatMessage, InsertChatMessage,
-  InventoryMovement, InsertInventoryMovement, InventoryStock,
+  InventoryMovement, InsertInventoryMovement, InventoryStock, ActivityLog, InsertActivityLog,
   users, repairCenters, products, repairOrders, tickets, ticketMessages,
-  invoices, billingData, chatMessages, inventoryMovements, inventoryStock
+  invoices, billingData, chatMessages, inventoryMovements, inventoryStock, activityLogs
 } from "@shared/schema";
 import { db, pool } from "./db";
-import { eq, and, or, desc } from "drizzle-orm";
+import { eq, and, or, desc, lt, sql } from "drizzle-orm";
 import session from "express-session";
 import connectPg from "connect-pg-simple";
 
@@ -65,6 +65,12 @@ export interface IStorage {
   // Inventory
   listInventoryStock(repairCenterId?: string): Promise<InventoryStock[]>;
   createInventoryMovement(movement: InsertInventoryMovement): Promise<InventoryMovement>;
+  
+  // Activity Logs
+  createActivityLog(log: InsertActivityLog): Promise<ActivityLog>;
+  listActivityLogs(filters?: { userId?: string; action?: string; entityType?: string; startDate?: Date; endDate?: Date; limit?: number }): Promise<ActivityLog[]>;
+  getActivityLog(id: string): Promise<ActivityLog | undefined>;
+  purgeOldActivityLogs(retentionDays: number): Promise<number>;
   
   sessionStore: session.Store;
 }
@@ -329,6 +335,61 @@ export class DatabaseStorage implements IStorage {
     }
     
     return movement;
+  }
+
+  // Activity Logs
+  async createActivityLog(insertLog: InsertActivityLog): Promise<ActivityLog> {
+    const [log] = await db.insert(activityLogs).values(insertLog).returning();
+    return log;
+  }
+
+  async listActivityLogs(filters?: { userId?: string; action?: string; entityType?: string; startDate?: Date; endDate?: Date; limit?: number }): Promise<ActivityLog[]> {
+    let query = db.select().from(activityLogs);
+    
+    const conditions = [];
+    if (filters?.userId) {
+      conditions.push(eq(activityLogs.userId, filters.userId));
+    }
+    if (filters?.action) {
+      conditions.push(eq(activityLogs.action, filters.action));
+    }
+    if (filters?.entityType) {
+      conditions.push(eq(activityLogs.entityType, filters.entityType));
+    }
+    if (filters?.startDate) {
+      conditions.push(sql`${activityLogs.createdAt} >= ${filters.startDate}`);
+    }
+    if (filters?.endDate) {
+      conditions.push(sql`${activityLogs.createdAt} <= ${filters.endDate}`);
+    }
+    
+    if (conditions.length > 0) {
+      query = query.where(and(...conditions)) as any;
+    }
+    
+    query = query.orderBy(desc(activityLogs.createdAt)) as any;
+    
+    // Always apply limit (default 100 if not specified)
+    const limit = filters?.limit ?? 100;
+    query = query.limit(limit) as any;
+    
+    return await query;
+  }
+
+  async getActivityLog(id: string): Promise<ActivityLog | undefined> {
+    const [log] = await db.select().from(activityLogs).where(eq(activityLogs.id, id));
+    return log || undefined;
+  }
+
+  async purgeOldActivityLogs(retentionDays: number): Promise<number> {
+    const cutoffDate = new Date();
+    cutoffDate.setDate(cutoffDate.getDate() - retentionDays);
+    
+    const deleted = await db.delete(activityLogs)
+      .where(lt(activityLogs.createdAt, cutoffDate))
+      .returning({ id: activityLogs.id });
+    
+    return deleted.length;
   }
 }
 

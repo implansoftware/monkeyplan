@@ -41,9 +41,192 @@ function requireRole(...roles: string[]) {
   };
 }
 
+// Helper to set entity metadata for activity logging
+// Call this in handlers after creating/updating/deleting entities
+// Example: setActivityEntity(res, { type: 'users', id: user.id });
+function setActivityEntity(res: Response, entity: { type?: string; id?: string }) {
+  res.locals.activityEntity = entity;
+}
+
+// Middleware for automatic activity logging
+async function logActivity(
+  userId: string,
+  action: string,
+  entityType?: string,
+  entityId?: string,
+  changes?: any,
+  req?: Request
+) {
+  try {
+    await storage.createActivityLog({
+      userId,
+      action,
+      entityType: entityType || null,
+      entityId: entityId || null,
+      changes: changes ? JSON.stringify(changes) : null,
+      ipAddress: req?.ip || req?.socket?.remoteAddress || null,
+      userAgent: req?.get('user-agent') || null,
+    });
+  } catch (error) {
+    console.error('Failed to log activity:', error);
+  }
+}
+
+// Route metadata for accurate entity/action logging
+// Maps path patterns to entity types for proper logging of nested resources
+const ROUTE_ENTITY_MAP: Record<string, string> = {
+  // Admin routes
+  '/api/admin/users': 'users',
+  '/api/admin/repair-centers': 'repair-centers',
+  '/api/admin/products': 'products',
+  '/api/admin/repairs': 'repairs',
+  '/api/admin/tickets': 'tickets',
+  '/api/admin/invoices': 'invoices',
+  '/api/admin/inventory': 'inventory',
+  '/api/admin/chat/messages': 'chat-messages',
+  '/api/admin/ticket-messages': 'ticket-messages',
+  
+  // Reseller routes
+  '/api/reseller/repairs': 'repairs',
+  '/api/reseller/customers': 'customers',
+  
+  // Repair Center routes
+  '/api/repair-center/repairs': 'repairs',
+  '/api/repair-center/inventory': 'inventory',
+  
+  // Customer routes
+  '/api/customer/tickets': 'tickets',
+};
+
+// Automatic logging middleware for all mutations
+function autoLogMiddleware(req: Request, res: Response, next: Function) {
+  // Only log POST, PATCH, DELETE requests
+  if (!['POST', 'PATCH', 'DELETE'].includes(req.method)) {
+    return next();
+  }
+
+  // Skip auth endpoints to avoid logging passwords
+  if (req.path.includes('/api/login') || req.path.includes('/api/register')) {
+    return next();
+  }
+
+  // Skip routes with manual logging (purge has custom PURGE action)
+  if (req.path.includes('/purge')) {
+    return next();
+  }
+
+  // Flag to track if we've already logged this request
+  let hasLogged = false;
+  let capturedResponseBody: any = null;
+
+  // Wrap res.json and res.send to capture response body (needed for CREATE entity IDs)
+  const originalJson = res.json.bind(res);
+  const originalSend = res.send.bind(res);
+
+  res.json = function (body: any) {
+    capturedResponseBody = body;
+    // Call performLogging immediately with body available
+    setImmediate(() => performLogging());
+    return originalJson(body);
+  };
+
+  res.send = function (body: any) {
+    try {
+      capturedResponseBody = JSON.parse(body);
+    } catch {
+      capturedResponseBody = body;
+    }
+    // Call performLogging immediately with body available
+    setImmediate(() => performLogging());
+    return originalSend(body);
+  };
+
+  // Helper to extract entity type from path using metadata map
+  const extractEntityType = (path: string): string | null => {
+    // Try exact match first
+    for (const [pattern, entity] of Object.entries(ROUTE_ENTITY_MAP)) {
+      if (path.startsWith(pattern)) {
+        // Handle both /api/admin/users and /api/admin/users/:id
+        const remainder = path.slice(pattern.length);
+        if (remainder === '' || remainder.startsWith('/')) {
+          return entity;
+        }
+      }
+    }
+    
+    // Fallback to path parsing for routes not in map
+    const pathParts = path.split('/').filter(Boolean);
+    if (pathParts.length >= 3) {
+      const entity = pathParts[2];
+      if (entity && !entity.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)) {
+        return entity;
+      }
+    }
+    
+    return null;
+  };
+
+  const performLogging = () => {
+    if (hasLogged) return;
+    
+    // Only log successful mutations (2xx status codes)
+    if (res.statusCode >= 200 && res.statusCode < 300 && req.isAuthenticated() && req.user) {
+      const action = req.method === 'POST' ? 'CREATE' : req.method === 'PATCH' ? 'UPDATE' : 'DELETE';
+      
+      // Priority 1: Read from res.locals if handler set explicit metadata
+      let entityType = res.locals.activityEntity?.type;
+      let entityId = res.locals.activityEntity?.id;
+      
+      // Priority 2: Extract from path if not set by handler
+      if (!entityType) {
+        entityType = extractEntityType(req.path);
+      }
+      
+      // Priority 3: Extract entity ID from various sources if not set by handler
+      if (!entityId) {
+        entityId = req.params.id; // For PATCH/DELETE with :id in path
+        
+        // For CREATE (POST), try to get ID from response body
+        if (!entityId && capturedResponseBody && typeof capturedResponseBody === 'object') {
+          entityId = capturedResponseBody.id;
+        }
+        
+        // Fallback to request body ID (rare case)
+        if (!entityId && req.body && typeof req.body === 'object') {
+          entityId = req.body.id;
+        }
+      }
+
+      if (entityType) {
+        hasLogged = true;
+        setImmediate(() => {
+          logActivity(
+            (req.user as any).id,
+            action,
+            entityType,
+            entityId,
+            { method: req.method, path: req.path },
+            req
+          );
+        });
+      }
+    }
+  };
+
+  // Listen for response finish event to catch all response types
+  res.on('finish', () => {
+    performLogging();
+  });
+
+  next();
+}
+
 export function registerRoutes(app: Express): Server {
   // Setup authentication routes
   setupAuth(app);
+
+  // Apply automatic logging middleware to all routes
+  app.use(autoLogMiddleware);
 
   // ============ ADMIN ROUTES ============
   
@@ -73,6 +256,53 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Activity Logs
+  app.get("/api/admin/activity-logs", requireRole("admin"), async (req, res) => {
+    try {
+      const { userId, action, entityType, startDate, endDate, limit } = req.query;
+      const logs = await storage.listActivityLogs({
+        userId: userId as string | undefined,
+        action: action as string | undefined,
+        entityType: entityType as string | undefined,
+        startDate: startDate ? new Date(startDate as string) : undefined,
+        endDate: endDate ? new Date(endDate as string) : undefined,
+        limit: limit ? parseInt(limit as string) : 100,
+      });
+      res.json(logs);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  app.post("/api/admin/activity-logs/purge", requireRole("admin"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      // Default retention: 90 days, configurable via request body
+      const retentionDays = req.body.retentionDays || parseInt(process.env.ACTIVITY_LOG_RETENTION_DAYS || "90");
+      
+      if (retentionDays < 1) {
+        return res.status(400).send("Retention days must be at least 1");
+      }
+      
+      const deletedCount = await storage.purgeOldActivityLogs(retentionDays);
+      
+      // Log the purge action itself
+      await logActivity(
+        req.user.id,
+        'PURGE',
+        'activity_logs',
+        undefined,
+        { retentionDays, deletedCount },
+        req
+      );
+      
+      res.json({ deletedCount, retentionDays });
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
   // Users
   app.get("/api/admin/users", requireRole("admin"), async (req, res) => {
     try {
@@ -85,6 +315,8 @@ export function registerRoutes(app: Express): Server {
 
   app.post("/api/admin/users", requireRole("admin"), async (req, res) => {
     try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
       // Validate input
       const validatedData = insertUserSchema.parse(req.body);
       
@@ -95,6 +327,8 @@ export function registerRoutes(app: Express): Server {
         ...validatedData,
         password: hashedPassword,
       });
+      
+      setActivityEntity(res, { type: 'users', id: user.id });
       res.status(201).json(user);
     } catch (error: any) {
       res.status(400).send(error.message);
@@ -103,7 +337,11 @@ export function registerRoutes(app: Express): Server {
 
   app.delete("/api/admin/users/:id", requireRole("admin"), async (req, res) => {
     try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
       await storage.deleteUser(req.params.id);
+      
+      setActivityEntity(res, { type: 'users', id: req.params.id });
       res.sendStatus(204);
     } catch (error: any) {
       res.status(500).send(error.message);
@@ -124,6 +362,7 @@ export function registerRoutes(app: Express): Server {
     try {
       const validatedData = insertRepairCenterSchema.parse(req.body);
       const center = await storage.createRepairCenter(validatedData);
+      setActivityEntity(res, { type: 'repair-centers', id: center.id });
       res.status(201).json(center);
     } catch (error: any) {
       res.status(400).send(error.message);
@@ -133,6 +372,7 @@ export function registerRoutes(app: Express): Server {
   app.delete("/api/admin/repair-centers/:id", requireRole("admin"), async (req, res) => {
     try {
       await storage.deleteRepairCenter(req.params.id);
+      setActivityEntity(res, { type: 'repair-centers', id: req.params.id });
       res.sendStatus(204);
     } catch (error: any) {
       res.status(500).send(error.message);
@@ -153,6 +393,7 @@ export function registerRoutes(app: Express): Server {
     try {
       const validatedData = insertProductSchema.parse(req.body);
       const product = await storage.createProduct(validatedData);
+      setActivityEntity(res, { type: 'products', id: product.id });
       res.status(201).json(product);
     } catch (error: any) {
       res.status(400).send(error.message);
@@ -162,6 +403,7 @@ export function registerRoutes(app: Express): Server {
   app.delete("/api/admin/products/:id", requireRole("admin"), async (req, res) => {
     try {
       await storage.deleteProduct(req.params.id);
+      setActivityEntity(res, { type: 'products', id: req.params.id });
       res.sendStatus(204);
     } catch (error: any) {
       res.status(500).send(error.message);
@@ -183,6 +425,7 @@ export function registerRoutes(app: Express): Server {
       // Validate with Zod schema
       const validatedData = updateRepairStatusSchema.parse(req.body);
       const repair = await storage.updateRepairOrderStatus(req.params.id, validatedData.status);
+      setActivityEntity(res, { type: 'repairs', id: req.params.id });
       res.json(repair);
     } catch (error: any) {
       res.status(400).send(error.message);
@@ -227,6 +470,7 @@ export function registerRoutes(app: Express): Server {
         message: validatedData.message,
         isInternal: validatedData.isInternal,
       });
+      setActivityEntity(res, { type: 'ticket-messages', id: message.id });
       res.status(201).json(message);
     } catch (error: any) {
       res.status(400).send(error.message);
@@ -238,6 +482,7 @@ export function registerRoutes(app: Express): Server {
       // Validate with Zod schema
       const validatedData = updateTicketStatusSchema.parse(req.body);
       const ticket = await storage.updateTicketStatus(req.params.id, validatedData.status);
+      setActivityEntity(res, { type: 'tickets', id: req.params.id });
       res.json(ticket);
     } catch (error: any) {
       res.status(400).send(error.message);
@@ -268,6 +513,7 @@ export function registerRoutes(app: Express): Server {
     try {
       const validatedData = insertInvoiceSchema.parse(req.body);
       const invoice = await storage.createInvoice(validatedData);
+      setActivityEntity(res, { type: 'invoices', id: invoice.id });
       res.status(201).json(invoice);
     } catch (error: any) {
       res.status(400).send(error.message);
@@ -279,6 +525,7 @@ export function registerRoutes(app: Express): Server {
     try {
       const validatedData = insertBillingDataSchema.parse(req.body);
       const billing = await storage.createBillingData(validatedData);
+      setActivityEntity(res, { type: 'billing-data', id: billing.id });
       res.status(201).json(billing);
     } catch (error: any) {
       res.status(400).send(error.message);
@@ -300,6 +547,7 @@ export function registerRoutes(app: Express): Server {
         ...validatedData,
         createdBy: req.user.id, // Force from authenticated session
       });
+      setActivityEntity(res, { type: 'inventory', id: movement.id });
       res.status(201).json(movement);
     } catch (error: any) {
       res.status(400).send(error.message);
@@ -368,6 +616,7 @@ export function registerRoutes(app: Express): Server {
         resellerId: req.user.id, // Force reseller ID from session
         customerId: validatedData.customerId || req.user.id,
       });
+      setActivityEntity(res, { type: 'repairs', id: repair.id });
       res.status(201).json(repair);
     } catch (error: any) {
       res.status(400).send(error.message);
@@ -481,6 +730,7 @@ export function registerRoutes(app: Express): Server {
         ...validatedData,
         customerId: req.user.id, // Force customer ID from session
       });
+      setActivityEntity(res, { type: 'tickets', id: ticket.id });
       res.status(201).json(ticket);
     } catch (error: any) {
       res.status(400).send(error.message);

@@ -153,6 +153,19 @@ export const chatMessages = pgTable("chat_messages", {
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
+// Activity Logs (Audit Trail)
+export const activityLogs = pgTable("activity_logs", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull(),
+  action: text("action").notNull(), // e.g., "CREATE", "UPDATE", "DELETE", "LOGIN", "LOGOUT"
+  entityType: text("entity_type"), // e.g., "user", "repair_order", "ticket", "product"
+  entityId: varchar("entity_id"),
+  changes: text("changes"), // JSON string with before/after data
+  ipAddress: text("ip_address"),
+  userAgent: text("user_agent"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
 // Relations
 export const usersRelations = relations(users, ({ one, many }) => ({
   repairCenter: one(repairCenters, {
@@ -164,6 +177,7 @@ export const usersRelations = relations(users, ({ one, many }) => ({
   billingData: one(billingData),
   sentMessages: many(chatMessages, { relationName: "sentMessages" }),
   receivedMessages: many(chatMessages, { relationName: "receivedMessages" }),
+  activityLogs: many(activityLogs),
 }));
 
 export const repairCentersRelations = relations(repairCenters, ({ many }) => ({
@@ -274,6 +288,13 @@ export const chatMessagesRelations = relations(chatMessages, ({ one }) => ({
   }),
 }));
 
+export const activityLogsRelations = relations(activityLogs, ({ one }) => ({
+  user: one(users, {
+    fields: [activityLogs.userId],
+    references: [users.id],
+  }),
+}));
+
 // Insert Schemas
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
@@ -328,6 +349,11 @@ export const insertChatMessageSchema = createInsertSchema(chatMessages).omit({
   createdAt: true,
 });
 
+export const insertActivityLogSchema = createInsertSchema(activityLogs).omit({
+  id: true,
+  createdAt: true,
+});
+
 // Update schemas for PATCH endpoints
 export const updateRepairStatusSchema = z.object({
   status: z.enum(["pending", "in_progress", "waiting_parts", "completed", "delivered", "cancelled"]),
@@ -374,3 +400,6 @@ export type InsertBillingData = z.infer<typeof insertBillingDataSchema>;
 
 export type ChatMessage = typeof chatMessages.$inferSelect;
 export type InsertChatMessage = z.infer<typeof insertChatMessageSchema>;
+
+export type ActivityLog = typeof activityLogs.$inferSelect;
+export type InsertActivityLog = z.infer<typeof insertActivityLogSchema>;
