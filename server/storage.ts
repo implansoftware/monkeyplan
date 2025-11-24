@@ -3,9 +3,11 @@ import {
   RepairOrder, InsertRepairOrder, Ticket, InsertTicket, TicketMessage, InsertTicketMessage,
   Invoice, InsertInvoice, BillingData, InsertBillingData, ChatMessage, InsertChatMessage,
   InventoryMovement, InsertInventoryMovement, InventoryStock, ActivityLog, InsertActivityLog,
-  AnalyticsCache, InsertAnalyticsCache,
+  AnalyticsCache, InsertAnalyticsCache, Notification, InsertNotification,
+  NotificationPreferences, InsertNotificationPreferences,
   users, repairCenters, products, repairOrders, tickets, ticketMessages,
-  invoices, billingData, chatMessages, inventoryMovements, inventoryStock, activityLogs, analyticsCache
+  invoices, billingData, chatMessages, inventoryMovements, inventoryStock, activityLogs, analyticsCache,
+  notifications, notificationPreferences
 } from "@shared/schema";
 import { db, pool } from "./db";
 import { eq, and, or, desc, lt, sql } from "drizzle-orm";
@@ -81,6 +83,14 @@ export interface IStorage {
   getRepairCenterPerformance(centerId?: string, period?: { start: Date; end: Date }): Promise<any>;
   getTopProducts(limit: number, period?: { start: Date; end: Date }): Promise<any[]>;
   getOverviewKPIs(period?: { start: Date; end: Date }): Promise<any>;
+  
+  // Notifications
+  createNotification(notification: InsertNotification): Promise<Notification>;
+  listNotifications(userId: string, filters?: { isRead?: boolean; limit?: number }): Promise<Notification[]>;
+  markNotificationAsRead(id: string, userId: string): Promise<Notification>;
+  getNotificationPreferences(userId: string): Promise<NotificationPreferences | undefined>;
+  createNotificationPreferences(preferences: InsertNotificationPreferences): Promise<NotificationPreferences>;
+  updateNotificationPreferences(userId: string, updates: { emailEnabled?: boolean; pushEnabled?: boolean; types?: string[] }): Promise<NotificationPreferences>;
   
   sessionStore: session.Store;
 }
@@ -583,6 +593,87 @@ export class DatabaseStorage implements IStorage {
       totalTickets: parseInt(ticketsData?.total_tickets as string) || 0,
       openTickets: parseInt(ticketsData?.open_tickets as string) || 0,
     };
+  }
+
+  async createNotification(insertNotification: InsertNotification): Promise<Notification> {
+    const [notification] = await db.insert(notifications).values(insertNotification).returning();
+    return notification;
+  }
+
+  async listNotifications(userId: string, filters?: { isRead?: boolean; limit?: number }): Promise<Notification[]> {
+    const conditions = filters?.isRead !== undefined
+      ? and(eq(notifications.userId, userId), eq(notifications.isRead, filters.isRead))
+      : eq(notifications.userId, userId);
+    
+    let query = db.select().from(notifications).where(conditions);
+    
+    query = query.orderBy(desc(notifications.createdAt)) as any;
+    
+    if (filters?.limit) {
+      query = query.limit(filters.limit) as any;
+    }
+    
+    return await query;
+  }
+
+  async markNotificationAsRead(id: string, userId: string): Promise<Notification> {
+    const [notification] = await db
+      .update(notifications)
+      .set({ isRead: true })
+      .where(and(eq(notifications.id, id), eq(notifications.userId, userId)))
+      .returning();
+    if (!notification) {
+      throw new Error("Notification not found or access denied");
+    }
+    return notification;
+  }
+
+  async getNotificationPreferences(userId: string): Promise<NotificationPreferences | undefined> {
+    const [preferences] = await db
+      .select()
+      .from(notificationPreferences)
+      .where(eq(notificationPreferences.userId, userId));
+    return preferences || undefined;
+  }
+
+  async createNotificationPreferences(insertPreferences: InsertNotificationPreferences): Promise<NotificationPreferences> {
+    const [preferences] = await db
+      .insert(notificationPreferences)
+      .values(insertPreferences)
+      .returning();
+    return preferences;
+  }
+
+  async updateNotificationPreferences(userId: string, updates: { emailEnabled?: boolean; pushEnabled?: boolean; types?: string[] }): Promise<NotificationPreferences> {
+    const allowedFields: { emailEnabled?: boolean; pushEnabled?: boolean; types?: string[]; updatedAt: Date } = {
+      updatedAt: new Date()
+    };
+    
+    if (updates.emailEnabled !== undefined) {
+      allowedFields.emailEnabled = updates.emailEnabled;
+    }
+    if (updates.pushEnabled !== undefined) {
+      allowedFields.pushEnabled = updates.pushEnabled;
+    }
+    if (updates.types !== undefined) {
+      allowedFields.types = updates.types;
+    }
+    
+    if (Object.keys(allowedFields).length === 1) {
+      throw new Error("No valid fields to update");
+    }
+    
+    const [preferences] = await db
+      .update(notificationPreferences)
+      .set(allowedFields)
+      .where(eq(notificationPreferences.userId, userId))
+      .returning();
+    
+    if (!preferences) {
+      throw new Error("Notification preferences not found");
+    }
+    
+    return preferences;
   }
 }
 

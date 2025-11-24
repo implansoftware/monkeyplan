@@ -11,6 +11,7 @@ export const ticketPriorityEnum = pgEnum("ticket_priority", ["low", "medium", "h
 export const repairStatusEnum = pgEnum("repair_status", ["pending", "in_progress", "waiting_parts", "completed", "delivered", "cancelled"]);
 export const paymentStatusEnum = pgEnum("payment_status", ["pending", "paid", "overdue", "cancelled"]);
 export const movementTypeEnum = pgEnum("movement_type", ["in", "out", "adjustment"]);
+export const notificationTypeEnum = pgEnum("notification_type", ["repair_update", "sla_warning", "review_request", "message", "system"]);
 
 // Users table with role-based access
 export const users = pgTable("users", {
@@ -175,6 +176,29 @@ export const analyticsCache = pgTable("analytics_cache", {
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
+// Notifications (Real-time alerts for users)
+export const notifications = pgTable("notifications", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull(),
+  type: notificationTypeEnum("type").notNull(),
+  title: text("title").notNull(),
+  message: text("message").notNull(),
+  data: text("data"), // JSON string with additional notification data
+  isRead: boolean("is_read").notNull().default(false),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+// Notification Preferences (User settings for notifications)
+export const notificationPreferences = pgTable("notification_preferences", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().unique(),
+  emailEnabled: boolean("email_enabled").notNull().default(true),
+  pushEnabled: boolean("push_enabled").notNull().default(true),
+  types: text("types").array().notNull().default(sql`ARRAY['repair_update', 'sla_warning', 'review_request', 'message', 'system']::text[]`),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
 // Relations
 export const usersRelations = relations(users, ({ one, many }) => ({
   repairCenter: one(repairCenters, {
@@ -187,6 +211,8 @@ export const usersRelations = relations(users, ({ one, many }) => ({
   sentMessages: many(chatMessages, { relationName: "sentMessages" }),
   receivedMessages: many(chatMessages, { relationName: "receivedMessages" }),
   activityLogs: many(activityLogs),
+  notifications: many(notifications),
+  notificationPreferences: one(notificationPreferences),
 }));
 
 export const repairCentersRelations = relations(repairCenters, ({ many }) => ({
@@ -304,6 +330,20 @@ export const activityLogsRelations = relations(activityLogs, ({ one }) => ({
   }),
 }));
 
+export const notificationsRelations = relations(notifications, ({ one }) => ({
+  user: one(users, {
+    fields: [notifications.userId],
+    references: [users.id],
+  }),
+}));
+
+export const notificationPreferencesRelations = relations(notificationPreferences, ({ one }) => ({
+  user: one(users, {
+    fields: [notificationPreferences.userId],
+    references: [users.id],
+  }),
+}));
+
 // Insert Schemas
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
@@ -368,6 +408,17 @@ export const insertAnalyticsCacheSchema = createInsertSchema(analyticsCache).omi
   createdAt: true,
 });
 
+export const insertNotificationSchema = createInsertSchema(notifications).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertNotificationPreferencesSchema = createInsertSchema(notificationPreferences).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 // Update schemas for PATCH endpoints
 export const updateRepairStatusSchema = z.object({
   status: z.enum(["pending", "in_progress", "waiting_parts", "completed", "delivered", "cancelled"]),
@@ -420,3 +471,9 @@ export type InsertActivityLog = z.infer<typeof insertActivityLogSchema>;
 
 export type AnalyticsCache = typeof analyticsCache.$inferSelect;
 export type InsertAnalyticsCache = z.infer<typeof insertAnalyticsCacheSchema>;
+
+export type Notification = typeof notifications.$inferSelect;
+export type InsertNotification = z.infer<typeof insertNotificationSchema>;
+
+export type NotificationPreferences = typeof notificationPreferences.$inferSelect;
+export type InsertNotificationPreferences = z.infer<typeof insertNotificationPreferencesSchema>;

@@ -10,7 +10,8 @@ import {
   insertUserSchema, insertRepairCenterSchema, insertProductSchema,
   insertRepairOrderSchema, insertTicketSchema, insertInvoiceSchema,
   updateRepairStatusSchema, updateTicketStatusSchema, createTicketMessageSchema,
-  insertInventoryMovementSchema, insertBillingDataSchema, insertChatMessageSchema
+  insertInventoryMovementSchema, insertBillingDataSchema, insertChatMessageSchema,
+  insertNotificationPreferencesSchema
 } from "@shared/schema";
 
 const scryptAsync = promisify(scrypt);
@@ -1128,12 +1129,93 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  // ============ WEBSOCKET FOR LIVECHAT ============
+  // ============ NOTIFICATIONS ============
+  
+  app.get("/api/notifications", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const isRead = req.query.isRead === 'true' ? true : req.query.isRead === 'false' ? false : undefined;
+      const limit = req.query.limit ? parseInt(req.query.limit as string) : undefined;
+      
+      const notifications = await storage.listNotifications(req.user.id, { isRead, limit });
+      res.json(notifications);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  app.patch("/api/notifications/:id/read", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const notification = await storage.markNotificationAsRead(req.params.id, req.user.id);
+      setActivityEntity(res, { type: 'notifications', id: notification.id });
+      res.json(notification);
+    } catch (error: any) {
+      res.status(403).send(error.message);
+    }
+  });
+
+  app.get("/api/notifications/preferences", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      let preferences = await storage.getNotificationPreferences(req.user.id);
+      
+      if (!preferences) {
+        preferences = await storage.createNotificationPreferences({
+          userId: req.user.id,
+          emailEnabled: true,
+          pushEnabled: true,
+          types: ['repair_update', 'sla_warning', 'review_request', 'message', 'system']
+        });
+      }
+      
+      res.json(preferences);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  app.patch("/api/notifications/preferences", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const updateSchema = insertNotificationPreferencesSchema.omit({
+        id: true,
+        userId: true,
+        createdAt: true,
+        updatedAt: true,
+      }).partial();
+      
+      const validatedData = updateSchema.parse(req.body);
+      
+      const preferences = await storage.updateNotificationPreferences(req.user.id, validatedData);
+      setActivityEntity(res, { type: 'notification_preferences', id: preferences.id });
+      res.json(preferences);
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+
+  // ============ WEBSOCKET FOR LIVECHAT & NOTIFICATIONS ============
 
   const httpServer = createServer(app);
   const wss = new WebSocketServer({ server: httpServer, path: '/ws' });
 
   const clients = new Map<string, WebSocket>();
+
+  // Helper function to broadcast notification to a specific user
+  function broadcastNotification(userId: string, notification: any) {
+    const userWs = clients.get(userId);
+    if (userWs && userWs.readyState === WebSocket.OPEN) {
+      userWs.send(JSON.stringify({
+        type: 'notification',
+        data: notification,
+      }));
+    }
+  }
 
   wss.on('connection', (ws: WebSocket) => {
     let userId: string | null = null;
