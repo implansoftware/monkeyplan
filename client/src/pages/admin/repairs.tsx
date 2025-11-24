@@ -16,12 +16,15 @@ import { useToast } from "@/hooks/use-toast";
 import { formatDistanceToNow, format } from "date-fns";
 import { it } from "date-fns/locale";
 import type { DateRange } from "react-day-picker";
+import { RepairOrderDetailDrawer } from "@/components/RepairOrderDetailDrawer";
 
 export default function AdminRepairs() {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
   const [isExporting, setIsExporting] = useState(false);
+  const [selectedRepairId, setSelectedRepairId] = useState<string | null>(null);
+  const [drawerOpen, setDrawerOpen] = useState(false);
   const { toast } = useToast();
 
   const { data: repairs = [], isLoading } = useQuery<RepairOrder[]>({
@@ -203,7 +206,15 @@ export default function AdminRepairs() {
               </TableHeader>
               <TableBody>
                 {filteredRepairs.map((repair) => (
-                  <TableRow key={repair.id} data-testid={`row-repair-${repair.id}`}>
+                  <TableRow
+                    key={repair.id}
+                    data-testid={`row-repair-${repair.id}`}
+                    className="cursor-pointer hover-elevate"
+                    onClick={() => {
+                      setSelectedRepairId(repair.id);
+                      setDrawerOpen(true);
+                    }}
+                  >
                     <TableCell className="font-mono font-medium">{repair.orderNumber}</TableCell>
                     <TableCell>
                       <div>
@@ -224,6 +235,12 @@ export default function AdminRepairs() {
           )}
         </CardContent>
       </Card>
+
+      <RepairOrderDetailDrawer
+        repairOrderId={selectedRepairId}
+        open={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+      />
     </div>
   );
 }

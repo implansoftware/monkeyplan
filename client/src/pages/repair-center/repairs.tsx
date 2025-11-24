@@ -11,6 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
+import { RepairOrderDetailDrawer } from "@/components/RepairOrderDetailDrawer";
 
 type RepairOrder = {
   id: string;
@@ -32,6 +33,8 @@ type RepairOrder = {
 export default function RepairCenterRepairs() {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [selectedRepairId, setSelectedRepairId] = useState<string | null>(null);
+  const [drawerOpen, setDrawerOpen] = useState(false);
   const { toast } = useToast();
 
   const { data: repairs = [], isLoading } = useQuery<RepairOrder[]>({
@@ -155,7 +158,15 @@ export default function RepairCenterRepairs() {
               </TableHeader>
               <TableBody>
                 {filteredRepairs.map((repair) => (
-                  <TableRow key={repair.id} data-testid={`row-repair-${repair.id}`}>
+                  <TableRow
+                    key={repair.id}
+                    data-testid={`row-repair-${repair.id}`}
+                    className="cursor-pointer hover-elevate"
+                    onClick={() => {
+                      setSelectedRepairId(repair.id);
+                      setDrawerOpen(true);
+                    }}
+                  >
                     <TableCell className="font-medium" data-testid={`text-order-${repair.orderNumber}`}>
                       {repair.orderNumber}
                     </TableCell>
@@ -172,7 +183,7 @@ export default function RepairCenterRepairs() {
                     <TableCell>{formatCurrency(repair.estimatedCost)}</TableCell>
                     <TableCell>{formatCurrency(repair.finalCost)}</TableCell>
                     <TableCell>{format(new Date(repair.createdAt), "dd/MM/yyyy")}</TableCell>
-                    <TableCell>
+                    <TableCell onClick={(e) => e.stopPropagation()}>
                       <Select
                         value={repair.status}
                         onValueChange={(status) => updateStatusMutation.mutate({ id: repair.id, status })}
@@ -197,6 +208,12 @@ export default function RepairCenterRepairs() {
           )}
         </CardContent>
       </Card>
+
+      <RepairOrderDetailDrawer
+        repairOrderId={selectedRepairId}
+        open={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+      />
     </div>
   );
 }

@@ -9,10 +9,13 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { formatDistanceToNow } from "date-fns";
 import { it } from "date-fns/locale";
+import { RepairOrderDetailDrawer } from "@/components/RepairOrderDetailDrawer";
 
 export default function ResellerOrders() {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [selectedRepairId, setSelectedRepairId] = useState<string | null>(null);
+  const [drawerOpen, setDrawerOpen] = useState(false);
 
   const { data: orders = [], isLoading } = useQuery<RepairOrder[]>({
     queryKey: ["/api/reseller/repairs"],
@@ -87,7 +90,15 @@ export default function ResellerOrders() {
           ) : (
             <div className="space-y-3">
               {filteredOrders.map((order) => (
-                <Card key={order.id} className="hover-elevate" data-testid={`card-order-${order.id}`}>
+                <Card
+                  key={order.id}
+                  className="hover-elevate cursor-pointer"
+                  data-testid={`card-order-${order.id}`}
+                  onClick={() => {
+                    setSelectedRepairId(order.id);
+                    setDrawerOpen(true);
+                  }}
+                >
                   <CardContent className="p-4">
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex-1">
@@ -122,6 +133,12 @@ export default function ResellerOrders() {
           )}
         </CardContent>
       </Card>
+
+      <RepairOrderDetailDrawer
+        repairOrderId={selectedRepairId}
+        open={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+      />
     </div>
   );
 }

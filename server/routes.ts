@@ -1232,6 +1232,31 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // ============ REPAIR ORDERS - ROLE-NEUTRAL DETAIL ============
+  
+  // Get repair order details (role-neutral endpoint with ACL check)
+  app.get("/api/repair-orders/:id", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const repairOrder = await storage.getRepairOrder(req.params.id);
+      if (!repairOrder) return res.status(404).send("Repair order not found");
+      
+      // Check access based on role
+      const hasAccess = 
+        req.user.role === 'admin' ||
+        (req.user.role === 'customer' && repairOrder.customerId === req.user.id) ||
+        (req.user.role === 'reseller' && repairOrder.resellerId === req.user.id) ||
+        (req.user.role === 'repair_center' && repairOrder.repairCenterId === req.user.repairCenterId);
+      
+      if (!hasAccess) return res.status(403).send("Forbidden");
+      
+      res.json(repairOrder);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
   // ============ REPAIR ORDER ATTACHMENTS ============
   
   // Upload attachment to repair order

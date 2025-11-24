@@ -1,3 +1,7 @@
+/* Uppy styles - import Core first, then plugins */
+@import "@uppy/core/css/style.min.css";
+@import "@uppy/dashboard/css/style.min.css";
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;

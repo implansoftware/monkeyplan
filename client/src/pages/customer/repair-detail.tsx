@@ -3,9 +3,11 @@ import { useQuery } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowLeft, Clock, Euro, Package, Wrench, FileText } from "lucide-react";
+import { ArrowLeft, Clock, Euro, Package, Wrench, FileText, Paperclip } from "lucide-react";
 import { useRoute, useLocation } from "wouter";
 import { format } from "date-fns";
+import { AttachmentUploader } from "@/components/AttachmentUploader";
+import { useAuth } from "@/hooks/use-auth";
 
 type RepairOrder = {
   id: string;
@@ -35,11 +37,30 @@ export default function CustomerRepairDetail() {
   const [, params] = useRoute("/customer/repairs/:id");
   const [, setLocation] = useLocation();
   const repairId = params?.id;
+  const { user } = useAuth();
 
   const { data: repair, isLoading } = useQuery<RepairOrder>({
     queryKey: ["/api/customer/repairs", repairId],
+    queryFn: async ({ queryKey }) => {
+      const id = queryKey[1];
+      const response = await fetch(`/api/customer/repairs/${id}`, {
+        credentials: "include",
+      });
+      if (!response.ok) {
+        if (response.status === 404) throw new Error("Riparazione non trovata");
+        if (response.status === 403) throw new Error("Accesso negato");
+        throw new Error("Errore nel caricamento");
+      }
+      return response.json();
+    },
     enabled: !!repairId,
+    retry: false,
   });
+
+  // Customer can upload to own repair orders
+  const canUpload = repair && user ? repair.customerId === user.id : false;
+  // Customer can delete own uploads (controlled by AttachmentUploader internally)
+  const canDelete = false;
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -235,6 +256,25 @@ export default function CustomerRepairDetail() {
           </CardHeader>
           <CardContent>
             <p className="text-sm whitespace-pre-wrap">{repair.notes}</p>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Attachments */}
+      {repair && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Paperclip className="h-5 w-5" />
+              Allegati
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <AttachmentUploader
+              repairOrderId={repair.id}
+              canUpload={canUpload}
+              canDelete={canDelete}
+            />
           </CardContent>
         </Card>
       )}

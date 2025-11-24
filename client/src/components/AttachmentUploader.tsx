@@ -21,10 +21,6 @@ import Uppy from "@uppy/core";
 import Dashboard from "@uppy/react/dashboard";
 import XHRUpload from "@uppy/xhr-upload";
 
-// Import Uppy styles
-import "@uppy/core/dist/style.min.css";
-import "@uppy/dashboard/dist/style.min.css";
-
 type Attachment = {
   id: string;
   repairOrderId: string;
@@ -100,8 +96,22 @@ export function AttachmentUploader({
     };
   }, [uppy]);
 
-  const { data: attachments = [], isLoading } = useQuery<Attachment[]>({
+  const { data: attachments = [], isLoading, error } = useQuery<Attachment[]>({
     queryKey: ["/api/repair-orders", repairOrderId, "attachments"],
+    queryFn: async ({ queryKey }) => {
+      const id = queryKey[1];
+      const response = await fetch(`/api/repair-orders/${id}/attachments`, {
+        credentials: "include",
+      });
+      if (!response.ok) {
+        if (response.status === 404) throw new Error("Riparazione non trovata");
+        if (response.status === 403) throw new Error("Accesso negato");
+        throw new Error("Errore nel caricamento allegati");
+      }
+      return response.json();
+    },
+    enabled: !!repairOrderId,
+    retry: false,
   });
 
   const [attachmentsWithPreviews, setAttachmentsWithPreviews] = useState<AttachmentWithPreview[]>([]);
@@ -260,6 +270,19 @@ export function AttachmentUploader({
       deleteMutation.mutate(attachmentToDelete.id);
     }
   };
+
+  // Show error state if fetch failed
+  if (error) {
+    return (
+      <Card>
+        <CardContent className="py-8">
+          <div className="text-center text-destructive" data-testid="error-attachments-load">
+            {error.message}
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <div className="space-y-6">
