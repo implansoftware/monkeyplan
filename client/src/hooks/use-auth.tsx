@@ -119,8 +119,6 @@ export function useAuth() {
   return context;
 }
 
-import { useLocation } from "wouter";
-
 export function ProtectedRoute({ 
   component: Component, 
   path 
