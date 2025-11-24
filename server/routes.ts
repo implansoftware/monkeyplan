@@ -1588,6 +1588,22 @@ export function registerRoutes(app: Express): Server {
       
       const updatedTicket = await storage.updateTicketStatus(req.params.id, status);
       setActivityEntity(res, { type: 'ticket', id: updatedTicket.id });
+      
+      // Broadcast real-time update to customer and assigned user
+      broadcastNotification(updatedTicket.customerId, { 
+        type: 'ticket_status_changed', 
+        ticketId: updatedTicket.id,
+        status: updatedTicket.status 
+      });
+      
+      if (updatedTicket.assignedTo) {
+        broadcastNotification(updatedTicket.assignedTo, { 
+          type: 'ticket_status_changed', 
+          ticketId: updatedTicket.id,
+          status: updatedTicket.status 
+        });
+      }
+      
       res.json(updatedTicket);
     } catch (error: any) {
       res.status(500).send(error.message);
@@ -1621,6 +1637,30 @@ export function registerRoutes(app: Express): Server {
       
       const updatedTicket = await storage.assignTicket(req.params.id, assignedTo || null);
       setActivityEntity(res, { type: 'ticket', id: updatedTicket.id });
+      
+      // Broadcast real-time update to customer, old assignee, and new assignee
+      broadcastNotification(updatedTicket.customerId, { 
+        type: 'ticket_assigned', 
+        ticketId: updatedTicket.id,
+        assignedTo: updatedTicket.assignedTo 
+      });
+      
+      if (ticket.assignedTo && ticket.assignedTo !== updatedTicket.assignedTo) {
+        broadcastNotification(ticket.assignedTo, { 
+          type: 'ticket_assigned', 
+          ticketId: updatedTicket.id,
+          assignedTo: updatedTicket.assignedTo 
+        });
+      }
+      
+      if (updatedTicket.assignedTo) {
+        broadcastNotification(updatedTicket.assignedTo, { 
+          type: 'ticket_assigned', 
+          ticketId: updatedTicket.id,
+          assignedTo: updatedTicket.assignedTo 
+        });
+      }
+      
       res.json(updatedTicket);
     } catch (error: any) {
       res.status(500).send(error.message);
@@ -1646,6 +1686,22 @@ export function registerRoutes(app: Express): Server {
       
       const updatedTicket = await storage.updateTicketPriority(req.params.id, priority);
       setActivityEntity(res, { type: 'ticket', id: updatedTicket.id });
+      
+      // Broadcast real-time update to customer and assigned user
+      broadcastNotification(updatedTicket.customerId, { 
+        type: 'ticket_priority_changed', 
+        ticketId: updatedTicket.id,
+        priority: updatedTicket.priority 
+      });
+      
+      if (updatedTicket.assignedTo) {
+        broadcastNotification(updatedTicket.assignedTo, { 
+          type: 'ticket_priority_changed', 
+          ticketId: updatedTicket.id,
+          priority: updatedTicket.priority 
+        });
+      }
+      
       res.json(updatedTicket);
     } catch (error: any) {
       res.status(500).send(error.message);
@@ -1719,6 +1775,25 @@ export function registerRoutes(app: Express): Server {
         message: message.trim(),
         isInternal: messageIsInternal,
       });
+      
+      // Broadcast real-time update to other participants (not sender)
+      // Notify customer (unless they're the sender)
+      if (ticket.customerId !== req.user.id) {
+        broadcastNotification(ticket.customerId, { 
+          type: 'ticket_new_message', 
+          ticketId: ticket.id,
+          messageId: ticketMessage.id 
+        });
+      }
+      
+      // Notify assigned user (unless they're the sender)
+      if (ticket.assignedTo && ticket.assignedTo !== req.user.id) {
+        broadcastNotification(ticket.assignedTo, { 
+          type: 'ticket_new_message', 
+          ticketId: ticket.id,
+          messageId: ticketMessage.id 
+        });
+      }
       
       setActivityEntity(res, { type: 'ticket_message', id: ticketMessage.id });
       res.json(ticketMessage);

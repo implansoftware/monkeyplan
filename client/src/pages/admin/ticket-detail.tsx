@@ -16,6 +16,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
+import { useTicketNotifications } from "@/hooks/useTicketNotifications";
 
 type Ticket = {
   id: string;
@@ -66,6 +67,7 @@ function getPriorityBadge(priority: string) {
 
 // Admin ticket detail view WITH management controls
 function TicketDetailManageView({ basePath }: { basePath: string }) {
+  useTicketNotifications(); // Enable real-time WebSocket updates
   const [location, setLocation] = useLocation();
   const { toast } = useToast();
   const { user } = useAuth();
@@ -367,6 +369,7 @@ function TicketDetailManageView({ basePath }: { basePath: string }) {
 
 // Read-only ticket detail view WITHOUT management controls (for Reseller/RC)
 function TicketDetailReadView({ basePath }: { basePath: string }) {
+  useTicketNotifications(); // Enable real-time WebSocket updates
   const [location, setLocation] = useLocation();
   const { toast } = useToast();
   const { user } = useAuth();
@@ -511,25 +514,11 @@ function TicketDetailReadView({ basePath }: { basePath: string }) {
                 <>
                   <Separator />
                   <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <Label>Scrivi una risposta</Label>
-                      {canUseInternalNotes && (
-                        <div className="flex items-center gap-2">
-                          <Switch checked={isInternalNote} onCheckedChange={setIsInternalNote} data-testid="switch-internal-note" />
-                          <Label className="text-sm cursor-pointer">Nota interna</Label>
-                        </div>
-                      )}
-                    </div>
-                    {isInternalNote && canUseInternalNotes && (
-                      <div className="flex items-center gap-2 text-sm text-amber-700 bg-amber-500/10 p-2 rounded">
-                        <AlertCircle className="h-4 w-4" />
-                        <span>Le note interne sono visibili solo allo staff</span>
-                      </div>
-                    )}
+                    <Label>Scrivi una risposta</Label>
                     <Textarea placeholder="Digita il tuo messaggio..." value={replyMessage} onChange={(e) => setReplyMessage(e.target.value)} rows={4} data-testid="textarea-reply" />
                     <Button onClick={handleSendReply} disabled={sendMessageMutation.isPending || replyMessage.trim().length === 0} data-testid="button-send-reply">
                       <Send className="h-4 w-4 mr-2" />
-                      {sendMessageMutation.isPending ? "Invio..." : isInternalNote ? "Aggiungi nota interna" : "Invia risposta"}
+                      {sendMessageMutation.isPending ? "Invio..." : "Invia risposta"}
                     </Button>
                   </div>
                 </>
