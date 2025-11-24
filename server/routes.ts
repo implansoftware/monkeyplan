@@ -1015,6 +1015,23 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  app.get("/api/customer/repairs/:id", requireRole("customer"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const repair = await storage.getRepairOrder(req.params.id);
+      if (!repair) return res.status(404).send("Repair order not found");
+      
+      if (repair.customerId !== req.user.id) {
+        return res.status(403).send("Cannot access other customers' repairs");
+      }
+      
+      res.json(repair);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
   app.get("/api/customer/tickets", requireRole("customer"), async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");

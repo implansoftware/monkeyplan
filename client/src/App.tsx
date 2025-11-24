@@ -28,6 +28,7 @@ import AdminAnalytics from "@/pages/admin/analytics";
 import ResellerDashboard from "@/pages/reseller/dashboard";
 import ResellerOrders from "@/pages/reseller/orders";
 import ResellerNewRepair from "@/pages/reseller/new-repair";
+import ResellerCustomers from "@/pages/reseller/customers";
 
 // Repair Center pages
 import RepairCenterDashboard from "@/pages/repair-center/dashboard";
@@ -37,6 +38,7 @@ import RepairCenterInventory from "@/pages/repair-center/inventory";
 // Customer pages
 import CustomerDashboard from "@/pages/customer/dashboard";
 import CustomerRepairs from "@/pages/customer/repairs";
+import CustomerRepairDetail from "@/pages/customer/repair-detail";
 import CustomerTickets from "@/pages/customer/tickets";
 
 function Router() {
@@ -60,6 +62,7 @@ function Router() {
       {/* Reseller routes */}
       <ProtectedRoute path="/reseller" component={ResellerDashboard} />
       <ProtectedRoute path="/reseller/orders" component={ResellerOrders} />
+      <ProtectedRoute path="/reseller/customers" component={ResellerCustomers} />
       <ProtectedRoute path="/reseller/new-repair" component={ResellerNewRepair} />
       
       {/* Repair Center routes */}
@@ -70,6 +73,7 @@ function Router() {
       {/* Customer routes */}
       <ProtectedRoute path="/customer" component={CustomerDashboard} />
       <ProtectedRoute path="/customer/repairs" component={CustomerRepairs} />
+      <ProtectedRoute path="/customer/repairs/:id" component={CustomerRepairDetail} />
       <ProtectedRoute path="/customer/tickets" component={CustomerTickets} />
       
       <Route component={NotFound} />

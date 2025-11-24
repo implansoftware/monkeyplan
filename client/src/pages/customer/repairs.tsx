@@ -2,12 +2,15 @@ import { useQuery } from "@tanstack/react-query";
 import { RepairOrder } from "@shared/schema";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Wrench, Clock, MapPin } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Wrench, Clock, MapPin, ArrowRight } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatDistanceToNow } from "date-fns";
 import { it } from "date-fns/locale";
+import { useLocation } from "wouter";
 
 export default function CustomerRepairs() {
+  const [, setLocation] = useLocation();
   const { data: repairs = [], isLoading } = useQuery<RepairOrder[]>({
     queryKey: ["/api/customer/repairs"],
   });
@@ -112,6 +115,15 @@ export default function CustomerRepairs() {
                       <p className="text-sm text-muted-foreground">{repair.notes}</p>
                     </div>
                   )}
+
+                  <Button
+                    onClick={() => setLocation(`/customer/repairs/${repair.id}`)}
+                    className="w-full"
+                    data-testid={`button-view-detail-${repair.id}`}
+                  >
+                    Visualizza Dettaglio
+                    <ArrowRight className="h-4 w-4 ml-2" />
+                  </Button>
                 </div>
               </CardContent>
             </Card>
