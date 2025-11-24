@@ -166,6 +166,15 @@ export const activityLogs = pgTable("activity_logs", {
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
+// Analytics Cache (for performance optimization)
+export const analyticsCache = pgTable("analytics_cache", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  key: text("key").notNull().unique(),
+  data: text("data").notNull(), // JSON string with aggregated analytics data
+  expiresAt: timestamp("expires_at").notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
 // Relations
 export const usersRelations = relations(users, ({ one, many }) => ({
   repairCenter: one(repairCenters, {
@@ -354,6 +363,11 @@ export const insertActivityLogSchema = createInsertSchema(activityLogs).omit({
   createdAt: true,
 });
 
+export const insertAnalyticsCacheSchema = createInsertSchema(analyticsCache).omit({
+  id: true,
+  createdAt: true,
+});
+
 // Update schemas for PATCH endpoints
 export const updateRepairStatusSchema = z.object({
   status: z.enum(["pending", "in_progress", "waiting_parts", "completed", "delivered", "cancelled"]),
@@ -403,3 +417,6 @@ export type InsertChatMessage = z.infer<typeof insertChatMessageSchema>;
 
 export type ActivityLog = typeof activityLogs.$inferSelect;
 export type InsertActivityLog = z.infer<typeof insertActivityLogSchema>;
+
+export type AnalyticsCache = typeof analyticsCache.$inferSelect;
+export type InsertAnalyticsCache = z.infer<typeof insertAnalyticsCacheSchema>;

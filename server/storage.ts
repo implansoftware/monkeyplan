@@ -3,8 +3,9 @@ import {
   RepairOrder, InsertRepairOrder, Ticket, InsertTicket, TicketMessage, InsertTicketMessage,
   Invoice, InsertInvoice, BillingData, InsertBillingData, ChatMessage, InsertChatMessage,
   InventoryMovement, InsertInventoryMovement, InventoryStock, ActivityLog, InsertActivityLog,
+  AnalyticsCache, InsertAnalyticsCache,
   users, repairCenters, products, repairOrders, tickets, ticketMessages,
-  invoices, billingData, chatMessages, inventoryMovements, inventoryStock, activityLogs
+  invoices, billingData, chatMessages, inventoryMovements, inventoryStock, activityLogs, analyticsCache
 } from "@shared/schema";
 import { db, pool } from "./db";
 import { eq, and, or, desc, lt, sql } from "drizzle-orm";
@@ -71,6 +72,15 @@ export interface IStorage {
   listActivityLogs(filters?: { userId?: string; action?: string; entityType?: string; startDate?: Date; endDate?: Date; limit?: number }): Promise<ActivityLog[]>;
   getActivityLog(id: string): Promise<ActivityLog | undefined>;
   purgeOldActivityLogs(retentionDays: number): Promise<number>;
+  
+  // Analytics & Cache
+  getCachedAnalytics(key: string): Promise<any | null>;
+  setCachedAnalytics(key: string, data: any, expiresAt: Date): Promise<void>;
+  invalidateCache(pattern: string): Promise<void>;
+  getRevenueByPeriod(startDate: Date, endDate: Date, groupBy: 'day' | 'week' | 'month'): Promise<any[]>;
+  getRepairCenterPerformance(centerId?: string, period?: { start: Date; end: Date }): Promise<any>;
+  getTopProducts(limit: number, period?: { start: Date; end: Date }): Promise<any[]>;
+  getOverviewKPIs(period?: { start: Date; end: Date }): Promise<any>;
   
   sessionStore: session.Store;
 }
@@ -390,6 +400,189 @@ export class DatabaseStorage implements IStorage {
       .returning({ id: activityLogs.id });
     
     return deleted.length;
+  }
+
+  // Analytics & Cache
+  async getCachedAnalytics(key: string): Promise<any | null> {
+    const [cached] = await db.select().from(analyticsCache).where(eq(analyticsCache.key, key));
+    
+    if (!cached) return null;
+    
+    if (new Date() > new Date(cached.expiresAt)) {
+      await db.delete(analyticsCache).where(eq(analyticsCache.key, key));
+      return null;
+    }
+    
+    return JSON.parse(cached.data);
+  }
+
+  async setCachedAnalytics(key: string, data: any, expiresAt: Date): Promise<void> {
+    const existing = await db.select().from(analyticsCache).where(eq(analyticsCache.key, key));
+    
+    if (existing.length > 0) {
+      await db.update(analyticsCache)
+        .set({ data: JSON.stringify(data), expiresAt, createdAt: new Date() })
+        .where(eq(analyticsCache.key, key));
+    } else {
+      await db.insert(analyticsCache).values({
+        key,
+        data: JSON.stringify(data),
+        expiresAt,
+      });
+    }
+  }
+
+  async invalidateCache(pattern: string): Promise<void> {
+    await db.delete(analyticsCache).where(sql`${analyticsCache.key} LIKE ${pattern}`);
+  }
+
+  async getRevenueByPeriod(startDate: Date, endDate: Date, groupBy: 'day' | 'week' | 'month'): Promise<any[]> {
+    const dateFormat = groupBy === 'day' ? 'YYYY-MM-DD' :
+                       groupBy === 'week' ? 'YYYY-"W"IW' :
+                       'YYYY-MM';
+    
+    const result = await db.execute(sql`
+      SELECT 
+        TO_CHAR(created_at, ${dateFormat}) as period,
+        SUM(total) as revenue,
+        COUNT(*) as invoice_count
+      FROM ${invoices}
+      WHERE created_at >= ${startDate}
+        AND created_at <= ${endDate}
+        AND payment_status = 'paid'
+      GROUP BY period
+      ORDER BY period
+    `);
+    
+    return result.rows.map((row: any) => ({
+      period: row.period,
+      revenue: parseInt(row.revenue) || 0,
+      invoiceCount: parseInt(row.invoice_count) || 0,
+    }));
+  }
+
+  async getRepairCenterPerformance(centerId?: string, period?: { start: Date; end: Date }): Promise<any> {
+    const conditions = [];
+    
+    if (centerId) {
+      conditions.push(sql`repair_center_id = ${centerId}`);
+    }
+    if (period) {
+      conditions.push(sql`created_at >= ${period.start}`);
+      conditions.push(sql`created_at <= ${period.end}`);
+    }
+    
+    const whereClause = conditions.length > 0 ? sql`WHERE ${sql.join(conditions, sql` AND `)}` : sql``;
+    
+    const result = await db.execute(sql`
+      SELECT 
+        repair_center_id,
+        COUNT(*) as total_repairs,
+        COUNT(CASE WHEN status = 'completed' THEN 1 END) as completed_repairs,
+        COUNT(CASE WHEN status = 'cancelled' THEN 1 END) as cancelled_repairs,
+        AVG(EXTRACT(EPOCH FROM (updated_at - created_at)) / 86400) as avg_days,
+        SUM(final_cost) as total_revenue
+      FROM ${repairOrders}
+      ${whereClause}
+      GROUP BY repair_center_id
+      ORDER BY total_repairs DESC
+    `);
+    
+    return result.rows.map((row: any) => ({
+      repairCenterId: row.repair_center_id,
+      totalRepairs: parseInt(row.total_repairs) || 0,
+      completedRepairs: parseInt(row.completed_repairs) || 0,
+      cancelledRepairs: parseInt(row.cancelled_repairs) || 0,
+      avgRepairDays: parseFloat(row.avg_days) || 0,
+      successRate: row.total_repairs > 0 ? (parseInt(row.completed_repairs) / parseInt(row.total_repairs)) * 100 : 0,
+      totalRevenue: parseInt(row.total_revenue) || 0,
+    }));
+  }
+
+  async getTopProducts(limit: number, period?: { start: Date; end: Date }): Promise<any[]> {
+    const conditions = [];
+    
+    if (period) {
+      conditions.push(sql`im.created_at >= ${period.start}`);
+      conditions.push(sql`im.created_at <= ${period.end}`);
+    }
+    
+    const whereClause = conditions.length > 0 ? sql`WHERE ${sql.join(conditions, sql` AND `)}` : sql``;
+    
+    const result = await db.execute(sql`
+      SELECT 
+        p.id,
+        p.name,
+        p.sku,
+        p.category,
+        SUM(CASE WHEN im.movement_type = 'out' THEN im.quantity ELSE 0 END) as usage_count,
+        SUM(CASE WHEN im.movement_type = 'in' THEN im.quantity ELSE 0 END) as stock_in,
+        COUNT(DISTINCT im.repair_center_id) as centers_count
+      FROM ${products} p
+      LEFT JOIN ${inventoryMovements} im ON p.id = im.product_id
+      ${whereClause}
+      GROUP BY p.id, p.name, p.sku, p.category
+      ORDER BY usage_count DESC
+      LIMIT ${limit}
+    `);
+    
+    return result.rows.map((row: any) => ({
+      id: row.id,
+      name: row.name,
+      sku: row.sku,
+      category: row.category,
+      usageCount: parseInt(row.usage_count) || 0,
+      stockIn: parseInt(row.stock_in) || 0,
+      centersCount: parseInt(row.centers_count) || 0,
+    }));
+  }
+
+  async getOverviewKPIs(period?: { start: Date; end: Date }): Promise<any> {
+    const conditions = period ? 
+      sql`WHERE created_at >= ${period.start} AND created_at <= ${period.end}` : 
+      sql``;
+    
+    const revenueResult = await db.execute(sql`
+      SELECT 
+        SUM(total) as total_revenue,
+        COUNT(*) as paid_invoices
+      FROM ${invoices}
+      ${conditions}
+      ${period ? sql`AND` : sql`WHERE`} payment_status = 'paid'
+    `);
+    
+    const repairsResult = await db.execute(sql`
+      SELECT 
+        COUNT(*) as total_repairs,
+        COUNT(CASE WHEN status = 'in_progress' THEN 1 END) as active_repairs,
+        COUNT(CASE WHEN status = 'completed' THEN 1 END) as completed_repairs,
+        AVG(EXTRACT(EPOCH FROM (updated_at - created_at)) / 86400) as avg_repair_time
+      FROM ${repairOrders}
+      ${conditions}
+    `);
+    
+    const ticketsResult = await db.execute(sql`
+      SELECT 
+        COUNT(*) as total_tickets,
+        COUNT(CASE WHEN status = 'open' THEN 1 END) as open_tickets
+      FROM ${tickets}
+      ${conditions}
+    `);
+    
+    const revenue = revenueResult.rows[0] as any;
+    const repairs = repairsResult.rows[0] as any;
+    const ticketsData = ticketsResult.rows[0] as any;
+    
+    return {
+      totalRevenue: parseInt(revenue?.total_revenue as string) || 0,
+      paidInvoices: parseInt(revenue?.paid_invoices as string) || 0,
+      totalRepairs: parseInt(repairs?.total_repairs as string) || 0,
+      activeRepairs: parseInt(repairs?.active_repairs as string) || 0,
+      completedRepairs: parseInt(repairs?.completed_repairs as string) || 0,
+      avgRepairTime: parseFloat(repairs?.avg_repair_time as string) || 0,
+      totalTickets: parseInt(ticketsData?.total_tickets as string) || 0,
+      openTickets: parseInt(ticketsData?.open_tickets as string) || 0,
+    };
   }
 }
 
