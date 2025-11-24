@@ -9,7 +9,20 @@ export const userRoleEnum = pgEnum("user_role", ["admin", "reseller", "repair_ce
 export const customerTypeEnum = pgEnum("customer_type", ["private", "company"]);
 export const ticketStatusEnum = pgEnum("ticket_status", ["open", "in_progress", "closed"]);
 export const ticketPriorityEnum = pgEnum("ticket_priority", ["low", "medium", "high"]);
-export const repairStatusEnum = pgEnum("repair_status", ["pending", "in_progress", "waiting_parts", "completed", "delivered", "cancelled"]);
+export const repairStatusEnum = pgEnum("repair_status", [
+  "pending",           // In attesa (stato iniziale)
+  "ingressato",        // Ricevuto in laboratorio
+  "in_diagnosi",       // In fase diagnostica
+  "preventivo_emesso", // Preventivo inviato al cliente
+  "preventivo_accettato", // Cliente ha accettato il preventivo
+  "preventivo_rifiutato", // Cliente ha rifiutato il preventivo
+  "attesa_ricambi",    // In attesa ricambi (ex waiting_parts)
+  "in_riparazione",    // In riparazione attiva
+  "in_test",           // In fase di collaudo
+  "pronto_ritiro",     // Pronto per il ritiro
+  "consegnato",        // Consegnato (ex delivered)
+  "cancelled"          // Annullato
+]);
 export const paymentStatusEnum = pgEnum("payment_status", ["pending", "paid", "overdue", "cancelled"]);
 export const movementTypeEnum = pgEnum("movement_type", ["in", "out", "adjustment"]);
 export const notificationTypeEnum = pgEnum("notification_type", ["repair_update", "sla_warning", "review_request", "message", "system"]);
@@ -80,15 +93,50 @@ export const repairOrders = pgTable("repair_orders", {
   customerId: varchar("customer_id").notNull(),
   resellerId: varchar("reseller_id"),
   repairCenterId: varchar("repair_center_id"),
-  deviceType: text("device_type").notNull(), // smartphone, laptop, tablet
+  deviceType: text("device_type").notNull(), // smartphone, laptop, tablet, tv, etc.
   deviceModel: text("device_model").notNull(),
+  brand: text("brand"), // Marca dispositivo (auto-selezionata da catalogo modelli)
+  imei: text("imei"), // IMEI dispositivo
+  serial: text("serial"), // Numero seriale
+  imeiNotReadable: boolean("imei_not_readable").notNull().default(false), // Flag: IMEI non leggibile
+  imeiNotPresent: boolean("imei_not_present").notNull().default(false), // Flag: IMEI non presente
+  serialOnly: boolean("serial_only").notNull().default(false), // Flag: Solo seriale presente
   issueDescription: text("issue_description").notNull(),
   status: repairStatusEnum("status").notNull().default("pending"),
   estimatedCost: integer("estimated_cost"), // in cents
   finalCost: integer("final_cost"), // in cents
   notes: text("notes"),
+  ingressatoAt: timestamp("ingressato_at"), // Data ingresso in laboratorio
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+// Device Models Catalog
+export const deviceModels = pgTable("device_models", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  modelName: text("model_name").notNull(), // es: "iPhone 12", "Samsung Galaxy S21"
+  brand: text("brand").notNull(), // es: "Apple", "Samsung"
+  deviceClass: text("device_class").notNull(), // smartphone, tablet, laptop, tv, etc.
+  marketCode: text("market_code"), // Codice markettario
+  photoUrl: text("photo_url"), // URL foto dispositivo (da API o manuale)
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+// Repair Acceptance Data (Check di accettazione)
+export const repairAcceptance = pgTable("repair_acceptance", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  repairOrderId: varchar("repair_order_id").notNull().unique().references(() => repairOrders.id), // One acceptance per repair
+  declaredDefects: text("declared_defects").array(), // Guasti dichiarati dal cliente
+  aestheticCondition: text("aesthetic_condition"), // Condizione estetica generale
+  aestheticNotes: text("aesthetic_notes"), // Note dettagliate su difetti estetici
+  aestheticPhotosMandatory: boolean("aesthetic_photos_mandatory").notNull().default(false),
+  accessories: text("accessories").array(), // Lista accessori in dotazione
+  lockCode: text("lock_code"), // Codice di blocco/password
+  lockPattern: text("lock_pattern"), // Pattern di blocco (serializzato)
+  hasLockCode: boolean("has_lock_code"), // Cliente ha confermato presenza codice
+  accessoriesRemoved: boolean("accessories_removed"), // Conferma rimozione accessori non necessari
+  acceptedBy: varchar("accepted_by").notNull(), // ID utente che ha fatto l'accettazione
+  acceptedAt: timestamp("accepted_at").notNull().defaultNow(),
 });
 
 // Repair Order Attachments (Photos and documents for repair orders)
@@ -262,6 +310,10 @@ export const repairOrdersRelations = relations(repairOrders, ({ one, many }) => 
   }),
   invoices: many(invoices),
   attachments: many(repairAttachments),
+  acceptance: one(repairAcceptance, {
+    fields: [repairOrders.id],
+    references: [repairAcceptance.repairOrderId],
+  }),
 }));
 
 export const repairAttachmentsRelations = relations(repairAttachments, ({ one }) => ({
@@ -272,6 +324,13 @@ export const repairAttachmentsRelations = relations(repairAttachments, ({ one })
   uploadedByUser: one(users, {
     fields: [repairAttachments.uploadedBy],
     references: [users.id],
+  }),
+}));
+
+export const repairAcceptanceRelations = relations(repairAcceptance, ({ one }) => ({
+  repairOrder: one(repairOrders, {
+    fields: [repairAcceptance.repairOrderId],
+    references: [repairOrders.id],
   }),
 }));
 
@@ -411,6 +470,16 @@ export const insertRepairOrderSchema = createInsertSchema(repairOrders).omit({
   updatedAt: true,
 });
 
+export const insertDeviceModelSchema = createInsertSchema(deviceModels).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertRepairAcceptanceSchema = createInsertSchema(repairAcceptance).omit({
+  id: true,
+  acceptedAt: true,
+});
+
 export const insertTicketSchema = createInsertSchema(tickets).omit({
   id: true,
   ticketNumber: true,
@@ -544,6 +613,12 @@ export type InsertInventoryStock = z.infer<typeof insertInventoryStockSchema>;
 
 export type RepairOrder = typeof repairOrders.$inferSelect;
 export type InsertRepairOrder = z.infer<typeof insertRepairOrderSchema>;
+
+export type DeviceModel = typeof deviceModels.$inferSelect;
+export type InsertDeviceModel = z.infer<typeof insertDeviceModelSchema>;
+
+export type RepairAcceptance = typeof repairAcceptance.$inferSelect;
+export type InsertRepairAcceptance = z.infer<typeof insertRepairAcceptanceSchema>;
 
 export type Ticket = typeof tickets.$inferSelect;
 export type InsertTicket = z.infer<typeof insertTicketSchema>;

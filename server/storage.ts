@@ -10,7 +10,7 @@ import {
   notifications, notificationPreferences, repairAttachments
 } from "@shared/schema";
 import { db, pool } from "./db";
-import { eq, and, or, desc, lt, sql } from "drizzle-orm";
+import { eq, and, or, desc, lt, sql, not } from "drizzle-orm";
 import session from "express-session";
 import connectPg from "connect-pg-simple";
 
@@ -45,6 +45,7 @@ export interface IStorage {
   createRepairOrder(order: InsertRepairOrder): Promise<RepairOrder>;
   updateRepairOrder(id: string, updates: Partial<Pick<RepairOrder, 'status' | 'estimatedCost' | 'finalCost' | 'notes' | 'repairCenterId'>>): Promise<RepairOrder>;
   updateRepairOrderStatus(id: string, status: string): Promise<RepairOrder>;
+  checkImeiSerialDuplicate(imei?: string, serial?: string, excludeId?: string): Promise<RepairOrder | undefined>;
   
   // Tickets
   listTickets(filters?: { customerId?: string; assignedTo?: string; status?: string }): Promise<Ticket[]>;
@@ -278,6 +279,42 @@ export class DatabaseStorage implements IStorage {
       .where(eq(repairOrders.id, id))
       .returning();
     return order;
+  }
+
+  async checkImeiSerialDuplicate(imei?: string, serial?: string, excludeId?: string): Promise<RepairOrder | undefined> {
+    // If neither IMEI nor serial provided, nothing to check
+    if (!imei && !serial) return undefined;
+
+    // Build the identifier condition (IMEI OR Serial)
+    let identifierCondition;
+    if (imei && serial) {
+      // Both provided: use OR
+      identifierCondition = or(eq(repairOrders.imei, imei), eq(repairOrders.serial, serial));
+    } else if (imei) {
+      // Only IMEI provided
+      identifierCondition = eq(repairOrders.imei, imei);
+    } else {
+      // Only serial provided
+      identifierCondition = eq(repairOrders.serial, serial!);
+    }
+
+    // Query for existing repair orders with same IMEI or Serial
+    // Exclude delivered/cancelled orders (those are closed/completed)
+    const results = await db.select().from(repairOrders)
+      .where(
+        and(
+          identifierCondition,
+          not(eq(repairOrders.status, 'consegnato' as any)),
+          not(eq(repairOrders.status, 'cancelled' as any))
+        )
+      );
+
+    // Filter out the excluded ID if provided
+    const filtered = excludeId 
+      ? results.filter(r => r.id !== excludeId)
+      : results;
+
+    return filtered[0];
   }
 
   // Tickets
