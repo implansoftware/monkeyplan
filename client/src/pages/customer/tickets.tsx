@@ -15,22 +15,23 @@ import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatDistanceToNow } from "date-fns";
 import { it } from "date-fns/locale";
+import { Link } from "wouter";
 
 export default function CustomerTickets() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const { toast } = useToast();
 
   const { data: tickets = [], isLoading } = useQuery<Ticket[]>({
-    queryKey: ["/api/customer/tickets"],
+    queryKey: ["/api/tickets"],
   });
 
   const createTicketMutation = useMutation({
     mutationFn: async (data: Partial<InsertTicket>) => {
-      const res = await apiRequest("POST", "/api/customer/tickets", data);
+      const res = await apiRequest("POST", "/api/tickets", data);
       return await res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/customer/tickets"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/tickets"] });
       setDialogOpen(false);
       toast({ title: "Ticket creato con successo" });
     },
@@ -153,29 +154,31 @@ export default function CustomerTickets() {
       ) : (
         <div className="space-y-4">
           {tickets.map((ticket) => (
-            <Card key={ticket.id} data-testid={`card-ticket-${ticket.id}`}>
-              <CardContent className="p-4">
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-2">
-                      <span className="font-mono text-sm text-muted-foreground">
-                        #{ticket.ticketNumber}
-                      </span>
-                      {getStatusBadge(ticket.status)}
-                      {getPriorityBadge(ticket.priority)}
+            <Link key={ticket.id} href={`/customer/tickets/${ticket.id}`}>
+              <Card data-testid={`card-ticket-${ticket.id}`} className="hover-elevate cursor-pointer">
+                <CardContent className="p-4">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="font-mono text-sm text-muted-foreground">
+                          #{ticket.ticketNumber}
+                        </span>
+                        {getStatusBadge(ticket.status)}
+                        {getPriorityBadge(ticket.priority)}
+                      </div>
+                      <h3 className="font-medium mb-1">{ticket.subject}</h3>
+                      <p className="text-sm text-muted-foreground line-clamp-2">
+                        {ticket.description}
+                      </p>
                     </div>
-                    <h3 className="font-medium mb-1">{ticket.subject}</h3>
-                    <p className="text-sm text-muted-foreground line-clamp-2">
-                      {ticket.description}
-                    </p>
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <Clock className="h-3 w-3" />
+                      {formatDistanceToNow(new Date(ticket.createdAt), { addSuffix: true, locale: it })}
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                    <Clock className="h-3 w-3" />
-                    {formatDistanceToNow(new Date(ticket.createdAt), { addSuffix: true, locale: it })}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            </Link>
           ))}
         </div>
       )}
