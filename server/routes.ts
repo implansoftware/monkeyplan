@@ -1469,6 +1469,236 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // ============ TICKETS ============
+  
+  // List tickets with role-based filtering
+  app.get("/api/tickets", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const filters: { customerId?: string; assignedTo?: string; status?: string } = {};
+      
+      // Role-based filtering
+      if (req.user.role === 'customer') {
+        // Customers see only their own tickets
+        filters.customerId = req.user.id;
+      } else if (req.user.role === 'reseller' || req.user.role === 'repair_center') {
+        // Resellers and repair center staff see assigned tickets
+        filters.assignedTo = req.user.id;
+      }
+      // Admin sees all tickets (no filter)
+      
+      // Apply status filter if provided
+      if (req.query.status && typeof req.query.status === 'string') {
+        filters.status = req.query.status;
+      }
+      
+      const tickets = await storage.listTickets(filters);
+      res.json(tickets);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+  
+  // Get single ticket details
+  app.get("/api/tickets/:id", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const ticket = await storage.getTicket(req.params.id);
+      if (!ticket) return res.status(404).send("Ticket not found");
+      
+      // Check access based on role
+      const hasAccess = 
+        req.user.role === 'admin' ||
+        ticket.customerId === req.user.id ||
+        ticket.assignedTo === req.user.id;
+      
+      if (!hasAccess) return res.status(403).send("Forbidden");
+      
+      res.json(ticket);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+  
+  // Create new ticket (customers only)
+  app.post("/api/tickets", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      // Only customers can create tickets
+      if (req.user.role !== 'customer') {
+        return res.status(403).send("Only customers can create tickets");
+      }
+      
+      const ticketSchema = insertTicketSchema.omit({
+        ticketNumber: true,
+        customerId: true,
+      });
+      
+      const validatedData = ticketSchema.parse(req.body);
+      
+      const ticket = await storage.createTicket({
+        ...validatedData,
+        customerId: req.user.id,
+      });
+      
+      setActivityEntity(res, { type: 'ticket', id: ticket.id });
+      res.json(ticket);
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+  
+  // Update ticket status (admin and assigned users)
+  app.patch("/api/tickets/:id/status", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const ticket = await storage.getTicket(req.params.id);
+      if (!ticket) return res.status(404).send("Ticket not found");
+      
+      // Only admin or assigned user can update status
+      const canUpdate = 
+        req.user.role === 'admin' ||
+        ticket.assignedTo === req.user.id;
+      
+      if (!canUpdate) return res.status(403).send("Forbidden");
+      
+      const { status } = req.body;
+      if (!status || !['open', 'in_progress', 'closed'].includes(status)) {
+        return res.status(400).send("Invalid status");
+      }
+      
+      const updatedTicket = await storage.updateTicketStatus(req.params.id, status);
+      setActivityEntity(res, { type: 'ticket', id: updatedTicket.id });
+      res.json(updatedTicket);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+  
+  // Assign ticket (admin only)
+  app.patch("/api/tickets/:id/assign", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      if (req.user.role !== 'admin') {
+        return res.status(403).send("Only admins can assign tickets");
+      }
+      
+      const ticket = await storage.getTicket(req.params.id);
+      if (!ticket) return res.status(404).send("Ticket not found");
+      
+      const { assignedTo } = req.body;
+      
+      // Validate assignedTo user exists if provided
+      if (assignedTo) {
+        const assignedUser = await storage.getUser(assignedTo);
+        if (!assignedUser) return res.status(400).send("Invalid user ID");
+        
+        // Can only assign to reseller or repair_center staff
+        if (!['reseller', 'repair_center', 'admin'].includes(assignedUser.role)) {
+          return res.status(400).send("Can only assign to reseller, repair center, or admin");
+        }
+      }
+      
+      const updatedTicket = await storage.assignTicket(req.params.id, assignedTo || null);
+      setActivityEntity(res, { type: 'ticket', id: updatedTicket.id });
+      res.json(updatedTicket);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+  
+  // Update ticket priority (admin only)
+  app.patch("/api/tickets/:id/priority", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      if (req.user.role !== 'admin') {
+        return res.status(403).send("Only admins can update priority");
+      }
+      
+      const ticket = await storage.getTicket(req.params.id);
+      if (!ticket) return res.status(404).send("Ticket not found");
+      
+      const { priority } = req.body;
+      if (!priority || !['low', 'medium', 'high'].includes(priority)) {
+        return res.status(400).send("Invalid priority");
+      }
+      
+      const updatedTicket = await storage.updateTicketPriority(req.params.id, priority);
+      setActivityEntity(res, { type: 'ticket', id: updatedTicket.id });
+      res.json(updatedTicket);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+  
+  // List ticket messages
+  app.get("/api/tickets/:id/messages", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const ticket = await storage.getTicket(req.params.id);
+      if (!ticket) return res.status(404).send("Ticket not found");
+      
+      // Check access
+      const hasAccess = 
+        req.user.role === 'admin' ||
+        ticket.customerId === req.user.id ||
+        ticket.assignedTo === req.user.id;
+      
+      if (!hasAccess) return res.status(403).send("Forbidden");
+      
+      const messages = await storage.listTicketMessages(req.params.id);
+      res.json(messages);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+  
+  // Create ticket message (reply)
+  app.post("/api/tickets/:id/messages", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const ticket = await storage.getTicket(req.params.id);
+      if (!ticket) return res.status(404).send("Ticket not found");
+      
+      // Check access
+      const hasAccess = 
+        req.user.role === 'admin' ||
+        ticket.customerId === req.user.id ||
+        ticket.assignedTo === req.user.id;
+      
+      if (!hasAccess) return res.status(403).send("Forbidden");
+      
+      const { message, isInternal } = req.body;
+      if (!message || typeof message !== 'string' || message.trim().length === 0) {
+        return res.status(400).send("Message is required");
+      }
+      
+      // Only admin and assigned users can create internal notes
+      const allowInternal = req.user.role === 'admin' || ticket.assignedTo === req.user.id;
+      const messageIsInternal = isInternal === true && allowInternal;
+      
+      const ticketMessage = await storage.createTicketMessage({
+        ticketId: req.params.id,
+        userId: req.user.id,
+        message: message.trim(),
+        isInternal: messageIsInternal,
+      });
+      
+      setActivityEntity(res, { type: 'ticket_message', id: ticketMessage.id });
+      res.json(ticketMessage);
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+
   // ============ WEBSOCKET FOR LIVECHAT & NOTIFICATIONS ============
 
   const httpServer = createServer(app);

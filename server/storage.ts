@@ -43,10 +43,12 @@ export interface IStorage {
   updateRepairOrderStatus(id: string, status: string): Promise<RepairOrder>;
   
   // Tickets
-  listTickets(filters?: { customerId?: string; status?: string }): Promise<Ticket[]>;
+  listTickets(filters?: { customerId?: string; assignedTo?: string; status?: string }): Promise<Ticket[]>;
   getTicket(id: string): Promise<Ticket | undefined>;
   createTicket(ticket: InsertTicket): Promise<Ticket>;
   updateTicketStatus(id: string, status: string): Promise<Ticket>;
+  assignTicket(id: string, assignedTo: string | null): Promise<Ticket>;
+  updateTicketPriority(id: string, priority: string): Promise<Ticket>;
   
   // Ticket Messages
   listTicketMessages(ticketId: string): Promise<TicketMessage[]>;
@@ -215,12 +217,13 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Tickets
-  async listTickets(filters?: { customerId?: string; status?: string }): Promise<Ticket[]> {
+  async listTickets(filters?: { customerId?: string; assignedTo?: string; status?: string }): Promise<Ticket[]> {
     let query = db.select().from(tickets);
     
     if (filters) {
       const conditions = [];
       if (filters.customerId) conditions.push(eq(tickets.customerId, filters.customerId));
+      if (filters.assignedTo) conditions.push(eq(tickets.assignedTo, filters.assignedTo));
       if (filters.status) conditions.push(eq(tickets.status, filters.status as any));
       
       if (conditions.length > 0) {
@@ -251,6 +254,22 @@ export class DatabaseStorage implements IStorage {
   async updateTicketStatus(id: string, status: string): Promise<Ticket> {
     const [ticket] = await db.update(tickets)
       .set({ status: status as any, updatedAt: new Date() })
+      .where(eq(tickets.id, id))
+      .returning();
+    return ticket;
+  }
+
+  async assignTicket(id: string, assignedTo: string | null): Promise<Ticket> {
+    const [ticket] = await db.update(tickets)
+      .set({ assignedTo, updatedAt: new Date() })
+      .where(eq(tickets.id, id))
+      .returning();
+    return ticket;
+  }
+
+  async updateTicketPriority(id: string, priority: string): Promise<Ticket> {
+    const [ticket] = await db.update(tickets)
+      .set({ priority: priority as any, updatedAt: new Date() })
       .where(eq(tickets.id, id))
       .returning();
     return ticket;
