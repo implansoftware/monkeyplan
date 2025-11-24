@@ -138,7 +138,7 @@ Development uses Vite for HMR. Production builds use Vite for client assets and 
 - Full Drizzle relations: `repairOrders.acceptance` ↔ `repairAcceptance.repairOrder` with foreign key constraint
 - All insert schemas and types generated for new tables (DeviceModel, InsertDeviceModel, RepairAcceptance, InsertRepairAcceptance)
 
-**FASE 2: Acceptance Wizard (🔧 IN PROGRESS)**
+**FASE 2: Acceptance Wizard (✅ COMPLETED)**
 **Backend API (✅ COMPLETED):**
 - Extended POST `/api/repair-orders` endpoint to support optional acceptance data
 - Added `createRepairWithAcceptance()` storage method using Drizzle transaction
@@ -146,9 +146,13 @@ Development uses Vite for HMR. Production builds use Vite for client assets and 
 - Role-based customerId validation (customer: session, reseller/admin/RC: body + existence check)
 - Returns both order and acceptance records when acceptance data provided
 - Status automatically set to 'ingressato' with ingressatoAt timestamp
-**Frontend (⏳ PENDING):**
-- 3-step wizard component (device info, acceptance checks, review)
-- Integration into repair orders creation flow
+**Frontend (✅ COMPLETED):**
+- Created AcceptanceWizardDialog component with 3 steps: device info, acceptance checks, review
+- Step 1: Customer selection (admin/RC only), device type/brand/model, IMEI/serial with validation flags, issue description
+- Step 2: Declared defects, aesthetic condition, accessories, lock code/pattern
+- Step 3: Review summary with all entered data
+- Integrated into admin and repair center pages with "Nuovo ingresso" button
+- Customer query for admin/repair_center to select customer for the order
 
 **FASE 3: Diagnostics & Priority (⏳ PENDING)**
 - Diagnostics table and API

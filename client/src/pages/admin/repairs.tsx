@@ -9,7 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { Search, Wrench, Download, CalendarIcon } from "lucide-react";
+import { Search, Wrench, Download, CalendarIcon, Plus } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -17,6 +17,7 @@ import { formatDistanceToNow, format } from "date-fns";
 import { it } from "date-fns/locale";
 import type { DateRange } from "react-day-picker";
 import { RepairOrderDetailDrawer } from "@/components/RepairOrderDetailDrawer";
+import { AcceptanceWizardDialog } from "@/components/AcceptanceWizardDialog";
 
 export default function AdminRepairs() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -25,6 +26,7 @@ export default function AdminRepairs() {
   const [isExporting, setIsExporting] = useState(false);
   const [selectedRepairId, setSelectedRepairId] = useState<string | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [wizardOpen, setWizardOpen] = useState(false);
   const { toast } = useToast();
 
   const { data: repairs = [], isLoading } = useQuery<RepairOrder[]>({
@@ -170,6 +172,13 @@ export default function AdminRepairs() {
               </PopoverContent>
             </Popover>
             <Button
+              onClick={() => setWizardOpen(true)}
+              data-testid="button-new-acceptance"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Nuovo ingresso
+            </Button>
+            <Button
               onClick={handleExport}
               disabled={isExporting || repairs.length === 0}
               variant="outline"
@@ -240,6 +249,14 @@ export default function AdminRepairs() {
         repairOrderId={selectedRepairId}
         open={drawerOpen}
         onClose={() => setDrawerOpen(false)}
+      />
+
+      <AcceptanceWizardDialog
+        open={wizardOpen}
+        onOpenChange={setWizardOpen}
+        onSuccess={() => {
+          queryClient.invalidateQueries({ queryKey: ["/api/repair-orders"] });
+        }}
       />
     </div>
   );

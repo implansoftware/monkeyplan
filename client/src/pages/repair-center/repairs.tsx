@@ -6,12 +6,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, Wrench } from "lucide-react";
+import { Search, Wrench, Plus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
 import { RepairOrderDetailDrawer } from "@/components/RepairOrderDetailDrawer";
+import { AcceptanceWizardDialog } from "@/components/AcceptanceWizardDialog";
 
 type RepairOrder = {
   id: string;
@@ -35,6 +36,7 @@ export default function RepairCenterRepairs() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [selectedRepairId, setSelectedRepairId] = useState<string | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [wizardOpen, setWizardOpen] = useState(false);
   const { toast } = useToast();
 
   const { data: repairs = [], isLoading } = useQuery<RepairOrder[]>({
@@ -93,7 +95,16 @@ export default function RepairCenterRepairs() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Filtri</CardTitle>
+          <div className="flex justify-between items-center gap-4">
+            <CardTitle>Filtri</CardTitle>
+            <Button
+              onClick={() => setWizardOpen(true)}
+              data-testid="button-new-acceptance"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Nuovo ingresso
+            </Button>
+          </div>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex gap-4">
@@ -213,6 +224,15 @@ export default function RepairCenterRepairs() {
         repairOrderId={selectedRepairId}
         open={drawerOpen}
         onClose={() => setDrawerOpen(false)}
+      />
+
+      <AcceptanceWizardDialog
+        open={wizardOpen}
+        onOpenChange={setWizardOpen}
+        onSuccess={() => {
+          queryClient.invalidateQueries({ queryKey: ["/api/repair-orders"] });
+          queryClient.invalidateQueries({ queryKey: ["/api/repair-center/stats"] });
+        }}
       />
     </div>
   );
