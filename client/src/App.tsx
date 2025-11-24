@@ -4,27 +4,100 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/not-found";
+import AuthPage from "@/pages/auth-page";
+import { AuthProvider } from "@/hooks/use-auth";
+import { ProtectedRoute } from "@/lib/protected-route";
+import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import { AppSidebar } from "@/components/app-sidebar";
+import { ThemeToggle } from "@/components/theme-toggle";
+
+// Admin pages
+import AdminDashboard from "@/pages/admin/dashboard";
+import AdminUsers from "@/pages/admin/users";
+import AdminRepairCenters from "@/pages/admin/repair-centers";
+import AdminTickets from "@/pages/admin/tickets";
+import AdminRepairs from "@/pages/admin/repairs";
+import AdminInventory from "@/pages/admin/inventory";
+import AdminProducts from "@/pages/admin/products";
+import AdminInvoices from "@/pages/admin/invoices";
+import AdminChat from "@/pages/admin/chat";
+
+// Reseller pages
+import ResellerDashboard from "@/pages/reseller/dashboard";
+import ResellerOrders from "@/pages/reseller/orders";
+import ResellerNewRepair from "@/pages/reseller/new-repair";
+
+// Repair Center pages
+import RepairCenterDashboard from "@/pages/repair-center/dashboard";
+
+// Customer pages
+import CustomerDashboard from "@/pages/customer/dashboard";
+import CustomerRepairs from "@/pages/customer/repairs";
+import CustomerTickets from "@/pages/customer/tickets";
 
 function Router() {
   return (
     <Switch>
-      {/* Add pages below */}
-      {/* <Route path="/" component={Home}/> */}
-      {/* Fallback to 404 */}
+      <Route path="/auth" component={AuthPage} />
+      
+      {/* Admin routes */}
+      <ProtectedRoute path="/" component={AdminDashboard} />
+      <ProtectedRoute path="/admin/users" component={AdminUsers} />
+      <ProtectedRoute path="/admin/repair-centers" component={AdminRepairCenters} />
+      <ProtectedRoute path="/admin/repairs" component={AdminRepairs} />
+      <ProtectedRoute path="/admin/tickets" component={AdminTickets} />
+      <ProtectedRoute path="/admin/inventory" component={AdminInventory} />
+      <ProtectedRoute path="/admin/products" component={AdminProducts} />
+      <ProtectedRoute path="/admin/invoices" component={AdminInvoices} />
+      <ProtectedRoute path="/admin/chat" component={AdminChat} />
+      
+      {/* Reseller routes */}
+      <ProtectedRoute path="/reseller" component={ResellerDashboard} />
+      <ProtectedRoute path="/reseller/orders" component={ResellerOrders} />
+      <ProtectedRoute path="/reseller/new-repair" component={ResellerNewRepair} />
+      
+      {/* Repair Center routes */}
+      <ProtectedRoute path="/repair-center" component={RepairCenterDashboard} />
+      
+      {/* Customer routes */}
+      <ProtectedRoute path="/customer" component={CustomerDashboard} />
+      <ProtectedRoute path="/customer/repairs" component={CustomerRepairs} />
+      <ProtectedRoute path="/customer/tickets" component={CustomerTickets} />
+      
       <Route component={NotFound} />
     </Switch>
   );
 }
 
-function App() {
+export default function App() {
+  const style = {
+    "--sidebar-width": "16rem",
+    "--sidebar-width-icon": "3rem",
+  };
+
   return (
     <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <Toaster />
-        <Router />
-      </TooltipProvider>
+      <AuthProvider>
+        <TooltipProvider>
+          <SidebarProvider style={style as React.CSSProperties}>
+            <div className="flex h-screen w-full">
+              <AppSidebar />
+              <div className="flex flex-col flex-1 overflow-hidden">
+                <header className="flex items-center justify-between p-4 border-b border-border">
+                  <SidebarTrigger data-testid="button-sidebar-toggle" />
+                  <ThemeToggle />
+                </header>
+                <main className="flex-1 overflow-y-auto p-6">
+                  <div className="max-w-7xl mx-auto">
+                    <Router />
+                  </div>
+                </main>
+              </div>
+            </div>
+          </SidebarProvider>
+          <Toaster />
+        </TooltipProvider>
+      </AuthProvider>
     </QueryClientProvider>
   );
 }
-
-export default App;
