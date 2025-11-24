@@ -1532,16 +1532,19 @@ export function registerRoutes(app: Express): Server {
         return res.status(403).send("Only customers can create tickets");
       }
       
-      const ticketSchema = insertTicketSchema.omit({
-        ticketNumber: true,
-        customerId: true,
+      const ticketSchema = insertTicketSchema.pick({
+        subject: true,
+        description: true,
+        priority: true,
       });
       
       const validatedData = ticketSchema.parse(req.body);
       
+      // Force customerId and status from server
       const ticket = await storage.createTicket({
         ...validatedData,
         customerId: req.user.id,
+        status: 'open',
       });
       
       setActivityEntity(res, { type: 'ticket', id: ticket.id });
@@ -1654,7 +1657,13 @@ export function registerRoutes(app: Express): Server {
       if (!hasAccess) return res.status(403).send("Forbidden");
       
       const messages = await storage.listTicketMessages(req.params.id);
-      res.json(messages);
+      
+      // Filter internal messages for customers
+      const filteredMessages = req.user.role === 'customer' 
+        ? messages.filter(msg => !msg.isInternal)
+        : messages;
+      
+      res.json(filteredMessages);
     } catch (error: any) {
       res.status(500).send(error.message);
     }
@@ -1676,14 +1685,21 @@ export function registerRoutes(app: Express): Server {
       
       if (!hasAccess) return res.status(403).send("Forbidden");
       
+      // Prevent replies on closed tickets
+      if (ticket.status === 'closed') {
+        return res.status(400).send("Cannot reply to closed ticket");
+      }
+      
       const { message, isInternal } = req.body;
       if (!message || typeof message !== 'string' || message.trim().length === 0) {
         return res.status(400).send("Message is required");
       }
       
-      // Only admin and assigned users can create internal notes
-      const allowInternal = req.user.role === 'admin' || ticket.assignedTo === req.user.id;
-      const messageIsInternal = isInternal === true && allowInternal;
+      // Force isInternal=false for customers, only staff can set internal
+      let messageIsInternal = false;
+      if (req.user.role === 'admin' || ticket.assignedTo === req.user.id) {
+        messageIsInternal = isInternal === true;
+      }
       
       const ticketMessage = await storage.createTicketMessage({
         ticketId: req.params.id,

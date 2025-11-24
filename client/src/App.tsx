@@ -41,6 +41,7 @@ import CustomerDashboard from "@/pages/customer/dashboard";
 import CustomerRepairs from "@/pages/customer/repairs";
 import CustomerRepairDetail from "@/pages/customer/repair-detail";
 import CustomerTickets from "@/pages/customer/tickets";
+import CustomerTicketDetail from "@/pages/customer/ticket-detail";
 
 function Router() {
   return (
@@ -76,6 +77,7 @@ function Router() {
       <ProtectedRoute path="/customer/repairs" component={CustomerRepairs} />
       <ProtectedRoute path="/customer/repairs/:id" component={CustomerRepairDetail} />
       <ProtectedRoute path="/customer/tickets" component={CustomerTickets} />
+      <ProtectedRoute path="/customer/tickets/:id" component={CustomerTicketDetail} />
       
       <Route component={NotFound} />
     </Switch>
