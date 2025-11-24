@@ -122,3 +122,29 @@ Development uses Vite for HMR. Production builds use Vite for client assets and 
 - Uses exceljs library for .xlsx generation with Italian headers, formatted currency (cents→euros)
 **Frontend (⏳ TODO):**
 - Admin reports page with date filters and download buttons
+
+### Phase 11: Repair Workflow System (🔧 IN PROGRESS)
+**FASE 1: Schema & Data Model (✅ COMPLETED, ARCHITECT REVIEWED)**
+- Extended `repair_orders` table:
+  - Added IMEI/serial tracking fields (`imei`, `serial`, `imeiNotReadable`, `imeiNotPresent`, `serialOnly`)
+  - Added `brand` field for device brand tracking
+  - Added `ingressatoAt` timestamp for lab reception tracking
+- Extended `repair_status` enum with 10 new workflow states:
+  - `ingressato`, `in_diagnosi`, `preventivo_emesso`, `preventivo_accettato`, `preventivo_rifiutato`
+  - `attesa_ricambi`, `in_riparazione`, `in_test`, `pronto_ritiro`, `consegnato`
+- Created `device_models` table: Device catalog with brand, deviceClass, marketCode, photoUrl
+- Created `repair_acceptance` table: Acceptance wizard data (declaredDefects, aestheticCondition, accessories, lockCode, etc.)
+- Implemented `checkImeiSerialDuplicate()` storage method: Validates IMEI/serial uniqueness in open repairs (excludes consegnato/cancelled)
+- Full Drizzle relations: `repairOrders.acceptance` ↔ `repairAcceptance.repairOrder` with foreign key constraint
+- All insert schemas and types generated for new tables (DeviceModel, InsertDeviceModel, RepairAcceptance, InsertRepairAcceptance)
+
+**FASE 2: Acceptance Wizard (⏳ PENDING)**
+- Backend: POST `/api/repair-orders` with acceptance validation
+- Frontend: 3-step wizard (device info, acceptance checks, review)
+
+**FASE 3: Diagnostics & Priority (⏳ PENDING)**
+- Diagnostics table and API
+- Priority calculation logic
+
+**FASE 4: Quote Management (⏳ PENDING)**
+- Quotes table and API with parts list, labor costs
