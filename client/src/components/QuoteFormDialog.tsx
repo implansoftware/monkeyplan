@@ -116,8 +116,8 @@ export function QuoteFormDialog({
         parts: partsJson,
         laborCost: Math.round((data.laborCost || 0) * 100),
         totalAmount: Math.round(totalAmount * 100),
-        validUntil: data.validUntil || null,
-        notes: data.notes || null,
+        validUntil: data.validUntil && data.validUntil.trim() !== '' ? new Date(data.validUntil) : null,
+        notes: data.notes && data.notes.trim() !== '' ? data.notes : null,
       };
 
       return await apiRequest(
