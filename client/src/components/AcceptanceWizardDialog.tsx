@@ -54,7 +54,8 @@ const acceptanceWizardSchema = z.object({
   deviceType: z.string().min(1, "Device type required"),
   deviceModel: z.string().optional(),
   brand: z.string().optional(),
-  issueDescription: z.string().min(1, "Issue description required"),
+  issueDescription: z.string().min(1, "Seleziona almeno un problema"),
+  otherIssueDescription: z.string().optional(),
   notes: z.string().optional(),
   imei: z.string().optional(),
   serial: z.string().optional(),
@@ -85,6 +86,8 @@ export function AcceptanceWizardDialog({
   const [step, setStep] = useState<WizardStep>("device-info");
   const [selectedTypeId, setSelectedTypeId] = useState<string>("");
   const [selectedBrandId, setSelectedBrandId] = useState<string>("");
+  const [selectedIssues, setSelectedIssues] = useState<string[]>([]);
+  const [showOtherIssue, setShowOtherIssue] = useState(false);
   const [showNewCustomerForm, setShowNewCustomerForm] = useState(false);
   const [newCustomerData, setNewCustomerData] = useState({
     customerType: "private" as "private" | "company",
@@ -123,6 +126,22 @@ export function AcceptanceWizardDialog({
     name: string;
   }>>({
     queryKey: ["/api/device-types"],
+  });
+
+  const { data: issueTypes = [] } = useQuery<Array<{
+    id: string;
+    name: string;
+    description: string | null;
+    deviceTypeId: string | null;
+  }>>({
+    queryKey: ["/api/issue-types", { deviceTypeId: selectedTypeId }],
+    queryFn: async () => {
+      const params = selectedTypeId ? new URLSearchParams({ deviceTypeId: selectedTypeId }) : new URLSearchParams();
+      const res = await fetch(`/api/issue-types?${params}`);
+      if (!res.ok) throw new Error("Failed to fetch issue types");
+      return res.json();
+    },
+    enabled: !!selectedTypeId,
   });
 
   const { data: allDeviceBrands = [] } = useQuery<Array<{
@@ -181,6 +200,7 @@ export function AcceptanceWizardDialog({
       deviceModel: "",
       brand: "",
       issueDescription: "",
+      otherIssueDescription: "",
       notes: "",
       imei: "",
       serial: "",
@@ -435,6 +455,10 @@ export function AcceptanceWizardDialog({
   const handleClose = () => {
     form.reset();
     setStep("device-info");
+    setSelectedTypeId("");
+    setSelectedBrandId("");
+    setSelectedIssues([]);
+    setShowOtherIssue(false);
     onOpenChange(false);
   };
 
@@ -804,7 +828,11 @@ export function AcceptanceWizardDialog({
                 setSelectedTypeId(type?.id || "");
                 form.setValue("brand", "");
                 form.setValue("deviceModel", "");
+                form.setValue("issueDescription", "");
+                form.setValue("otherIssueDescription", "");
                 setSelectedBrandId("");
+                setSelectedIssues([]);
+                setShowOtherIssue(false);
               }} 
               value={field.value}
             >
@@ -1001,19 +1029,90 @@ export function AcceptanceWizardDialog({
         name="issueDescription"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Descrizione problema *</FormLabel>
-            <FormControl>
-              <Textarea 
-                {...field} 
-                placeholder="Descrivi il problema riportato dal cliente"
-                rows={3}
-                data-testid="textarea-issue-description"
-              />
-            </FormControl>
+            <FormLabel>Problemi riscontrati *</FormLabel>
+            <FormDescription className="text-xs">
+              Seleziona uno o più problemi segnalati dal cliente
+            </FormDescription>
+            {!selectedTypeId ? (
+              <div className="text-sm text-muted-foreground p-3 border rounded-md bg-muted/50">
+                Seleziona prima un tipo di dispositivo per vedere i problemi disponibili
+              </div>
+            ) : issueTypes.length === 0 ? (
+              <div className="text-sm text-muted-foreground p-3 border rounded-md bg-muted/50">
+                <Loader2 className="h-4 w-4 animate-spin inline mr-2" />
+                Caricamento problemi...
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto p-2 border rounded-md" data-testid="issue-types-list">
+                {issueTypes.map((issue) => {
+                  const isSelected = selectedIssues.includes(issue.name);
+                  const isOther = issue.name === "Altro";
+                  return (
+                    <div key={issue.id} className="flex items-start space-x-2">
+                      <Checkbox
+                        id={`issue-${issue.id}`}
+                        checked={isSelected}
+                        onCheckedChange={(checked) => {
+                          let newSelected: string[];
+                          if (checked) {
+                            newSelected = [...selectedIssues, issue.name];
+                          } else {
+                            newSelected = selectedIssues.filter(i => i !== issue.name);
+                          }
+                          setSelectedIssues(newSelected);
+                          if (isOther) {
+                            setShowOtherIssue(!!checked);
+                            if (!checked) {
+                              form.setValue("otherIssueDescription", "");
+                            }
+                          }
+                          const issueText = newSelected.join(", ");
+                          field.onChange(issueText);
+                        }}
+                        data-testid={`checkbox-issue-${issue.id}`}
+                      />
+                      <Label 
+                        htmlFor={`issue-${issue.id}`} 
+                        className="text-sm font-normal cursor-pointer leading-tight"
+                        title={issue.description || undefined}
+                      >
+                        {issue.name}
+                      </Label>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+            {selectedIssues.length > 0 && (
+              <div className="text-xs text-muted-foreground mt-1">
+                Selezionati: {selectedIssues.join(", ")}
+              </div>
+            )}
             <FormMessage />
           </FormItem>
         )}
       />
+
+      {showOtherIssue && (
+        <FormField
+          control={form.control}
+          name="otherIssueDescription"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Descrivi altro problema *</FormLabel>
+              <FormControl>
+                <Textarea 
+                  {...field} 
+                  placeholder="Descrivi il problema non elencato"
+                  rows={2}
+                  data-testid="textarea-other-issue"
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      )}
 
       <FormField
         control={form.control}
@@ -1285,8 +1384,13 @@ export function AcceptanceWizardDialog({
             <Separator className="my-2" />
             
             <div>
-              <div className="text-muted-foreground mb-1">Problema:</div>
+              <div className="text-muted-foreground mb-1">Problemi segnalati:</div>
               <div className="font-medium" data-testid="text-review-issue">{formData.issueDescription}</div>
+              {formData.otherIssueDescription && (
+                <div className="text-sm text-muted-foreground mt-1">
+                  Altro: {formData.otherIssueDescription}
+                </div>
+              )}
             </div>
             
             {formData.notes && (
