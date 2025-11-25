@@ -6,10 +6,12 @@ import {
   AnalyticsCache, InsertAnalyticsCache, Notification, InsertNotification,
   NotificationPreferences, InsertNotificationPreferences, RepairAttachment, InsertRepairAttachment,
   RepairAcceptance, InsertRepairAcceptance, RepairDiagnostics, InsertRepairDiagnostics,
+  RepairQuote, InsertRepairQuote,
   DeviceType, InsertDeviceType, DeviceBrand, InsertDeviceBrand, DeviceModel, InsertDeviceModel,
   users, repairCenters, products, repairOrders, tickets, ticketMessages,
   invoices, billingData, chatMessages, inventoryMovements, inventoryStock, activityLogs, analyticsCache,
   notifications, notificationPreferences, repairAttachments, repairAcceptance, repairDiagnostics,
+  repairQuotes,
   deviceTypes, deviceBrands, deviceModels
 } from "@shared/schema";
 import { db, pool } from "./db";
@@ -117,6 +119,12 @@ export interface IStorage {
   createRepairDiagnostics(diagnostics: InsertRepairDiagnostics): Promise<RepairDiagnostics>;
   updateRepairDiagnostics(repairOrderId: string, updates: Partial<Omit<InsertRepairDiagnostics, 'repairOrderId' | 'diagnosedBy'>>): Promise<RepairDiagnostics>;
   getRepairDiagnostics(repairOrderId: string): Promise<RepairDiagnostics | undefined>;
+  
+  // Repair Quotes
+  createRepairQuote(quote: InsertRepairQuote): Promise<RepairQuote>;
+  updateRepairQuote(repairOrderId: string, updates: Partial<Omit<InsertRepairQuote, 'repairOrderId' | 'quoteNumber' | 'createdBy'>>): Promise<RepairQuote>;
+  getRepairQuote(repairOrderId: string): Promise<RepairQuote | undefined>;
+  updateQuoteStatus(repairOrderId: string, status: string): Promise<RepairQuote>;
   
   // Device Types (Admin-managed categories)
   listDeviceTypes(activeOnly?: boolean): Promise<DeviceType[]>;
@@ -962,6 +970,39 @@ export class DatabaseStorage implements IStorage {
       .from(repairDiagnostics)
       .where(eq(repairDiagnostics.repairOrderId, repairOrderId));
     return diagnostics || undefined;
+  }
+
+  // Repair Quotes
+  async createRepairQuote(quote: InsertRepairQuote): Promise<RepairQuote> {
+    const [created] = await db.insert(repairQuotes).values(quote).returning();
+    return created;
+  }
+
+  async updateRepairQuote(
+    repairOrderId: string,
+    updates: Partial<Omit<InsertRepairQuote, 'repairOrderId' | 'quoteNumber' | 'createdBy'>>
+  ): Promise<RepairQuote> {
+    const updateData: any = { ...updates, updatedAt: new Date() };
+    const [updated] = await db.update(repairQuotes)
+      .set(updateData)
+      .where(eq(repairQuotes.repairOrderId, repairOrderId))
+      .returning();
+    return updated;
+  }
+
+  async getRepairQuote(repairOrderId: string): Promise<RepairQuote | undefined> {
+    const [quote] = await db.select()
+      .from(repairQuotes)
+      .where(eq(repairQuotes.repairOrderId, repairOrderId));
+    return quote || undefined;
+  }
+
+  async updateQuoteStatus(repairOrderId: string, status: string): Promise<RepairQuote> {
+    const [updated] = await db.update(repairQuotes)
+      .set({ status: status as any, updatedAt: new Date() })
+      .where(eq(repairQuotes.repairOrderId, repairOrderId))
+      .returning();
+    return updated;
   }
 
   // Device Types
