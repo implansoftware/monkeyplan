@@ -5181,5 +5181,47 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // ============ DIAGNOSTIC FINDINGS ============
+
+  // Get diagnostic findings (filtered by device type)
+  app.get("/api/diagnostic-findings", requireAuth, async (req, res) => {
+    try {
+      const deviceTypeId = req.query.deviceTypeId as string | undefined;
+      const activeOnly = req.query.activeOnly !== 'false'; // Default true
+      const findings = await storage.listDiagnosticFindings(deviceTypeId, activeOnly);
+      res.json(findings);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // ============ DAMAGED COMPONENT TYPES ============
+
+  // Get damaged component types (filtered by device type)
+  app.get("/api/damaged-component-types", requireAuth, async (req, res) => {
+    try {
+      const deviceTypeId = req.query.deviceTypeId as string | undefined;
+      const activeOnly = req.query.activeOnly !== 'false'; // Default true
+      const components = await storage.listDamagedComponentTypes(deviceTypeId, activeOnly);
+      res.json(components);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // ============ ESTIMATED REPAIR TIMES ============
+
+  // Get estimated repair times (filtered by device type)
+  app.get("/api/estimated-repair-times", requireAuth, async (req, res) => {
+    try {
+      const deviceTypeId = req.query.deviceTypeId as string | undefined;
+      const activeOnly = req.query.activeOnly !== 'false'; // Default true
+      const times = await storage.listEstimatedRepairTimes(deviceTypeId, activeOnly);
+      res.json(times);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
   return httpServer;
 }

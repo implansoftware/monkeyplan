@@ -850,6 +850,24 @@ export const insertAccessoryTypeSchema = createInsertSchema(accessoryTypes).omit
   updatedAt: true,
 });
 
+export const insertDiagnosticFindingSchema = createInsertSchema(diagnosticFindings).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertDamagedComponentTypeSchema = createInsertSchema(damagedComponentTypes).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertEstimatedRepairTimeSchema = createInsertSchema(estimatedRepairTimes).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 export const insertDeviceModelSchema = createInsertSchema(deviceModels).omit({
   id: true,
   createdAt: true,
@@ -1042,6 +1060,15 @@ export type InsertAestheticDefect = z.infer<typeof insertAestheticDefectSchema>;
 
 export type AccessoryType = typeof accessoryTypes.$inferSelect;
 export type InsertAccessoryType = z.infer<typeof insertAccessoryTypeSchema>;
+
+export type DiagnosticFinding = typeof diagnosticFindings.$inferSelect;
+export type InsertDiagnosticFinding = z.infer<typeof insertDiagnosticFindingSchema>;
+
+export type DamagedComponentType = typeof damagedComponentTypes.$inferSelect;
+export type InsertDamagedComponentType = z.infer<typeof insertDamagedComponentTypeSchema>;
+
+export type EstimatedRepairTime = typeof estimatedRepairTimes.$inferSelect;
+export type InsertEstimatedRepairTime = z.infer<typeof insertEstimatedRepairTimeSchema>;
 
 export type DeviceModel = typeof deviceModels.$inferSelect;
 export type InsertDeviceModel = z.infer<typeof insertDeviceModelSchema>;

@@ -9,13 +9,15 @@ import {
   RepairQuote, InsertRepairQuote,
   DeviceType, InsertDeviceType, DeviceBrand, InsertDeviceBrand, DeviceModel, InsertDeviceModel,
   IssueType, InsertIssueType, AestheticDefect, InsertAestheticDefect, AccessoryType, InsertAccessoryType,
+  DiagnosticFinding, DamagedComponentType, EstimatedRepairTime,
   PartsOrder, InsertPartsOrder, RepairLog, InsertRepairLog,
   RepairTestChecklist, InsertRepairTestChecklist, RepairDelivery, InsertRepairDelivery,
   users, repairCenters, products, repairOrders, tickets, ticketMessages,
   invoices, billingData, chatMessages, inventoryMovements, inventoryStock, activityLogs, analyticsCache,
   notifications, notificationPreferences, repairAttachments, repairAcceptance, repairDiagnostics,
   repairQuotes, partsOrders, repairLogs, repairTestChecklist, repairDelivery,
-  deviceTypes, deviceBrands, deviceModels, issueTypes, aestheticDefects, accessoryTypes
+  deviceTypes, deviceBrands, deviceModels, issueTypes, aestheticDefects, accessoryTypes,
+  diagnosticFindings, damagedComponentTypes, estimatedRepairTimes
 } from "@shared/schema";
 import { db, pool } from "./db";
 import { eq, and, or, desc, lt, sql, not } from "drizzle-orm";
@@ -158,6 +160,15 @@ export interface IStorage {
   
   // Accessory Types (Predefined accessories per device type)
   listAccessoryTypes(deviceTypeId?: string, activeOnly?: boolean): Promise<AccessoryType[]>;
+  
+  // Diagnostic Findings (Predefined diagnostic results per device type)
+  listDiagnosticFindings(deviceTypeId?: string, activeOnly?: boolean): Promise<DiagnosticFinding[]>;
+  
+  // Damaged Component Types (Predefined damaged components per device type)
+  listDamagedComponentTypes(deviceTypeId?: string, activeOnly?: boolean): Promise<DamagedComponentType[]>;
+  
+  // Estimated Repair Times (Predefined repair time ranges)
+  listEstimatedRepairTimes(deviceTypeId?: string, activeOnly?: boolean): Promise<EstimatedRepairTime[]>;
   
   // Device Models (Cascading dropdown catalog)
   listDeviceModels(filters?: { typeId?: string; brandId?: string; activeOnly?: boolean }): Promise<DeviceModel[]>;
@@ -1397,6 +1408,78 @@ export class DatabaseStorage implements IStorage {
     }
     
     return await query.orderBy(accessoryTypes.sortOrder, accessoryTypes.name);
+  }
+
+  // Diagnostic Findings (Predefined diagnostic results per device type)
+  async listDiagnosticFindings(deviceTypeId?: string, activeOnly: boolean = true): Promise<DiagnosticFinding[]> {
+    let query = db.select().from(diagnosticFindings);
+    
+    const conditions = [];
+    
+    if (deviceTypeId) {
+      conditions.push(or(
+        eq(diagnosticFindings.deviceTypeId, deviceTypeId),
+        sql`${diagnosticFindings.deviceTypeId} IS NULL`
+      ));
+    }
+    
+    if (activeOnly) {
+      conditions.push(eq(diagnosticFindings.isActive, true));
+    }
+    
+    if (conditions.length > 0) {
+      query = query.where(and(...conditions)) as any;
+    }
+    
+    return await query.orderBy(diagnosticFindings.sortOrder, diagnosticFindings.name);
+  }
+
+  // Damaged Component Types (Predefined damaged components per device type)
+  async listDamagedComponentTypes(deviceTypeId?: string, activeOnly: boolean = true): Promise<DamagedComponentType[]> {
+    let query = db.select().from(damagedComponentTypes);
+    
+    const conditions = [];
+    
+    if (deviceTypeId) {
+      conditions.push(or(
+        eq(damagedComponentTypes.deviceTypeId, deviceTypeId),
+        sql`${damagedComponentTypes.deviceTypeId} IS NULL`
+      ));
+    }
+    
+    if (activeOnly) {
+      conditions.push(eq(damagedComponentTypes.isActive, true));
+    }
+    
+    if (conditions.length > 0) {
+      query = query.where(and(...conditions)) as any;
+    }
+    
+    return await query.orderBy(damagedComponentTypes.sortOrder, damagedComponentTypes.name);
+  }
+
+  // Estimated Repair Times (Predefined repair time ranges)
+  async listEstimatedRepairTimes(deviceTypeId?: string, activeOnly: boolean = true): Promise<EstimatedRepairTime[]> {
+    let query = db.select().from(estimatedRepairTimes);
+    
+    const conditions = [];
+    
+    if (deviceTypeId) {
+      conditions.push(or(
+        eq(estimatedRepairTimes.deviceTypeId, deviceTypeId),
+        sql`${estimatedRepairTimes.deviceTypeId} IS NULL`
+      ));
+    }
+    
+    if (activeOnly) {
+      conditions.push(eq(estimatedRepairTimes.isActive, true));
+    }
+    
+    if (conditions.length > 0) {
+      query = query.where(and(...conditions)) as any;
+    }
+    
+    return await query.orderBy(estimatedRepairTimes.sortOrder, estimatedRepairTimes.name);
   }
 
   // Device Models (Cascading dropdown)
