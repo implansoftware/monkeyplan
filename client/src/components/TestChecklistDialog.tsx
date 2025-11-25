@@ -164,6 +164,7 @@ export function TestChecklistDialog({
       queryClient.invalidateQueries({ queryKey: ["/api/repair-orders", repairOrderId, "test-checklist"] });
       queryClient.invalidateQueries({ queryKey: ["/api/repair-orders"] });
       onSuccess?.();
+      onOpenChange(false);
     },
     onError: (error: Error) => {
       toast({
