@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { z } from "zod";
 import { useToast } from "@/hooks/use-toast";
@@ -26,7 +26,15 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { FileText, Plus, Trash2 } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { FileText, Plus, Trash2, Package } from "lucide-react";
+import type { Product } from "@shared/schema";
 
 interface QuoteFormDialogProps {
   open: boolean;
@@ -36,6 +44,7 @@ interface QuoteFormDialogProps {
 }
 
 const partSchema = z.object({
+  productId: z.string().optional(),
   name: z.string().min(1, "Nome ricambio obbligatorio"),
   quantity: z.coerce.number().min(1, "La quantità deve essere almeno 1"),
   unitPrice: z.coerce.number().min(0, "Il prezzo deve essere positivo"),
@@ -59,6 +68,11 @@ export function QuoteFormDialog({
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [totalAmount, setTotalAmount] = useState(0);
+
+  const { data: products = [] } = useQuery<Product[]>({
+    queryKey: ["/api/products"],
+    enabled: open,
+  });
 
   const form = useForm<QuoteFormData>({
     resolver: zodResolver(quoteSchema),
@@ -161,21 +175,59 @@ export function QuoteFormDialog({
             <Card>
               <CardHeader className="flex flex-row items-center justify-between gap-2">
                 <CardTitle className="text-base">Elenco Ricambi</CardTitle>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => append({ name: "", quantity: 1, unitPrice: 0 })}
-                  data-testid="button-add-part"
-                >
-                  <Plus className="h-4 w-4 mr-1" />
-                  Aggiungi Ricambio
-                </Button>
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => append({ productId: "", name: "", quantity: 1, unitPrice: 0 })}
+                    data-testid="button-add-part"
+                  >
+                    <Plus className="h-4 w-4 mr-1" />
+                    Manuale
+                  </Button>
+                  <Select
+                    onValueChange={(productId) => {
+                      const product = products.find(p => p.id === productId);
+                      if (product) {
+                        append({
+                          productId: product.id,
+                          name: product.name,
+                          quantity: 1,
+                          unitPrice: (product.unitPrice || 0) / 100,
+                        });
+                      }
+                    }}
+                  >
+                    <SelectTrigger className="w-[180px]" data-testid="select-product-from-inventory">
+                      <Package className="h-4 w-4 mr-2" />
+                      <SelectValue placeholder="Da Magazzino" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {products.length === 0 ? (
+                        <div className="p-2 text-sm text-muted-foreground text-center">
+                          Nessun prodotto disponibile
+                        </div>
+                      ) : (
+                        products.filter(p => p.isActive).map((product) => (
+                          <SelectItem key={product.id} value={product.id}>
+                            <div className="flex flex-col">
+                              <span>{product.name}</span>
+                              <span className="text-xs text-muted-foreground">
+                                {product.sku} - {formatCurrency((product.unitPrice || 0) / 100)}
+                              </span>
+                            </div>
+                          </SelectItem>
+                        ))
+                      )}
+                    </SelectContent>
+                  </Select>
+                </div>
               </CardHeader>
               <CardContent className="space-y-4">
                 {fields.length === 0 ? (
                   <p className="text-sm text-muted-foreground text-center py-4">
-                    Nessun ricambio aggiunto. Clicca "Aggiungi Ricambio" per aggiungere pezzi di ricambio.
+                    Nessun ricambio aggiunto. Seleziona dal magazzino o aggiungi manualmente.
                   </p>
                 ) : (
                   fields.map((field, index) => (
@@ -186,12 +238,12 @@ export function QuoteFormDialog({
                       <FormField
                         control={form.control}
                         name={`parts.${index}.name`}
-                        render={({ field }) => (
+                        render={({ field: nameField }) => (
                           <FormItem className="flex-1">
                             {index === 0 && <FormLabel>Nome Ricambio</FormLabel>}
                             <FormControl>
                               <Input
-                                {...field}
+                                {...nameField}
                                 placeholder="es. Schermo LCD"
                                 data-testid={`input-part-name-${index}`}
                               />
@@ -203,12 +255,12 @@ export function QuoteFormDialog({
                       <FormField
                         control={form.control}
                         name={`parts.${index}.quantity`}
-                        render={({ field }) => (
+                        render={({ field: qtyField }) => (
                           <FormItem className="w-20">
                             {index === 0 && <FormLabel>Qtà</FormLabel>}
                             <FormControl>
                               <Input
-                                {...field}
+                                {...qtyField}
                                 type="number"
                                 min="1"
                                 data-testid={`input-part-qty-${index}`}
@@ -221,12 +273,12 @@ export function QuoteFormDialog({
                       <FormField
                         control={form.control}
                         name={`parts.${index}.unitPrice`}
-                        render={({ field }) => (
+                        render={({ field: priceField }) => (
                           <FormItem className="w-28">
                             {index === 0 && <FormLabel>Prezzo Unit.</FormLabel>}
                             <FormControl>
                               <Input
-                                {...field}
+                                {...priceField}
                                 type="number"
                                 min="0"
                                 step="0.01"
