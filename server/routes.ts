@@ -12,7 +12,7 @@ import {
   insertRepairOrderSchema, insertRepairAcceptanceSchema, insertTicketSchema, insertInvoiceSchema,
   updateRepairStatusSchema, updateTicketStatusSchema, createTicketMessageSchema,
   insertInventoryMovementSchema, insertBillingDataSchema, insertChatMessageSchema,
-  insertNotificationPreferencesSchema, insertRepairAttachmentSchema,
+  insertNotificationPreferencesSchema, insertRepairAttachmentSchema, insertRepairDiagnosticsSchema,
   customerWizardSchema,
   type Product
 } from "@shared/schema";
@@ -2636,8 +2636,8 @@ export function registerRoutes(app: Express): Server {
         return res.status(409).send("Diagnostics already exists for this repair order");
       }
       
-      // Validate request body
-      const diagnosticsData = {
+      // Validate request body with Zod
+      const validationResult = insertRepairDiagnosticsSchema.safeParse({
         repairOrderId: req.params.id,
         technicalDiagnosis: req.body.technicalDiagnosis,
         damagedComponents: req.body.damagedComponents || [],
@@ -2647,8 +2647,13 @@ export function registerRoutes(app: Express): Server {
         diagnosisNotes: req.body.diagnosisNotes,
         photos: req.body.photos || [],
         diagnosedBy: req.user.id,
-      };
+      });
       
+      if (!validationResult.success) {
+        return res.status(400).send(validationResult.error.message);
+      }
+      
+      const diagnosticsData = validationResult.data;
       const diagnostics = await storage.createRepairDiagnostics(diagnosticsData);
       
       // Calculate automatic priority based on diagnostic data
@@ -2658,7 +2663,7 @@ export function registerRoutes(app: Express): Server {
         requiresExternalParts: diagnosticsData.requiresExternalParts,
       });
       
-      // Update repair order status to 'in_diagnosi' and set calculated priority
+      // Update repair order status to 'in_diagnosi' (priority field doesn't exist yet - will be added in quote phase)
       await storage.updateRepairOrder(req.params.id, { 
         status: 'in_diagnosi' as any,
       });
@@ -2699,25 +2704,27 @@ export function registerRoutes(app: Express): Server {
         return res.status(404).send("Diagnostics not found");
       }
       
-      // Update diagnostics
-      const updates = {
-        technicalDiagnosis: req.body.technicalDiagnosis,
-        damagedComponents: req.body.damagedComponents,
-        severity: req.body.severity,
-        estimatedRepairTime: req.body.estimatedRepairTime,
-        requiresExternalParts: req.body.requiresExternalParts,
-        diagnosisNotes: req.body.diagnosisNotes,
-        photos: req.body.photos,
-      };
-      
-      // Remove undefined fields
-      Object.keys(updates).forEach(key => {
-        if (updates[key as keyof typeof updates] === undefined) {
-          delete updates[key as keyof typeof updates];
-        }
-      });
+      // Validate and prepare update data
+      const updates: any = {};
+      if (req.body.technicalDiagnosis !== undefined) updates.technicalDiagnosis = req.body.technicalDiagnosis;
+      if (req.body.damagedComponents !== undefined) updates.damagedComponents = req.body.damagedComponents;
+      if (req.body.severity !== undefined) updates.severity = req.body.severity;
+      if (req.body.estimatedRepairTime !== undefined) updates.estimatedRepairTime = req.body.estimatedRepairTime;
+      if (req.body.requiresExternalParts !== undefined) updates.requiresExternalParts = req.body.requiresExternalParts;
+      if (req.body.diagnosisNotes !== undefined) updates.diagnosisNotes = req.body.diagnosisNotes;
+      if (req.body.photos !== undefined) updates.photos = req.body.photos;
       
       const diagnostics = await storage.updateRepairDiagnostics(req.params.id, updates);
+      
+      // Recalculate priority if severity or other factors changed
+      if (updates.severity || updates.estimatedRepairTime !== undefined || updates.requiresExternalParts !== undefined) {
+        const calculatedPriority = calculateRepairPriority({
+          severity: diagnostics.severity as any,
+          estimatedRepairTime: diagnostics.estimatedRepairTime ?? undefined,
+          requiresExternalParts: diagnostics.requiresExternalParts,
+        });
+        // Priority will be applied in quote phase when priority field is added to repair_orders
+      }
       
       setActivityEntity(res, { type: 'repair_diagnostics', id: diagnostics.id });
       res.json(diagnostics);

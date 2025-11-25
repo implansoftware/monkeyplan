@@ -45,7 +45,7 @@ const diagnosisSchema = z.object({
   technicalDiagnosis: z.string().min(10, "Diagnosis must be at least 10 characters"),
   damagedComponents: z.string().optional(),
   severity: z.enum(["low", "medium", "high", "critical"]).default("medium"),
-  estimatedRepairTime: z.number().min(0).optional(),
+  estimatedRepairTime: z.coerce.number().min(0).optional(),
   requiresExternalParts: z.boolean().default(false),
   diagnosisNotes: z.string().optional(),
   photos: z.string().optional(),
@@ -231,12 +231,8 @@ export function DiagnosisFormDialog({
                           type="number"
                           min="0"
                           step="0.5"
-                          value={field.value || ""}
-                          onChange={(e) =>
-                            field.onChange(
-                              e.target.value ? parseFloat(e.target.value) : undefined
-                            )
-                          }
+                          value={field.value ?? ""}
+                          onChange={(e) => field.onChange(e.target.value)}
                           placeholder="e.g., 2.5"
                           data-testid="input-estimated-time"
                         />
