@@ -130,8 +130,8 @@ export function PartsOrderDialog({
         notes: data.notes || null,
       };
       return await apiRequest(
-        `/api/repair-orders/${repairOrderId}/parts`,
         "POST",
+        `/api/repair-orders/${repairOrderId}/parts`,
         payload
       );
     },
@@ -159,7 +159,7 @@ export function PartsOrderDialog({
 
   const updateStatusMutation = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: string }) => {
-      return await apiRequest(`/api/parts-orders/${id}/status`, "PATCH", { status });
+      return await apiRequest("PATCH", `/api/parts-orders/${id}/status`, { status });
     },
     onSuccess: () => {
       toast({ title: "Stato aggiornato" });
