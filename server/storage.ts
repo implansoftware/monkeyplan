@@ -8,10 +8,12 @@ import {
   RepairAcceptance, InsertRepairAcceptance, RepairDiagnostics, InsertRepairDiagnostics,
   RepairQuote, InsertRepairQuote,
   DeviceType, InsertDeviceType, DeviceBrand, InsertDeviceBrand, DeviceModel, InsertDeviceModel,
+  PartsOrder, InsertPartsOrder, RepairLog, InsertRepairLog,
+  RepairTestChecklist, InsertRepairTestChecklist, RepairDelivery, InsertRepairDelivery,
   users, repairCenters, products, repairOrders, tickets, ticketMessages,
   invoices, billingData, chatMessages, inventoryMovements, inventoryStock, activityLogs, analyticsCache,
   notifications, notificationPreferences, repairAttachments, repairAcceptance, repairDiagnostics,
-  repairQuotes,
+  repairQuotes, partsOrders, repairLogs, repairTestChecklist, repairDelivery,
   deviceTypes, deviceBrands, deviceModels
 } from "@shared/schema";
 import { db, pool } from "./db";
@@ -142,6 +144,25 @@ export interface IStorage {
   
   // Device Models (Cascading dropdown catalog)
   listDeviceModels(filters?: { typeId?: string; brandId?: string; activeOnly?: boolean }): Promise<DeviceModel[]>;
+  
+  // Parts Orders (FASE 5)
+  createPartsOrder(order: InsertPartsOrder): Promise<PartsOrder>;
+  listPartsOrders(repairOrderId: string): Promise<PartsOrder[]>;
+  getPartsOrder(id: string): Promise<PartsOrder | undefined>;
+  updatePartsOrderStatus(id: string, status: string, receivedAt?: Date): Promise<PartsOrder>;
+  
+  // Repair Logs (FASE 6)
+  createRepairLog(log: InsertRepairLog): Promise<RepairLog>;
+  listRepairLogs(repairOrderId: string): Promise<RepairLog[]>;
+  
+  // Test Checklist (FASE 7)
+  createTestChecklist(checklist: InsertRepairTestChecklist): Promise<RepairTestChecklist>;
+  getTestChecklist(repairOrderId: string): Promise<RepairTestChecklist | undefined>;
+  updateTestChecklist(repairOrderId: string, updates: Partial<Omit<InsertRepairTestChecklist, 'repairOrderId' | 'testedBy'>>): Promise<RepairTestChecklist>;
+  
+  // Delivery (FASE 7)
+  createDelivery(delivery: InsertRepairDelivery): Promise<RepairDelivery>;
+  getDelivery(repairOrderId: string): Promise<RepairDelivery | undefined>;
   
   sessionStore: session.Store;
 }
@@ -1106,6 +1127,83 @@ export class DatabaseStorage implements IStorage {
     }
     
     return await query.orderBy(deviceModels.modelName);
+  }
+
+  // Parts Orders (FASE 5)
+  async createPartsOrder(order: InsertPartsOrder): Promise<PartsOrder> {
+    const [created] = await db.insert(partsOrders).values(order).returning();
+    return created;
+  }
+
+  async listPartsOrders(repairOrderId: string): Promise<PartsOrder[]> {
+    return await db.select()
+      .from(partsOrders)
+      .where(eq(partsOrders.repairOrderId, repairOrderId))
+      .orderBy(desc(partsOrders.orderedAt));
+  }
+
+  async getPartsOrder(id: string): Promise<PartsOrder | undefined> {
+    const [order] = await db.select().from(partsOrders).where(eq(partsOrders.id, id));
+    return order || undefined;
+  }
+
+  async updatePartsOrderStatus(id: string, status: string, receivedAt?: Date): Promise<PartsOrder> {
+    const updates: any = { status };
+    if (receivedAt) {
+      updates.receivedAt = receivedAt;
+    }
+    const [updated] = await db.update(partsOrders)
+      .set(updates)
+      .where(eq(partsOrders.id, id))
+      .returning();
+    return updated;
+  }
+
+  // Repair Logs (FASE 6)
+  async createRepairLog(log: InsertRepairLog): Promise<RepairLog> {
+    const [created] = await db.insert(repairLogs).values(log).returning();
+    return created;
+  }
+
+  async listRepairLogs(repairOrderId: string): Promise<RepairLog[]> {
+    return await db.select()
+      .from(repairLogs)
+      .where(eq(repairLogs.repairOrderId, repairOrderId))
+      .orderBy(desc(repairLogs.createdAt));
+  }
+
+  // Test Checklist (FASE 7)
+  async createTestChecklist(checklist: InsertRepairTestChecklist): Promise<RepairTestChecklist> {
+    const [created] = await db.insert(repairTestChecklist).values(checklist).returning();
+    return created;
+  }
+
+  async getTestChecklist(repairOrderId: string): Promise<RepairTestChecklist | undefined> {
+    const [checklist] = await db.select()
+      .from(repairTestChecklist)
+      .where(eq(repairTestChecklist.repairOrderId, repairOrderId));
+    return checklist || undefined;
+  }
+
+  async updateTestChecklist(repairOrderId: string, updates: Partial<Omit<InsertRepairTestChecklist, 'repairOrderId' | 'testedBy'>>): Promise<RepairTestChecklist> {
+    const [updated] = await db.update(repairTestChecklist)
+      .set(updates)
+      .where(eq(repairTestChecklist.repairOrderId, repairOrderId))
+      .returning();
+    return updated;
+  }
+
+  // Delivery (FASE 7)
+  async createDelivery(delivery: InsertRepairDelivery): Promise<RepairDelivery> {
+    const [created] = await db.insert(repairDelivery).values(delivery).returning();
+    return created;
+  }
+
+  async getDelivery(repairOrderId: string): Promise<RepairDelivery | undefined> {
+    const [delivery] = await db.select()
+      .from(repairDelivery)
+      .where(eq(repairDelivery.repairOrderId, repairOrderId));
+    return delivery || undefined;
   }
 }
 

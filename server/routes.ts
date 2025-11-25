@@ -2997,6 +2997,442 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // ============ FASE 5: PARTS ORDERS ============
+
+  // GET /api/repair-orders/:id/parts - List parts orders
+  app.get("/api/repair-orders/:id/parts", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const repairOrder = await storage.getRepairOrder(req.params.id);
+      if (!repairOrder) {
+        return res.status(404).send("Repair order not found");
+      }
+      
+      // RBAC check
+      if (req.user.role === 'customer' && repairOrder.customerId !== req.user.id) {
+        return res.status(403).send("Access denied");
+      }
+      if (req.user.role === 'reseller' && repairOrder.resellerId !== req.user.id) {
+        return res.status(403).send("Access denied");
+      }
+      if (req.user.role === 'repair_center' && repairOrder.repairCenterId !== req.user.repairCenterId) {
+        return res.status(403).send("Access denied");
+      }
+      
+      const parts = await storage.listPartsOrders(req.params.id);
+      res.json(parts);
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+
+  // POST /api/repair-orders/:id/parts - Create parts order
+  app.post("/api/repair-orders/:id/parts", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      // Only admin and repair_center can order parts
+      if (req.user.role !== 'admin' && req.user.role !== 'repair_center') {
+        return res.status(403).send("Only admins and repair centers can order parts");
+      }
+      
+      const repairOrder = await storage.getRepairOrder(req.params.id);
+      if (!repairOrder) {
+        return res.status(404).send("Repair order not found");
+      }
+      
+      // Repair center access check
+      if (req.user.role === 'repair_center' && repairOrder.repairCenterId !== req.user.repairCenterId) {
+        return res.status(403).send("Access denied");
+      }
+      
+      const partsOrder = await storage.createPartsOrder({
+        repairOrderId: req.params.id,
+        partName: req.body.partName,
+        partNumber: req.body.partNumber,
+        quantity: req.body.quantity || 1,
+        unitCost: req.body.unitCost,
+        supplier: req.body.supplier,
+        expectedArrival: req.body.expectedArrival,
+        notes: req.body.notes,
+        orderedBy: req.user.id,
+      });
+      
+      // Transition status to attesa_ricambi if not already
+      if (repairOrder.status === 'preventivo_accettato') {
+        await storage.updateRepairOrder(req.params.id, {
+          status: 'attesa_ricambi' as any,
+        });
+      }
+      
+      res.status(201).json(partsOrder);
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+
+  // PATCH /api/parts-orders/:id/status - Update parts order status
+  app.patch("/api/parts-orders/:id/status", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      if (req.user.role !== 'admin' && req.user.role !== 'repair_center') {
+        return res.status(403).send("Only admins and repair centers can update parts status");
+      }
+      
+      const partsOrder = await storage.getPartsOrder(req.params.id);
+      if (!partsOrder) {
+        return res.status(404).send("Parts order not found");
+      }
+      
+      const receivedAt = req.body.status === 'received' ? new Date() : undefined;
+      const updated = await storage.updatePartsOrderStatus(req.params.id, req.body.status, receivedAt);
+      
+      // If all parts received, check if we can transition to in_riparazione
+      if (req.body.status === 'received') {
+        const repairOrder = await storage.getRepairOrder(partsOrder.repairOrderId);
+        if (repairOrder && repairOrder.status === 'attesa_ricambi') {
+          const allParts = await storage.listPartsOrders(partsOrder.repairOrderId);
+          const allReceived = allParts.every(p => p.status === 'received' || p.status === 'cancelled');
+          if (allReceived) {
+            await storage.updateRepairOrder(partsOrder.repairOrderId, {
+              status: 'in_riparazione' as any,
+            });
+          }
+        }
+      }
+      
+      res.json(updated);
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+
+  // ============ FASE 6: REPAIR LOGS ============
+
+  // GET /api/repair-orders/:id/logs - List repair logs
+  app.get("/api/repair-orders/:id/logs", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const repairOrder = await storage.getRepairOrder(req.params.id);
+      if (!repairOrder) {
+        return res.status(404).send("Repair order not found");
+      }
+      
+      // Only admin, repair_center can see logs
+      if (req.user.role !== 'admin' && req.user.role !== 'repair_center') {
+        return res.status(403).send("Access denied");
+      }
+      
+      if (req.user.role === 'repair_center' && repairOrder.repairCenterId !== req.user.repairCenterId) {
+        return res.status(403).send("Access denied");
+      }
+      
+      const logs = await storage.listRepairLogs(req.params.id);
+      res.json(logs);
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+
+  // POST /api/repair-orders/:id/logs - Create repair log
+  app.post("/api/repair-orders/:id/logs", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      if (req.user.role !== 'admin' && req.user.role !== 'repair_center') {
+        return res.status(403).send("Only admins and repair centers can add logs");
+      }
+      
+      const repairOrder = await storage.getRepairOrder(req.params.id);
+      if (!repairOrder) {
+        return res.status(404).send("Repair order not found");
+      }
+      
+      if (req.user.role === 'repair_center' && repairOrder.repairCenterId !== req.user.repairCenterId) {
+        return res.status(403).send("Access denied");
+      }
+      
+      const log = await storage.createRepairLog({
+        repairOrderId: req.params.id,
+        logType: req.body.logType,
+        description: req.body.description,
+        technicianId: req.user.id,
+        hoursWorked: req.body.hoursWorked,
+        partsUsed: req.body.partsUsed,
+        testResults: req.body.testResults,
+        photos: req.body.photos,
+      });
+      
+      res.status(201).json(log);
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+
+  // POST /api/repair-orders/:id/start-repair - Start repair (transition to in_riparazione)
+  app.post("/api/repair-orders/:id/start-repair", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      if (req.user.role !== 'admin' && req.user.role !== 'repair_center') {
+        return res.status(403).send("Only admins and repair centers can start repairs");
+      }
+      
+      const repairOrder = await storage.getRepairOrder(req.params.id);
+      if (!repairOrder) {
+        return res.status(404).send("Repair order not found");
+      }
+      
+      if (req.user.role === 'repair_center' && repairOrder.repairCenterId !== req.user.repairCenterId) {
+        return res.status(403).send("Access denied");
+      }
+      
+      // Can start repair from preventivo_accettato or attesa_ricambi
+      if (repairOrder.status !== 'preventivo_accettato' && repairOrder.status !== 'attesa_ricambi') {
+        return res.status(400).send("Cannot start repair from current status");
+      }
+      
+      await storage.updateRepairOrder(req.params.id, {
+        status: 'in_riparazione' as any,
+      });
+      
+      // Create log entry
+      await storage.createRepairLog({
+        repairOrderId: req.params.id,
+        logType: 'status_change' as any,
+        description: 'Repair started',
+        technicianId: req.user.id,
+      });
+      
+      res.json({ message: "Repair started" });
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+
+  // ============ FASE 7: TEST & DELIVERY ============
+
+  // GET /api/repair-orders/:id/test-checklist - Get test checklist
+  app.get("/api/repair-orders/:id/test-checklist", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const repairOrder = await storage.getRepairOrder(req.params.id);
+      if (!repairOrder) {
+        return res.status(404).send("Repair order not found");
+      }
+      
+      if (req.user.role !== 'admin' && req.user.role !== 'repair_center') {
+        return res.status(403).send("Access denied");
+      }
+      
+      if (req.user.role === 'repair_center' && repairOrder.repairCenterId !== req.user.repairCenterId) {
+        return res.status(403).send("Access denied");
+      }
+      
+      const checklist = await storage.getTestChecklist(req.params.id);
+      res.json(checklist || null);
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+
+  // POST /api/repair-orders/:id/test-checklist - Create/update test checklist
+  app.post("/api/repair-orders/:id/test-checklist", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      if (req.user.role !== 'admin' && req.user.role !== 'repair_center') {
+        return res.status(403).send("Only admins and repair centers can update test checklist");
+      }
+      
+      const repairOrder = await storage.getRepairOrder(req.params.id);
+      if (!repairOrder) {
+        return res.status(404).send("Repair order not found");
+      }
+      
+      if (req.user.role === 'repair_center' && repairOrder.repairCenterId !== req.user.repairCenterId) {
+        return res.status(403).send("Access denied");
+      }
+      
+      // Check if checklist exists
+      const existing = await storage.getTestChecklist(req.params.id);
+      
+      let checklist;
+      if (existing) {
+        checklist = await storage.updateTestChecklist(req.params.id, {
+          displayTest: req.body.displayTest,
+          touchTest: req.body.touchTest,
+          batteryTest: req.body.batteryTest,
+          audioTest: req.body.audioTest,
+          cameraTest: req.body.cameraTest,
+          connectivityTest: req.body.connectivityTest,
+          buttonsTest: req.body.buttonsTest,
+          sensorsTest: req.body.sensorsTest,
+          chargingTest: req.body.chargingTest,
+          softwareTest: req.body.softwareTest,
+          overallResult: req.body.overallResult,
+          notes: req.body.notes,
+        });
+      } else {
+        checklist = await storage.createTestChecklist({
+          repairOrderId: req.params.id,
+          displayTest: req.body.displayTest,
+          touchTest: req.body.touchTest,
+          batteryTest: req.body.batteryTest,
+          audioTest: req.body.audioTest,
+          cameraTest: req.body.cameraTest,
+          connectivityTest: req.body.connectivityTest,
+          buttonsTest: req.body.buttonsTest,
+          sensorsTest: req.body.sensorsTest,
+          chargingTest: req.body.chargingTest,
+          softwareTest: req.body.softwareTest,
+          overallResult: req.body.overallResult,
+          notes: req.body.notes,
+          testedBy: req.user.id,
+        });
+      }
+      
+      // Transition to in_test if coming from in_riparazione
+      if (repairOrder.status === 'in_riparazione') {
+        await storage.updateRepairOrder(req.params.id, {
+          status: 'in_test' as any,
+        });
+      }
+      
+      res.json(checklist);
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+
+  // POST /api/repair-orders/:id/ready-for-pickup - Mark as ready for pickup
+  app.post("/api/repair-orders/:id/ready-for-pickup", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      if (req.user.role !== 'admin' && req.user.role !== 'repair_center') {
+        return res.status(403).send("Only admins and repair centers can mark as ready");
+      }
+      
+      const repairOrder = await storage.getRepairOrder(req.params.id);
+      if (!repairOrder) {
+        return res.status(404).send("Repair order not found");
+      }
+      
+      if (req.user.role === 'repair_center' && repairOrder.repairCenterId !== req.user.repairCenterId) {
+        return res.status(403).send("Access denied");
+      }
+      
+      // Must have passed tests
+      const checklist = await storage.getTestChecklist(req.params.id);
+      if (!checklist || !checklist.overallResult) {
+        return res.status(400).send("Device must pass all tests before marking as ready");
+      }
+      
+      await storage.updateRepairOrder(req.params.id, {
+        status: 'pronto_ritiro' as any,
+      });
+      
+      // Create log
+      await storage.createRepairLog({
+        repairOrderId: req.params.id,
+        logType: 'status_change' as any,
+        description: 'Device ready for customer pickup',
+        technicianId: req.user.id,
+      });
+      
+      res.json({ message: "Device marked as ready for pickup" });
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+
+  // POST /api/repair-orders/:id/deliver - Complete delivery
+  app.post("/api/repair-orders/:id/deliver", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      if (req.user.role !== 'admin' && req.user.role !== 'repair_center') {
+        return res.status(403).send("Only admins and repair centers can complete delivery");
+      }
+      
+      const repairOrder = await storage.getRepairOrder(req.params.id);
+      if (!repairOrder) {
+        return res.status(404).send("Repair order not found");
+      }
+      
+      if (req.user.role === 'repair_center' && repairOrder.repairCenterId !== req.user.repairCenterId) {
+        return res.status(403).send("Access denied");
+      }
+      
+      // Must be ready for pickup
+      if (repairOrder.status !== 'pronto_ritiro') {
+        return res.status(400).send("Device must be ready for pickup before delivery");
+      }
+      
+      // Create delivery record
+      const delivery = await storage.createDelivery({
+        repairOrderId: req.params.id,
+        deliveredTo: req.body.deliveredTo,
+        deliveryMethod: req.body.deliveryMethod || 'in_store',
+        signatureData: req.body.signatureData,
+        idDocumentType: req.body.idDocumentType,
+        idDocumentNumber: req.body.idDocumentNumber,
+        notes: req.body.notes,
+        deliveredBy: req.user.id,
+      });
+      
+      // Update status to consegnato
+      await storage.updateRepairOrder(req.params.id, {
+        status: 'consegnato' as any,
+      });
+      
+      // Create log
+      await storage.createRepairLog({
+        repairOrderId: req.params.id,
+        logType: 'status_change' as any,
+        description: `Device delivered to ${req.body.deliveredTo}`,
+        technicianId: req.user.id,
+      });
+      
+      res.json(delivery);
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+
+  // GET /api/repair-orders/:id/delivery - Get delivery info
+  app.get("/api/repair-orders/:id/delivery", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const repairOrder = await storage.getRepairOrder(req.params.id);
+      if (!repairOrder) {
+        return res.status(404).send("Repair order not found");
+      }
+      
+      // RBAC
+      if (req.user.role === 'customer' && repairOrder.customerId !== req.user.id) {
+        return res.status(403).send("Access denied");
+      }
+      if (req.user.role === 'reseller' && repairOrder.resellerId !== req.user.id) {
+        return res.status(403).send("Access denied");
+      }
+      if (req.user.role === 'repair_center' && repairOrder.repairCenterId !== req.user.repairCenterId) {
+        return res.status(403).send("Access denied");
+      }
+      
+      const delivery = await storage.getDelivery(req.params.id);
+      res.json(delivery || null);
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+
   // ============ REPORTS & EXPORT ============
 
   app.get("/api/reports/repairs", requireAuth, async (req, res) => {
