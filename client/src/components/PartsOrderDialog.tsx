@@ -33,8 +33,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Package, Truck, CheckCircle, Clock, Search, Warehouse, PlusCircle } from "lucide-react";
+import { Package, Truck, CheckCircle, Clock, Search, Warehouse } from "lucide-react";
 import type { PartsOrder, Product } from "@shared/schema";
 
 interface PartsOrderDialogProps {
@@ -65,7 +64,6 @@ export function PartsOrderDialog({
 }: PartsOrderDialogProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [orderMode, setOrderMode] = useState<"catalog" | "manual">("catalog");
   const [searchTerm, setSearchTerm] = useState("");
 
   const { data: existingParts = [] } = useQuery<PartsOrder[]>({
@@ -274,117 +272,74 @@ export function PartsOrderDialog({
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Ordina Nuovo Ricambio</CardTitle>
+            <CardTitle className="text-base flex items-center gap-2">
+              <Warehouse className="h-4 w-4" />
+              Ordina Nuovo Ricambio
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <Tabs value={orderMode} onValueChange={(v) => setOrderMode(v as "catalog" | "manual")}>
-              <TabsList className="grid w-full grid-cols-2 mb-4">
-                <TabsTrigger value="catalog" className="flex items-center gap-2" data-testid="tab-catalog">
-                  <Warehouse className="h-4 w-4" />
-                  Da Catalogo
-                </TabsTrigger>
-                <TabsTrigger value="manual" className="flex items-center gap-2" data-testid="tab-manual">
-                  <PlusCircle className="h-4 w-4" />
-                  Inserimento Manuale
-                </TabsTrigger>
-              </TabsList>
+            <div className="space-y-4">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Cerca prodotto per nome o SKU..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-9"
+                  data-testid="input-search-product"
+                />
+              </div>
 
-              <TabsContent value="catalog">
-                <div className="space-y-4">
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      placeholder="Cerca prodotto per nome o SKU..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="pl-9"
-                      data-testid="input-search-product"
-                    />
-                  </div>
-
-                  {searchTerm && filteredProducts.length > 0 && (
-                    <div className="border rounded-lg max-h-48 overflow-y-auto">
-                      {filteredProducts.map((product) => (
-                        <div
-                          key={product.id}
-                          className="p-3 hover-elevate cursor-pointer border-b last:border-b-0"
-                          onClick={() => {
-                            selectProduct(product.id);
-                            setSearchTerm("");
-                          }}
-                          data-testid={`product-option-${product.id}`}
-                        >
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <div className="font-medium">{product.name}</div>
-                              <div className="text-sm text-muted-foreground">
-                                SKU: {product.sku} | {product.category}
-                              </div>
-                            </div>
-                            <div className="font-medium text-primary">
-                              {formatCurrency(product.unitPrice)}
-                            </div>
+              {searchTerm && filteredProducts.length > 0 && (
+                <div className="border rounded-lg max-h-48 overflow-y-auto">
+                  {filteredProducts.map((product) => (
+                    <div
+                      key={product.id}
+                      className="p-3 hover-elevate cursor-pointer border-b last:border-b-0"
+                      onClick={() => {
+                        selectProduct(product.id);
+                        setSearchTerm("");
+                      }}
+                      data-testid={`product-option-${product.id}`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <div className="font-medium">{product.name}</div>
+                          <div className="text-sm text-muted-foreground">
+                            SKU: {product.sku} | {product.category}
                           </div>
                         </div>
-                      ))}
-                    </div>
-                  )}
-
-                  {productsLoading && (
-                    <div className="text-center text-muted-foreground py-4">
-                      Caricamento prodotti...
-                    </div>
-                  )}
-
-                  {!productsLoading && searchTerm && filteredProducts.length === 0 && (
-                    <div className="text-center text-muted-foreground py-4">
-                      Nessun prodotto trovato. Prova con l'inserimento manuale.
-                    </div>
-                  )}
-
-                  {form.watch("productId") && (
-                    <div className="p-3 bg-muted rounded-lg">
-                      <div className="text-sm text-muted-foreground mb-1">Prodotto selezionato:</div>
-                      <div className="font-medium">{form.watch("partName")}</div>
-                      <div className="text-sm text-muted-foreground">
-                        SKU: {form.watch("partNumber")} | {formatCurrency((form.watch("unitCost") || 0) * 100)}
+                        <div className="font-medium text-primary">
+                          {formatCurrency(product.unitPrice)}
+                        </div>
                       </div>
                     </div>
-                  )}
+                  ))}
                 </div>
-              </TabsContent>
+              )}
 
-              <TabsContent value="manual">
-                <div className="grid grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="partName"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Nome Ricambio *</FormLabel>
-                        <FormControl>
-                          <Input {...field} placeholder="es. Display LCD" data-testid="input-part-name" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="partNumber"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Codice Ricambio</FormLabel>
-                        <FormControl>
-                          <Input {...field} placeholder="es. LCD-IP14-001" data-testid="input-part-number" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+              {productsLoading && (
+                <div className="text-center text-muted-foreground py-4">
+                  Caricamento prodotti...
                 </div>
-              </TabsContent>
-            </Tabs>
+              )}
+
+              {!productsLoading && searchTerm && filteredProducts.length === 0 && (
+                <div className="text-center text-muted-foreground py-4">
+                  Nessun prodotto trovato nel catalogo.
+                </div>
+              )}
+
+              {form.watch("productId") && (
+                <div className="p-3 bg-muted rounded-lg">
+                  <div className="text-sm text-muted-foreground mb-1">Prodotto selezionato:</div>
+                  <div className="font-medium">{form.watch("partName")}</div>
+                  <div className="text-sm text-muted-foreground">
+                    SKU: {form.watch("partNumber")} | {formatCurrency((form.watch("unitCost") || 0) * 100)}
+                  </div>
+                </div>
+              )}
+            </div>
 
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 mt-4">
