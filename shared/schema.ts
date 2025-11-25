@@ -26,6 +26,7 @@ export const repairStatusEnum = pgEnum("repair_status", [
 export const paymentStatusEnum = pgEnum("payment_status", ["pending", "paid", "overdue", "cancelled"]);
 export const movementTypeEnum = pgEnum("movement_type", ["in", "out", "adjustment"]);
 export const notificationTypeEnum = pgEnum("notification_type", ["repair_update", "sla_warning", "review_request", "message", "system"]);
+export const diagnosisSeverityEnum = pgEnum("diagnosis_severity", ["low", "medium", "high", "critical"]);
 
 // Users table with role-based access
 export const users = pgTable("users", {
@@ -174,6 +175,22 @@ export const repairAttachments = pgTable("repair_attachments", {
   fileSize: integer("file_size").notNull(), // Size in bytes
   uploadedBy: varchar("uploaded_by").notNull(),
   uploadedAt: timestamp("uploaded_at").notNull().defaultNow(),
+});
+
+// Repair Diagnostics (Technical diagnosis by repair center)
+export const repairDiagnostics = pgTable("repair_diagnostics", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  repairOrderId: varchar("repair_order_id").notNull().unique().references(() => repairOrders.id), // One diagnosis per repair
+  technicalDiagnosis: text("technical_diagnosis").notNull(), // Diagnosi tecnica dettagliata
+  damagedComponents: text("damaged_components").array(), // Componenti danneggiati
+  severity: diagnosisSeverityEnum("severity").notNull().default("medium"), // Gravità del danno
+  estimatedRepairTime: integer("estimated_repair_time"), // Tempo stimato in ore
+  requiresExternalParts: boolean("requires_external_parts").notNull().default(false), // Necessità ricambi esterni
+  diagnosisNotes: text("diagnosis_notes"), // Note aggiuntive del tecnico
+  photos: text("photos").array(), // Array di URL foto diagnostiche
+  diagnosedBy: varchar("diagnosed_by").notNull(), // ID tecnico che ha fatto la diagnosi
+  diagnosedAt: timestamp("diagnosed_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 
 // Support Tickets
@@ -339,6 +356,10 @@ export const repairOrdersRelations = relations(repairOrders, ({ one, many }) => 
     fields: [repairOrders.id],
     references: [repairAcceptance.repairOrderId],
   }),
+  diagnostics: one(repairDiagnostics, {
+    fields: [repairOrders.id],
+    references: [repairDiagnostics.repairOrderId],
+  }),
 }));
 
 export const repairAttachmentsRelations = relations(repairAttachments, ({ one }) => ({
@@ -356,6 +377,17 @@ export const repairAcceptanceRelations = relations(repairAcceptance, ({ one }) =
   repairOrder: one(repairOrders, {
     fields: [repairAcceptance.repairOrderId],
     references: [repairOrders.id],
+  }),
+}));
+
+export const repairDiagnosticsRelations = relations(repairDiagnostics, ({ one }) => ({
+  repairOrder: one(repairOrders, {
+    fields: [repairDiagnostics.repairOrderId],
+    references: [repairOrders.id],
+  }),
+  diagnosedByUser: one(users, {
+    fields: [repairDiagnostics.diagnosedBy],
+    references: [users.id],
   }),
 }));
 
@@ -537,6 +569,12 @@ export const insertRepairAcceptanceSchema = createInsertSchema(repairAcceptance)
   acceptedAt: true,
 });
 
+export const insertRepairDiagnosticsSchema = createInsertSchema(repairDiagnostics).omit({
+  id: true,
+  diagnosedAt: true,
+  updatedAt: true,
+});
+
 export const insertTicketSchema = createInsertSchema(tickets).omit({
   id: true,
   ticketNumber: true,
@@ -682,6 +720,9 @@ export type InsertDeviceModel = z.infer<typeof insertDeviceModelSchema>;
 
 export type RepairAcceptance = typeof repairAcceptance.$inferSelect;
 export type InsertRepairAcceptance = z.infer<typeof insertRepairAcceptanceSchema>;
+
+export type RepairDiagnostics = typeof repairDiagnostics.$inferSelect;
+export type InsertRepairDiagnostics = z.infer<typeof insertRepairDiagnosticsSchema>;
 
 export type Ticket = typeof tickets.$inferSelect;
 export type InsertTicket = z.infer<typeof insertTicketSchema>;
