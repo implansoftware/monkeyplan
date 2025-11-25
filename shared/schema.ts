@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, integer, timestamp, boolean, pgEnum } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, integer, real, timestamp, boolean, pgEnum } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
@@ -243,10 +243,10 @@ export const damagedComponentTypes = pgTable("damaged_component_types", {
 // Estimated Repair Times Lookup (Tempi stimati predefiniti)
 export const estimatedRepairTimes = pgTable("estimated_repair_times", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  name: text("name").notNull(), // es: "Rapido", "Standard", "Complesso"
-  description: text("description"), // es: "Riparazioni semplici"
-  hoursMin: integer("hours_min").notNull(), // 0.5, 1, 2, etc
-  hoursMax: integer("hours_max").notNull(),
+  name: text("name").notNull(), // es: "30 minuti", "1 ora", "2 ore"
+  description: text("description"), // es: "Intervento rapido"
+  hoursMin: real("hours_min").notNull(), // 0.5, 1, 1.5, 2, etc (ore con decimali)
+  hoursMax: real("hours_max").notNull(), // Ore precise per il calcolo manodopera
   deviceTypeId: varchar("device_type_id").references(() => deviceTypes.id), // null = tutti i tipi
   isActive: boolean("is_active").notNull().default(true),
   sortOrder: integer("sort_order").notNull().default(0),
@@ -305,7 +305,7 @@ export const repairDiagnostics = pgTable("repair_diagnostics", {
   technicalDiagnosis: text("technical_diagnosis").notNull(), // Diagnosi tecnica dettagliata
   damagedComponents: text("damaged_components").array(), // Componenti danneggiati
   severity: diagnosisSeverityEnum("severity").notNull().default("medium"), // Gravità del danno
-  estimatedRepairTime: integer("estimated_repair_time"), // Tempo stimato in ore
+  estimatedRepairTime: real("estimated_repair_time"), // Tempo stimato in ore (supporta decimali es. 0.5, 1.5)
   requiresExternalParts: boolean("requires_external_parts").notNull().default(false), // Necessità ricambi esterni
   diagnosisNotes: text("diagnosis_notes"), // Note aggiuntive del tecnico
   photos: text("photos").array(), // Array di URL foto diagnostiche
