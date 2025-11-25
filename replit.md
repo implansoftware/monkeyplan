@@ -175,6 +175,9 @@ Development uses Vite for HMR. Production builds use Vite for client assets and 
 - Fallback to text Input when no models available for selected type/brand combination
 - "Altro (inserimento manuale)" option in model dropdown for custom entries not in catalog
 - Clean state reset when type/brand selections change ensures consistent UX
+**Bug Fixes:**
+- Fixed missing `deviceModels` import in storage.ts causing 500 errors on GET /api/device-models
+- Created test repair order (ORD-1764030338-2) with acceptance data: iPhone 14 with IMEI 352099001234567
 
 **FASE 3: Diagnostics & Priority (⏳ PENDING)**
 - Diagnostics table and API
