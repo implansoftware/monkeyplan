@@ -80,9 +80,11 @@ export function PartsOrderDialog({
     enabled: open,
   });
 
-  const { data: products = [] } = useQuery<Product[]>({
+  const { data: products = [], isLoading: productsLoading } = useQuery<Product[]>({
     queryKey: ["/api/products"],
     enabled: open,
+    staleTime: 0,
+    refetchOnMount: "always",
   });
 
   const filteredProducts = products.filter(
@@ -328,7 +330,13 @@ export function PartsOrderDialog({
                     </div>
                   )}
 
-                  {searchTerm && filteredProducts.length === 0 && (
+                  {productsLoading && (
+                    <div className="text-center text-muted-foreground py-4">
+                      Caricamento prodotti...
+                    </div>
+                  )}
+
+                  {!productsLoading && searchTerm && filteredProducts.length === 0 && (
                     <div className="text-center text-muted-foreground py-4">
                       Nessun prodotto trovato. Prova con l'inserimento manuale.
                     </div>
