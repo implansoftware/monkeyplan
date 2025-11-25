@@ -271,6 +271,62 @@ export function registerRoutes(app: Express): Server {
 
   // ============ ADMIN ROUTES ============
   
+  // Admin Settings - Hourly Rate
+  app.get("/api/admin/settings/hourly-rate", requireRole("admin"), async (req, res) => {
+    try {
+      const setting = await storage.getAdminSetting("hourly_rate");
+      if (!setting) {
+        return res.json({ hourlyRateCents: 3500, description: "Tariffa oraria manodopera predefinita" });
+      }
+      res.json({
+        hourlyRateCents: parseInt(setting.settingValue),
+        description: setting.description,
+        updatedAt: setting.updatedAt,
+      });
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  app.patch("/api/admin/settings/hourly-rate", requireRole("admin"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const { hourlyRateCents, description } = req.body;
+      
+      if (typeof hourlyRateCents !== "number" || hourlyRateCents < 0) {
+        return res.status(400).send("La tariffa oraria deve essere un numero positivo");
+      }
+      
+      const setting = await storage.setAdminSetting(
+        "hourly_rate",
+        hourlyRateCents.toString(),
+        description ?? "Tariffa oraria manodopera in centesimi",
+        req.user.id
+      );
+      
+      res.json({
+        hourlyRateCents: parseInt(setting.settingValue),
+        description: setting.description,
+        updatedAt: setting.updatedAt,
+      });
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // Public endpoint to get hourly rate for quote calculation (authenticated users only)
+  app.get("/api/settings/hourly-rate", requireAuth, async (req, res) => {
+    try {
+      const setting = await storage.getAdminSetting("hourly_rate");
+      res.json({
+        hourlyRateCents: setting ? parseInt(setting.settingValue) : 3500,
+      });
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
   // Admin Stats
   app.get("/api/admin/stats", requireRole("admin"), async (req, res) => {
     try {
