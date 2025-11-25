@@ -28,6 +28,9 @@ The backend is an `Express.js` application with TypeScript, featuring a RESTful 
     *   **Database-Driven Catalogs**: Uses `device_types`, `device_brands`, and `device_models` tables to provide cascading dropdowns for device selection, improving data consistency.
     *   **Diagnostics & Priority**: Allows creation and update of repair diagnostics by admins/repair centers, automatically calculating repair priority based on severity, estimated time, and external parts requirement. Transitions status to 'in_diagnosi'.
     *   **Quote Management**: Enables creation, update, acceptance, and rejection of repair quotes with detailed parts and labor costs. Quotes automatically transition the repair order status and persist calculated priority.
+    *   **Parts Orders (FASE 5)**: Manages spare parts ordering with supplier tracking, order dates, expected arrival, and status lifecycle (ordered → in_transit → received). Auto-transitions repair status to 'attesa_ricambi' when parts are ordered and 'in_riparazione' when all parts are received.
+    *   **Repair Logs (FASE 6)**: Tracks technician activities during repair including work hours, parts installed, test results, and photos. Supports log types: status_change, technician_note, parts_installed, test_result, customer_contact. Includes endpoint to start repair process.
+    *   **Test & Delivery (FASE 7)**: Comprehensive device testing checklist (display, touch, battery, audio, camera, connectivity, buttons, sensors, charging, software) with pass/fail tracking. Delivery records capture recipient, method, signature, and ID verification. Complete workflow from 'in_riparazione' → 'in_test' → 'pronto_ritiro' → 'consegnato'.
 
 ## External Dependencies
 
