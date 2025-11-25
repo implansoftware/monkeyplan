@@ -33,8 +33,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { FileText, Plus, Trash2, Package } from "lucide-react";
-import type { Product } from "@shared/schema";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { FileText, Plus, Trash2, Package, Calculator, Info } from "lucide-react";
+import type { Product, RepairDiagnostics } from "@shared/schema";
+
+interface HourlyRateResponse {
+  hourlyRateCents: number;
+}
 
 interface QuoteFormDialogProps {
   open: boolean;
@@ -68,11 +73,50 @@ export function QuoteFormDialog({
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [totalAmount, setTotalAmount] = useState(0);
+  const [laborCalculation, setLaborCalculation] = useState<{
+    hourlyRate: number;
+    estimatedHours: number;
+    calculatedCost: number;
+  } | null>(null);
 
   const { data: products = [] } = useQuery<Product[]>({
     queryKey: ["/api/products"],
     enabled: open,
   });
+
+  const { 
+    data: diagnosis, 
+    isError: isDiagnosisError,
+    error: diagnosisError 
+  } = useQuery<RepairDiagnostics>({
+    queryKey: ["/api/repair-orders", repairOrderId, "diagnostics"],
+    enabled: open && !!repairOrderId,
+    retry: false,
+  });
+
+  const { 
+    data: hourlyRateData, 
+    isError: isHourlyRateError,
+    error: hourlyRateError
+  } = useQuery<HourlyRateResponse>({
+    queryKey: ["/api/settings/hourly-rate"],
+    enabled: open,
+    retry: false,
+  });
+
+  const getErrorStatus = (error: any): number | null => {
+    if (!error?.message) return null;
+    const match = error.message.match(/^(\d+):/);
+    return match ? parseInt(match[1]) : null;
+  };
+
+  const diagnosisErrorStatus = isDiagnosisError ? getErrorStatus(diagnosisError) : null;
+  const diagnosisNotFound = diagnosisErrorStatus === 404;
+  const diagnosisFetchError = isDiagnosisError && !diagnosisNotFound;
+
+  const hourlyRateErrorStatus = isHourlyRateError ? getErrorStatus(hourlyRateError) : null;
+  const hourlyRatePermissionError = hourlyRateErrorStatus === 401 || hourlyRateErrorStatus === 403;
+  const hourlyRateFetchError = isHourlyRateError && !hourlyRatePermissionError;
 
   const form = useForm<QuoteFormData>({
     resolver: zodResolver(quoteSchema),
@@ -101,6 +145,30 @@ export function QuoteFormDialog({
     const labor = Number(watchLaborCost) || 0;
     setTotalAmount(partsTotal + labor);
   }, [watchParts, watchLaborCost]);
+
+  useEffect(() => {
+    if (open && diagnosis && hourlyRateData && diagnosis.estimatedRepairTime) {
+      const hourlyRate = hourlyRateData.hourlyRateCents / 100;
+      const estimatedHours = diagnosis.estimatedRepairTime;
+      const calculatedCost = hourlyRate * estimatedHours;
+      
+      setLaborCalculation({
+        hourlyRate,
+        estimatedHours,
+        calculatedCost,
+      });
+      
+      form.setValue("laborCost", calculatedCost);
+    } else if (open) {
+      setLaborCalculation(null);
+    }
+  }, [open, diagnosis, hourlyRateData, form]);
+
+  useEffect(() => {
+    if (!open) {
+      setLaborCalculation(null);
+    }
+  }, [open]);
 
   const createQuoteMutation = useMutation({
     mutationFn: async (data: QuoteFormData) => {
@@ -309,9 +377,85 @@ export function QuoteFormDialog({
 
             <Card>
               <CardHeader>
-                <CardTitle className="text-base">Manodopera e Totali</CardTitle>
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Calculator className="h-4 w-4" />
+                  Manodopera e Totali
+                </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
+                {laborCalculation && (
+                  <Alert className="bg-muted">
+                    <Info className="h-4 w-4" />
+                    <AlertDescription>
+                      <span className="font-medium">Calcolo Automatico:</span>{" "}
+                      {formatCurrency(laborCalculation.hourlyRate)}/ora &times; {laborCalculation.estimatedHours} ore = {formatCurrency(laborCalculation.calculatedCost)}
+                      <br />
+                      <span className="text-xs text-muted-foreground">
+                        Basato sulla diagnosi e tariffa oraria configurata. Puoi modificare il valore se necessario.
+                      </span>
+                    </AlertDescription>
+                  </Alert>
+                )}
+
+                {diagnosisNotFound && (
+                  <Alert variant="default" className="bg-muted/50">
+                    <Info className="h-4 w-4" />
+                    <AlertDescription>
+                      <span className="text-sm font-medium">
+                        Diagnosi non ancora presente per questa lavorazione. 
+                      </span>
+                      <br />
+                      <span className="text-xs text-muted-foreground">
+                        Inserisci il costo manodopera manualmente o completa prima la diagnosi.
+                      </span>
+                    </AlertDescription>
+                  </Alert>
+                )}
+
+                {diagnosisFetchError && (
+                  <Alert variant="destructive" className="bg-destructive/10">
+                    <Info className="h-4 w-4" />
+                    <AlertDescription>
+                      <span className="text-sm">
+                        Errore nel recupero della diagnosi. Inserisci il costo manodopera manualmente.
+                      </span>
+                    </AlertDescription>
+                  </Alert>
+                )}
+
+                {hourlyRatePermissionError && (
+                  <Alert variant="default" className="bg-muted/50">
+                    <Info className="h-4 w-4" />
+                    <AlertDescription>
+                      <span className="text-sm">
+                        Tariffa oraria non accessibile. Inserisci il costo manodopera manualmente.
+                      </span>
+                    </AlertDescription>
+                  </Alert>
+                )}
+
+                {hourlyRateFetchError && (
+                  <Alert variant="destructive" className="bg-destructive/10">
+                    <Info className="h-4 w-4" />
+                    <AlertDescription>
+                      <span className="text-sm">
+                        Errore nel recupero della tariffa oraria. Inserisci il costo manodopera manualmente.
+                      </span>
+                    </AlertDescription>
+                  </Alert>
+                )}
+
+                {!laborCalculation && !isDiagnosisError && !isHourlyRateError && diagnosis && !diagnosis.estimatedRepairTime && (
+                  <Alert variant="default" className="bg-muted/50">
+                    <Info className="h-4 w-4" />
+                    <AlertDescription>
+                      <span className="text-sm">
+                        Nessun tempo di riparazione stimato nella diagnosi. Inserisci il costo manodopera manualmente.
+                      </span>
+                    </AlertDescription>
+                  </Alert>
+                )}
+
                 <FormField
                   control={form.control}
                   name="laborCost"
@@ -329,7 +473,10 @@ export function QuoteFormDialog({
                         />
                       </FormControl>
                       <FormDescription>
-                        Costo totale della manodopera per la riparazione
+                        {laborCalculation 
+                          ? "Pre-calcolato automaticamente. Puoi modificarlo se necessario."
+                          : "Costo totale della manodopera per la riparazione"
+                        }
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
