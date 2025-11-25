@@ -7,9 +7,6 @@ import Uppy from "@uppy/core";
 import Dashboard from "@uppy/react/dashboard";
 import XHRUpload from "@uppy/xhr-upload";
 
-import "@uppy/core/dist/style.min.css";
-import "@uppy/dashboard/dist/style.min.css";
-
 interface DiagnosisPhotoUploaderProps {
   repairOrderId: string;
   photos: string[];
