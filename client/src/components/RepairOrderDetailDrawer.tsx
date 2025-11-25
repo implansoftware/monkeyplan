@@ -1,4 +1,6 @@
-import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
 import {
   Sheet,
   SheetContent,
@@ -7,10 +9,20 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AttachmentUploader } from "@/components/AttachmentUploader";
-import { Wrench, Euro, FileText, Paperclip, Calendar } from "lucide-react";
+import { PartsOrderDialog } from "@/components/PartsOrderDialog";
+import { RepairLogDialog } from "@/components/RepairLogDialog";
+import { TestChecklistDialog } from "@/components/TestChecklistDialog";
+import { DeliveryDialog } from "@/components/DeliveryDialog";
+import { useToast } from "@/hooks/use-toast";
+import {
+  Wrench, Euro, FileText, Paperclip, Calendar, Package, ClipboardList,
+  ClipboardCheck, PackageCheck, Play, CheckCircle
+} from "lucide-react";
 import { format } from "date-fns";
 import { useAuth } from "@/hooks/use-auth";
 
@@ -43,6 +55,14 @@ export function RepairOrderDetailDrawer({
   onClose,
 }: RepairOrderDetailDrawerProps) {
   const { user } = useAuth();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  
+  const [partsDialogOpen, setPartsDialogOpen] = useState(false);
+  const [logsDialogOpen, setLogsDialogOpen] = useState(false);
+  const [testDialogOpen, setTestDialogOpen] = useState(false);
+  const [deliveryDialogOpen, setDeliveryDialogOpen] = useState(false);
+
   const { data: repair, isLoading, error } = useQuery<RepairOrder>({
     queryKey: ["/api/repair-orders", repairOrderId],
     queryFn: async ({ queryKey }) => {
@@ -73,6 +93,38 @@ export function RepairOrderDetailDrawer({
     user.role === 'admin' ||
     (user.role === 'repair_center' && repair.repairCenterId === user.repairCenterId)
   ) : false;
+
+  const canManageWorkflow = user ? (
+    user.role === 'admin' || user.role === 'repair_center'
+  ) : false;
+
+  const startRepairMutation = useMutation({
+    mutationFn: async () => {
+      return await apiRequest(`/api/repair-orders/${repairOrderId}/start-repair`, "POST");
+    },
+    onSuccess: () => {
+      toast({ title: "Riparazione avviata" });
+      queryClient.invalidateQueries({ queryKey: ["/api/repair-orders"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/repair-orders", repairOrderId] });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Errore", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const readyForPickupMutation = useMutation({
+    mutationFn: async () => {
+      return await apiRequest(`/api/repair-orders/${repairOrderId}/ready-for-pickup`, "POST");
+    },
+    onSuccess: () => {
+      toast({ title: "Dispositivo pronto per il ritiro" });
+      queryClient.invalidateQueries({ queryKey: ["/api/repair-orders"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/repair-orders", repairOrderId] });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Errore", description: error.message, variant: "destructive" });
+    },
+  });
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -224,6 +276,151 @@ export function RepairOrderDetailDrawer({
                 canDelete={canDelete}
               />
             </div>
+
+            {/* Workflow Actions */}
+            {canManageWorkflow && (
+              <>
+                <Separator />
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-base flex items-center gap-2">
+                      <Wrench className="h-4 w-4" />
+                      Azioni Workflow
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="grid grid-cols-2 gap-2">
+                    {/* Parts Order - available when quote is accepted or waiting for parts */}
+                    {['preventivo_accettato', 'attesa_ricambi'].includes(repair.status) && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setPartsDialogOpen(true)}
+                        className="gap-1"
+                        data-testid="button-parts-order"
+                      >
+                        <Package className="h-4 w-4" />
+                        Ordina Ricambi
+                      </Button>
+                    )}
+
+                    {/* Start Repair - available when quote is accepted or parts received */}
+                    {['preventivo_accettato', 'attesa_ricambi'].includes(repair.status) && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => startRepairMutation.mutate()}
+                        disabled={startRepairMutation.isPending}
+                        className="gap-1"
+                        data-testid="button-start-repair"
+                      >
+                        <Play className="h-4 w-4" />
+                        Avvia Riparazione
+                      </Button>
+                    )}
+
+                    {/* Repair Logs - available during repair */}
+                    {['in_riparazione', 'in_test'].includes(repair.status) && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setLogsDialogOpen(true)}
+                        className="gap-1"
+                        data-testid="button-repair-logs"
+                      >
+                        <ClipboardList className="h-4 w-4" />
+                        Log Attività
+                      </Button>
+                    )}
+
+                    {/* Test Checklist - available during repair or test */}
+                    {['in_riparazione', 'in_test'].includes(repair.status) && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setTestDialogOpen(true)}
+                        className="gap-1"
+                        data-testid="button-test-checklist"
+                      >
+                        <ClipboardCheck className="h-4 w-4" />
+                        Collaudo
+                      </Button>
+                    )}
+
+                    {/* Ready for Pickup - available after tests */}
+                    {repair.status === 'in_test' && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => readyForPickupMutation.mutate()}
+                        disabled={readyForPickupMutation.isPending}
+                        className="gap-1"
+                        data-testid="button-ready-pickup"
+                      >
+                        <CheckCircle className="h-4 w-4" />
+                        Pronto Ritiro
+                      </Button>
+                    )}
+
+                    {/* Complete Delivery - available when ready for pickup */}
+                    {repair.status === 'pronto_ritiro' && (
+                      <Button
+                        variant="default"
+                        size="sm"
+                        onClick={() => setDeliveryDialogOpen(true)}
+                        className="gap-1"
+                        data-testid="button-delivery"
+                      >
+                        <PackageCheck className="h-4 w-4" />
+                        Consegna
+                      </Button>
+                    )}
+
+                    {/* View Delivery - available when delivered */}
+                    {repair.status === 'consegnato' && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setDeliveryDialogOpen(true)}
+                        className="gap-1"
+                        data-testid="button-view-delivery"
+                      >
+                        <PackageCheck className="h-4 w-4" />
+                        Dettagli Consegna
+                      </Button>
+                    )}
+                  </CardContent>
+                </Card>
+              </>
+            )}
+
+            {/* Dialogs */}
+            {repairOrderId && (
+              <>
+                <PartsOrderDialog
+                  open={partsDialogOpen}
+                  onOpenChange={setPartsDialogOpen}
+                  repairOrderId={repairOrderId}
+                  onSuccess={() => queryClient.invalidateQueries({ queryKey: ["/api/repair-orders", repairOrderId] })}
+                />
+                <RepairLogDialog
+                  open={logsDialogOpen}
+                  onOpenChange={setLogsDialogOpen}
+                  repairOrderId={repairOrderId}
+                />
+                <TestChecklistDialog
+                  open={testDialogOpen}
+                  onOpenChange={setTestDialogOpen}
+                  repairOrderId={repairOrderId}
+                  onSuccess={() => queryClient.invalidateQueries({ queryKey: ["/api/repair-orders", repairOrderId] })}
+                />
+                <DeliveryDialog
+                  open={deliveryDialogOpen}
+                  onOpenChange={setDeliveryDialogOpen}
+                  repairOrderId={repairOrderId}
+                  onSuccess={() => queryClient.invalidateQueries({ queryKey: ["/api/repair-orders", repairOrderId] })}
+                />
+              </>
+            )}
           </div>
         ) : error ? (
           <div className="mt-6 text-center text-destructive" data-testid="error-repair-load">
