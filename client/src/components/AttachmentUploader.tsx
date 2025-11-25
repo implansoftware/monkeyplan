@@ -91,8 +91,11 @@ export function AttachmentUploader({
   // Cleanup Uppy instance on unmount
   useEffect(() => {
     return () => {
-      // @ts-ignore - close() exists but types are incomplete
-      uppy.close();
+      try {
+        uppy.cancelAll();
+      } catch (e) {
+        // Ignore cleanup errors
+      }
     };
   }, [uppy]);
 

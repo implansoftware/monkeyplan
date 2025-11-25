@@ -64,8 +64,11 @@ export function DiagnosisPhotoUploader({
   // Cleanup Uppy on unmount
   useEffect(() => {
     return () => {
-      // @ts-ignore
-      uppy.close();
+      try {
+        uppy.cancelAll();
+      } catch (e) {
+        // Ignore cleanup errors
+      }
     };
   }, [uppy]);
 
