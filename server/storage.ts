@@ -121,12 +121,14 @@ export interface IStorage {
   createRepairDiagnostics(diagnostics: InsertRepairDiagnostics): Promise<RepairDiagnostics>;
   updateRepairDiagnostics(repairOrderId: string, updates: Partial<Omit<InsertRepairDiagnostics, 'repairOrderId' | 'diagnosedBy'>>): Promise<RepairDiagnostics>;
   getRepairDiagnostics(repairOrderId: string): Promise<RepairDiagnostics | undefined>;
+  listAllDiagnostics(filters?: { userId?: string; role?: string }): Promise<any[]>;
   
   // Repair Quotes
   createRepairQuote(quote: InsertRepairQuote): Promise<RepairQuote>;
   updateRepairQuote(repairOrderId: string, updates: Partial<Omit<InsertRepairQuote, 'repairOrderId' | 'quoteNumber' | 'createdBy'>>): Promise<RepairQuote>;
   getRepairQuote(repairOrderId: string): Promise<RepairQuote | undefined>;
   updateQuoteStatus(repairOrderId: string, status: string): Promise<RepairQuote>;
+  listAllQuotes(filters?: { userId?: string; role?: string }): Promise<any[]>;
   
   // Device Types (Admin-managed categories)
   listDeviceTypes(activeOnly?: boolean): Promise<DeviceType[]>;
@@ -1024,6 +1026,92 @@ export class DatabaseStorage implements IStorage {
       .where(eq(repairQuotes.repairOrderId, repairOrderId))
       .returning();
     return updated;
+  }
+
+  async listAllDiagnostics(filters?: { userId?: string; role?: string }): Promise<any[]> {
+    // Join diagnostics with repair orders to get device info and filter by role
+    const results = await db
+      .select({
+        id: repairDiagnostics.id,
+        repairOrderId: repairDiagnostics.repairOrderId,
+        technicalDiagnosis: repairDiagnostics.technicalDiagnosis,
+        damagedComponents: repairDiagnostics.damagedComponents,
+        severity: repairDiagnostics.severity,
+        estimatedRepairTime: repairDiagnostics.estimatedRepairTime,
+        requiresExternalParts: repairDiagnostics.requiresExternalParts,
+        diagnosisNotes: repairDiagnostics.diagnosisNotes,
+        diagnosedBy: repairDiagnostics.diagnosedBy,
+        diagnosedAt: repairDiagnostics.diagnosedAt,
+        orderNumber: repairOrders.orderNumber,
+        deviceType: repairOrders.deviceType,
+        deviceModel: repairOrders.deviceModel,
+        status: repairOrders.status,
+        customerId: repairOrders.customerId,
+        repairCenterId: repairOrders.repairCenterId,
+      })
+      .from(repairDiagnostics)
+      .innerJoin(repairOrders, eq(repairDiagnostics.repairOrderId, repairOrders.id))
+      .orderBy(sql`${repairDiagnostics.diagnosedAt} DESC`);
+
+    // Filter based on role
+    if (filters?.role === 'admin') {
+      return results;
+    } else if (filters?.role === 'repair_center' && filters?.userId) {
+      return results.filter(d => d.repairCenterId === filters.userId);
+    } else if (filters?.role === 'reseller' && filters?.userId) {
+      // Resellers see diagnostics for their customers' orders
+      const resellerOrders = await db.select({ id: repairOrders.id })
+        .from(repairOrders)
+        .where(eq(repairOrders.resellerId, filters.userId));
+      const orderIds = resellerOrders.map(o => o.id);
+      return results.filter(d => orderIds.includes(d.repairOrderId));
+    } else if (filters?.role === 'customer' && filters?.userId) {
+      return results.filter(d => d.customerId === filters.userId);
+    }
+    return results;
+  }
+
+  async listAllQuotes(filters?: { userId?: string; role?: string }): Promise<any[]> {
+    // Join quotes with repair orders to get device info and filter by role
+    const results = await db
+      .select({
+        id: repairQuotes.id,
+        repairOrderId: repairQuotes.repairOrderId,
+        quoteNumber: repairQuotes.quoteNumber,
+        parts: repairQuotes.parts,
+        laborCost: repairQuotes.laborCost,
+        totalAmount: repairQuotes.totalAmount,
+        quoteStatus: repairQuotes.status,
+        validUntil: repairQuotes.validUntil,
+        notes: repairQuotes.notes,
+        createdBy: repairQuotes.createdBy,
+        createdAt: repairQuotes.createdAt,
+        orderNumber: repairOrders.orderNumber,
+        deviceType: repairOrders.deviceType,
+        deviceModel: repairOrders.deviceModel,
+        orderStatus: repairOrders.status,
+        customerId: repairOrders.customerId,
+        repairCenterId: repairOrders.repairCenterId,
+      })
+      .from(repairQuotes)
+      .innerJoin(repairOrders, eq(repairQuotes.repairOrderId, repairOrders.id))
+      .orderBy(sql`${repairQuotes.createdAt} DESC`);
+
+    // Filter based on role
+    if (filters?.role === 'admin') {
+      return results;
+    } else if (filters?.role === 'repair_center' && filters?.userId) {
+      return results.filter(q => q.repairCenterId === filters.userId);
+    } else if (filters?.role === 'reseller' && filters?.userId) {
+      const resellerOrders = await db.select({ id: repairOrders.id })
+        .from(repairOrders)
+        .where(eq(repairOrders.resellerId, filters.userId));
+      const orderIds = resellerOrders.map(o => o.id);
+      return results.filter(q => orderIds.includes(q.repairOrderId));
+    } else if (filters?.role === 'customer' && filters?.userId) {
+      return results.filter(q => q.customerId === filters.userId);
+    }
+    return results;
   }
 
   // Device Types

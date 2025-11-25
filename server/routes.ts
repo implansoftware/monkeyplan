@@ -2575,6 +2575,22 @@ export function registerRoutes(app: Express): Server {
 
   // ============ DIAGNOSTICS ============
 
+  // List all diagnostics (with role-based filtering)
+  app.get("/api/diagnostics", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const diagnostics = await storage.listAllDiagnostics({
+        userId: req.user.role === 'repair_center' ? req.user.repairCenterId : req.user.id,
+        role: req.user.role,
+      });
+      
+      res.json(diagnostics);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
   // Get diagnostics for repair order
   app.get("/api/repair-orders/:id/diagnostics", requireAuth, async (req, res) => {
     try {
@@ -2737,6 +2753,22 @@ export function registerRoutes(app: Express): Server {
   });
 
   // ============ REPAIR QUOTES ENDPOINTS ============
+
+  // List all quotes (with role-based filtering)
+  app.get("/api/quotes", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const quotes = await storage.listAllQuotes({
+        userId: req.user.role === 'repair_center' ? req.user.repairCenterId : req.user.id,
+        role: req.user.role,
+      });
+      
+      res.json(quotes);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
 
   // GET /api/repair-orders/:id/quote - Get quote for a repair order
   app.get("/api/repair-orders/:id/quote", requireAuth, async (req, res) => {
