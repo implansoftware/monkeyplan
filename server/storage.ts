@@ -126,14 +126,14 @@ export interface IStorage {
   createRepairDiagnostics(diagnostics: InsertRepairDiagnostics): Promise<RepairDiagnostics>;
   updateRepairDiagnostics(repairOrderId: string, updates: Partial<Omit<InsertRepairDiagnostics, 'repairOrderId' | 'diagnosedBy'>>): Promise<RepairDiagnostics>;
   getRepairDiagnostics(repairOrderId: string): Promise<RepairDiagnostics | undefined>;
-  listAllDiagnostics(filters?: { userId?: string; role?: string }): Promise<any[]>;
+  listAllDiagnostics(filters?: { userId?: string; role?: string; severity?: string; search?: string; dateFrom?: string; dateTo?: string }): Promise<any[]>;
   
   // Repair Quotes
   createRepairQuote(quote: InsertRepairQuote): Promise<RepairQuote>;
   updateRepairQuote(repairOrderId: string, updates: Partial<Omit<InsertRepairQuote, 'repairOrderId' | 'quoteNumber' | 'createdBy'>>): Promise<RepairQuote>;
   getRepairQuote(repairOrderId: string): Promise<RepairQuote | undefined>;
   updateQuoteStatus(repairOrderId: string, status: string): Promise<RepairQuote>;
-  listAllQuotes(filters?: { userId?: string; role?: string }): Promise<any[]>;
+  listAllQuotes(filters?: { userId?: string; role?: string; status?: string; search?: string; dateFrom?: string; dateTo?: string }): Promise<any[]>;
   
   // Device Types (Admin-managed categories)
   listDeviceTypes(activeOnly?: boolean): Promise<DeviceType[]>;
@@ -1099,7 +1099,7 @@ export class DatabaseStorage implements IStorage {
     return updated;
   }
 
-  async listAllDiagnostics(filters?: { userId?: string; role?: string }): Promise<any[]> {
+  async listAllDiagnostics(filters?: { userId?: string; role?: string; severity?: string; search?: string; dateFrom?: string; dateTo?: string }): Promise<any[]> {
     // Join diagnostics with repair orders to get device info and filter by role
     const results = await db
       .select({
@@ -1124,25 +1124,51 @@ export class DatabaseStorage implements IStorage {
       .innerJoin(repairOrders, eq(repairDiagnostics.repairOrderId, repairOrders.id))
       .orderBy(sql`${repairDiagnostics.diagnosedAt} DESC`);
 
+    let filtered = results;
+
     // Filter based on role
-    if (filters?.role === 'admin') {
-      return results;
-    } else if (filters?.role === 'repair_center' && filters?.userId) {
-      return results.filter(d => d.repairCenterId === filters.userId);
+    if (filters?.role === 'repair_center' && filters?.userId) {
+      filtered = filtered.filter(d => d.repairCenterId === filters.userId);
     } else if (filters?.role === 'reseller' && filters?.userId) {
-      // Resellers see diagnostics for their customers' orders
       const resellerOrders = await db.select({ id: repairOrders.id })
         .from(repairOrders)
         .where(eq(repairOrders.resellerId, filters.userId));
       const orderIds = resellerOrders.map(o => o.id);
-      return results.filter(d => orderIds.includes(d.repairOrderId));
+      filtered = filtered.filter(d => orderIds.includes(d.repairOrderId));
     } else if (filters?.role === 'customer' && filters?.userId) {
-      return results.filter(d => d.customerId === filters.userId);
+      filtered = filtered.filter(d => d.customerId === filters.userId);
     }
-    return results;
+
+    // Apply additional filters
+    if (filters?.severity) {
+      filtered = filtered.filter(d => d.severity === filters.severity);
+    }
+
+    if (filters?.search) {
+      const searchLower = filters.search.toLowerCase();
+      filtered = filtered.filter(d => 
+        d.orderNumber?.toLowerCase().includes(searchLower) ||
+        d.deviceType?.toLowerCase().includes(searchLower) ||
+        d.deviceModel?.toLowerCase().includes(searchLower) ||
+        d.technicalDiagnosis?.toLowerCase().includes(searchLower)
+      );
+    }
+
+    if (filters?.dateFrom) {
+      const fromDate = new Date(filters.dateFrom);
+      filtered = filtered.filter(d => d.diagnosedAt && new Date(d.diagnosedAt) >= fromDate);
+    }
+
+    if (filters?.dateTo) {
+      const toDate = new Date(filters.dateTo);
+      toDate.setHours(23, 59, 59, 999);
+      filtered = filtered.filter(d => d.diagnosedAt && new Date(d.diagnosedAt) <= toDate);
+    }
+
+    return filtered;
   }
 
-  async listAllQuotes(filters?: { userId?: string; role?: string }): Promise<any[]> {
+  async listAllQuotes(filters?: { userId?: string; role?: string; status?: string; search?: string; dateFrom?: string; dateTo?: string }): Promise<any[]> {
     // Join quotes with repair orders to get device info and filter by role
     const results = await db
       .select({
@@ -1168,21 +1194,48 @@ export class DatabaseStorage implements IStorage {
       .innerJoin(repairOrders, eq(repairQuotes.repairOrderId, repairOrders.id))
       .orderBy(sql`${repairQuotes.createdAt} DESC`);
 
+    let filtered = results;
+
     // Filter based on role
-    if (filters?.role === 'admin') {
-      return results;
-    } else if (filters?.role === 'repair_center' && filters?.userId) {
-      return results.filter(q => q.repairCenterId === filters.userId);
+    if (filters?.role === 'repair_center' && filters?.userId) {
+      filtered = filtered.filter(q => q.repairCenterId === filters.userId);
     } else if (filters?.role === 'reseller' && filters?.userId) {
       const resellerOrders = await db.select({ id: repairOrders.id })
         .from(repairOrders)
         .where(eq(repairOrders.resellerId, filters.userId));
       const orderIds = resellerOrders.map(o => o.id);
-      return results.filter(q => orderIds.includes(q.repairOrderId));
+      filtered = filtered.filter(q => orderIds.includes(q.repairOrderId));
     } else if (filters?.role === 'customer' && filters?.userId) {
-      return results.filter(q => q.customerId === filters.userId);
+      filtered = filtered.filter(q => q.customerId === filters.userId);
     }
-    return results;
+
+    // Apply additional filters
+    if (filters?.status) {
+      filtered = filtered.filter(q => q.quoteStatus === filters.status);
+    }
+
+    if (filters?.search) {
+      const searchLower = filters.search.toLowerCase();
+      filtered = filtered.filter(q => 
+        q.quoteNumber?.toLowerCase().includes(searchLower) ||
+        q.orderNumber?.toLowerCase().includes(searchLower) ||
+        q.deviceType?.toLowerCase().includes(searchLower) ||
+        q.deviceModel?.toLowerCase().includes(searchLower)
+      );
+    }
+
+    if (filters?.dateFrom) {
+      const fromDate = new Date(filters.dateFrom);
+      filtered = filtered.filter(q => q.createdAt && new Date(q.createdAt) >= fromDate);
+    }
+
+    if (filters?.dateTo) {
+      const toDate = new Date(filters.dateTo);
+      toDate.setHours(23, 59, 59, 999);
+      filtered = filtered.filter(q => q.createdAt && new Date(q.createdAt) <= toDate);
+    }
+
+    return filtered;
   }
 
   // Device Types

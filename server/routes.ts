@@ -2776,7 +2776,7 @@ export function registerRoutes(app: Express): Server {
 
   // ============ DIAGNOSTICS ============
 
-  // List all diagnostics (with role-based filtering)
+  // List all diagnostics (with role-based filtering and search filters)
   app.get("/api/diagnostics", requireAuth, async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
@@ -2784,6 +2784,10 @@ export function registerRoutes(app: Express): Server {
       const diagnostics = await storage.listAllDiagnostics({
         userId: req.user.role === 'repair_center' ? req.user.repairCenterId : req.user.id,
         role: req.user.role,
+        severity: req.query.severity as string | undefined,
+        search: req.query.search as string | undefined,
+        dateFrom: req.query.dateFrom as string | undefined,
+        dateTo: req.query.dateTo as string | undefined,
       });
       
       res.json(diagnostics);
@@ -2955,7 +2959,7 @@ export function registerRoutes(app: Express): Server {
 
   // ============ REPAIR QUOTES ENDPOINTS ============
 
-  // List all quotes (with role-based filtering)
+  // List all quotes (with role-based filtering and search filters)
   app.get("/api/quotes", requireAuth, async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
@@ -2963,6 +2967,10 @@ export function registerRoutes(app: Express): Server {
       const quotes = await storage.listAllQuotes({
         userId: req.user.role === 'repair_center' ? req.user.repairCenterId : req.user.id,
         role: req.user.role,
+        status: req.query.status as string | undefined,
+        search: req.query.search as string | undefined,
+        dateFrom: req.query.dateFrom as string | undefined,
+        dateTo: req.query.dateTo as string | undefined,
       });
       
       res.json(quotes);
