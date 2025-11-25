@@ -125,31 +125,41 @@ export function AcceptanceWizardDialog({
     queryKey: ["/api/device-types"],
   });
 
-  const { data: deviceBrands = [] } = useQuery<Array<{
+  const { data: allDeviceBrands = [] } = useQuery<Array<{
     id: string;
     name: string;
   }>>({
     queryKey: ["/api/device-brands"],
   });
 
-  const { data: deviceModels = [], refetch: refetchModels } = useQuery<Array<{
+  const { data: deviceModels = [] } = useQuery<Array<{
     id: string;
     modelName: string;
     brandId: string;
     typeId: string;
   }>>({
-    queryKey: ["/api/device-models", { typeId: selectedTypeId, brandId: selectedBrandId }],
+    queryKey: ["/api/device-models", { typeId: selectedTypeId }],
     queryFn: async () => {
-      const params = new URLSearchParams({ 
-        typeId: selectedTypeId, 
-        brandId: selectedBrandId 
-      });
+      const params = new URLSearchParams({ typeId: selectedTypeId });
       const res = await fetch(`/api/device-models?${params}`);
       if (!res.ok) throw new Error("Failed to fetch models");
       return res.json();
     },
-    enabled: !!selectedTypeId && !!selectedBrandId,
+    enabled: !!selectedTypeId,
   });
+
+  const deviceBrands = allDeviceBrands.filter(brand => 
+    deviceModels.some(model => model.brandId === brand.id)
+  );
+
+  const filteredModels = selectedBrandId 
+    ? deviceModels.filter(model => model.brandId === selectedBrandId)
+    : deviceModels;
+
+  const getBrandName = (brandId: string) => {
+    const brand = allDeviceBrands.find(b => b.id === brandId);
+    return brand?.name || "";
+  };
 
   const { data: repairCenters = [] } = useQuery<Array<{
     id: string;
@@ -824,12 +834,18 @@ export function AcceptanceWizardDialog({
             <FormLabel>Brand</FormLabel>
             <Select 
               onValueChange={(name) => {
-                field.onChange(name);
-                const brand = deviceBrands.find(b => b.name === name);
-                setSelectedBrandId(brand?.id || "");
+                if (name === "__all__") {
+                  field.onChange("");
+                  setSelectedBrandId("");
+                } else {
+                  field.onChange(name);
+                  const brand = deviceBrands.find(b => b.name === name);
+                  setSelectedBrandId(brand?.id || "");
+                }
                 form.setValue("deviceModel", "");
               }} 
-              value={field.value}
+              value={field.value || "__all__"}
+              disabled={!selectedTypeId}
             >
               <FormControl>
                 <SelectTrigger data-testid="select-brand">
@@ -837,6 +853,7 @@ export function AcceptanceWizardDialog({
                 </SelectTrigger>
               </FormControl>
               <SelectContent>
+                <SelectItem value="__all__">Tutti i brand ({deviceBrands.length})</SelectItem>
                 {deviceBrands.map((brand) => (
                   <SelectItem key={brand.id} value={brand.name}>
                     {brand.name}
@@ -844,6 +861,9 @@ export function AcceptanceWizardDialog({
                 ))}
               </SelectContent>
             </Select>
+            <FormDescription>
+              {selectedTypeId ? `${deviceBrands.length} brand disponibili` : "Seleziona prima il tipo dispositivo"}
+            </FormDescription>
             <FormMessage />
           </FormItem>
         )}
@@ -855,7 +875,7 @@ export function AcceptanceWizardDialog({
         render={({ field }) => (
           <FormItem>
             <FormLabel>Modello</FormLabel>
-            {selectedTypeId && selectedBrandId && deviceModels.length > 0 ? (
+            {selectedTypeId && filteredModels.length > 0 ? (
               <Select onValueChange={field.onChange} value={field.value}>
                 <FormControl>
                   <SelectTrigger data-testid="select-device-model">
@@ -863,9 +883,9 @@ export function AcceptanceWizardDialog({
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  {deviceModels.map((model) => (
+                  {filteredModels.map((model) => (
                     <SelectItem key={model.id} value={model.modelName}>
-                      {model.modelName}
+                      {selectedBrandId ? model.modelName : `${getBrandName(model.brandId)} - ${model.modelName}`}
                     </SelectItem>
                   ))}
                   <SelectItem value="__other__">Altro (inserimento manuale)</SelectItem>
@@ -877,7 +897,7 @@ export function AcceptanceWizardDialog({
               </FormControl>
             )}
             <FormDescription>
-              {selectedTypeId && selectedBrandId && deviceModels.length === 0 && "Nessun modello disponibile, inserisci manualmente"}
+              {selectedTypeId && filteredModels.length === 0 && "Nessun modello disponibile, inserisci manualmente"}
             </FormDescription>
             <FormMessage />
           </FormItem>
