@@ -4114,6 +4114,209 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // GET /api/repair-orders/:id/diagnosis-document - Generate diagnosis PDF document
+  app.get("/api/repair-orders/:id/diagnosis-document", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const repairOrder = await storage.getRepairOrder(req.params.id);
+      if (!repairOrder) {
+        return res.status(404).send("Repair order not found");
+      }
+      
+      // RBAC
+      if (req.user.role === 'customer' && repairOrder.customerId !== req.user.id) {
+        return res.status(403).send("Access denied");
+      }
+      if (req.user.role === 'reseller' && repairOrder.resellerId !== req.user.id) {
+        return res.status(403).send("Access denied");
+      }
+      if (req.user.role === 'repair_center' && repairOrder.repairCenterId !== req.user.repairCenterId) {
+        return res.status(403).send("Access denied");
+      }
+      
+      // Get diagnostics info - required for this document
+      const diagnostics = await storage.getRepairDiagnostics(req.params.id);
+      if (!diagnostics) {
+        return res.status(404).send("Diagnosi non ancora effettuata");
+      }
+      
+      // Get customer info
+      const customer = repairOrder.customerId ? await storage.getUser(repairOrder.customerId) : null;
+      
+      // Get repair center info if available
+      const repairCenter = repairOrder.repairCenterId ? await storage.getRepairCenter(repairOrder.repairCenterId) : null;
+      
+      // Get acceptance info
+      const acceptance = await storage.getRepairAcceptance(req.params.id);
+      
+      // Get technician who performed diagnosis
+      const technician = diagnostics.diagnosedBy ? await storage.getUser(diagnostics.diagnosedBy) : null;
+      
+      // Get device brand and model names
+      let brandName = repairOrder.brand || '';
+      let modelName = repairOrder.deviceModel || '';
+      
+      if (repairOrder.brand) {
+        const brand = await storage.getDeviceBrand(repairOrder.brand);
+        if (brand) brandName = brand.name;
+      }
+      
+      if (repairOrder.deviceModel) {
+        const model = await storage.getDeviceModel(repairOrder.deviceModel);
+        if (model) modelName = model.name;
+      }
+      
+      // Get device type name
+      let deviceTypeName = repairOrder.deviceType || '';
+      if (repairOrder.deviceType) {
+        const deviceType = await storage.getDeviceType(repairOrder.deviceType);
+        if (deviceType) deviceTypeName = deviceType.name;
+      }
+      
+      // Generate PDF
+      const PDFDocument = (await import('pdfkit')).default;
+      const doc = new PDFDocument({ margin: 50, size: 'A4' });
+      
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="diagnosi-${repairOrder.orderNumber}.pdf"`);
+      
+      doc.pipe(res);
+      
+      // Header
+      doc.fontSize(20).font('Helvetica-Bold').text('RAPPORTO DI DIAGNOSI', { align: 'center' });
+      doc.fontSize(12).font('Helvetica').text('Esito Diagnosi Tecnica', { align: 'center' });
+      doc.moveDown();
+      
+      // Repair center info (if available)
+      if (repairCenter) {
+        doc.fontSize(12).font('Helvetica-Bold').text(repairCenter.name);
+        if (repairCenter.address) doc.font('Helvetica').text(repairCenter.address);
+        if (repairCenter.phone) doc.text(`Tel: ${repairCenter.phone}`);
+        if (repairCenter.email) doc.text(`Email: ${repairCenter.email}`);
+        doc.moveDown();
+      }
+      
+      // Order info box
+      const diagnosisDate = diagnostics.diagnosedAt ? new Date(diagnostics.diagnosedAt) : new Date();
+      doc.rect(50, doc.y, 500, 60).stroke();
+      const boxY = doc.y + 10;
+      doc.fontSize(10).font('Helvetica-Bold').text('ORDINE DI RIPARAZIONE', 60, boxY);
+      doc.font('Helvetica').text(`Numero: ${repairOrder.orderNumber}`, 60, boxY + 15);
+      doc.text(`Data Diagnosi: ${diagnosisDate.toLocaleDateString('it-IT')}`, 60, boxY + 30);
+      doc.text(`Ora: ${diagnosisDate.toLocaleTimeString('it-IT')}`, 300, boxY + 30);
+      doc.y = boxY + 50;
+      doc.moveDown();
+      
+      // Customer info
+      doc.fontSize(12).font('Helvetica-Bold').text('DATI CLIENTE');
+      doc.fontSize(10).font('Helvetica');
+      if (customer) {
+        doc.text(`Nome: ${customer.fullName || customer.username || ''}`);
+        if (customer.email) doc.text(`Email: ${customer.email}`);
+        if (customer.phone) doc.text(`Telefono: ${customer.phone}`);
+      }
+      doc.moveDown();
+      
+      // Device info
+      doc.fontSize(12).font('Helvetica-Bold').text('DISPOSITIVO');
+      doc.fontSize(10).font('Helvetica');
+      doc.text(`Tipo: ${deviceTypeName || 'N/A'}`);
+      doc.text(`Marca: ${brandName || 'N/A'}`);
+      doc.text(`Modello: ${modelName || 'N/A'}`);
+      if (repairOrder.imei) doc.text(`IMEI: ${repairOrder.imei}`);
+      if (repairOrder.serialNumber) doc.text(`Seriale: ${repairOrder.serialNumber}`);
+      doc.moveDown();
+      
+      // Original problem
+      doc.fontSize(12).font('Helvetica-Bold').text('PROBLEMA ORIGINALE');
+      doc.fontSize(10).font('Helvetica');
+      doc.text(repairOrder.issueDescription || 'N/A');
+      doc.moveDown();
+      
+      // Technical Diagnosis
+      doc.fontSize(12).font('Helvetica-Bold').text('DIAGNOSI TECNICA');
+      doc.fontSize(10).font('Helvetica');
+      doc.text(diagnostics.technicalDiagnosis || 'N/A');
+      doc.moveDown();
+      
+      // Damaged components
+      if (diagnostics.damagedComponents && diagnostics.damagedComponents.length > 0) {
+        doc.fontSize(12).font('Helvetica-Bold').text('COMPONENTI DANNEGGIATI');
+        doc.fontSize(10).font('Helvetica');
+        diagnostics.damagedComponents.forEach((component: string) => {
+          doc.text(`• ${component}`);
+        });
+        doc.moveDown();
+      }
+      
+      // Severity and details
+      doc.fontSize(12).font('Helvetica-Bold').text('VALUTAZIONE');
+      doc.fontSize(10).font('Helvetica');
+      
+      const severityLabels: Record<string, string> = {
+        'low': 'Bassa - Danno minore',
+        'medium': 'Media - Danno moderato',
+        'high': 'Alta - Danno significativo',
+        'critical': 'Critica - Danno grave'
+      };
+      doc.text(`Gravità: ${severityLabels[diagnostics.severity] || diagnostics.severity}`);
+      
+      if (diagnostics.estimatedRepairTime) {
+        const hours = diagnostics.estimatedRepairTime;
+        const timeText = hours >= 24 
+          ? `${Math.floor(hours / 24)} giorni e ${hours % 24} ore`
+          : `${hours} ore`;
+        doc.text(`Tempo Stimato Riparazione: ${timeText}`);
+      }
+      
+      doc.text(`Necessita Ricambi Esterni: ${diagnostics.requiresExternalParts ? 'Sì' : 'No'}`);
+      doc.moveDown();
+      
+      // Diagnosis notes
+      if (diagnostics.diagnosisNotes) {
+        doc.fontSize(12).font('Helvetica-Bold').text('NOTE DEL TECNICO');
+        doc.fontSize(10).font('Helvetica');
+        doc.text(diagnostics.diagnosisNotes);
+        doc.moveDown();
+      }
+      
+      // Technician info
+      doc.fontSize(12).font('Helvetica-Bold').text('TECNICO RESPONSABILE');
+      doc.fontSize(10).font('Helvetica');
+      doc.text(technician ? (technician.fullName || technician.username) : 'N/A');
+      doc.moveDown();
+      
+      // Next steps
+      doc.moveDown();
+      doc.fontSize(10).font('Helvetica-Bold').text('PROSSIMI PASSI:');
+      doc.fontSize(9).font('Helvetica').text(
+        'A seguito della presente diagnosi, verrà elaborato un preventivo dettagliato con i costi di riparazione.\n' +
+        'Il cliente sarà contattato per la conferma o il rifiuto del preventivo prima di procedere con la riparazione.',
+        { align: 'left' }
+      );
+      doc.moveDown(2);
+      
+      // Signature areas
+      doc.fontSize(10).font('Helvetica');
+      doc.text('_______________________________', 60);
+      doc.text('Firma Tecnico', 60);
+      doc.text('_______________________________', 320);
+      doc.text('Timbro Centro Assistenza', 320);
+      doc.moveDown(2);
+      
+      // Footer
+      doc.fontSize(8).font('Helvetica').text(
+        `Documento generato il ${new Date().toLocaleDateString('it-IT')} alle ${new Date().toLocaleTimeString('it-IT')}`,
+        { align: 'center' }
+      );
+      
+      doc.end();
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+
   // ============ REPORTS & EXPORT ============
 
   app.get("/api/reports/repairs", requireAuth, async (req, res) => {

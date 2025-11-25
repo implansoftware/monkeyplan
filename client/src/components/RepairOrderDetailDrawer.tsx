@@ -433,6 +433,20 @@ export function RepairOrderDetailDrawer({
                       Doc. Accettazione
                     </Button>
 
+                    {/* Download Diagnosis Document - available after diagnosis */}
+                    {!['ingressato'].includes(repair.status) && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => window.open(`/api/repair-orders/${repair.id}/diagnosis-document`, '_blank')}
+                        className="gap-1"
+                        data-testid="button-diagnosis-document"
+                      >
+                        <Download className="h-4 w-4" />
+                        Doc. Diagnosi
+                      </Button>
+                    )}
+
                     {/* Download Delivery Document - available when delivered */}
                     {repair.status === 'consegnato' && (
                       <Button
