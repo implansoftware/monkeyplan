@@ -313,6 +313,203 @@ export function RepairOrderDetailDrawer({
               </div>
             </div>
 
+            {/* Workflow Actions - In alto */}
+            {canManageWorkflow && (
+              <>
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-base flex items-center gap-2">
+                      <Wrench className="h-4 w-4" />
+                      Azioni Workflow
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="grid grid-cols-2 gap-2">
+                    {/* Download Intake Document - always available */}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => window.open(`/api/repair-orders/${repair.id}/intake-document`, '_blank')}
+                      className="gap-1"
+                      data-testid="button-intake-document"
+                    >
+                      <Download className="h-4 w-4" />
+                      Doc. Accettazione
+                    </Button>
+
+                    {/* Download Diagnosis Document - available after diagnosis */}
+                    {!['ingressato'].includes(repair.status) && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => window.open(`/api/repair-orders/${repair.id}/diagnosis-document`, '_blank')}
+                        className="gap-1"
+                        data-testid="button-diagnosis-document"
+                      >
+                        <Download className="h-4 w-4" />
+                        Doc. Diagnosi
+                      </Button>
+                    )}
+
+                    {/* Download Quote Document - available after quote is created */}
+                    {!['ingressato', 'in_diagnosi'].includes(repair.status) && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => window.open(`/api/repair-orders/${repair.id}/quote-document`, '_blank')}
+                        className="gap-1"
+                        data-testid="button-quote-document"
+                      >
+                        <Download className="h-4 w-4" />
+                        Doc. Preventivo
+                      </Button>
+                    )}
+
+                    {/* Download Delivery Document - available when delivered */}
+                    {repair.status === 'consegnato' && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => window.open(`/api/repair-orders/${repair.id}/delivery-document`, '_blank')}
+                        className="gap-1"
+                        data-testid="button-delivery-document"
+                      >
+                        <Download className="h-4 w-4" />
+                        Doc. Consegna
+                      </Button>
+                    )}
+
+                    {/* Diagnosis - available when order is received */}
+                    {['ingressato', 'in_diagnosi'].includes(repair.status) && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setDiagnosisDialogOpen(true)}
+                        className="gap-1"
+                        data-testid="button-diagnosis"
+                      >
+                        <Stethoscope className="h-4 w-4" />
+                        Diagnosi
+                      </Button>
+                    )}
+
+                    {/* Quote - available after diagnosis */}
+                    {['in_diagnosi', 'preventivo_inviato'].includes(repair.status) && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setQuoteDialogOpen(true)}
+                        className="gap-1"
+                        data-testid="button-quote"
+                      >
+                        <Receipt className="h-4 w-4" />
+                        Preventivo
+                      </Button>
+                    )}
+
+                    {/* Parts Order - available when quote is accepted or waiting for parts */}
+                    {['preventivo_accettato', 'attesa_ricambi'].includes(repair.status) && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setPartsDialogOpen(true)}
+                        className="gap-1"
+                        data-testid="button-parts-order"
+                      >
+                        <Package className="h-4 w-4" />
+                        Ordina Ricambi
+                      </Button>
+                    )}
+
+                    {/* Start Repair - available when quote is accepted or parts received */}
+                    {['preventivo_accettato', 'attesa_ricambi'].includes(repair.status) && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => startRepairMutation.mutate()}
+                        disabled={startRepairMutation.isPending}
+                        className="gap-1"
+                        data-testid="button-start-repair"
+                      >
+                        <Play className="h-4 w-4" />
+                        Avvia Riparazione
+                      </Button>
+                    )}
+
+                    {/* Repair Logs - available during repair */}
+                    {['in_riparazione', 'in_test'].includes(repair.status) && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setLogsDialogOpen(true)}
+                        className="gap-1"
+                        data-testid="button-repair-logs"
+                      >
+                        <ClipboardList className="h-4 w-4" />
+                        Log Attività
+                      </Button>
+                    )}
+
+                    {/* Test Checklist - available during repair or test */}
+                    {['in_riparazione', 'in_test'].includes(repair.status) && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setTestDialogOpen(true)}
+                        className="gap-1"
+                        data-testid="button-test-checklist"
+                      >
+                        <ClipboardCheck className="h-4 w-4" />
+                        Collaudo
+                      </Button>
+                    )}
+
+                    {/* Ready for Pickup - available after tests */}
+                    {repair.status === 'in_test' && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => readyForPickupMutation.mutate()}
+                        disabled={readyForPickupMutation.isPending}
+                        className="gap-1"
+                        data-testid="button-ready-pickup"
+                      >
+                        <CheckCircle className="h-4 w-4" />
+                        Pronto Ritiro
+                      </Button>
+                    )}
+
+                    {/* Complete Delivery - available when ready for pickup */}
+                    {repair.status === 'pronto_ritiro' && (
+                      <Button
+                        variant="default"
+                        size="sm"
+                        onClick={() => setDeliveryDialogOpen(true)}
+                        className="gap-1"
+                        data-testid="button-delivery"
+                      >
+                        <PackageCheck className="h-4 w-4" />
+                        Consegna
+                      </Button>
+                    )}
+
+                    {/* View Delivery - available when delivered */}
+                    {repair.status === 'consegnato' && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setDeliveryDialogOpen(true)}
+                        className="gap-1"
+                        data-testid="button-view-delivery"
+                      >
+                        <PackageCheck className="h-4 w-4" />
+                        Dettagli Consegna
+                      </Button>
+                    )}
+                  </CardContent>
+                </Card>
+              </>
+            )}
+
             <Separator />
 
             {/* Device Info */}
@@ -668,204 +865,6 @@ export function RepairOrderDetailDrawer({
                 canDelete={canDelete}
               />
             </div>
-
-            {/* Workflow Actions */}
-            {canManageWorkflow && (
-              <>
-                <Separator />
-                <Card>
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-base flex items-center gap-2">
-                      <Wrench className="h-4 w-4" />
-                      Azioni Workflow
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="grid grid-cols-2 gap-2">
-                    {/* Download Intake Document - always available */}
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => window.open(`/api/repair-orders/${repair.id}/intake-document`, '_blank')}
-                      className="gap-1"
-                      data-testid="button-intake-document"
-                    >
-                      <Download className="h-4 w-4" />
-                      Doc. Accettazione
-                    </Button>
-
-                    {/* Download Diagnosis Document - available after diagnosis */}
-                    {!['ingressato'].includes(repair.status) && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => window.open(`/api/repair-orders/${repair.id}/diagnosis-document`, '_blank')}
-                        className="gap-1"
-                        data-testid="button-diagnosis-document"
-                      >
-                        <Download className="h-4 w-4" />
-                        Doc. Diagnosi
-                      </Button>
-                    )}
-
-                    {/* Download Quote Document - available after quote is created */}
-                    {!['ingressato', 'in_diagnosi'].includes(repair.status) && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => window.open(`/api/repair-orders/${repair.id}/quote-document`, '_blank')}
-                        className="gap-1"
-                        data-testid="button-quote-document"
-                      >
-                        <Download className="h-4 w-4" />
-                        Doc. Preventivo
-                      </Button>
-                    )}
-
-                    {/* Download Delivery Document - available when delivered */}
-                    {repair.status === 'consegnato' && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => window.open(`/api/repair-orders/${repair.id}/delivery-document`, '_blank')}
-                        className="gap-1"
-                        data-testid="button-delivery-document"
-                      >
-                        <Download className="h-4 w-4" />
-                        Doc. Consegna
-                      </Button>
-                    )}
-
-                    {/* Diagnosis - available when order is received */}
-                    {['ingressato', 'in_diagnosi'].includes(repair.status) && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setDiagnosisDialogOpen(true)}
-                        className="gap-1"
-                        data-testid="button-diagnosis"
-                      >
-                        <Stethoscope className="h-4 w-4" />
-                        Diagnosi
-                      </Button>
-                    )}
-
-                    {/* Quote - available after diagnosis */}
-                    {['in_diagnosi', 'preventivo_inviato'].includes(repair.status) && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setQuoteDialogOpen(true)}
-                        className="gap-1"
-                        data-testid="button-quote"
-                      >
-                        <Receipt className="h-4 w-4" />
-                        Preventivo
-                      </Button>
-                    )}
-
-                    {/* Parts Order - available when quote is accepted or waiting for parts */}
-                    {['preventivo_accettato', 'attesa_ricambi'].includes(repair.status) && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setPartsDialogOpen(true)}
-                        className="gap-1"
-                        data-testid="button-parts-order"
-                      >
-                        <Package className="h-4 w-4" />
-                        Ordina Ricambi
-                      </Button>
-                    )}
-
-                    {/* Start Repair - available when quote is accepted or parts received */}
-                    {['preventivo_accettato', 'attesa_ricambi'].includes(repair.status) && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => startRepairMutation.mutate()}
-                        disabled={startRepairMutation.isPending}
-                        className="gap-1"
-                        data-testid="button-start-repair"
-                      >
-                        <Play className="h-4 w-4" />
-                        Avvia Riparazione
-                      </Button>
-                    )}
-
-                    {/* Repair Logs - available during repair */}
-                    {['in_riparazione', 'in_test'].includes(repair.status) && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setLogsDialogOpen(true)}
-                        className="gap-1"
-                        data-testid="button-repair-logs"
-                      >
-                        <ClipboardList className="h-4 w-4" />
-                        Log Attività
-                      </Button>
-                    )}
-
-                    {/* Test Checklist - available during repair or test */}
-                    {['in_riparazione', 'in_test'].includes(repair.status) && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setTestDialogOpen(true)}
-                        className="gap-1"
-                        data-testid="button-test-checklist"
-                      >
-                        <ClipboardCheck className="h-4 w-4" />
-                        Collaudo
-                      </Button>
-                    )}
-
-                    {/* Ready for Pickup - available after tests */}
-                    {repair.status === 'in_test' && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => readyForPickupMutation.mutate()}
-                        disabled={readyForPickupMutation.isPending}
-                        className="gap-1"
-                        data-testid="button-ready-pickup"
-                      >
-                        <CheckCircle className="h-4 w-4" />
-                        Pronto Ritiro
-                      </Button>
-                    )}
-
-                    {/* Complete Delivery - available when ready for pickup */}
-                    {repair.status === 'pronto_ritiro' && (
-                      <Button
-                        variant="default"
-                        size="sm"
-                        onClick={() => setDeliveryDialogOpen(true)}
-                        className="gap-1"
-                        data-testid="button-delivery"
-                      >
-                        <PackageCheck className="h-4 w-4" />
-                        Consegna
-                      </Button>
-                    )}
-
-                    {/* View Delivery - available when delivered */}
-                    {repair.status === 'consegnato' && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setDeliveryDialogOpen(true)}
-                        className="gap-1"
-                        data-testid="button-view-delivery"
-                      >
-                        <PackageCheck className="h-4 w-4" />
-                        Dettagli Consegna
-                      </Button>
-                    )}
-                  </CardContent>
-                </Card>
-              </>
-            )}
 
             {/* Dialogs */}
             {repairOrderId && (
