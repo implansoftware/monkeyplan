@@ -4507,29 +4507,33 @@ export function registerRoutes(app: Express): Server {
       doc.fontSize(12).font('Helvetica-Bold').text('RIEPILOGO COSTI');
       doc.moveDown(0.5);
       
-      const totalsY = doc.y;
+      let currentTotalsY = doc.y;
       doc.fontSize(10).font('Helvetica');
       
       // Parts subtotal
       const partsSubtotal = parts.reduce((sum, p) => sum + (p.quantity * p.unitPrice), 0);
       if (parts.length > 0) {
-        doc.text('Subtotale Ricambi:', 350, totalsY);
-        doc.text(formatCurrency(partsSubtotal), 460, totalsY);
+        doc.text('Subtotale Ricambi:', 350, currentTotalsY);
+        doc.text(formatCurrency(partsSubtotal), 460, currentTotalsY);
+        currentTotalsY += 18;
       }
       
-      // Labor cost
+      // Labor cost - always show if greater than 0
       if (quote.laborCost && quote.laborCost > 0) {
-        doc.text('Manodopera:', 350, totalsY + 18);
-        doc.text(formatCurrency(quote.laborCost), 460, totalsY + 18);
+        doc.text('Manodopera:', 350, currentTotalsY);
+        doc.text(formatCurrency(quote.laborCost), 460, currentTotalsY);
+        currentTotalsY += 18;
       }
       
-      // Total
-      doc.moveTo(350, totalsY + 40).lineTo(550, totalsY + 40).stroke();
+      // Total line
+      currentTotalsY += 5;
+      doc.moveTo(350, currentTotalsY).lineTo(550, currentTotalsY).stroke();
+      currentTotalsY += 8;
       doc.fontSize(12).font('Helvetica-Bold');
-      doc.text('TOTALE:', 350, totalsY + 48);
-      doc.text(formatCurrency(quote.totalAmount), 460, totalsY + 48);
+      doc.text('TOTALE:', 350, currentTotalsY);
+      doc.text(formatCurrency(quote.totalAmount), 460, currentTotalsY);
       
-      doc.y = totalsY + 70;
+      doc.y = currentTotalsY + 30;
       doc.moveDown();
       
       // Notes
