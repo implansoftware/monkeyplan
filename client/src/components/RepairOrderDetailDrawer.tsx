@@ -512,30 +512,6 @@ export function RepairOrderDetailDrawer({
             )}
 
 
-            {/* Cost Info */}
-            <div className="space-y-3">
-              <div className="flex items-center gap-2 font-medium">
-                <Euro className="h-4 w-4" />
-                Costi
-              </div>
-              <div className="grid gap-3">
-                <div>
-                  <p className="text-sm text-muted-foreground">Costo Stimato</p>
-                  <p className="text-lg font-bold text-primary" data-testid="text-estimated-cost">
-                    {quote ? formatCurrency(Number(quote.totalAmount)) : (repair.estimatedCost ? formatCurrency(repair.estimatedCost, true) : "Da definire")}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Costo Finale</p>
-                  <p className="text-lg font-bold" data-testid="text-final-cost">
-                    {quote?.status === 'accepted' 
-                      ? formatCurrency(Number(quote.totalAmount))
-                      : (repair.finalCost ? formatCurrency(repair.finalCost, true) : "Da confermare")}
-                  </p>
-                </div>
-              </div>
-            </div>
-
             {/* Quote Info */}
             {quote && (
               <>
