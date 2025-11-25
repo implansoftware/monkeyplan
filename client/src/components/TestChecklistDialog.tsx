@@ -67,16 +67,16 @@ const testChecklistSchema = z.object({
 type TestChecklistFormData = z.infer<typeof testChecklistSchema>;
 
 const testItems = [
-  { key: "displayTest", label: "Display", icon: Monitor, description: "Screen visuals, colors, dead pixels" },
-  { key: "touchTest", label: "Touch", icon: Hand, description: "Touch responsiveness, multi-touch" },
-  { key: "batteryTest", label: "Battery", icon: Battery, description: "Battery health, charging cycles" },
-  { key: "audioTest", label: "Audio", icon: Volume2, description: "Speakers, microphone, earpiece" },
-  { key: "cameraTest", label: "Camera", icon: Camera, description: "Front/rear cameras, flash" },
-  { key: "connectivityTest", label: "Connectivity", icon: Wifi, description: "WiFi, Bluetooth, cellular" },
-  { key: "buttonsTest", label: "Buttons", icon: MousePointer2, description: "Physical buttons, volume, power" },
-  { key: "sensorsTest", label: "Sensors", icon: Gauge, description: "Proximity, accelerometer, gyroscope" },
-  { key: "chargingTest", label: "Charging", icon: Plug, description: "Charging port, wireless charging" },
-  { key: "softwareTest", label: "Software", icon: Smartphone, description: "OS stability, apps, updates" },
+  { key: "displayTest", label: "Display", icon: Monitor, description: "Schermo, colori, pixel morti" },
+  { key: "touchTest", label: "Touch", icon: Hand, description: "Reattività touch, multi-touch" },
+  { key: "batteryTest", label: "Batteria", icon: Battery, description: "Salute batteria, cicli di ricarica" },
+  { key: "audioTest", label: "Audio", icon: Volume2, description: "Altoparlanti, microfono, capsula" },
+  { key: "cameraTest", label: "Fotocamera", icon: Camera, description: "Fotocamere anteriore/posteriore, flash" },
+  { key: "connectivityTest", label: "Connettività", icon: Wifi, description: "WiFi, Bluetooth, rete cellulare" },
+  { key: "buttonsTest", label: "Pulsanti", icon: MousePointer2, description: "Tasti fisici, volume, accensione" },
+  { key: "sensorsTest", label: "Sensori", icon: Gauge, description: "Prossimità, accelerometro, giroscopio" },
+  { key: "chargingTest", label: "Ricarica", icon: Plug, description: "Porta di ricarica, ricarica wireless" },
+  { key: "softwareTest", label: "Software", icon: Smartphone, description: "Stabilità OS, app, aggiornamenti" },
 ] as const;
 
 export function TestChecklistDialog({
@@ -154,12 +154,12 @@ export function TestChecklistDialog({
 
   const saveChecklistMutation = useMutation({
     mutationFn: async (data: TestChecklistFormData) => {
-      return await apiRequest(`/api/repair-orders/${repairOrderId}/test-checklist`, "POST", data);
+      return await apiRequest("POST", `/api/repair-orders/${repairOrderId}/test-checklist`, data);
     },
     onSuccess: () => {
       toast({
-        title: "Checklist saved",
-        description: "Test results have been saved successfully",
+        title: "Checklist salvata",
+        description: "I risultati dei test sono stati salvati con successo",
       });
       queryClient.invalidateQueries({ queryKey: ["/api/repair-orders", repairOrderId, "test-checklist"] });
       queryClient.invalidateQueries({ queryKey: ["/api/repair-orders"] });
@@ -167,7 +167,7 @@ export function TestChecklistDialog({
     },
     onError: (error: Error) => {
       toast({
-        title: "Error",
+        title: "Errore",
         description: error.message,
         variant: "destructive",
       });
@@ -189,22 +189,22 @@ export function TestChecklistDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <ClipboardCheck className="h-5 w-5" />
-            Device Test Checklist
+            Checklist Collaudo Dispositivo
           </DialogTitle>
           <DialogDescription>
-            Perform and record device functionality tests
+            Esegui e registra i test funzionali del dispositivo
           </DialogDescription>
         </DialogHeader>
 
         <div className="flex gap-2 mb-4">
           <Badge variant="default" className="gap-1">
-            <CheckCircle className="h-3 w-3" /> {passedTests} Passed
+            <CheckCircle className="h-3 w-3" /> {passedTests} Superati
           </Badge>
           <Badge variant="destructive" className="gap-1">
-            <XCircle className="h-3 w-3" /> {failedTests} Failed
+            <XCircle className="h-3 w-3" /> {failedTests} Falliti
           </Badge>
           <Badge variant="outline" className="gap-1">
-            {pendingTests} Pending
+            {pendingTests} In Attesa
           </Badge>
         </div>
 
@@ -212,7 +212,7 @@ export function TestChecklistDialog({
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <Card>
               <CardHeader>
-                <CardTitle className="text-base">Functional Tests</CardTitle>
+                <CardTitle className="text-base">Test Funzionali</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-2 gap-4">
@@ -247,7 +247,7 @@ export function TestChecklistDialog({
                                 className="gap-1"
                                 data-testid={`button-pass-${item.key}`}
                               >
-                                <CheckCircle className="h-3 w-3" /> Pass
+                                <CheckCircle className="h-3 w-3" /> OK
                               </Button>
                               <Button
                                 type="button"
@@ -257,7 +257,7 @@ export function TestChecklistDialog({
                                 className="gap-1"
                                 data-testid={`button-fail-${item.key}`}
                               >
-                                <XCircle className="h-3 w-3" /> Fail
+                                <XCircle className="h-3 w-3" /> KO
                               </Button>
                               <Button
                                 type="button"
@@ -281,7 +281,7 @@ export function TestChecklistDialog({
 
             <Card>
               <CardHeader>
-                <CardTitle className="text-base">Overall Result</CardTitle>
+                <CardTitle className="text-base">Risultato Generale</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <FormField
@@ -297,7 +297,7 @@ export function TestChecklistDialog({
                         />
                       </FormControl>
                       <FormLabel className="text-base font-medium cursor-pointer">
-                        Device passed all required tests and is ready for delivery
+                        Il dispositivo ha superato tutti i test ed è pronto per la consegna
                       </FormLabel>
                       <FormMessage />
                     </FormItem>
@@ -309,11 +309,11 @@ export function TestChecklistDialog({
                   name="notes"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Notes</FormLabel>
+                      <FormLabel>Note</FormLabel>
                       <FormControl>
                         <Textarea
                           {...field}
-                          placeholder="Additional observations, issues found, recommendations..."
+                          placeholder="Osservazioni aggiuntive, problemi riscontrati, raccomandazioni..."
                           rows={3}
                           data-testid="input-notes"
                         />
@@ -332,14 +332,14 @@ export function TestChecklistDialog({
                 onClick={() => onOpenChange(false)}
                 data-testid="button-close"
               >
-                Close
+                Chiudi
               </Button>
               <Button
                 type="submit"
                 disabled={saveChecklistMutation.isPending}
                 data-testid="button-save-checklist"
               >
-                {saveChecklistMutation.isPending ? "Saving..." : "Save Checklist"}
+                {saveChecklistMutation.isPending ? "Salvataggio..." : "Salva Checklist"}
               </Button>
             </div>
           </form>
