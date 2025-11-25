@@ -87,9 +87,20 @@ export function AcceptanceWizardDialog({
   const [selectedBrandId, setSelectedBrandId] = useState<string>("");
   const [showNewCustomerForm, setShowNewCustomerForm] = useState(false);
   const [newCustomerData, setNewCustomerData] = useState({
+    customerType: "private" as "private" | "company",
     fullName: "",
+    companyName: "",
     email: "",
     phone: "",
+    address: "",
+    city: "",
+    zipCode: "",
+    country: "IT",
+    vatNumber: "",
+    fiscalCode: "",
+    pec: "",
+    codiceUnivoco: "",
+    iban: "",
     username: "",
     password: "",
   });
@@ -212,23 +223,48 @@ export function AcceptanceWizardDialog({
       let endpoint: string;
       let payload: any;
       
+      const basePayload = {
+        customerType: data.customerType,
+        email: data.email,
+        phone: data.phone,
+        address: data.address,
+        city: data.city,
+        zipCode: data.zipCode,
+        country: data.country || "IT",
+        iban: data.iban || undefined,
+        ...(data.customerType === "private" 
+          ? { fullName: data.fullName }
+          : { 
+              companyName: data.companyName,
+              fullName: data.companyName,
+              vatNumber: data.vatNumber || undefined,
+              fiscalCode: data.fiscalCode || undefined,
+              pec: data.pec || undefined,
+              codiceUnivoco: data.codiceUnivoco || undefined,
+            }
+        ),
+      };
+      
       if (user?.role === "admin") {
         endpoint = "/api/admin/users";
-        payload = { ...data, role: "customer", isActive: true };
+        payload = { 
+          ...basePayload, 
+          username: data.username,
+          password: data.password,
+          role: "customer", 
+          isActive: true 
+        };
       } else if (user?.role === "reseller") {
         endpoint = "/api/reseller/customers";
-        payload = { ...data, isActive: true };
+        payload = { 
+          ...basePayload, 
+          username: data.username,
+          password: data.password,
+          isActive: true 
+        };
       } else {
         endpoint = "/api/customers";
-        payload = {
-          email: data.email,
-          fullName: data.fullName,
-          phone: data.phone,
-          customerType: "private",
-          address: "",
-          city: "",
-          zipCode: "",
-        };
+        payload = basePayload;
       }
       
       const response = await apiRequest("POST", endpoint, payload);
@@ -245,9 +281,20 @@ export function AcceptanceWizardDialog({
       form.setValue("customerId", customerId);
       setShowNewCustomerForm(false);
       setNewCustomerData({
+        customerType: "private",
         fullName: "",
+        companyName: "",
         email: "",
         phone: "",
+        address: "",
+        city: "",
+        zipCode: "",
+        country: "IT",
+        vatNumber: "",
+        fiscalCode: "",
+        pec: "",
+        codiceUnivoco: "",
+        iban: "",
         username: "",
         password: "",
       });
@@ -266,14 +313,53 @@ export function AcceptanceWizardDialog({
   });
 
   const handleCreateCustomer = () => {
-    if (!newCustomerData.fullName || !newCustomerData.email) {
+    const isPrivate = newCustomerData.customerType === "private";
+    
+    if (isPrivate && !newCustomerData.fullName) {
       toast({
         variant: "destructive",
         title: "Dati mancanti",
-        description: "Nome e email sono obbligatori",
+        description: "Nome completo è obbligatorio",
       });
       return;
     }
+    
+    if (!isPrivate && !newCustomerData.companyName) {
+      toast({
+        variant: "destructive",
+        title: "Dati mancanti",
+        description: "Ragione sociale è obbligatoria",
+      });
+      return;
+    }
+    
+    if (!newCustomerData.email) {
+      toast({
+        variant: "destructive",
+        title: "Dati mancanti",
+        description: "Email è obbligatoria",
+      });
+      return;
+    }
+    
+    if (!newCustomerData.phone || !newCustomerData.address || !newCustomerData.city || !newCustomerData.zipCode) {
+      toast({
+        variant: "destructive",
+        title: "Dati mancanti",
+        description: "Telefono, indirizzo, città e CAP sono obbligatori",
+      });
+      return;
+    }
+    
+    if (!isPrivate && !newCustomerData.pec && !newCustomerData.codiceUnivoco) {
+      toast({
+        variant: "destructive",
+        title: "Dati mancanti",
+        description: "Per le aziende, almeno PEC o Codice Univoco è obbligatorio",
+      });
+      return;
+    }
+    
     if (user?.role !== "repair_center" && 
         (!newCustomerData.username || !newCustomerData.password)) {
       toast({
@@ -394,8 +480,38 @@ export function AcceptanceWizardDialog({
                 </CardTitle>
                 <CardDescription>Inserisci i dati del nuovo cliente</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="grid grid-cols-2 gap-3">
+              <CardContent className="space-y-4 max-h-[400px] overflow-y-auto">
+                {/* Tipo Cliente */}
+                <div className="space-y-2">
+                  <Label>Tipo Cliente *</Label>
+                  <div className="flex gap-4">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="customerType"
+                        checked={newCustomerData.customerType === "private"}
+                        onChange={() => setNewCustomerData(prev => ({ ...prev, customerType: "private" }))}
+                        className="w-4 h-4"
+                        data-testid="radio-customer-private"
+                      />
+                      <span>Privato</span>
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="customerType"
+                        checked={newCustomerData.customerType === "company"}
+                        onChange={() => setNewCustomerData(prev => ({ ...prev, customerType: "company" }))}
+                        className="w-4 h-4"
+                        data-testid="radio-customer-company"
+                      />
+                      <span>Azienda</span>
+                    </label>
+                  </div>
+                </div>
+
+                {/* Nome / Ragione Sociale */}
+                {newCustomerData.customerType === "private" ? (
                   <div className="space-y-1">
                     <Label htmlFor="new-customer-name">Nome completo *</Label>
                     <Input
@@ -406,6 +522,21 @@ export function AcceptanceWizardDialog({
                       data-testid="input-new-customer-name"
                     />
                   </div>
+                ) : (
+                  <div className="space-y-1">
+                    <Label htmlFor="new-customer-company">Ragione Sociale *</Label>
+                    <Input
+                      id="new-customer-company"
+                      placeholder="Azienda S.r.l."
+                      value={newCustomerData.companyName}
+                      onChange={(e) => setNewCustomerData(prev => ({ ...prev, companyName: e.target.value }))}
+                      data-testid="input-new-customer-company"
+                    />
+                  </div>
+                )}
+
+                {/* Email e Telefono */}
+                <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1">
                     <Label htmlFor="new-customer-email">Email *</Label>
                     <Input
@@ -417,19 +548,133 @@ export function AcceptanceWizardDialog({
                       data-testid="input-new-customer-email"
                     />
                   </div>
+                  <div className="space-y-1">
+                    <Label htmlFor="new-customer-phone">Telefono *</Label>
+                    <Input
+                      id="new-customer-phone"
+                      placeholder="+39 333 1234567"
+                      value={newCustomerData.phone}
+                      onChange={(e) => setNewCustomerData(prev => ({ ...prev, phone: e.target.value }))}
+                      data-testid="input-new-customer-phone"
+                    />
+                  </div>
                 </div>
+
+                {/* Indirizzo */}
                 <div className="space-y-1">
-                  <Label htmlFor="new-customer-phone">Telefono</Label>
+                  <Label htmlFor="new-customer-address">Indirizzo *</Label>
                   <Input
-                    id="new-customer-phone"
-                    placeholder="+39 333 1234567"
-                    value={newCustomerData.phone}
-                    onChange={(e) => setNewCustomerData(prev => ({ ...prev, phone: e.target.value }))}
-                    data-testid="input-new-customer-phone"
+                    id="new-customer-address"
+                    placeholder="Via Roma, 1"
+                    value={newCustomerData.address}
+                    onChange={(e) => setNewCustomerData(prev => ({ ...prev, address: e.target.value }))}
+                    data-testid="input-new-customer-address"
                   />
                 </div>
+
+                {/* Città, CAP, Paese */}
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="space-y-1">
+                    <Label htmlFor="new-customer-city">Città *</Label>
+                    <Input
+                      id="new-customer-city"
+                      placeholder="Milano"
+                      value={newCustomerData.city}
+                      onChange={(e) => setNewCustomerData(prev => ({ ...prev, city: e.target.value }))}
+                      data-testid="input-new-customer-city"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label htmlFor="new-customer-zip">CAP *</Label>
+                    <Input
+                      id="new-customer-zip"
+                      placeholder="20100"
+                      value={newCustomerData.zipCode}
+                      onChange={(e) => setNewCustomerData(prev => ({ ...prev, zipCode: e.target.value }))}
+                      data-testid="input-new-customer-zip"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label htmlFor="new-customer-country">Paese</Label>
+                    <Input
+                      id="new-customer-country"
+                      placeholder="IT"
+                      value={newCustomerData.country}
+                      onChange={(e) => setNewCustomerData(prev => ({ ...prev, country: e.target.value }))}
+                      data-testid="input-new-customer-country"
+                    />
+                  </div>
+                </div>
+
+                {/* Campi Azienda */}
+                {newCustomerData.customerType === "company" && (
+                  <>
+                    <Separator />
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1">
+                        <Label htmlFor="new-customer-vat">Partita IVA</Label>
+                        <Input
+                          id="new-customer-vat"
+                          placeholder="IT12345678901"
+                          value={newCustomerData.vatNumber}
+                          onChange={(e) => setNewCustomerData(prev => ({ ...prev, vatNumber: e.target.value }))}
+                          data-testid="input-new-customer-vat"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <Label htmlFor="new-customer-fiscal">Codice Fiscale</Label>
+                        <Input
+                          id="new-customer-fiscal"
+                          placeholder="12345678901"
+                          value={newCustomerData.fiscalCode}
+                          onChange={(e) => setNewCustomerData(prev => ({ ...prev, fiscalCode: e.target.value }))}
+                          data-testid="input-new-customer-fiscal"
+                        />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1">
+                        <Label htmlFor="new-customer-pec">PEC *</Label>
+                        <Input
+                          id="new-customer-pec"
+                          type="email"
+                          placeholder="azienda@pec.it"
+                          value={newCustomerData.pec}
+                          onChange={(e) => setNewCustomerData(prev => ({ ...prev, pec: e.target.value }))}
+                          data-testid="input-new-customer-pec"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <Label htmlFor="new-customer-sdi">Codice Univoco (SDI) *</Label>
+                        <Input
+                          id="new-customer-sdi"
+                          placeholder="A1B2C3D"
+                          value={newCustomerData.codiceUnivoco}
+                          onChange={(e) => setNewCustomerData(prev => ({ ...prev, codiceUnivoco: e.target.value }))}
+                          data-testid="input-new-customer-sdi"
+                        />
+                      </div>
+                    </div>
+                    <p className="text-xs text-muted-foreground">* Almeno PEC o Codice Univoco è obbligatorio</p>
+                  </>
+                )}
+
+                {/* IBAN */}
+                <div className="space-y-1">
+                  <Label htmlFor="new-customer-iban">IBAN</Label>
+                  <Input
+                    id="new-customer-iban"
+                    placeholder="IT60X0542811101000000123456"
+                    value={newCustomerData.iban}
+                    onChange={(e) => setNewCustomerData(prev => ({ ...prev, iban: e.target.value }))}
+                    data-testid="input-new-customer-iban"
+                  />
+                </div>
+
+                {/* Username e Password (solo admin/reseller) */}
                 {user?.role !== "repair_center" && (
                   <>
+                    <Separator />
                     <div className="grid grid-cols-2 gap-3">
                       <div className="space-y-1">
                         <Label htmlFor="new-customer-username">Username *</Label>
@@ -455,6 +700,7 @@ export function AcceptanceWizardDialog({
                     </div>
                   </>
                 )}
+
                 <div className="flex gap-2 pt-2">
                   <Button
                     type="button"
@@ -462,9 +708,20 @@ export function AcceptanceWizardDialog({
                     onClick={() => {
                       setShowNewCustomerForm(false);
                       setNewCustomerData({
+                        customerType: "private",
                         fullName: "",
+                        companyName: "",
                         email: "",
                         phone: "",
+                        address: "",
+                        city: "",
+                        zipCode: "",
+                        country: "IT",
+                        vatNumber: "",
+                        fiscalCode: "",
+                        pec: "",
+                        codiceUnivoco: "",
+                        iban: "",
                         username: "",
                         password: "",
                       });
