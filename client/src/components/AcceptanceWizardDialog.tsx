@@ -211,21 +211,29 @@ export function AcceptanceWizardDialog({
     }
   };
 
-  const handleSubmit = form.handleSubmit((data) => {
-    const payload = {
-      ...data,
-      acceptance: {
-        ...data.acceptance,
-        declaredDefects: data.acceptance.declaredDefects 
-          ? data.acceptance.declaredDefects.split('\n').filter(d => d.trim())
-          : [],
-        accessories: data.acceptance.accessories
-          ? data.acceptance.accessories.split(',').map(a => a.trim()).filter(a => a)
-          : [],
-      }
-    };
-    createOrderMutation.mutate(payload as any);
-  });
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    // Only submit if we're on the review step
+    if (step !== "review") {
+      return;
+    }
+    
+    form.handleSubmit((data) => {
+      const payload = {
+        ...data,
+        acceptance: {
+          ...data.acceptance,
+          declaredDefects: data.acceptance.declaredDefects 
+            ? data.acceptance.declaredDefects.split('\n').filter(d => d.trim())
+            : [],
+          accessories: data.acceptance.accessories
+            ? data.acceptance.accessories.split(',').map(a => a.trim()).filter(a => a)
+            : [],
+        }
+      };
+      createOrderMutation.mutate(payload as any);
+    })();
+  };
 
   const handleClose = () => {
     form.reset();
