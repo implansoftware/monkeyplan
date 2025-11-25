@@ -2808,13 +2808,38 @@ export function registerRoutes(app: Express): Server {
       const count = (quoteCount.rows[0] as any).count;
       const quoteNumber = `QUOTE-${timestamp}-${parseInt(count) + 1}`;
       
+      // Parse and validate parts JSON if provided
+      let partsData: Array<{ name: string; quantity: number; unitPrice: number }> = [];
+      if (req.body.parts) {
+        try {
+          partsData = typeof req.body.parts === 'string' 
+            ? JSON.parse(req.body.parts) 
+            : req.body.parts;
+          if (!Array.isArray(partsData)) {
+            return res.status(400).send("Parts must be an array");
+          }
+          for (const part of partsData) {
+            if (!part.name || typeof part.quantity !== 'number' || typeof part.unitPrice !== 'number') {
+              return res.status(400).send("Each part must have name, quantity, and unitPrice");
+            }
+          }
+        } catch (e) {
+          return res.status(400).send("Invalid parts JSON format");
+        }
+      }
+      
+      // Calculate totalAmount server-side
+      const partsTotal = partsData.reduce((sum, part) => sum + (part.quantity * part.unitPrice), 0);
+      const laborCost = req.body.laborCost || 0;
+      const calculatedTotal = partsTotal + laborCost;
+      
       // Validate and create quote
       const validationResult = insertRepairQuoteSchema.safeParse({
         repairOrderId: req.params.id,
         quoteNumber,
-        parts: req.body.parts,
-        laborCost: req.body.laborCost || 0,
-        totalAmount: req.body.totalAmount,
+        parts: partsData.length > 0 ? JSON.stringify(partsData) : null,
+        laborCost,
+        totalAmount: calculatedTotal,
         status: 'draft',
         validUntil: req.body.validUntil,
         notes: req.body.notes,
@@ -2827,26 +2852,23 @@ export function registerRoutes(app: Express): Server {
       
       const quote = await storage.createRepairQuote(validationResult.data);
       
-      // Calculate priority based on diagnostics (if exists)
+      // Calculate priority based on diagnostics or use default
       const diagnostics = await storage.getRepairDiagnostics(req.params.id);
+      let calculatedPriority = 'medium'; // Default priority
+      
       if (diagnostics) {
-        const calculatedPriority = calculateRepairPriority({
+        calculatedPriority = calculateRepairPriority({
           severity: diagnostics.severity as any,
           estimatedRepairTime: diagnostics.estimatedRepairTime ?? undefined,
           requiresExternalParts: diagnostics.requiresExternalParts,
         });
-        
-        // Update repair order with priority and status
-        await storage.updateRepairOrder(req.params.id, {
-          priority: calculatedPriority as any,
-          status: 'preventivo_emesso' as any,
-        });
-      } else {
-        // No diagnostics, just update status
-        await storage.updateRepairOrder(req.params.id, {
-          status: 'preventivo_emesso' as any,
-        });
       }
+      
+      // Update repair order with priority and status
+      await storage.updateRepairOrder(req.params.id, {
+        priority: calculatedPriority as any,
+        status: 'preventivo_emesso' as any,
+      });
       
       setActivityEntity(res, { type: 'repair_quote', id: quote.id });
       res.status(201).json(quote);

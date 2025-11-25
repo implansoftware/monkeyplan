@@ -335,7 +335,7 @@ export class DatabaseStorage implements IStorage {
     return order;
   }
 
-  async updateRepairOrder(id: string, updates: Partial<Pick<RepairOrder, 'status' | 'estimatedCost' | 'finalCost' | 'notes' | 'repairCenterId'>>): Promise<RepairOrder> {
+  async updateRepairOrder(id: string, updates: Partial<Pick<RepairOrder, 'status' | 'priority' | 'estimatedCost' | 'finalCost' | 'notes' | 'repairCenterId'>>): Promise<RepairOrder> {
     const [order] = await db.update(repairOrders)
       .set({ ...updates, updatedAt: new Date() })
       .where(eq(repairOrders.id, id))
