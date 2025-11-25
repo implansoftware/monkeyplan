@@ -29,6 +29,8 @@ import AdminReports from "@/pages/admin/reports";
 import AdminChat from "@/pages/admin/chat";
 import AdminActivityLogs from "@/pages/admin/activity-logs";
 import AdminAnalytics from "@/pages/admin/analytics";
+import DiagnosisList from "@/pages/DiagnosisList";
+import QuotesList from "@/pages/QuotesList";
 
 // Reseller pages
 import ResellerDashboard from "@/pages/reseller/dashboard";
@@ -76,6 +78,8 @@ function Router() {
       <ProtectedRoute path="/admin/chat" component={AdminChat} />
       <ProtectedRoute path="/admin/activity-logs" component={AdminActivityLogs} />
       <ProtectedRoute path="/admin/analytics" component={AdminAnalytics} />
+      <ProtectedRoute path="/admin/diagnostics" component={DiagnosisList} />
+      <ProtectedRoute path="/admin/quotes" component={QuotesList} />
       
       {/* Reseller routes */}
       <ProtectedRoute path="/reseller" component={ResellerDashboard} />
@@ -91,6 +95,8 @@ function Router() {
       <ProtectedRoute path="/repair-center/inventory" component={RepairCenterInventory} />
       <ProtectedRoute path="/repair-center/tickets" component={RepairCenterTickets} />
       <ProtectedRoute path="/repair-center/tickets/:id" component={RepairCenterTicketDetail} />
+      <ProtectedRoute path="/repair-center/diagnostics" component={DiagnosisList} />
+      <ProtectedRoute path="/repair-center/quotes" component={QuotesList} />
       
       {/* Customer routes */}
       <ProtectedRoute path="/customer" component={CustomerDashboard} />

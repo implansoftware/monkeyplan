@@ -13,6 +13,8 @@ import {
   Shield,
   BarChart3,
   Store,
+  Stethoscope,
+  Receipt,
 } from "lucide-react";
 import {
   Sidebar,
@@ -40,6 +42,8 @@ const menuItems = {
     { title: "Rivenditori", url: "/admin/resellers", icon: Store, group: "Principale" },
     { title: "Centri di Riparazione", url: "/admin/repair-centers", icon: Building, group: "Centri" },
     { title: "Lavorazioni", url: "/admin/repairs", icon: Wrench, group: "Centri" },
+    { title: "Diagnosi", url: "/admin/diagnostics", icon: Stethoscope, group: "Centri" },
+    { title: "Preventivi", url: "/admin/quotes", icon: Receipt, group: "Centri" },
     { title: "Ticket", url: "/admin/tickets", icon: Ticket, group: "Assistenza" },
     { title: "Live Chat", url: "/admin/chat", icon: MessageSquare, group: "Assistenza" },
     { title: "Magazzino", url: "/admin/inventory", icon: Package, group: "Magazzino" },
@@ -58,6 +62,8 @@ const menuItems = {
   repair_center: [
     { title: "Dashboard", url: "/repair-center", icon: LayoutDashboard, group: "Principale" },
     { title: "Lavorazioni", url: "/repair-center/repairs", icon: Wrench, group: "Principale" },
+    { title: "Diagnosi", url: "/repair-center/diagnostics", icon: Stethoscope, group: "Principale" },
+    { title: "Preventivi", url: "/repair-center/quotes", icon: Receipt, group: "Principale" },
     { title: "Magazzino", url: "/repair-center/inventory", icon: Package, group: "Magazzino" },
     { title: "Ticket", url: "/repair-center/tickets", icon: Ticket, group: "Assistenza" },
   ],
