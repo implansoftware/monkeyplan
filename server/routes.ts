@@ -2116,6 +2116,23 @@ export function registerRoutes(app: Express): Server {
     }
   });
   
+  // Get products with stock by repair center (admin only)
+  app.get("/api/products/with-stock", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      // Only admins can view all stock across centers
+      if (req.user.role !== 'admin') {
+        return res.status(403).send("Only admins can view stock across all centers");
+      }
+      
+      const productsWithStock = await storage.getAllProductsWithStock();
+      res.json(productsWithStock);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+  
   // Create product (admin only)
   app.post("/api/products", requireAuth, async (req, res) => {
     try {

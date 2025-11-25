@@ -13,10 +13,17 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Search, Pencil, Trash2, Package, Tag, Truck, Warehouse, AlertTriangle } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { Plus, Search, Pencil, Trash2, Package, Warehouse, AlertTriangle } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
+
+interface ProductWithStock {
+  product: Product;
+  stockByCenter: Array<{ repairCenterId: string; repairCenterName: string; quantity: number }>;
+  totalStock: number;
+}
 
 const CATEGORIES = [
   { value: "display", label: "Display/Schermo" },
@@ -57,8 +64,8 @@ export default function AdminProducts() {
   const [newModel, setNewModel] = useState("");
   const { toast } = useToast();
 
-  const { data: products = [], isLoading } = useQuery<Product[]>({
-    queryKey: ["/api/products"],
+  const { data: productsWithStock = [], isLoading } = useQuery<ProductWithStock[]>({
+    queryKey: ["/api/products/with-stock"],
   });
 
   const createProductMutation = useMutation({
@@ -68,6 +75,7 @@ export default function AdminProducts() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/products"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/products/with-stock"] });
       setDialogOpen(false);
       setCompatibleModels([]);
       toast({ title: "Prodotto creato con successo" });
@@ -83,6 +91,7 @@ export default function AdminProducts() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/products"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/products/with-stock"] });
       toast({ title: "Prodotto eliminato" });
     },
   });
@@ -127,7 +136,7 @@ export default function AdminProducts() {
     createProductMutation.mutate(data);
   };
 
-  const filteredProducts = products.filter((product) => {
+  const filteredProducts = productsWithStock.filter(({ product }) => {
     const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       product.sku.toLowerCase().includes(searchQuery.toLowerCase()) ||
       (product.brand?.toLowerCase().includes(searchQuery.toLowerCase()));
@@ -155,6 +164,16 @@ export default function AdminProducts() {
 
   const getCategoryLabel = (category: string) => {
     return CATEGORIES.find(c => c.value === category)?.label || category;
+  };
+
+  const getStockBadge = (totalStock: number, minStock: number | null | undefined) => {
+    const min = minStock ?? 5;
+    if (totalStock === 0) {
+      return <Badge variant="destructive"><AlertTriangle className="h-3 w-3 mr-1" />Esaurito</Badge>;
+    } else if (totalStock <= min) {
+      return <Badge variant="secondary" className="bg-yellow-500/20 text-yellow-700 dark:text-yellow-400"><AlertTriangle className="h-3 w-3 mr-1" />Scorta Bassa</Badge>;
+    }
+    return <Badge variant="outline">{totalStock}</Badge>;
   };
 
   return (
@@ -505,33 +524,70 @@ export default function AdminProducts() {
                   <TableHead>Prodotto</TableHead>
                   <TableHead>SKU</TableHead>
                   <TableHead>Categoria</TableHead>
-                  <TableHead>Marca</TableHead>
                   <TableHead>Condizione</TableHead>
-                  <TableHead>Acquisto</TableHead>
                   <TableHead>Vendita</TableHead>
+                  <TableHead>
+                    <div className="flex items-center gap-1">
+                      <Warehouse className="h-4 w-4" />
+                      Giacenze
+                    </div>
+                  </TableHead>
                   <TableHead className="text-right">Azioni</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredProducts.map((product) => (
+                {filteredProducts.map(({ product, stockByCenter, totalStock }) => (
                   <TableRow key={product.id} data-testid={`row-product-${product.id}`}>
                     <TableCell>
                       <div>
                         <div className="font-medium">{product.name}</div>
-                        {product.compatibleModels && product.compatibleModels.length > 0 && (
-                          <div className="text-xs text-muted-foreground">
-                            {product.compatibleModels.slice(0, 2).join(", ")}
-                            {product.compatibleModels.length > 2 && ` +${product.compatibleModels.length - 2}`}
-                          </div>
-                        )}
+                        <div className="text-xs text-muted-foreground">
+                          {product.brand && <span>{product.brand}</span>}
+                          {product.brand && product.compatibleModels && product.compatibleModels.length > 0 && " - "}
+                          {product.compatibleModels && product.compatibleModels.length > 0 && (
+                            <span>
+                              {product.compatibleModels.slice(0, 2).join(", ")}
+                              {product.compatibleModels.length > 2 && ` +${product.compatibleModels.length - 2}`}
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </TableCell>
                     <TableCell className="font-mono text-sm">{product.sku}</TableCell>
                     <TableCell>{getCategoryLabel(product.category)}</TableCell>
-                    <TableCell>{product.brand || "-"}</TableCell>
                     <TableCell>{getConditionBadge(product.condition)}</TableCell>
-                    <TableCell className="text-muted-foreground">{formatCurrency(product.costPrice)}</TableCell>
                     <TableCell className="font-semibold">{formatCurrency(product.unitPrice)}</TableCell>
+                    <TableCell>
+                      {stockByCenter.length > 0 ? (
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <div className="cursor-help">
+                              {getStockBadge(totalStock, product.minStock)}
+                            </div>
+                          </TooltipTrigger>
+                          <TooltipContent className="max-w-xs">
+                            <div className="space-y-1">
+                              <div className="font-semibold mb-2">Giacenze per Centro:</div>
+                              {stockByCenter.map((stock) => (
+                                <div key={stock.repairCenterId} className="flex justify-between gap-4 text-sm">
+                                  <span>{stock.repairCenterName}</span>
+                                  <span className="font-mono">{stock.quantity}</span>
+                                </div>
+                              ))}
+                              <Separator className="my-2" />
+                              <div className="flex justify-between gap-4 font-semibold">
+                                <span>Totale</span>
+                                <span className="font-mono">{totalStock}</span>
+                              </div>
+                            </div>
+                          </TooltipContent>
+                        </Tooltip>
+                      ) : (
+                        <Badge variant="outline" className="text-muted-foreground">
+                          Nessuna giacenza
+                        </Badge>
+                      )}
+                    </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
                         <Button variant="ghost" size="icon" data-testid={`button-edit-${product.id}`}>

@@ -86,6 +86,8 @@ export interface IStorage {
   getInventoryStock(productId: string, repairCenterId: string): Promise<InventoryStock | undefined>;
   createInventoryMovement(movement: InsertInventoryMovement): Promise<InventoryMovement>;
   listInventoryMovements(filters?: { repairCenterId?: string; productId?: string }): Promise<InventoryMovement[]>;
+  getProductStockByCenter(productId: string): Promise<Array<{ repairCenterId: string; repairCenterName: string; quantity: number }>>;
+  getAllProductsWithStock(): Promise<Array<{ product: Product; stockByCenter: Array<{ repairCenterId: string; repairCenterName: string; quantity: number }>; totalStock: number }>>;
   updateProduct(id: string, updates: Partial<Pick<Product, 'name' | 'sku' | 'category' | 'description' | 'unitPrice'>>): Promise<Product>;
   
   // Activity Logs
@@ -621,6 +623,62 @@ export class DatabaseStorage implements IStorage {
     }
     
     return await query.orderBy(desc(inventoryMovements.createdAt));
+  }
+
+  async getProductStockByCenter(productId: string): Promise<Array<{ repairCenterId: string; repairCenterName: string; quantity: number }>> {
+    const result = await db.select({
+      repairCenterId: inventoryStock.repairCenterId,
+      repairCenterName: repairCenters.name,
+      quantity: inventoryStock.quantity,
+    })
+    .from(inventoryStock)
+    .innerJoin(repairCenters, eq(inventoryStock.repairCenterId, repairCenters.id))
+    .where(eq(inventoryStock.productId, productId));
+    
+    return result;
+  }
+
+  async getAllProductsWithStock(): Promise<Array<{ 
+    product: Product; 
+    stockByCenter: Array<{ repairCenterId: string; repairCenterName: string; quantity: number }>;
+    totalStock: number;
+  }>> {
+    const allProducts = await this.listProducts();
+    const allStock = await db.select({
+      productId: inventoryStock.productId,
+      repairCenterId: inventoryStock.repairCenterId,
+      repairCenterName: repairCenters.name,
+      quantity: inventoryStock.quantity,
+    })
+    .from(inventoryStock)
+    .innerJoin(repairCenters, eq(inventoryStock.repairCenterId, repairCenters.id));
+    
+    // Aggregate stock by product and repair center (handles potential duplicates)
+    const stockMap = new Map<string, Map<string, { repairCenterId: string; repairCenterName: string; quantity: number }>>();
+    for (const stock of allStock) {
+      if (!stockMap.has(stock.productId)) {
+        stockMap.set(stock.productId, new Map());
+      }
+      const centerMap = stockMap.get(stock.productId)!;
+      if (centerMap.has(stock.repairCenterId)) {
+        // Aggregate quantities for same product/center
+        const existing = centerMap.get(stock.repairCenterId)!;
+        existing.quantity += stock.quantity;
+      } else {
+        centerMap.set(stock.repairCenterId, {
+          repairCenterId: stock.repairCenterId,
+          repairCenterName: stock.repairCenterName,
+          quantity: stock.quantity,
+        });
+      }
+    }
+    
+    return allProducts.map(product => {
+      const centerMap = stockMap.get(product.id);
+      const stockByCenter = centerMap ? Array.from(centerMap.values()) : [];
+      const totalStock = stockByCenter.reduce((sum, s) => sum + s.quantity, 0);
+      return { product, stockByCenter, totalStock };
+    });
   }
 
   async updateProduct(id: string, updates: Partial<Pick<Product, 'name' | 'sku' | 'category' | 'description' | 'unitPrice'>>): Promise<Product> {
