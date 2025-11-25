@@ -6,9 +6,11 @@ import {
   AnalyticsCache, InsertAnalyticsCache, Notification, InsertNotification,
   NotificationPreferences, InsertNotificationPreferences, RepairAttachment, InsertRepairAttachment,
   RepairAcceptance, InsertRepairAcceptance, DeviceType, InsertDeviceType, DeviceBrand, InsertDeviceBrand,
+  DeviceModel, InsertDeviceModel,
   users, repairCenters, products, repairOrders, tickets, ticketMessages,
   invoices, billingData, chatMessages, inventoryMovements, inventoryStock, activityLogs, analyticsCache,
-  notifications, notificationPreferences, repairAttachments, repairAcceptance, deviceTypes, deviceBrands
+  notifications, notificationPreferences, repairAttachments, repairAcceptance, deviceTypes, deviceBrands,
+  deviceModels
 } from "@shared/schema";
 import { db, pool } from "./db";
 import { eq, and, or, desc, lt, sql, not } from "drizzle-orm";
