@@ -47,18 +47,18 @@ interface RepairLogDialogProps {
 
 const repairLogSchema = z.object({
   logType: z.enum(["status_change", "technician_note", "parts_installed", "test_result", "customer_contact"]),
-  description: z.string().min(1, "Description is required"),
+  description: z.string().min(1, "La descrizione è obbligatoria"),
   hoursWorked: z.coerce.number().min(0).optional(),
 });
 
 type RepairLogFormData = z.infer<typeof repairLogSchema>;
 
 const logTypeLabels: Record<string, { label: string; icon: typeof Clock }> = {
-  status_change: { label: "Status Change", icon: Clock },
-  technician_note: { label: "Technician Note", icon: MessageSquare },
-  parts_installed: { label: "Parts Installed", icon: Wrench },
-  test_result: { label: "Test Result", icon: TestTube },
-  customer_contact: { label: "Customer Contact", icon: Phone },
+  status_change: { label: "Cambio Stato", icon: Clock },
+  technician_note: { label: "Nota Tecnico", icon: MessageSquare },
+  parts_installed: { label: "Parti Installate", icon: Wrench },
+  test_result: { label: "Risultato Test", icon: TestTube },
+  customer_contact: { label: "Contatto Cliente", icon: Phone },
 };
 
 export function RepairLogDialog({
@@ -93,7 +93,7 @@ export function RepairLogDialog({
 
   const createLogMutation = useMutation({
     mutationFn: async (data: RepairLogFormData) => {
-      return await apiRequest(`/api/repair-orders/${repairOrderId}/logs`, "POST", {
+      return await apiRequest("POST", `/api/repair-orders/${repairOrderId}/logs`, {
         logType: data.logType,
         description: data.description,
         hoursWorked: data.hoursWorked ?? null,
@@ -101,8 +101,8 @@ export function RepairLogDialog({
     },
     onSuccess: () => {
       toast({
-        title: "Log added",
-        description: "The repair log has been added successfully",
+        title: "Log aggiunto",
+        description: "Il log di riparazione è stato aggiunto con successo",
       });
       queryClient.invalidateQueries({ queryKey: ["/api/repair-orders", repairOrderId, "logs"] });
       form.reset();
@@ -110,7 +110,7 @@ export function RepairLogDialog({
     },
     onError: (error: Error) => {
       toast({
-        title: "Error",
+        title: "Errore",
         description: error.message,
         variant: "destructive",
       });
@@ -147,17 +147,17 @@ export function RepairLogDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <ClipboardList className="h-5 w-5" />
-            Repair Activity Log
+            Log Attività Riparazione
           </DialogTitle>
           <DialogDescription>
-            Track technician activities and repair progress
+            Traccia le attività del tecnico e l'avanzamento della riparazione
           </DialogDescription>
         </DialogHeader>
 
         {logs.length > 0 && (
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Activity History</CardTitle>
+              <CardTitle className="text-base">Storico Attività</CardTitle>
             </CardHeader>
             <CardContent>
               <ScrollArea className="h-[200px] pr-4">
@@ -178,7 +178,7 @@ export function RepairLogDialog({
                           </Badge>
                           {log.hoursWorked && (
                             <span className="text-xs text-muted-foreground">
-                              {log.hoursWorked}h worked
+                              {log.hoursWorked}h lavorate
                             </span>
                           )}
                         </div>
@@ -197,7 +197,7 @@ export function RepairLogDialog({
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Add New Log Entry</CardTitle>
+            <CardTitle className="text-base">Aggiungi Nuova Voce</CardTitle>
           </CardHeader>
           <CardContent>
             <Form {...form}>
@@ -208,19 +208,19 @@ export function RepairLogDialog({
                     name="logType"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Log Type *</FormLabel>
+                        <FormLabel>Tipo Attività *</FormLabel>
                         <Select onValueChange={field.onChange} defaultValue={field.value}>
                           <FormControl>
                             <SelectTrigger data-testid="select-log-type">
-                              <SelectValue placeholder="Select type" />
+                              <SelectValue placeholder="Seleziona tipo" />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            <SelectItem value="technician_note">Technician Note</SelectItem>
-                            <SelectItem value="parts_installed">Parts Installed</SelectItem>
-                            <SelectItem value="test_result">Test Result</SelectItem>
-                            <SelectItem value="customer_contact">Customer Contact</SelectItem>
-                            <SelectItem value="status_change">Status Change</SelectItem>
+                            <SelectItem value="technician_note">Nota Tecnico</SelectItem>
+                            <SelectItem value="parts_installed">Parti Installate</SelectItem>
+                            <SelectItem value="test_result">Risultato Test</SelectItem>
+                            <SelectItem value="customer_contact">Contatto Cliente</SelectItem>
+                            <SelectItem value="status_change">Cambio Stato</SelectItem>
                           </SelectContent>
                         </Select>
                         <FormMessage />
@@ -232,7 +232,7 @@ export function RepairLogDialog({
                     name="hoursWorked"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Hours Worked</FormLabel>
+                        <FormLabel>Ore Lavorate</FormLabel>
                         <FormControl>
                           <Input
                             {...field}
@@ -243,7 +243,7 @@ export function RepairLogDialog({
                             data-testid="input-hours-worked"
                           />
                         </FormControl>
-                        <FormDescription>Optional time tracking</FormDescription>
+                        <FormDescription>Tracciamento tempo opzionale</FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -255,11 +255,11 @@ export function RepairLogDialog({
                   name="description"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Description *</FormLabel>
+                      <FormLabel>Descrizione *</FormLabel>
                       <FormControl>
                         <Textarea
                           {...field}
-                          placeholder="Describe the activity performed..."
+                          placeholder="Descrivi l'attività eseguita..."
                           rows={3}
                           data-testid="input-description"
                         />
@@ -276,14 +276,14 @@ export function RepairLogDialog({
                     onClick={() => onOpenChange(false)}
                     data-testid="button-close"
                   >
-                    Close
+                    Chiudi
                   </Button>
                   <Button
                     type="submit"
                     disabled={createLogMutation.isPending}
                     data-testid="button-add-log"
                   >
-                    {createLogMutation.isPending ? "Adding..." : "Add Log Entry"}
+                    {createLogMutation.isPending ? "Salvataggio..." : "Aggiungi Log"}
                   </Button>
                 </div>
               </form>
