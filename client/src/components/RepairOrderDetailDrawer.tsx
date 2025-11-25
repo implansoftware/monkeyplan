@@ -156,7 +156,7 @@ export function RepairOrderDetailDrawer({
 
   const startRepairMutation = useMutation({
     mutationFn: async () => {
-      return await apiRequest(`/api/repair-orders/${repairOrderId}/start-repair`, "POST");
+      return await apiRequest("POST", `/api/repair-orders/${repairOrderId}/start-repair`);
     },
     onSuccess: () => {
       toast({ title: "Riparazione avviata" });
@@ -170,7 +170,7 @@ export function RepairOrderDetailDrawer({
 
   const readyForPickupMutation = useMutation({
     mutationFn: async () => {
-      return await apiRequest(`/api/repair-orders/${repairOrderId}/ready-for-pickup`, "POST");
+      return await apiRequest("POST", `/api/repair-orders/${repairOrderId}/ready-for-pickup`);
     },
     onSuccess: () => {
       toast({ title: "Dispositivo pronto per il ritiro" });
