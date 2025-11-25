@@ -270,13 +270,14 @@ export function AcceptanceWizardDialog({
     },
     onSuccess: async (data) => {
       // Upload photos if any were selected
+      let uploadedCount = 0;
       if (acceptancePhotos.length > 0) {
-        await uploadPhotosToOrder(data.order.id);
+        uploadedCount = await uploadPhotosToOrder(data.order.id);
       }
       
       queryClient.invalidateQueries({ queryKey: ["/api/repair-orders"] });
-      const photoMessage = acceptancePhotos.length > 0 
-        ? ` con ${acceptancePhotos.length} foto allegate`
+      const photoMessage = uploadedCount > 0 
+        ? ` con ${uploadedCount} foto allegate`
         : "";
       toast({
         title: "Riparazione ingressata",
@@ -542,28 +543,49 @@ export function AcceptanceWizardDialog({
     });
   };
 
-  const uploadPhotosToOrder = async (repairOrderId: string) => {
-    if (acceptancePhotos.length === 0) return;
+  const uploadPhotosToOrder = async (repairOrderId: string): Promise<number> => {
+    if (acceptancePhotos.length === 0) return 0;
 
     setIsUploadingPhotos(true);
+    let successCount = 0;
+    const failedPhotos: string[] = [];
+    
     try {
       for (const photo of acceptancePhotos) {
         const formData = new FormData();
         formData.append('file', photo.file);
 
-        await fetch(`/api/repair-orders/${repairOrderId}/attachments`, {
+        const response = await fetch(`/api/repair-orders/${repairOrderId}/attachments`, {
           method: 'POST',
           body: formData,
           credentials: 'include'
         });
+        
+        if (response.ok) {
+          successCount++;
+        } else {
+          failedPhotos.push(photo.file.name);
+          console.error(`Failed to upload ${photo.file.name}: ${response.status}`);
+        }
       }
+      
+      if (failedPhotos.length > 0) {
+        toast({
+          variant: "destructive",
+          title: "Errore upload foto",
+          description: `${failedPhotos.length} foto non caricate: ${failedPhotos.join(', ')}`,
+        });
+      }
+      
+      return successCount;
     } catch (error) {
       console.error('Error uploading photos:', error);
       toast({
         variant: "destructive",
         title: "Errore upload foto",
-        description: "Alcune foto potrebbero non essere state caricate correttamente",
+        description: "Errore di rete durante l'upload delle foto",
       });
+      return successCount;
     } finally {
       setIsUploadingPhotos(false);
     }
@@ -1892,10 +1914,20 @@ export function AcceptanceWizardDialog({
                     key="submit-button"
                     type="button"
                     onClick={handleSubmit}
-                    disabled={createOrderMutation.isPending}
+                    disabled={createOrderMutation.isPending || isUploadingPhotos}
                     data-testid="button-submit"
                   >
-                    {createOrderMutation.isPending ? "Creazione..." : "Conferma ingresso"}
+                    {isUploadingPhotos ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Caricamento foto...
+                      </>
+                    ) : createOrderMutation.isPending ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Creazione...
+                      </>
+                    ) : "Conferma ingresso"}
                   </Button>
                 )}
               </div>
