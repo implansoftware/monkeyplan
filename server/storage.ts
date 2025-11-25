@@ -130,7 +130,7 @@ export interface IStorage {
   createRepairDiagnostics(diagnostics: InsertRepairDiagnostics): Promise<RepairDiagnostics>;
   updateRepairDiagnostics(repairOrderId: string, updates: Partial<Omit<InsertRepairDiagnostics, 'repairOrderId' | 'diagnosedBy'>>): Promise<RepairDiagnostics>;
   getRepairDiagnostics(repairOrderId: string): Promise<RepairDiagnostics | undefined>;
-  listAllDiagnostics(filters?: { userId?: string; role?: string; severity?: string; search?: string; dateFrom?: string; dateTo?: string }): Promise<any[]>;
+  listAllDiagnostics(filters?: { userId?: string; role?: string; search?: string; dateFrom?: string; dateTo?: string }): Promise<any[]>;
   
   // Repair Quotes
   createRepairQuote(quote: InsertRepairQuote): Promise<RepairQuote>;
@@ -1126,7 +1126,7 @@ export class DatabaseStorage implements IStorage {
     return updated;
   }
 
-  async listAllDiagnostics(filters?: { userId?: string; role?: string; severity?: string; search?: string; dateFrom?: string; dateTo?: string }): Promise<any[]> {
+  async listAllDiagnostics(filters?: { userId?: string; role?: string; search?: string; dateFrom?: string; dateTo?: string }): Promise<any[]> {
     // Join diagnostics with repair orders to get device info and filter by role
     const results = await db
       .select({
@@ -1134,7 +1134,6 @@ export class DatabaseStorage implements IStorage {
         repairOrderId: repairDiagnostics.repairOrderId,
         technicalDiagnosis: repairDiagnostics.technicalDiagnosis,
         damagedComponents: repairDiagnostics.damagedComponents,
-        severity: repairDiagnostics.severity,
         estimatedRepairTime: repairDiagnostics.estimatedRepairTime,
         requiresExternalParts: repairDiagnostics.requiresExternalParts,
         diagnosisNotes: repairDiagnostics.diagnosisNotes,
@@ -1164,11 +1163,6 @@ export class DatabaseStorage implements IStorage {
       filtered = filtered.filter(d => orderIds.includes(d.repairOrderId));
     } else if (filters?.role === 'customer' && filters?.userId) {
       filtered = filtered.filter(d => d.customerId === filters.userId);
-    }
-
-    // Apply additional filters
-    if (filters?.severity) {
-      filtered = filtered.filter(d => d.severity === filters.severity);
     }
 
     if (filters?.search) {

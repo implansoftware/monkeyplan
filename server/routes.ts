@@ -2840,7 +2840,6 @@ export function registerRoutes(app: Express): Server {
       const diagnostics = await storage.listAllDiagnostics({
         userId: req.user.role === 'repair_center' ? req.user.repairCenterId : req.user.id,
         role: req.user.role,
-        severity: req.query.severity as string | undefined,
         search: req.query.search as string | undefined,
         dateFrom: req.query.dateFrom as string | undefined,
         dateTo: req.query.dateTo as string | undefined,
@@ -2956,7 +2955,6 @@ export function registerRoutes(app: Express): Server {
         repairOrderId: req.params.id,
         technicalDiagnosis: req.body.technicalDiagnosis,
         damagedComponents: req.body.damagedComponents || [],
-        severity: req.body.severity || 'medium',
         estimatedRepairTime: req.body.estimatedRepairTime,
         requiresExternalParts: req.body.requiresExternalParts || false,
         diagnosisNotes: req.body.diagnosisNotes,
@@ -2973,8 +2971,7 @@ export function registerRoutes(app: Express): Server {
       
       // Calculate automatic priority based on diagnostic data
       const calculatedPriority = calculateRepairPriority({
-        severity: diagnosticsData.severity as any,
-        estimatedRepairTime: diagnosticsData.estimatedRepairTime,
+        estimatedRepairTime: diagnosticsData.estimatedRepairTime ?? undefined,
         requiresExternalParts: diagnosticsData.requiresExternalParts,
       });
       
@@ -3023,7 +3020,6 @@ export function registerRoutes(app: Express): Server {
       const updates: any = {};
       if (req.body.technicalDiagnosis !== undefined) updates.technicalDiagnosis = req.body.technicalDiagnosis;
       if (req.body.damagedComponents !== undefined) updates.damagedComponents = req.body.damagedComponents;
-      if (req.body.severity !== undefined) updates.severity = req.body.severity;
       if (req.body.estimatedRepairTime !== undefined) updates.estimatedRepairTime = req.body.estimatedRepairTime;
       if (req.body.requiresExternalParts !== undefined) updates.requiresExternalParts = req.body.requiresExternalParts;
       if (req.body.diagnosisNotes !== undefined) updates.diagnosisNotes = req.body.diagnosisNotes;
@@ -3031,10 +3027,9 @@ export function registerRoutes(app: Express): Server {
       
       const diagnostics = await storage.updateRepairDiagnostics(req.params.id, updates);
       
-      // Recalculate priority if severity or other factors changed
-      if (updates.severity || updates.estimatedRepairTime !== undefined || updates.requiresExternalParts !== undefined) {
+      // Recalculate priority if factors changed
+      if (updates.estimatedRepairTime !== undefined || updates.requiresExternalParts !== undefined) {
         const calculatedPriority = calculateRepairPriority({
-          severity: diagnostics.severity as any,
           estimatedRepairTime: diagnostics.estimatedRepairTime ?? undefined,
           requiresExternalParts: diagnostics.requiresExternalParts,
         });
@@ -3205,7 +3200,6 @@ export function registerRoutes(app: Express): Server {
       
       if (diagnostics) {
         calculatedPriority = calculateRepairPriority({
-          severity: diagnostics.severity as any,
           estimatedRepairTime: diagnostics.estimatedRepairTime ?? undefined,
           requiresExternalParts: diagnostics.requiresExternalParts,
         });
@@ -4358,17 +4352,9 @@ export function registerRoutes(app: Express): Server {
         doc.moveDown();
       }
       
-      // Severity and details
+      // Valutation details
       doc.fontSize(12).font('Helvetica-Bold').text('VALUTAZIONE');
       doc.fontSize(10).font('Helvetica');
-      
-      const severityLabels: Record<string, string> = {
-        'low': 'Bassa - Danno minore',
-        'medium': 'Media - Danno moderato',
-        'high': 'Alta - Danno significativo',
-        'critical': 'Critica - Danno grave'
-      };
-      doc.text(`Gravità: ${severityLabels[diagnostics.severity] || diagnostics.severity}`);
       
       if (diagnostics.estimatedRepairTime) {
         const hours = diagnostics.estimatedRepairTime;

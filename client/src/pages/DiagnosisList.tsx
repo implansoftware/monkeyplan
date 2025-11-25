@@ -5,32 +5,16 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Stethoscope, Clock, Package, Search, Filter, X, Calendar } from "lucide-react";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
 import { RepairOrderDetailDrawer } from "@/components/RepairOrderDetailDrawer";
-
-const severityLabels: Record<string, string> = {
-  low: "Bassa",
-  medium: "Media",
-  high: "Alta",
-  critical: "Critica",
-};
-
-const severityColors: Record<string, string> = {
-  low: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200",
-  medium: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200",
-  high: "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200",
-  critical: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200",
-};
 
 export default function DiagnosisList() {
   const [selectedRepairId, setSelectedRepairId] = useState<string | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   
   const [search, setSearch] = useState("");
-  const [severity, setSeverity] = useState<string>("");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [showFilters, setShowFilters] = useState(false);
@@ -38,7 +22,6 @@ export default function DiagnosisList() {
   const buildQueryParams = () => {
     const params = new URLSearchParams();
     if (search) params.append("search", search);
-    if (severity && severity !== "all") params.append("severity", severity);
     if (dateFrom) params.append("dateFrom", dateFrom);
     if (dateTo) params.append("dateTo", dateTo);
     return params.toString();
@@ -47,7 +30,7 @@ export default function DiagnosisList() {
   const queryString = buildQueryParams();
 
   const { data: diagnostics, isLoading } = useQuery<any[]>({
-    queryKey: ["/api/diagnostics", { search, severity, dateFrom, dateTo }],
+    queryKey: ["/api/diagnostics", { search, dateFrom, dateTo }],
     queryFn: async () => {
       const url = queryString ? `/api/diagnostics?${queryString}` : "/api/diagnostics";
       const res = await fetch(url, { credentials: "include" });
@@ -58,12 +41,11 @@ export default function DiagnosisList() {
 
   const clearFilters = () => {
     setSearch("");
-    setSeverity("");
     setDateFrom("");
     setDateTo("");
   };
 
-  const hasActiveFilters = search || (severity && severity !== "all") || dateFrom || dateTo;
+  const hasActiveFilters = search || dateFrom || dateTo;
 
   if (isLoading) {
     return (
@@ -107,7 +89,7 @@ export default function DiagnosisList() {
       {showFilters && (
         <Card className="mb-4">
           <CardContent className="pt-4 space-y-4">
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <div className="grid gap-4 md:grid-cols-3">
               <div className="space-y-2">
                 <label className="text-sm font-medium">Cerca</label>
                 <div className="relative">
@@ -120,22 +102,6 @@ export default function DiagnosisList() {
                     data-testid="input-search-diagnosis"
                   />
                 </div>
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Gravità</label>
-                <Select value={severity} onValueChange={setSeverity}>
-                  <SelectTrigger data-testid="select-severity">
-                    <SelectValue placeholder="Tutte" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Tutte</SelectItem>
-                    <SelectItem value="low">Bassa</SelectItem>
-                    <SelectItem value="medium">Media</SelectItem>
-                    <SelectItem value="high">Alta</SelectItem>
-                    <SelectItem value="critical">Critica</SelectItem>
-                  </SelectContent>
-                </Select>
               </div>
 
               <div className="space-y-2">
@@ -187,11 +153,6 @@ export default function DiagnosisList() {
               Cerca: "{search}"
             </Badge>
           )}
-          {severity && severity !== "all" && (
-            <Badge variant="secondary">
-              Gravità: {severityLabels[severity]}
-            </Badge>
-          )}
           {dateFrom && (
             <Badge variant="secondary">
               Dal: {format(new Date(dateFrom), "dd/MM/yyyy")}
@@ -235,11 +196,6 @@ export default function DiagnosisList() {
                     <span>{diagnosis.deviceType} - {diagnosis.deviceModel}</span>
                   </CardTitle>
                   <div className="flex items-center gap-2">
-                    {diagnosis.severity && (
-                      <Badge className={severityColors[diagnosis.severity]}>
-                        {severityLabels[diagnosis.severity]}
-                      </Badge>
-                    )}
                     {diagnosis.requiresExternalParts && (
                       <Badge variant="outline" className="flex items-center gap-1">
                         <Package className="h-3 w-3" />

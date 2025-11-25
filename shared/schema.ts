@@ -26,7 +26,7 @@ export const repairStatusEnum = pgEnum("repair_status", [
 export const paymentStatusEnum = pgEnum("payment_status", ["pending", "paid", "overdue", "cancelled"]);
 export const movementTypeEnum = pgEnum("movement_type", ["in", "out", "adjustment"]);
 export const notificationTypeEnum = pgEnum("notification_type", ["repair_update", "sla_warning", "review_request", "message", "system"]);
-export const diagnosisSeverityEnum = pgEnum("diagnosis_severity", ["low", "medium", "high", "critical"]);
+// RIMOSSO: diagnosisSeverityEnum - non più necessario
 export const quoteStatusEnum = pgEnum("quote_status", ["draft", "sent", "accepted", "rejected"]);
 export const repairPriorityEnum = pgEnum("repair_priority", ["low", "medium", "high", "urgent"]);
 export const partsOrderStatusEnum = pgEnum("parts_order_status", ["ordered", "in_transit", "received", "cancelled"]);
@@ -304,7 +304,6 @@ export const repairDiagnostics = pgTable("repair_diagnostics", {
   repairOrderId: varchar("repair_order_id").notNull().unique().references(() => repairOrders.id), // One diagnosis per repair
   technicalDiagnosis: text("technical_diagnosis").notNull(), // Diagnosi tecnica dettagliata
   damagedComponents: text("damaged_components").array(), // Componenti danneggiati
-  severity: diagnosisSeverityEnum("severity").notNull().default("medium"), // Gravità del danno
   estimatedRepairTime: real("estimated_repair_time"), // Tempo stimato in ore (supporta decimali es. 0.5, 1.5)
   requiresExternalParts: boolean("requires_external_parts").notNull().default(false), // Necessità ricambi esterni
   diagnosisNotes: text("diagnosis_notes"), // Note aggiuntive del tecnico

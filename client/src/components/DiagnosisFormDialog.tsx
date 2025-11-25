@@ -51,7 +51,6 @@ const diagnosisSchema = z.object({
   otherFindingDescription: z.string().optional(),
   selectedComponentIds: z.array(z.string()).default([]),
   otherComponentDescription: z.string().optional(),
-  severity: z.enum(["low", "medium", "high", "critical"]).default("medium"),
   estimatedRepairTimeId: z.string().min(1, "Seleziona un tempo stimato di riparazione"),
   requiresExternalParts: z.boolean().default(false),
   diagnosisNotes: z.string().optional(),
@@ -157,7 +156,6 @@ export function DiagnosisFormDialog({
       otherFindingDescription: "",
       selectedComponentIds: [],
       otherComponentDescription: "",
-      severity: "medium",
       estimatedRepairTimeId: "",
       requiresExternalParts: false,
       diagnosisNotes: "",
@@ -219,7 +217,6 @@ export function DiagnosisFormDialog({
       const payload = {
         technicalDiagnosis,
         damagedComponents: selectedComponentNames,
-        severity: data.severity,
         estimatedRepairTime: estimatedHours,
         requiresExternalParts: data.requiresExternalParts,
         diagnosisNotes: data.diagnosisNotes,
@@ -454,42 +451,6 @@ export function DiagnosisFormDialog({
                 <CardTitle className="text-base">Valutazione</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <FormField
-                  control={form.control}
-                  name="severity"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Livello di Gravità *</FormLabel>
-                      <Select
-                        onValueChange={field.onChange}
-                        value={field.value}
-                      >
-                        <FormControl>
-                          <SelectTrigger data-testid="select-severity">
-                            <SelectValue placeholder="Seleziona gravità" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="low">Basso - Problema minore</SelectItem>
-                          <SelectItem value="medium">
-                            Medio - Danno moderato
-                          </SelectItem>
-                          <SelectItem value="high">
-                            Alto - Danno grave
-                          </SelectItem>
-                          <SelectItem value="critical">
-                            Critico - Danno severo
-                          </SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormDescription>
-                        La gravità determina la priorità della riparazione
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
                 <FormField
                   control={form.control}
                   name="estimatedRepairTimeId"
