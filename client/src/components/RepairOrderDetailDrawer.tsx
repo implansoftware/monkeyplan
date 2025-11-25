@@ -207,12 +207,13 @@ export function RepairOrderDetailDrawer({
     }
   };
 
-  const formatCurrency = (cents: number | null) => {
-    if (!cents) return "Da definire";
+  const formatCurrency = (amount: number | null | undefined, inCents: boolean = false) => {
+    if (amount === null || amount === undefined) return "Da definire";
+    const value = inCents ? amount / 100 : amount;
     return new Intl.NumberFormat("it-IT", {
       style: "currency",
       currency: "EUR",
-    }).format(cents / 100);
+    }).format(value);
   };
 
   return (
@@ -279,13 +280,15 @@ export function RepairOrderDetailDrawer({
                 <div>
                   <p className="text-sm text-muted-foreground">Costo Stimato</p>
                   <p className="text-lg font-bold text-primary" data-testid="text-estimated-cost">
-                    {formatCurrency(repair.estimatedCost)}
+                    {quote ? formatCurrency(Number(quote.totalAmount)) : (repair.estimatedCost ? formatCurrency(repair.estimatedCost, true) : "Da definire")}
                   </p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Costo Finale</p>
                   <p className="text-lg font-bold" data-testid="text-final-cost">
-                    {repair.finalCost ? formatCurrency(repair.finalCost) : "Da confermare"}
+                    {quote?.status === 'accepted' 
+                      ? formatCurrency(Number(quote.totalAmount))
+                      : (repair.finalCost ? formatCurrency(repair.finalCost, true) : "Da confermare")}
                   </p>
                 </div>
               </div>
@@ -315,10 +318,10 @@ export function RepairOrderDetailDrawer({
                             <div>
                               <p className="text-sm text-muted-foreground mb-2">Ricambi</p>
                               <div className="space-y-1 text-sm">
-                                {parts.map((part: { name: string; quantity: number; unitPrice: number }, idx: number) => (
+                                {parts.map((part: { name: string; quantity: number; unitPrice: number; price?: number }, idx: number) => (
                                   <div key={idx} className="flex justify-between items-center">
                                     <span>{part.name} x{part.quantity}</span>
-                                    <span className="font-medium">{formatCurrency(part.unitPrice * part.quantity)}</span>
+                                    <span className="font-medium">{formatCurrency(Number(part.price || part.unitPrice * part.quantity))}</span>
                                   </div>
                                 ))}
                               </div>
@@ -332,11 +335,11 @@ export function RepairOrderDetailDrawer({
                     })()}
                     
                     {/* Labor cost */}
-                    {quote.laborCost > 0 && (
+                    {Number(quote.laborCost) > 0 && (
                       <div className="flex justify-between items-center">
                         <p className="text-sm text-muted-foreground">Manodopera</p>
                         <p className="text-sm font-medium" data-testid="text-labor-cost">
-                          {formatCurrency(quote.laborCost)}
+                          {formatCurrency(Number(quote.laborCost))}
                         </p>
                       </div>
                     )}
@@ -346,7 +349,7 @@ export function RepairOrderDetailDrawer({
                     <div className="flex justify-between items-center">
                       <p className="text-sm font-medium">Totale</p>
                       <p className="text-lg font-bold text-primary" data-testid="text-quote-total">
-                        {formatCurrency(quote.totalAmount)}
+                        {formatCurrency(Number(quote.totalAmount))}
                       </p>
                     </div>
                     
