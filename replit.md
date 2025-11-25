@@ -154,6 +154,28 @@ Development uses Vite for HMR. Production builds use Vite for client assets and 
 - Integrated into admin and repair center pages with "Nuovo ingresso" button
 - Customer query for admin/repair_center to select customer for the order
 
+**FASE 2.5: Database-Driven Dropdown Catalogs (✅ COMPLETED, ARCHITECT REVIEWED)**
+**Schema Extensions (✅):**
+- Extended `device_types` and `device_brands` tables: Added to replace free-text input with admin-managed catalogs
+- Extended `device_models` table: Added `isActive` flag, `updatedAt` timestamp for lifecycle management
+- Added `device_model_id` nullable FK to `repair_orders`: Links orders to catalog entries while maintaining backward-compatible text fields
+- Unique index on `device_models(type_id, brand_id, LOWER(model_name))`: Prevents duplicate model entries per brand/type combo
+- Seeded 7 device types (Smartphone, Tablet, Laptop, etc.) and 14 brands (Apple, Samsung, Dell, etc.)
+- Seeded 11 sample device models (iPhone 15 Pro, Galaxy S24, MacBook Air, etc.) with proper FK relationships
+**Backend API (✅ COMPLETED):**
+- `GET /api/device-types` - Returns active device types for dropdown (requireAuth, activeOnly default true)
+- `GET /api/device-brands` - Returns active brands for dropdown (requireAuth, activeOnly default true)
+- `GET /api/device-models?typeId=X&brandId=Y` - Cascading dropdown endpoint, filters models by type+brand (requireAuth)
+- Storage method `listDeviceModels({ typeId, brandId, activeOnly })` - Conditional filtering with Drizzle where/and clauses
+**Frontend Cascading Dropdowns (✅ COMPLETED):**
+- Device type Select: onChange tracks `selectedTypeId` state, resets brand/model selections
+- Brand Select: onChange tracks `selectedBrandId` state, resets model selection
+- Device model Select: Cascading dropdown that loads when type+brand selected via TanStack Query with custom queryFn
+- Query automatically refetches when type/brand IDs change, disabled until both parent selections made
+- Fallback to text Input when no models available for selected type/brand combination
+- "Altro (inserimento manuale)" option in model dropdown for custom entries not in catalog
+- Clean state reset when type/brand selections change ensures consistent UX
+
 **FASE 3: Diagnostics & Priority (⏳ PENDING)**
 - Diagnostics table and API
 - Priority calculation logic
