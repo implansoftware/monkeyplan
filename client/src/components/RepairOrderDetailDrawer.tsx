@@ -13,6 +13,13 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { AttachmentUploader } from "@/components/AttachmentUploader";
 import { DiagnosisFormDialog } from "@/components/DiagnosisFormDialog";
 import { QuoteFormDialog } from "@/components/QuoteFormDialog";
@@ -27,6 +34,19 @@ import {
 } from "lucide-react";
 import { format } from "date-fns";
 import { useAuth } from "@/hooks/use-auth";
+
+type RepairQuote = {
+  id: string;
+  repairOrderId: string;
+  quoteNumber: string;
+  parts: any;
+  laborCost: number;
+  totalAmount: number;
+  status: string;
+  validUntil: string | null;
+  notes: string | null;
+  createdAt: string;
+};
 
 type RepairOrder = {
   id: string;
@@ -83,6 +103,38 @@ export function RepairOrderDetailDrawer({
     },
     enabled: !!repairOrderId && open,
     retry: false,
+  });
+
+  const { data: quote } = useQuery<RepairQuote>({
+    queryKey: ["/api/repair-orders", repairOrderId, "quote"],
+    queryFn: async () => {
+      const response = await fetch(`/api/repair-orders/${repairOrderId}/quote`, {
+        credentials: "include",
+      });
+      if (!response.ok) {
+        if (response.status === 404) return null;
+        throw new Error("Errore nel caricamento preventivo");
+      }
+      return response.json();
+    },
+    enabled: !!repairOrderId && open,
+    retry: false,
+  });
+
+  const updateQuoteStatusMutation = useMutation({
+    mutationFn: async (status: string) => {
+      return await apiRequest("PATCH", `/api/repair-orders/${repairOrderId}/quote`, { status });
+    },
+    onSuccess: () => {
+      toast({ title: "Stato preventivo aggiornato" });
+      queryClient.invalidateQueries({ queryKey: ["/api/repair-orders"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/repair-orders", repairOrderId] });
+      queryClient.invalidateQueries({ queryKey: ["/api/repair-orders", repairOrderId, "quote"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/quotes"] });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Errore", description: error.message, variant: "destructive" });
+    },
   });
 
   // Calculate permissions based on user role and repair order ownership
@@ -225,6 +277,69 @@ export function RepairOrderDetailDrawer({
                 </div>
               </div>
             </div>
+
+            {/* Quote Info */}
+            {quote && (
+              <>
+                <Separator />
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2 font-medium">
+                    <Receipt className="h-4 w-4" />
+                    Preventivo
+                  </div>
+                  <div className="grid gap-3">
+                    <div>
+                      <p className="text-sm text-muted-foreground">Numero</p>
+                      <p className="text-sm font-mono" data-testid="text-quote-number">{quote.quoteNumber}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Totale</p>
+                      <p className="text-lg font-bold text-primary" data-testid="text-quote-total">
+                        {formatCurrency(quote.totalAmount)}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground mb-1">Stato Preventivo</p>
+                      {canManageWorkflow ? (
+                        <Select
+                          value={quote.status}
+                          onValueChange={(value) => updateQuoteStatusMutation.mutate(value)}
+                          disabled={updateQuoteStatusMutation.isPending}
+                        >
+                          <SelectTrigger className="w-full" data-testid="select-quote-status">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="draft">Bozza</SelectItem>
+                            <SelectItem value="sent">Inviato</SelectItem>
+                            <SelectItem value="accepted">Accettato</SelectItem>
+                            <SelectItem value="rejected">Rifiutato</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      ) : (
+                        <Badge 
+                          variant={quote.status === 'accepted' ? 'default' : quote.status === 'rejected' ? 'destructive' : 'secondary'}
+                          data-testid="badge-quote-status"
+                        >
+                          {quote.status === 'draft' && 'Bozza'}
+                          {quote.status === 'sent' && 'Inviato'}
+                          {quote.status === 'accepted' && 'Accettato'}
+                          {quote.status === 'rejected' && 'Rifiutato'}
+                        </Badge>
+                      )}
+                    </div>
+                    {quote.validUntil && (
+                      <div>
+                        <p className="text-sm text-muted-foreground">Valido fino al</p>
+                        <p className="text-sm" data-testid="text-quote-valid-until">
+                          {format(new Date(quote.validUntil), "dd/MM/yyyy")}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </>
+            )}
 
             {/* Notes */}
             {repair.notes && (

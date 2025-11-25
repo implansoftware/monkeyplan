@@ -2949,8 +2949,30 @@ export function registerRoutes(app: Express): Server {
       if (req.body.totalAmount !== undefined) updates.totalAmount = req.body.totalAmount;
       if (req.body.validUntil !== undefined) updates.validUntil = req.body.validUntil;
       if (req.body.notes !== undefined) updates.notes = req.body.notes;
+      if (req.body.status !== undefined) {
+        const validStatuses = ['draft', 'sent', 'accepted', 'rejected'];
+        if (!validStatuses.includes(req.body.status)) {
+          return res.status(400).send(`Invalid status. Must be one of: ${validStatuses.join(', ')}`);
+        }
+        updates.status = req.body.status;
+      }
       
       const quote = await storage.updateRepairQuote(req.params.id, updates);
+      
+      // If status changed to accepted, update repair order status
+      if (req.body.status === 'accepted') {
+        await storage.updateRepairOrder(req.params.id, {
+          status: 'preventivo_accettato' as any,
+        });
+      } else if (req.body.status === 'rejected') {
+        await storage.updateRepairOrder(req.params.id, {
+          status: 'preventivo_rifiutato' as any,
+        });
+      } else if (req.body.status === 'sent') {
+        await storage.updateRepairOrder(req.params.id, {
+          status: 'preventivo_emesso' as any,
+        });
+      }
       
       setActivityEntity(res, { type: 'repair_quote', id: quote.id });
       res.json(quote);
