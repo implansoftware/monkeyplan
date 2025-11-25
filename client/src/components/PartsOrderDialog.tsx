@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -25,8 +26,16 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Package, Truck, CheckCircle, Clock } from "lucide-react";
-import type { PartsOrder } from "@shared/schema";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Package, Truck, CheckCircle, Clock, Search, Warehouse, PlusCircle } from "lucide-react";
+import type { PartsOrder, Product } from "@shared/schema";
 
 interface PartsOrderDialogProps {
   open: boolean;
@@ -36,10 +45,11 @@ interface PartsOrderDialogProps {
 }
 
 const partsOrderSchema = z.object({
-  partName: z.string().min(1, "Part name is required"),
+  productId: z.string().optional(),
+  partName: z.string().min(1, "Il nome del ricambio è obbligatorio"),
   partNumber: z.string().optional(),
-  quantity: z.coerce.number().min(1, "Quantity must be at least 1"),
-  unitCost: z.coerce.number().min(0, "Cost must be positive"),
+  quantity: z.coerce.number().min(1, "La quantità deve essere almeno 1"),
+  unitCost: z.coerce.number().min(0, "Il costo deve essere positivo"),
   supplier: z.string().optional(),
   expectedArrival: z.string().optional(),
   notes: z.string().optional(),
@@ -55,6 +65,8 @@ export function PartsOrderDialog({
 }: PartsOrderDialogProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [orderMode, setOrderMode] = useState<"catalog" | "manual">("catalog");
+  const [searchTerm, setSearchTerm] = useState("");
 
   const { data: existingParts = [] } = useQuery<PartsOrder[]>({
     queryKey: ["/api/repair-orders", repairOrderId, "parts"],
@@ -68,9 +80,21 @@ export function PartsOrderDialog({
     enabled: open,
   });
 
+  const { data: products = [] } = useQuery<Product[]>({
+    queryKey: ["/api/products"],
+    enabled: open,
+  });
+
+  const filteredProducts = products.filter(
+    (p) =>
+      p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      p.sku.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   const form = useForm<PartsOrderFormData>({
     resolver: zodResolver(partsOrderSchema),
     defaultValues: {
+      productId: "",
       partName: "",
       partNumber: "",
       quantity: 1,
@@ -81,9 +105,20 @@ export function PartsOrderDialog({
     },
   });
 
+  const selectProduct = (productId: string) => {
+    const product = products.find((p) => p.id === productId);
+    if (product) {
+      form.setValue("productId", product.id);
+      form.setValue("partName", product.name);
+      form.setValue("partNumber", product.sku);
+      form.setValue("unitCost", product.unitPrice / 100);
+    }
+  };
+
   const createPartMutation = useMutation({
     mutationFn: async (data: PartsOrderFormData) => {
       const payload = {
+        productId: data.productId || null,
         partName: data.partName,
         partNumber: data.partNumber || null,
         quantity: data.quantity,
@@ -100,17 +135,20 @@ export function PartsOrderDialog({
     },
     onSuccess: () => {
       toast({
-        title: "Part ordered",
-        description: "The spare part has been ordered successfully",
+        title: "Ricambio ordinato",
+        description: "L'ordine del ricambio è stato creato con successo",
       });
       queryClient.invalidateQueries({ queryKey: ["/api/repair-orders", repairOrderId, "parts"] });
       queryClient.invalidateQueries({ queryKey: ["/api/repair-orders"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/products"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/inventory"] });
       form.reset();
+      setSearchTerm("");
       onSuccess?.();
     },
     onError: (error: Error) => {
       toast({
-        title: "Error",
+        title: "Errore",
         description: error.message,
         variant: "destructive",
       });
@@ -122,12 +160,14 @@ export function PartsOrderDialog({
       return await apiRequest(`/api/parts-orders/${id}/status`, "PATCH", { status });
     },
     onSuccess: () => {
-      toast({ title: "Status updated" });
+      toast({ title: "Stato aggiornato" });
       queryClient.invalidateQueries({ queryKey: ["/api/repair-orders", repairOrderId, "parts"] });
       queryClient.invalidateQueries({ queryKey: ["/api/repair-orders"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/products"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/inventory"] });
     },
     onError: (error: Error) => {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
+      toast({ title: "Errore", description: error.message, variant: "destructive" });
     },
   });
 
@@ -138,13 +178,13 @@ export function PartsOrderDialog({
   const getStatusBadge = (status: string) => {
     switch (status) {
       case "ordered":
-        return <Badge variant="outline"><Clock className="h-3 w-3 mr-1" />Ordered</Badge>;
+        return <Badge variant="outline"><Clock className="h-3 w-3 mr-1" />Ordinato</Badge>;
       case "in_transit":
-        return <Badge variant="secondary"><Truck className="h-3 w-3 mr-1" />In Transit</Badge>;
+        return <Badge variant="secondary"><Truck className="h-3 w-3 mr-1" />In Transito</Badge>;
       case "received":
-        return <Badge variant="default"><CheckCircle className="h-3 w-3 mr-1" />Received</Badge>;
+        return <Badge variant="default"><CheckCircle className="h-3 w-3 mr-1" />Ricevuto</Badge>;
       case "cancelled":
-        return <Badge variant="destructive">Cancelled</Badge>;
+        return <Badge variant="destructive">Annullato</Badge>;
       default:
         return <Badge variant="outline">{status}</Badge>;
     }
@@ -164,17 +204,17 @@ export function PartsOrderDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Package className="h-5 w-5" />
-            Spare Parts Management
+            Gestione Ricambi
           </DialogTitle>
           <DialogDescription>
-            Order and track spare parts for this repair
+            Ordina e traccia i ricambi per questa riparazione
           </DialogDescription>
         </DialogHeader>
 
         {existingParts.length > 0 && (
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Existing Parts Orders</CardTitle>
+              <CardTitle className="text-base">Ordini Ricambi Esistenti</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
               {existingParts.map((part) => (
@@ -184,10 +224,18 @@ export function PartsOrderDialog({
                   data-testid={`part-order-${part.id}`}
                 >
                   <div className="space-y-1">
-                    <div className="font-medium">{part.partName}</div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium">{part.partName}</span>
+                      {part.productId && (
+                        <Badge variant="outline" className="text-xs">
+                          <Warehouse className="h-3 w-3 mr-1" />
+                          Da magazzino
+                        </Badge>
+                      )}
+                    </div>
                     <div className="text-sm text-muted-foreground">
                       {part.partNumber && <span>#{part.partNumber} - </span>}
-                      Qty: {part.quantity} - {formatCurrency(part.unitCost)}
+                      Qtà: {part.quantity} - {formatCurrency(part.unitCost)}
                       {part.supplier && <span> - {part.supplier}</span>}
                     </div>
                   </div>
@@ -224,20 +272,90 @@ export function PartsOrderDialog({
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Order New Part</CardTitle>
+            <CardTitle className="text-base">Ordina Nuovo Ricambio</CardTitle>
           </CardHeader>
           <CardContent>
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <Tabs value={orderMode} onValueChange={(v) => setOrderMode(v as "catalog" | "manual")}>
+              <TabsList className="grid w-full grid-cols-2 mb-4">
+                <TabsTrigger value="catalog" className="flex items-center gap-2" data-testid="tab-catalog">
+                  <Warehouse className="h-4 w-4" />
+                  Da Catalogo
+                </TabsTrigger>
+                <TabsTrigger value="manual" className="flex items-center gap-2" data-testid="tab-manual">
+                  <PlusCircle className="h-4 w-4" />
+                  Inserimento Manuale
+                </TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="catalog">
+                <div className="space-y-4">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Cerca prodotto per nome o SKU..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="pl-9"
+                      data-testid="input-search-product"
+                    />
+                  </div>
+
+                  {searchTerm && filteredProducts.length > 0 && (
+                    <div className="border rounded-lg max-h-48 overflow-y-auto">
+                      {filteredProducts.map((product) => (
+                        <div
+                          key={product.id}
+                          className="p-3 hover-elevate cursor-pointer border-b last:border-b-0"
+                          onClick={() => {
+                            selectProduct(product.id);
+                            setSearchTerm("");
+                          }}
+                          data-testid={`product-option-${product.id}`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <div className="font-medium">{product.name}</div>
+                              <div className="text-sm text-muted-foreground">
+                                SKU: {product.sku} | {product.category}
+                              </div>
+                            </div>
+                            <div className="font-medium text-primary">
+                              {formatCurrency(product.unitPrice)}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {searchTerm && filteredProducts.length === 0 && (
+                    <div className="text-center text-muted-foreground py-4">
+                      Nessun prodotto trovato. Prova con l'inserimento manuale.
+                    </div>
+                  )}
+
+                  {form.watch("productId") && (
+                    <div className="p-3 bg-muted rounded-lg">
+                      <div className="text-sm text-muted-foreground mb-1">Prodotto selezionato:</div>
+                      <div className="font-medium">{form.watch("partName")}</div>
+                      <div className="text-sm text-muted-foreground">
+                        SKU: {form.watch("partNumber")} | {formatCurrency((form.watch("unitCost") || 0) * 100)}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </TabsContent>
+
+              <TabsContent value="manual">
                 <div className="grid grid-cols-2 gap-4">
                   <FormField
                     control={form.control}
                     name="partName"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Part Name *</FormLabel>
+                        <FormLabel>Nome Ricambio *</FormLabel>
                         <FormControl>
-                          <Input {...field} placeholder="e.g., LCD Display" data-testid="input-part-name" />
+                          <Input {...field} placeholder="es. Display LCD" data-testid="input-part-name" />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -248,23 +366,27 @@ export function PartsOrderDialog({
                     name="partNumber"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Part Number</FormLabel>
+                        <FormLabel>Codice Ricambio</FormLabel>
                         <FormControl>
-                          <Input {...field} placeholder="e.g., LCD-IP14-001" data-testid="input-part-number" />
+                          <Input {...field} placeholder="es. LCD-IP14-001" data-testid="input-part-number" />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
                 </div>
+              </TabsContent>
+            </Tabs>
 
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 mt-4">
                 <div className="grid grid-cols-3 gap-4">
                   <FormField
                     control={form.control}
                     name="quantity"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Quantity *</FormLabel>
+                        <FormLabel>Quantità *</FormLabel>
                         <FormControl>
                           <Input {...field} type="number" min="1" data-testid="input-quantity" />
                         </FormControl>
@@ -277,7 +399,7 @@ export function PartsOrderDialog({
                     name="unitCost"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Unit Cost (EUR)</FormLabel>
+                        <FormLabel>Costo Unitario (EUR)</FormLabel>
                         <FormControl>
                           <Input {...field} type="number" min="0" step="0.01" data-testid="input-unit-cost" />
                         </FormControl>
@@ -290,9 +412,9 @@ export function PartsOrderDialog({
                     name="supplier"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Supplier</FormLabel>
+                        <FormLabel>Fornitore</FormLabel>
                         <FormControl>
-                          <Input {...field} placeholder="Supplier name" data-testid="input-supplier" />
+                          <Input {...field} placeholder="Nome fornitore" data-testid="input-supplier" />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -305,11 +427,11 @@ export function PartsOrderDialog({
                   name="expectedArrival"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Expected Arrival</FormLabel>
+                      <FormLabel>Data Arrivo Prevista</FormLabel>
                       <FormControl>
                         <Input {...field} type="date" data-testid="input-expected-arrival" />
                       </FormControl>
-                      <FormDescription>When the part is expected to arrive</FormDescription>
+                      <FormDescription>Quando è previsto l'arrivo del ricambio</FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -320,9 +442,9 @@ export function PartsOrderDialog({
                   name="notes"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Notes</FormLabel>
+                      <FormLabel>Note</FormLabel>
                       <FormControl>
-                        <Textarea {...field} placeholder="Additional notes..." rows={2} data-testid="input-notes" />
+                        <Textarea {...field} placeholder="Note aggiuntive..." rows={2} data-testid="input-notes" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -336,14 +458,14 @@ export function PartsOrderDialog({
                     onClick={() => onOpenChange(false)}
                     data-testid="button-close"
                   >
-                    Close
+                    Chiudi
                   </Button>
                   <Button
                     type="submit"
-                    disabled={createPartMutation.isPending}
+                    disabled={createPartMutation.isPending || !form.watch("partName")}
                     data-testid="button-order-part"
                   >
-                    {createPartMutation.isPending ? "Ordering..." : "Order Part"}
+                    {createPartMutation.isPending ? "Ordinando..." : "Ordina Ricambio"}
                   </Button>
                 </div>
               </form>

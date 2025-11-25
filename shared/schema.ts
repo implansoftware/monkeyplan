@@ -218,6 +218,7 @@ export const repairQuotes = pgTable("repair_quotes", {
 export const partsOrders = pgTable("parts_orders", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   repairOrderId: varchar("repair_order_id").notNull().references(() => repairOrders.id),
+  productId: varchar("product_id").references(() => products.id), // Collegamento opzionale al prodotto in magazzino
   partName: text("part_name").notNull(), // Nome ricambio
   partNumber: text("part_number"), // Codice ricambio fornitore
   quantity: integer("quantity").notNull().default(1),

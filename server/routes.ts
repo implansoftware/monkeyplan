@@ -3114,6 +3114,7 @@ export function registerRoutes(app: Express): Server {
       
       const partsOrder = await storage.createPartsOrder({
         repairOrderId: req.params.id,
+        productId: req.body.productId || null,
         partName: req.body.partName,
         partNumber: req.body.partNumber,
         quantity: req.body.quantity || 1,
@@ -3154,9 +3155,23 @@ export function registerRoutes(app: Express): Server {
       const receivedAt = req.body.status === 'received' ? new Date() : undefined;
       const updated = await storage.updatePartsOrderStatus(req.params.id, req.body.status, receivedAt);
       
-      // If all parts received, check if we can transition to in_riparazione
+      // If parts received, update inventory
       if (req.body.status === 'received') {
         const repairOrder = await storage.getRepairOrder(partsOrder.repairOrderId);
+        
+        // If linked to a product, add to inventory
+        if (partsOrder.productId && repairOrder?.repairCenterId) {
+          await storage.createInventoryMovement({
+            productId: partsOrder.productId,
+            repairCenterId: repairOrder.repairCenterId,
+            quantity: partsOrder.quantity,
+            movementType: 'in',
+            reference: `Ricambio ricevuto - Ordine #${partsOrder.id}`,
+            performedBy: req.user.id,
+          });
+        }
+        
+        // If all parts received, check if we can transition to in_riparazione
         if (repairOrder && repairOrder.status === 'attesa_ricambi') {
           const allParts = await storage.listPartsOrders(partsOrder.repairOrderId);
           const allReceived = allParts.every(p => p.status === 'received' || p.status === 'cancelled');
