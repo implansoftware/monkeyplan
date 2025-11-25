@@ -3258,6 +3258,37 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // GET /api/parts-orders - List all parts orders (admin only)
+  app.get("/api/parts-orders", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      let filters: { repairCenterId?: string; status?: string } = {};
+      
+      if (req.user.role === 'admin') {
+        if (req.query.repairCenterId) {
+          filters.repairCenterId = req.query.repairCenterId as string;
+        }
+      } else if (req.user.role === 'repair_center') {
+        if (!req.user.repairCenterId) {
+          return res.json([]);
+        }
+        filters.repairCenterId = req.user.repairCenterId;
+      } else {
+        return res.status(403).send("Only admins and repair centers can view parts orders");
+      }
+      
+      if (req.query.status) {
+        filters.status = req.query.status as string;
+      }
+      
+      const orders = await storage.listAllPartsOrders(filters);
+      res.json(orders);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
   // PATCH /api/parts-orders/:id/status - Update parts order status
   app.patch("/api/parts-orders/:id/status", requireAuth, async (req, res) => {
     try {

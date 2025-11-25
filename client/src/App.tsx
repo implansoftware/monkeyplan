@@ -24,6 +24,7 @@ import AdminTicketDetail from "@/pages/admin/ticket-detail";
 import AdminRepairs from "@/pages/admin/repairs";
 import AdminInventory from "@/pages/admin/inventory";
 import AdminProducts from "@/pages/admin/products";
+import AdminPartsOrders from "@/pages/admin/parts-orders";
 import AdminInvoices from "@/pages/admin/invoices";
 import AdminReports from "@/pages/admin/reports";
 import AdminChat from "@/pages/admin/chat";
@@ -73,6 +74,7 @@ function Router() {
       <ProtectedRoute path="/admin/tickets/:id" component={AdminTicketDetail} />
       <ProtectedRoute path="/admin/inventory" component={AdminInventory} />
       <ProtectedRoute path="/admin/products" component={AdminProducts} />
+      <ProtectedRoute path="/admin/parts-orders" component={AdminPartsOrders} />
       <ProtectedRoute path="/admin/invoices" component={AdminInvoices} />
       <ProtectedRoute path="/admin/reports" component={AdminReports} />
       <ProtectedRoute path="/admin/chat" component={AdminChat} />

@@ -15,6 +15,7 @@ import {
   Store,
   Stethoscope,
   Receipt,
+  Truck,
 } from "lucide-react";
 import {
   Sidebar,
@@ -48,6 +49,7 @@ const menuItems = {
     { title: "Live Chat", url: "/admin/chat", icon: MessageSquare, group: "Assistenza" },
     { title: "Magazzino", url: "/admin/inventory", icon: Package, group: "Magazzino" },
     { title: "Prodotti", url: "/admin/products", icon: ShoppingCart, group: "Magazzino" },
+    { title: "Ordini Ricambi", url: "/admin/parts-orders", icon: Truck, group: "Magazzino" },
     { title: "Fatture", url: "/admin/invoices", icon: FileText, group: "Fatturazione" },
     { title: "Activity Logs", url: "/admin/activity-logs", icon: Shield, group: "Sistema" },
     { title: "Impostazioni", url: "/admin/settings", icon: Settings, group: "Sistema" },

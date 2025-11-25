@@ -152,6 +152,7 @@ export interface IStorage {
   // Parts Orders (FASE 5)
   createPartsOrder(order: InsertPartsOrder): Promise<PartsOrder>;
   listPartsOrders(repairOrderId: string): Promise<PartsOrder[]>;
+  listAllPartsOrders(filters?: { repairCenterId?: string; status?: string }): Promise<any[]>;
   getPartsOrder(id: string): Promise<PartsOrder | undefined>;
   updatePartsOrderStatus(id: string, status: string, receivedAt?: Date): Promise<PartsOrder>;
   
@@ -1286,6 +1287,39 @@ export class DatabaseStorage implements IStorage {
       .from(partsOrders)
       .where(eq(partsOrders.repairOrderId, repairOrderId))
       .orderBy(desc(partsOrders.orderedAt));
+  }
+
+  async listAllPartsOrders(filters?: { repairCenterId?: string; status?: string }): Promise<any[]> {
+    const result = await db.select({
+      partsOrder: partsOrders,
+      repairOrder: repairOrders,
+      repairCenter: repairCenters,
+      product: products,
+    })
+    .from(partsOrders)
+    .innerJoin(repairOrders, eq(partsOrders.repairOrderId, repairOrders.id))
+    .leftJoin(repairCenters, eq(repairOrders.repairCenterId, repairCenters.id))
+    .leftJoin(products, eq(partsOrders.productId, products.id))
+    .orderBy(desc(partsOrders.orderedAt));
+
+    let filtered = result;
+    
+    if (filters?.repairCenterId) {
+      filtered = filtered.filter(r => r.repairOrder.repairCenterId === filters.repairCenterId);
+    }
+    
+    if (filters?.status) {
+      filtered = filtered.filter(r => r.partsOrder.status === filters.status);
+    }
+
+    return filtered.map(r => ({
+      ...r.partsOrder,
+      repairOrderNumber: r.repairOrder.orderNumber,
+      repairCenterName: r.repairCenter?.name || 'N/A',
+      repairCenterId: r.repairOrder.repairCenterId,
+      productName: r.product?.name || r.partsOrder.partName,
+      productSku: r.product?.sku || r.partsOrder.partNumber,
+    }));
   }
 
   async getPartsOrder(id: string): Promise<PartsOrder | undefined> {
