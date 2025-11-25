@@ -110,7 +110,7 @@ export default function QuotesList() {
                     </div>
                   </div>
 
-                  {quote.parts && quote.parts.length > 0 && (
+                  {quote.parts && Array.isArray(quote.parts) && quote.parts.length > 0 && (
                     <div className="flex flex-wrap gap-1">
                       {quote.parts.slice(0, 3).map((part: any, idx: number) => (
                         <Badge key={idx} variant="secondary" className="text-xs">
