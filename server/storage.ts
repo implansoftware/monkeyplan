@@ -8,13 +8,14 @@ import {
   RepairAcceptance, InsertRepairAcceptance, RepairDiagnostics, InsertRepairDiagnostics,
   RepairQuote, InsertRepairQuote,
   DeviceType, InsertDeviceType, DeviceBrand, InsertDeviceBrand, DeviceModel, InsertDeviceModel,
+  IssueType, InsertIssueType,
   PartsOrder, InsertPartsOrder, RepairLog, InsertRepairLog,
   RepairTestChecklist, InsertRepairTestChecklist, RepairDelivery, InsertRepairDelivery,
   users, repairCenters, products, repairOrders, tickets, ticketMessages,
   invoices, billingData, chatMessages, inventoryMovements, inventoryStock, activityLogs, analyticsCache,
   notifications, notificationPreferences, repairAttachments, repairAcceptance, repairDiagnostics,
   repairQuotes, partsOrders, repairLogs, repairTestChecklist, repairDelivery,
-  deviceTypes, deviceBrands, deviceModels
+  deviceTypes, deviceBrands, deviceModels, issueTypes
 } from "@shared/schema";
 import { db, pool } from "./db";
 import { eq, and, or, desc, lt, sql, not } from "drizzle-orm";
@@ -148,6 +149,9 @@ export interface IStorage {
   createDeviceBrand(deviceBrand: InsertDeviceBrand): Promise<DeviceBrand>;
   updateDeviceBrand(id: string, updates: Partial<InsertDeviceBrand>): Promise<DeviceBrand>;
   deleteDeviceBrand(id: string): Promise<void>;
+  
+  // Issue Types (Predefined problems per device type)
+  listIssueTypes(deviceTypeId?: string, activeOnly?: boolean): Promise<IssueType[]>;
   
   // Device Models (Cascading dropdown catalog)
   listDeviceModels(filters?: { typeId?: string; brandId?: string; activeOnly?: boolean }): Promise<DeviceModel[]>;
@@ -1314,6 +1318,31 @@ export class DatabaseStorage implements IStorage {
 
   async deleteDeviceBrand(id: string): Promise<void> {
     await db.delete(deviceBrands).where(eq(deviceBrands.id, id));
+  }
+
+  // Issue Types (Predefined problems per device type)
+  async listIssueTypes(deviceTypeId?: string, activeOnly: boolean = true): Promise<IssueType[]> {
+    let query = db.select().from(issueTypes);
+    
+    const conditions = [];
+    
+    if (deviceTypeId) {
+      // Include issues for specific device type OR generic issues (null deviceTypeId)
+      conditions.push(or(
+        eq(issueTypes.deviceTypeId, deviceTypeId),
+        sql`${issueTypes.deviceTypeId} IS NULL`
+      ));
+    }
+    
+    if (activeOnly) {
+      conditions.push(eq(issueTypes.isActive, true));
+    }
+    
+    if (conditions.length > 0) {
+      query = query.where(and(...conditions)) as any;
+    }
+    
+    return await query.orderBy(issueTypes.sortOrder, issueTypes.name);
   }
 
   // Device Models (Cascading dropdown)

@@ -5139,5 +5139,19 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // ============ ISSUE TYPES ============
+
+  // Get issue types (filtered by device type, includes "Altro" option)
+  app.get("/api/issue-types", requireAuth, async (req, res) => {
+    try {
+      const deviceTypeId = req.query.deviceTypeId as string | undefined;
+      const activeOnly = req.query.activeOnly !== 'false'; // Default true
+      const issueTypes = await storage.listIssueTypes(deviceTypeId, activeOnly);
+      res.json(issueTypes);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
   return httpServer;
 }
