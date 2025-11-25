@@ -421,6 +421,23 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Public endpoint to list repair centers (for dropdowns)
+  app.get("/api/repair-centers", requireAuth, async (req, res) => {
+    try {
+      const centers = await storage.listRepairCenters();
+      // Return only essential fields for selection
+      res.json(centers.map(c => ({
+        id: c.id,
+        name: c.name,
+        address: c.address,
+        phone: c.phone,
+        email: c.email
+      })));
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
   app.post("/api/admin/repair-centers", requireRole("admin"), async (req, res) => {
     try {
       const validatedData = insertRepairCenterSchema.parse(req.body);

@@ -49,6 +49,7 @@ type WizardStep = "device-info" | "acceptance-checks" | "review";
 
 const acceptanceWizardSchema = z.object({
   customerId: z.string().min(1, "Customer is required"),
+  repairCenterId: z.string().min(1, "Centro di riparazione richiesto"),
   deviceType: z.string().min(1, "Device type required"),
   deviceModel: z.string().optional(),
   brand: z.string().optional(),
@@ -130,10 +131,22 @@ export function AcceptanceWizardDialog({
     enabled: !!selectedTypeId && !!selectedBrandId,
   });
 
+  const { data: repairCenters = [] } = useQuery<Array<{
+    id: string;
+    name: string;
+    address: string | null;
+    phone: string | null;
+    email: string | null;
+  }>>({
+    queryKey: ["/api/repair-centers"],
+    enabled: user?.role === "admin" || user?.role === "repair_center",
+  });
+
   const form = useForm<AcceptanceWizardData>({
     resolver: zodResolver(acceptanceWizardSchema),
     defaultValues: {
       customerId: customerId || "",
+      repairCenterId: "",
       deviceType: "",
       deviceModel: "",
       brand: "",
@@ -189,7 +202,7 @@ export function AcceptanceWizardDialog({
     let fieldsToValidate: (keyof AcceptanceWizardData)[] = [];
     
     if (step === "device-info") {
-      fieldsToValidate = ["customerId", "deviceType", "issueDescription"];
+      fieldsToValidate = ["customerId", "repairCenterId", "deviceType", "issueDescription"];
     }
     
     const isValid = await form.trigger(fieldsToValidate.length > 0 ? fieldsToValidate : undefined);
@@ -272,6 +285,35 @@ export function AcceptanceWizardDialog({
           )}
         />
       )}
+
+      {/* Centro di Riparazione */}
+      <FormField
+        control={form.control}
+        name="repairCenterId"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Centro di Riparazione *</FormLabel>
+            <Select onValueChange={field.onChange} value={field.value}>
+              <FormControl>
+                <SelectTrigger data-testid="select-repair-center">
+                  <SelectValue placeholder="Seleziona centro di riparazione" />
+                </SelectTrigger>
+              </FormControl>
+              <SelectContent>
+                {repairCenters.map((center) => (
+                  <SelectItem key={center.id} value={center.id}>
+                    {center.name} {center.address ? `- ${center.address}` : ''}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <FormDescription>
+              Seleziona il centro che effettuerà la riparazione
+            </FormDescription>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
 
       <FormField
         control={form.control}
@@ -698,6 +740,7 @@ export function AcceptanceWizardDialog({
   const renderReviewStep = () => {
     const formData = form.getValues();
     const selectedCustomer = customers.find((c) => c.id === formData.customerId);
+    const selectedRepairCenter = repairCenters.find((c) => c.id === formData.repairCenterId);
     
     return (
       <div className="space-y-4">
@@ -713,6 +756,17 @@ export function AcceptanceWizardDialog({
             </CardContent>
           </Card>
         )}
+        
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Centro di Riparazione</CardTitle>
+          </CardHeader>
+          <CardContent className="text-sm">
+            <div className="font-medium" data-testid="text-review-repair-center">
+              {selectedRepairCenter ? `${selectedRepairCenter.name}${selectedRepairCenter.address ? ` - ${selectedRepairCenter.address}` : ''}` : "-"}
+            </div>
+          </CardContent>
+        </Card>
         
         <Card>
           <CardHeader>
