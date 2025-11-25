@@ -388,7 +388,7 @@ export function PartsOrderDialog({
 
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 mt-4">
-                <div className="grid grid-cols-3 gap-4">
+                <div className="grid grid-cols-2 gap-4">
                   <FormField
                     control={form.control}
                     name="quantity"
@@ -410,19 +410,6 @@ export function PartsOrderDialog({
                         <FormLabel>Costo Unitario (EUR)</FormLabel>
                         <FormControl>
                           <Input {...field} type="number" min="0" step="0.01" data-testid="input-unit-cost" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="supplier"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Fornitore</FormLabel>
-                        <FormControl>
-                          <Input {...field} placeholder="Nome fornitore" data-testid="input-supplier" />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
