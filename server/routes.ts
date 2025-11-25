@@ -5153,5 +5153,33 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // ============ AESTHETIC DEFECTS ============
+
+  // Get aesthetic defects (filtered by device type)
+  app.get("/api/aesthetic-defects", requireAuth, async (req, res) => {
+    try {
+      const deviceTypeId = req.query.deviceTypeId as string | undefined;
+      const activeOnly = req.query.activeOnly !== 'false'; // Default true
+      const defects = await storage.listAestheticDefects(deviceTypeId, activeOnly);
+      res.json(defects);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // ============ ACCESSORY TYPES ============
+
+  // Get accessory types (filtered by device type)
+  app.get("/api/accessory-types", requireAuth, async (req, res) => {
+    try {
+      const deviceTypeId = req.query.deviceTypeId as string | undefined;
+      const activeOnly = req.query.activeOnly !== 'false'; // Default true
+      const accessories = await storage.listAccessoryTypes(deviceTypeId, activeOnly);
+      res.json(accessories);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
   return httpServer;
 }

@@ -8,14 +8,14 @@ import {
   RepairAcceptance, InsertRepairAcceptance, RepairDiagnostics, InsertRepairDiagnostics,
   RepairQuote, InsertRepairQuote,
   DeviceType, InsertDeviceType, DeviceBrand, InsertDeviceBrand, DeviceModel, InsertDeviceModel,
-  IssueType, InsertIssueType,
+  IssueType, InsertIssueType, AestheticDefect, InsertAestheticDefect, AccessoryType, InsertAccessoryType,
   PartsOrder, InsertPartsOrder, RepairLog, InsertRepairLog,
   RepairTestChecklist, InsertRepairTestChecklist, RepairDelivery, InsertRepairDelivery,
   users, repairCenters, products, repairOrders, tickets, ticketMessages,
   invoices, billingData, chatMessages, inventoryMovements, inventoryStock, activityLogs, analyticsCache,
   notifications, notificationPreferences, repairAttachments, repairAcceptance, repairDiagnostics,
   repairQuotes, partsOrders, repairLogs, repairTestChecklist, repairDelivery,
-  deviceTypes, deviceBrands, deviceModels, issueTypes
+  deviceTypes, deviceBrands, deviceModels, issueTypes, aestheticDefects, accessoryTypes
 } from "@shared/schema";
 import { db, pool } from "./db";
 import { eq, and, or, desc, lt, sql, not } from "drizzle-orm";
@@ -152,6 +152,12 @@ export interface IStorage {
   
   // Issue Types (Predefined problems per device type)
   listIssueTypes(deviceTypeId?: string, activeOnly?: boolean): Promise<IssueType[]>;
+  
+  // Aesthetic Defects (Predefined defects per device type)
+  listAestheticDefects(deviceTypeId?: string, activeOnly?: boolean): Promise<AestheticDefect[]>;
+  
+  // Accessory Types (Predefined accessories per device type)
+  listAccessoryTypes(deviceTypeId?: string, activeOnly?: boolean): Promise<AccessoryType[]>;
   
   // Device Models (Cascading dropdown catalog)
   listDeviceModels(filters?: { typeId?: string; brandId?: string; activeOnly?: boolean }): Promise<DeviceModel[]>;
@@ -1343,6 +1349,54 @@ export class DatabaseStorage implements IStorage {
     }
     
     return await query.orderBy(issueTypes.sortOrder, issueTypes.name);
+  }
+
+  // Aesthetic Defects (Predefined defects per device type)
+  async listAestheticDefects(deviceTypeId?: string, activeOnly: boolean = true): Promise<AestheticDefect[]> {
+    let query = db.select().from(aestheticDefects);
+    
+    const conditions = [];
+    
+    if (deviceTypeId) {
+      conditions.push(or(
+        eq(aestheticDefects.deviceTypeId, deviceTypeId),
+        sql`${aestheticDefects.deviceTypeId} IS NULL`
+      ));
+    }
+    
+    if (activeOnly) {
+      conditions.push(eq(aestheticDefects.isActive, true));
+    }
+    
+    if (conditions.length > 0) {
+      query = query.where(and(...conditions)) as any;
+    }
+    
+    return await query.orderBy(aestheticDefects.sortOrder, aestheticDefects.name);
+  }
+
+  // Accessory Types (Predefined accessories per device type)
+  async listAccessoryTypes(deviceTypeId?: string, activeOnly: boolean = true): Promise<AccessoryType[]> {
+    let query = db.select().from(accessoryTypes);
+    
+    const conditions = [];
+    
+    if (deviceTypeId) {
+      conditions.push(or(
+        eq(accessoryTypes.deviceTypeId, deviceTypeId),
+        sql`${accessoryTypes.deviceTypeId} IS NULL`
+      ));
+    }
+    
+    if (activeOnly) {
+      conditions.push(eq(accessoryTypes.isActive, true));
+    }
+    
+    if (conditions.length > 0) {
+      query = query.where(and(...conditions)) as any;
+    }
+    
+    return await query.orderBy(accessoryTypes.sortOrder, accessoryTypes.name);
   }
 
   // Device Models (Cascading dropdown)
