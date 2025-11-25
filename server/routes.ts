@@ -2850,7 +2850,13 @@ export function registerRoutes(app: Express): Server {
         return res.status(400).send(validationResult.error.message);
       }
       
-      const quote = await storage.createRepairQuote(validationResult.data);
+      // Add quoteNumber back to the data (it was omitted by the schema)
+      const quoteData = {
+        ...validationResult.data,
+        quoteNumber,
+      };
+      
+      const quote = await storage.createRepairQuote(quoteData);
       
       // Calculate priority based on diagnostics or use default
       const diagnostics = await storage.getRepairDiagnostics(req.params.id);
@@ -3047,6 +3053,11 @@ export function registerRoutes(app: Express): Server {
         return res.status(403).send("Access denied");
       }
       
+      // Convert expectedArrival string to Date if provided
+      const expectedArrival = req.body.expectedArrival 
+        ? new Date(req.body.expectedArrival) 
+        : undefined;
+      
       const partsOrder = await storage.createPartsOrder({
         repairOrderId: req.params.id,
         partName: req.body.partName,
@@ -3054,7 +3065,7 @@ export function registerRoutes(app: Express): Server {
         quantity: req.body.quantity || 1,
         unitCost: req.body.unitCost,
         supplier: req.body.supplier,
-        expectedArrival: req.body.expectedArrival,
+        expectedArrival,
         notes: req.body.notes,
         orderedBy: req.user.id,
       });
