@@ -59,15 +59,56 @@ export const repairCenters = pgTable("repair_centers", {
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
-// Products (Inventory items)
+// Product type enum
+export const productTypeEnum = pgEnum("product_type", [
+  "ricambio",      // Spare part
+  "accessorio",    // Accessory
+  "dispositivo",   // Complete device
+  "consumabile",   // Consumable (cables, adhesives, etc.)
+]);
+
+// Product condition enum
+export const productConditionEnum = pgEnum("product_condition", [
+  "nuovo",           // New
+  "ricondizionato",  // Refurbished
+  "usato",           // Used
+  "compatibile",     // Compatible (third-party)
+]);
+
+// Products (Inventory items - Electronics parts)
 export const products = pgTable("products", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   name: text("name").notNull(),
   sku: text("sku").notNull().unique(),
-  category: text("category").notNull(), // smartphone, laptop, tablet, accessory
+  category: text("category").notNull(), // display, batteria, scheda_madre, cover, etc.
+  productType: productTypeEnum("product_type").notNull().default("ricambio"),
   description: text("description"),
-  unitPrice: integer("unit_price").notNull(), // in cents
+  
+  // Brand & Compatibility
+  brand: text("brand"), // Apple, Samsung, Xiaomi, Huawei, etc.
+  compatibleModels: text("compatible_models").array(), // ["iPhone 14", "iPhone 14 Pro"]
+  color: text("color"), // Nero, Bianco, Blu, etc.
+  
+  // Pricing
+  costPrice: integer("cost_price"), // Prezzo acquisto in cents
+  unitPrice: integer("unit_price").notNull(), // Prezzo vendita in cents
+  
+  // Condition & Quality
+  condition: productConditionEnum("condition").notNull().default("nuovo"),
+  warrantyMonths: integer("warranty_months").default(3), // Garanzia in mesi
+  
+  // Supplier Info
+  supplier: text("supplier"), // Nome fornitore principale
+  supplierCode: text("supplier_code"), // Codice articolo fornitore
+  
+  // Inventory Management
+  minStock: integer("min_stock").default(5), // Soglia scorta minima per alert
+  location: text("location"), // Posizione in magazzino (es. "Scaffale A3")
+  
+  // Metadata
+  isActive: boolean("is_active").notNull().default(true),
   createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 
 // Inventory movements
@@ -683,6 +724,7 @@ export const insertRepairCenterSchema = createInsertSchema(repairCenters).omit({
 export const insertProductSchema = createInsertSchema(products).omit({
   id: true,
   createdAt: true,
+  updatedAt: true,
 });
 
 export const insertInventoryMovementSchema = createInsertSchema(inventoryMovements).omit({
