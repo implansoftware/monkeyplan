@@ -117,7 +117,16 @@ export function AcceptanceWizardDialog({
     brandId: string;
     typeId: string;
   }>>({
-    queryKey: ["/api/device-models", selectedTypeId, selectedBrandId],
+    queryKey: ["/api/device-models", { typeId: selectedTypeId, brandId: selectedBrandId }],
+    queryFn: async () => {
+      const params = new URLSearchParams({ 
+        typeId: selectedTypeId, 
+        brandId: selectedBrandId 
+      });
+      const res = await fetch(`/api/device-models?${params}`);
+      if (!res.ok) throw new Error("Failed to fetch models");
+      return res.json();
+    },
     enabled: !!selectedTypeId && !!selectedBrandId,
   });
 
