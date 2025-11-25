@@ -29,7 +29,7 @@ export const notificationTypeEnum = pgEnum("notification_type", ["repair_update"
 export const diagnosisSeverityEnum = pgEnum("diagnosis_severity", ["low", "medium", "high", "critical"]);
 export const quoteStatusEnum = pgEnum("quote_status", ["draft", "sent", "accepted", "rejected"]);
 export const repairPriorityEnum = pgEnum("repair_priority", ["low", "medium", "high", "urgent"]);
-export const partsOrderStatusEnum = pgEnum("parts_order_status", ["ordered", "shipped", "received", "cancelled"]);
+export const partsOrderStatusEnum = pgEnum("parts_order_status", ["ordered", "in_transit", "received", "cancelled"]);
 export const repairLogTypeEnum = pgEnum("repair_log_type", ["status_change", "technician_note", "parts_installed", "test_result", "customer_contact"]);
 
 // Users table with role-based access
