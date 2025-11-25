@@ -71,6 +71,8 @@ export default function AdminProducts() {
   const [editCompatibleModels, setEditCompatibleModels] = useState<string[]>([]);
   const [newModel, setNewModel] = useState("");
   const [initialStock, setInitialStock] = useState<InitialStockEntry[]>([]);
+  const [editStock, setEditStock] = useState<Array<{ repairCenterId: string; repairCenterName: string; quantity: number; originalQuantity: number }>>([]);
+  const [isLoadingStock, setIsLoadingStock] = useState(false);
   const { toast } = useToast();
 
   const { data: productsWithStock = [], isLoading } = useQuery<ProductWithStock[]>({
@@ -111,6 +113,20 @@ export default function AdminProducts() {
       setEditingProduct(null);
       setEditCompatibleModels([]);
       toast({ title: "Prodotto aggiornato con successo" });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Errore", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const updateStockMutation = useMutation({
+    mutationFn: async ({ productId, repairCenterId, quantity }: { productId: string; repairCenterId: string; quantity: number }) => {
+      const res = await apiRequest("POST", `/api/products/${productId}/stock`, { repairCenterId, quantity });
+      return await res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/products/with-stock"] });
+      toast({ title: "Quantità aggiornata" });
     },
     onError: (error: Error) => {
       toast({ title: "Errore", description: error.message, variant: "destructive" });
@@ -166,10 +182,54 @@ export default function AdminProducts() {
     setInitialStock(initialStock.filter(s => s.repairCenterId !== repairCenterId));
   };
 
-  const openEditDialog = (product: Product) => {
+  const openEditDialog = async (product: Product) => {
     setEditingProduct(product);
     setEditCompatibleModels(product.compatibleModels || []);
     setEditDialogOpen(true);
+    setIsLoadingStock(true);
+    
+    try {
+      const res = await apiRequest("GET", `/api/products/${product.id}/stock`);
+      const stockData = await res.json();
+      setEditStock(stockData.map((s: { repairCenterId: string; repairCenterName: string; quantity: number }) => ({
+        ...s,
+        originalQuantity: s.quantity
+      })));
+    } catch {
+      setEditStock([]);
+    } finally {
+      setIsLoadingStock(false);
+    }
+  };
+
+  const addEditStock = (repairCenterId: string) => {
+    const center = repairCenters.find(c => c.id === repairCenterId);
+    if (center && !editStock.find(s => s.repairCenterId === repairCenterId)) {
+      setEditStock([...editStock, { 
+        repairCenterId, 
+        repairCenterName: center.name, 
+        quantity: 0,
+        originalQuantity: 0
+      }]);
+    }
+  };
+
+  const updateEditStock = (repairCenterId: string, quantity: number) => {
+    setEditStock(editStock.map(s => 
+      s.repairCenterId === repairCenterId ? { ...s, quantity } : s
+    ));
+  };
+
+  const saveStockChange = async (repairCenterId: string, quantity: number) => {
+    if (!editingProduct) return;
+    await updateStockMutation.mutateAsync({
+      productId: editingProduct.id,
+      repairCenterId,
+      quantity
+    });
+    setEditStock(editStock.map(s => 
+      s.repairCenterId === repairCenterId ? { ...s, originalQuantity: quantity } : s
+    ));
   };
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
@@ -641,6 +701,7 @@ export default function AdminProducts() {
             setEditingProduct(null);
             setEditCompatibleModels([]);
             setNewModel("");
+            setEditStock([]);
           }
         }}>
           <DialogContent className="max-w-2xl max-h-[90vh]">
@@ -916,6 +977,68 @@ export default function AdminProducts() {
                             data-testid="edit-input-location"
                           />
                         </div>
+                      </div>
+
+                      <Separator />
+
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <Label className="flex items-center gap-2">
+                            <Warehouse className="h-4 w-4" />
+                            Quantità per Centro Riparazione
+                          </Label>
+                          <Select onValueChange={addEditStock}>
+                            <SelectTrigger className="w-48" data-testid="edit-select-add-center">
+                              <SelectValue placeholder="Aggiungi centro..." />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {repairCenters
+                                .filter(c => !editStock.find(s => s.repairCenterId === c.id))
+                                .map(center => (
+                                  <SelectItem key={center.id} value={center.id}>
+                                    {center.name}
+                                  </SelectItem>
+                                ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        {isLoadingStock ? (
+                          <div className="space-y-2">
+                            <Skeleton className="h-10 w-full" />
+                            <Skeleton className="h-10 w-full" />
+                          </div>
+                        ) : editStock.length === 0 ? (
+                          <div className="text-center py-4 text-muted-foreground text-sm">
+                            Nessuna giacenza. Seleziona un centro per aggiungere quantità.
+                          </div>
+                        ) : (
+                          <div className="space-y-2">
+                            {editStock.map((stock) => (
+                              <div key={stock.repairCenterId} className="flex items-center gap-2 p-2 bg-muted/50 rounded-md">
+                                <span className="flex-1 text-sm font-medium">{stock.repairCenterName}</span>
+                                <Input
+                                  type="number"
+                                  min="0"
+                                  value={stock.quantity}
+                                  onChange={(e) => updateEditStock(stock.repairCenterId, parseInt(e.target.value) || 0)}
+                                  className="w-24"
+                                  data-testid={`edit-input-stock-${stock.repairCenterId}`}
+                                />
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  variant={stock.quantity !== stock.originalQuantity ? "default" : "outline"}
+                                  disabled={stock.quantity === stock.originalQuantity || updateStockMutation.isPending}
+                                  onClick={() => saveStockChange(stock.repairCenterId, stock.quantity)}
+                                  data-testid={`edit-button-save-stock-${stock.repairCenterId}`}
+                                >
+                                  {updateStockMutation.isPending ? "..." : "Salva"}
+                                </Button>
+                              </div>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     </TabsContent>
                   </Tabs>

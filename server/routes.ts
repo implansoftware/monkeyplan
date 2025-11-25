@@ -2239,6 +2239,78 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Get product stock by repair center (admin only)
+  app.get("/api/products/:id/stock", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      // Only admins can view stock across all centers
+      if (req.user.role !== 'admin') {
+        return res.status(403).send("Only admins can view stock by center");
+      }
+      
+      const product = await storage.getProduct(req.params.id);
+      if (!product) return res.status(404).send("Product not found");
+      
+      const stockByCenter = await storage.getProductStockByCenter(req.params.id);
+      res.json(stockByCenter);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // Update product stock for a specific repair center (admin only)
+  app.post("/api/products/:id/stock", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      // Only admins can update stock
+      if (req.user.role !== 'admin') {
+        return res.status(403).send("Only admins can update stock");
+      }
+      
+      const product = await storage.getProduct(req.params.id);
+      if (!product) return res.status(404).send("Product not found");
+      
+      const { repairCenterId, quantity, notes } = req.body;
+      
+      if (!repairCenterId) {
+        return res.status(400).send("repairCenterId is required");
+      }
+      
+      if (typeof quantity !== 'number') {
+        return res.status(400).send("quantity must be a number");
+      }
+      
+      // Get current stock
+      const currentStock = await storage.getInventoryStock(req.params.id, repairCenterId);
+      const currentQuantity = currentStock?.quantity || 0;
+      const difference = quantity - currentQuantity;
+      
+      if (difference === 0) {
+        return res.json({ message: "No change in quantity" });
+      }
+      
+      // Create inventory movement for the difference
+      const movement = await storage.createInventoryMovement({
+        productId: req.params.id,
+        repairCenterId,
+        movementType: difference > 0 ? 'in' : 'out',
+        quantity: Math.abs(difference),
+        notes: notes || `Rettifica manuale: da ${currentQuantity} a ${quantity}`,
+        createdBy: req.user.id,
+      });
+      
+      // Get updated stock
+      const updatedStock = await storage.getProductStockByCenter(req.params.id);
+      setActivityEntity(res, { type: 'inventory', id: movement.id });
+      
+      res.json(updatedStock);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
   // ============ INVENTORY ============
   
   // List inventory stock with role-based filtering
