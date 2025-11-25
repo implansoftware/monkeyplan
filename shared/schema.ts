@@ -191,6 +191,30 @@ export const issueTypes = pgTable("issue_types", {
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 
+// Aesthetic Defects Lookup (Difetti estetici predefiniti)
+export const aestheticDefects = pgTable("aesthetic_defects", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull(), // es: "Graffi sul display", "Ammaccature"
+  description: text("description"),
+  deviceTypeId: varchar("device_type_id").references(() => deviceTypes.id), // null = tutti i tipi
+  isActive: boolean("is_active").notNull().default(true),
+  sortOrder: integer("sort_order").notNull().default(0),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+// Accessory Types Lookup (Accessori predefiniti)
+export const accessoryTypes = pgTable("accessory_types", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull(), // es: "Caricabatterie", "Custodia"
+  description: text("description"),
+  deviceTypeId: varchar("device_type_id").references(() => deviceTypes.id), // null = tutti i tipi
+  isActive: boolean("is_active").notNull().default(true),
+  sortOrder: integer("sort_order").notNull().default(0),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
 // Device Models Catalog
 export const deviceModels = pgTable("device_models", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -775,6 +799,18 @@ export const insertIssueTypeSchema = createInsertSchema(issueTypes).omit({
   updatedAt: true,
 });
 
+export const insertAestheticDefectSchema = createInsertSchema(aestheticDefects).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertAccessoryTypeSchema = createInsertSchema(accessoryTypes).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 export const insertDeviceModelSchema = createInsertSchema(deviceModels).omit({
   id: true,
   createdAt: true,
@@ -961,6 +997,12 @@ export type InsertDeviceBrand = z.infer<typeof insertDeviceBrandSchema>;
 
 export type IssueType = typeof issueTypes.$inferSelect;
 export type InsertIssueType = z.infer<typeof insertIssueTypeSchema>;
+
+export type AestheticDefect = typeof aestheticDefects.$inferSelect;
+export type InsertAestheticDefect = z.infer<typeof insertAestheticDefectSchema>;
+
+export type AccessoryType = typeof accessoryTypes.$inferSelect;
+export type InsertAccessoryType = z.infer<typeof insertAccessoryTypeSchema>;
 
 export type DeviceModel = typeof deviceModels.$inferSelect;
 export type InsertDeviceModel = z.infer<typeof insertDeviceModelSchema>;
