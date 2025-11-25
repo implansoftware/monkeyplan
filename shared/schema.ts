@@ -179,6 +179,18 @@ export const deviceBrands = pgTable("device_brands", {
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 
+// Issue Types Lookup (Problemi predefiniti per tipo dispositivo)
+export const issueTypes = pgTable("issue_types", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull(), // es: "Schermo rotto", "Batteria esaurita"
+  description: text("description"), // Descrizione dettagliata
+  deviceTypeId: varchar("device_type_id").references(() => deviceTypes.id), // null = tutti i tipi
+  isActive: boolean("is_active").notNull().default(true),
+  sortOrder: integer("sort_order").notNull().default(0),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
 // Device Models Catalog
 export const deviceModels = pgTable("device_models", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -757,6 +769,12 @@ export const insertDeviceBrandSchema = createInsertSchema(deviceBrands).omit({
   updatedAt: true,
 });
 
+export const insertIssueTypeSchema = createInsertSchema(issueTypes).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 export const insertDeviceModelSchema = createInsertSchema(deviceModels).omit({
   id: true,
   createdAt: true,
@@ -940,6 +958,9 @@ export type InsertDeviceType = z.infer<typeof insertDeviceTypeSchema>;
 
 export type DeviceBrand = typeof deviceBrands.$inferSelect;
 export type InsertDeviceBrand = z.infer<typeof insertDeviceBrandSchema>;
+
+export type IssueType = typeof issueTypes.$inferSelect;
+export type InsertIssueType = z.infer<typeof insertIssueTypeSchema>;
 
 export type DeviceModel = typeof deviceModels.$inferSelect;
 export type InsertDeviceModel = z.infer<typeof insertDeviceModelSchema>;
