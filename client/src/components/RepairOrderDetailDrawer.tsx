@@ -58,13 +58,48 @@ type RepairOrder = {
   deviceType: string;
   deviceTypeId: string | null;
   deviceModel: string;
+  brand: string | null;
+  imei: string | null;
+  serial: string | null;
+  imeiNotReadable: boolean;
+  imeiNotPresent: boolean;
+  serialOnly: boolean;
   issueDescription: string;
   status: string;
+  priority: string | null;
   estimatedCost: number | null;
   finalCost: number | null;
   notes: string | null;
+  ingressatoAt: string | null;
   createdAt: string;
   updatedAt: string;
+};
+
+type RepairAcceptance = {
+  id: string;
+  repairOrderId: string;
+  declaredDefects: string[] | null;
+  aestheticCondition: string | null;
+  aestheticNotes: string | null;
+  aestheticPhotosMandatory: boolean;
+  accessories: string[] | null;
+  lockCode: string | null;
+  lockPattern: string | null;
+  hasLockCode: boolean | null;
+  accessoriesRemoved: boolean | null;
+  acceptedBy: string;
+  acceptedAt: string;
+};
+
+type Customer = {
+  id: string;
+  username: string;
+  email: string | null;
+  fullName: string | null;
+  phone: string | null;
+  address: string | null;
+  fiscalCode: string | null;
+  vatNumber: string | null;
 };
 
 interface RepairOrderDetailDrawerProps {
@@ -120,6 +155,39 @@ export function RepairOrderDetailDrawer({
       return response.json();
     },
     enabled: !!repairOrderId && open,
+    retry: false,
+  });
+
+  const { data: acceptance } = useQuery<RepairAcceptance | null>({
+    queryKey: ["/api/repair-orders", repairOrderId, "acceptance"],
+    queryFn: async () => {
+      const response = await fetch(`/api/repair-orders/${repairOrderId}/acceptance`, {
+        credentials: "include",
+      });
+      if (!response.ok) {
+        if (response.status === 404) return null;
+        throw new Error("Errore nel caricamento dati accettazione");
+      }
+      return response.json();
+    },
+    enabled: !!repairOrderId && open,
+    retry: false,
+  });
+
+  const { data: customer } = useQuery<Customer | null>({
+    queryKey: ["/api/users", repair?.customerId],
+    queryFn: async () => {
+      if (!repair?.customerId) return null;
+      const response = await fetch(`/api/users/${repair.customerId}`, {
+        credentials: "include",
+      });
+      if (!response.ok) {
+        if (response.status === 404) return null;
+        return null;
+      }
+      return response.json();
+    },
+    enabled: !!repair?.customerId && open,
     retry: false,
   });
 
