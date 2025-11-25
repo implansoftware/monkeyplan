@@ -29,6 +29,8 @@ export const notificationTypeEnum = pgEnum("notification_type", ["repair_update"
 export const diagnosisSeverityEnum = pgEnum("diagnosis_severity", ["low", "medium", "high", "critical"]);
 export const quoteStatusEnum = pgEnum("quote_status", ["draft", "sent", "accepted", "rejected"]);
 export const repairPriorityEnum = pgEnum("repair_priority", ["low", "medium", "high", "urgent"]);
+export const partsOrderStatusEnum = pgEnum("parts_order_status", ["ordered", "shipped", "received", "cancelled"]);
+export const repairLogTypeEnum = pgEnum("repair_log_type", ["status_change", "technician_note", "parts_installed", "test_result", "customer_contact"]);
 
 // Users table with role-based access
 export const users = pgTable("users", {
@@ -212,6 +214,71 @@ export const repairQuotes = pgTable("repair_quotes", {
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 
+// Parts Orders (Ordini ricambi - FASE 5)
+export const partsOrders = pgTable("parts_orders", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  repairOrderId: varchar("repair_order_id").notNull().references(() => repairOrders.id),
+  partName: text("part_name").notNull(), // Nome ricambio
+  partNumber: text("part_number"), // Codice ricambio fornitore
+  quantity: integer("quantity").notNull().default(1),
+  unitCost: integer("unit_cost"), // Costo unitario in cents
+  supplier: text("supplier"), // Nome fornitore
+  status: partsOrderStatusEnum("status").notNull().default("ordered"),
+  orderedAt: timestamp("ordered_at").notNull().defaultNow(),
+  expectedArrival: timestamp("expected_arrival"), // Data arrivo prevista
+  receivedAt: timestamp("received_at"), // Data arrivo effettiva
+  orderedBy: varchar("ordered_by").notNull(), // ID utente che ha ordinato
+  notes: text("notes"),
+});
+
+// Repair Logs (Log attività riparazione - FASE 6)
+export const repairLogs = pgTable("repair_logs", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  repairOrderId: varchar("repair_order_id").notNull().references(() => repairOrders.id),
+  logType: repairLogTypeEnum("log_type").notNull(),
+  description: text("description").notNull(), // Descrizione attività
+  technicianId: varchar("technician_id").notNull(), // ID tecnico
+  hoursWorked: integer("hours_worked"), // Ore lavorate (in minuti per precisione)
+  partsUsed: text("parts_used"), // JSON array di parti utilizzate
+  testResults: text("test_results"), // JSON risultati test
+  photos: text("photos").array(), // Array URL foto
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+// Test Checklist (Checklist collaudo - FASE 7)
+export const repairTestChecklist = pgTable("repair_test_checklist", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  repairOrderId: varchar("repair_order_id").notNull().unique().references(() => repairOrders.id),
+  displayTest: boolean("display_test"), // Test display
+  touchTest: boolean("touch_test"), // Test touch
+  batteryTest: boolean("battery_test"), // Test batteria
+  audioTest: boolean("audio_test"), // Test audio
+  cameraTest: boolean("camera_test"), // Test fotocamera
+  connectivityTest: boolean("connectivity_test"), // Test WiFi/BT/4G
+  buttonsTest: boolean("buttons_test"), // Test pulsanti fisici
+  sensorsTest: boolean("sensors_test"), // Test sensori
+  chargingTest: boolean("charging_test"), // Test ricarica
+  softwareTest: boolean("software_test"), // Test software/OS
+  overallResult: boolean("overall_result"), // Risultato complessivo (true = passed)
+  notes: text("notes"), // Note sul collaudo
+  testedBy: varchar("tested_by").notNull(), // ID tecnico
+  testedAt: timestamp("tested_at").notNull().defaultNow(),
+});
+
+// Delivery Records (Conferma consegna - FASE 7)
+export const repairDelivery = pgTable("repair_delivery", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  repairOrderId: varchar("repair_order_id").notNull().unique().references(() => repairOrders.id),
+  deliveredTo: text("delivered_to").notNull(), // Nome di chi ritira
+  deliveryMethod: text("delivery_method").notNull().default("in_store"), // in_store, courier, pickup
+  signatureData: text("signature_data"), // Base64 firma (opzionale)
+  idDocumentType: text("id_document_type"), // Tipo documento identità
+  idDocumentNumber: text("id_document_number"), // Numero documento
+  notes: text("notes"),
+  deliveredBy: varchar("delivered_by").notNull(), // ID utente che ha consegnato
+  deliveredAt: timestamp("delivered_at").notNull().defaultNow(),
+});
+
 // Support Tickets
 export const tickets = pgTable("tickets", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -383,6 +450,16 @@ export const repairOrdersRelations = relations(repairOrders, ({ one, many }) => 
     fields: [repairOrders.id],
     references: [repairQuotes.repairOrderId],
   }),
+  partsOrders: many(partsOrders),
+  logs: many(repairLogs),
+  testChecklist: one(repairTestChecklist, {
+    fields: [repairOrders.id],
+    references: [repairTestChecklist.repairOrderId],
+  }),
+  delivery: one(repairDelivery, {
+    fields: [repairOrders.id],
+    references: [repairDelivery.repairOrderId],
+  }),
 }));
 
 export const repairAttachmentsRelations = relations(repairAttachments, ({ one }) => ({
@@ -421,6 +498,50 @@ export const repairQuotesRelations = relations(repairQuotes, ({ one }) => ({
   }),
   createdByUser: one(users, {
     fields: [repairQuotes.createdBy],
+    references: [users.id],
+  }),
+}));
+
+export const partsOrdersRelations = relations(partsOrders, ({ one }) => ({
+  repairOrder: one(repairOrders, {
+    fields: [partsOrders.repairOrderId],
+    references: [repairOrders.id],
+  }),
+  orderedByUser: one(users, {
+    fields: [partsOrders.orderedBy],
+    references: [users.id],
+  }),
+}));
+
+export const repairLogsRelations = relations(repairLogs, ({ one }) => ({
+  repairOrder: one(repairOrders, {
+    fields: [repairLogs.repairOrderId],
+    references: [repairOrders.id],
+  }),
+  technician: one(users, {
+    fields: [repairLogs.technicianId],
+    references: [users.id],
+  }),
+}));
+
+export const repairTestChecklistRelations = relations(repairTestChecklist, ({ one }) => ({
+  repairOrder: one(repairOrders, {
+    fields: [repairTestChecklist.repairOrderId],
+    references: [repairOrders.id],
+  }),
+  testedByUser: one(users, {
+    fields: [repairTestChecklist.testedBy],
+    references: [users.id],
+  }),
+}));
+
+export const repairDeliveryRelations = relations(repairDelivery, ({ one }) => ({
+  repairOrder: one(repairOrders, {
+    fields: [repairDelivery.repairOrderId],
+    references: [repairOrders.id],
+  }),
+  deliveredByUser: one(users, {
+    fields: [repairDelivery.deliveredBy],
     references: [users.id],
   }),
 }));
@@ -671,6 +792,26 @@ export const insertRepairAttachmentSchema = createInsertSchema(repairAttachments
   uploadedAt: true,
 });
 
+export const insertPartsOrderSchema = createInsertSchema(partsOrders).omit({
+  id: true,
+  orderedAt: true,
+});
+
+export const insertRepairLogSchema = createInsertSchema(repairLogs).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertRepairTestChecklistSchema = createInsertSchema(repairTestChecklist).omit({
+  id: true,
+  testedAt: true,
+});
+
+export const insertRepairDeliverySchema = createInsertSchema(repairDelivery).omit({
+  id: true,
+  deliveredAt: true,
+});
+
 // Update schemas for PATCH endpoints
 export const updateRepairStatusSchema = z.object({
   status: z.enum(["pending", "in_progress", "waiting_parts", "completed", "delivered", "cancelled"]),
@@ -797,3 +938,15 @@ export type InsertNotificationPreferences = z.infer<typeof insertNotificationPre
 
 export type RepairAttachment = typeof repairAttachments.$inferSelect;
 export type InsertRepairAttachment = z.infer<typeof insertRepairAttachmentSchema>;
+
+export type PartsOrder = typeof partsOrders.$inferSelect;
+export type InsertPartsOrder = z.infer<typeof insertPartsOrderSchema>;
+
+export type RepairLog = typeof repairLogs.$inferSelect;
+export type InsertRepairLog = z.infer<typeof insertRepairLogSchema>;
+
+export type RepairTestChecklist = typeof repairTestChecklist.$inferSelect;
+export type InsertRepairTestChecklist = z.infer<typeof insertRepairTestChecklistSchema>;
+
+export type RepairDelivery = typeof repairDelivery.$inferSelect;
+export type InsertRepairDelivery = z.infer<typeof insertRepairDeliverySchema>;
