@@ -90,8 +90,8 @@ export function DiagnosisFormDialog({
         photos: uploadedPhotos,
       };
       return await apiRequest(
-        `/api/repair-orders/${repairOrderId}/diagnostics`,
         "POST",
+        `/api/repair-orders/${repairOrderId}/diagnostics`,
         payload
       );
     },

@@ -105,8 +105,8 @@ export function QuoteFormDialog({
       };
 
       return await apiRequest(
-        `/api/repair-orders/${repairOrderId}/quote`,
         "POST",
+        `/api/repair-orders/${repairOrderId}/quote`,
         payload
       );
     },
