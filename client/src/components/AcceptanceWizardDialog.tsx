@@ -29,7 +29,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { Smartphone, CheckCircle2, ChevronRight, ChevronLeft, AlertCircle, UserPlus, Loader2 } from "lucide-react";
+import { Smartphone, CheckCircle2, ChevronRight, ChevronLeft, AlertCircle, UserPlus, Loader2, Camera, X, ImageIcon } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -93,6 +93,8 @@ export function AcceptanceWizardDialog({
   const [selectedAccessories, setSelectedAccessories] = useState<string[]>([]);
   const [showOtherAccessory, setShowOtherAccessory] = useState(false);
   const [showNewCustomerForm, setShowNewCustomerForm] = useState(false);
+  const [acceptancePhotos, setAcceptancePhotos] = useState<Array<{ file: File; preview: string }>>([]);
+  const [isUploadingPhotos, setIsUploadingPhotos] = useState(false);
   const [newCustomerData, setNewCustomerData] = useState({
     customerType: "private" as "private" | "company",
     fullName: "",
@@ -266,11 +268,19 @@ export function AcceptanceWizardDialog({
       }
       return await response.json();
     },
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
+      // Upload photos if any were selected
+      if (acceptancePhotos.length > 0) {
+        await uploadPhotosToOrder(data.order.id);
+      }
+      
       queryClient.invalidateQueries({ queryKey: ["/api/repair-orders"] });
+      const photoMessage = acceptancePhotos.length > 0 
+        ? ` con ${acceptancePhotos.length} foto allegate`
+        : "";
       toast({
         title: "Riparazione ingressata",
-        description: `Ordine ${data.order.orderNumber} creato con successo`,
+        description: `Ordine ${data.order.orderNumber} creato con successo${photoMessage}`,
       });
       handleClose();
       if (onSuccess) onSuccess(data);
@@ -499,7 +509,64 @@ export function AcceptanceWizardDialog({
     setShowOtherDefect(false);
     setSelectedAccessories([]);
     setShowOtherAccessory(false);
+    // Cleanup photo previews
+    acceptancePhotos.forEach(photo => URL.revokeObjectURL(photo.preview));
+    setAcceptancePhotos([]);
     onOpenChange(false);
+  };
+
+  const handlePhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files) return;
+
+    const newPhotos: Array<{ file: File; preview: string }> = [];
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      if (file.type.startsWith('image/')) {
+        newPhotos.push({
+          file,
+          preview: URL.createObjectURL(file)
+        });
+      }
+    }
+    setAcceptancePhotos(prev => [...prev, ...newPhotos]);
+    e.target.value = ''; // Reset input
+  };
+
+  const handleRemovePhoto = (index: number) => {
+    setAcceptancePhotos(prev => {
+      const newPhotos = [...prev];
+      URL.revokeObjectURL(newPhotos[index].preview);
+      newPhotos.splice(index, 1);
+      return newPhotos;
+    });
+  };
+
+  const uploadPhotosToOrder = async (repairOrderId: string) => {
+    if (acceptancePhotos.length === 0) return;
+
+    setIsUploadingPhotos(true);
+    try {
+      for (const photo of acceptancePhotos) {
+        const formData = new FormData();
+        formData.append('file', photo.file);
+
+        await fetch(`/api/repair-orders/${repairOrderId}/attachments`, {
+          method: 'POST',
+          body: formData,
+          credentials: 'include'
+        });
+      }
+    } catch (error) {
+      console.error('Error uploading photos:', error);
+      toast({
+        variant: "destructive",
+        title: "Errore upload foto",
+        description: "Alcune foto potrebbero non essere state caricate correttamente",
+      });
+    } finally {
+      setIsUploadingPhotos(false);
+    }
   };
 
   const renderDeviceInfoStep = () => (
