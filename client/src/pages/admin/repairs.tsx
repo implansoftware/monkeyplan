@@ -9,8 +9,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { Search, Wrench, Download, CalendarIcon, Plus } from "lucide-react";
+import { Search, Wrench, Download, CalendarIcon, Plus, Stethoscope, Receipt, ClipboardCheck, Package, Play, TestTube, Truck, Eye } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { formatDistanceToNow, format } from "date-fns";
@@ -122,6 +123,71 @@ export default function AdminRepairs() {
     }).format(cents / 100);
   };
 
+  const getWorkflowActions = (repair: RepairOrder) => {
+    const actions: Array<{
+      icon: typeof Stethoscope;
+      label: string;
+      available: boolean;
+    }> = [];
+
+    const status = repair.status;
+
+    actions.push({
+      icon: Stethoscope,
+      label: "Diagnosi",
+      available: status === "ingressato",
+    });
+
+    actions.push({
+      icon: Receipt,
+      label: "Preventivo",
+      available: status === "in_diagnosi",
+    });
+
+    actions.push({
+      icon: ClipboardCheck,
+      label: "Gestisci Preventivo",
+      available: status === "preventivo_emesso",
+    });
+
+    actions.push({
+      icon: Package,
+      label: "Ricambi",
+      available: status === "preventivo_accettato" || status === "attesa_ricambi",
+    });
+
+    actions.push({
+      icon: Play,
+      label: "Riparazione",
+      available: status === "in_riparazione",
+    });
+
+    actions.push({
+      icon: TestTube,
+      label: "Collaudo",
+      available: status === "in_test",
+    });
+
+    actions.push({
+      icon: Truck,
+      label: "Consegna",
+      available: status === "pronto_ritiro",
+    });
+
+    actions.push({
+      icon: Eye,
+      label: "Dettagli",
+      available: true,
+    });
+
+    return actions;
+  };
+
+  const openRepairDetail = (repairId: string) => {
+    setSelectedRepairId(repairId);
+    setDrawerOpen(true);
+  };
+
   return (
     <div className="space-y-6">
       <div>
@@ -228,34 +294,105 @@ export default function AdminRepairs() {
                   <TableHead>Costo</TableHead>
                   <TableHead>Stato</TableHead>
                   <TableHead>Data</TableHead>
+                  <TableHead className="text-right">Azioni</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredRepairs.map((repair) => (
-                  <TableRow
-                    key={repair.id}
-                    data-testid={`row-repair-${repair.id}`}
-                    className="cursor-pointer hover-elevate"
-                    onClick={() => {
-                      setSelectedRepairId(repair.id);
-                      setDrawerOpen(true);
-                    }}
-                  >
-                    <TableCell className="font-mono font-medium">{repair.orderNumber}</TableCell>
-                    <TableCell>
-                      <div>
-                        <div className="font-medium capitalize">{repair.deviceType}</div>
-                        <div className="text-sm text-muted-foreground">{repair.deviceModel}</div>
-                      </div>
-                    </TableCell>
-                    <TableCell className="max-w-xs truncate">{repair.issueDescription}</TableCell>
-                    <TableCell>{formatCurrency(repair.finalCost || repair.estimatedCost)}</TableCell>
-                    <TableCell>{getStatusBadge(repair.status)}</TableCell>
-                    <TableCell className="text-sm text-muted-foreground">
-                      {formatDistanceToNow(new Date(repair.createdAt), { addSuffix: true, locale: it })}
-                    </TableCell>
-                  </TableRow>
-                ))}
+                {filteredRepairs.map((repair) => {
+                  const actions = getWorkflowActions(repair);
+                  const availableActions = actions.filter(a => a.available);
+                  
+                  return (
+                    <TableRow
+                      key={repair.id}
+                      data-testid={`row-repair-${repair.id}`}
+                      className="hover-elevate"
+                    >
+                      <TableCell 
+                        className="font-mono font-medium cursor-pointer"
+                        onClick={() => {
+                          setSelectedRepairId(repair.id);
+                          setDrawerOpen(true);
+                        }}
+                      >
+                        {repair.orderNumber}
+                      </TableCell>
+                      <TableCell
+                        className="cursor-pointer"
+                        onClick={() => {
+                          setSelectedRepairId(repair.id);
+                          setDrawerOpen(true);
+                        }}
+                      >
+                        <div>
+                          <div className="font-medium capitalize">{repair.deviceType}</div>
+                          <div className="text-sm text-muted-foreground">{repair.deviceModel}</div>
+                        </div>
+                      </TableCell>
+                      <TableCell 
+                        className="max-w-xs truncate cursor-pointer"
+                        onClick={() => {
+                          setSelectedRepairId(repair.id);
+                          setDrawerOpen(true);
+                        }}
+                      >
+                        {repair.issueDescription}
+                      </TableCell>
+                      <TableCell
+                        className="cursor-pointer"
+                        onClick={() => {
+                          setSelectedRepairId(repair.id);
+                          setDrawerOpen(true);
+                        }}
+                      >
+                        {formatCurrency(repair.finalCost || repair.estimatedCost)}
+                      </TableCell>
+                      <TableCell
+                        className="cursor-pointer"
+                        onClick={() => {
+                          setSelectedRepairId(repair.id);
+                          setDrawerOpen(true);
+                        }}
+                      >
+                        {getStatusBadge(repair.status)}
+                      </TableCell>
+                      <TableCell 
+                        className="text-sm text-muted-foreground cursor-pointer"
+                        onClick={() => {
+                          setSelectedRepairId(repair.id);
+                          setDrawerOpen(true);
+                        }}
+                      >
+                        {formatDistanceToNow(new Date(repair.createdAt), { addSuffix: true, locale: it })}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center justify-end gap-1">
+                          {availableActions.map((actionItem, idx) => (
+                            <Tooltip key={idx}>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="outline"
+                                  size="icon"
+                                  className="h-8 w-8"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    openRepairDetail(repair.id);
+                                  }}
+                                  data-testid={`button-action-${actionItem.label.toLowerCase().replace(/\s/g, '-')}-${repair.id}`}
+                                >
+                                  <actionItem.icon className="h-4 w-4" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>{actionItem.label}</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          ))}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
               </TableBody>
             </Table>
           )}
