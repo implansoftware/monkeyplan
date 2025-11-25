@@ -2143,9 +2143,28 @@ export function registerRoutes(app: Express): Server {
         return res.status(403).send("Only admins can create products");
       }
       
-      const validatedData = insertProductSchema.parse(req.body);
+      // Extract initial stock assignments from request body
+      const { initialStock, ...productData } = req.body;
+      
+      const validatedData = insertProductSchema.parse(productData);
       const product = await storage.createProduct(validatedData);
       setActivityEntity(res, { type: 'product', id: product.id });
+      
+      // Create initial inventory movements for each repair center
+      if (initialStock && Array.isArray(initialStock)) {
+        for (const stockEntry of initialStock) {
+          if (stockEntry.repairCenterId && stockEntry.quantity > 0) {
+            await storage.createInventoryMovement({
+              productId: product.id,
+              repairCenterId: stockEntry.repairCenterId,
+              movementType: 'in',
+              quantity: stockEntry.quantity,
+              notes: 'Quantità iniziale alla creazione prodotto',
+              createdBy: req.user.id,
+            });
+          }
+        }
+      }
       
       res.status(201).json(product);
     } catch (error: any) {
@@ -2166,12 +2185,24 @@ export function registerRoutes(app: Express): Server {
       const product = await storage.getProduct(req.params.id);
       if (!product) return res.status(404).send("Product not found");
       
-      const updates: Partial<Pick<Product, 'name' | 'sku' | 'category' | 'description' | 'unitPrice'>> = {};
+      const updates: Partial<Omit<Product, 'id' | 'createdAt'>> = {};
       if (req.body.name !== undefined) updates.name = req.body.name;
       if (req.body.sku !== undefined) updates.sku = req.body.sku;
       if (req.body.category !== undefined) updates.category = req.body.category;
+      if (req.body.productType !== undefined) updates.productType = req.body.productType;
       if (req.body.description !== undefined) updates.description = req.body.description;
+      if (req.body.brand !== undefined) updates.brand = req.body.brand;
+      if (req.body.compatibleModels !== undefined) updates.compatibleModels = req.body.compatibleModels;
+      if (req.body.color !== undefined) updates.color = req.body.color;
+      if (req.body.costPrice !== undefined) updates.costPrice = req.body.costPrice;
       if (req.body.unitPrice !== undefined) updates.unitPrice = req.body.unitPrice;
+      if (req.body.condition !== undefined) updates.condition = req.body.condition;
+      if (req.body.warrantyMonths !== undefined) updates.warrantyMonths = req.body.warrantyMonths;
+      if (req.body.supplier !== undefined) updates.supplier = req.body.supplier;
+      if (req.body.supplierCode !== undefined) updates.supplierCode = req.body.supplierCode;
+      if (req.body.minStock !== undefined) updates.minStock = req.body.minStock;
+      if (req.body.location !== undefined) updates.location = req.body.location;
+      if (req.body.isActive !== undefined) updates.isActive = req.body.isActive;
       
       if (Object.keys(updates).length === 0) {
         return res.status(400).send("No valid updates provided");

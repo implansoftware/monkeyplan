@@ -88,7 +88,7 @@ export interface IStorage {
   listInventoryMovements(filters?: { repairCenterId?: string; productId?: string }): Promise<InventoryMovement[]>;
   getProductStockByCenter(productId: string): Promise<Array<{ repairCenterId: string; repairCenterName: string; quantity: number }>>;
   getAllProductsWithStock(): Promise<Array<{ product: Product; stockByCenter: Array<{ repairCenterId: string; repairCenterName: string; quantity: number }>; totalStock: number }>>;
-  updateProduct(id: string, updates: Partial<Pick<Product, 'name' | 'sku' | 'category' | 'description' | 'unitPrice'>>): Promise<Product>;
+  updateProduct(id: string, updates: Partial<Omit<Product, 'id' | 'createdAt'>>): Promise<Product>;
   
   // Activity Logs
   createActivityLog(log: InsertActivityLog): Promise<ActivityLog>;
@@ -681,9 +681,9 @@ export class DatabaseStorage implements IStorage {
     });
   }
 
-  async updateProduct(id: string, updates: Partial<Pick<Product, 'name' | 'sku' | 'category' | 'description' | 'unitPrice'>>): Promise<Product> {
+  async updateProduct(id: string, updates: Partial<Omit<Product, 'id' | 'createdAt'>>): Promise<Product> {
     const [updated] = await db.update(products)
-      .set(updates)
+      .set({ ...updates, updatedAt: new Date() })
       .where(eq(products.id, id))
       .returning();
     return updated;
