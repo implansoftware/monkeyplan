@@ -29,7 +29,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { Smartphone, CheckCircle2, ChevronRight, ChevronLeft, AlertCircle } from "lucide-react";
+import { Smartphone, CheckCircle2, ChevronRight, ChevronLeft, AlertCircle, UserPlus, Loader2 } from "lucide-react";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -84,6 +85,14 @@ export function AcceptanceWizardDialog({
   const [step, setStep] = useState<WizardStep>("device-info");
   const [selectedTypeId, setSelectedTypeId] = useState<string>("");
   const [selectedBrandId, setSelectedBrandId] = useState<string>("");
+  const [showNewCustomerForm, setShowNewCustomerForm] = useState(false);
+  const [newCustomerData, setNewCustomerData] = useState({
+    fullName: "",
+    email: "",
+    phone: "",
+    username: "",
+    password: "",
+  });
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { user } = useUser();
@@ -198,6 +207,85 @@ export function AcceptanceWizardDialog({
     },
   });
 
+  const createCustomerMutation = useMutation({
+    mutationFn: async (data: typeof newCustomerData) => {
+      let endpoint: string;
+      let payload: any;
+      
+      if (user?.role === "admin") {
+        endpoint = "/api/admin/users";
+        payload = { ...data, role: "customer", isActive: true };
+      } else if (user?.role === "reseller") {
+        endpoint = "/api/reseller/customers";
+        payload = { ...data, isActive: true };
+      } else {
+        endpoint = "/api/customers";
+        payload = {
+          email: data.email,
+          fullName: data.fullName,
+          phone: data.phone,
+          customerType: "private",
+          address: "",
+          city: "",
+          zipCode: "",
+        };
+      }
+      
+      const response = await apiRequest("POST", endpoint, payload);
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(errorText || "Errore durante la creazione del cliente");
+      }
+      return await response.json();
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/users"] });
+      const customerId = data.user?.id || data.id;
+      const customerName = data.user?.fullName || data.fullName;
+      form.setValue("customerId", customerId);
+      setShowNewCustomerForm(false);
+      setNewCustomerData({
+        fullName: "",
+        email: "",
+        phone: "",
+        username: "",
+        password: "",
+      });
+      toast({
+        title: "Cliente creato",
+        description: `Il cliente ${customerName} è stato creato con successo`,
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        variant: "destructive",
+        title: "Errore",
+        description: error.message || "Impossibile creare il cliente",
+      });
+    },
+  });
+
+  const handleCreateCustomer = () => {
+    if (!newCustomerData.fullName || !newCustomerData.email) {
+      toast({
+        variant: "destructive",
+        title: "Dati mancanti",
+        description: "Nome e email sono obbligatori",
+      });
+      return;
+    }
+    if (user?.role !== "repair_center" && 
+        (!newCustomerData.username || !newCustomerData.password)) {
+      toast({
+        variant: "destructive",
+        title: "Dati mancanti",
+        description: "Username e password sono obbligatori",
+      });
+      return;
+    }
+    createCustomerMutation.mutate(newCustomerData);
+  };
+
   const handleNext = async () => {
     let fieldsToValidate: (keyof AcceptanceWizardData)[] = [];
     
@@ -257,33 +345,154 @@ export function AcceptanceWizardDialog({
   const renderDeviceInfoStep = () => (
     <div className="space-y-4">
       {(user?.role === "admin" || user?.role === "repair_center") && (
-        <FormField
-          control={form.control}
-          name="customerId"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Cliente *</FormLabel>
-              <Select onValueChange={field.onChange} value={field.value}>
-                <FormControl>
-                  <SelectTrigger data-testid="select-customer">
-                    <SelectValue placeholder="Seleziona cliente" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  {customers.map((customer) => (
-                    <SelectItem key={customer.id} value={customer.id}>
-                      {customer.fullName} ({customer.email})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <FormDescription>
-                Seleziona il cliente per cui stai creando l'ordine di riparazione
-              </FormDescription>
-              <FormMessage />
-            </FormItem>
+        <>
+          {!showNewCustomerForm ? (
+            <FormField
+              control={form.control}
+              name="customerId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Cliente *</FormLabel>
+                  <div className="flex gap-2">
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger data-testid="select-customer" className="flex-1">
+                          <SelectValue placeholder="Seleziona cliente" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {customers.map((customer) => (
+                          <SelectItem key={customer.id} value={customer.id}>
+                            {customer.fullName} ({customer.email})
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      onClick={() => setShowNewCustomerForm(true)}
+                      data-testid="button-new-customer"
+                    >
+                      <UserPlus className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  <FormDescription>
+                    Seleziona il cliente o creane uno nuovo
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          ) : (
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <UserPlus className="h-4 w-4" />
+                  Nuovo Cliente
+                </CardTitle>
+                <CardDescription>Inserisci i dati del nuovo cliente</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <Label htmlFor="new-customer-name">Nome completo *</Label>
+                    <Input
+                      id="new-customer-name"
+                      placeholder="Mario Rossi"
+                      value={newCustomerData.fullName}
+                      onChange={(e) => setNewCustomerData(prev => ({ ...prev, fullName: e.target.value }))}
+                      data-testid="input-new-customer-name"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label htmlFor="new-customer-email">Email *</Label>
+                    <Input
+                      id="new-customer-email"
+                      type="email"
+                      placeholder="mario@email.com"
+                      value={newCustomerData.email}
+                      onChange={(e) => setNewCustomerData(prev => ({ ...prev, email: e.target.value }))}
+                      data-testid="input-new-customer-email"
+                    />
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="new-customer-phone">Telefono</Label>
+                  <Input
+                    id="new-customer-phone"
+                    placeholder="+39 333 1234567"
+                    value={newCustomerData.phone}
+                    onChange={(e) => setNewCustomerData(prev => ({ ...prev, phone: e.target.value }))}
+                    data-testid="input-new-customer-phone"
+                  />
+                </div>
+                {user?.role !== "repair_center" && (
+                  <>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1">
+                        <Label htmlFor="new-customer-username">Username *</Label>
+                        <Input
+                          id="new-customer-username"
+                          placeholder="mrossi"
+                          value={newCustomerData.username}
+                          onChange={(e) => setNewCustomerData(prev => ({ ...prev, username: e.target.value }))}
+                          data-testid="input-new-customer-username"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <Label htmlFor="new-customer-password">Password *</Label>
+                        <Input
+                          id="new-customer-password"
+                          type="password"
+                          placeholder="Password"
+                          value={newCustomerData.password}
+                          onChange={(e) => setNewCustomerData(prev => ({ ...prev, password: e.target.value }))}
+                          data-testid="input-new-customer-password"
+                        />
+                      </div>
+                    </div>
+                  </>
+                )}
+                <div className="flex gap-2 pt-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      setShowNewCustomerForm(false);
+                      setNewCustomerData({
+                        fullName: "",
+                        email: "",
+                        phone: "",
+                        username: "",
+                        password: "",
+                      });
+                    }}
+                    data-testid="button-cancel-new-customer"
+                  >
+                    Annulla
+                  </Button>
+                  <Button
+                    type="button"
+                    onClick={handleCreateCustomer}
+                    disabled={createCustomerMutation.isPending}
+                    data-testid="button-save-new-customer"
+                  >
+                    {createCustomerMutation.isPending ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Creazione...
+                      </>
+                    ) : (
+                      "Crea Cliente"
+                    )}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
           )}
-        />
+        </>
       )}
 
       {/* Centro di Riparazione */}
