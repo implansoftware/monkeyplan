@@ -88,6 +88,10 @@ export function AcceptanceWizardDialog({
   const [selectedBrandId, setSelectedBrandId] = useState<string>("");
   const [selectedIssues, setSelectedIssues] = useState<string[]>([]);
   const [showOtherIssue, setShowOtherIssue] = useState(false);
+  const [selectedDefects, setSelectedDefects] = useState<string[]>([]);
+  const [showOtherDefect, setShowOtherDefect] = useState(false);
+  const [selectedAccessories, setSelectedAccessories] = useState<string[]>([]);
+  const [showOtherAccessory, setShowOtherAccessory] = useState(false);
   const [showNewCustomerForm, setShowNewCustomerForm] = useState(false);
   const [newCustomerData, setNewCustomerData] = useState({
     customerType: "private" as "private" | "company",
@@ -139,6 +143,38 @@ export function AcceptanceWizardDialog({
       const params = selectedTypeId ? new URLSearchParams({ deviceTypeId: selectedTypeId }) : new URLSearchParams();
       const res = await fetch(`/api/issue-types?${params}`);
       if (!res.ok) throw new Error("Failed to fetch issue types");
+      return res.json();
+    },
+    enabled: !!selectedTypeId,
+  });
+
+  const { data: aestheticDefects = [] } = useQuery<Array<{
+    id: string;
+    name: string;
+    description: string | null;
+    deviceTypeId: string | null;
+  }>>({
+    queryKey: ["/api/aesthetic-defects", { deviceTypeId: selectedTypeId }],
+    queryFn: async () => {
+      const params = selectedTypeId ? new URLSearchParams({ deviceTypeId: selectedTypeId }) : new URLSearchParams();
+      const res = await fetch(`/api/aesthetic-defects?${params}`);
+      if (!res.ok) throw new Error("Failed to fetch aesthetic defects");
+      return res.json();
+    },
+    enabled: !!selectedTypeId,
+  });
+
+  const { data: accessoryTypes = [] } = useQuery<Array<{
+    id: string;
+    name: string;
+    description: string | null;
+    deviceTypeId: string | null;
+  }>>({
+    queryKey: ["/api/accessory-types", { deviceTypeId: selectedTypeId }],
+    queryFn: async () => {
+      const params = selectedTypeId ? new URLSearchParams({ deviceTypeId: selectedTypeId }) : new URLSearchParams();
+      const res = await fetch(`/api/accessory-types?${params}`);
+      if (!res.ok) throw new Error("Failed to fetch accessory types");
       return res.json();
     },
     enabled: !!selectedTypeId,
@@ -459,6 +495,10 @@ export function AcceptanceWizardDialog({
     setSelectedBrandId("");
     setSelectedIssues([]);
     setShowOtherIssue(false);
+    setSelectedDefects([]);
+    setShowOtherDefect(false);
+    setSelectedAccessories([]);
+    setShowOtherAccessory(false);
     onOpenChange(false);
   };
 
@@ -830,9 +870,15 @@ export function AcceptanceWizardDialog({
                 form.setValue("deviceModel", "");
                 form.setValue("issueDescription", "");
                 form.setValue("otherIssueDescription", "");
+                form.setValue("acceptance.aestheticNotes", "");
+                form.setValue("acceptance.accessories", "");
                 setSelectedBrandId("");
                 setSelectedIssues([]);
                 setShowOtherIssue(false);
+                setSelectedDefects([]);
+                setShowOtherDefect(false);
+                setSelectedAccessories([]);
+                setShowOtherAccessory(false);
               }} 
               value={field.value}
             >
@@ -1139,32 +1185,10 @@ export function AcceptanceWizardDialog({
     <div className="space-y-4">
       <FormField
         control={form.control}
-        name="acceptance.declaredDefects"
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel>Difetti dichiarati</FormLabel>
-            <FormControl>
-              <Textarea 
-                {...field} 
-                placeholder="Un difetto per riga (es: Schermo rotto, Batteria non si ricarica)"
-                rows={3}
-                data-testid="textarea-declared-defects"
-              />
-            </FormControl>
-            <FormDescription>
-              Inserisci un difetto per riga
-            </FormDescription>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
-
-      <FormField
-        control={form.control}
         name="acceptance.aestheticCondition"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Condizioni estetiche</FormLabel>
+            <FormLabel>Condizioni estetiche generali *</FormLabel>
             <Select onValueChange={field.onChange} value={field.value}>
               <FormControl>
                 <SelectTrigger data-testid="select-aesthetic-condition">
@@ -1172,10 +1196,10 @@ export function AcceptanceWizardDialog({
                 </SelectTrigger>
               </FormControl>
               <SelectContent>
-                <SelectItem value="ottimo">Ottimo</SelectItem>
-                <SelectItem value="buono">Buono</SelectItem>
-                <SelectItem value="discreto">Discreto</SelectItem>
-                <SelectItem value="scadente">Scadente</SelectItem>
+                <SelectItem value="ottimo">Ottimo - Nessun difetto visibile</SelectItem>
+                <SelectItem value="buono">Buono - Minimi segni di usura</SelectItem>
+                <SelectItem value="discreto">Discreto - Segni di usura evidenti</SelectItem>
+                <SelectItem value="scadente">Scadente - Danni estetici significativi</SelectItem>
               </SelectContent>
             </Select>
             <FormMessage />
@@ -1188,19 +1212,107 @@ export function AcceptanceWizardDialog({
         name="acceptance.aestheticNotes"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Note estetiche</FormLabel>
-            <FormControl>
-              <Textarea 
-                {...field} 
-                placeholder="Graffi, ammaccature, segni di usura..."
-                rows={2}
-                data-testid="textarea-aesthetic-notes"
-              />
-            </FormControl>
+            <FormLabel>Difetti estetici rilevati</FormLabel>
+            <div className="border rounded-md p-3 max-h-48 overflow-y-auto space-y-2">
+              {aestheticDefects.length === 0 ? (
+                <p className="text-sm text-muted-foreground">Seleziona prima un tipo di dispositivo</p>
+              ) : (
+                <>
+                  {aestheticDefects.map((defect) => (
+                    <div key={defect.id} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={`defect-${defect.id}`}
+                        checked={selectedDefects.includes(defect.name)}
+                        onCheckedChange={(checked) => {
+                          const newDefects = checked 
+                            ? [...selectedDefects, defect.name]
+                            : selectedDefects.filter(d => d !== defect.name);
+                          setSelectedDefects(newDefects);
+                          
+                          if (defect.name === "Altro") {
+                            setShowOtherDefect(!!checked);
+                          }
+                          
+                          const defectText = newDefects.filter(d => d !== "Altro").join(", ");
+                          field.onChange(defectText);
+                        }}
+                        data-testid={`checkbox-defect-${defect.id}`}
+                      />
+                      <label 
+                        htmlFor={`defect-${defect.id}`}
+                        className="text-sm cursor-pointer flex-1"
+                      >
+                        {defect.name}
+                        {defect.description && (
+                          <span className="text-muted-foreground text-xs ml-1">
+                            - {defect.description}
+                          </span>
+                        )}
+                      </label>
+                    </div>
+                  ))}
+                  <div className="flex items-center space-x-2 border-t pt-2 mt-2">
+                    <Checkbox
+                      id="defect-altro"
+                      checked={showOtherDefect}
+                      onCheckedChange={(checked) => {
+                        setShowOtherDefect(!!checked);
+                        if (!checked) {
+                          const newDefects = selectedDefects.filter(d => d !== "Altro");
+                          setSelectedDefects(newDefects);
+                          const defectText = newDefects.join(", ");
+                          field.onChange(defectText);
+                        } else {
+                          setSelectedDefects([...selectedDefects, "Altro"]);
+                        }
+                      }}
+                      data-testid="checkbox-defect-altro"
+                    />
+                    <label htmlFor="defect-altro" className="text-sm cursor-pointer font-medium">
+                      Altro difetto non in elenco
+                    </label>
+                  </div>
+                </>
+              )}
+            </div>
+            {selectedDefects.length > 0 && (
+              <div className="text-xs text-muted-foreground mt-1">
+                Selezionati: {selectedDefects.join(", ")}
+              </div>
+            )}
             <FormMessage />
           </FormItem>
         )}
       />
+
+      {showOtherDefect && (
+        <FormField
+          control={form.control}
+          name="acceptance.declaredDefects"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Descrivi altro difetto estetico *</FormLabel>
+              <FormControl>
+                <Input 
+                  {...field} 
+                  placeholder="Descrivi il difetto non elencato"
+                  data-testid="input-other-defect"
+                  onChange={(e) => {
+                    field.onChange(e.target.value);
+                    const currentNotes = form.getValues("acceptance.aestheticNotes") || "";
+                    const baseNotes = selectedDefects.filter(d => d !== "Altro").join(", ");
+                    const newNotes = e.target.value 
+                      ? (baseNotes ? `${baseNotes}, ${e.target.value}` : e.target.value)
+                      : baseNotes;
+                    form.setValue("acceptance.aestheticNotes", newNotes);
+                  }}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      )}
 
       <FormField
         control={form.control}
@@ -1227,21 +1339,112 @@ export function AcceptanceWizardDialog({
         render={({ field }) => (
           <FormItem>
             <FormLabel>Accessori consegnati</FormLabel>
-            <FormControl>
-              <Textarea 
-                {...field} 
-                placeholder="Separa con virgole (es: Caricabatterie, Custodia, Cavo USB)"
-                rows={2}
-                data-testid="textarea-accessories"
-              />
-            </FormControl>
-            <FormDescription>
-              Separa gli accessori con virgole
-            </FormDescription>
+            <div className="border rounded-md p-3 max-h-48 overflow-y-auto space-y-2">
+              {accessoryTypes.length === 0 ? (
+                <p className="text-sm text-muted-foreground">Seleziona prima un tipo di dispositivo</p>
+              ) : (
+                <>
+                  {accessoryTypes.map((accessory) => (
+                    <div key={accessory.id} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={`accessory-${accessory.id}`}
+                        checked={selectedAccessories.includes(accessory.name)}
+                        onCheckedChange={(checked) => {
+                          let newAccessories: string[];
+                          
+                          if (accessory.name === "Nessun accessorio") {
+                            newAccessories = checked ? ["Nessun accessorio"] : [];
+                          } else {
+                            newAccessories = checked 
+                              ? [...selectedAccessories.filter(a => a !== "Nessun accessorio"), accessory.name]
+                              : selectedAccessories.filter(a => a !== accessory.name);
+                          }
+                          
+                          setSelectedAccessories(newAccessories);
+                          
+                          if (accessory.name === "Altro") {
+                            setShowOtherAccessory(!!checked);
+                          }
+                          
+                          const accessoryText = newAccessories.filter(a => a !== "Altro").join(", ");
+                          field.onChange(accessoryText);
+                        }}
+                        disabled={accessory.name !== "Nessun accessorio" && selectedAccessories.includes("Nessun accessorio")}
+                        data-testid={`checkbox-accessory-${accessory.id}`}
+                      />
+                      <label 
+                        htmlFor={`accessory-${accessory.id}`}
+                        className={`text-sm cursor-pointer flex-1 ${
+                          accessory.name !== "Nessun accessorio" && selectedAccessories.includes("Nessun accessorio") 
+                            ? "text-muted-foreground" 
+                            : ""
+                        }`}
+                      >
+                        {accessory.name}
+                        {accessory.description && (
+                          <span className="text-muted-foreground text-xs ml-1">
+                            - {accessory.description}
+                          </span>
+                        )}
+                      </label>
+                    </div>
+                  ))}
+                  <div className="flex items-center space-x-2 border-t pt-2 mt-2">
+                    <Checkbox
+                      id="accessory-altro"
+                      checked={showOtherAccessory}
+                      onCheckedChange={(checked) => {
+                        setShowOtherAccessory(!!checked);
+                        if (!checked) {
+                          const newAccessories = selectedAccessories.filter(a => a !== "Altro");
+                          setSelectedAccessories(newAccessories);
+                          const accessoryText = newAccessories.join(", ");
+                          field.onChange(accessoryText);
+                        } else {
+                          setSelectedAccessories([...selectedAccessories.filter(a => a !== "Nessun accessorio"), "Altro"]);
+                        }
+                      }}
+                      disabled={selectedAccessories.includes("Nessun accessorio")}
+                      data-testid="checkbox-accessory-altro"
+                    />
+                    <label 
+                      htmlFor="accessory-altro" 
+                      className={`text-sm cursor-pointer font-medium ${
+                        selectedAccessories.includes("Nessun accessorio") ? "text-muted-foreground" : ""
+                      }`}
+                    >
+                      Altro accessorio non in elenco
+                    </label>
+                  </div>
+                </>
+              )}
+            </div>
+            {selectedAccessories.length > 0 && (
+              <div className="text-xs text-muted-foreground mt-1">
+                Selezionati: {selectedAccessories.join(", ")}
+              </div>
+            )}
             <FormMessage />
           </FormItem>
         )}
       />
+
+      {showOtherAccessory && (
+        <div className="space-y-2">
+          <Label>Descrivi altro accessorio *</Label>
+          <Input 
+            placeholder="Descrivi l'accessorio non elencato"
+            data-testid="input-other-accessory"
+            onChange={(e) => {
+              const baseAccessories = selectedAccessories.filter(a => a !== "Altro").join(", ");
+              const newText = e.target.value 
+                ? (baseAccessories ? `${baseAccessories}, ${e.target.value}` : e.target.value)
+                : baseAccessories;
+              form.setValue("acceptance.accessories", newText);
+            }}
+          />
+        </div>
+      )}
 
       <FormField
         control={form.control}
