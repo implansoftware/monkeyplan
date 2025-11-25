@@ -45,7 +45,7 @@ interface DeliveryDialogProps {
 }
 
 const deliverySchema = z.object({
-  deliveredTo: z.string().min(1, "Recipient name is required"),
+  deliveredTo: z.string().min(1, "Il nome del destinatario è obbligatorio"),
   deliveryMethod: z.enum(["in_store", "courier", "pickup"]),
   idDocumentType: z.string().optional(),
   idDocumentNumber: z.string().optional(),
@@ -88,7 +88,7 @@ export function DeliveryDialog({
 
   const deliverMutation = useMutation({
     mutationFn: async (data: DeliveryFormData) => {
-      return await apiRequest(`/api/repair-orders/${repairOrderId}/deliver`, "POST", {
+      return await apiRequest("POST", `/api/repair-orders/${repairOrderId}/deliver`, {
         deliveredTo: data.deliveredTo,
         deliveryMethod: data.deliveryMethod,
         idDocumentType: data.idDocumentType || null,
@@ -98,8 +98,8 @@ export function DeliveryDialog({
     },
     onSuccess: () => {
       toast({
-        title: "Delivery completed",
-        description: "The device has been successfully delivered",
+        title: "Consegna completata",
+        description: "Il dispositivo è stato consegnato con successo",
       });
       queryClient.invalidateQueries({ queryKey: ["/api/repair-orders", repairOrderId, "delivery"] });
       queryClient.invalidateQueries({ queryKey: ["/api/repair-orders"] });
@@ -109,7 +109,7 @@ export function DeliveryDialog({
     },
     onError: (error: Error) => {
       toast({
-        title: "Error",
+        title: "Errore",
         description: error.message,
         variant: "destructive",
       });
@@ -136,11 +136,11 @@ export function DeliveryDialog({
   const getMethodLabel = (method: string) => {
     switch (method) {
       case "in_store":
-        return "In-Store Pickup";
+        return "Ritiro in Negozio";
       case "courier":
-        return "Courier Delivery";
+        return "Spedizione Corriere";
       case "pickup":
-        return "Customer Pickup";
+        return "Ritiro Cliente";
       default:
         return method;
     }
@@ -153,10 +153,10 @@ export function DeliveryDialog({
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <PackageCheck className="h-5 w-5 text-green-600" />
-              Delivery Completed
+              Consegna Completata
             </DialogTitle>
             <DialogDescription>
-              This device has already been delivered
+              Questo dispositivo è già stato consegnato
             </DialogDescription>
           </DialogHeader>
 
@@ -165,31 +165,31 @@ export function DeliveryDialog({
               <div className="flex items-center gap-3">
                 <Badge variant="default" className="gap-1">
                   <CheckCircle className="h-3 w-3" />
-                  Delivered
+                  Consegnato
                 </Badge>
               </div>
 
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
-                  <div className="text-muted-foreground">Recipient</div>
+                  <div className="text-muted-foreground">Destinatario</div>
                   <div className="font-medium">{existingDelivery.deliveredTo}</div>
                 </div>
                 <div>
-                  <div className="text-muted-foreground">Method</div>
+                  <div className="text-muted-foreground">Metodo</div>
                   <div className="font-medium flex items-center gap-1">
                     {getMethodIcon(existingDelivery.deliveryMethod)}
                     {getMethodLabel(existingDelivery.deliveryMethod)}
                   </div>
                 </div>
                 <div>
-                  <div className="text-muted-foreground">Date</div>
+                  <div className="text-muted-foreground">Data</div>
                   <div className="font-medium">
                     {format(new Date(existingDelivery.deliveredAt), "dd MMM yyyy HH:mm", { locale: it })}
                   </div>
                 </div>
                 {existingDelivery.idDocumentType && (
                   <div>
-                    <div className="text-muted-foreground">ID Document</div>
+                    <div className="text-muted-foreground">Documento</div>
                     <div className="font-medium">
                       {existingDelivery.idDocumentType}: {existingDelivery.idDocumentNumber}
                     </div>
@@ -199,7 +199,7 @@ export function DeliveryDialog({
 
               {existingDelivery.notes && (
                 <div>
-                  <div className="text-muted-foreground text-sm">Notes</div>
+                  <div className="text-muted-foreground text-sm">Note</div>
                   <div className="text-sm">{existingDelivery.notes}</div>
                 </div>
               )}
@@ -208,7 +208,7 @@ export function DeliveryDialog({
 
           <div className="flex justify-end">
             <Button variant="outline" onClick={() => onOpenChange(false)} data-testid="button-close">
-              Close
+              Chiudi
             </Button>
           </div>
         </DialogContent>
@@ -222,10 +222,10 @@ export function DeliveryDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <PackageCheck className="h-5 w-5" />
-            Complete Delivery
+            Completa Consegna
           </DialogTitle>
           <DialogDescription>
-            Record the device delivery to the customer
+            Registra la consegna del dispositivo al cliente
           </DialogDescription>
         </DialogHeader>
 
@@ -236,11 +236,11 @@ export function DeliveryDialog({
               name="deliveredTo"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Recipient Name *</FormLabel>
+                  <FormLabel>Nome Destinatario *</FormLabel>
                   <FormControl>
                     <Input
                       {...field}
-                      placeholder="Full name of person receiving the device"
+                      placeholder="Nome completo della persona che ritira"
                       data-testid="input-delivered-to"
                     />
                   </FormControl>
@@ -254,30 +254,30 @@ export function DeliveryDialog({
               name="deliveryMethod"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Delivery Method *</FormLabel>
+                  <FormLabel>Metodo Consegna *</FormLabel>
                   <Select onValueChange={field.onChange} defaultValue={field.value}>
                     <FormControl>
                       <SelectTrigger data-testid="select-delivery-method">
-                        <SelectValue placeholder="Select method" />
+                        <SelectValue placeholder="Seleziona metodo" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
                       <SelectItem value="in_store">
                         <div className="flex items-center gap-2">
                           <Store className="h-4 w-4" />
-                          In-Store Pickup
+                          Ritiro in Negozio
                         </div>
                       </SelectItem>
                       <SelectItem value="courier">
                         <div className="flex items-center gap-2">
                           <Truck className="h-4 w-4" />
-                          Courier Delivery
+                          Spedizione Corriere
                         </div>
                       </SelectItem>
                       <SelectItem value="pickup">
                         <div className="flex items-center gap-2">
                           <UserCheck className="h-4 w-4" />
-                          Customer Pickup
+                          Ritiro Cliente
                         </div>
                       </SelectItem>
                     </SelectContent>
@@ -293,11 +293,11 @@ export function DeliveryDialog({
                 name="idDocumentType"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>ID Document Type</FormLabel>
+                    <FormLabel>Tipo Documento</FormLabel>
                     <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
                         <SelectTrigger data-testid="select-id-type">
-                          <SelectValue placeholder="Select" />
+                          <SelectValue placeholder="Seleziona" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
@@ -316,11 +316,11 @@ export function DeliveryDialog({
                 name="idDocumentNumber"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Document Number</FormLabel>
+                    <FormLabel>Numero Documento</FormLabel>
                     <FormControl>
                       <Input
                         {...field}
-                        placeholder="ID number"
+                        placeholder="Numero documento"
                         data-testid="input-id-number"
                       />
                     </FormControl>
@@ -335,17 +335,17 @@ export function DeliveryDialog({
               name="notes"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Notes</FormLabel>
+                  <FormLabel>Note</FormLabel>
                   <FormControl>
                     <Textarea
                       {...field}
-                      placeholder="Additional notes about the delivery..."
+                      placeholder="Note aggiuntive sulla consegna..."
                       rows={2}
                       data-testid="input-notes"
                     />
                   </FormControl>
                   <FormDescription>
-                    Any observations about the delivery
+                    Eventuali osservazioni sulla consegna
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
@@ -359,14 +359,14 @@ export function DeliveryDialog({
                 onClick={() => onOpenChange(false)}
                 data-testid="button-cancel"
               >
-                Cancel
+                Annulla
               </Button>
               <Button
                 type="submit"
                 disabled={deliverMutation.isPending}
                 data-testid="button-complete-delivery"
               >
-                {deliverMutation.isPending ? "Processing..." : "Complete Delivery"}
+                {deliverMutation.isPending ? "Elaborazione..." : "Completa Consegna"}
               </Button>
             </div>
           </form>
