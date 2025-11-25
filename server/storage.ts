@@ -5,10 +5,10 @@ import {
   InventoryMovement, InsertInventoryMovement, InventoryStock, ActivityLog, InsertActivityLog,
   AnalyticsCache, InsertAnalyticsCache, Notification, InsertNotification,
   NotificationPreferences, InsertNotificationPreferences, RepairAttachment, InsertRepairAttachment,
-  RepairAcceptance, InsertRepairAcceptance,
+  RepairAcceptance, InsertRepairAcceptance, DeviceType, InsertDeviceType, DeviceBrand, InsertDeviceBrand,
   users, repairCenters, products, repairOrders, tickets, ticketMessages,
   invoices, billingData, chatMessages, inventoryMovements, inventoryStock, activityLogs, analyticsCache,
-  notifications, notificationPreferences, repairAttachments, repairAcceptance
+  notifications, notificationPreferences, repairAttachments, repairAcceptance, deviceTypes, deviceBrands
 } from "@shared/schema";
 import { db, pool } from "./db";
 import { eq, and, or, desc, lt, sql, not } from "drizzle-orm";
@@ -110,6 +110,20 @@ export interface IStorage {
   listRepairAttachments(repairOrderId: string): Promise<RepairAttachment[]>;
   getRepairAttachment(id: string): Promise<RepairAttachment | undefined>;
   deleteRepairAttachment(id: string): Promise<void>;
+  
+  // Device Types (Admin-managed categories)
+  listDeviceTypes(activeOnly?: boolean): Promise<DeviceType[]>;
+  getDeviceType(id: string): Promise<DeviceType | undefined>;
+  createDeviceType(deviceType: InsertDeviceType): Promise<DeviceType>;
+  updateDeviceType(id: string, updates: Partial<InsertDeviceType>): Promise<DeviceType>;
+  deleteDeviceType(id: string): Promise<void>;
+  
+  // Device Brands (Admin-managed brands)
+  listDeviceBrands(activeOnly?: boolean): Promise<DeviceBrand[]>;
+  getDeviceBrand(id: string): Promise<DeviceBrand | undefined>;
+  createDeviceBrand(deviceBrand: InsertDeviceBrand): Promise<DeviceBrand>;
+  updateDeviceBrand(id: string, updates: Partial<InsertDeviceBrand>): Promise<DeviceBrand>;
+  deleteDeviceBrand(id: string): Promise<void>;
   
   sessionStore: session.Store;
 }
@@ -914,6 +928,84 @@ export class DatabaseStorage implements IStorage {
 
   async deleteRepairAttachment(id: string): Promise<void> {
     await db.delete(repairAttachments).where(eq(repairAttachments.id, id));
+  }
+
+  // Device Types
+  async listDeviceTypes(activeOnly: boolean = false): Promise<DeviceType[]> {
+    let query = db.select().from(deviceTypes);
+    
+    if (activeOnly) {
+      query = query.where(eq(deviceTypes.isActive, true)) as any;
+    }
+    
+    return await query.orderBy(deviceTypes.name);
+  }
+
+  async getDeviceType(id: string): Promise<DeviceType | undefined> {
+    const [deviceType] = await db.select().from(deviceTypes).where(eq(deviceTypes.id, id));
+    return deviceType || undefined;
+  }
+
+  async createDeviceType(insertDeviceType: InsertDeviceType): Promise<DeviceType> {
+    const [deviceType] = await db.insert(deviceTypes).values(insertDeviceType).returning();
+    return deviceType;
+  }
+
+  async updateDeviceType(id: string, updates: Partial<InsertDeviceType>): Promise<DeviceType> {
+    const [deviceType] = await db
+      .update(deviceTypes)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(deviceTypes.id, id))
+      .returning();
+    
+    if (!deviceType) {
+      throw new Error("Device type not found");
+    }
+    
+    return deviceType;
+  }
+
+  async deleteDeviceType(id: string): Promise<void> {
+    await db.delete(deviceTypes).where(eq(deviceTypes.id, id));
+  }
+
+  // Device Brands
+  async listDeviceBrands(activeOnly: boolean = false): Promise<DeviceBrand[]> {
+    let query = db.select().from(deviceBrands);
+    
+    if (activeOnly) {
+      query = query.where(eq(deviceBrands.isActive, true)) as any;
+    }
+    
+    return await query.orderBy(deviceBrands.name);
+  }
+
+  async getDeviceBrand(id: string): Promise<DeviceBrand | undefined> {
+    const [deviceBrand] = await db.select().from(deviceBrands).where(eq(deviceBrands.id, id));
+    return deviceBrand || undefined;
+  }
+
+  async createDeviceBrand(insertDeviceBrand: InsertDeviceBrand): Promise<DeviceBrand> {
+    const [deviceBrand] = await db.insert(deviceBrands).values(insertDeviceBrand).returning();
+    return deviceBrand;
+  }
+
+  async updateDeviceBrand(id: string, updates: Partial<InsertDeviceBrand>): Promise<DeviceBrand> {
+    const [deviceBrand] = await db
+      .update(deviceBrands)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(deviceBrands.id, id))
+      .returning();
+    
+    if (!deviceBrand) {
+      throw new Error("Device brand not found");
+    }
+    
+    return deviceBrand;
+  }
+
+  async deleteDeviceBrand(id: string): Promise<void> {
+    await db.delete(deviceBrands).where(eq(deviceBrands.id, id));
   }
 }
 

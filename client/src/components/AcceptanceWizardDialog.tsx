@@ -95,6 +95,20 @@ export function AcceptanceWizardDialog({
     enabled: user?.role === "admin" || user?.role === "repair_center",
   });
 
+  const { data: deviceTypes = [] } = useQuery<Array<{
+    id: string;
+    name: string;
+  }>>({
+    queryKey: ["/api/device-types"],
+  });
+
+  const { data: deviceBrands = [] } = useQuery<Array<{
+    id: string;
+    name: string;
+  }>>({
+    queryKey: ["/api/device-brands"],
+  });
+
   const form = useForm<AcceptanceWizardData>({
     resolver: zodResolver(acceptanceWizardSchema),
     defaultValues: {
@@ -236,9 +250,20 @@ export function AcceptanceWizardDialog({
         render={({ field }) => (
           <FormItem>
             <FormLabel>Tipo dispositivo *</FormLabel>
-            <FormControl>
-              <Input {...field} placeholder="es. Smartphone, Tablet, Laptop" data-testid="input-device-type" />
-            </FormControl>
+            <Select onValueChange={field.onChange} value={field.value}>
+              <FormControl>
+                <SelectTrigger data-testid="select-device-type">
+                  <SelectValue placeholder="Seleziona tipo" />
+                </SelectTrigger>
+              </FormControl>
+              <SelectContent>
+                {deviceTypes.map((type) => (
+                  <SelectItem key={type.id} value={type.name}>
+                    {type.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             <FormMessage />
           </FormItem>
         )}
@@ -250,9 +275,20 @@ export function AcceptanceWizardDialog({
         render={({ field }) => (
           <FormItem>
             <FormLabel>Brand</FormLabel>
-            <FormControl>
-              <Input {...field} placeholder="es. Apple, Samsung, Huawei" data-testid="input-brand" />
-            </FormControl>
+            <Select onValueChange={field.onChange} value={field.value}>
+              <FormControl>
+                <SelectTrigger data-testid="select-brand">
+                  <SelectValue placeholder="Seleziona brand" />
+                </SelectTrigger>
+              </FormControl>
+              <SelectContent>
+                {deviceBrands.map((brand) => (
+                  <SelectItem key={brand.id} value={brand.name}>
+                    {brand.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             <FormMessage />
           </FormItem>
         )}

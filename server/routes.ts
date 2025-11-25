@@ -3085,5 +3085,29 @@ export function registerRoutes(app: Express): Server {
     });
   });
 
+  // ============ DEVICE TYPES & BRANDS ============
+
+  // Get device types (only active for dropdown)
+  app.get("/api/device-types", requireAuth, async (req, res) => {
+    try {
+      const activeOnly = req.query.activeOnly !== 'false'; // Default true
+      const deviceTypes = await storage.listDeviceTypes(activeOnly);
+      res.json(deviceTypes);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // Get device brands (only active for dropdown)
+  app.get("/api/device-brands", requireAuth, async (req, res) => {
+    try {
+      const activeOnly = req.query.activeOnly !== 'false'; // Default true
+      const deviceBrands = await storage.listDeviceBrands(activeOnly);
+      res.json(deviceBrands);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
   return httpServer;
 }
