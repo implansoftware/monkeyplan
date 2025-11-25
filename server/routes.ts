@@ -3066,6 +3066,15 @@ export function registerRoutes(app: Express): Server {
       const laborCost = req.body.laborCost || 0;
       const calculatedTotal = partsTotal + laborCost;
       
+      // Convert validUntil string to Date if provided
+      let validUntilDate: Date | null = null;
+      if (req.body.validUntil) {
+        const parsed = new Date(req.body.validUntil);
+        if (!isNaN(parsed.getTime())) {
+          validUntilDate = parsed;
+        }
+      }
+      
       // Validate and create quote
       const validationResult = insertRepairQuoteSchema.safeParse({
         repairOrderId: req.params.id,
@@ -3074,8 +3083,8 @@ export function registerRoutes(app: Express): Server {
         laborCost,
         totalAmount: calculatedTotal,
         status: 'draft',
-        validUntil: req.body.validUntil,
-        notes: req.body.notes,
+        validUntil: validUntilDate,
+        notes: req.body.notes || null,
         createdBy: req.user.id,
       });
       
