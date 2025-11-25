@@ -125,6 +125,9 @@ export interface IStorage {
   updateDeviceBrand(id: string, updates: Partial<InsertDeviceBrand>): Promise<DeviceBrand>;
   deleteDeviceBrand(id: string): Promise<void>;
   
+  // Device Models (Cascading dropdown catalog)
+  listDeviceModels(filters?: { typeId?: string; brandId?: string; activeOnly?: boolean }): Promise<DeviceModel[]>;
+  
   sessionStore: session.Store;
 }
 
@@ -1006,6 +1009,31 @@ export class DatabaseStorage implements IStorage {
 
   async deleteDeviceBrand(id: string): Promise<void> {
     await db.delete(deviceBrands).where(eq(deviceBrands.id, id));
+  }
+
+  // Device Models (Cascading dropdown)
+  async listDeviceModels(filters?: { typeId?: string; brandId?: string; activeOnly?: boolean }): Promise<DeviceModel[]> {
+    let query = db.select().from(deviceModels);
+    
+    const conditions = [];
+    
+    if (filters?.typeId) {
+      conditions.push(eq(deviceModels.typeId, filters.typeId));
+    }
+    
+    if (filters?.brandId) {
+      conditions.push(eq(deviceModels.brandId, filters.brandId));
+    }
+    
+    if (filters?.activeOnly !== false) {
+      conditions.push(eq(deviceModels.isActive, true));
+    }
+    
+    if (conditions.length > 0) {
+      query = query.where(and(...conditions)) as any;
+    }
+    
+    return await query.orderBy(deviceModels.modelName);
   }
 }
 

@@ -3109,5 +3109,19 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Get device models (cascading dropdown filtered by type/brand)
+  app.get("/api/device-models", requireAuth, async (req, res) => {
+    try {
+      const typeId = req.query.typeId as string | undefined;
+      const brandId = req.query.brandId as string | undefined;
+      const activeOnly = req.query.activeOnly !== 'false'; // Default true
+      
+      const deviceModels = await storage.listDeviceModels({ typeId, brandId, activeOnly });
+      res.json(deviceModels);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
   return httpServer;
 }

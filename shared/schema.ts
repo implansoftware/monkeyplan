@@ -96,6 +96,7 @@ export const repairOrders = pgTable("repair_orders", {
   deviceType: text("device_type").notNull(), // smartphone, laptop, tablet, tv, etc.
   deviceModel: text("device_model").notNull(),
   brand: text("brand"), // Marca dispositivo (auto-selezionata da catalogo modelli)
+  deviceModelId: varchar("device_model_id").references(() => deviceModels.id), // FK to device catalog (nullable for manual entries)
   imei: text("imei"), // IMEI dispositivo
   serial: text("serial"), // Numero seriale
   imeiNotReadable: boolean("imei_not_readable").notNull().default(false), // Flag: IMEI non leggibile
@@ -141,7 +142,9 @@ export const deviceModels = pgTable("device_models", {
   deviceClass: text("device_class"), // Legacy text column (kept for backward compatibility)
   marketCode: text("market_code"), // Codice markettario
   photoUrl: text("photo_url"), // URL foto dispositivo (da API o manuale)
+  isActive: boolean("is_active").notNull().default(true), // Soft delete flag
   createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 
 // Repair Acceptance Data (Check di accettazione)
@@ -526,6 +529,7 @@ export const insertDeviceBrandSchema = createInsertSchema(deviceBrands).omit({
 export const insertDeviceModelSchema = createInsertSchema(deviceModels).omit({
   id: true,
   createdAt: true,
+  updatedAt: true,
 });
 
 export const insertRepairAcceptanceSchema = createInsertSchema(repairAcceptance).omit({

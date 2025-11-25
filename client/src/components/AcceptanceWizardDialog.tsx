@@ -81,6 +81,8 @@ export function AcceptanceWizardDialog({
   customerId 
 }: AcceptanceWizardDialogProps) {
   const [step, setStep] = useState<WizardStep>("device-info");
+  const [selectedTypeId, setSelectedTypeId] = useState<string>("");
+  const [selectedBrandId, setSelectedBrandId] = useState<string>("");
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { user } = useUser();
@@ -107,6 +109,16 @@ export function AcceptanceWizardDialog({
     name: string;
   }>>({
     queryKey: ["/api/device-brands"],
+  });
+
+  const { data: deviceModels = [], refetch: refetchModels } = useQuery<Array<{
+    id: string;
+    modelName: string;
+    brandId: string;
+    typeId: string;
+  }>>({
+    queryKey: ["/api/device-models", selectedTypeId, selectedBrandId],
+    enabled: !!selectedTypeId && !!selectedBrandId,
   });
 
   const form = useForm<AcceptanceWizardData>({
@@ -250,7 +262,17 @@ export function AcceptanceWizardDialog({
         render={({ field }) => (
           <FormItem>
             <FormLabel>Tipo dispositivo *</FormLabel>
-            <Select onValueChange={field.onChange} value={field.value}>
+            <Select 
+              onValueChange={(name) => {
+                field.onChange(name);
+                const type = deviceTypes.find(t => t.name === name);
+                setSelectedTypeId(type?.id || "");
+                form.setValue("brand", "");
+                form.setValue("deviceModel", "");
+                setSelectedBrandId("");
+              }} 
+              value={field.value}
+            >
               <FormControl>
                 <SelectTrigger data-testid="select-device-type">
                   <SelectValue placeholder="Seleziona tipo" />
@@ -275,7 +297,15 @@ export function AcceptanceWizardDialog({
         render={({ field }) => (
           <FormItem>
             <FormLabel>Brand</FormLabel>
-            <Select onValueChange={field.onChange} value={field.value}>
+            <Select 
+              onValueChange={(name) => {
+                field.onChange(name);
+                const brand = deviceBrands.find(b => b.name === name);
+                setSelectedBrandId(brand?.id || "");
+                form.setValue("deviceModel", "");
+              }} 
+              value={field.value}
+            >
               <FormControl>
                 <SelectTrigger data-testid="select-brand">
                   <SelectValue placeholder="Seleziona brand" />
@@ -300,9 +330,30 @@ export function AcceptanceWizardDialog({
         render={({ field }) => (
           <FormItem>
             <FormLabel>Modello</FormLabel>
-            <FormControl>
-              <Input {...field} placeholder="es. iPhone 13 Pro, Galaxy S21" data-testid="input-device-model" />
-            </FormControl>
+            {selectedTypeId && selectedBrandId && deviceModels.length > 0 ? (
+              <Select onValueChange={field.onChange} value={field.value}>
+                <FormControl>
+                  <SelectTrigger data-testid="select-device-model">
+                    <SelectValue placeholder="Seleziona modello" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {deviceModels.map((model) => (
+                    <SelectItem key={model.id} value={model.modelName}>
+                      {model.modelName}
+                    </SelectItem>
+                  ))}
+                  <SelectItem value="__other__">Altro (inserimento manuale)</SelectItem>
+                </SelectContent>
+              </Select>
+            ) : (
+              <FormControl>
+                <Input {...field} placeholder="es. iPhone 13 Pro, Galaxy S21" data-testid="input-device-model" />
+              </FormControl>
+            )}
+            <FormDescription>
+              {selectedTypeId && selectedBrandId && deviceModels.length === 0 && "Nessun modello disponibile, inserisci manualmente"}
+            </FormDescription>
             <FormMessage />
           </FormItem>
         )}
