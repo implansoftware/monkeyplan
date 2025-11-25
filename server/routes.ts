@@ -1461,7 +1461,7 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  // Download/preview attachment with signed URL
+  // Download/preview attachment - serve file directly
   app.get("/api/repair-orders/attachments/:id/download", requireAuth, async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
@@ -1481,7 +1481,7 @@ export function registerRoutes(app: Express): Server {
       
       if (!hasAccess) return res.status(403).send("Forbidden");
       
-      // Generate signed URL for download or preview (valid for 1 hour)
+      // Get file from storage
       const { bucketName, objectName } = parseObjectPath(attachment.objectKey);
       const bucket = objectStorageClient.bucket(bucketName);
       const file = bucket.file(objectName);
@@ -1492,19 +1492,13 @@ export function registerRoutes(app: Express): Server {
         ? 'inline'
         : `attachment; filename="${encodeURIComponent(attachment.fileName)}"`;
       
-      const [signedUrl] = await file.getSignedUrl({
-        version: 'v4',
-        action: 'read',
-        expires: Date.now() + 60 * 60 * 1000, // 1 hour
-        responseDisposition: disposition,
-      });
+      // Set headers
+      res.setHeader('Content-Type', attachment.fileType || 'application/octet-stream');
+      res.setHeader('Content-Disposition', disposition);
       
-      // If redirect=true, redirect to the signed URL
-      if (req.query.redirect === 'true') {
-        return res.redirect(signedUrl);
-      }
-      
-      res.json({ signedUrl });
+      // Stream file directly to response
+      const [fileContents] = await file.download();
+      res.send(fileContents);
     } catch (error: any) {
       console.error('Download error:', error);
       res.status(500).send(error.message);
@@ -1564,10 +1558,10 @@ export function registerRoutes(app: Express): Server {
         uploadedBy: req.user.id,
       });
       
-      // Return the attachment with a download URL that redirects to the signed URL
+      // Return the attachment with a download URL
       res.json({ 
         id: attachment.id,
-        url: `/api/repair-orders/attachments/${attachment.id}/download?preview=true&redirect=true`,
+        url: `/api/repair-orders/attachments/${attachment.id}/download?preview=true`,
         fileName: attachment.fileName
       });
     } catch (error: any) {
