@@ -49,7 +49,7 @@ export interface IStorage {
   getRepairOrder(id: string): Promise<RepairOrder | undefined>;
   createRepairOrder(order: InsertRepairOrder): Promise<RepairOrder>;
   createRepairWithAcceptance(order: InsertRepairOrder, acceptance: InsertRepairAcceptance): Promise<{ order: RepairOrder; acceptance: RepairAcceptance }>;
-  updateRepairOrder(id: string, updates: Partial<Pick<RepairOrder, 'status' | 'estimatedCost' | 'finalCost' | 'notes' | 'repairCenterId'>>): Promise<RepairOrder>;
+  updateRepairOrder(id: string, updates: Partial<Pick<RepairOrder, 'status' | 'priority' | 'estimatedCost' | 'finalCost' | 'notes' | 'repairCenterId'>>): Promise<RepairOrder>;
   updateRepairOrderStatus(id: string, status: string): Promise<RepairOrder>;
   checkImeiSerialDuplicate(imei?: string, serial?: string, excludeId?: string): Promise<RepairOrder | undefined>;
   

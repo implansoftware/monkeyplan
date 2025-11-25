@@ -13,12 +13,15 @@ import {
   updateRepairStatusSchema, updateTicketStatusSchema, createTicketMessageSchema,
   insertInventoryMovementSchema, insertBillingDataSchema, insertChatMessageSchema,
   insertNotificationPreferencesSchema, insertRepairAttachmentSchema, insertRepairDiagnosticsSchema,
+  insertRepairQuoteSchema,
   customerWizardSchema,
   type Product
 } from "@shared/schema";
 import { ObjectStorageService, objectStorageClient, parseObjectPath } from "./objectStorage";
 import { canAccessObject, ObjectPermission } from "./objectAcl";
 import { calculateRepairPriority } from "./helpers/priorityCalculation";
+import { db } from "./db";
+import { sql } from "drizzle-orm";
 
 const scryptAsync = promisify(scrypt);
 
@@ -2728,6 +2731,245 @@ export function registerRoutes(app: Express): Server {
       
       setActivityEntity(res, { type: 'repair_diagnostics', id: diagnostics.id });
       res.json(diagnostics);
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+
+  // ============ REPAIR QUOTES ENDPOINTS ============
+
+  // GET /api/repair-orders/:id/quote - Get quote for a repair order
+  app.get("/api/repair-orders/:id/quote", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const repairOrder = await storage.getRepairOrder(req.params.id);
+      if (!repairOrder) {
+        return res.status(404).send("Repair order not found");
+      }
+      
+      // RBAC check
+      if (req.user.role === 'customer') {
+        if (repairOrder.customerId !== req.user.id) {
+          return res.status(403).send("Access denied");
+        }
+      } else if (req.user.role === 'reseller') {
+        if (repairOrder.resellerId !== req.user.id) {
+          return res.status(403).send("Access denied");
+        }
+      } else if (req.user.role === 'repair_center') {
+        if (repairOrder.repairCenterId !== req.user.repairCenterId) {
+          return res.status(403).send("Access denied");
+        }
+      }
+      
+      const quote = await storage.getRepairQuote(req.params.id);
+      if (!quote) {
+        return res.status(404).send("Quote not found");
+      }
+      
+      res.json(quote);
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+
+  // POST /api/repair-orders/:id/quote - Create quote for a repair order
+  app.post("/api/repair-orders/:id/quote", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      // Only admin and repair_center can create quotes
+      if (req.user.role !== 'admin' && req.user.role !== 'repair_center') {
+        return res.status(403).send("Only admins and repair centers can create quotes");
+      }
+      
+      const repairOrder = await storage.getRepairOrder(req.params.id);
+      if (!repairOrder) {
+        return res.status(404).send("Repair order not found");
+      }
+      
+      // Repair center can only create quotes for their assigned orders
+      if (req.user.role === 'repair_center') {
+        if (repairOrder.repairCenterId !== req.user.repairCenterId) {
+          return res.status(403).send("Access denied");
+        }
+      }
+      
+      // Check if quote already exists
+      const existingQuote = await storage.getRepairQuote(req.params.id);
+      if (existingQuote) {
+        return res.status(409).send("Quote already exists for this repair order");
+      }
+      
+      // Auto-generate quote number (QUOTE-timestamp-count format)
+      const timestamp = Date.now();
+      const quoteCount = await db.execute(sql`SELECT COUNT(*) as count FROM repair_quotes`);
+      const count = (quoteCount.rows[0] as any).count;
+      const quoteNumber = `QUOTE-${timestamp}-${parseInt(count) + 1}`;
+      
+      // Validate and create quote
+      const validationResult = insertRepairQuoteSchema.safeParse({
+        repairOrderId: req.params.id,
+        quoteNumber,
+        parts: req.body.parts,
+        laborCost: req.body.laborCost || 0,
+        totalAmount: req.body.totalAmount,
+        status: 'draft',
+        validUntil: req.body.validUntil,
+        notes: req.body.notes,
+        createdBy: req.user.id,
+      });
+      
+      if (!validationResult.success) {
+        return res.status(400).send(validationResult.error.message);
+      }
+      
+      const quote = await storage.createRepairQuote(validationResult.data);
+      
+      // Calculate priority based on diagnostics (if exists)
+      const diagnostics = await storage.getRepairDiagnostics(req.params.id);
+      if (diagnostics) {
+        const calculatedPriority = calculateRepairPriority({
+          severity: diagnostics.severity as any,
+          estimatedRepairTime: diagnostics.estimatedRepairTime ?? undefined,
+          requiresExternalParts: diagnostics.requiresExternalParts,
+        });
+        
+        // Update repair order with priority and status
+        await storage.updateRepairOrder(req.params.id, {
+          priority: calculatedPriority as any,
+          status: 'preventivo_emesso' as any,
+        });
+      } else {
+        // No diagnostics, just update status
+        await storage.updateRepairOrder(req.params.id, {
+          status: 'preventivo_emesso' as any,
+        });
+      }
+      
+      setActivityEntity(res, { type: 'repair_quote', id: quote.id });
+      res.status(201).json(quote);
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+
+  // PATCH /api/repair-orders/:id/quote - Update quote
+  app.patch("/api/repair-orders/:id/quote", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      // Only admin and repair_center can update quotes
+      if (req.user.role !== 'admin' && req.user.role !== 'repair_center') {
+        return res.status(403).send("Only admins and repair centers can update quotes");
+      }
+      
+      const repairOrder = await storage.getRepairOrder(req.params.id);
+      if (!repairOrder) {
+        return res.status(404).send("Repair order not found");
+      }
+      
+      // Repair center can only update quotes for their assigned orders
+      if (req.user.role === 'repair_center') {
+        if (repairOrder.repairCenterId !== req.user.repairCenterId) {
+          return res.status(403).send("Access denied");
+        }
+      }
+      
+      const existingQuote = await storage.getRepairQuote(req.params.id);
+      if (!existingQuote) {
+        return res.status(404).send("Quote not found");
+      }
+      
+      // Prepare updates
+      const updates: any = {};
+      if (req.body.parts !== undefined) updates.parts = req.body.parts;
+      if (req.body.laborCost !== undefined) updates.laborCost = req.body.laborCost;
+      if (req.body.totalAmount !== undefined) updates.totalAmount = req.body.totalAmount;
+      if (req.body.validUntil !== undefined) updates.validUntil = req.body.validUntil;
+      if (req.body.notes !== undefined) updates.notes = req.body.notes;
+      
+      const quote = await storage.updateRepairQuote(req.params.id, updates);
+      
+      setActivityEntity(res, { type: 'repair_quote', id: quote.id });
+      res.json(quote);
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+
+  // POST /api/repair-orders/:id/quote/accept - Accept quote (customer only)
+  app.post("/api/repair-orders/:id/quote/accept", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const repairOrder = await storage.getRepairOrder(req.params.id);
+      if (!repairOrder) {
+        return res.status(404).send("Repair order not found");
+      }
+      
+      // Only customer can accept their own quote
+      if (req.user.role === 'customer') {
+        if (repairOrder.customerId !== req.user.id) {
+          return res.status(403).send("Access denied");
+        }
+      } else if (req.user.role !== 'admin') {
+        return res.status(403).send("Only customers can accept quotes");
+      }
+      
+      const quote = await storage.getRepairQuote(req.params.id);
+      if (!quote) {
+        return res.status(404).send("Quote not found");
+      }
+      
+      // Update quote status to accepted
+      await storage.updateQuoteStatus(req.params.id, 'accepted');
+      
+      // Update repair order status to preventivo_accettato
+      await storage.updateRepairOrder(req.params.id, {
+        status: 'preventivo_accettato' as any,
+      });
+      
+      res.json({ message: "Quote accepted successfully" });
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+
+  // POST /api/repair-orders/:id/quote/reject - Reject quote (customer only)
+  app.post("/api/repair-orders/:id/quote/reject", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const repairOrder = await storage.getRepairOrder(req.params.id);
+      if (!repairOrder) {
+        return res.status(404).send("Repair order not found");
+      }
+      
+      // Only customer can reject their own quote
+      if (req.user.role === 'customer') {
+        if (repairOrder.customerId !== req.user.id) {
+          return res.status(403).send("Access denied");
+        }
+      } else if (req.user.role !== 'admin') {
+        return res.status(403).send("Only customers can reject quotes");
+      }
+      
+      const quote = await storage.getRepairQuote(req.params.id);
+      if (!quote) {
+        return res.status(404).send("Quote not found");
+      }
+      
+      // Update quote status to rejected
+      await storage.updateQuoteStatus(req.params.id, 'rejected');
+      
+      // Update repair order status to preventivo_rifiutato
+      await storage.updateRepairOrder(req.params.id, {
+        status: 'preventivo_rifiutato' as any,
+      });
+      
+      res.json({ message: "Quote rejected successfully" });
     } catch (error: any) {
       res.status(400).send(error.message);
     }
