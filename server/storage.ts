@@ -5,12 +5,12 @@ import {
   InventoryMovement, InsertInventoryMovement, InventoryStock, ActivityLog, InsertActivityLog,
   AnalyticsCache, InsertAnalyticsCache, Notification, InsertNotification,
   NotificationPreferences, InsertNotificationPreferences, RepairAttachment, InsertRepairAttachment,
-  RepairAcceptance, InsertRepairAcceptance, DeviceType, InsertDeviceType, DeviceBrand, InsertDeviceBrand,
-  DeviceModel, InsertDeviceModel,
+  RepairAcceptance, InsertRepairAcceptance, RepairDiagnostics, InsertRepairDiagnostics,
+  DeviceType, InsertDeviceType, DeviceBrand, InsertDeviceBrand, DeviceModel, InsertDeviceModel,
   users, repairCenters, products, repairOrders, tickets, ticketMessages,
   invoices, billingData, chatMessages, inventoryMovements, inventoryStock, activityLogs, analyticsCache,
-  notifications, notificationPreferences, repairAttachments, repairAcceptance, deviceTypes, deviceBrands,
-  deviceModels
+  notifications, notificationPreferences, repairAttachments, repairAcceptance, repairDiagnostics,
+  deviceTypes, deviceBrands, deviceModels
 } from "@shared/schema";
 import { db, pool } from "./db";
 import { eq, and, or, desc, lt, sql, not } from "drizzle-orm";
@@ -112,6 +112,11 @@ export interface IStorage {
   listRepairAttachments(repairOrderId: string): Promise<RepairAttachment[]>;
   getRepairAttachment(id: string): Promise<RepairAttachment | undefined>;
   deleteRepairAttachment(id: string): Promise<void>;
+  
+  // Repair Diagnostics
+  createRepairDiagnostics(diagnostics: InsertRepairDiagnostics): Promise<RepairDiagnostics>;
+  updateRepairDiagnostics(repairOrderId: string, updates: Partial<Omit<InsertRepairDiagnostics, 'repairOrderId' | 'diagnosedBy'>>): Promise<RepairDiagnostics>;
+  getRepairDiagnostics(repairOrderId: string): Promise<RepairDiagnostics | undefined>;
   
   // Device Types (Admin-managed categories)
   listDeviceTypes(activeOnly?: boolean): Promise<DeviceType[]>;
@@ -933,6 +938,30 @@ export class DatabaseStorage implements IStorage {
 
   async deleteRepairAttachment(id: string): Promise<void> {
     await db.delete(repairAttachments).where(eq(repairAttachments.id, id));
+  }
+
+  // Repair Diagnostics
+  async createRepairDiagnostics(diagnostics: InsertRepairDiagnostics): Promise<RepairDiagnostics> {
+    const [created] = await db.insert(repairDiagnostics).values(diagnostics).returning();
+    return created;
+  }
+
+  async updateRepairDiagnostics(
+    repairOrderId: string, 
+    updates: Partial<Omit<InsertRepairDiagnostics, 'repairOrderId' | 'diagnosedBy'>>
+  ): Promise<RepairDiagnostics> {
+    const [updated] = await db.update(repairDiagnostics)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(repairDiagnostics.repairOrderId, repairOrderId))
+      .returning();
+    return updated;
+  }
+
+  async getRepairDiagnostics(repairOrderId: string): Promise<RepairDiagnostics | undefined> {
+    const [diagnostics] = await db.select()
+      .from(repairDiagnostics)
+      .where(eq(repairDiagnostics.repairOrderId, repairOrderId));
+    return diagnostics || undefined;
   }
 
   // Device Types
