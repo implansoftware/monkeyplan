@@ -305,12 +305,51 @@ export function RepairOrderDetailDrawer({
                       <p className="text-sm text-muted-foreground">Numero</p>
                       <p className="text-sm font-mono" data-testid="text-quote-number">{quote.quoteNumber}</p>
                     </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">Totale</p>
+                    
+                    {/* Parts list */}
+                    {quote.parts && (() => {
+                      try {
+                        const parts = typeof quote.parts === 'string' ? JSON.parse(quote.parts) : quote.parts;
+                        if (Array.isArray(parts) && parts.length > 0) {
+                          return (
+                            <div>
+                              <p className="text-sm text-muted-foreground mb-2">Ricambi</p>
+                              <div className="space-y-1 text-sm">
+                                {parts.map((part: { name: string; quantity: number; unitPrice: number }, idx: number) => (
+                                  <div key={idx} className="flex justify-between items-center">
+                                    <span>{part.name} x{part.quantity}</span>
+                                    <span className="font-medium">{formatCurrency(part.unitPrice * part.quantity)}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          );
+                        }
+                        return null;
+                      } catch (e) {
+                        return null;
+                      }
+                    })()}
+                    
+                    {/* Labor cost */}
+                    {quote.laborCost > 0 && (
+                      <div className="flex justify-between items-center">
+                        <p className="text-sm text-muted-foreground">Manodopera</p>
+                        <p className="text-sm font-medium" data-testid="text-labor-cost">
+                          {formatCurrency(quote.laborCost)}
+                        </p>
+                      </div>
+                    )}
+                    
+                    <Separator className="my-1" />
+                    
+                    <div className="flex justify-between items-center">
+                      <p className="text-sm font-medium">Totale</p>
                       <p className="text-lg font-bold text-primary" data-testid="text-quote-total">
                         {formatCurrency(quote.totalAmount)}
                       </p>
                     </div>
+                    
                     <div>
                       <p className="text-sm text-muted-foreground mb-1">Stato Preventivo</p>
                       {canManageWorkflow ? (
