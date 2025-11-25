@@ -3877,6 +3877,226 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // GET /api/repair-orders/:id/intake-document - Generate intake/acceptance PDF document
+  app.get("/api/repair-orders/:id/intake-document", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const repairOrder = await storage.getRepairOrder(req.params.id);
+      if (!repairOrder) {
+        return res.status(404).send("Repair order not found");
+      }
+      
+      // RBAC
+      if (req.user.role === 'customer' && repairOrder.customerId !== req.user.id) {
+        return res.status(403).send("Access denied");
+      }
+      if (req.user.role === 'reseller' && repairOrder.resellerId !== req.user.id) {
+        return res.status(403).send("Access denied");
+      }
+      if (req.user.role === 'repair_center' && repairOrder.repairCenterId !== req.user.repairCenterId) {
+        return res.status(403).send("Access denied");
+      }
+      
+      // Get customer info
+      const customer = repairOrder.customerId ? await storage.getUser(repairOrder.customerId) : null;
+      
+      // Get repair center info if available
+      const repairCenter = repairOrder.repairCenterId ? await storage.getRepairCenter(repairOrder.repairCenterId) : null;
+      
+      // Get acceptance info
+      const acceptance = await storage.getRepairAcceptance(req.params.id);
+      
+      // Get device brand and model names
+      let brandName = repairOrder.brand || '';
+      let modelName = repairOrder.deviceModel || '';
+      
+      // Try to get brand name from database
+      if (repairOrder.brand) {
+        const brand = await storage.getDeviceBrand(repairOrder.brand);
+        if (brand) brandName = brand.name;
+      }
+      
+      // Try to get model name from database
+      if (repairOrder.deviceModel) {
+        const model = await storage.getDeviceModel(repairOrder.deviceModel);
+        if (model) modelName = model.name;
+      }
+      
+      // Get device type name
+      let deviceTypeName = repairOrder.deviceType || '';
+      if (repairOrder.deviceType) {
+        const deviceType = await storage.getDeviceType(repairOrder.deviceType);
+        if (deviceType) deviceTypeName = deviceType.name;
+      }
+      
+      // Generate PDF
+      const PDFDocument = (await import('pdfkit')).default;
+      const doc = new PDFDocument({ margin: 50, size: 'A4' });
+      
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="accettazione-${repairOrder.orderNumber}.pdf"`);
+      
+      doc.pipe(res);
+      
+      // Header
+      doc.fontSize(20).font('Helvetica-Bold').text('DOCUMENTO DI ACCETTAZIONE', { align: 'center' });
+      doc.fontSize(12).font('Helvetica').text('Modulo di Ingresso Riparazione', { align: 'center' });
+      doc.moveDown();
+      
+      // Repair center info (if available)
+      if (repairCenter) {
+        doc.fontSize(12).font('Helvetica-Bold').text(repairCenter.name);
+        if (repairCenter.address) doc.font('Helvetica').text(repairCenter.address);
+        if (repairCenter.phone) doc.text(`Tel: ${repairCenter.phone}`);
+        if (repairCenter.email) doc.text(`Email: ${repairCenter.email}`);
+        doc.moveDown();
+      }
+      
+      // Order info box
+      const ingressDate = repairOrder.ingressatoAt ? new Date(repairOrder.ingressatoAt) : new Date(repairOrder.createdAt);
+      doc.rect(50, doc.y, 500, 60).stroke();
+      const boxY = doc.y + 10;
+      doc.fontSize(10).font('Helvetica-Bold').text('ORDINE DI RIPARAZIONE', 60, boxY);
+      doc.font('Helvetica').text(`Numero: ${repairOrder.orderNumber}`, 60, boxY + 15);
+      doc.text(`Data Ingresso: ${ingressDate.toLocaleDateString('it-IT')}`, 60, boxY + 30);
+      doc.text(`Ora: ${ingressDate.toLocaleTimeString('it-IT')}`, 300, boxY + 30);
+      doc.y = boxY + 50;
+      doc.moveDown();
+      
+      // Customer info
+      doc.fontSize(12).font('Helvetica-Bold').text('DATI CLIENTE');
+      doc.fontSize(10).font('Helvetica');
+      if (customer) {
+        doc.text(`Nome: ${customer.fullName || customer.username || ''}`);
+        if (customer.email) doc.text(`Email: ${customer.email}`);
+        if (customer.phone) doc.text(`Telefono: ${customer.phone}`);
+        if (customer.address) doc.text(`Indirizzo: ${customer.address}`);
+      }
+      doc.moveDown();
+      
+      // Device info
+      doc.fontSize(12).font('Helvetica-Bold').text('DATI DISPOSITIVO');
+      doc.fontSize(10).font('Helvetica');
+      doc.text(`Tipo Dispositivo: ${deviceTypeName || 'N/A'}`);
+      doc.text(`Marca: ${brandName || 'N/A'}`);
+      doc.text(`Modello: ${modelName || 'N/A'}`);
+      
+      // IMEI/Serial info
+      if (repairOrder.imei) {
+        doc.text(`IMEI: ${repairOrder.imei}`);
+      }
+      if (repairOrder.serialNumber) {
+        doc.text(`Numero Seriale: ${repairOrder.serialNumber}`);
+      }
+      if (repairOrder.imeiNotReadable) {
+        doc.text('IMEI: Non leggibile');
+      }
+      if (repairOrder.imeiNotPresent) {
+        doc.text('IMEI: Non presente sul dispositivo');
+      }
+      doc.moveDown();
+      
+      // Problem description
+      doc.fontSize(12).font('Helvetica-Bold').text('PROBLEMA RISCONTRATO');
+      doc.fontSize(10).font('Helvetica');
+      doc.text(repairOrder.issueDescription || 'N/A');
+      doc.moveDown();
+      
+      // Acceptance details (if available)
+      if (acceptance) {
+        // Declared defects
+        if (acceptance.declaredDefects && acceptance.declaredDefects.length > 0) {
+          doc.fontSize(12).font('Helvetica-Bold').text('DIFETTI DICHIARATI DAL CLIENTE');
+          doc.fontSize(10).font('Helvetica');
+          acceptance.declaredDefects.forEach((defect: string) => {
+            doc.text(`• ${defect}`);
+          });
+          doc.moveDown();
+        }
+        
+        // Aesthetic condition
+        doc.fontSize(12).font('Helvetica-Bold').text('CONDIZIONE ESTETICA');
+        doc.fontSize(10).font('Helvetica');
+        const aestheticLabels: Record<string, string> = {
+          'nuovo': 'Nuovo/Come Nuovo',
+          'ottimo': 'Ottimo',
+          'buono': 'Buono',
+          'discreto': 'Discreto',
+          'usato': 'Usato',
+          'danneggiato': 'Danneggiato'
+        };
+        doc.text(`Condizione: ${aestheticLabels[acceptance.aestheticCondition || ''] || acceptance.aestheticCondition || 'N/A'}`);
+        if (acceptance.aestheticNotes) {
+          doc.text(`Note estetiche: ${acceptance.aestheticNotes}`);
+        }
+        doc.moveDown();
+        
+        // Accessories
+        if (acceptance.accessories && acceptance.accessories.length > 0) {
+          doc.fontSize(12).font('Helvetica-Bold').text('ACCESSORI CONSEGNATI');
+          doc.fontSize(10).font('Helvetica');
+          acceptance.accessories.forEach((acc: string) => {
+            doc.text(`• ${acc}`);
+          });
+          doc.moveDown();
+        }
+        
+        // Lock code info
+        if (acceptance.hasLockCode) {
+          doc.fontSize(12).font('Helvetica-Bold').text('CODICE DI SBLOCCO');
+          doc.fontSize(10).font('Helvetica');
+          if (acceptance.lockCode) {
+            doc.text(`Codice: ${acceptance.lockCode}`);
+          }
+          if (acceptance.lockPattern) {
+            doc.text(`Pattern: ${acceptance.lockPattern}`);
+          }
+          doc.moveDown();
+        }
+      }
+      
+      // Notes
+      if (repairOrder.notes) {
+        doc.fontSize(12).font('Helvetica-Bold').text('NOTE AGGIUNTIVE');
+        doc.fontSize(10).font('Helvetica');
+        doc.text(repairOrder.notes);
+        doc.moveDown();
+      }
+      
+      // Terms and conditions
+      doc.moveDown();
+      doc.fontSize(8).font('Helvetica').text(
+        'CONDIZIONI DI ACCETTAZIONE:\n' +
+        '1. Il dispositivo viene accettato nelle condizioni sopra descritte.\n' +
+        '2. La diagnosi e il preventivo verranno comunicati al cliente prima di procedere con la riparazione.\n' +
+        '3. Il cliente autorizza il centro assistenza ad aprire il dispositivo per la diagnosi.\n' +
+        '4. Il centro non è responsabile per dati presenti sul dispositivo.\n' +
+        '5. Il dispositivo non ritirato entro 30 giorni dalla comunicazione di fine lavori potrà essere smaltito.',
+        { align: 'left' }
+      );
+      doc.moveDown(2);
+      
+      // Signature areas
+      doc.fontSize(10).font('Helvetica');
+      doc.text('_______________________________', 60);
+      doc.text('Firma del Cliente', 60);
+      doc.text('_______________________________', 320);
+      doc.text('Firma del Tecnico', 320);
+      doc.moveDown(2);
+      
+      // Footer
+      doc.fontSize(8).font('Helvetica').text(
+        `Documento generato il ${new Date().toLocaleDateString('it-IT')} alle ${new Date().toLocaleTimeString('it-IT')}`,
+        { align: 'center' }
+      );
+      
+      doc.end();
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+
   // ============ REPORTS & EXPORT ============
 
   app.get("/api/reports/repairs", requireAuth, async (req, res) => {

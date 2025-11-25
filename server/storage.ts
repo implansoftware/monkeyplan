@@ -151,6 +151,7 @@ export interface IStorage {
   
   // Device Models (Cascading dropdown catalog)
   listDeviceModels(filters?: { typeId?: string; brandId?: string; activeOnly?: boolean }): Promise<DeviceModel[]>;
+  getDeviceModel(id: string): Promise<DeviceModel | undefined>;
   
   // Parts Orders (FASE 5)
   createPartsOrder(order: InsertPartsOrder): Promise<PartsOrder>;
@@ -1285,6 +1286,11 @@ export class DatabaseStorage implements IStorage {
     }
     
     return await query.orderBy(deviceModels.modelName);
+  }
+
+  async getDeviceModel(id: string): Promise<DeviceModel | undefined> {
+    const [deviceModel] = await db.select().from(deviceModels).where(eq(deviceModels.id, id));
+    return deviceModel || undefined;
   }
 
   // Parts Orders (FASE 5)

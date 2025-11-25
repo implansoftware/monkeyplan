@@ -30,7 +30,8 @@ import { DeliveryDialog } from "@/components/DeliveryDialog";
 import { useToast } from "@/hooks/use-toast";
 import {
   Wrench, Euro, FileText, Paperclip, Calendar, Package, ClipboardList,
-  ClipboardCheck, PackageCheck, Play, CheckCircle, Stethoscope, Receipt
+  ClipboardCheck, PackageCheck, Play, CheckCircle, Stethoscope, Receipt,
+  Download
 } from "lucide-react";
 import { format } from "date-fns";
 import { useAuth } from "@/hooks/use-auth";
@@ -420,6 +421,32 @@ export function RepairOrderDetailDrawer({
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="grid grid-cols-2 gap-2">
+                    {/* Download Intake Document - always available */}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => window.open(`/api/repair-orders/${repair.id}/intake-document`, '_blank')}
+                      className="gap-1"
+                      data-testid="button-intake-document"
+                    >
+                      <Download className="h-4 w-4" />
+                      Doc. Accettazione
+                    </Button>
+
+                    {/* Download Delivery Document - available when delivered */}
+                    {repair.status === 'consegnato' && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => window.open(`/api/repair-orders/${repair.id}/delivery-document`, '_blank')}
+                        className="gap-1"
+                        data-testid="button-delivery-document"
+                      >
+                        <Download className="h-4 w-4" />
+                        Doc. Consegna
+                      </Button>
+                    )}
+
                     {/* Diagnosis - available when order is received */}
                     {['ingressato', 'in_diagnosi'].includes(repair.status) && (
                       <Button
