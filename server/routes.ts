@@ -2887,6 +2887,41 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Get acceptance data for repair order
+  app.get("/api/repair-orders/:id/acceptance", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      // Verify user has access to this repair order
+      const order = await storage.getRepairOrder(req.params.id);
+      if (!order) {
+        return res.status(404).send("Repair order not found");
+      }
+      
+      // Role-based access control (same as repair order detail)
+      if (req.user.role === 'customer' && order.customerId !== req.user.id) {
+        return res.status(403).send("Access denied");
+      }
+      if (req.user.role === 'reseller' && order.resellerId !== req.user.id) {
+        return res.status(403).send("Access denied");
+      }
+      if (req.user.role === 'repair_center') {
+        if (!req.user.repairCenterId || order.repairCenterId !== req.user.repairCenterId) {
+          return res.status(403).send("Access denied");
+        }
+      }
+      
+      const acceptance = await storage.getRepairAcceptance(req.params.id);
+      if (!acceptance) {
+        return res.status(404).send("Acceptance data not found");
+      }
+      
+      res.json(acceptance);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
   // Create diagnostics for repair order
   app.post("/api/repair-orders/:id/diagnostics", requireAuth, async (req, res) => {
     try {
