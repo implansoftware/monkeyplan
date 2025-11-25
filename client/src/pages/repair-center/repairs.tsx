@@ -67,6 +67,18 @@ export default function RepairCenterRepairs() {
 
   const getStatusBadge = (status: string) => {
     switch (status) {
+      case "ingressato": return <Badge variant="secondary" data-testid={`badge-status-ingressato`}>Ingressato</Badge>;
+      case "in_diagnosi": return <Badge variant="outline" data-testid={`badge-status-in_diagnosi`}>In Diagnosi</Badge>;
+      case "preventivo_inviato": return <Badge variant="outline" data-testid={`badge-status-preventivo_inviato`}>Preventivo Inviato</Badge>;
+      case "preventivo_accettato": return <Badge data-testid={`badge-status-preventivo_accettato`}>Preventivo Accettato</Badge>;
+      case "preventivo_rifiutato": return <Badge variant="destructive" data-testid={`badge-status-preventivo_rifiutato`}>Preventivo Rifiutato</Badge>;
+      case "attesa_ricambi": return <Badge variant="outline" data-testid={`badge-status-attesa_ricambi`}>Attesa Ricambi</Badge>;
+      case "in_riparazione": return <Badge data-testid={`badge-status-in_riparazione`}>In Riparazione</Badge>;
+      case "in_test": return <Badge data-testid={`badge-status-in_test`}>In Test</Badge>;
+      case "pronto_ritiro": return <Badge data-testid={`badge-status-pronto_ritiro`}>Pronto Ritiro</Badge>;
+      case "consegnato": return <Badge variant="outline" data-testid={`badge-status-consegnato`}>Consegnato</Badge>;
+      case "annullato": return <Badge variant="destructive" data-testid={`badge-status-annullato`}>Annullato</Badge>;
+      // Legacy stati
       case "pending": return <Badge variant="secondary" data-testid={`badge-status-pending`}>In attesa</Badge>;
       case "in_progress": return <Badge data-testid={`badge-status-in_progress`}>In lavorazione</Badge>;
       case "completed": return <Badge variant="outline" data-testid={`badge-status-completed`}>Completata</Badge>;
@@ -124,11 +136,16 @@ export default function RepairCenterRepairs() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Tutti gli stati</SelectItem>
-                <SelectItem value="pending">In attesa</SelectItem>
-                <SelectItem value="in_progress">In lavorazione</SelectItem>
-                <SelectItem value="completed">Completata</SelectItem>
-                <SelectItem value="delivered">Consegnata</SelectItem>
-                <SelectItem value="cancelled">Annullata</SelectItem>
+                <SelectItem value="ingressato">Ingressato</SelectItem>
+                <SelectItem value="in_diagnosi">In Diagnosi</SelectItem>
+                <SelectItem value="preventivo_inviato">Preventivo Inviato</SelectItem>
+                <SelectItem value="preventivo_accettato">Preventivo Accettato</SelectItem>
+                <SelectItem value="attesa_ricambi">Attesa Ricambi</SelectItem>
+                <SelectItem value="in_riparazione">In Riparazione</SelectItem>
+                <SelectItem value="in_test">In Test</SelectItem>
+                <SelectItem value="pronto_ritiro">Pronto Ritiro</SelectItem>
+                <SelectItem value="consegnato">Consegnato</SelectItem>
+                <SelectItem value="annullato">Annullato</SelectItem>
               </SelectContent>
             </Select>
           </div>

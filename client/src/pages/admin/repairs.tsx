@@ -92,6 +92,18 @@ export default function AdminRepairs() {
 
   const getStatusBadge = (status: string) => {
     switch (status) {
+      case "ingressato": return <Badge variant="secondary">Ingressato</Badge>;
+      case "in_diagnosi": return <Badge variant="outline">In Diagnosi</Badge>;
+      case "preventivo_inviato": return <Badge variant="outline">Preventivo Inviato</Badge>;
+      case "preventivo_accettato": return <Badge>Preventivo Accettato</Badge>;
+      case "preventivo_rifiutato": return <Badge variant="destructive">Preventivo Rifiutato</Badge>;
+      case "attesa_ricambi": return <Badge variant="outline">Attesa Ricambi</Badge>;
+      case "in_riparazione": return <Badge>In Riparazione</Badge>;
+      case "in_test": return <Badge>In Test</Badge>;
+      case "pronto_ritiro": return <Badge>Pronto Ritiro</Badge>;
+      case "consegnato": return <Badge variant="outline">Consegnato</Badge>;
+      case "annullato": return <Badge variant="destructive">Annullato</Badge>;
+      // Legacy stati
       case "pending": return <Badge variant="secondary">In attesa</Badge>;
       case "in_progress": return <Badge>In lavorazione</Badge>;
       case "waiting_parts": return <Badge variant="outline">In attesa pezzi</Badge>;
@@ -138,12 +150,17 @@ export default function AdminRepairs() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Tutti gli stati</SelectItem>
-                <SelectItem value="pending">In attesa</SelectItem>
-                <SelectItem value="in_progress">In lavorazione</SelectItem>
-                <SelectItem value="waiting_parts">In attesa pezzi</SelectItem>
-                <SelectItem value="completed">Completate</SelectItem>
-                <SelectItem value="delivered">Consegnate</SelectItem>
-                <SelectItem value="cancelled">Annullate</SelectItem>
+                <SelectItem value="ingressato">Ingressato</SelectItem>
+                <SelectItem value="in_diagnosi">In Diagnosi</SelectItem>
+                <SelectItem value="preventivo_inviato">Preventivo Inviato</SelectItem>
+                <SelectItem value="preventivo_accettato">Preventivo Accettato</SelectItem>
+                <SelectItem value="preventivo_rifiutato">Preventivo Rifiutato</SelectItem>
+                <SelectItem value="attesa_ricambi">Attesa Ricambi</SelectItem>
+                <SelectItem value="in_riparazione">In Riparazione</SelectItem>
+                <SelectItem value="in_test">In Test</SelectItem>
+                <SelectItem value="pronto_ritiro">Pronto Ritiro</SelectItem>
+                <SelectItem value="consegnato">Consegnato</SelectItem>
+                <SelectItem value="annullato">Annullato</SelectItem>
               </SelectContent>
             </Select>
             <Popover>

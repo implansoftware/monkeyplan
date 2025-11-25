@@ -184,6 +184,18 @@ export function RepairOrderDetailDrawer({
 
   const getStatusBadge = (status: string) => {
     switch (status) {
+      case "ingressato": return <Badge variant="secondary" data-testid={`status-${status}`}>Ingressato</Badge>;
+      case "in_diagnosi": return <Badge variant="outline" data-testid={`status-${status}`}>In Diagnosi</Badge>;
+      case "preventivo_inviato": return <Badge variant="outline" data-testid={`status-${status}`}>Preventivo Inviato</Badge>;
+      case "preventivo_accettato": return <Badge data-testid={`status-${status}`}>Preventivo Accettato</Badge>;
+      case "preventivo_rifiutato": return <Badge variant="destructive" data-testid={`status-${status}`}>Preventivo Rifiutato</Badge>;
+      case "attesa_ricambi": return <Badge variant="outline" data-testid={`status-${status}`}>Attesa Ricambi</Badge>;
+      case "in_riparazione": return <Badge data-testid={`status-${status}`}>In Riparazione</Badge>;
+      case "in_test": return <Badge data-testid={`status-${status}`}>In Test</Badge>;
+      case "pronto_ritiro": return <Badge data-testid={`status-${status}`}>Pronto Ritiro</Badge>;
+      case "consegnato": return <Badge variant="outline" data-testid={`status-${status}`}>Consegnato</Badge>;
+      case "annullato": return <Badge variant="destructive" data-testid={`status-${status}`}>Annullato</Badge>;
+      // Legacy stati
       case "pending": return <Badge variant="secondary" data-testid={`status-${status}`}>In attesa</Badge>;
       case "in_progress": return <Badge data-testid={`status-${status}`}>In lavorazione</Badge>;
       case "waiting_parts": return <Badge variant="outline" data-testid={`status-${status}`}>In attesa pezzi</Badge>;
