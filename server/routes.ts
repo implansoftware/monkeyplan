@@ -1499,9 +1499,79 @@ export function registerRoutes(app: Express): Server {
         responseDisposition: disposition,
       });
       
+      // If redirect=true, redirect to the signed URL
+      if (req.query.redirect === 'true') {
+        return res.redirect(signedUrl);
+      }
+      
       res.json({ signedUrl });
     } catch (error: any) {
       console.error('Download error:', error);
+      res.status(500).send(error.message);
+    }
+  });
+
+  // Generic file upload endpoint for delivery documents, etc.
+  app.post("/api/attachments/upload", requireAuth, upload.single('file'), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      if (!req.file) return res.status(400).send("No file uploaded");
+      
+      const repairOrderId = req.body.repairOrderId;
+      if (!repairOrderId) return res.status(400).send("repairOrderId is required");
+      
+      // Check if user has access to this repair order
+      const repairOrder = await storage.getRepairOrder(repairOrderId);
+      if (!repairOrder) return res.status(404).send("Repair order not found");
+      
+      // Check access based on role
+      const hasAccess = 
+        req.user.role === 'admin' ||
+        (req.user.role === 'repair_center' && repairOrder.repairCenterId === req.user.repairCenterId);
+      
+      if (!hasAccess) return res.status(403).send("Forbidden");
+      
+      // Generate unique object key
+      const objectId = randomUUID();
+      const privateDir = objectStorage.getPrivateObjectDir();
+      const objectKey = `${privateDir}/delivery-documents/${repairOrderId}/${objectId}`;
+      
+      // Parse bucket and object name
+      const { bucketName, objectName } = parseObjectPath(objectKey);
+      
+      // Upload to Google Cloud Storage
+      const bucket = objectStorageClient.bucket(bucketName);
+      const file = bucket.file(objectName);
+      
+      await file.save(req.file.buffer, {
+        contentType: req.file.mimetype,
+        metadata: {
+          metadata: {
+            originalName: req.file.originalname,
+            uploadedBy: req.user.id,
+            repairOrderId: repairOrderId,
+          }
+        }
+      });
+      
+      // Save metadata to database as attachment
+      const attachment = await storage.addRepairAttachment({
+        repairOrderId,
+        objectKey,
+        fileName: req.file.originalname,
+        fileType: req.file.mimetype,
+        fileSize: req.file.size,
+        uploadedBy: req.user.id,
+      });
+      
+      // Return the attachment with a download URL that redirects to the signed URL
+      res.json({ 
+        id: attachment.id,
+        url: `/api/repair-orders/attachments/${attachment.id}/download?preview=true&redirect=true`,
+        fileName: attachment.fileName
+      });
+    } catch (error: any) {
+      console.error('Upload error:', error);
       res.status(500).send(error.message);
     }
   });
