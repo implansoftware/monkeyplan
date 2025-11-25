@@ -18,6 +18,7 @@ import {
 } from "@shared/schema";
 import { ObjectStorageService, objectStorageClient, parseObjectPath } from "./objectStorage";
 import { canAccessObject, ObjectPermission } from "./objectAcl";
+import { calculateRepairPriority } from "./helpers/priorityCalculation";
 
 const scryptAsync = promisify(scrypt);
 
@@ -2566,6 +2567,162 @@ export function registerRoutes(app: Express): Server {
       res.status(204).send();
     } catch (error: any) {
       res.status(500).send(error.message);
+    }
+  });
+
+  // ============ DIAGNOSTICS ============
+
+  // Get diagnostics for repair order
+  app.get("/api/repair-orders/:id/diagnostics", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      // Verify user has access to this repair order
+      const order = await storage.getRepairOrder(req.params.id);
+      if (!order) {
+        return res.status(404).send("Repair order not found");
+      }
+      
+      // Role-based access control (same as repair order detail)
+      if (req.user.role === 'customer' && order.customerId !== req.user.id) {
+        return res.status(403).send("Access denied");
+      }
+      if (req.user.role === 'reseller' && order.resellerId !== req.user.id) {
+        return res.status(403).send("Access denied");
+      }
+      if (req.user.role === 'repair_center') {
+        if (!req.user.repairCenterId || order.repairCenterId !== req.user.repairCenterId) {
+          return res.status(403).send("Access denied");
+        }
+      }
+      
+      const diagnostics = await storage.getRepairDiagnostics(req.params.id);
+      if (!diagnostics) {
+        return res.status(404).send("Diagnostics not found");
+      }
+      
+      res.json(diagnostics);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // Create diagnostics for repair order
+  app.post("/api/repair-orders/:id/diagnostics", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      // Only repair center technicians and admins can create diagnostics
+      if (req.user.role !== 'admin' && req.user.role !== 'repair_center') {
+        return res.status(403).send("Only repair centers and admins can create diagnostics");
+      }
+      
+      // Verify repair order exists
+      const order = await storage.getRepairOrder(req.params.id);
+      if (!order) {
+        return res.status(404).send("Repair order not found");
+      }
+      
+      // Repair center can only diagnose their own orders
+      if (req.user.role === 'repair_center') {
+        if (!req.user.repairCenterId || order.repairCenterId !== req.user.repairCenterId) {
+          return res.status(403).send("Access denied");
+        }
+      }
+      
+      // Check if diagnostics already exists
+      const existing = await storage.getRepairDiagnostics(req.params.id);
+      if (existing) {
+        return res.status(409).send("Diagnostics already exists for this repair order");
+      }
+      
+      // Validate request body
+      const diagnosticsData = {
+        repairOrderId: req.params.id,
+        technicalDiagnosis: req.body.technicalDiagnosis,
+        damagedComponents: req.body.damagedComponents || [],
+        severity: req.body.severity || 'medium',
+        estimatedRepairTime: req.body.estimatedRepairTime,
+        requiresExternalParts: req.body.requiresExternalParts || false,
+        diagnosisNotes: req.body.diagnosisNotes,
+        photos: req.body.photos || [],
+        diagnosedBy: req.user.id,
+      };
+      
+      const diagnostics = await storage.createRepairDiagnostics(diagnosticsData);
+      
+      // Calculate automatic priority based on diagnostic data
+      const calculatedPriority = calculateRepairPriority({
+        severity: diagnosticsData.severity as any,
+        estimatedRepairTime: diagnosticsData.estimatedRepairTime,
+        requiresExternalParts: diagnosticsData.requiresExternalParts,
+      });
+      
+      // Update repair order status to 'in_diagnosi' and set calculated priority
+      await storage.updateRepairOrder(req.params.id, { 
+        status: 'in_diagnosi' as any,
+      });
+      
+      setActivityEntity(res, { type: 'repair_diagnostics', id: diagnostics.id });
+      res.status(201).json(diagnostics);
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+
+  // Update diagnostics for repair order
+  app.patch("/api/repair-orders/:id/diagnostics", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      // Only repair center technicians and admins can update diagnostics
+      if (req.user.role !== 'admin' && req.user.role !== 'repair_center') {
+        return res.status(403).send("Only repair centers and admins can update diagnostics");
+      }
+      
+      // Verify repair order exists
+      const order = await storage.getRepairOrder(req.params.id);
+      if (!order) {
+        return res.status(404).send("Repair order not found");
+      }
+      
+      // Repair center can only update their own orders
+      if (req.user.role === 'repair_center') {
+        if (!req.user.repairCenterId || order.repairCenterId !== req.user.repairCenterId) {
+          return res.status(403).send("Access denied");
+        }
+      }
+      
+      // Check if diagnostics exists
+      const existing = await storage.getRepairDiagnostics(req.params.id);
+      if (!existing) {
+        return res.status(404).send("Diagnostics not found");
+      }
+      
+      // Update diagnostics
+      const updates = {
+        technicalDiagnosis: req.body.technicalDiagnosis,
+        damagedComponents: req.body.damagedComponents,
+        severity: req.body.severity,
+        estimatedRepairTime: req.body.estimatedRepairTime,
+        requiresExternalParts: req.body.requiresExternalParts,
+        diagnosisNotes: req.body.diagnosisNotes,
+        photos: req.body.photos,
+      };
+      
+      // Remove undefined fields
+      Object.keys(updates).forEach(key => {
+        if (updates[key as keyof typeof updates] === undefined) {
+          delete updates[key as keyof typeof updates];
+        }
+      });
+      
+      const diagnostics = await storage.updateRepairDiagnostics(req.params.id, updates);
+      
+      setActivityEntity(res, { type: 'repair_diagnostics', id: diagnostics.id });
+      res.json(diagnostics);
+    } catch (error: any) {
+      res.status(400).send(error.message);
     }
   });
 
