@@ -42,7 +42,7 @@ interface DiagnosisFormDialogProps {
 }
 
 const diagnosisSchema = z.object({
-  technicalDiagnosis: z.string().min(10, "Diagnosis must be at least 10 characters"),
+  technicalDiagnosis: z.string().min(10, "La diagnosi deve contenere almeno 10 caratteri"),
   damagedComponents: z.string().optional(),
   severity: z.enum(["low", "medium", "high", "critical"]).default("medium"),
   estimatedRepairTime: z.coerce.number().min(0).optional(),
@@ -96,8 +96,8 @@ export function DiagnosisFormDialog({
     },
     onSuccess: () => {
       toast({
-        title: "Diagnostics created",
-        description: "Technical diagnosis has been successfully recorded",
+        title: "Diagnosi creata",
+        description: "La diagnosi tecnica è stata registrata con successo",
       });
       queryClient.invalidateQueries({ queryKey: ["/api/repair-orders"] });
       queryClient.invalidateQueries({
@@ -109,7 +109,7 @@ export function DiagnosisFormDialog({
     },
     onError: (error: Error) => {
       toast({
-        title: "Error",
+        title: "Errore",
         description: error.message,
         variant: "destructive",
       });
@@ -126,10 +126,10 @@ export function DiagnosisFormDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Stethoscope className="h-5 w-5" />
-            Technical Diagnosis
+            Diagnosi Tecnica
           </DialogTitle>
           <DialogDescription>
-            Record technical diagnosis findings for this repair order
+            Registra i risultati della diagnosi tecnica per questa lavorazione
           </DialogDescription>
         </DialogHeader>
 
@@ -137,7 +137,7 @@ export function DiagnosisFormDialog({
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle className="text-base">Diagnosis Details</CardTitle>
+                <CardTitle className="text-base">Dettagli Diagnosi</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <FormField
@@ -145,17 +145,17 @@ export function DiagnosisFormDialog({
                   name="technicalDiagnosis"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Technical Diagnosis *</FormLabel>
+                      <FormLabel>Diagnosi Tecnica *</FormLabel>
                       <FormControl>
                         <Textarea
                           {...field}
-                          placeholder="Detailed technical diagnosis of the issue..."
+                          placeholder="Descrizione dettagliata del problema riscontrato..."
                           rows={4}
                           data-testid="input-technical-diagnosis"
                         />
                       </FormControl>
                       <FormDescription>
-                        Describe the technical findings and root cause
+                        Descrivi i risultati tecnici e la causa del problema
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
@@ -167,16 +167,16 @@ export function DiagnosisFormDialog({
                   name="damagedComponents"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Damaged Components</FormLabel>
+                      <FormLabel>Componenti Danneggiati</FormLabel>
                       <FormControl>
                         <Input
                           {...field}
-                          placeholder="e.g., Display, Battery, Motherboard (comma separated)"
+                          placeholder="es. Display, Batteria, Scheda madre (separati da virgola)"
                           data-testid="input-damaged-components"
                         />
                       </FormControl>
                       <FormDescription>
-                        List damaged components separated by commas
+                        Elenca i componenti danneggiati separati da virgola
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
@@ -188,31 +188,31 @@ export function DiagnosisFormDialog({
                   name="severity"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Severity Level *</FormLabel>
+                      <FormLabel>Livello di Gravità *</FormLabel>
                       <Select
                         onValueChange={field.onChange}
                         defaultValue={field.value}
                       >
                         <FormControl>
                           <SelectTrigger data-testid="select-severity">
-                            <SelectValue placeholder="Select severity" />
+                            <SelectValue placeholder="Seleziona gravità" />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="low">Low - Minor issue</SelectItem>
+                          <SelectItem value="low">Basso - Problema minore</SelectItem>
                           <SelectItem value="medium">
-                            Medium - Moderate damage
+                            Medio - Danno moderato
                           </SelectItem>
                           <SelectItem value="high">
-                            High - Major damage
+                            Alto - Danno grave
                           </SelectItem>
                           <SelectItem value="critical">
-                            Critical - Severe damage
+                            Critico - Danno severo
                           </SelectItem>
                         </SelectContent>
                       </Select>
                       <FormDescription>
-                        Severity determines repair priority
+                        La gravità determina la priorità della riparazione
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
@@ -224,7 +224,7 @@ export function DiagnosisFormDialog({
                   name="estimatedRepairTime"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Estimated Repair Time (hours)</FormLabel>
+                      <FormLabel>Tempo Stimato di Riparazione (ore)</FormLabel>
                       <FormControl>
                         <Input
                           {...field}
@@ -233,12 +233,12 @@ export function DiagnosisFormDialog({
                           step="0.5"
                           value={field.value ?? ""}
                           onChange={(e) => field.onChange(e.target.value)}
-                          placeholder="e.g., 2.5"
+                          placeholder="es. 2.5"
                           data-testid="input-estimated-time"
                         />
                       </FormControl>
                       <FormDescription>
-                        Estimated time in hours to complete the repair
+                        Tempo stimato in ore per completare la riparazione
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
@@ -258,9 +258,9 @@ export function DiagnosisFormDialog({
                         />
                       </FormControl>
                       <div className="space-y-1 leading-none">
-                        <FormLabel>Requires External Parts</FormLabel>
+                        <FormLabel>Richiede Ricambi Esterni</FormLabel>
                         <FormDescription>
-                          Check if parts need to be ordered externally
+                          Spunta se è necessario ordinare ricambi esternamente
                         </FormDescription>
                       </div>
                     </FormItem>
@@ -272,11 +272,11 @@ export function DiagnosisFormDialog({
                   name="diagnosisNotes"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Additional Notes</FormLabel>
+                      <FormLabel>Note Aggiuntive</FormLabel>
                       <FormControl>
                         <Textarea
                           {...field}
-                          placeholder="Any additional observations or recommendations..."
+                          placeholder="Osservazioni o raccomandazioni aggiuntive..."
                           rows={3}
                           data-testid="input-diagnosis-notes"
                         />
@@ -291,16 +291,16 @@ export function DiagnosisFormDialog({
                   name="photos"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Photo URLs</FormLabel>
+                      <FormLabel>URL Foto</FormLabel>
                       <FormControl>
                         <Input
                           {...field}
-                          placeholder="Photo URLs (comma separated)"
+                          placeholder="URL delle foto (separati da virgola)"
                           data-testid="input-photos"
                         />
                       </FormControl>
                       <FormDescription>
-                        Paste photo URLs separated by commas
+                        Inserisci gli URL delle foto separati da virgola
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
@@ -316,7 +316,7 @@ export function DiagnosisFormDialog({
                 onClick={() => onOpenChange(false)}
                 data-testid="button-cancel"
               >
-                Cancel
+                Annulla
               </Button>
               <Button
                 type="submit"
@@ -324,8 +324,8 @@ export function DiagnosisFormDialog({
                 data-testid="button-submit-diagnosis"
               >
                 {createDiagnosisMutation.isPending
-                  ? "Creating..."
-                  : "Create Diagnosis"}
+                  ? "Creazione..."
+                  : "Crea Diagnosi"}
               </Button>
             </div>
           </form>

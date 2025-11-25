@@ -36,14 +36,14 @@ interface QuoteFormDialogProps {
 }
 
 const partSchema = z.object({
-  name: z.string().min(1, "Part name required"),
-  quantity: z.coerce.number().min(1, "Quantity must be at least 1"),
-  unitPrice: z.coerce.number().min(0, "Price must be positive"),
+  name: z.string().min(1, "Nome ricambio obbligatorio"),
+  quantity: z.coerce.number().min(1, "La quantità deve essere almeno 1"),
+  unitPrice: z.coerce.number().min(0, "Il prezzo deve essere positivo"),
 });
 
 const quoteSchema = z.object({
   parts: z.array(partSchema).optional(),
-  laborCost: z.coerce.number().min(0, "Labor cost must be positive").default(0),
+  laborCost: z.coerce.number().min(0, "Il costo manodopera deve essere positivo").default(0),
   validUntil: z.string().optional(),
   notes: z.string().optional(),
 });
@@ -112,8 +112,8 @@ export function QuoteFormDialog({
     },
     onSuccess: () => {
       toast({
-        title: "Quote created",
-        description: "The quote has been successfully created and sent",
+        title: "Preventivo creato",
+        description: "Il preventivo è stato creato e inviato con successo",
       });
       queryClient.invalidateQueries({ queryKey: ["/api/repair-orders"] });
       queryClient.invalidateQueries({
@@ -125,7 +125,7 @@ export function QuoteFormDialog({
     },
     onError: (error: Error) => {
       toast({
-        title: "Error",
+        title: "Errore",
         description: error.message,
         variant: "destructive",
       });
@@ -149,10 +149,10 @@ export function QuoteFormDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <FileText className="h-5 w-5" />
-            Create Quote
+            Crea Preventivo
           </DialogTitle>
           <DialogDescription>
-            Create a repair quote with parts and labor costs
+            Crea un preventivo con i costi di ricambi e manodopera
           </DialogDescription>
         </DialogHeader>
 
@@ -160,7 +160,7 @@ export function QuoteFormDialog({
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between gap-2">
-                <CardTitle className="text-base">Parts List</CardTitle>
+                <CardTitle className="text-base">Elenco Ricambi</CardTitle>
                 <Button
                   type="button"
                   variant="outline"
@@ -169,13 +169,13 @@ export function QuoteFormDialog({
                   data-testid="button-add-part"
                 >
                   <Plus className="h-4 w-4 mr-1" />
-                  Add Part
+                  Aggiungi Ricambio
                 </Button>
               </CardHeader>
               <CardContent className="space-y-4">
                 {fields.length === 0 ? (
                   <p className="text-sm text-muted-foreground text-center py-4">
-                    No parts added. Click "Add Part" to add replacement parts.
+                    Nessun ricambio aggiunto. Clicca "Aggiungi Ricambio" per aggiungere pezzi di ricambio.
                   </p>
                 ) : (
                   fields.map((field, index) => (
@@ -188,11 +188,11 @@ export function QuoteFormDialog({
                         name={`parts.${index}.name`}
                         render={({ field }) => (
                           <FormItem className="flex-1">
-                            {index === 0 && <FormLabel>Part Name</FormLabel>}
+                            {index === 0 && <FormLabel>Nome Ricambio</FormLabel>}
                             <FormControl>
                               <Input
                                 {...field}
-                                placeholder="e.g., LCD Screen"
+                                placeholder="es. Schermo LCD"
                                 data-testid={`input-part-name-${index}`}
                               />
                             </FormControl>
@@ -205,7 +205,7 @@ export function QuoteFormDialog({
                         name={`parts.${index}.quantity`}
                         render={({ field }) => (
                           <FormItem className="w-20">
-                            {index === 0 && <FormLabel>Qty</FormLabel>}
+                            {index === 0 && <FormLabel>Qtà</FormLabel>}
                             <FormControl>
                               <Input
                                 {...field}
@@ -223,14 +223,14 @@ export function QuoteFormDialog({
                         name={`parts.${index}.unitPrice`}
                         render={({ field }) => (
                           <FormItem className="w-28">
-                            {index === 0 && <FormLabel>Unit Price</FormLabel>}
+                            {index === 0 && <FormLabel>Prezzo Unit.</FormLabel>}
                             <FormControl>
                               <Input
                                 {...field}
                                 type="number"
                                 min="0"
                                 step="0.01"
-                                placeholder="0.00"
+                                placeholder="0,00"
                                 data-testid={`input-part-price-${index}`}
                               />
                             </FormControl>
@@ -255,7 +255,7 @@ export function QuoteFormDialog({
 
             <Card>
               <CardHeader>
-                <CardTitle className="text-base">Labor & Totals</CardTitle>
+                <CardTitle className="text-base">Manodopera e Totali</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <FormField
@@ -263,19 +263,19 @@ export function QuoteFormDialog({
                   name="laborCost"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Labor Cost (EUR)</FormLabel>
+                      <FormLabel>Costo Manodopera (EUR)</FormLabel>
                       <FormControl>
                         <Input
                           {...field}
                           type="number"
                           min="0"
                           step="0.01"
-                          placeholder="0.00"
+                          placeholder="0,00"
                           data-testid="input-labor-cost"
                         />
                       </FormControl>
                       <FormDescription>
-                        Total labor cost for the repair
+                        Costo totale della manodopera per la riparazione
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
@@ -285,7 +285,7 @@ export function QuoteFormDialog({
                 <Separator />
 
                 <div className="flex justify-between items-center text-lg font-semibold">
-                  <span>Total Amount:</span>
+                  <span>Importo Totale:</span>
                   <span data-testid="text-total-amount">
                     {formatCurrency(totalAmount)}
                   </span>
@@ -295,7 +295,7 @@ export function QuoteFormDialog({
 
             <Card>
               <CardHeader>
-                <CardTitle className="text-base">Additional Details</CardTitle>
+                <CardTitle className="text-base">Dettagli Aggiuntivi</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <FormField
@@ -303,7 +303,7 @@ export function QuoteFormDialog({
                   name="validUntil"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Valid Until</FormLabel>
+                      <FormLabel>Valido Fino Al</FormLabel>
                       <FormControl>
                         <Input
                           {...field}
@@ -312,7 +312,7 @@ export function QuoteFormDialog({
                         />
                       </FormControl>
                       <FormDescription>
-                        Quote expiration date (optional)
+                        Data di scadenza del preventivo (opzionale)
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
@@ -324,11 +324,11 @@ export function QuoteFormDialog({
                   name="notes"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Notes</FormLabel>
+                      <FormLabel>Note</FormLabel>
                       <FormControl>
                         <Textarea
                           {...field}
-                          placeholder="Additional notes or terms..."
+                          placeholder="Note aggiuntive o condizioni..."
                           rows={3}
                           data-testid="input-quote-notes"
                         />
@@ -347,7 +347,7 @@ export function QuoteFormDialog({
                 onClick={() => onOpenChange(false)}
                 data-testid="button-cancel"
               >
-                Cancel
+                Annulla
               </Button>
               <Button
                 type="submit"
@@ -355,8 +355,8 @@ export function QuoteFormDialog({
                 data-testid="button-create-quote"
               >
                 {createQuoteMutation.isPending
-                  ? "Creating..."
-                  : "Create Quote"}
+                  ? "Creazione..."
+                  : "Crea Preventivo"}
               </Button>
             </div>
           </form>
