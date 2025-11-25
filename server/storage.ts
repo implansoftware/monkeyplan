@@ -12,12 +12,13 @@ import {
   DiagnosticFinding, DamagedComponentType, EstimatedRepairTime,
   PartsOrder, InsertPartsOrder, RepairLog, InsertRepairLog,
   RepairTestChecklist, InsertRepairTestChecklist, RepairDelivery, InsertRepairDelivery,
+  AdminSetting, InsertAdminSetting,
   users, repairCenters, products, repairOrders, tickets, ticketMessages,
   invoices, billingData, chatMessages, inventoryMovements, inventoryStock, activityLogs, analyticsCache,
   notifications, notificationPreferences, repairAttachments, repairAcceptance, repairDiagnostics,
   repairQuotes, partsOrders, repairLogs, repairTestChecklist, repairDelivery,
   deviceTypes, deviceBrands, deviceModels, issueTypes, aestheticDefects, accessoryTypes,
-  diagnosticFindings, damagedComponentTypes, estimatedRepairTimes
+  diagnosticFindings, damagedComponentTypes, estimatedRepairTimes, adminSettings
 } from "@shared/schema";
 import { db, pool } from "./db";
 import { eq, and, or, desc, lt, sql, not } from "drizzle-orm";
@@ -193,6 +194,11 @@ export interface IStorage {
   // Delivery (FASE 7)
   createDelivery(delivery: InsertRepairDelivery): Promise<RepairDelivery>;
   getDelivery(repairOrderId: string): Promise<RepairDelivery | undefined>;
+  
+  // Admin Settings
+  getAdminSetting(key: string): Promise<AdminSetting | undefined>;
+  setAdminSetting(key: string, value: string, description?: string, updatedBy?: string): Promise<AdminSetting>;
+  listAdminSettings(): Promise<AdminSetting[]>;
   
   sessionStore: session.Store;
 }
@@ -1620,6 +1626,40 @@ export class DatabaseStorage implements IStorage {
       .from(repairDelivery)
       .where(eq(repairDelivery.repairOrderId, repairOrderId));
     return delivery || undefined;
+  }
+
+  // Admin Settings
+  async getAdminSetting(key: string): Promise<AdminSetting | undefined> {
+    const [setting] = await db.select()
+      .from(adminSettings)
+      .where(eq(adminSettings.settingKey, key));
+    return setting || undefined;
+  }
+
+  async setAdminSetting(key: string, value: string, description?: string, updatedBy?: string): Promise<AdminSetting> {
+    const existing = await this.getAdminSetting(key);
+    
+    if (existing) {
+      const [updated] = await db.update(adminSettings)
+        .set({ 
+          settingValue: value, 
+          description: description ?? existing.description,
+          updatedBy: updatedBy ?? existing.updatedBy,
+          updatedAt: new Date()
+        })
+        .where(eq(adminSettings.settingKey, key))
+        .returning();
+      return updated;
+    } else {
+      const [created] = await db.insert(adminSettings)
+        .values({ settingKey: key, settingValue: value, description, updatedBy })
+        .returning();
+      return created;
+    }
+  }
+
+  async listAdminSettings(): Promise<AdminSetting[]> {
+    return await db.select().from(adminSettings).orderBy(adminSettings.settingKey);
   }
 }
 

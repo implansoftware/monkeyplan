@@ -397,6 +397,16 @@ export const repairDelivery = pgTable("repair_delivery", {
   deliveredAt: timestamp("delivered_at").notNull().defaultNow(),
 });
 
+// Admin Settings (Configurazione sistema)
+export const adminSettings = pgTable("admin_settings", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  settingKey: text("setting_key").notNull().unique(), // es: "hourly_rate", "vat_rate"
+  settingValue: text("setting_value").notNull(), // Valore come stringa (convertito dal codice)
+  description: text("description"), // Descrizione dell'impostazione
+  updatedBy: varchar("updated_by"), // ID admin che ha modificato
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
 // Support Tickets
 export const tickets = pgTable("tickets", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -967,6 +977,16 @@ export const insertRepairDeliverySchema = createInsertSchema(repairDelivery).omi
   deliveredAt: true,
 });
 
+export const insertAdminSettingSchema = createInsertSchema(adminSettings).omit({
+  id: true,
+  updatedAt: true,
+});
+
+export const updateAdminSettingSchema = z.object({
+  settingValue: z.string().min(1),
+  description: z.string().optional(),
+});
+
 // Update schemas for PATCH endpoints
 export const updateRepairStatusSchema = z.object({
   status: z.enum(["pending", "in_progress", "waiting_parts", "completed", "delivered", "cancelled"]),
@@ -1123,3 +1143,6 @@ export type InsertRepairTestChecklist = z.infer<typeof insertRepairTestChecklist
 
 export type RepairDelivery = typeof repairDelivery.$inferSelect;
 export type InsertRepairDelivery = z.infer<typeof insertRepairDeliverySchema>;
+
+export type AdminSetting = typeof adminSettings.$inferSelect;
+export type InsertAdminSetting = z.infer<typeof insertAdminSettingSchema>;
