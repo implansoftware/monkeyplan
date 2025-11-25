@@ -94,9 +94,11 @@ export function QuoteFormDialog({
 
   useEffect(() => {
     const partsTotal = (watchParts || []).reduce((sum, part) => {
-      return sum + (part.quantity || 0) * (part.unitPrice || 0);
+      const qty = Number(part.quantity) || 0;
+      const price = Number(part.unitPrice) || 0;
+      return sum + (qty * price);
     }, 0);
-    const labor = watchLaborCost || 0;
+    const labor = Number(watchLaborCost) || 0;
     setTotalAmount(partsTotal + labor);
   }, [watchParts, watchLaborCost]);
 
