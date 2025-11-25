@@ -3613,6 +3613,7 @@ export function registerRoutes(app: Express): Server {
         signatureData: req.body.signatureData,
         idDocumentType: req.body.idDocumentType,
         idDocumentNumber: req.body.idDocumentNumber,
+        idDocumentPhoto: req.body.idDocumentPhoto,
         notes: req.body.notes,
         deliveredBy: req.user.id,
       });
@@ -3659,6 +3660,154 @@ export function registerRoutes(app: Express): Server {
       
       const delivery = await storage.getDelivery(req.params.id);
       res.json(delivery || null);
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+
+  // GET /api/repair-orders/:id/delivery-document - Generate delivery PDF document
+  app.get("/api/repair-orders/:id/delivery-document", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const repairOrder = await storage.getRepairOrder(req.params.id);
+      if (!repairOrder) {
+        return res.status(404).send("Repair order not found");
+      }
+      
+      // RBAC
+      if (req.user.role === 'customer' && repairOrder.customerId !== req.user.id) {
+        return res.status(403).send("Access denied");
+      }
+      if (req.user.role === 'reseller' && repairOrder.resellerId !== req.user.id) {
+        return res.status(403).send("Access denied");
+      }
+      if (req.user.role === 'repair_center' && repairOrder.repairCenterId !== req.user.repairCenterId) {
+        return res.status(403).send("Access denied");
+      }
+      
+      const delivery = await storage.getDelivery(req.params.id);
+      if (!delivery) {
+        return res.status(404).send("Delivery record not found");
+      }
+      
+      // Get customer info
+      const customer = repairOrder.customerId ? await storage.getUser(repairOrder.customerId) : null;
+      
+      // Get repair center info if available
+      const repairCenter = repairOrder.repairCenterId ? await storage.getRepairCenter(repairOrder.repairCenterId) : null;
+      
+      // Get acceptance info
+      const acceptance = await storage.getRepairAcceptance(req.params.id);
+      
+      // Get diagnostics info
+      const diagnostics = await storage.getRepairDiagnostics(req.params.id);
+      
+      // Get quote info
+      const quote = await storage.getRepairQuote(req.params.id);
+      
+      // Generate PDF
+      const PDFDocument = (await import('pdfkit')).default;
+      const doc = new PDFDocument({ margin: 50, size: 'A4' });
+      
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="consegna-${repairOrder.orderNumber}.pdf"`);
+      
+      doc.pipe(res);
+      
+      // Header
+      doc.fontSize(20).font('Helvetica-Bold').text('DOCUMENTO DI CONSEGNA', { align: 'center' });
+      doc.moveDown();
+      
+      // Repair center info (if available)
+      if (repairCenter) {
+        doc.fontSize(12).font('Helvetica-Bold').text(repairCenter.name);
+        if (repairCenter.address) doc.font('Helvetica').text(repairCenter.address);
+        if (repairCenter.phone) doc.text(`Tel: ${repairCenter.phone}`);
+        if (repairCenter.email) doc.text(`Email: ${repairCenter.email}`);
+        doc.moveDown();
+      }
+      
+      // Order info box
+      doc.rect(50, doc.y, 500, 60).stroke();
+      const boxY = doc.y + 10;
+      doc.fontSize(10).font('Helvetica-Bold').text('ORDINE DI RIPARAZIONE', 60, boxY);
+      doc.font('Helvetica').text(`Numero: ${repairOrder.orderNumber}`, 60, boxY + 15);
+      doc.text(`Data Consegna: ${new Date(delivery.deliveredAt).toLocaleDateString('it-IT')}`, 60, boxY + 30);
+      doc.text(`Ora: ${new Date(delivery.deliveredAt).toLocaleTimeString('it-IT')}`, 300, boxY + 30);
+      doc.y = boxY + 50;
+      doc.moveDown();
+      
+      // Customer info
+      doc.fontSize(12).font('Helvetica-Bold').text('DATI CLIENTE');
+      doc.fontSize(10).font('Helvetica');
+      if (customer) {
+        doc.text(`Nome: ${customer.fullName || customer.username || ''}`);
+        if (customer.email) doc.text(`Email: ${customer.email}`);
+        if (customer.phone) doc.text(`Telefono: ${customer.phone}`);
+      }
+      doc.moveDown();
+      
+      // Device info
+      doc.fontSize(12).font('Helvetica-Bold').text('DISPOSITIVO RIPARATO');
+      doc.fontSize(10).font('Helvetica');
+      doc.text(`Tipo: ${repairOrder.deviceType || 'N/A'}`);
+      doc.text(`Modello: ${repairOrder.deviceModel || 'N/A'}`);
+      if (acceptance?.imei) doc.text(`IMEI/Seriale: ${acceptance.imei}`);
+      if (repairOrder.issueDescription) doc.text(`Problema originale: ${repairOrder.issueDescription}`);
+      doc.moveDown();
+      
+      // Repair summary
+      doc.fontSize(12).font('Helvetica-Bold').text('RIEPILOGO RIPARAZIONE');
+      doc.fontSize(10).font('Helvetica');
+      if (diagnostics?.diagnosis) doc.text(`Diagnosi: ${diagnostics.diagnosis}`);
+      if (quote) {
+        doc.text(`Totale Parti: € ${quote.partsTotal?.toFixed(2) || '0.00'}`);
+        doc.text(`Totale Manodopera: € ${quote.laborTotal?.toFixed(2) || '0.00'}`);
+        doc.font('Helvetica-Bold').text(`TOTALE: € ${quote.totalAmount?.toFixed(2) || '0.00'}`);
+        doc.font('Helvetica');
+      }
+      doc.moveDown();
+      
+      // Delivery info
+      doc.fontSize(12).font('Helvetica-Bold').text('DATI CONSEGNA');
+      doc.fontSize(10).font('Helvetica');
+      doc.text(`Ritirato da: ${delivery.deliveredTo}`);
+      const methodLabels: Record<string, string> = {
+        'in_store': 'Ritiro in Negozio',
+        'courier': 'Spedizione Corriere',
+        'pickup': 'Ritiro Cliente'
+      };
+      doc.text(`Metodo: ${methodLabels[delivery.deliveryMethod] || delivery.deliveryMethod}`);
+      if (delivery.idDocumentType) {
+        const docTypeLabels: Record<string, string> = {
+          'id_card': "Carta d'Identità",
+          'drivers_license': 'Patente',
+          'passport': 'Passaporto',
+          'other': 'Altro'
+        };
+        doc.text(`Documento: ${docTypeLabels[delivery.idDocumentType] || delivery.idDocumentType} - ${delivery.idDocumentNumber || ''}`);
+      }
+      if (delivery.notes) doc.text(`Note: ${delivery.notes}`);
+      doc.moveDown(2);
+      
+      // Signature areas
+      doc.fontSize(10).font('Helvetica');
+      doc.text('_______________________________', 60);
+      doc.text('Firma del Cliente', 60);
+      doc.text('_______________________________', 320);
+      doc.text('Firma del Tecnico', 320);
+      doc.moveDown(2);
+      
+      // Footer
+      doc.fontSize(8).font('Helvetica').text(
+        'Questo documento certifica la consegna del dispositivo riparato. ' +
+        'Il cliente conferma di aver ricevuto il dispositivo nelle condizioni descritte.',
+        { align: 'center' }
+      );
+      doc.text(`Documento generato il ${new Date().toLocaleDateString('it-IT')} alle ${new Date().toLocaleTimeString('it-IT')}`, { align: 'center' });
+      
+      doc.end();
     } catch (error: any) {
       res.status(400).send(error.message);
     }

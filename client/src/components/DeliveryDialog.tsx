@@ -1,3 +1,4 @@
+import { useState, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -32,7 +33,7 @@ import {
 } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { PackageCheck, Store, Truck, UserCheck, CheckCircle } from "lucide-react";
+import { PackageCheck, Store, Truck, UserCheck, CheckCircle, Camera, Download, Image, X } from "lucide-react";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
 import type { RepairDelivery } from "@shared/schema";
@@ -49,6 +50,7 @@ const deliverySchema = z.object({
   deliveryMethod: z.enum(["in_store", "courier", "pickup"]),
   idDocumentType: z.string().optional(),
   idDocumentNumber: z.string().optional(),
+  idDocumentPhoto: z.string().optional(),
   notes: z.string().optional(),
 });
 
@@ -62,6 +64,9 @@ export function DeliveryDialog({
 }: DeliveryDialogProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [documentPhotoPreview, setDocumentPhotoPreview] = useState<string | null>(null);
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { data: existingDelivery } = useQuery<RepairDelivery | null>({
     queryKey: ["/api/repair-orders", repairOrderId, "delivery"],
@@ -82,9 +87,78 @@ export function DeliveryDialog({
       deliveryMethod: "in_store",
       idDocumentType: "",
       idDocumentNumber: "",
+      idDocumentPhoto: "",
       notes: "",
     },
   });
+
+  const handlePhotoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      toast({
+        title: "Errore",
+        description: "Per favore seleziona un file immagine",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (file.size > 10 * 1024 * 1024) {
+      toast({
+        title: "Errore",
+        description: "L'immagine deve essere inferiore a 10MB",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsUploadingPhoto(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('repairOrderId', repairOrderId);
+
+      const res = await fetch('/api/attachments/upload', {
+        method: 'POST',
+        credentials: 'include',
+        body: formData,
+      });
+
+      if (!res.ok) {
+        throw new Error('Errore durante il caricamento');
+      }
+
+      const data = await res.json();
+      form.setValue('idDocumentPhoto', data.url);
+      setDocumentPhotoPreview(data.url);
+      toast({
+        title: "Foto caricata",
+        description: "La foto del documento è stata caricata",
+      });
+    } catch (error) {
+      toast({
+        title: "Errore",
+        description: "Impossibile caricare la foto",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUploadingPhoto(false);
+    }
+  };
+
+  const removePhoto = () => {
+    form.setValue('idDocumentPhoto', '');
+    setDocumentPhotoPreview(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const downloadDeliveryDocument = () => {
+    window.open(`/api/repair-orders/${repairOrderId}/delivery-document`, '_blank');
+  };
 
   const deliverMutation = useMutation({
     mutationFn: async (data: DeliveryFormData) => {
@@ -93,6 +167,7 @@ export function DeliveryDialog({
         deliveryMethod: data.deliveryMethod,
         idDocumentType: data.idDocumentType || null,
         idDocumentNumber: data.idDocumentNumber || null,
+        idDocumentPhoto: data.idDocumentPhoto || null,
         notes: data.notes || null,
       });
     },
@@ -203,10 +278,37 @@ export function DeliveryDialog({
                   <div className="text-sm">{existingDelivery.notes}</div>
                 </div>
               )}
+
+              {existingDelivery.idDocumentPhoto && (
+                <div>
+                  <div className="text-muted-foreground text-sm mb-2">Foto Documento</div>
+                  <a 
+                    href={existingDelivery.idDocumentPhoto} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="inline-block"
+                  >
+                    <img 
+                      src={existingDelivery.idDocumentPhoto} 
+                      alt="Foto documento" 
+                      className="max-h-32 rounded border hover:opacity-80 transition-opacity"
+                    />
+                  </a>
+                </div>
+              )}
             </CardContent>
           </Card>
 
-          <div className="flex justify-end">
+          <div className="flex justify-between gap-3">
+            <Button 
+              variant="outline" 
+              onClick={downloadDeliveryDocument}
+              className="gap-2"
+              data-testid="button-download-document"
+            >
+              <Download className="h-4 w-4" />
+              Scarica Documento
+            </Button>
             <Button variant="outline" onClick={() => onOpenChange(false)} data-testid="button-close">
               Chiudi
             </Button>
@@ -328,6 +430,58 @@ export function DeliveryDialog({
                   </FormItem>
                 )}
               />
+            </div>
+
+            <div>
+              <FormLabel className="block mb-2">Foto Documento</FormLabel>
+              <input
+                type="file"
+                accept="image/*"
+                ref={fileInputRef}
+                onChange={handlePhotoUpload}
+                className="hidden"
+                data-testid="input-document-photo"
+              />
+              {documentPhotoPreview ? (
+                <div className="relative inline-block">
+                  <img 
+                    src={documentPhotoPreview} 
+                    alt="Anteprima documento" 
+                    className="max-h-32 rounded border"
+                  />
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    size="icon"
+                    className="absolute -top-2 -right-2 h-6 w-6"
+                    onClick={removePhoto}
+                    data-testid="button-remove-photo"
+                  >
+                    <X className="h-3 w-3" />
+                  </Button>
+                </div>
+              ) : (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={isUploadingPhoto}
+                  className="gap-2"
+                  data-testid="button-upload-photo"
+                >
+                  {isUploadingPhoto ? (
+                    <>Caricamento...</>
+                  ) : (
+                    <>
+                      <Camera className="h-4 w-4" />
+                      Carica Foto Documento
+                    </>
+                  )}
+                </Button>
+              )}
+              <p className="text-xs text-muted-foreground mt-1">
+                Carica una foto del documento di identità (opzionale)
+              </p>
             </div>
 
             <FormField

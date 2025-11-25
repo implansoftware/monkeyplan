@@ -316,6 +316,7 @@ export const repairDelivery = pgTable("repair_delivery", {
   signatureData: text("signature_data"), // Base64 firma (opzionale)
   idDocumentType: text("id_document_type"), // Tipo documento identità
   idDocumentNumber: text("id_document_number"), // Numero documento
+  idDocumentPhoto: text("id_document_photo"), // URL foto documento identità
   notes: text("notes"),
   deliveredBy: varchar("delivered_by").notNull(), // ID utente che ha consegnato
   deliveredAt: timestamp("delivered_at").notNull().defaultNow(),

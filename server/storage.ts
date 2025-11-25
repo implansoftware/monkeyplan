@@ -119,6 +119,9 @@ export interface IStorage {
   getRepairAttachment(id: string): Promise<RepairAttachment | undefined>;
   deleteRepairAttachment(id: string): Promise<void>;
   
+  // Repair Acceptance
+  getRepairAcceptance(repairOrderId: string): Promise<RepairAcceptance | undefined>;
+  
   // Repair Diagnostics
   createRepairDiagnostics(diagnostics: InsertRepairDiagnostics): Promise<RepairDiagnostics>;
   updateRepairDiagnostics(repairOrderId: string, updates: Partial<Omit<InsertRepairDiagnostics, 'repairOrderId' | 'diagnosedBy'>>): Promise<RepairDiagnostics>;
@@ -1028,6 +1031,14 @@ export class DatabaseStorage implements IStorage {
 
   async deleteRepairAttachment(id: string): Promise<void> {
     await db.delete(repairAttachments).where(eq(repairAttachments.id, id));
+  }
+
+  // Repair Acceptance
+  async getRepairAcceptance(repairOrderId: string): Promise<RepairAcceptance | undefined> {
+    const [acceptance] = await db.select()
+      .from(repairAcceptance)
+      .where(eq(repairAcceptance.repairOrderId, repairOrderId));
+    return acceptance || undefined;
   }
 
   // Repair Diagnostics
