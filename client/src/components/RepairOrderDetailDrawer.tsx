@@ -14,6 +14,8 @@ import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AttachmentUploader } from "@/components/AttachmentUploader";
+import { DiagnosisFormDialog } from "@/components/DiagnosisFormDialog";
+import { QuoteFormDialog } from "@/components/QuoteFormDialog";
 import { PartsOrderDialog } from "@/components/PartsOrderDialog";
 import { RepairLogDialog } from "@/components/RepairLogDialog";
 import { TestChecklistDialog } from "@/components/TestChecklistDialog";
@@ -21,7 +23,7 @@ import { DeliveryDialog } from "@/components/DeliveryDialog";
 import { useToast } from "@/hooks/use-toast";
 import {
   Wrench, Euro, FileText, Paperclip, Calendar, Package, ClipboardList,
-  ClipboardCheck, PackageCheck, Play, CheckCircle
+  ClipboardCheck, PackageCheck, Play, CheckCircle, Stethoscope, Receipt
 } from "lucide-react";
 import { format } from "date-fns";
 import { useAuth } from "@/hooks/use-auth";
@@ -58,6 +60,8 @@ export function RepairOrderDetailDrawer({
   const { toast } = useToast();
   const queryClient = useQueryClient();
   
+  const [diagnosisDialogOpen, setDiagnosisDialogOpen] = useState(false);
+  const [quoteDialogOpen, setQuoteDialogOpen] = useState(false);
   const [partsDialogOpen, setPartsDialogOpen] = useState(false);
   const [logsDialogOpen, setLogsDialogOpen] = useState(false);
   const [testDialogOpen, setTestDialogOpen] = useState(false);
@@ -289,6 +293,34 @@ export function RepairOrderDetailDrawer({
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="grid grid-cols-2 gap-2">
+                    {/* Diagnosis - available when order is received */}
+                    {['ingressato', 'in_diagnosi'].includes(repair.status) && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setDiagnosisDialogOpen(true)}
+                        className="gap-1"
+                        data-testid="button-diagnosis"
+                      >
+                        <Stethoscope className="h-4 w-4" />
+                        Diagnosi
+                      </Button>
+                    )}
+
+                    {/* Quote - available after diagnosis */}
+                    {['in_diagnosi', 'preventivo_inviato'].includes(repair.status) && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setQuoteDialogOpen(true)}
+                        className="gap-1"
+                        data-testid="button-quote"
+                      >
+                        <Receipt className="h-4 w-4" />
+                        Preventivo
+                      </Button>
+                    )}
+
                     {/* Parts Order - available when quote is accepted or waiting for parts */}
                     {['preventivo_accettato', 'attesa_ricambi'].includes(repair.status) && (
                       <Button
@@ -396,6 +428,18 @@ export function RepairOrderDetailDrawer({
             {/* Dialogs */}
             {repairOrderId && (
               <>
+                <DiagnosisFormDialog
+                  open={diagnosisDialogOpen}
+                  onOpenChange={setDiagnosisDialogOpen}
+                  repairOrderId={repairOrderId}
+                  onSuccess={() => queryClient.invalidateQueries({ queryKey: ["/api/repair-orders", repairOrderId] })}
+                />
+                <QuoteFormDialog
+                  open={quoteDialogOpen}
+                  onOpenChange={setQuoteDialogOpen}
+                  repairOrderId={repairOrderId}
+                  onSuccess={() => queryClient.invalidateQueries({ queryKey: ["/api/repair-orders", repairOrderId] })}
+                />
                 <PartsOrderDialog
                   open={partsDialogOpen}
                   onOpenChange={setPartsDialogOpen}
