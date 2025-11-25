@@ -56,6 +56,7 @@ type RepairOrder = {
   resellerId: string | null;
   repairCenterId: string | null;
   deviceType: string;
+  deviceTypeId: string | null;
   deviceModel: string;
   issueDescription: string;
   status: string;
@@ -656,6 +657,7 @@ export function RepairOrderDetailDrawer({
                   open={diagnosisDialogOpen}
                   onOpenChange={setDiagnosisDialogOpen}
                   repairOrderId={repairOrderId}
+                  repairOrder={repair ? { deviceTypeId: repair.deviceTypeId } as any : undefined}
                   onSuccess={() => queryClient.invalidateQueries({ queryKey: ["/api/repair-orders", repairOrderId] })}
                 />
                 <QuoteFormDialog

@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { z } from "zod";
 import { useToast } from "@/hooks/use-toast";
@@ -33,23 +33,46 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Stethoscope, Camera } from "lucide-react";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Stethoscope, Camera, AlertCircle } from "lucide-react";
 import { DiagnosisPhotoUploader } from "@/components/DiagnosisPhotoUploader";
+import type { DiagnosticFinding, DamagedComponentType, EstimatedRepairTime, RepairOrder } from "@shared/schema";
 
 interface DiagnosisFormDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   repairOrderId: string;
+  repairOrder?: { deviceTypeId?: string | null };
   onSuccess?: () => void;
 }
 
 const diagnosisSchema = z.object({
-  technicalDiagnosis: z.string().min(10, "La diagnosi deve contenere almeno 10 caratteri"),
-  damagedComponents: z.string().optional(),
+  selectedFindingIds: z.array(z.string()).min(1, "Seleziona almeno un risultato della diagnosi"),
+  otherFindingDescription: z.string().optional(),
+  selectedComponentIds: z.array(z.string()).default([]),
+  otherComponentDescription: z.string().optional(),
   severity: z.enum(["low", "medium", "high", "critical"]).default("medium"),
-  estimatedRepairTime: z.coerce.number().min(0).optional(),
+  estimatedRepairTimeId: z.string().min(1, "Seleziona un tempo stimato di riparazione"),
   requiresExternalParts: z.boolean().default(false),
   diagnosisNotes: z.string().optional(),
+}).refine((data) => {
+  const hasOtherFinding = data.selectedFindingIds.some(id => id.includes("-other"));
+  if (hasOtherFinding && !data.otherFindingDescription?.trim()) {
+    return false;
+  }
+  return true;
+}, {
+  message: "Descrivi il problema 'Altro' selezionato",
+  path: ["otherFindingDescription"],
+}).refine((data) => {
+  const hasOtherComponent = data.selectedComponentIds.some(id => id.includes("-other"));
+  if (hasOtherComponent && !data.otherComponentDescription?.trim()) {
+    return false;
+  }
+  return true;
+}, {
+  message: "Descrivi il componente 'Altro' selezionato",
+  path: ["otherComponentDescription"],
 });
 
 type DiagnosisFormData = z.infer<typeof diagnosisSchema>;
@@ -58,37 +81,154 @@ export function DiagnosisFormDialog({
   open,
   onOpenChange,
   repairOrderId,
+  repairOrder,
   onSuccess,
 }: DiagnosisFormDialogProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [uploadedPhotos, setUploadedPhotos] = useState<string[]>([]);
+  const [showOtherFinding, setShowOtherFinding] = useState(false);
+  const [showOtherComponent, setShowOtherComponent] = useState(false);
+
+  const deviceTypeId = repairOrder?.deviceTypeId;
+
+  const buildQueryUrl = (base: string, params: Record<string, string | undefined>) => {
+    const searchParams = new URLSearchParams();
+    Object.entries(params).forEach(([key, value]) => {
+      if (value) searchParams.set(key, value);
+    });
+    const queryString = searchParams.toString();
+    return queryString ? `${base}?${queryString}` : base;
+  };
+
+  const { data: diagnosticFindings = [] } = useQuery<DiagnosticFinding[]>({
+    queryKey: ["/api/diagnostic-findings", { deviceTypeId }],
+    queryFn: async () => {
+      const url = buildQueryUrl("/api/diagnostic-findings", { deviceTypeId: deviceTypeId ?? undefined });
+      const res = await fetch(url, { credentials: "include" });
+      if (!res.ok) throw new Error("Errore nel caricamento diagnosi");
+      return res.json();
+    },
+    enabled: open,
+  });
+
+  const { data: damagedComponentTypes = [] } = useQuery<DamagedComponentType[]>({
+    queryKey: ["/api/damaged-component-types", { deviceTypeId }],
+    queryFn: async () => {
+      const url = buildQueryUrl("/api/damaged-component-types", { deviceTypeId: deviceTypeId ?? undefined });
+      const res = await fetch(url, { credentials: "include" });
+      if (!res.ok) throw new Error("Errore nel caricamento componenti");
+      return res.json();
+    },
+    enabled: open,
+  });
+
+  const { data: estimatedRepairTimes = [] } = useQuery<EstimatedRepairTime[]>({
+    queryKey: ["/api/estimated-repair-times", { deviceTypeId }],
+    queryFn: async () => {
+      const url = buildQueryUrl("/api/estimated-repair-times", { deviceTypeId: deviceTypeId ?? undefined });
+      const res = await fetch(url, { credentials: "include" });
+      if (!res.ok) throw new Error("Errore nel caricamento tempi");
+      return res.json();
+    },
+    enabled: open,
+  });
+
+  const findingsByCategory = diagnosticFindings.reduce((acc, finding) => {
+    const category = finding.category || "altro";
+    if (!acc[category]) {
+      acc[category] = [];
+    }
+    acc[category].push(finding);
+    return acc;
+  }, {} as Record<string, DiagnosticFinding[]>);
+
+  const categoryLabels: Record<string, string> = {
+    hardware: "Hardware",
+    software: "Software",
+    connectivity: "Connettività",
+    altro: "Altro",
+  };
 
   const form = useForm<DiagnosisFormData>({
     resolver: zodResolver(diagnosisSchema),
     defaultValues: {
-      technicalDiagnosis: "",
-      damagedComponents: "",
+      selectedFindingIds: [],
+      otherFindingDescription: "",
+      selectedComponentIds: [],
+      otherComponentDescription: "",
       severity: "medium",
-      estimatedRepairTime: undefined,
+      estimatedRepairTimeId: "",
       requiresExternalParts: false,
       diagnosisNotes: "",
     },
   });
 
+  const selectedFindingIds = form.watch("selectedFindingIds");
+  const selectedComponentIds = form.watch("selectedComponentIds");
+
+  useEffect(() => {
+    const hasOther = selectedFindingIds.some(id => id.includes("-other"));
+    setShowOtherFinding(hasOther);
+    if (!hasOther) {
+      form.setValue("otherFindingDescription", "");
+    }
+  }, [selectedFindingIds, form]);
+
+  useEffect(() => {
+    const hasOther = selectedComponentIds.some(id => id.includes("-other"));
+    setShowOtherComponent(hasOther);
+    if (!hasOther) {
+      form.setValue("otherComponentDescription", "");
+    }
+  }, [selectedComponentIds, form]);
+
+  const resetFormState = () => {
+    form.reset();
+    setUploadedPhotos([]);
+    setShowOtherFinding(false);
+    setShowOtherComponent(false);
+  };
+
   const createDiagnosisMutation = useMutation({
     mutationFn: async (data: DiagnosisFormData) => {
+      const findingsMap = new Map(diagnosticFindings.map(f => [f.id, f]));
+      const componentsMap = new Map(damagedComponentTypes.map(c => [c.id, c]));
+      const timesMap = new Map(estimatedRepairTimes.map(t => [t.id, t]));
+
+      const selectedFindingNames = data.selectedFindingIds
+        .map(id => findingsMap.get(id)?.name)
+        .filter(Boolean) as string[];
+      
+      let technicalDiagnosis = selectedFindingNames.join(", ");
+      if (showOtherFinding && data.otherFindingDescription?.trim()) {
+        technicalDiagnosis += technicalDiagnosis ? `, ${data.otherFindingDescription.trim()}` : data.otherFindingDescription.trim();
+      }
+
+      const selectedComponentNames = data.selectedComponentIds
+        .map(id => componentsMap.get(id)?.name)
+        .filter(Boolean) as string[];
+      
+      if (showOtherComponent && data.otherComponentDescription?.trim()) {
+        selectedComponentNames.push(data.otherComponentDescription.trim());
+      }
+
+      const selectedTime = timesMap.get(data.estimatedRepairTimeId);
+      const estimatedHours = selectedTime?.hoursMax ?? undefined;
+
       const payload = {
-        technicalDiagnosis: data.technicalDiagnosis,
-        damagedComponents: data.damagedComponents
-          ? data.damagedComponents.split(",").map((c) => c.trim())
-          : [],
+        technicalDiagnosis,
+        damagedComponents: selectedComponentNames,
         severity: data.severity,
-        estimatedRepairTime: data.estimatedRepairTime,
+        estimatedRepairTime: estimatedHours,
         requiresExternalParts: data.requiresExternalParts,
         diagnosisNotes: data.diagnosisNotes,
         photos: uploadedPhotos,
+        findingIds: data.selectedFindingIds,
+        componentIds: data.selectedComponentIds,
+        estimatedRepairTimeId: data.estimatedRepairTimeId,
       };
+      
       return await apiRequest(
         "POST",
         `/api/repair-orders/${repairOrderId}/diagnostics`,
@@ -104,8 +244,7 @@ export function DiagnosisFormDialog({
       queryClient.invalidateQueries({
         queryKey: [`/api/repair-orders/${repairOrderId}`],
       });
-      form.reset();
-      setUploadedPhotos([]);
+      resetFormState();
       onOpenChange(false);
       onSuccess?.();
     },
@@ -122,9 +261,34 @@ export function DiagnosisFormDialog({
     createDiagnosisMutation.mutate(data);
   };
 
+  const handleOpenChange = (newOpen: boolean) => {
+    onOpenChange(newOpen);
+  };
+
+  const handleExplicitCancel = () => {
+    resetFormState();
+    onOpenChange(false);
+  };
+
+  const toggleFinding = (findingId: string) => {
+    const current = form.getValues("selectedFindingIds");
+    const newValue = current.includes(findingId)
+      ? current.filter(id => id !== findingId)
+      : [...current, findingId];
+    form.setValue("selectedFindingIds", newValue, { shouldValidate: true });
+  };
+
+  const toggleComponent = (componentId: string) => {
+    const current = form.getValues("selectedComponentIds");
+    const newValue = current.includes(componentId)
+      ? current.filter(id => id !== componentId)
+      : [...current, componentId];
+    form.setValue("selectedComponentIds", newValue, { shouldValidate: true });
+  };
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+    <Dialog open={open} onOpenChange={handleOpenChange}>
+      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Stethoscope className="h-5 w-5" />
@@ -139,52 +303,157 @@ export function DiagnosisFormDialog({
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle className="text-base">Dettagli Diagnosi</CardTitle>
+                <CardTitle className="text-base">Risultati Diagnosi</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <FormField
                   control={form.control}
-                  name="technicalDiagnosis"
-                  render={({ field }) => (
+                  name="selectedFindingIds"
+                  render={() => (
                     <FormItem>
-                      <FormLabel>Diagnosi Tecnica *</FormLabel>
-                      <FormControl>
-                        <Textarea
-                          {...field}
-                          placeholder="Descrizione dettagliata del problema riscontrato..."
-                          rows={4}
-                          data-testid="input-technical-diagnosis"
-                        />
-                      </FormControl>
+                      <FormLabel>Problemi Riscontrati *</FormLabel>
                       <FormDescription>
-                        Descrivi i risultati tecnici e la causa del problema
+                        Seleziona tutti i problemi identificati durante la diagnosi
                       </FormDescription>
+                      <ScrollArea className="h-[200px] border rounded-md p-3">
+                        <div className="space-y-4">
+                          {Object.entries(findingsByCategory).map(([category, findings]) => (
+                            <div key={category} className="space-y-2">
+                              <h4 className="text-sm font-semibold text-muted-foreground border-b pb-1">
+                                {categoryLabels[category] || category}
+                              </h4>
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                                {findings.map((finding) => {
+                                  const isSelected = selectedFindingIds.includes(finding.id);
+                                  return (
+                                    <div key={finding.id} className="flex items-start space-x-2">
+                                      <Checkbox
+                                        id={`finding-${finding.id}`}
+                                        checked={isSelected}
+                                        onCheckedChange={() => toggleFinding(finding.id)}
+                                        data-testid={`checkbox-finding-${finding.id}`}
+                                      />
+                                      <label
+                                        htmlFor={`finding-${finding.id}`}
+                                        className="text-sm cursor-pointer leading-tight"
+                                      >
+                                        {finding.name}
+                                      </label>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </ScrollArea>
+                      {selectedFindingIds.length > 0 && (
+                        <div className="text-xs text-muted-foreground mt-1 p-2 bg-muted rounded">
+                          <strong>Selezionati ({selectedFindingIds.length}):</strong>{" "}
+                          {selectedFindingIds.map(id => diagnosticFindings.find(f => f.id === id)?.name).filter(Boolean).join(", ")}
+                        </div>
+                      )}
                       <FormMessage />
                     </FormItem>
                   )}
                 />
+
+                {showOtherFinding && (
+                  <FormField
+                    control={form.control}
+                    name="otherFindingDescription"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="flex items-center gap-1">
+                          <AlertCircle className="h-4 w-4 text-orange-500" />
+                          Descrivi altro problema *
+                        </FormLabel>
+                        <FormControl>
+                          <Input
+                            {...field}
+                            placeholder="Descrivi il problema non presente in lista..."
+                            data-testid="input-other-finding"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
 
                 <FormField
                   control={form.control}
-                  name="damagedComponents"
-                  render={({ field }) => (
+                  name="selectedComponentIds"
+                  render={() => (
                     <FormItem>
                       <FormLabel>Componenti Danneggiati</FormLabel>
-                      <FormControl>
-                        <Input
-                          {...field}
-                          placeholder="es. Display, Batteria, Scheda madre (separati da virgola)"
-                          data-testid="input-damaged-components"
-                        />
-                      </FormControl>
                       <FormDescription>
-                        Elenca i componenti danneggiati separati da virgola
+                        Seleziona i componenti che necessitano riparazione o sostituzione
                       </FormDescription>
+                      <ScrollArea className="h-[180px] border rounded-md p-3">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                          {damagedComponentTypes.map((component) => {
+                            const isSelected = selectedComponentIds.includes(component.id);
+                            return (
+                              <div key={component.id} className="flex items-start space-x-2">
+                                <Checkbox
+                                  id={`component-${component.id}`}
+                                  checked={isSelected}
+                                  onCheckedChange={() => toggleComponent(component.id)}
+                                  data-testid={`checkbox-component-${component.id}`}
+                                />
+                                <label
+                                  htmlFor={`component-${component.id}`}
+                                  className="text-sm cursor-pointer leading-tight"
+                                >
+                                  {component.name}
+                                </label>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </ScrollArea>
+                      {selectedComponentIds.length > 0 && (
+                        <div className="text-xs text-muted-foreground mt-1 p-2 bg-muted rounded">
+                          <strong>Selezionati ({selectedComponentIds.length}):</strong>{" "}
+                          {selectedComponentIds.map(id => damagedComponentTypes.find(c => c.id === id)?.name).filter(Boolean).join(", ")}
+                        </div>
+                      )}
                       <FormMessage />
                     </FormItem>
                   )}
                 />
 
+                {showOtherComponent && (
+                  <FormField
+                    control={form.control}
+                    name="otherComponentDescription"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="flex items-center gap-1">
+                          <AlertCircle className="h-4 w-4 text-orange-500" />
+                          Descrivi altro componente *
+                        </FormLabel>
+                        <FormControl>
+                          <Input
+                            {...field}
+                            placeholder="Descrivi il componente non presente in lista..."
+                            data-testid="input-other-component"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Valutazione</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
                 <FormField
                   control={form.control}
                   name="severity"
@@ -193,7 +462,7 @@ export function DiagnosisFormDialog({
                       <FormLabel>Livello di Gravità *</FormLabel>
                       <Select
                         onValueChange={field.onChange}
-                        defaultValue={field.value}
+                        value={field.value}
                       >
                         <FormControl>
                           <SelectTrigger data-testid="select-severity">
@@ -223,24 +492,29 @@ export function DiagnosisFormDialog({
 
                 <FormField
                   control={form.control}
-                  name="estimatedRepairTime"
+                  name="estimatedRepairTimeId"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Tempo Stimato di Riparazione (ore)</FormLabel>
-                      <FormControl>
-                        <Input
-                          {...field}
-                          type="number"
-                          min="0"
-                          step="0.5"
-                          value={field.value ?? ""}
-                          onChange={(e) => field.onChange(e.target.value)}
-                          placeholder="es. 2.5"
-                          data-testid="input-estimated-time"
-                        />
-                      </FormControl>
+                      <FormLabel>Tempo Stimato di Riparazione *</FormLabel>
+                      <Select
+                        onValueChange={field.onChange}
+                        value={field.value}
+                      >
+                        <FormControl>
+                          <SelectTrigger data-testid="select-estimated-time">
+                            <SelectValue placeholder="Seleziona tempo stimato" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {estimatedRepairTimes.map((time) => (
+                            <SelectItem key={time.id} value={time.id}>
+                              {time.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                       <FormDescription>
-                        Tempo stimato in ore per completare la riparazione
+                        Tempo stimato per completare la riparazione
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
@@ -288,7 +562,6 @@ export function DiagnosisFormDialog({
                   )}
                 />
 
-                {/* Photo Upload Section */}
                 <div className="space-y-2">
                   <div className="flex items-center gap-2">
                     <Camera className="h-4 w-4" />
@@ -310,10 +583,10 @@ export function DiagnosisFormDialog({
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => onOpenChange(false)}
+                onClick={handleExplicitCancel}
                 data-testid="button-cancel"
               >
-                Annulla
+                Annulla e Chiudi
               </Button>
               <Button
                 type="submit"
