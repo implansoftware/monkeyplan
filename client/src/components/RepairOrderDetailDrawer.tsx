@@ -31,7 +31,7 @@ import { useToast } from "@/hooks/use-toast";
 import {
   Wrench, Euro, FileText, Paperclip, Calendar, Package, ClipboardList,
   ClipboardCheck, PackageCheck, Play, CheckCircle, Stethoscope, Receipt,
-  Download
+  Download, User
 } from "lucide-react";
 import { format } from "date-fns";
 import { useAuth } from "@/hooks/use-auth";
@@ -322,14 +322,57 @@ export function RepairOrderDetailDrawer({
                 Dispositivo
               </div>
               <div className="grid gap-3">
-                <div>
-                  <p className="text-sm text-muted-foreground">Tipo</p>
-                  <p className="text-sm font-medium" data-testid="text-device-type">{repair.deviceType}</p>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <p className="text-sm text-muted-foreground">Tipo</p>
+                    <p className="text-sm font-medium" data-testid="text-device-type">{repair.deviceType}</p>
+                  </div>
+                  {repair.brand && (
+                    <div>
+                      <p className="text-sm text-muted-foreground">Marca</p>
+                      <p className="text-sm font-medium" data-testid="text-device-brand">{repair.brand}</p>
+                    </div>
+                  )}
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Modello</p>
                   <p className="text-sm font-medium" data-testid="text-device-model">{repair.deviceModel}</p>
                 </div>
+                {/* IMEI/Seriale */}
+                {(repair.imei || repair.serial || repair.imeiNotReadable || repair.imeiNotPresent || repair.serialOnly) && (
+                  <div className="grid grid-cols-2 gap-3">
+                    {repair.imei && (
+                      <div>
+                        <p className="text-sm text-muted-foreground">IMEI</p>
+                        <p className="text-sm font-mono" data-testid="text-device-imei">{repair.imei}</p>
+                      </div>
+                    )}
+                    {repair.serial && (
+                      <div>
+                        <p className="text-sm text-muted-foreground">Seriale</p>
+                        <p className="text-sm font-mono" data-testid="text-device-serial">{repair.serial}</p>
+                      </div>
+                    )}
+                    {repair.imeiNotReadable && (
+                      <div>
+                        <p className="text-sm text-muted-foreground">IMEI</p>
+                        <p className="text-sm text-amber-600" data-testid="text-imei-not-readable">Non leggibile</p>
+                      </div>
+                    )}
+                    {repair.imeiNotPresent && (
+                      <div>
+                        <p className="text-sm text-muted-foreground">IMEI</p>
+                        <p className="text-sm text-amber-600" data-testid="text-imei-not-present">Non presente</p>
+                      </div>
+                    )}
+                    {repair.serialOnly && !repair.imei && (
+                      <div>
+                        <p className="text-sm text-muted-foreground">Note</p>
+                        <p className="text-sm text-muted-foreground" data-testid="text-serial-only">Solo seriale presente</p>
+                      </div>
+                    )}
+                  </div>
+                )}
                 <div>
                   <p className="text-sm text-muted-foreground">Problema</p>
                   <p className="text-sm" data-testid="text-issue-description">{repair.issueDescription}</p>
@@ -338,6 +381,136 @@ export function RepairOrderDetailDrawer({
             </div>
 
             <Separator />
+
+            {/* Customer Info */}
+            {customer && (
+              <>
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2 font-medium">
+                    <User className="h-4 w-4" />
+                    Cliente
+                  </div>
+                  <div className="grid gap-3">
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <p className="text-sm text-muted-foreground">Nome</p>
+                        <p className="text-sm font-medium" data-testid="text-customer-name">{customer.fullName || customer.username}</p>
+                      </div>
+                      {customer.phone && (
+                        <div>
+                          <p className="text-sm text-muted-foreground">Telefono</p>
+                          <p className="text-sm" data-testid="text-customer-phone">{customer.phone}</p>
+                        </div>
+                      )}
+                    </div>
+                    {customer.email && (
+                      <div>
+                        <p className="text-sm text-muted-foreground">Email</p>
+                        <p className="text-sm" data-testid="text-customer-email">{customer.email}</p>
+                      </div>
+                    )}
+                    {customer.address && (
+                      <div>
+                        <p className="text-sm text-muted-foreground">Indirizzo</p>
+                        <p className="text-sm" data-testid="text-customer-address">{customer.address}</p>
+                      </div>
+                    )}
+                    {(customer.fiscalCode || customer.vatNumber) && (
+                      <div className="grid grid-cols-2 gap-3">
+                        {customer.fiscalCode && (
+                          <div>
+                            <p className="text-sm text-muted-foreground">Codice Fiscale</p>
+                            <p className="text-sm font-mono" data-testid="text-customer-fiscal">{customer.fiscalCode}</p>
+                          </div>
+                        )}
+                        {customer.vatNumber && (
+                          <div>
+                            <p className="text-sm text-muted-foreground">P.IVA</p>
+                            <p className="text-sm font-mono" data-testid="text-customer-vat">{customer.vatNumber}</p>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+                <Separator />
+              </>
+            )}
+
+            {/* Acceptance Info */}
+            {acceptance && (
+              <>
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2 font-medium">
+                    <ClipboardCheck className="h-4 w-4" />
+                    Dati Accettazione
+                  </div>
+                  <div className="grid gap-3">
+                    {/* Declared Defects */}
+                    {acceptance.declaredDefects && acceptance.declaredDefects.length > 0 && (
+                      <div>
+                        <p className="text-sm text-muted-foreground">Guasti Dichiarati</p>
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {acceptance.declaredDefects.map((defect, idx) => (
+                            <Badge key={idx} variant="secondary" className="text-xs" data-testid={`badge-defect-${idx}`}>
+                              {defect}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {/* Aesthetic Condition */}
+                    {acceptance.aestheticCondition && (
+                      <div>
+                        <p className="text-sm text-muted-foreground">Condizione Estetica</p>
+                        <p className="text-sm" data-testid="text-aesthetic-condition">{acceptance.aestheticCondition}</p>
+                      </div>
+                    )}
+                    {acceptance.aestheticNotes && (
+                      <div>
+                        <p className="text-sm text-muted-foreground">Note Estetiche</p>
+                        <p className="text-sm text-muted-foreground whitespace-pre-wrap" data-testid="text-aesthetic-notes">{acceptance.aestheticNotes}</p>
+                      </div>
+                    )}
+                    {/* Accessories */}
+                    {acceptance.accessories && acceptance.accessories.length > 0 && (
+                      <div>
+                        <p className="text-sm text-muted-foreground">Accessori Inclusi</p>
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {acceptance.accessories.map((acc, idx) => (
+                            <Badge key={idx} variant="outline" className="text-xs" data-testid={`badge-accessory-${idx}`}>
+                              {acc}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {/* Lock Code */}
+                    {acceptance.hasLockCode && acceptance.lockCode && (
+                      <div>
+                        <p className="text-sm text-muted-foreground">Codice Sblocco</p>
+                        <p className="text-sm font-mono" data-testid="text-lock-code">{acceptance.lockCode}</p>
+                      </div>
+                    )}
+                    {acceptance.hasLockCode && acceptance.lockPattern && (
+                      <div>
+                        <p className="text-sm text-muted-foreground">Pattern Sblocco</p>
+                        <p className="text-sm font-mono" data-testid="text-lock-pattern">{acceptance.lockPattern}</p>
+                      </div>
+                    )}
+                    {/* Acceptance Date */}
+                    <div>
+                      <p className="text-sm text-muted-foreground">Data Accettazione</p>
+                      <p className="text-sm" data-testid="text-acceptance-date">
+                        {format(new Date(acceptance.acceptedAt), "dd/MM/yyyy HH:mm")}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                <Separator />
+              </>
+            )}
+
 
             {/* Cost Info */}
             <div className="space-y-3">
