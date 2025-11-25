@@ -215,6 +215,45 @@ export const accessoryTypes = pgTable("accessory_types", {
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 
+// Diagnostic Findings Lookup (Risultati diagnosi predefiniti)
+export const diagnosticFindings = pgTable("diagnostic_findings", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull(), // es: "Display danneggiato", "Connettore di ricarica difettoso"
+  description: text("description"),
+  category: text("category"), // es: "Hardware", "Software", "Batteria"
+  deviceTypeId: varchar("device_type_id").references(() => deviceTypes.id), // null = tutti i tipi
+  isActive: boolean("is_active").notNull().default(true),
+  sortOrder: integer("sort_order").notNull().default(0),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+// Damaged Component Types Lookup (Componenti danneggiabili predefiniti)
+export const damagedComponentTypes = pgTable("damaged_component_types", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull(), // es: "Display", "Batteria", "Scheda madre"
+  description: text("description"),
+  deviceTypeId: varchar("device_type_id").references(() => deviceTypes.id), // null = tutti i tipi
+  isActive: boolean("is_active").notNull().default(true),
+  sortOrder: integer("sort_order").notNull().default(0),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+// Estimated Repair Times Lookup (Tempi stimati predefiniti)
+export const estimatedRepairTimes = pgTable("estimated_repair_times", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull(), // es: "Rapido", "Standard", "Complesso"
+  description: text("description"), // es: "Riparazioni semplici"
+  hoursMin: integer("hours_min").notNull(), // 0.5, 1, 2, etc
+  hoursMax: integer("hours_max").notNull(),
+  deviceTypeId: varchar("device_type_id").references(() => deviceTypes.id), // null = tutti i tipi
+  isActive: boolean("is_active").notNull().default(true),
+  sortOrder: integer("sort_order").notNull().default(0),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
 // Device Models Catalog
 export const deviceModels = pgTable("device_models", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
