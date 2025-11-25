@@ -1,23 +1,28 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Product, InsertProduct } from "@shared/schema";
+import { Product, InsertProduct, RepairCenter } from "@shared/schema";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { Plus, Search, Pencil, Trash2, Package, Warehouse, AlertTriangle } from "lucide-react";
+import { Plus, Search, Pencil, Trash2, Package, Warehouse, AlertTriangle, X } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
+
+interface InitialStockEntry {
+  repairCenterId: string;
+  quantity: number;
+}
 
 interface ProductWithStock {
   product: Product;
@@ -60,16 +65,24 @@ export default function AdminProducts() {
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [compatibleModels, setCompatibleModels] = useState<string[]>([]);
+  const [editCompatibleModels, setEditCompatibleModels] = useState<string[]>([]);
   const [newModel, setNewModel] = useState("");
+  const [initialStock, setInitialStock] = useState<InitialStockEntry[]>([]);
   const { toast } = useToast();
 
   const { data: productsWithStock = [], isLoading } = useQuery<ProductWithStock[]>({
     queryKey: ["/api/products/with-stock"],
   });
 
+  const { data: repairCenters = [] } = useQuery<RepairCenter[]>({
+    queryKey: ["/api/admin/repair-centers"],
+  });
+
   const createProductMutation = useMutation({
-    mutationFn: async (data: InsertProduct) => {
+    mutationFn: async (data: InsertProduct & { initialStock?: InitialStockEntry[] }) => {
       const res = await apiRequest("POST", "/api/products", data);
       return await res.json();
     },
@@ -78,7 +91,26 @@ export default function AdminProducts() {
       queryClient.invalidateQueries({ queryKey: ["/api/products/with-stock"] });
       setDialogOpen(false);
       setCompatibleModels([]);
+      setInitialStock([]);
       toast({ title: "Prodotto creato con successo" });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Errore", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const updateProductMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: Partial<Product> }) => {
+      const res = await apiRequest("PATCH", `/api/products/${id}`, data);
+      return await res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/products"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/products/with-stock"] });
+      setEditDialogOpen(false);
+      setEditingProduct(null);
+      setEditCompatibleModels([]);
+      toast({ title: "Prodotto aggiornato con successo" });
     },
     onError: (error: Error) => {
       toast({ title: "Errore", description: error.message, variant: "destructive" });
@@ -107,6 +139,39 @@ export default function AdminProducts() {
     setCompatibleModels(compatibleModels.filter(m => m !== model));
   };
 
+  const addEditCompatibleModel = () => {
+    if (newModel.trim() && !editCompatibleModels.includes(newModel.trim())) {
+      setEditCompatibleModels([...editCompatibleModels, newModel.trim()]);
+      setNewModel("");
+    }
+  };
+
+  const removeEditCompatibleModel = (model: string) => {
+    setEditCompatibleModels(editCompatibleModels.filter(m => m !== model));
+  };
+
+  const addInitialStock = (repairCenterId: string) => {
+    if (!initialStock.find(s => s.repairCenterId === repairCenterId)) {
+      setInitialStock([...initialStock, { repairCenterId, quantity: 0 }]);
+    }
+  };
+
+  const updateInitialStock = (repairCenterId: string, quantity: number) => {
+    setInitialStock(initialStock.map(s => 
+      s.repairCenterId === repairCenterId ? { ...s, quantity } : s
+    ));
+  };
+
+  const removeInitialStock = (repairCenterId: string) => {
+    setInitialStock(initialStock.filter(s => s.repairCenterId !== repairCenterId));
+  };
+
+  const openEditDialog = (product: Product) => {
+    setEditingProduct(product);
+    setEditCompatibleModels(product.compatibleModels || []);
+    setEditDialogOpen(true);
+  };
+
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
@@ -115,7 +180,7 @@ export default function AdminProducts() {
     const warrantyValue = formData.get("warrantyMonths") as string;
     const minStockValue = formData.get("minStock") as string;
     
-    const data: InsertProduct = {
+    const data: InsertProduct & { initialStock?: InitialStockEntry[] } = {
       name: formData.get("name") as string,
       sku: formData.get("sku") as string,
       category: formData.get("category") as string,
@@ -132,8 +197,41 @@ export default function AdminProducts() {
       supplierCode: formData.get("supplierCode") as string || undefined,
       minStock: minStockValue ? parseInt(minStockValue) : undefined,
       location: formData.get("location") as string || undefined,
+      initialStock: initialStock.filter(s => s.quantity > 0),
     };
     createProductMutation.mutate(data);
+  };
+
+  const handleEditSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!editingProduct) return;
+    
+    const formData = new FormData(e.currentTarget);
+    
+    const costPriceValue = formData.get("costPrice") as string;
+    const warrantyValue = formData.get("warrantyMonths") as string;
+    const minStockValue = formData.get("minStock") as string;
+    
+    const data: Partial<Product> = {
+      name: formData.get("name") as string,
+      sku: formData.get("sku") as string,
+      category: formData.get("category") as string,
+      productType: formData.get("productType") as any,
+      description: formData.get("description") as string || undefined,
+      brand: formData.get("brand") as string || undefined,
+      compatibleModels: editCompatibleModels.length > 0 ? editCompatibleModels : undefined,
+      color: formData.get("color") as string || undefined,
+      costPrice: costPriceValue ? Math.round(parseFloat(costPriceValue) * 100) : undefined,
+      unitPrice: Math.round(parseFloat(formData.get("unitPrice") as string) * 100),
+      condition: formData.get("condition") as any,
+      warrantyMonths: warrantyValue ? parseInt(warrantyValue) : undefined,
+      supplier: formData.get("supplier") as string || undefined,
+      supplierCode: formData.get("supplierCode") as string || undefined,
+      minStock: minStockValue ? parseInt(minStockValue) : undefined,
+      location: formData.get("location") as string || undefined,
+      isActive: formData.get("isActive") === "true",
+    };
+    updateProductMutation.mutate({ id: editingProduct.id, data });
   };
 
   const filteredProducts = productsWithStock.filter(({ product }) => {
@@ -460,6 +558,65 @@ export default function AdminProducts() {
                         />
                       </div>
                     </div>
+
+                    <Separator className="my-4" />
+
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <Label>Quantità Iniziali per Magazzino</Label>
+                        <Select onValueChange={addInitialStock}>
+                          <SelectTrigger className="w-48" data-testid="select-add-stock-center">
+                            <SelectValue placeholder="Aggiungi centro..." />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {repairCenters
+                              .filter(rc => rc.isActive && !initialStock.find(s => s.repairCenterId === rc.id))
+                              .map(rc => (
+                                <SelectItem key={rc.id} value={rc.id}>{rc.name}</SelectItem>
+                              ))
+                            }
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      
+                      {initialStock.length === 0 ? (
+                        <p className="text-sm text-muted-foreground text-center py-4">
+                          Nessuna quantità iniziale. Seleziona un centro riparazioni per aggiungere.
+                        </p>
+                      ) : (
+                        <div className="space-y-2">
+                          {initialStock.map(stock => {
+                            const center = repairCenters.find(rc => rc.id === stock.repairCenterId);
+                            return (
+                              <div key={stock.repairCenterId} className="flex items-center gap-3 p-3 border rounded-md">
+                                <Warehouse className="h-4 w-4 text-muted-foreground" />
+                                <span className="flex-1 font-medium">{center?.name || "Centro"}</span>
+                                <Input
+                                  type="number"
+                                  min="0"
+                                  value={stock.quantity}
+                                  onChange={(e) => updateInitialStock(stock.repairCenterId, parseInt(e.target.value) || 0)}
+                                  className="w-24"
+                                  data-testid={`input-stock-${stock.repairCenterId}`}
+                                />
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => removeInitialStock(stock.repairCenterId)}
+                                  data-testid={`button-remove-stock-${stock.repairCenterId}`}
+                                >
+                                  <X className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                      <p className="text-xs text-muted-foreground">
+                        Puoi assegnare quantità iniziali ai magazzini dei centri riparazione
+                      </p>
+                    </div>
                   </TabsContent>
                 </Tabs>
 
@@ -475,6 +632,307 @@ export default function AdminProducts() {
                 </Button>
               </form>
             </ScrollArea>
+          </DialogContent>
+        </Dialog>
+
+        <Dialog open={editDialogOpen} onOpenChange={(open) => {
+          setEditDialogOpen(open);
+          if (!open) {
+            setEditingProduct(null);
+            setEditCompatibleModels([]);
+            setNewModel("");
+          }
+        }}>
+          <DialogContent className="max-w-2xl max-h-[90vh]">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Pencil className="h-5 w-5" />
+                Modifica Prodotto
+              </DialogTitle>
+              <DialogDescription>
+                Modifica i dettagli del prodotto
+              </DialogDescription>
+            </DialogHeader>
+            {editingProduct && (
+              <ScrollArea className="max-h-[70vh] pr-4">
+                <form onSubmit={handleEditSubmit} className="space-y-6">
+                  <Tabs defaultValue="info" className="w-full">
+                    <TabsList className="grid w-full grid-cols-4">
+                      <TabsTrigger value="info">Info Base</TabsTrigger>
+                      <TabsTrigger value="compatibility">Compatibilità</TabsTrigger>
+                      <TabsTrigger value="pricing">Prezzi</TabsTrigger>
+                      <TabsTrigger value="inventory">Magazzino</TabsTrigger>
+                    </TabsList>
+
+                    <TabsContent value="info" className="space-y-4 mt-4">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="edit-name">Nome Prodotto *</Label>
+                          <Input 
+                            id="edit-name" 
+                            name="name" 
+                            required 
+                            defaultValue={editingProduct.name}
+                            data-testid="edit-input-name" 
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="edit-sku">SKU/Codice *</Label>
+                          <Input 
+                            id="edit-sku" 
+                            name="sku" 
+                            required 
+                            defaultValue={editingProduct.sku}
+                            data-testid="edit-input-sku" 
+                          />
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="edit-category">Categoria *</Label>
+                          <Select name="category" defaultValue={editingProduct.category}>
+                            <SelectTrigger id="edit-category" data-testid="edit-select-category">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {CATEGORIES.map(cat => (
+                                <SelectItem key={cat.value} value={cat.value}>
+                                  {cat.label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="edit-productType">Tipo Prodotto *</Label>
+                          <Select name="productType" defaultValue={editingProduct.productType}>
+                            <SelectTrigger id="edit-productType" data-testid="edit-select-product-type">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="ricambio">Ricambio</SelectItem>
+                              <SelectItem value="accessorio">Accessorio</SelectItem>
+                              <SelectItem value="dispositivo">Dispositivo</SelectItem>
+                              <SelectItem value="consumabile">Consumabile</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="edit-condition">Condizione *</Label>
+                          <Select name="condition" defaultValue={editingProduct.condition}>
+                            <SelectTrigger id="edit-condition" data-testid="edit-select-condition">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="nuovo">Nuovo Originale</SelectItem>
+                              <SelectItem value="ricondizionato">Ricondizionato</SelectItem>
+                              <SelectItem value="usato">Usato</SelectItem>
+                              <SelectItem value="compatibile">Compatibile (aftermarket)</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="edit-color">Colore</Label>
+                          <Select name="color" defaultValue={editingProduct.color || undefined}>
+                            <SelectTrigger id="edit-color" data-testid="edit-select-color">
+                              <SelectValue placeholder="Seleziona colore" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {COLORS.map(color => (
+                                <SelectItem key={color} value={color}>{color}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="edit-description">Descrizione</Label>
+                        <Textarea 
+                          id="edit-description" 
+                          name="description" 
+                          defaultValue={editingProduct.description || ""}
+                          rows={3}
+                          data-testid="edit-textarea-description" 
+                        />
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <Label htmlFor="edit-isActive">Stato Prodotto</Label>
+                        <Select name="isActive" defaultValue={editingProduct.isActive ? "true" : "false"}>
+                          <SelectTrigger className="w-40" data-testid="edit-select-is-active">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="true">Attivo</SelectItem>
+                            <SelectItem value="false">Disattivato</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </TabsContent>
+
+                    <TabsContent value="compatibility" className="space-y-4 mt-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="edit-brand">Marca</Label>
+                        <Select name="brand" defaultValue={editingProduct.brand || undefined}>
+                          <SelectTrigger id="edit-brand" data-testid="edit-select-brand">
+                            <SelectValue placeholder="Seleziona marca" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {BRANDS.map(brand => (
+                              <SelectItem key={brand} value={brand}>{brand}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label>Modelli Compatibili</Label>
+                        <div className="flex gap-2">
+                          <Input
+                            value={newModel}
+                            onChange={(e) => setNewModel(e.target.value)}
+                            placeholder="es. iPhone 14 Pro Max"
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') {
+                                e.preventDefault();
+                                addEditCompatibleModel();
+                              }
+                            }}
+                            data-testid="edit-input-compatible-model"
+                          />
+                          <Button 
+                            type="button" 
+                            variant="outline" 
+                            onClick={addEditCompatibleModel}
+                            data-testid="edit-button-add-model"
+                          >
+                            <Plus className="h-4 w-4" />
+                          </Button>
+                        </div>
+                        {editCompatibleModels.length > 0 && (
+                          <div className="flex flex-wrap gap-2 mt-2">
+                            {editCompatibleModels.map((model) => (
+                              <Badge 
+                                key={model} 
+                                variant="secondary"
+                                className="cursor-pointer"
+                                onClick={() => removeEditCompatibleModel(model)}
+                              >
+                                {model} <span className="ml-1">×</span>
+                              </Badge>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </TabsContent>
+
+                    <TabsContent value="pricing" className="space-y-4 mt-4">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="edit-costPrice">Prezzo Acquisto (€)</Label>
+                          <Input
+                            id="edit-costPrice"
+                            name="costPrice"
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            defaultValue={editingProduct.costPrice ? (editingProduct.costPrice / 100).toFixed(2) : ""}
+                            data-testid="edit-input-cost-price"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="edit-unitPrice">Prezzo Vendita (€) *</Label>
+                          <Input
+                            id="edit-unitPrice"
+                            name="unitPrice"
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            required
+                            defaultValue={(editingProduct.unitPrice / 100).toFixed(2)}
+                            data-testid="edit-input-price"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="edit-warrantyMonths">Garanzia (mesi)</Label>
+                        <Input
+                          id="edit-warrantyMonths"
+                          name="warrantyMonths"
+                          type="number"
+                          min="0"
+                          defaultValue={editingProduct.warrantyMonths ?? 3}
+                          data-testid="edit-input-warranty"
+                        />
+                      </div>
+                    </TabsContent>
+
+                    <TabsContent value="inventory" className="space-y-4 mt-4">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="edit-supplier">Fornitore</Label>
+                          <Input
+                            id="edit-supplier"
+                            name="supplier"
+                            defaultValue={editingProduct.supplier || ""}
+                            data-testid="edit-input-supplier"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="edit-supplierCode">Codice Fornitore</Label>
+                          <Input
+                            id="edit-supplierCode"
+                            name="supplierCode"
+                            defaultValue={editingProduct.supplierCode || ""}
+                            data-testid="edit-input-supplier-code"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="edit-minStock">Scorta Minima</Label>
+                          <Input
+                            id="edit-minStock"
+                            name="minStock"
+                            type="number"
+                            min="0"
+                            defaultValue={editingProduct.minStock ?? 5}
+                            data-testid="edit-input-min-stock"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="edit-location">Ubicazione</Label>
+                          <Input
+                            id="edit-location"
+                            name="location"
+                            defaultValue={editingProduct.location || ""}
+                            data-testid="edit-input-location"
+                          />
+                        </div>
+                      </div>
+                    </TabsContent>
+                  </Tabs>
+
+                  <Separator />
+
+                  <Button
+                    type="submit"
+                    className="w-full"
+                    disabled={updateProductMutation.isPending}
+                    data-testid="button-update-product"
+                  >
+                    {updateProductMutation.isPending ? "Salvataggio..." : "Salva Modifiche"}
+                  </Button>
+                </form>
+              </ScrollArea>
+            )}
           </DialogContent>
         </Dialog>
       </div>
@@ -590,7 +1048,12 @@ export default function AdminProducts() {
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
-                        <Button variant="ghost" size="icon" data-testid={`button-edit-${product.id}`}>
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          onClick={() => openEditDialog(product)}
+                          data-testid={`button-edit-${product.id}`}
+                        >
                           <Pencil className="h-4 w-4" />
                         </Button>
                         <Button
