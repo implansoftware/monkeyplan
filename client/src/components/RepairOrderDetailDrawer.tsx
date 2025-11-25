@@ -447,6 +447,20 @@ export function RepairOrderDetailDrawer({
                       </Button>
                     )}
 
+                    {/* Download Quote Document - available after quote is created */}
+                    {!['ingressato', 'in_diagnosi'].includes(repair.status) && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => window.open(`/api/repair-orders/${repair.id}/quote-document`, '_blank')}
+                        className="gap-1"
+                        data-testid="button-quote-document"
+                      >
+                        <Download className="h-4 w-4" />
+                        Doc. Preventivo
+                      </Button>
+                    )}
+
                     {/* Download Delivery Document - available when delivered */}
                     {repair.status === 'consegnato' && (
                       <Button

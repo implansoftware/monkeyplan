@@ -4326,6 +4326,253 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // GET /api/repair-orders/:id/quote-document - Generate quote PDF document
+  app.get("/api/repair-orders/:id/quote-document", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const repairOrder = await storage.getRepairOrder(req.params.id);
+      if (!repairOrder) {
+        return res.status(404).send("Repair order not found");
+      }
+      
+      // RBAC
+      if (req.user.role === 'customer' && repairOrder.customerId !== req.user.id) {
+        return res.status(403).send("Access denied");
+      }
+      if (req.user.role === 'reseller' && repairOrder.resellerId !== req.user.id) {
+        return res.status(403).send("Access denied");
+      }
+      if (req.user.role === 'repair_center' && repairOrder.repairCenterId !== req.user.repairCenterId) {
+        return res.status(403).send("Access denied");
+      }
+      
+      // Get quote info - required for this document
+      const quote = await storage.getRepairQuote(req.params.id);
+      if (!quote) {
+        return res.status(404).send("Preventivo non ancora creato");
+      }
+      
+      // Get customer info
+      const customer = repairOrder.customerId ? await storage.getUser(repairOrder.customerId) : null;
+      
+      // Get repair center info if available
+      const repairCenter = repairOrder.repairCenterId ? await storage.getRepairCenter(repairOrder.repairCenterId) : null;
+      
+      // Get device brand and model names
+      let brandName = repairOrder.brand || '';
+      let modelName = repairOrder.deviceModel || '';
+      
+      if (repairOrder.brand) {
+        const brand = await storage.getDeviceBrand(repairOrder.brand);
+        if (brand) brandName = brand.name;
+      }
+      
+      if (repairOrder.deviceModel) {
+        const model = await storage.getDeviceModel(repairOrder.deviceModel);
+        if (model) modelName = model.name;
+      }
+      
+      // Get device type name
+      let deviceTypeName = repairOrder.deviceType || '';
+      if (repairOrder.deviceType) {
+        const deviceType = await storage.getDeviceType(repairOrder.deviceType);
+        if (deviceType) deviceTypeName = deviceType.name;
+      }
+      
+      // Parse parts from quote
+      let parts: Array<{ name: string; quantity: number; unitPrice: number }> = [];
+      if (quote.parts) {
+        try {
+          parts = typeof quote.parts === 'string' ? JSON.parse(quote.parts) : quote.parts;
+        } catch (e) {
+          parts = [];
+        }
+      }
+      
+      // Format currency helper
+      const formatCurrency = (cents: number) => {
+        return new Intl.NumberFormat('it-IT', {
+          style: 'currency',
+          currency: 'EUR',
+        }).format(cents / 100);
+      };
+      
+      // Generate PDF
+      const PDFDocument = (await import('pdfkit')).default;
+      const doc = new PDFDocument({ margin: 50, size: 'A4' });
+      
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="preventivo-${quote.quoteNumber}.pdf"`);
+      
+      doc.pipe(res);
+      
+      // Header
+      doc.fontSize(20).font('Helvetica-Bold').text('PREVENTIVO DI RIPARAZIONE', { align: 'center' });
+      doc.fontSize(14).font('Helvetica').text(`N. ${quote.quoteNumber}`, { align: 'center' });
+      doc.moveDown();
+      
+      // Repair center info (if available)
+      if (repairCenter) {
+        doc.fontSize(12).font('Helvetica-Bold').text(repairCenter.name);
+        if (repairCenter.address) doc.font('Helvetica').text(repairCenter.address);
+        if (repairCenter.phone) doc.text(`Tel: ${repairCenter.phone}`);
+        if (repairCenter.email) doc.text(`Email: ${repairCenter.email}`);
+        doc.moveDown();
+      }
+      
+      // Quote info box
+      const quoteDate = quote.createdAt ? new Date(quote.createdAt) : new Date();
+      doc.rect(50, doc.y, 500, 70).stroke();
+      const boxY = doc.y + 10;
+      doc.fontSize(10).font('Helvetica-Bold').text('RIFERIMENTO RIPARAZIONE', 60, boxY);
+      doc.font('Helvetica').text(`Ordine: ${repairOrder.orderNumber}`, 60, boxY + 15);
+      doc.text(`Data Preventivo: ${quoteDate.toLocaleDateString('it-IT')}`, 60, boxY + 30);
+      if (quote.validUntil) {
+        const validDate = new Date(quote.validUntil);
+        doc.text(`Valido Fino Al: ${validDate.toLocaleDateString('it-IT')}`, 60, boxY + 45);
+      }
+      
+      // Status badge
+      const statusLabels: Record<string, string> = {
+        'draft': 'Bozza',
+        'sent': 'Inviato',
+        'accepted': 'Accettato',
+        'rejected': 'Rifiutato',
+      };
+      doc.text(`Stato: ${statusLabels[quote.status] || quote.status}`, 350, boxY + 15);
+      
+      doc.y = boxY + 60;
+      doc.moveDown();
+      
+      // Customer info
+      doc.fontSize(12).font('Helvetica-Bold').text('DATI CLIENTE');
+      doc.fontSize(10).font('Helvetica');
+      if (customer) {
+        doc.text(`Nome: ${customer.fullName || customer.username || ''}`);
+        if (customer.email) doc.text(`Email: ${customer.email}`);
+        if (customer.phone) doc.text(`Telefono: ${customer.phone}`);
+      }
+      doc.moveDown();
+      
+      // Device info
+      doc.fontSize(12).font('Helvetica-Bold').text('DISPOSITIVO');
+      doc.fontSize(10).font('Helvetica');
+      doc.text(`Tipo: ${deviceTypeName || 'N/A'}`);
+      doc.text(`Marca: ${brandName || 'N/A'}`);
+      doc.text(`Modello: ${modelName || 'N/A'}`);
+      if (repairOrder.imei) doc.text(`IMEI: ${repairOrder.imei}`);
+      if (repairOrder.serialNumber) doc.text(`Seriale: ${repairOrder.serialNumber}`);
+      doc.moveDown();
+      
+      // Problem description
+      doc.fontSize(12).font('Helvetica-Bold').text('PROBLEMA RISCONTRATO');
+      doc.fontSize(10).font('Helvetica');
+      doc.text(repairOrder.issueDescription || 'N/A');
+      doc.moveDown();
+      
+      // Parts table
+      if (parts.length > 0) {
+        doc.fontSize(12).font('Helvetica-Bold').text('DETTAGLIO RICAMBI');
+        doc.moveDown(0.5);
+        
+        // Table header
+        const tableTop = doc.y;
+        doc.fontSize(9).font('Helvetica-Bold');
+        doc.text('Descrizione', 60, tableTop);
+        doc.text('Qtà', 320, tableTop);
+        doc.text('Prezzo Unit.', 370, tableTop);
+        doc.text('Totale', 460, tableTop);
+        
+        doc.moveTo(50, tableTop + 15).lineTo(550, tableTop + 15).stroke();
+        
+        let currentY = tableTop + 20;
+        doc.fontSize(9).font('Helvetica');
+        
+        parts.forEach((part) => {
+          const lineTotal = part.quantity * part.unitPrice;
+          doc.text(part.name, 60, currentY, { width: 250 });
+          doc.text(part.quantity.toString(), 320, currentY);
+          doc.text(formatCurrency(part.unitPrice), 370, currentY);
+          doc.text(formatCurrency(lineTotal), 460, currentY);
+          currentY += 18;
+        });
+        
+        doc.moveTo(50, currentY).lineTo(550, currentY).stroke();
+        doc.y = currentY + 10;
+        doc.moveDown();
+      }
+      
+      // Totals section
+      doc.fontSize(12).font('Helvetica-Bold').text('RIEPILOGO COSTI');
+      doc.moveDown(0.5);
+      
+      const totalsY = doc.y;
+      doc.fontSize(10).font('Helvetica');
+      
+      // Parts subtotal
+      const partsSubtotal = parts.reduce((sum, p) => sum + (p.quantity * p.unitPrice), 0);
+      if (parts.length > 0) {
+        doc.text('Subtotale Ricambi:', 350, totalsY);
+        doc.text(formatCurrency(partsSubtotal), 460, totalsY);
+      }
+      
+      // Labor cost
+      if (quote.laborCost && quote.laborCost > 0) {
+        doc.text('Manodopera:', 350, totalsY + 18);
+        doc.text(formatCurrency(quote.laborCost), 460, totalsY + 18);
+      }
+      
+      // Total
+      doc.moveTo(350, totalsY + 40).lineTo(550, totalsY + 40).stroke();
+      doc.fontSize(12).font('Helvetica-Bold');
+      doc.text('TOTALE:', 350, totalsY + 48);
+      doc.text(formatCurrency(quote.totalAmount), 460, totalsY + 48);
+      
+      doc.y = totalsY + 70;
+      doc.moveDown();
+      
+      // Notes
+      if (quote.notes) {
+        doc.fontSize(12).font('Helvetica-Bold').text('NOTE');
+        doc.fontSize(10).font('Helvetica');
+        doc.text(quote.notes);
+        doc.moveDown();
+      }
+      
+      // Terms and conditions
+      doc.moveDown();
+      doc.fontSize(8).font('Helvetica').text(
+        'CONDIZIONI DEL PREVENTIVO:\n' +
+        '1. I prezzi indicati sono IVA inclusa salvo diversa indicazione.\n' +
+        '2. Il preventivo ha validità di 15 giorni dalla data di emissione, salvo diversa indicazione.\n' +
+        '3. I tempi di riparazione sono indicativi e possono variare in base alla disponibilità dei ricambi.\n' +
+        '4. L\'accettazione del preventivo autorizza il centro a procedere con la riparazione.\n' +
+        '5. In caso di rifiuto, il dispositivo verrà restituito senza alcun costo aggiuntivo.',
+        { align: 'left' }
+      );
+      doc.moveDown(2);
+      
+      // Signature areas
+      doc.fontSize(10).font('Helvetica');
+      doc.text('_______________________________', 60);
+      doc.text('Firma per Accettazione Cliente', 60);
+      doc.text('_______________________________', 320);
+      doc.text('Timbro Centro Assistenza', 320);
+      doc.moveDown(2);
+      
+      // Footer
+      doc.fontSize(8).font('Helvetica').text(
+        `Documento generato il ${new Date().toLocaleDateString('it-IT')} alle ${new Date().toLocaleTimeString('it-IT')}`,
+        { align: 'center' }
+      );
+      
+      doc.end();
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+
   // ============ REPORTS & EXPORT ============
 
   app.get("/api/reports/repairs", requireAuth, async (req, res) => {
