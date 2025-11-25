@@ -1398,6 +1398,74 @@ export function AcceptanceWizardDialog({
         )}
       />
 
+      {/* Photo Upload Section */}
+      <div className="space-y-3">
+        <Label className="flex items-center gap-2">
+          <Camera className="h-4 w-4" />
+          Foto del dispositivo
+        </Label>
+        <div className="border rounded-md p-3 space-y-3">
+          <div className="flex items-center gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => document.getElementById('acceptance-photo-input')?.click()}
+              data-testid="button-add-photo"
+            >
+              <Camera className="h-4 w-4 mr-2" />
+              Aggiungi foto
+            </Button>
+            <input
+              id="acceptance-photo-input"
+              type="file"
+              accept="image/*"
+              multiple
+              onChange={handlePhotoSelect}
+              className="hidden"
+              data-testid="input-photo-file"
+            />
+            <span className="text-xs text-muted-foreground">
+              {acceptancePhotos.length > 0 
+                ? `${acceptancePhotos.length} foto selezionate`
+                : "Nessuna foto selezionata"}
+            </span>
+          </div>
+          
+          {acceptancePhotos.length > 0 && (
+            <div className="grid grid-cols-4 gap-2">
+              {acceptancePhotos.map((photo, index) => (
+                <div 
+                  key={index} 
+                  className="relative group aspect-square rounded-md overflow-hidden border"
+                  data-testid={`photo-preview-${index}`}
+                >
+                  <img 
+                    src={photo.preview} 
+                    alt={`Foto ${index + 1}`}
+                    className="w-full h-full object-cover"
+                  />
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    size="icon"
+                    className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                    onClick={() => handleRemovePhoto(index)}
+                    data-testid={`button-remove-photo-${index}`}
+                  >
+                    <X className="h-3 w-3" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+          )}
+          
+          <p className="text-xs text-muted-foreground">
+            Scatta o carica foto del dispositivo per documentare le condizioni al momento dell'ingresso
+          </p>
+        </div>
+      </div>
+
       <Separator />
 
       <FormField
@@ -1725,6 +1793,30 @@ export function AcceptanceWizardDialog({
                 </div>
               )}
             </div>
+            
+            {acceptancePhotos.length > 0 && (
+              <div className="mt-3 pt-3 border-t">
+                <div className="text-muted-foreground mb-2 flex items-center gap-2">
+                  <ImageIcon className="w-4 h-4" />
+                  <span>Foto allegate ({acceptancePhotos.length})</span>
+                </div>
+                <div className="grid grid-cols-6 gap-2">
+                  {acceptancePhotos.map((photo, index) => (
+                    <div 
+                      key={index} 
+                      className="aspect-square rounded-md overflow-hidden border"
+                      data-testid={`review-photo-${index}`}
+                    >
+                      <img 
+                        src={photo.preview} 
+                        alt={`Foto ${index + 1}`}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
 
