@@ -2,12 +2,12 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -286,16 +286,16 @@ export function RepairOrderDetailDrawer({
   };
 
   return (
-    <Sheet open={open} onOpenChange={onClose}>
-      <SheetContent className="sm:max-w-[600px] overflow-y-auto" data-testid="sheet-repair-detail">
-        <SheetHeader>
-          <SheetTitle data-testid="text-drawer-title">Dettaglio Riparazione</SheetTitle>
+    <Dialog open={open} onOpenChange={onClose}>
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto" data-testid="dialog-repair-detail">
+        <DialogHeader>
+          <DialogTitle data-testid="text-dialog-title">Dettaglio Riparazione</DialogTitle>
           {repair && (
-            <SheetDescription data-testid="text-order-number">
+            <DialogDescription data-testid="text-order-number">
               Ordine #{repair.orderNumber}
-            </SheetDescription>
+            </DialogDescription>
           )}
-        </SheetHeader>
+        </DialogHeader>
 
         {isLoading ? (
           <div className="space-y-4 mt-6">
@@ -918,7 +918,7 @@ export function RepairOrderDetailDrawer({
             Riparazione non trovata
           </div>
         )}
-      </SheetContent>
-    </Sheet>
+      </DialogContent>
+    </Dialog>
   );
 }
