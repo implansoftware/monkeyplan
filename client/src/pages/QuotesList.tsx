@@ -1,12 +1,12 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { useLocation } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { FileText, ExternalLink, Euro, Calendar } from "lucide-react";
+import { FileText, Euro, Calendar } from "lucide-react";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
+import { RepairOrderDetailDrawer } from "@/components/RepairOrderDetailDrawer";
 
 const quoteStatusLabels: Record<string, string> = {
   draft: "Bozza",
@@ -25,7 +25,8 @@ const quoteStatusColors: Record<string, string> = {
 };
 
 export default function QuotesList() {
-  const [, navigate] = useLocation();
+  const [selectedRepairId, setSelectedRepairId] = useState<string | null>(null);
+  const [drawerOpen, setDrawerOpen] = useState(false);
 
   const { data: quotes, isLoading } = useQuery<any[]>({
     queryKey: ["/api/quotes"],
@@ -66,7 +67,10 @@ export default function QuotesList() {
             <Card
               key={quote.id}
               className="hover-elevate cursor-pointer"
-              onClick={() => navigate(`/repair-orders/${quote.repairOrderId}`)}
+              onClick={() => {
+                setSelectedRepairId(quote.repairOrderId);
+                setDrawerOpen(true);
+              }}
               data-testid={`card-quote-${quote.id}`}
             >
               <CardHeader className="pb-2">
@@ -121,8 +125,7 @@ export default function QuotesList() {
                     </div>
                   )}
 
-                  <div className="flex items-center justify-between text-sm text-muted-foreground">
-                    <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-4 text-sm text-muted-foreground">
                       <span>
                         Creato: {quote.createdAt && format(new Date(quote.createdAt), "dd MMM yyyy", { locale: it })}
                       </span>
@@ -133,25 +136,21 @@ export default function QuotesList() {
                         </span>
                       )}
                     </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        navigate(`/repair-orders/${quote.repairOrderId}`);
-                      }}
-                      data-testid={`button-view-order-${quote.id}`}
-                    >
-                      <ExternalLink className="h-4 w-4 mr-1" />
-                      Vedi ordine
-                    </Button>
-                  </div>
                 </div>
               </CardContent>
             </Card>
           ))}
         </div>
       )}
+
+      <RepairOrderDetailDrawer
+        repairOrderId={selectedRepairId}
+        open={drawerOpen}
+        onClose={() => {
+          setDrawerOpen(false);
+          setSelectedRepairId(null);
+        }}
+      />
     </div>
   );
 }

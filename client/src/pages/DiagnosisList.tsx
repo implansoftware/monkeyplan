@@ -1,12 +1,12 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { useLocation } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Stethoscope, ExternalLink, Clock, AlertTriangle, Package } from "lucide-react";
+import { Stethoscope, Clock, Package } from "lucide-react";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
+import { RepairOrderDetailDrawer } from "@/components/RepairOrderDetailDrawer";
 
 const severityLabels: Record<string, string> = {
   low: "Bassa",
@@ -23,7 +23,8 @@ const severityColors: Record<string, string> = {
 };
 
 export default function DiagnosisList() {
-  const [, navigate] = useLocation();
+  const [selectedRepairId, setSelectedRepairId] = useState<string | null>(null);
+  const [drawerOpen, setDrawerOpen] = useState(false);
 
   const { data: diagnostics, isLoading } = useQuery<any[]>({
     queryKey: ["/api/diagnostics"],
@@ -64,7 +65,10 @@ export default function DiagnosisList() {
             <Card
               key={diagnosis.id}
               className="hover-elevate cursor-pointer"
-              onClick={() => navigate(`/repair-orders/${diagnosis.repairOrderId}`)}
+              onClick={() => {
+                setSelectedRepairId(diagnosis.repairOrderId);
+                setDrawerOpen(true);
+              }}
               data-testid={`card-diagnosis-${diagnosis.id}`}
             >
               <CardHeader className="pb-2">
@@ -111,8 +115,7 @@ export default function DiagnosisList() {
                     </div>
                   )}
 
-                  <div className="flex items-center justify-between text-sm text-muted-foreground">
-                    <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-4 text-sm text-muted-foreground">
                       {diagnosis.estimatedRepairTime && (
                         <span className="flex items-center gap-1">
                           <Clock className="h-4 w-4" />
@@ -123,25 +126,21 @@ export default function DiagnosisList() {
                         {diagnosis.diagnosedAt && format(new Date(diagnosis.diagnosedAt), "dd MMM yyyy HH:mm", { locale: it })}
                       </span>
                     </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        navigate(`/repair-orders/${diagnosis.repairOrderId}`);
-                      }}
-                      data-testid={`button-view-order-${diagnosis.id}`}
-                    >
-                      <ExternalLink className="h-4 w-4 mr-1" />
-                      Vedi ordine
-                    </Button>
-                  </div>
                 </div>
               </CardContent>
             </Card>
           ))}
         </div>
       )}
+
+      <RepairOrderDetailDrawer
+        repairOrderId={selectedRepairId}
+        open={drawerOpen}
+        onClose={() => {
+          setDrawerOpen(false);
+          setSelectedRepairId(null);
+        }}
+      />
     </div>
   );
 }
