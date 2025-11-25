@@ -27,6 +27,8 @@ export const paymentStatusEnum = pgEnum("payment_status", ["pending", "paid", "o
 export const movementTypeEnum = pgEnum("movement_type", ["in", "out", "adjustment"]);
 export const notificationTypeEnum = pgEnum("notification_type", ["repair_update", "sla_warning", "review_request", "message", "system"]);
 export const diagnosisSeverityEnum = pgEnum("diagnosis_severity", ["low", "medium", "high", "critical"]);
+export const quoteStatusEnum = pgEnum("quote_status", ["draft", "sent", "accepted", "rejected"]);
+export const repairPriorityEnum = pgEnum("repair_priority", ["low", "medium", "high", "urgent"]);
 
 // Users table with role-based access
 export const users = pgTable("users", {
@@ -105,6 +107,7 @@ export const repairOrders = pgTable("repair_orders", {
   serialOnly: boolean("serial_only").notNull().default(false), // Flag: Solo seriale presente
   issueDescription: text("issue_description").notNull(),
   status: repairStatusEnum("status").notNull().default("pending"),
+  priority: repairPriorityEnum("priority"), // Auto-calculated from diagnostics
   estimatedCost: integer("estimated_cost"), // in cents
   finalCost: integer("final_cost"), // in cents
   notes: text("notes"),
@@ -190,6 +193,22 @@ export const repairDiagnostics = pgTable("repair_diagnostics", {
   photos: text("photos").array(), // Array di URL foto diagnostiche
   diagnosedBy: varchar("diagnosed_by").notNull(), // ID tecnico che ha fatto la diagnosi
   diagnosedAt: timestamp("diagnosed_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+// Repair Quotes (Preventivi riparazione)
+export const repairQuotes = pgTable("repair_quotes", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  repairOrderId: varchar("repair_order_id").notNull().unique().references(() => repairOrders.id), // One quote per repair
+  quoteNumber: text("quote_number").notNull().unique(), // Auto-generated quote number
+  parts: text("parts"), // JSON array: [{name, quantity, unitPrice}]
+  laborCost: integer("labor_cost").notNull().default(0), // Costo manodopera in cents
+  totalAmount: integer("total_amount").notNull(), // Totale preventivo in cents
+  status: quoteStatusEnum("status").notNull().default("draft"),
+  validUntil: timestamp("valid_until"), // Data scadenza preventivo
+  notes: text("notes"), // Note aggiuntive
+  createdBy: varchar("created_by").notNull(), // ID utente che ha creato il preventivo
+  createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 
@@ -360,6 +379,10 @@ export const repairOrdersRelations = relations(repairOrders, ({ one, many }) => 
     fields: [repairOrders.id],
     references: [repairDiagnostics.repairOrderId],
   }),
+  quote: one(repairQuotes, {
+    fields: [repairOrders.id],
+    references: [repairQuotes.repairOrderId],
+  }),
 }));
 
 export const repairAttachmentsRelations = relations(repairAttachments, ({ one }) => ({
@@ -387,6 +410,17 @@ export const repairDiagnosticsRelations = relations(repairDiagnostics, ({ one })
   }),
   diagnosedByUser: one(users, {
     fields: [repairDiagnostics.diagnosedBy],
+    references: [users.id],
+  }),
+}));
+
+export const repairQuotesRelations = relations(repairQuotes, ({ one }) => ({
+  repairOrder: one(repairOrders, {
+    fields: [repairQuotes.repairOrderId],
+    references: [repairOrders.id],
+  }),
+  createdByUser: one(users, {
+    fields: [repairQuotes.createdBy],
     references: [users.id],
   }),
 }));
@@ -575,6 +609,13 @@ export const insertRepairDiagnosticsSchema = createInsertSchema(repairDiagnostic
   updatedAt: true,
 });
 
+export const insertRepairQuoteSchema = createInsertSchema(repairQuotes).omit({
+  id: true,
+  quoteNumber: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 export const insertTicketSchema = createInsertSchema(tickets).omit({
   id: true,
   ticketNumber: true,
@@ -723,6 +764,9 @@ export type InsertRepairAcceptance = z.infer<typeof insertRepairAcceptanceSchema
 
 export type RepairDiagnostics = typeof repairDiagnostics.$inferSelect;
 export type InsertRepairDiagnostics = z.infer<typeof insertRepairDiagnosticsSchema>;
+
+export type RepairQuote = typeof repairQuotes.$inferSelect;
+export type InsertRepairQuote = z.infer<typeof insertRepairQuoteSchema>;
 
 export type Ticket = typeof tickets.$inferSelect;
 export type InsertTicket = z.infer<typeof insertTicketSchema>;
