@@ -873,6 +873,7 @@ export function AcceptanceWizardDialog({
                 
                 {step !== "review" ? (
                   <Button
+                    key="next-button"
                     type="button"
                     onClick={handleNext}
                     data-testid="button-next"
@@ -882,7 +883,9 @@ export function AcceptanceWizardDialog({
                   </Button>
                 ) : (
                   <Button
-                    type="submit"
+                    key="submit-button"
+                    type="button"
+                    onClick={handleSubmit}
                     disabled={createOrderMutation.isPending}
                     data-testid="button-submit"
                   >
