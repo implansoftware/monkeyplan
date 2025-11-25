@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -32,7 +33,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Stethoscope } from "lucide-react";
+import { Stethoscope, Camera } from "lucide-react";
+import { DiagnosisPhotoUploader } from "@/components/DiagnosisPhotoUploader";
 
 interface DiagnosisFormDialogProps {
   open: boolean;
@@ -48,7 +50,6 @@ const diagnosisSchema = z.object({
   estimatedRepairTime: z.coerce.number().min(0).optional(),
   requiresExternalParts: z.boolean().default(false),
   diagnosisNotes: z.string().optional(),
-  photos: z.string().optional(),
 });
 
 type DiagnosisFormData = z.infer<typeof diagnosisSchema>;
@@ -61,6 +62,7 @@ export function DiagnosisFormDialog({
 }: DiagnosisFormDialogProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [uploadedPhotos, setUploadedPhotos] = useState<string[]>([]);
 
   const form = useForm<DiagnosisFormData>({
     resolver: zodResolver(diagnosisSchema),
@@ -71,7 +73,6 @@ export function DiagnosisFormDialog({
       estimatedRepairTime: undefined,
       requiresExternalParts: false,
       diagnosisNotes: "",
-      photos: "",
     },
   });
 
@@ -86,7 +87,7 @@ export function DiagnosisFormDialog({
         estimatedRepairTime: data.estimatedRepairTime,
         requiresExternalParts: data.requiresExternalParts,
         diagnosisNotes: data.diagnosisNotes,
-        photos: data.photos ? data.photos.split(",").map((p) => p.trim()) : [],
+        photos: uploadedPhotos,
       };
       return await apiRequest(
         `/api/repair-orders/${repairOrderId}/diagnostics`,
@@ -104,6 +105,7 @@ export function DiagnosisFormDialog({
         queryKey: [`/api/repair-orders/${repairOrderId}`],
       });
       form.reset();
+      setUploadedPhotos([]);
       onOpenChange(false);
       onSuccess?.();
     },
@@ -286,26 +288,21 @@ export function DiagnosisFormDialog({
                   )}
                 />
 
-                <FormField
-                  control={form.control}
-                  name="photos"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>URL Foto</FormLabel>
-                      <FormControl>
-                        <Input
-                          {...field}
-                          placeholder="URL delle foto (separati da virgola)"
-                          data-testid="input-photos"
-                        />
-                      </FormControl>
-                      <FormDescription>
-                        Inserisci gli URL delle foto separati da virgola
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                {/* Photo Upload Section */}
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Camera className="h-4 w-4" />
+                    <span className="text-sm font-medium">Foto Diagnosi</span>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    Carica foto del dispositivo e dei componenti danneggiati
+                  </p>
+                  <DiagnosisPhotoUploader
+                    repairOrderId={repairOrderId}
+                    photos={uploadedPhotos}
+                    onPhotosChange={setUploadedPhotos}
+                  />
+                </div>
               </CardContent>
             </Card>
 
