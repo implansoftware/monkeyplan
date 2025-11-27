@@ -38,139 +38,10 @@ import {
   Stethoscope, 
   Camera, 
   AlertCircle,
-  Monitor,
-  Fingerprint,
-  Battery,
-  BatteryWarning,
-  Plug,
-  Volume2,
-  Mic,
-  Wifi,
-  Bluetooth,
-  Signal,
-  Settings,
-  HardDrive,
-  Cpu,
   CircuitBoard,
-  Square,
-  Sun,
-  Power,
-  Usb,
-  Cable,
-  Layers,
-  ScanLine,
-  Radio,
-  Smartphone,
-  Droplets,
-  type LucideIcon,
 } from "lucide-react";
 import { DiagnosisPhotoUploader } from "@/components/DiagnosisPhotoUploader";
 import type { DiagnosticFinding, DamagedComponentType, EstimatedRepairTime, RepairOrder } from "@shared/schema";
-
-// Static icon mappings - defined outside component to avoid re-creation
-const FINDING_KEYWORDS: Array<[string, LucideIcon]> = [
-  ["display", Monitor],
-  ["schermo", Monitor],
-  ["lcd", Monitor],
-  ["oled", Layers],
-  ["touch", Fingerprint],
-  ["digitalizzatore", Fingerprint],
-  ["batteria gonfia", BatteryWarning],
-  ["gonfia", BatteryWarning],
-  ["batteria", Battery],
-  ["consumo", Battery],
-  ["degradata", Battery],
-  ["ricarica", Plug],
-  ["carica", Plug],
-  ["altoparlante", Volume2],
-  ["speaker", Volume2],
-  ["audio", Volume2],
-  ["microfono", Mic],
-  ["wifi", Wifi],
-  ["bluetooth", Bluetooth],
-  ["rete", Signal],
-  ["segnale", Signal],
-  ["antenna", Signal],
-  ["software", Settings],
-  ["sistema", Settings],
-  ["memoria", HardDrive],
-  ["storage", HardDrive],
-  ["processore", Cpu],
-  ["cpu", Cpu],
-  ["chip", Cpu],
-  ["scheda", CircuitBoard],
-  ["madre", CircuitBoard],
-  ["fotocamera", Camera],
-  ["camera", Camera],
-  ["tast", Square],
-  ["pulsant", Square],
-  ["retroilluminazione", Sun],
-  ["accensione", Power],
-  ["power", Power],
-  ["usb", Usb],
-  ["porta", Usb],
-  ["flex", Cable],
-  ["cavo", Cable],
-  ["nfc", Radio],
-  ["sensore", ScanLine],
-  ["acqua", Droplets],
-  ["liquid", Droplets],
-  ["ossid", Droplets],
-];
-
-const COMPONENT_KEYWORDS: Array<[string, LucideIcon]> = [
-  ["vetro", Monitor],
-  ["display", Monitor],
-  ["schermo", Monitor],
-  ["oled", Layers],
-  ["lcd", Layers],
-  ["pannello", Layers],
-  ["touch", Fingerprint],
-  ["digitalizzatore", Fingerprint],
-  ["retroilluminazione", Sun],
-  ["cornice", Square],
-  ["batteria", Battery],
-  ["cella", Battery],
-  ["connettore", Plug],
-  ["ricarica", Plug],
-  ["porta", Usb],
-  ["flex", Cable],
-  ["altoparlante", Volume2],
-  ["speaker", Volume2],
-  ["microfono", Mic],
-  ["fotocamera", Camera],
-  ["camera", Camera],
-  ["antenna", Wifi],
-  ["wifi", Wifi],
-  ["bluetooth", Bluetooth],
-  ["nfc", Radio],
-  ["sensore", ScanLine],
-  ["pulsant", Square],
-  ["tast", Square],
-  ["scheda", CircuitBoard],
-  ["madre", CircuitBoard],
-  ["chip", Cpu],
-  ["ic", Cpu],
-  ["processore", Cpu],
-  ["memoria", HardDrive],
-  ["storage", HardDrive],
-  ["nand", HardDrive],
-  ["scocca", Smartphone],
-  ["frame", Smartphone],
-  ["telaio", Smartphone],
-  ["vibra", Radio],
-];
-
-// Helper to get icon - pure function, no hooks
-function getIconForName(name: string, keywords: Array<[string, LucideIcon]>, defaultIcon: LucideIcon): LucideIcon {
-  const lowerName = name.toLowerCase();
-  for (const [keyword, icon] of keywords) {
-    if (lowerName.includes(keyword)) {
-      return icon;
-    }
-  }
-  return defaultIcon;
-}
 
 interface DiagnosisFormDialogProps {
   open: boolean;
@@ -267,14 +138,17 @@ export function DiagnosisFormDialog({
     enabled: open,
   });
 
-  const findingsByCategory = diagnosticFindings.reduce((acc, finding) => {
-    const category = finding.category || "altro";
-    if (!acc[category]) {
-      acc[category] = [];
-    }
-    acc[category].push(finding);
-    return acc;
-  }, {} as Record<string, DiagnosticFinding[]>);
+  // Memoize findingsByCategory to prevent re-calculation on every render
+  const findingsByCategory = useMemo(() => {
+    return diagnosticFindings.reduce((acc, finding) => {
+      const category = finding.category || "altro";
+      if (!acc[category]) {
+        acc[category] = [];
+      }
+      acc[category].push(finding);
+      return acc;
+    }, {} as Record<string, DiagnosticFinding[]>);
+  }, [diagnosticFindings]);
 
   const categoryLabels: Record<string, string> = {
     hardware: "Hardware",
@@ -282,37 +156,6 @@ export function DiagnosisFormDialog({
     connectivity: "Connettività",
     altro: "Altro",
   };
-
-  // DEBUG: Log query results
-  console.log("DEBUG DiagnosisFormDialog:", {
-    open,
-    repairOrderId: repairOrder?.id ?? "N/A",
-    deviceTypeId: deviceTypeId ?? "N/A",
-    diagnosticFindingsCount: diagnosticFindings.length,
-    diagnosticFindings: diagnosticFindings.slice(0, 3),
-    damagedComponentTypesCount: damagedComponentTypes.length,
-    damagedComponentTypes: damagedComponentTypes.slice(0, 3),
-    estimatedRepairTimesCount: estimatedRepairTimes.length,
-    findingsByCategory: Object.keys(findingsByCategory),
-  });
-
-  // Pre-compute icons for findings - memoized to prevent recalculation
-  const findingIcons = useMemo(() => {
-    const icons: Record<string, LucideIcon> = {};
-    diagnosticFindings.forEach(finding => {
-      icons[finding.id] = getIconForName(finding.name, FINDING_KEYWORDS, AlertCircle);
-    });
-    return icons;
-  }, [diagnosticFindings]);
-
-  // Pre-compute icons for components - memoized to prevent recalculation
-  const componentIcons = useMemo(() => {
-    const icons: Record<string, LucideIcon> = {};
-    damagedComponentTypes.forEach(component => {
-      icons[component.id] = getIconForName(component.name, COMPONENT_KEYWORDS, CircuitBoard);
-    });
-    return icons;
-  }, [damagedComponentTypes]);
 
   const form = useForm<DiagnosisFormData>({
     resolver: zodResolver(diagnosisSchema),
@@ -489,7 +332,6 @@ export function DiagnosisFormDialog({
                               <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                                 {findings.map((finding) => {
                                   const isSelected = selectedFindingIds.includes(finding.id);
-                                  const IconComponent = findingIcons[finding.id] || AlertCircle;
                                   return (
                                     <div 
                                       key={finding.id} 
@@ -506,7 +348,7 @@ export function DiagnosisFormDialog({
                                         onCheckedChange={() => toggleFinding(finding.id)}
                                         data-testid={`checkbox-finding-${finding.id}`}
                                       />
-                                      <IconComponent className={`h-5 w-5 flex-shrink-0 ${isSelected ? 'text-primary' : 'text-muted-foreground'}`} />
+                                      <AlertCircle className={`h-5 w-5 flex-shrink-0 ${isSelected ? 'text-primary' : 'text-muted-foreground'}`} />
                                       <label
                                         htmlFor={`finding-${finding.id}`}
                                         className="text-sm cursor-pointer leading-tight"
@@ -568,7 +410,6 @@ export function DiagnosisFormDialog({
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                           {damagedComponentTypes.map((component) => {
                             const isSelected = selectedComponentIds.includes(component.id);
-                            const IconComponent = componentIcons[component.id] || CircuitBoard;
                             return (
                               <div 
                                 key={component.id} 
@@ -585,7 +426,7 @@ export function DiagnosisFormDialog({
                                   onCheckedChange={() => toggleComponent(component.id)}
                                   data-testid={`checkbox-component-${component.id}`}
                                 />
-                                <IconComponent className={`h-5 w-5 flex-shrink-0 ${isSelected ? 'text-primary' : 'text-muted-foreground'}`} />
+                                <CircuitBoard className={`h-5 w-5 flex-shrink-0 ${isSelected ? 'text-primary' : 'text-muted-foreground'}`} />
                                 <label
                                   htmlFor={`component-${component.id}`}
                                   className="text-sm cursor-pointer leading-tight"
