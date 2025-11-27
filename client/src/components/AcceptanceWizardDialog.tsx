@@ -29,7 +29,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { Smartphone, CheckCircle2, ChevronRight, ChevronLeft, AlertCircle, UserPlus, Loader2, Camera, X, ImageIcon } from "lucide-react";
+import { 
+  Smartphone, CheckCircle2, ChevronRight, ChevronLeft, AlertCircle, UserPlus, Loader2, Camera, X, ImageIcon,
+  Monitor, Battery, Volume2, Thermometer, Cpu, HardDrive, Usb, Wifi, Power, Zap, Fan, Bug, Settings, MoreHorizontal,
+  Headphones, Keyboard, Mouse, Cable, BatteryCharging, Briefcase, Watch, Tablet, Laptop, Gamepad2, Printer,
+  MonitorSmartphone, CircleDot, Square, Grid3X3, Link2, PenTool, PackageOpen, Shield, AlertTriangle, CircleSlash,
+  Bluetooth, PowerOff, PlugZap, MemoryStick, Disc, Server, Router, Fingerprint, Eye, Mic, Speaker, Vibrate
+} from "lucide-react";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -76,6 +82,96 @@ const acceptanceWizardSchema = z.object({
 });
 
 type AcceptanceWizardData = z.infer<typeof acceptanceWizardSchema>;
+
+const getIssueIcon = (issueName: string) => {
+  const name = issueName.toLowerCase();
+  
+  if (name.includes("schermo") || name.includes("display") || name.includes("lcd") || name.includes("oled")) return Monitor;
+  if (name.includes("batteria") || name.includes("carica") || name.includes("autonomia")) return Battery;
+  if (name.includes("audio") || name.includes("suono") || name.includes("altoparlante") || name.includes("speaker")) return Volume2;
+  if (name.includes("microfono") || name.includes("mic")) return Mic;
+  if (name.includes("surriscaldamento") || name.includes("temperatura") || name.includes("caldo")) return Thermometer;
+  if (name.includes("scheda madre") || name.includes("motherboard") || name.includes("cpu") || name.includes("processore")) return Cpu;
+  if (name.includes("scheda video") || name.includes("gpu") || name.includes("grafica")) return MonitorSmartphone;
+  if (name.includes("ssd") || name.includes("hdd") || name.includes("hard disk") || name.includes("memoria")) return HardDrive;
+  if (name.includes("ram")) return MemoryStick;
+  if (name.includes("usb") || name.includes("hdmi") || name.includes("porta") || name.includes("connettore")) return Usb;
+  if (name.includes("wifi") || name.includes("wireless") || name.includes("rete")) return Wifi;
+  if (name.includes("bluetooth")) return Bluetooth;
+  if (name.includes("non si avvia") || name.includes("non accende") || name.includes("accensione")) return PowerOff;
+  if (name.includes("alimentatore") || name.includes("alimentazione") || name.includes("power")) return PlugZap;
+  if (name.includes("ventola") || name.includes("fan") || name.includes("rumore")) return Fan;
+  if (name.includes("virus") || name.includes("malware") || name.includes("sicurezza")) return Bug;
+  if (name.includes("software") || name.includes("sistema") || name.includes("os") || name.includes("windows") || name.includes("macos")) return Settings;
+  if (name.includes("tastiera") || name.includes("keyboard") || name.includes("tasti")) return Keyboard;
+  if (name.includes("touchpad") || name.includes("mouse") || name.includes("trackpad")) return Mouse;
+  if (name.includes("webcam") || name.includes("fotocamera") || name.includes("camera")) return Eye;
+  if (name.includes("touch") || name.includes("sensore") || name.includes("face id") || name.includes("fingerprint") || name.includes("impronta")) return Fingerprint;
+  if (name.includes("vibrazione") || name.includes("vibra")) return Vibrate;
+  if (name.includes("cerniera") || name.includes("hinge")) return Link2;
+  if (name.includes("altro")) return MoreHorizontal;
+  
+  return AlertTriangle;
+};
+
+const getDefectIcon = (defectName: string) => {
+  const name = defectName.toLowerCase();
+  
+  if (name.includes("graffi") || name.includes("graffio") || name.includes("righe")) return CircleSlash;
+  if (name.includes("ammaccatur") || name.includes("bozza") || name.includes("deformazione")) return CircleDot;
+  if (name.includes("crepa") || name.includes("incrinat") || name.includes("rotto") || name.includes("frantum")) return Monitor;
+  if (name.includes("cornice") || name.includes("scocca") || name.includes("telaio") || name.includes("frame")) return Square;
+  if (name.includes("tasti") || name.includes("tastiera") || name.includes("button")) return Grid3X3;
+  if (name.includes("cerniera") || name.includes("hinge")) return Link2;
+  if (name.includes("schermo") || name.includes("display")) return MonitorSmartphone;
+  if (name.includes("vetro") || name.includes("glass")) return Smartphone;
+  if (name.includes("altro")) return MoreHorizontal;
+  
+  return AlertTriangle;
+};
+
+const getAccessoryIcon = (accessoryName: string) => {
+  const name = accessoryName.toLowerCase();
+  
+  if (name.includes("caricatore") || name.includes("caricabatterie") || name.includes("charger") || name.includes("alimentatore")) return BatteryCharging;
+  if (name.includes("cavo") || name.includes("cable") || name.includes("filo")) return Cable;
+  if (name.includes("custodia") || name.includes("cover") || name.includes("case")) return Briefcase;
+  if (name.includes("mouse")) return Mouse;
+  if (name.includes("tastiera") || name.includes("keyboard")) return Keyboard;
+  if (name.includes("auricolar") || name.includes("cuffie") || name.includes("earphone") || name.includes("headphone") || name.includes("airpods")) return Headphones;
+  if (name.includes("pennino") || name.includes("stylus") || name.includes("penna") || name.includes("apple pencil")) return PenTool;
+  if (name.includes("borsa") || name.includes("zaino") || name.includes("bag")) return PackageOpen;
+  if (name.includes("watch") || name.includes("orologio") || name.includes("smartwatch")) return Watch;
+  if (name.includes("tablet")) return Tablet;
+  if (name.includes("laptop") || name.includes("notebook") || name.includes("computer")) return Laptop;
+  if (name.includes("controller") || name.includes("gamepad") || name.includes("joystick")) return Gamepad2;
+  if (name.includes("stampante") || name.includes("printer")) return Printer;
+  if (name.includes("router") || name.includes("modem")) return Router;
+  if (name.includes("disco") || name.includes("hdd") || name.includes("ssd") || name.includes("pendrive") || name.includes("usb")) return Disc;
+  if (name.includes("scheda") || name.includes("sd") || name.includes("memoria")) return Server;
+  if (name.includes("protezione") || name.includes("pellicola") || name.includes("vetro")) return Shield;
+  if (name.includes("altro")) return MoreHorizontal;
+  
+  return PackageOpen;
+};
+
+const getDeviceTypeIcon = (typeName: string) => {
+  const name = typeName.toLowerCase();
+  
+  if (name.includes("smartphone") || name.includes("telefono") || name.includes("cellulare") || name.includes("iphone")) return Smartphone;
+  if (name.includes("tablet") || name.includes("ipad")) return Tablet;
+  if (name.includes("laptop") || name.includes("notebook") || name.includes("macbook") || name.includes("portatile")) return Laptop;
+  if (name.includes("desktop") || name.includes("pc") || name.includes("computer") || name.includes("fisso")) return Monitor;
+  if (name.includes("smartwatch") || name.includes("orologio") || name.includes("watch")) return Watch;
+  if (name.includes("console") || name.includes("playstation") || name.includes("xbox") || name.includes("nintendo") || name.includes("gaming")) return Gamepad2;
+  if (name.includes("stampante") || name.includes("printer")) return Printer;
+  if (name.includes("router") || name.includes("modem") || name.includes("rete")) return Router;
+  if (name.includes("auricolar") || name.includes("cuffie") || name.includes("headphone") || name.includes("airpods")) return Headphones;
+  if (name.includes("monitor") || name.includes("schermo") || name.includes("tv") || name.includes("televisore")) return Monitor;
+  if (name.includes("speaker") || name.includes("cassa") || name.includes("altoparlante") || name.includes("homepod")) return Speaker;
+  
+  return Smartphone;
+};
 
 export function AcceptanceWizardDialog({ 
   open, 
@@ -977,11 +1073,17 @@ export function AcceptanceWizardDialog({
                 </SelectTrigger>
               </FormControl>
               <SelectContent>
-                {deviceTypes.map((type) => (
-                  <SelectItem key={type.id} value={type.name}>
-                    {type.name}
-                  </SelectItem>
-                ))}
+                {deviceTypes.map((type) => {
+                  const TypeIcon = getDeviceTypeIcon(type.name);
+                  return (
+                    <SelectItem key={type.id} value={type.name}>
+                      <span className="flex items-center gap-2">
+                        <TypeIcon className="h-4 w-4" />
+                        {type.name}
+                      </span>
+                    </SelectItem>
+                  );
+                })}
               </SelectContent>
             </Select>
             <FormMessage />
@@ -1182,8 +1284,9 @@ export function AcceptanceWizardDialog({
                 {issueTypes.map((issue) => {
                   const isSelected = selectedIssues.includes(issue.name);
                   const isOther = issue.name === "Altro";
+                  const IssueIcon = getIssueIcon(issue.name);
                   return (
-                    <div key={issue.id} className="flex items-start space-x-2">
+                    <div key={issue.id} className="flex items-center space-x-2">
                       <Checkbox
                         id={`issue-${issue.id}`}
                         checked={isSelected}
@@ -1206,6 +1309,7 @@ export function AcceptanceWizardDialog({
                         }}
                         data-testid={`checkbox-issue-${issue.id}`}
                       />
+                      <IssueIcon className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                       <Label 
                         htmlFor={`issue-${issue.id}`} 
                         className="text-sm font-normal cursor-pointer leading-tight"
@@ -1266,10 +1370,30 @@ export function AcceptanceWizardDialog({
                 </SelectTrigger>
               </FormControl>
               <SelectContent>
-                <SelectItem value="ottimo">Ottimo - Nessun difetto visibile</SelectItem>
-                <SelectItem value="buono">Buono - Minimi segni di usura</SelectItem>
-                <SelectItem value="discreto">Discreto - Segni di usura evidenti</SelectItem>
-                <SelectItem value="scadente">Scadente - Danni estetici significativi</SelectItem>
+                <SelectItem value="ottimo">
+                  <span className="flex items-center gap-2">
+                    <CheckCircle2 className="h-4 w-4 text-green-500" />
+                    Ottimo - Nessun difetto visibile
+                  </span>
+                </SelectItem>
+                <SelectItem value="buono">
+                  <span className="flex items-center gap-2">
+                    <CircleDot className="h-4 w-4 text-blue-500" />
+                    Buono - Minimi segni di usura
+                  </span>
+                </SelectItem>
+                <SelectItem value="discreto">
+                  <span className="flex items-center gap-2">
+                    <AlertTriangle className="h-4 w-4 text-amber-500" />
+                    Discreto - Segni di usura evidenti
+                  </span>
+                </SelectItem>
+                <SelectItem value="scadente">
+                  <span className="flex items-center gap-2">
+                    <AlertCircle className="h-4 w-4 text-red-500" />
+                    Scadente - Danni estetici significativi
+                  </span>
+                </SelectItem>
               </SelectContent>
             </Select>
             <FormMessage />
@@ -1288,39 +1412,43 @@ export function AcceptanceWizardDialog({
                 <p className="text-sm text-muted-foreground">Seleziona prima un tipo di dispositivo</p>
               ) : (
                 <>
-                  {aestheticDefects.map((defect) => (
-                    <div key={defect.id} className="flex items-center space-x-2">
-                      <Checkbox
-                        id={`defect-${defect.id}`}
-                        checked={selectedDefects.includes(defect.name)}
-                        onCheckedChange={(checked) => {
-                          const newDefects = checked 
-                            ? [...selectedDefects, defect.name]
-                            : selectedDefects.filter(d => d !== defect.name);
-                          setSelectedDefects(newDefects);
-                          
-                          if (defect.name === "Altro") {
-                            setShowOtherDefect(!!checked);
-                          }
-                          
-                          const defectText = newDefects.filter(d => d !== "Altro").join(", ");
-                          field.onChange(defectText);
-                        }}
-                        data-testid={`checkbox-defect-${defect.id}`}
-                      />
-                      <label 
-                        htmlFor={`defect-${defect.id}`}
-                        className="text-sm cursor-pointer flex-1"
-                      >
-                        {defect.name}
-                        {defect.description && (
-                          <span className="text-muted-foreground text-xs ml-1">
-                            - {defect.description}
-                          </span>
-                        )}
-                      </label>
-                    </div>
-                  ))}
+                  {aestheticDefects.map((defect) => {
+                    const DefectIcon = getDefectIcon(defect.name);
+                    return (
+                      <div key={defect.id} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={`defect-${defect.id}`}
+                          checked={selectedDefects.includes(defect.name)}
+                          onCheckedChange={(checked) => {
+                            const newDefects = checked 
+                              ? [...selectedDefects, defect.name]
+                              : selectedDefects.filter(d => d !== defect.name);
+                            setSelectedDefects(newDefects);
+                            
+                            if (defect.name === "Altro") {
+                              setShowOtherDefect(!!checked);
+                            }
+                            
+                            const defectText = newDefects.filter(d => d !== "Altro").join(", ");
+                            field.onChange(defectText);
+                          }}
+                          data-testid={`checkbox-defect-${defect.id}`}
+                        />
+                        <DefectIcon className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                        <label 
+                          htmlFor={`defect-${defect.id}`}
+                          className="text-sm cursor-pointer flex-1"
+                        >
+                          {defect.name}
+                          {defect.description && (
+                            <span className="text-muted-foreground text-xs ml-1">
+                              - {defect.description}
+                            </span>
+                          )}
+                        </label>
+                      </div>
+                    );
+                  })}
                   <div className="flex items-center space-x-2 border-t pt-2 mt-2">
                     <Checkbox
                       id="defect-altro"
@@ -1338,6 +1466,7 @@ export function AcceptanceWizardDialog({
                       }}
                       data-testid="checkbox-defect-altro"
                     />
+                    <MoreHorizontal className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                     <label htmlFor="defect-altro" className="text-sm cursor-pointer font-medium">
                       Altro difetto non in elenco
                     </label>
@@ -1489,51 +1618,55 @@ export function AcceptanceWizardDialog({
                 <p className="text-sm text-muted-foreground">Seleziona prima un tipo di dispositivo</p>
               ) : (
                 <>
-                  {accessoryTypes.map((accessory) => (
-                    <div key={accessory.id} className="flex items-center space-x-2">
-                      <Checkbox
-                        id={`accessory-${accessory.id}`}
-                        checked={selectedAccessories.includes(accessory.name)}
-                        onCheckedChange={(checked) => {
-                          let newAccessories: string[];
-                          
-                          if (accessory.name === "Nessun accessorio") {
-                            newAccessories = checked ? ["Nessun accessorio"] : [];
-                          } else {
-                            newAccessories = checked 
-                              ? [...selectedAccessories.filter(a => a !== "Nessun accessorio"), accessory.name]
-                              : selectedAccessories.filter(a => a !== accessory.name);
-                          }
-                          
-                          setSelectedAccessories(newAccessories);
-                          
-                          if (accessory.name === "Altro") {
-                            setShowOtherAccessory(!!checked);
-                          }
-                          
-                          const accessoryText = newAccessories.filter(a => a !== "Altro").join(", ");
-                          field.onChange(accessoryText);
-                        }}
-                        disabled={accessory.name !== "Nessun accessorio" && selectedAccessories.includes("Nessun accessorio")}
-                        data-testid={`checkbox-accessory-${accessory.id}`}
-                      />
-                      <label 
-                        htmlFor={`accessory-${accessory.id}`}
-                        className={`text-sm cursor-pointer flex-1 ${
-                          accessory.name !== "Nessun accessorio" && selectedAccessories.includes("Nessun accessorio") 
-                            ? "text-muted-foreground" 
-                            : ""
-                        }`}
-                      >
-                        {accessory.name}
-                        {accessory.description && (
-                          <span className="text-muted-foreground text-xs ml-1">
-                            - {accessory.description}
-                          </span>
-                        )}
-                      </label>
-                    </div>
-                  ))}
+                  {accessoryTypes.map((accessory) => {
+                    const AccessoryIcon = getAccessoryIcon(accessory.name);
+                    return (
+                      <div key={accessory.id} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={`accessory-${accessory.id}`}
+                          checked={selectedAccessories.includes(accessory.name)}
+                          onCheckedChange={(checked) => {
+                            let newAccessories: string[];
+                            
+                            if (accessory.name === "Nessun accessorio") {
+                              newAccessories = checked ? ["Nessun accessorio"] : [];
+                            } else {
+                              newAccessories = checked 
+                                ? [...selectedAccessories.filter(a => a !== "Nessun accessorio"), accessory.name]
+                                : selectedAccessories.filter(a => a !== accessory.name);
+                            }
+                            
+                            setSelectedAccessories(newAccessories);
+                            
+                            if (accessory.name === "Altro") {
+                              setShowOtherAccessory(!!checked);
+                            }
+                            
+                            const accessoryText = newAccessories.filter(a => a !== "Altro").join(", ");
+                            field.onChange(accessoryText);
+                          }}
+                          disabled={accessory.name !== "Nessun accessorio" && selectedAccessories.includes("Nessun accessorio")}
+                          data-testid={`checkbox-accessory-${accessory.id}`}
+                        />
+                        <AccessoryIcon className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                        <label 
+                          htmlFor={`accessory-${accessory.id}`}
+                          className={`text-sm cursor-pointer flex-1 ${
+                            accessory.name !== "Nessun accessorio" && selectedAccessories.includes("Nessun accessorio") 
+                              ? "text-muted-foreground" 
+                              : ""
+                          }`}
+                        >
+                          {accessory.name}
+                          {accessory.description && (
+                            <span className="text-muted-foreground text-xs ml-1">
+                              - {accessory.description}
+                            </span>
+                          )}
+                        </label>
+                      </div>
+                    );
+                  })}
                   <div className="flex items-center space-x-2 border-t pt-2 mt-2">
                     <Checkbox
                       id="accessory-altro"
@@ -1552,6 +1685,7 @@ export function AcceptanceWizardDialog({
                       disabled={selectedAccessories.includes("Nessun accessorio")}
                       data-testid="checkbox-accessory-altro"
                     />
+                    <MoreHorizontal className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                     <label 
                       htmlFor="accessory-altro" 
                       className={`text-sm cursor-pointer font-medium ${
