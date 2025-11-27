@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
@@ -191,6 +191,7 @@ export function AcceptanceWizardDialog({
   const [showNewCustomerForm, setShowNewCustomerForm] = useState(false);
   const [acceptancePhotos, setAcceptancePhotos] = useState<Array<{ file: File; preview: string }>>([]);
   const [isUploadingPhotos, setIsUploadingPhotos] = useState(false);
+  const dialogContentRef = useRef<HTMLDivElement>(null);
   const [newCustomerData, setNewCustomerData] = useState({
     customerType: "private" as "private" | "company",
     fullName: "",
@@ -354,6 +355,12 @@ export function AcceptanceWizardDialog({
       },
     },
   });
+
+  useEffect(() => {
+    if (dialogContentRef.current) {
+      dialogContentRef.current.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }, [step]);
 
   const createOrderMutation = useMutation({
     mutationFn: async (data: AcceptanceWizardData) => {
@@ -1977,7 +1984,7 @@ export function AcceptanceWizardDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent ref={dialogContentRef} className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Smartphone className="w-5 h-5" />
