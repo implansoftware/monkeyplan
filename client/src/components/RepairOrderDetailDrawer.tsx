@@ -323,54 +323,58 @@ export function RepairOrderDetailDrawer({
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  {/* Visual Progress Steps */}
-                  <div className="flex items-center justify-between text-xs gap-1 overflow-x-auto pb-2">
+                  {/* Visual Progress Steps - Grid Layout for better visibility */}
+                  <div className="grid grid-cols-5 gap-2 text-xs">
                     {[
-                      { key: 'ingressato', label: 'Ingresso', icon: Package },
-                      { key: 'in_diagnosi', label: 'Diagnosi', icon: Stethoscope },
-                      { key: 'preventivo_inviato', label: 'Preventivo', icon: Receipt },
-                      { key: 'preventivo_accettato', label: 'Accettato', icon: CheckCircle2 },
-                      { key: 'attesa_ricambi', label: 'Ricambi', icon: Package },
-                      { key: 'in_riparazione', label: 'Riparazione', icon: Wrench },
-                      { key: 'in_test', label: 'Collaudo', icon: ClipboardCheck },
-                      { key: 'pronto_ritiro', label: 'Pronto', icon: CheckCircle },
-                      { key: 'consegnato', label: 'Consegnato', icon: PackageCheck },
-                    ].map((step, index, arr) => {
+                      { key: 'ingressato', label: 'Ingresso', icon: Package, num: 1 },
+                      { key: 'in_diagnosi', label: 'Diagnosi', icon: Stethoscope, num: 2 },
+                      { key: 'preventivo_inviato', label: 'Preventivo', icon: Receipt, num: 3 },
+                      { key: 'preventivo_accettato', label: 'Accettato', icon: CheckCircle2, num: 4 },
+                      { key: 'attesa_ricambi', label: 'Ricambi', icon: Package, num: 5 },
+                      { key: 'in_riparazione', label: 'Riparazione', icon: Wrench, num: 6 },
+                      { key: 'in_test', label: 'Collaudo', icon: ClipboardCheck, num: 7 },
+                      { key: 'pronto_ritiro', label: 'Pronto', icon: CheckCircle, num: 8 },
+                      { key: 'consegnato', label: 'Consegnato', icon: PackageCheck, num: 9 },
+                    ].map((step) => {
                       const statusOrder = ['ingressato', 'in_diagnosi', 'preventivo_inviato', 'preventivo_accettato', 'attesa_ricambi', 'in_riparazione', 'in_test', 'pronto_ritiro', 'consegnato'];
                       const currentIndex = statusOrder.indexOf(repair.status);
                       const stepIndex = statusOrder.indexOf(step.key);
                       const isCompleted = stepIndex < currentIndex;
                       const isCurrent = step.key === repair.status;
-                      const isPending = stepIndex > currentIndex;
                       const StepIcon = step.icon;
                       
                       return (
-                        <div key={step.key} className="flex items-center">
-                          <div className={`flex flex-col items-center min-w-[60px] ${isCurrent ? 'scale-110' : ''}`}>
-                            <div className={`w-8 h-8 rounded-full flex items-center justify-center mb-1 transition-all ${
-                              isCompleted ? 'bg-green-500 text-white' :
-                              isCurrent ? 'bg-primary text-primary-foreground ring-2 ring-primary ring-offset-2' :
-                              'bg-muted text-muted-foreground'
-                            }`}>
-                              {isCompleted ? (
-                                <CheckCircle2 className="h-4 w-4" />
-                              ) : (
-                                <StepIcon className="h-4 w-4" />
-                              )}
-                            </div>
-                            <span className={`text-center leading-tight ${
-                              isCurrent ? 'font-bold text-primary' :
-                              isCompleted ? 'text-green-600 dark:text-green-400' :
-                              'text-muted-foreground'
-                            }`}>
-                              {step.label}
-                            </span>
+                        <div 
+                          key={step.key} 
+                          className={`flex flex-col items-center p-2 rounded-lg transition-all ${
+                            isCurrent ? 'bg-primary/20 ring-2 ring-primary scale-105' :
+                            isCompleted ? 'bg-green-500/10' :
+                            'bg-muted/30'
+                          }`}
+                        >
+                          <div className={`w-7 h-7 rounded-full flex items-center justify-center mb-1 ${
+                            isCompleted ? 'bg-green-500 text-white' :
+                            isCurrent ? 'bg-primary text-primary-foreground' :
+                            'bg-muted text-muted-foreground'
+                          }`}>
+                            {isCompleted ? (
+                              <CheckCircle2 className="h-4 w-4" />
+                            ) : (
+                              <span className="text-xs font-bold">{step.num}</span>
+                            )}
                           </div>
-                          {index < arr.length - 1 && (
-                            <ArrowRight className={`h-4 w-4 mx-1 flex-shrink-0 ${
-                              stepIndex < currentIndex ? 'text-green-500' : 'text-muted-foreground/30'
-                            }`} />
-                          )}
+                          <StepIcon className={`h-4 w-4 mb-0.5 ${
+                            isCurrent ? 'text-primary' :
+                            isCompleted ? 'text-green-500' :
+                            'text-muted-foreground'
+                          }`} />
+                          <span className={`text-center leading-tight text-[10px] ${
+                            isCurrent ? 'font-bold text-primary' :
+                            isCompleted ? 'text-green-600 dark:text-green-400 font-medium' :
+                            'text-muted-foreground'
+                          }`}>
+                            {step.label}
+                          </span>
                         </div>
                       );
                     })}
