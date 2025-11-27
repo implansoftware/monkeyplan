@@ -249,7 +249,7 @@ export function AcceptanceWizardDialog({
         declaredDefects: "",
         aestheticCondition: "",
         aestheticNotes: "",
-        aestheticPhotosMandatory: false,
+        aestheticPhotosMandatory: true,
         accessories: "",
         lockCode: "",
         lockPattern: "",
@@ -1248,25 +1248,6 @@ export function AcceptanceWizardDialog({
           )}
         />
       )}
-
-      <FormField
-        control={form.control}
-        name="notes"
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel>Note aggiuntive</FormLabel>
-            <FormControl>
-              <Textarea 
-                {...field} 
-                placeholder="Note interne"
-                rows={2}
-                data-testid="textarea-notes"
-              />
-            </FormControl>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
     </div>
   );
 
@@ -1403,89 +1384,96 @@ export function AcceptanceWizardDialog({
         />
       )}
 
-      <FormField
-        control={form.control}
-        name="acceptance.aestheticPhotosMandatory"
-        render={({ field }) => (
-          <FormItem className="flex items-center space-x-2 space-y-0">
-            <FormControl>
-              <Checkbox
-                checked={field.value}
-                onCheckedChange={field.onChange}
-                data-testid="checkbox-photos-mandatory"
-              />
-            </FormControl>
-            <FormLabel className="font-normal">Foto obbligatorie per documentazione</FormLabel>
-          </FormItem>
-        )}
-      />
-
-      {/* Photo Upload Section */}
+      {/* Photo Upload Section - Inverted logic: photos required by default */}
       <div className="space-y-3">
         <Label className="flex items-center gap-2">
           <Camera className="h-4 w-4" />
           Foto del dispositivo
         </Label>
-        <div className="border rounded-md p-3 space-y-3">
-          <div className="flex items-center gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => document.getElementById('acceptance-photo-input')?.click()}
-              data-testid="button-add-photo"
-            >
-              <Camera className="h-4 w-4 mr-2" />
-              Aggiungi foto
-            </Button>
-            <input
-              id="acceptance-photo-input"
-              type="file"
-              accept="image/*"
-              multiple
-              onChange={handlePhotoSelect}
-              className="hidden"
-              data-testid="input-photo-file"
-            />
-            <span className="text-xs text-muted-foreground">
-              {acceptancePhotos.length > 0 
-                ? `${acceptancePhotos.length} foto selezionate`
-                : "Nessuna foto selezionata"}
-            </span>
-          </div>
-          
-          {acceptancePhotos.length > 0 && (
-            <div className="grid grid-cols-4 gap-2">
-              {acceptancePhotos.map((photo, index) => (
-                <div 
-                  key={index} 
-                  className="relative group aspect-square rounded-md overflow-hidden border"
-                  data-testid={`photo-preview-${index}`}
-                >
-                  <img 
-                    src={photo.preview} 
-                    alt={`Foto ${index + 1}`}
-                    className="w-full h-full object-cover"
-                  />
-                  <Button
-                    type="button"
-                    variant="destructive"
-                    size="icon"
-                    className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
-                    onClick={() => handleRemovePhoto(index)}
-                    data-testid={`button-remove-photo-${index}`}
-                  >
-                    <X className="h-3 w-3" />
-                  </Button>
-                </div>
-              ))}
-            </div>
+        
+        {/* Skip photos checkbox - inverted logic */}
+        <FormField
+          control={form.control}
+          name="acceptance.aestheticPhotosMandatory"
+          render={({ field }) => (
+            <FormItem className="flex items-center space-x-2 space-y-0 bg-amber-500/10 border border-amber-500/20 rounded-lg p-3">
+              <FormControl>
+                <Checkbox
+                  checked={!field.value}
+                  onCheckedChange={(checked) => field.onChange(!checked)}
+                  data-testid="checkbox-skip-photos"
+                />
+              </FormControl>
+              <FormLabel className="font-normal text-sm">
+                Non voglio caricare foto per questo dispositivo
+              </FormLabel>
+            </FormItem>
           )}
-          
-          <p className="text-xs text-muted-foreground">
-            Scatta o carica foto del dispositivo per documentare le condizioni al momento dell'ingresso
-          </p>
-        </div>
+        />
+
+        {/* Show photo upload only if photos are required (aestheticPhotosMandatory = true) */}
+        {form.watch("acceptance.aestheticPhotosMandatory") && (
+          <div className="border rounded-md p-3 space-y-3">
+            <div className="flex items-center gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => document.getElementById('acceptance-photo-input')?.click()}
+                data-testid="button-add-photo"
+              >
+                <Camera className="h-4 w-4 mr-2" />
+                Aggiungi foto
+              </Button>
+              <input
+                id="acceptance-photo-input"
+                type="file"
+                accept="image/*"
+                multiple
+                onChange={handlePhotoSelect}
+                className="hidden"
+                data-testid="input-photo-file"
+              />
+              <span className="text-xs text-muted-foreground">
+                {acceptancePhotos.length > 0 
+                  ? `${acceptancePhotos.length} foto selezionate`
+                  : "Nessuna foto selezionata"}
+              </span>
+            </div>
+            
+            {acceptancePhotos.length > 0 && (
+              <div className="grid grid-cols-4 gap-2">
+                {acceptancePhotos.map((photo, index) => (
+                  <div 
+                    key={index} 
+                    className="relative group aspect-square rounded-md overflow-hidden border"
+                    data-testid={`photo-preview-${index}`}
+                  >
+                    <img 
+                      src={photo.preview} 
+                      alt={`Foto ${index + 1}`}
+                      className="w-full h-full object-cover"
+                    />
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      size="icon"
+                      className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                      onClick={() => handleRemovePhoto(index)}
+                      data-testid={`button-remove-photo-${index}`}
+                    >
+                      <X className="h-3 w-3" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
+            
+            <p className="text-xs text-muted-foreground">
+              Scatta o carica foto del dispositivo per documentare le condizioni al momento dell'ingresso
+            </p>
+          </div>
+        )}
       </div>
 
       <Separator />
@@ -1796,10 +1784,10 @@ export function AcceptanceWizardDialog({
             )}
             
             <div className="flex flex-col gap-1 mt-2">
-              {formData.acceptance.aestheticPhotosMandatory && (
+              {!formData.acceptance.aestheticPhotosMandatory && (
                 <div className="flex items-center gap-2 text-xs">
                   <AlertCircle className="w-4 h-4 text-orange-500" />
-                  <span>Foto obbligatorie richieste</span>
+                  <span>Foto non caricate (scelta utente)</span>
                 </div>
               )}
               {formData.acceptance.accessoriesRemoved && (
