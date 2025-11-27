@@ -1078,8 +1078,8 @@ export function AcceptanceWizardDialog({
                   return (
                     <SelectItem key={type.id} value={type.name}>
                       <span className="flex items-center gap-2">
-                        <TypeIcon className="h-4 w-4" />
-                        {type.name}
+                        <TypeIcon className="h-5 w-5 text-primary" />
+                        <span className="font-medium">{type.name}</span>
                       </span>
                     </SelectItem>
                   );
@@ -1309,7 +1309,7 @@ export function AcceptanceWizardDialog({
                         }}
                         data-testid={`checkbox-issue-${issue.id}`}
                       />
-                      <IssueIcon className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                      <IssueIcon className="h-6 w-6 text-primary flex-shrink-0" />
                       <Label 
                         htmlFor={`issue-${issue.id}`} 
                         className="text-sm font-normal cursor-pointer leading-tight"
@@ -1372,26 +1372,26 @@ export function AcceptanceWizardDialog({
               <SelectContent>
                 <SelectItem value="ottimo">
                   <span className="flex items-center gap-2">
-                    <CheckCircle2 className="h-4 w-4 text-green-500" />
-                    Ottimo - Nessun difetto visibile
+                    <CheckCircle2 className="h-5 w-5 text-green-500" />
+                    <span className="font-medium">Ottimo - Nessun difetto visibile</span>
                   </span>
                 </SelectItem>
                 <SelectItem value="buono">
                   <span className="flex items-center gap-2">
-                    <CircleDot className="h-4 w-4 text-blue-500" />
-                    Buono - Minimi segni di usura
+                    <CircleDot className="h-5 w-5 text-blue-500" />
+                    <span className="font-medium">Buono - Minimi segni di usura</span>
                   </span>
                 </SelectItem>
                 <SelectItem value="discreto">
                   <span className="flex items-center gap-2">
-                    <AlertTriangle className="h-4 w-4 text-amber-500" />
-                    Discreto - Segni di usura evidenti
+                    <AlertTriangle className="h-5 w-5 text-amber-500" />
+                    <span className="font-medium">Discreto - Segni di usura evidenti</span>
                   </span>
                 </SelectItem>
                 <SelectItem value="scadente">
                   <span className="flex items-center gap-2">
-                    <AlertCircle className="h-4 w-4 text-red-500" />
-                    Scadente - Danni estetici significativi
+                    <AlertCircle className="h-5 w-5 text-red-500" />
+                    <span className="font-medium">Scadente - Danni estetici significativi</span>
                   </span>
                 </SelectItem>
               </SelectContent>
@@ -1434,7 +1434,7 @@ export function AcceptanceWizardDialog({
                           }}
                           data-testid={`checkbox-defect-${defect.id}`}
                         />
-                        <DefectIcon className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                        <DefectIcon className="h-6 w-6 text-primary flex-shrink-0" />
                         <label 
                           htmlFor={`defect-${defect.id}`}
                           className="text-sm cursor-pointer flex-1"
@@ -1466,7 +1466,7 @@ export function AcceptanceWizardDialog({
                       }}
                       data-testid="checkbox-defect-altro"
                     />
-                    <MoreHorizontal className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                    <MoreHorizontal className="h-6 w-6 text-primary flex-shrink-0" />
                     <label htmlFor="defect-altro" className="text-sm cursor-pointer font-medium">
                       Altro difetto non in elenco
                     </label>
@@ -1648,7 +1648,7 @@ export function AcceptanceWizardDialog({
                           disabled={accessory.name !== "Nessun accessorio" && selectedAccessories.includes("Nessun accessorio")}
                           data-testid={`checkbox-accessory-${accessory.id}`}
                         />
-                        <AccessoryIcon className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                        <AccessoryIcon className="h-6 w-6 text-primary flex-shrink-0" />
                         <label 
                           htmlFor={`accessory-${accessory.id}`}
                           className={`text-sm cursor-pointer flex-1 ${
@@ -1685,7 +1685,7 @@ export function AcceptanceWizardDialog({
                       disabled={selectedAccessories.includes("Nessun accessorio")}
                       data-testid="checkbox-accessory-altro"
                     />
-                    <MoreHorizontal className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                    <MoreHorizontal className="h-6 w-6 text-primary flex-shrink-0" />
                     <label 
                       htmlFor="accessory-altro" 
                       className={`text-sm cursor-pointer font-medium ${
