@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -120,16 +120,30 @@ export function AttachmentUploader({
   const [attachmentsWithPreviews, setAttachmentsWithPreviews] = useState<AttachmentWithPreview[]>([]);
   const [retryCount, setRetryCount] = useState<Map<string, number>>(new Map());
   const [loadedAttachmentIds, setLoadedAttachmentIds] = useState<string>("");
+  
+  // Use ref to access attachments without adding to dependency array
+  const attachmentsRef = useRef<Attachment[]>([]);
+  attachmentsRef.current = attachments;
 
-  // Load image previews - use stable dependency to prevent infinite loops
+  // Load image previews - use stable string dependency to prevent infinite loops
   const attachmentIds = attachments.map(a => a.id).join(",");
   
   useEffect(() => {
+    // Skip if we already loaded these attachments
     if (attachmentIds === loadedAttachmentIds) return;
+    // Skip if no attachments
+    if (!attachmentIds) {
+      setAttachmentsWithPreviews([]);
+      setLoadedAttachmentIds("");
+      return;
+    }
+    
+    // Use ref to get current attachments without dependency issues
+    const currentAttachments = attachmentsRef.current;
     
     const loadPreviews = async () => {
       const withPreviews = await Promise.all(
-        attachments.map(async (attachment) => {
+        currentAttachments.map(async (attachment) => {
           if (isImage(attachment.fileType)) {
             try {
               const response = await fetch(`/api/repair-orders/attachments/${attachment.id}/download?preview=true`, {
@@ -150,13 +164,8 @@ export function AttachmentUploader({
       setLoadedAttachmentIds(attachmentIds);
     };
 
-    if (attachments.length > 0) {
-      loadPreviews();
-    } else {
-      setAttachmentsWithPreviews([]);
-      setLoadedAttachmentIds("");
-    }
-  }, [attachmentIds, attachments, loadedAttachmentIds]);
+    loadPreviews();
+  }, [attachmentIds]); // Only depend on the string ID, not the attachments array
 
   // Retry loading a preview for a specific attachment (max 3 retries)
   const retryPreview = async (attachmentId: string) => {
