@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -91,8 +91,6 @@ export function DiagnosisFormDialog({
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [uploadedPhotos, setUploadedPhotos] = useState<string[]>([]);
-  const [showOtherFinding, setShowOtherFinding] = useState(false);
-  const [showOtherComponent, setShowOtherComponent] = useState(false);
 
   const deviceTypeId = repairOrder?.deviceTypeId;
 
@@ -173,30 +171,14 @@ export function DiagnosisFormDialog({
   const selectedFindingIds = form.watch("selectedFindingIds");
   const selectedComponentIds = form.watch("selectedComponentIds");
 
-  useEffect(() => {
-    const hasOther = selectedFindingIds.some(id => id.includes("-other"));
-    setShowOtherFinding(hasOther);
-    if (!hasOther) {
-      form.setValue("otherFindingDescription", "");
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedFindingIds]);
+  // Calculate showOther flags directly from watched values (no useEffect needed)
+  const showOtherFinding = selectedFindingIds.some(id => id.includes("-other"));
+  const showOtherComponent = selectedComponentIds.some(id => id.includes("-other"));
 
-  useEffect(() => {
-    const hasOther = selectedComponentIds.some(id => id.includes("-other"));
-    setShowOtherComponent(hasOther);
-    if (!hasOther) {
-      form.setValue("otherComponentDescription", "");
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedComponentIds]);
-
-  const resetFormState = () => {
+  const resetFormState = useCallback(() => {
     form.reset();
     setUploadedPhotos([]);
-    setShowOtherFinding(false);
-    setShowOtherComponent(false);
-  };
+  }, [form]);
 
   const createDiagnosisMutation = useMutation({
     mutationFn: async (data: DiagnosisFormData) => {
