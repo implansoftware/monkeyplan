@@ -276,7 +276,8 @@ export function DiagnosisFormDialog({
     if (!hasOther) {
       form.setValue("otherFindingDescription", "");
     }
-  }, [selectedFindingIds, form]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedFindingIds]);
 
   useEffect(() => {
     const hasOther = selectedComponentIds.some(id => id.includes("-other"));
@@ -284,7 +285,8 @@ export function DiagnosisFormDialog({
     if (!hasOther) {
       form.setValue("otherComponentDescription", "");
     }
-  }, [selectedComponentIds, form]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedComponentIds]);
 
   const resetFormState = () => {
     form.reset();
