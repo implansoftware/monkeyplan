@@ -31,7 +31,7 @@ import { useToast } from "@/hooks/use-toast";
 import {
   Wrench, Euro, FileText, Paperclip, Calendar, Package, ClipboardList,
   ClipboardCheck, PackageCheck, Play, CheckCircle, Stethoscope, Receipt,
-  Download, User
+  Download, User, ArrowRight, Circle, CheckCircle2, AlertCircle
 } from "lucide-react";
 import { format } from "date-fns";
 import { useAuth } from "@/hooks/use-auth";
@@ -313,201 +313,359 @@ export function RepairOrderDetailDrawer({
               </div>
             </div>
 
-            {/* Workflow Actions - In alto */}
+            {/* Workflow Progress - Visual Timeline */}
             {canManageWorkflow && (
-              <>
-                <Card>
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-base flex items-center gap-2">
-                      <Wrench className="h-4 w-4" />
-                      Azioni Workflow
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="grid grid-cols-2 gap-2">
-                    {/* Download Intake Document - always available */}
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => window.open(`/api/repair-orders/${repair.id}/intake-document`, '_blank')}
-                      className="gap-1"
-                      data-testid="button-intake-document"
-                    >
-                      <Download className="h-4 w-4" />
-                      Doc. Accettazione
-                    </Button>
+              <Card className="border-2">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <Wrench className="h-4 w-4" />
+                    Flusso di Lavoro
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {/* Visual Progress Steps */}
+                  <div className="flex items-center justify-between text-xs gap-1 overflow-x-auto pb-2">
+                    {[
+                      { key: 'ingressato', label: 'Ingresso', icon: Package },
+                      { key: 'in_diagnosi', label: 'Diagnosi', icon: Stethoscope },
+                      { key: 'preventivo_inviato', label: 'Preventivo', icon: Receipt },
+                      { key: 'preventivo_accettato', label: 'Accettato', icon: CheckCircle2 },
+                      { key: 'attesa_ricambi', label: 'Ricambi', icon: Package },
+                      { key: 'in_riparazione', label: 'Riparazione', icon: Wrench },
+                      { key: 'in_test', label: 'Collaudo', icon: ClipboardCheck },
+                      { key: 'pronto_ritiro', label: 'Pronto', icon: CheckCircle },
+                      { key: 'consegnato', label: 'Consegnato', icon: PackageCheck },
+                    ].map((step, index, arr) => {
+                      const statusOrder = ['ingressato', 'in_diagnosi', 'preventivo_inviato', 'preventivo_accettato', 'attesa_ricambi', 'in_riparazione', 'in_test', 'pronto_ritiro', 'consegnato'];
+                      const currentIndex = statusOrder.indexOf(repair.status);
+                      const stepIndex = statusOrder.indexOf(step.key);
+                      const isCompleted = stepIndex < currentIndex;
+                      const isCurrent = step.key === repair.status;
+                      const isPending = stepIndex > currentIndex;
+                      const StepIcon = step.icon;
+                      
+                      return (
+                        <div key={step.key} className="flex items-center">
+                          <div className={`flex flex-col items-center min-w-[60px] ${isCurrent ? 'scale-110' : ''}`}>
+                            <div className={`w-8 h-8 rounded-full flex items-center justify-center mb-1 transition-all ${
+                              isCompleted ? 'bg-green-500 text-white' :
+                              isCurrent ? 'bg-primary text-primary-foreground ring-2 ring-primary ring-offset-2' :
+                              'bg-muted text-muted-foreground'
+                            }`}>
+                              {isCompleted ? (
+                                <CheckCircle2 className="h-4 w-4" />
+                              ) : (
+                                <StepIcon className="h-4 w-4" />
+                              )}
+                            </div>
+                            <span className={`text-center leading-tight ${
+                              isCurrent ? 'font-bold text-primary' :
+                              isCompleted ? 'text-green-600 dark:text-green-400' :
+                              'text-muted-foreground'
+                            }`}>
+                              {step.label}
+                            </span>
+                          </div>
+                          {index < arr.length - 1 && (
+                            <ArrowRight className={`h-4 w-4 mx-1 flex-shrink-0 ${
+                              stepIndex < currentIndex ? 'text-green-500' : 'text-muted-foreground/30'
+                            }`} />
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
 
-                    {/* Download Diagnosis Document - available after diagnosis */}
-                    {!['ingressato'].includes(repair.status) && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => window.open(`/api/repair-orders/${repair.id}/diagnosis-document`, '_blank')}
-                        className="gap-1"
-                        data-testid="button-diagnosis-document"
-                      >
-                        <Download className="h-4 w-4" />
-                        Doc. Diagnosi
-                      </Button>
+                  <Separator />
+
+                  {/* Next Action - The Main CTA */}
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2">
+                      <AlertCircle className="h-4 w-4 text-primary" />
+                      <span className="font-semibold text-sm">PROSSIMO PASSO</span>
+                    </div>
+                    
+                    {/* Status: ingressato - Need to do diagnosis */}
+                    {repair.status === 'ingressato' && (
+                      <div className="bg-primary/10 border border-primary/20 rounded-lg p-4 space-y-3">
+                        <p className="text-sm">
+                          Il dispositivo è stato ricevuto. <strong>Esegui la diagnosi</strong> per identificare i problemi.
+                        </p>
+                        <Button
+                          onClick={() => setDiagnosisDialogOpen(true)}
+                          className="w-full gap-2"
+                          size="lg"
+                          data-testid="button-diagnosis"
+                        >
+                          <Stethoscope className="h-5 w-5" />
+                          Inizia Diagnosi
+                        </Button>
+                      </div>
                     )}
 
-                    {/* Download Quote Document - available after quote is created */}
-                    {!['ingressato', 'in_diagnosi'].includes(repair.status) && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => window.open(`/api/repair-orders/${repair.id}/quote-document`, '_blank')}
-                        className="gap-1"
-                        data-testid="button-quote-document"
-                      >
-                        <Download className="h-4 w-4" />
-                        Doc. Preventivo
-                      </Button>
+                    {/* Status: in_diagnosi - Need to complete diagnosis or create quote */}
+                    {repair.status === 'in_diagnosi' && (
+                      <div className="bg-primary/10 border border-primary/20 rounded-lg p-4 space-y-3">
+                        <p className="text-sm">
+                          Diagnosi in corso. <strong>Completa la diagnosi</strong> e poi <strong>crea il preventivo</strong> per il cliente.
+                        </p>
+                        <div className="grid grid-cols-2 gap-2">
+                          <Button
+                            variant="outline"
+                            onClick={() => setDiagnosisDialogOpen(true)}
+                            className="gap-2"
+                            data-testid="button-diagnosis-edit"
+                          >
+                            <Stethoscope className="h-4 w-4" />
+                            Modifica Diagnosi
+                          </Button>
+                          <Button
+                            onClick={() => setQuoteDialogOpen(true)}
+                            className="gap-2"
+                            data-testid="button-quote"
+                          >
+                            <Receipt className="h-4 w-4" />
+                            Crea Preventivo
+                          </Button>
+                        </div>
+                      </div>
                     )}
 
-                    {/* Download Delivery Document - available when delivered */}
-                    {repair.status === 'consegnato' && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => window.open(`/api/repair-orders/${repair.id}/delivery-document`, '_blank')}
-                        className="gap-1"
-                        data-testid="button-delivery-document"
-                      >
-                        <Download className="h-4 w-4" />
-                        Doc. Consegna
-                      </Button>
+                    {/* Status: preventivo_inviato - Waiting for customer response */}
+                    {repair.status === 'preventivo_inviato' && (
+                      <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-4 space-y-3">
+                        <p className="text-sm">
+                          Preventivo inviato al cliente. <strong>In attesa di risposta</strong>. Puoi modificare il preventivo se necessario.
+                        </p>
+                        <Button
+                          variant="outline"
+                          onClick={() => setQuoteDialogOpen(true)}
+                          className="w-full gap-2"
+                          data-testid="button-quote-edit"
+                        >
+                          <Receipt className="h-4 w-4" />
+                          Modifica Preventivo
+                        </Button>
+                      </div>
                     )}
 
-                    {/* Diagnosis - available when order is received */}
-                    {['ingressato', 'in_diagnosi'].includes(repair.status) && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setDiagnosisDialogOpen(true)}
-                        className="gap-1"
-                        data-testid="button-diagnosis"
-                      >
-                        <Stethoscope className="h-4 w-4" />
-                        Diagnosi
-                      </Button>
+                    {/* Status: preventivo_accettato - Can order parts or start repair */}
+                    {repair.status === 'preventivo_accettato' && (
+                      <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-4 space-y-3">
+                        <p className="text-sm">
+                          Preventivo accettato dal cliente. <strong>Ordina i ricambi</strong> se necessario, oppure <strong>avvia la riparazione</strong>.
+                        </p>
+                        <div className="grid grid-cols-2 gap-2">
+                          <Button
+                            variant="outline"
+                            onClick={() => setPartsDialogOpen(true)}
+                            className="gap-2"
+                            data-testid="button-parts-order"
+                          >
+                            <Package className="h-4 w-4" />
+                            Ordina Ricambi
+                          </Button>
+                          <Button
+                            onClick={() => startRepairMutation.mutate()}
+                            disabled={startRepairMutation.isPending}
+                            className="gap-2"
+                            data-testid="button-start-repair"
+                          >
+                            <Play className="h-4 w-4" />
+                            Avvia Riparazione
+                          </Button>
+                        </div>
+                      </div>
                     )}
 
-                    {/* Quote - available after diagnosis */}
-                    {['in_diagnosi', 'preventivo_inviato'].includes(repair.status) && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setQuoteDialogOpen(true)}
-                        className="gap-1"
-                        data-testid="button-quote"
-                      >
-                        <Receipt className="h-4 w-4" />
-                        Preventivo
-                      </Button>
+                    {/* Status: attesa_ricambi - Waiting for parts */}
+                    {repair.status === 'attesa_ricambi' && (
+                      <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-4 space-y-3">
+                        <p className="text-sm">
+                          In attesa dei ricambi. Quando arrivano, <strong>registra la ricezione</strong> e poi <strong>avvia la riparazione</strong>.
+                        </p>
+                        <div className="grid grid-cols-2 gap-2">
+                          <Button
+                            variant="outline"
+                            onClick={() => setPartsDialogOpen(true)}
+                            className="gap-2"
+                            data-testid="button-parts-manage"
+                          >
+                            <Package className="h-4 w-4" />
+                            Gestisci Ricambi
+                          </Button>
+                          <Button
+                            onClick={() => startRepairMutation.mutate()}
+                            disabled={startRepairMutation.isPending}
+                            className="gap-2"
+                            data-testid="button-start-repair"
+                          >
+                            <Play className="h-4 w-4" />
+                            Avvia Riparazione
+                          </Button>
+                        </div>
+                      </div>
                     )}
 
-                    {/* Parts Order - available when quote is accepted or waiting for parts */}
-                    {['preventivo_accettato', 'attesa_ricambi'].includes(repair.status) && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setPartsDialogOpen(true)}
-                        className="gap-1"
-                        data-testid="button-parts-order"
-                      >
-                        <Package className="h-4 w-4" />
-                        Ordina Ricambi
-                      </Button>
+                    {/* Status: in_riparazione - Repair in progress */}
+                    {repair.status === 'in_riparazione' && (
+                      <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-4 space-y-3">
+                        <p className="text-sm">
+                          Riparazione in corso. <strong>Registra le attività</strong> svolte. Quando finisci, <strong>esegui il collaudo</strong>.
+                        </p>
+                        <div className="grid grid-cols-2 gap-2">
+                          <Button
+                            variant="outline"
+                            onClick={() => setLogsDialogOpen(true)}
+                            className="gap-2"
+                            data-testid="button-repair-logs"
+                          >
+                            <ClipboardList className="h-4 w-4" />
+                            Log Attività
+                          </Button>
+                          <Button
+                            onClick={() => setTestDialogOpen(true)}
+                            className="gap-2"
+                            data-testid="button-test-checklist"
+                          >
+                            <ClipboardCheck className="h-4 w-4" />
+                            Vai al Collaudo
+                          </Button>
+                        </div>
+                      </div>
                     )}
 
-                    {/* Start Repair - available when quote is accepted or parts received */}
-                    {['preventivo_accettato', 'attesa_ricambi'].includes(repair.status) && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => startRepairMutation.mutate()}
-                        disabled={startRepairMutation.isPending}
-                        className="gap-1"
-                        data-testid="button-start-repair"
-                      >
-                        <Play className="h-4 w-4" />
-                        Avvia Riparazione
-                      </Button>
-                    )}
-
-                    {/* Repair Logs - available during repair */}
-                    {['in_riparazione', 'in_test'].includes(repair.status) && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setLogsDialogOpen(true)}
-                        className="gap-1"
-                        data-testid="button-repair-logs"
-                      >
-                        <ClipboardList className="h-4 w-4" />
-                        Log Attività
-                      </Button>
-                    )}
-
-                    {/* Test Checklist - available during repair or test */}
-                    {['in_riparazione', 'in_test'].includes(repair.status) && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setTestDialogOpen(true)}
-                        className="gap-1"
-                        data-testid="button-test-checklist"
-                      >
-                        <ClipboardCheck className="h-4 w-4" />
-                        Collaudo
-                      </Button>
-                    )}
-
-                    {/* Ready for Pickup - available after tests */}
+                    {/* Status: in_test - Testing in progress */}
                     {repair.status === 'in_test' && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => readyForPickupMutation.mutate()}
-                        disabled={readyForPickupMutation.isPending}
-                        className="gap-1"
-                        data-testid="button-ready-pickup"
-                      >
-                        <CheckCircle className="h-4 w-4" />
-                        Pronto Ritiro
-                      </Button>
+                      <div className="bg-purple-500/10 border border-purple-500/20 rounded-lg p-4 space-y-3">
+                        <p className="text-sm">
+                          Collaudo in corso. <strong>Completa tutti i test</strong>. Quando tutto funziona, <strong>segna come pronto</strong>.
+                        </p>
+                        <div className="grid grid-cols-2 gap-2">
+                          <Button
+                            variant="outline"
+                            onClick={() => setTestDialogOpen(true)}
+                            className="gap-2"
+                            data-testid="button-test-checklist"
+                          >
+                            <ClipboardCheck className="h-4 w-4" />
+                            Checklist Test
+                          </Button>
+                          <Button
+                            onClick={() => readyForPickupMutation.mutate()}
+                            disabled={readyForPickupMutation.isPending}
+                            className="gap-2"
+                            data-testid="button-ready-pickup"
+                          >
+                            <CheckCircle className="h-4 w-4" />
+                            Pronto per Ritiro
+                          </Button>
+                        </div>
+                      </div>
                     )}
 
-                    {/* Complete Delivery - available when ready for pickup */}
+                    {/* Status: pronto_ritiro - Ready for delivery */}
                     {repair.status === 'pronto_ritiro' && (
-                      <Button
-                        variant="default"
-                        size="sm"
-                        onClick={() => setDeliveryDialogOpen(true)}
-                        className="gap-1"
-                        data-testid="button-delivery"
-                      >
-                        <PackageCheck className="h-4 w-4" />
-                        Consegna
-                      </Button>
+                      <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-4 space-y-3">
+                        <p className="text-sm">
+                          Dispositivo pronto per il ritiro. Quando il cliente arriva, <strong>completa la consegna</strong>.
+                        </p>
+                        <Button
+                          onClick={() => setDeliveryDialogOpen(true)}
+                          className="w-full gap-2"
+                          size="lg"
+                          data-testid="button-delivery"
+                        >
+                          <PackageCheck className="h-5 w-5" />
+                          Completa Consegna
+                        </Button>
+                      </div>
                     )}
 
-                    {/* View Delivery - available when delivered */}
+                    {/* Status: consegnato - Completed */}
                     {repair.status === 'consegnato' && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setDeliveryDialogOpen(true)}
-                        className="gap-1"
-                        data-testid="button-view-delivery"
-                      >
-                        <PackageCheck className="h-4 w-4" />
-                        Dettagli Consegna
-                      </Button>
+                      <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-4 space-y-3">
+                        <p className="text-sm text-green-600 dark:text-green-400 font-medium">
+                          Riparazione completata e consegnata al cliente.
+                        </p>
+                        <Button
+                          variant="outline"
+                          onClick={() => setDeliveryDialogOpen(true)}
+                          className="w-full gap-2"
+                          data-testid="button-view-delivery"
+                        >
+                          <PackageCheck className="h-4 w-4" />
+                          Visualizza Dettagli Consegna
+                        </Button>
+                      </div>
                     )}
-                  </CardContent>
-                </Card>
-              </>
+
+                    {/* Status: annullato - Cancelled */}
+                    {repair.status === 'annullato' && (
+                      <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-4">
+                        <p className="text-sm text-red-600 dark:text-red-400 font-medium">
+                          Ordine annullato.
+                        </p>
+                      </div>
+                    )}
+                  </div>
+
+                  <Separator />
+
+                  {/* Documents Section */}
+                  <div className="space-y-2">
+                    <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Documenti</span>
+                    <div className="flex flex-wrap gap-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => window.open(`/api/repair-orders/${repair.id}/intake-document`, '_blank')}
+                        className="gap-1 text-xs"
+                        data-testid="button-intake-document"
+                      >
+                        <Download className="h-3 w-3" />
+                        Accettazione
+                      </Button>
+                      {!['ingressato'].includes(repair.status) && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => window.open(`/api/repair-orders/${repair.id}/diagnosis-document`, '_blank')}
+                          className="gap-1 text-xs"
+                          data-testid="button-diagnosis-document"
+                        >
+                          <Download className="h-3 w-3" />
+                          Diagnosi
+                        </Button>
+                      )}
+                      {!['ingressato', 'in_diagnosi'].includes(repair.status) && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => window.open(`/api/repair-orders/${repair.id}/quote-document`, '_blank')}
+                          className="gap-1 text-xs"
+                          data-testid="button-quote-document"
+                        >
+                          <Download className="h-3 w-3" />
+                          Preventivo
+                        </Button>
+                      )}
+                      {repair.status === 'consegnato' && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => window.open(`/api/repair-orders/${repair.id}/delivery-document`, '_blank')}
+                          className="gap-1 text-xs"
+                          data-testid="button-delivery-document"
+                        >
+                          <Download className="h-3 w-3" />
+                          Consegna
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
             )}
 
             <Separator />
