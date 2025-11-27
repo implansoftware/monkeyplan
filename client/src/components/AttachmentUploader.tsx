@@ -119,9 +119,14 @@ export function AttachmentUploader({
 
   const [attachmentsWithPreviews, setAttachmentsWithPreviews] = useState<AttachmentWithPreview[]>([]);
   const [retryCount, setRetryCount] = useState<Map<string, number>>(new Map());
+  const [loadedAttachmentIds, setLoadedAttachmentIds] = useState<string>("");
 
-  // Load image previews
+  // Load image previews - use stable dependency to prevent infinite loops
+  const attachmentIds = attachments.map(a => a.id).join(",");
+  
   useEffect(() => {
+    if (attachmentIds === loadedAttachmentIds) return;
+    
     const loadPreviews = async () => {
       const withPreviews = await Promise.all(
         attachments.map(async (attachment) => {
@@ -142,15 +147,16 @@ export function AttachmentUploader({
         })
       );
       setAttachmentsWithPreviews(withPreviews);
-      setRetryCount(new Map()); // Reset retry count on fresh load
+      setLoadedAttachmentIds(attachmentIds);
     };
 
     if (attachments.length > 0) {
       loadPreviews();
     } else {
       setAttachmentsWithPreviews([]);
+      setLoadedAttachmentIds("");
     }
-  }, [attachments]);
+  }, [attachmentIds, attachments, loadedAttachmentIds]);
 
   // Retry loading a preview for a specific attachment (max 3 retries)
   const retryPreview = async (attachmentId: string) => {
