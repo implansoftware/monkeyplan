@@ -34,7 +34,46 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Stethoscope, Camera, AlertCircle } from "lucide-react";
+import { 
+  Stethoscope, 
+  Camera, 
+  AlertCircle,
+  Monitor,
+  Fingerprint,
+  Zap,
+  Battery,
+  BatteryWarning,
+  Plug,
+  Volume2,
+  VolumeX,
+  Mic,
+  Wifi,
+  WifiOff,
+  Bluetooth,
+  Signal,
+  Settings,
+  HardDrive,
+  Cpu,
+  MemoryStick,
+  CircuitBoard,
+  Smartphone,
+  Square,
+  Sun,
+  Power,
+  Usb,
+  Cable,
+  Layers,
+  ScanLine,
+  Radio,
+  Component,
+  Thermometer,
+  Droplets,
+  Shield,
+  Lock,
+  Bug,
+  RefreshCw,
+  Ghost,
+} from "lucide-react";
 import { DiagnosisPhotoUploader } from "@/components/DiagnosisPhotoUploader";
 import type { DiagnosticFinding, DamagedComponentType, EstimatedRepairTime, RepairOrder } from "@shared/schema";
 
@@ -45,6 +84,72 @@ interface DiagnosisFormDialogProps {
   repairOrder?: { deviceTypeId?: string | null };
   onSuccess?: () => void;
 }
+
+const getDiagnosticFindingIcon = (findingName: string) => {
+  const name = findingName.toLowerCase();
+  
+  if (name.includes("display") || name.includes("schermo") || name.includes("lcd") || name.includes("oled")) return Monitor;
+  if (name.includes("touch") || name.includes("digitalizzatore")) return Fingerprint;
+  if (name.includes("linee") || name.includes("artefatti") || name.includes("burn") || name.includes("fantasma")) return Ghost;
+  if (name.includes("batteria gonfia") || name.includes("gonfia")) return BatteryWarning;
+  if (name.includes("batteria") || name.includes("consumo") || name.includes("degradata")) return Battery;
+  if (name.includes("ricarica") || name.includes("carica")) return Plug;
+  if (name.includes("altoparlante") || name.includes("speaker") || name.includes("audio")) return Volume2;
+  if (name.includes("microfono")) return Mic;
+  if (name.includes("wifi") || name.includes("wi-fi")) return Wifi;
+  if (name.includes("bluetooth")) return Bluetooth;
+  if (name.includes("rete") || name.includes("segnale") || name.includes("antenna")) return Signal;
+  if (name.includes("software") || name.includes("sistema")) return Settings;
+  if (name.includes("memoria") || name.includes("storage")) return HardDrive;
+  if (name.includes("processore") || name.includes("cpu") || name.includes("chip")) return Cpu;
+  if (name.includes("ram")) return MemoryStick;
+  if (name.includes("scheda") || name.includes("madre") || name.includes("logic")) return CircuitBoard;
+  if (name.includes("fotocamera") || name.includes("camera")) return Camera;
+  if (name.includes("tast") || name.includes("pulsant") || name.includes("button")) return Square;
+  if (name.includes("retroilluminazione") || name.includes("luminosità")) return Sun;
+  if (name.includes("accensione") || name.includes("power") || name.includes("avvio")) return Power;
+  if (name.includes("usb") || name.includes("porta")) return Usb;
+  if (name.includes("flex") || name.includes("cavo")) return Cable;
+  if (name.includes("nfc")) return Radio;
+  if (name.includes("sensore") || name.includes("sensor")) return ScanLine;
+  if (name.includes("acqua") || name.includes("liquid") || name.includes("ossid")) return Droplets;
+  if (name.includes("sicurezza") || name.includes("blocco")) return Lock;
+  if (name.includes("virus") || name.includes("malware")) return Bug;
+  if (name.includes("aggiornamento") || name.includes("update")) return RefreshCw;
+  
+  return AlertCircle;
+};
+
+const getDamagedComponentIcon = (componentName: string) => {
+  const name = componentName.toLowerCase();
+  
+  if (name.includes("vetro") || name.includes("display") || name.includes("schermo")) return Monitor;
+  if (name.includes("oled") || name.includes("lcd") || name.includes("pannello")) return Layers;
+  if (name.includes("touch") || name.includes("digitalizzatore")) return Fingerprint;
+  if (name.includes("retroilluminazione")) return Sun;
+  if (name.includes("cornice")) return Square;
+  if (name.includes("batteria") || name.includes("cella")) return Battery;
+  if (name.includes("connettore") && name.includes("batteria")) return Plug;
+  if (name.includes("ricarica") || name.includes("ic ricarica")) return Zap;
+  if (name.includes("porta") && (name.includes("ricarica") || name.includes("usb"))) return Usb;
+  if (name.includes("flex")) return Cable;
+  if (name.includes("altoparlante") || name.includes("speaker")) return Volume2;
+  if (name.includes("microfono")) return Mic;
+  if (name.includes("fotocamera") || name.includes("camera")) return Camera;
+  if (name.includes("antenna") || name.includes("wifi")) return Wifi;
+  if (name.includes("bluetooth")) return Bluetooth;
+  if (name.includes("nfc")) return Radio;
+  if (name.includes("sensore")) return ScanLine;
+  if (name.includes("pulsant") || name.includes("tast") || name.includes("button")) return Square;
+  if (name.includes("scheda") || name.includes("madre") || name.includes("logic")) return CircuitBoard;
+  if (name.includes("chip") || name.includes("ic") || name.includes("processore")) return Cpu;
+  if (name.includes("memoria") || name.includes("storage") || name.includes("nand")) return HardDrive;
+  if (name.includes("ram")) return MemoryStick;
+  if (name.includes("scocca") || name.includes("frame") || name.includes("telaio")) return Smartphone;
+  if (name.includes("vibra")) return Radio;
+  
+  return Component;
+};
 
 const diagnosisSchema = z.object({
   selectedFindingIds: z.array(z.string()).min(1, "Seleziona almeno un risultato della diagnosi"),
@@ -322,17 +427,28 @@ export function DiagnosisFormDialog({
                               <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                                 {findings.map((finding) => {
                                   const isSelected = selectedFindingIds.includes(finding.id);
+                                  const FindingIcon = getDiagnosticFindingIcon(finding.name);
                                   return (
-                                    <div key={finding.id} className="flex items-start space-x-2">
+                                    <div 
+                                      key={finding.id} 
+                                      className={`flex items-center gap-3 p-2 rounded-lg border cursor-pointer transition-all ${
+                                        isSelected 
+                                          ? 'border-primary bg-primary/10 ring-1 ring-primary' 
+                                          : 'border-muted hover:border-primary/50 hover:bg-muted/50'
+                                      }`}
+                                      onClick={() => toggleFinding(finding.id)}
+                                    >
                                       <Checkbox
                                         id={`finding-${finding.id}`}
                                         checked={isSelected}
                                         onCheckedChange={() => toggleFinding(finding.id)}
                                         data-testid={`checkbox-finding-${finding.id}`}
+                                        className="h-5 w-5"
                                       />
+                                      <FindingIcon className={`h-6 w-6 flex-shrink-0 ${isSelected ? 'text-primary' : 'text-muted-foreground'}`} />
                                       <label
                                         htmlFor={`finding-${finding.id}`}
-                                        className="text-sm cursor-pointer leading-tight"
+                                        className={`text-sm cursor-pointer leading-tight ${isSelected ? 'font-medium' : ''}`}
                                       >
                                         {finding.name}
                                       </label>
@@ -387,21 +503,32 @@ export function DiagnosisFormDialog({
                       <FormDescription>
                         Seleziona i componenti che necessitano riparazione o sostituzione
                       </FormDescription>
-                      <ScrollArea className="h-[180px] border rounded-md p-3">
+                      <ScrollArea className="h-[220px] border rounded-md p-3">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                           {damagedComponentTypes.map((component) => {
                             const isSelected = selectedComponentIds.includes(component.id);
+                            const ComponentIcon = getDamagedComponentIcon(component.name);
                             return (
-                              <div key={component.id} className="flex items-start space-x-2">
+                              <div 
+                                key={component.id} 
+                                className={`flex items-center gap-3 p-2 rounded-lg border cursor-pointer transition-all ${
+                                  isSelected 
+                                    ? 'border-primary bg-primary/10 ring-1 ring-primary' 
+                                    : 'border-muted hover:border-primary/50 hover:bg-muted/50'
+                                }`}
+                                onClick={() => toggleComponent(component.id)}
+                              >
                                 <Checkbox
                                   id={`component-${component.id}`}
                                   checked={isSelected}
                                   onCheckedChange={() => toggleComponent(component.id)}
                                   data-testid={`checkbox-component-${component.id}`}
+                                  className="h-5 w-5"
                                 />
+                                <ComponentIcon className={`h-6 w-6 flex-shrink-0 ${isSelected ? 'text-primary' : 'text-muted-foreground'}`} />
                                 <label
                                   htmlFor={`component-${component.id}`}
-                                  className="text-sm cursor-pointer leading-tight"
+                                  className={`text-sm cursor-pointer leading-tight ${isSelected ? 'font-medium' : ''}`}
                                 >
                                   {component.name}
                                 </label>
