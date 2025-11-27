@@ -283,6 +283,19 @@ export function DiagnosisFormDialog({
     altro: "Altro",
   };
 
+  // DEBUG: Log query results
+  console.log("DEBUG DiagnosisFormDialog:", {
+    open,
+    repairOrderId: repairOrder?.id ?? "N/A",
+    deviceTypeId: deviceTypeId ?? "N/A",
+    diagnosticFindingsCount: diagnosticFindings.length,
+    diagnosticFindings: diagnosticFindings.slice(0, 3),
+    damagedComponentTypesCount: damagedComponentTypes.length,
+    damagedComponentTypes: damagedComponentTypes.slice(0, 3),
+    estimatedRepairTimesCount: estimatedRepairTimes.length,
+    findingsByCategory: Object.keys(findingsByCategory),
+  });
+
   // Pre-compute icons for findings - memoized to prevent recalculation
   const findingIcons = useMemo(() => {
     const icons: Record<string, LucideIcon> = {};

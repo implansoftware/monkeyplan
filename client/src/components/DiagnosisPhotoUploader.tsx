@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Upload, X, Image as ImageIcon, Loader2 } from "lucide-react";
@@ -27,6 +27,10 @@ export function DiagnosisPhotoUploader({
   const { toast } = useToast();
   const [uploadedPhotos, setUploadedPhotos] = useState<UploadedPhoto[]>([]);
   const [isUploading, setIsUploading] = useState(false);
+  
+  // Use ref to always have latest callback without causing re-renders
+  const onPhotosChangeRef = useRef(onPhotosChange);
+  onPhotosChangeRef.current = onPhotosChange;
 
   const [uppy] = useState(() =>
     new Uppy({
@@ -72,7 +76,7 @@ export function DiagnosisPhotoUploader({
     };
   }, [uppy]);
 
-  // Handle upload events
+  // Handle upload events - use ref to avoid re-creating handlers
   useEffect(() => {
     const handleUploadStart = () => {
       setIsUploading(true);
@@ -88,8 +92,8 @@ export function DiagnosisPhotoUploader({
         };
         setUploadedPhotos(prev => {
           const updated = [...prev, newPhoto];
-          // Update parent with new photos array
-          onPhotosChange(updated.map(p => p.id));
+          // Update parent with new photos array using ref
+          onPhotosChangeRef.current(updated.map(p => p.id));
           return updated;
         });
         toast({
@@ -124,12 +128,12 @@ export function DiagnosisPhotoUploader({
       uppy.off("complete", handleComplete);
       uppy.off("upload-error", handleError);
     };
-  }, [uppy, toast, onPhotosChange]);
+  }, [uppy, toast]); // Removed onPhotosChange - using ref instead
 
   const removePhoto = (photoId: string) => {
     setUploadedPhotos(prev => {
       const updated = prev.filter(p => p.id !== photoId);
-      onPhotosChange(updated.map(p => p.id));
+      onPhotosChangeRef.current(updated.map(p => p.id));
       return updated;
     });
   };
