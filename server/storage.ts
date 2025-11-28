@@ -13,12 +13,14 @@ import {
   PartsOrder, InsertPartsOrder, RepairLog, InsertRepairLog,
   RepairTestChecklist, InsertRepairTestChecklist, RepairDelivery, InsertRepairDelivery,
   AdminSetting, InsertAdminSetting,
+  Promotion, InsertPromotion, UnrepairableReason, InsertUnrepairableReason,
   users, repairCenters, products, repairOrders, tickets, ticketMessages,
   invoices, billingData, chatMessages, inventoryMovements, inventoryStock, activityLogs, analyticsCache,
   notifications, notificationPreferences, repairAttachments, repairAcceptance, repairDiagnostics,
   repairQuotes, partsOrders, repairLogs, repairTestChecklist, repairDelivery,
   deviceTypes, deviceBrands, deviceModels, issueTypes, aestheticDefects, accessoryTypes,
-  diagnosticFindings, damagedComponentTypes, estimatedRepairTimes, adminSettings
+  diagnosticFindings, damagedComponentTypes, estimatedRepairTimes, adminSettings,
+  promotions, unrepairableReasons
 } from "@shared/schema";
 import { db, pool } from "./db";
 import { eq, and, or, desc, lt, sql, not } from "drizzle-orm";
@@ -199,6 +201,20 @@ export interface IStorage {
   getAdminSetting(key: string): Promise<AdminSetting | undefined>;
   setAdminSetting(key: string, value: string, description?: string, updatedBy?: string): Promise<AdminSetting>;
   listAdminSettings(): Promise<AdminSetting[]>;
+  
+  // Promotions (for "Non Conveniente" diagnosis outcome)
+  listPromotions(activeOnly?: boolean): Promise<Promotion[]>;
+  getPromotion(id: string): Promise<Promotion | undefined>;
+  createPromotion(promotion: InsertPromotion): Promise<Promotion>;
+  updatePromotion(id: string, updates: Partial<InsertPromotion>): Promise<Promotion>;
+  deletePromotion(id: string): Promise<void>;
+  
+  // Unrepairable Reasons (for "Irriparabile" diagnosis outcome)
+  listUnrepairableReasons(deviceTypeId?: string, activeOnly?: boolean): Promise<UnrepairableReason[]>;
+  getUnrepairableReason(id: string): Promise<UnrepairableReason | undefined>;
+  createUnrepairableReason(reason: InsertUnrepairableReason): Promise<UnrepairableReason>;
+  updateUnrepairableReason(id: string, updates: Partial<InsertUnrepairableReason>): Promise<UnrepairableReason>;
+  deleteUnrepairableReason(id: string): Promise<void>;
   
   sessionStore: session.Store;
 }
@@ -1654,6 +1670,91 @@ export class DatabaseStorage implements IStorage {
 
   async listAdminSettings(): Promise<AdminSetting[]> {
     return await db.select().from(adminSettings).orderBy(adminSettings.settingKey);
+  }
+
+  // Promotions (for "Non Conveniente" diagnosis outcome)
+  async listPromotions(activeOnly: boolean = true): Promise<Promotion[]> {
+    if (activeOnly) {
+      return await db.select()
+        .from(promotions)
+        .where(eq(promotions.isActive, true))
+        .orderBy(promotions.sortOrder);
+    }
+    return await db.select().from(promotions).orderBy(promotions.sortOrder);
+  }
+
+  async getPromotion(id: string): Promise<Promotion | undefined> {
+    const [promotion] = await db.select().from(promotions).where(eq(promotions.id, id));
+    return promotion || undefined;
+  }
+
+  async createPromotion(promotion: InsertPromotion): Promise<Promotion> {
+    const [created] = await db.insert(promotions).values(promotion).returning();
+    return created;
+  }
+
+  async updatePromotion(id: string, updates: Partial<InsertPromotion>): Promise<Promotion> {
+    const [updated] = await db.update(promotions)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(promotions.id, id))
+      .returning();
+    if (!updated) throw new Error("Promotion not found");
+    return updated;
+  }
+
+  async deletePromotion(id: string): Promise<void> {
+    await db.delete(promotions).where(eq(promotions.id, id));
+  }
+
+  // Unrepairable Reasons (for "Irriparabile" diagnosis outcome)
+  async listUnrepairableReasons(deviceTypeId?: string, activeOnly: boolean = true): Promise<UnrepairableReason[]> {
+    const conditions = [];
+    
+    if (activeOnly) {
+      conditions.push(eq(unrepairableReasons.isActive, true));
+    }
+    
+    // Filter by device type: show reasons that are generic (null deviceTypeId) OR specific to this device type
+    if (deviceTypeId) {
+      conditions.push(
+        or(
+          eq(unrepairableReasons.deviceTypeId, deviceTypeId),
+          sql`${unrepairableReasons.deviceTypeId} IS NULL`
+        )!
+      );
+    }
+    
+    if (conditions.length > 0) {
+      return await db.select()
+        .from(unrepairableReasons)
+        .where(and(...conditions))
+        .orderBy(unrepairableReasons.sortOrder);
+    }
+    
+    return await db.select().from(unrepairableReasons).orderBy(unrepairableReasons.sortOrder);
+  }
+
+  async getUnrepairableReason(id: string): Promise<UnrepairableReason | undefined> {
+    const [reason] = await db.select().from(unrepairableReasons).where(eq(unrepairableReasons.id, id));
+    return reason || undefined;
+  }
+
+  async createUnrepairableReason(reason: InsertUnrepairableReason): Promise<UnrepairableReason> {
+    const [created] = await db.insert(unrepairableReasons).values(reason).returning();
+    return created;
+  }
+
+  async updateUnrepairableReason(id: string, updates: Partial<InsertUnrepairableReason>): Promise<UnrepairableReason> {
+    const [updated] = await db.update(unrepairableReasons)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(unrepairableReasons.id, id))
+      .returning();
+    if (!updated) throw new Error("Unrepairable reason not found");
+    return updated;
+  }
+
+  async deleteUnrepairableReason(id: string): Promise<void> {
+    await db.delete(unrepairableReasons).where(eq(unrepairableReasons.id, id));
   }
 }
 
