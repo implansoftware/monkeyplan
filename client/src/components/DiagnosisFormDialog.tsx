@@ -588,25 +588,6 @@ export function DiagnosisFormDialog({
                   )}
                 />
 
-                <FormField
-                  control={form.control}
-                  name="diagnosisNotes"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Note Aggiuntive</FormLabel>
-                      <FormControl>
-                        <Textarea
-                          {...field}
-                          placeholder="Osservazioni o raccomandazioni aggiuntive..."
-                          rows={3}
-                          data-testid="input-diagnosis-notes"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
                 <div className="space-y-2">
                   <div className="flex items-center gap-2">
                     <Camera className="h-4 w-4" />
