@@ -33,6 +33,13 @@ export const partsOrderStatusEnum = pgEnum("parts_order_status", ["ordered", "in
 export const repairLogTypeEnum = pgEnum("repair_log_type", ["status_change", "technician_note", "parts_installed", "test_result", "customer_contact"]);
 export const quoteBypassReasonEnum = pgEnum("quote_bypass_reason", ["garanzia", "omaggio"]);
 
+// Diagnosis Outcome - esito della diagnosi
+export const diagnosisOutcomeEnum = pgEnum("diagnosis_outcome", [
+  "riparabile",        // Dispositivo riparabile normalmente
+  "non_conveniente",   // Costo riparazione > valore dispositivo (economico)
+  "irriparabile",      // Danno tecnico non risolvibile
+]);
+
 // Users table with role-based access
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -257,6 +264,30 @@ export const estimatedRepairTimes = pgTable("estimated_repair_times", {
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 
+// Promotions & Suggestions (Promozioni e Suggerimenti per dispositivi non convenienti)
+export const promotions = pgTable("promotions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull(), // es: "Telefono nuovo con SIM inclusa"
+  description: text("description"), // Descrizione dettagliata
+  icon: text("icon"), // Nome icona Lucide (es: "Smartphone", "CreditCard")
+  isActive: boolean("is_active").notNull().default(true),
+  sortOrder: integer("sort_order").notNull().default(0),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+// Unrepairable Reasons (Motivi irriparabilità filtrati per device type)
+export const unrepairableReasons = pgTable("unrepairable_reasons", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull(), // es: "Ossidazione Diffusa", "CPU Danneggiata"
+  description: text("description"),
+  deviceTypeId: varchar("device_type_id").references(() => deviceTypes.id), // null = tutti i tipi
+  isActive: boolean("is_active").notNull().default(true),
+  sortOrder: integer("sort_order").notNull().default(0),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
 // Device Models Catalog
 export const deviceModels = pgTable("device_models", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -314,6 +345,15 @@ export const repairDiagnostics = pgTable("repair_diagnostics", {
   findingIds: text("finding_ids").array(), // IDs dei problemi selezionati dal catalogo
   componentIds: text("component_ids").array(), // IDs dei componenti danneggiati dal catalogo
   estimatedRepairTimeId: varchar("estimated_repair_time_id"), // ID del tempo stimato selezionato
+  // Esito diagnosi - nuovo sistema
+  diagnosisOutcome: diagnosisOutcomeEnum("diagnosis_outcome").default("riparabile"), // Esito: riparabile, non_conveniente, irriparabile
+  // Per esito "irriparabile"
+  unrepairableReasonId: varchar("unrepairable_reason_id").references(() => unrepairableReasons.id), // Motivo predefinito
+  unrepairableReasonOther: text("unrepairable_reason_other"), // Campo libero "Altro"
+  // Per esito "non_conveniente"
+  customerDataImportant: boolean("customer_data_important").default(false), // Dati importanti? → attiva recupero dati
+  suggestedPromotionIds: text("suggested_promotion_ids").array(), // IDs promozioni suggerite
+  dataRecoveryRequested: boolean("data_recovery_requested").default(false), // Richiesto recupero dati
   diagnosedBy: varchar("diagnosed_by").notNull(), // ID tecnico che ha fatto la diagnosi
   diagnosedAt: timestamp("diagnosed_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
@@ -622,6 +662,24 @@ export const repairDiagnosticsRelations = relations(repairDiagnostics, ({ one })
     fields: [repairDiagnostics.diagnosedBy],
     references: [users.id],
   }),
+  unrepairableReason: one(unrepairableReasons, {
+    fields: [repairDiagnostics.unrepairableReasonId],
+    references: [unrepairableReasons.id],
+  }),
+}));
+
+// Promotions Relations
+export const promotionsRelations = relations(promotions, ({ }) => ({
+  // No direct relations - used via suggestedPromotionIds array in diagnostics
+}));
+
+// Unrepairable Reasons Relations
+export const unrepairableReasonsRelations = relations(unrepairableReasons, ({ one, many }) => ({
+  deviceType: one(deviceTypes, {
+    fields: [unrepairableReasons.deviceTypeId],
+    references: [deviceTypes.id],
+  }),
+  diagnostics: many(repairDiagnostics),
 }));
 
 export const repairQuotesRelations = relations(repairQuotes, ({ one }) => ({
@@ -883,6 +941,18 @@ export const insertEstimatedRepairTimeSchema = createInsertSchema(estimatedRepai
   updatedAt: true,
 });
 
+export const insertPromotionSchema = createInsertSchema(promotions).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertUnrepairableReasonSchema = createInsertSchema(unrepairableReasons).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 export const insertDeviceModelSchema = createInsertSchema(deviceModels).omit({
   id: true,
   createdAt: true,
@@ -1094,6 +1164,12 @@ export type InsertDamagedComponentType = z.infer<typeof insertDamagedComponentTy
 
 export type EstimatedRepairTime = typeof estimatedRepairTimes.$inferSelect;
 export type InsertEstimatedRepairTime = z.infer<typeof insertEstimatedRepairTimeSchema>;
+
+export type Promotion = typeof promotions.$inferSelect;
+export type InsertPromotion = z.infer<typeof insertPromotionSchema>;
+
+export type UnrepairableReason = typeof unrepairableReasons.$inferSelect;
+export type InsertUnrepairableReason = z.infer<typeof insertUnrepairableReasonSchema>;
 
 export type DeviceModel = typeof deviceModels.$inferSelect;
 export type InsertDeviceModel = z.infer<typeof insertDeviceModelSchema>;
