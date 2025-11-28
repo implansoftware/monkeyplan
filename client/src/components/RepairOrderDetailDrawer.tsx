@@ -31,7 +31,7 @@ import { useToast } from "@/hooks/use-toast";
 import {
   Wrench, Euro, FileText, Paperclip, Calendar, Package, ClipboardList,
   ClipboardCheck, PackageCheck, Play, CheckCircle, Stethoscope, Receipt,
-  Download, User, ArrowRight, Circle, CheckCircle2, AlertCircle
+  Download, User, ArrowRight, Circle, CheckCircle2, AlertCircle, Gift, Shield, SkipForward
 } from "lucide-react";
 import { format } from "date-fns";
 import { useAuth } from "@/hooks/use-auth";
@@ -123,6 +123,8 @@ export function RepairOrderDetailDrawer({
   const [logsDialogOpen, setLogsDialogOpen] = useState(false);
   const [testDialogOpen, setTestDialogOpen] = useState(false);
   const [deliveryDialogOpen, setDeliveryDialogOpen] = useState(false);
+  const [skipQuoteDialogOpen, setSkipQuoteDialogOpen] = useState(false);
+  const [skipQuoteReason, setSkipQuoteReason] = useState<'garanzia' | 'omaggio' | null>(null);
 
   const { data: repair, isLoading, error } = useQuery<RepairOrder>({
     queryKey: ["/api/repair-orders", repairOrderId],
@@ -262,6 +264,22 @@ export function RepairOrderDetailDrawer({
       toast({ title: "Dispositivo pronto per il ritiro" });
       queryClient.invalidateQueries({ queryKey: ["/api/repair-orders"] });
       queryClient.invalidateQueries({ queryKey: ["/api/repair-orders", repairOrderId] });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Errore", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const skipQuoteMutation = useMutation({
+    mutationFn: async (reason: 'garanzia' | 'omaggio') => {
+      return await apiRequest("POST", `/api/repair-orders/${repairOrderId}/skip-quote`, { reason });
+    },
+    onSuccess: () => {
+      toast({ title: "Preventivo saltato", description: "La riparazione procede senza preventivo" });
+      queryClient.invalidateQueries({ queryKey: ["/api/repair-orders"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/repair-orders", repairOrderId] });
+      setSkipQuoteDialogOpen(false);
+      setSkipQuoteReason(null);
     },
     onError: (error: Error) => {
       toast({ title: "Errore", description: error.message, variant: "destructive" });
@@ -455,6 +473,21 @@ export function RepairOrderDetailDrawer({
                             Crea Preventivo
                           </Button>
                         </div>
+                        {/* Skip Quote Button - only visible when diagnosis is complete */}
+                        {diagnosis && (
+                          <div className="pt-2 border-t border-border/50">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setSkipQuoteDialogOpen(true)}
+                              className="w-full gap-2 text-muted-foreground hover:text-foreground"
+                              data-testid="button-skip-quote"
+                            >
+                              <SkipForward className="h-4 w-4" />
+                              Salta Preventivo (Garanzia/Omaggio)
+                            </Button>
+                          </div>
+                        )}
                       </div>
                     )}
 
@@ -1090,6 +1123,62 @@ export function RepairOrderDetailDrawer({
                   repairOrderId={repairOrderId}
                   onSuccess={() => queryClient.invalidateQueries({ queryKey: ["/api/repair-orders", repairOrderId] })}
                 />
+                
+                {/* Skip Quote Dialog */}
+                <Dialog open={skipQuoteDialogOpen} onOpenChange={setSkipQuoteDialogOpen}>
+                  <DialogContent className="max-w-md" data-testid="dialog-skip-quote">
+                    <DialogHeader>
+                      <DialogTitle>Salta Preventivo</DialogTitle>
+                      <DialogDescription>
+                        Seleziona il motivo per cui vuoi saltare il preventivo. Questa azione non può essere annullata.
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                      <p className="text-sm text-muted-foreground">
+                        Scegli il motivo:
+                      </p>
+                      <div className="grid grid-cols-2 gap-3">
+                        <Button
+                          variant={skipQuoteReason === 'garanzia' ? 'default' : 'outline'}
+                          className="h-24 flex flex-col gap-2"
+                          onClick={() => setSkipQuoteReason('garanzia')}
+                          data-testid="button-reason-garanzia"
+                        >
+                          <Shield className="h-8 w-8" />
+                          <span className="font-semibold">Garanzia</span>
+                        </Button>
+                        <Button
+                          variant={skipQuoteReason === 'omaggio' ? 'default' : 'outline'}
+                          className="h-24 flex flex-col gap-2"
+                          onClick={() => setSkipQuoteReason('omaggio')}
+                          data-testid="button-reason-omaggio"
+                        >
+                          <Gift className="h-8 w-8" />
+                          <span className="font-semibold">Omaggio</span>
+                        </Button>
+                      </div>
+                    </div>
+                    <div className="flex justify-end gap-3">
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          setSkipQuoteDialogOpen(false);
+                          setSkipQuoteReason(null);
+                        }}
+                        data-testid="button-cancel-skip"
+                      >
+                        Annulla
+                      </Button>
+                      <Button
+                        onClick={() => skipQuoteReason && skipQuoteMutation.mutate(skipQuoteReason)}
+                        disabled={!skipQuoteReason || skipQuoteMutation.isPending}
+                        data-testid="button-confirm-skip"
+                      >
+                        {skipQuoteMutation.isPending ? 'Conferma...' : 'Conferma'}
+                      </Button>
+                    </div>
+                  </DialogContent>
+                </Dialog>
               </>
             )}
           </div>
