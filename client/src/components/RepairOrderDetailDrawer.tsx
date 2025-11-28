@@ -1162,6 +1162,37 @@ export function RepairOrderDetailDrawer({
                       </DialogDescription>
                     </DialogHeader>
                     <div className="space-y-4 py-4">
+                      {/* Info box showing next step based on diagnosis */}
+                      <div className={`rounded-lg p-3 text-sm ${
+                        diagnosis?.requiresExternalParts 
+                          ? 'bg-amber-500/10 border border-amber-500/30' 
+                          : 'bg-blue-500/10 border border-blue-500/30'
+                      }`}>
+                        <div className="flex items-center gap-2 font-medium mb-1">
+                          {diagnosis?.requiresExternalParts ? (
+                            <>
+                              <Package className="h-4 w-4 text-amber-500" />
+                              <span className="text-amber-600 dark:text-amber-400">Richiede Ricambi</span>
+                            </>
+                          ) : (
+                            <>
+                              <Wrench className="h-4 w-4 text-blue-500" />
+                              <span className="text-blue-600 dark:text-blue-400">Riparazione Diretta</span>
+                            </>
+                          )}
+                        </div>
+                        <p className="text-muted-foreground">
+                          {diagnosis?.requiresExternalParts 
+                            ? "Dopo la conferma, lo stato passerà ad 'Attesa Ricambi' per permettere l'ordine dei pezzi."
+                            : "Dopo la conferma, lo stato passerà direttamente a 'In Riparazione'."}
+                        </p>
+                        {!diagnosis?.requiresExternalParts && (
+                          <p className="text-xs text-muted-foreground mt-2">
+                            Se servono ricambi, annulla e modifica la diagnosi spuntando "Richiede Ricambi Esterni".
+                          </p>
+                        )}
+                      </div>
+
                       <p className="text-sm text-muted-foreground">
                         Scegli il motivo:
                       </p>
