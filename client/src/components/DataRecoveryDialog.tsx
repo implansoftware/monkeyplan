@@ -89,13 +89,14 @@ export function DataRecoveryDialog({
       externalLabId?: string | null;
       internalNotes?: string | null;
     }) => {
-      return await apiRequest(`/api/repair-orders/${repairOrderId}/data-recovery`, {
-        method: "POST",
-        body: JSON.stringify({
+      return await apiRequest(
+        "POST",
+        `/api/repair-orders/${repairOrderId}/data-recovery`,
+        {
           ...data,
           triggerType: "manual",
-        }),
-      });
+        }
+      );
     },
     onSuccess: () => {
       toast({
