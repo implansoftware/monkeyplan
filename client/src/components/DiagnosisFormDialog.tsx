@@ -168,13 +168,6 @@ export function DiagnosisFormDialog({
     },
   });
 
-  const selectedFindingIds = form.watch("selectedFindingIds");
-  const selectedComponentIds = form.watch("selectedComponentIds");
-
-  // Calculate showOther flags directly from watched values (no useEffect needed)
-  const showOtherFinding = selectedFindingIds.some(id => id.includes("-other"));
-  const showOtherComponent = selectedComponentIds.some(id => id.includes("-other"));
-
   const resetFormState = useCallback(() => {
     form.reset();
     setUploadedPhotos([]);
@@ -191,7 +184,8 @@ export function DiagnosisFormDialog({
         .filter(Boolean) as string[];
       
       let technicalDiagnosis = selectedFindingNames.join(", ");
-      if (showOtherFinding && data.otherFindingDescription?.trim()) {
+      const hasOtherFinding = data.selectedFindingIds.some(id => id.includes("-other"));
+      if (hasOtherFinding && data.otherFindingDescription?.trim()) {
         technicalDiagnosis += technicalDiagnosis ? `, ${data.otherFindingDescription.trim()}` : data.otherFindingDescription.trim();
       }
 
@@ -199,7 +193,8 @@ export function DiagnosisFormDialog({
         .map(id => componentsMap.get(id)?.name)
         .filter(Boolean) as string[];
       
-      if (showOtherComponent && data.otherComponentDescription?.trim()) {
+      const hasOtherComponent = data.selectedComponentIds.some(id => id.includes("-other"));
+      if (hasOtherComponent && data.otherComponentDescription?.trim()) {
         selectedComponentNames.push(data.otherComponentDescription.trim());
       }
 
@@ -298,69 +293,75 @@ export function DiagnosisFormDialog({
                 <FormField
                   control={form.control}
                   name="selectedFindingIds"
-                  render={() => (
-                    <FormItem>
-                      <FormLabel>Problemi Riscontrati *</FormLabel>
-                      <FormDescription>
-                        Seleziona tutti i problemi identificati durante la diagnosi
-                      </FormDescription>
-                      <ScrollArea className="h-[200px] border rounded-md p-3">
-                        <div className="space-y-4">
-                          {Object.entries(findingsByCategory).map(([category, findings]) => (
-                            <div key={category} className="space-y-2">
-                              <h4 className="text-sm font-semibold text-muted-foreground border-b pb-1">
-                                {categoryLabels[category] || category}
-                              </h4>
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                                {findings.map((finding) => {
-                                  const isSelected = selectedFindingIds.includes(finding.id);
-                                  return (
-                                    <div 
-                                      key={finding.id} 
-                                      className={`flex items-center gap-2 p-2 rounded-lg border cursor-pointer transition-all ${
-                                        isSelected 
-                                          ? 'border-primary bg-primary/10' 
-                                          : 'border-transparent hover:bg-muted/50'
-                                      }`}
-                                      onClick={() => toggleFinding(finding.id)}
-                                    >
-                                      <Checkbox
-                                        id={`finding-${finding.id}`}
-                                        checked={isSelected}
-                                        onCheckedChange={() => toggleFinding(finding.id)}
-                                        data-testid={`checkbox-finding-${finding.id}`}
-                                      />
-                                      <AlertCircle className={`h-5 w-5 flex-shrink-0 ${isSelected ? 'text-primary' : 'text-muted-foreground'}`} />
-                                      <label
-                                        htmlFor={`finding-${finding.id}`}
-                                        className="text-sm cursor-pointer leading-tight"
+                  render={({ field }) => {
+                    const selectedIds = field.value || [];
+                    return (
+                      <FormItem>
+                        <FormLabel>Problemi Riscontrati *</FormLabel>
+                        <FormDescription>
+                          Seleziona tutti i problemi identificati durante la diagnosi
+                        </FormDescription>
+                        <ScrollArea className="h-[200px] border rounded-md p-3">
+                          <div className="space-y-4">
+                            {Object.entries(findingsByCategory).map(([category, findings]) => (
+                              <div key={category} className="space-y-2">
+                                <h4 className="text-sm font-semibold text-muted-foreground border-b pb-1">
+                                  {categoryLabels[category] || category}
+                                </h4>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                                  {findings.map((finding) => {
+                                    const isSelected = selectedIds.includes(finding.id);
+                                    return (
+                                      <div 
+                                        key={finding.id} 
+                                        className={`flex items-center gap-2 p-2 rounded-lg border cursor-pointer transition-all ${
+                                          isSelected 
+                                            ? 'border-primary bg-primary/10' 
+                                            : 'border-transparent hover:bg-muted/50'
+                                        }`}
+                                        onClick={() => toggleFinding(finding.id)}
                                       >
-                                        {finding.name}
-                                      </label>
-                                    </div>
-                                  );
-                                })}
+                                        <Checkbox
+                                          id={`finding-${finding.id}`}
+                                          checked={isSelected}
+                                          onCheckedChange={() => toggleFinding(finding.id)}
+                                          data-testid={`checkbox-finding-${finding.id}`}
+                                        />
+                                        <AlertCircle className={`h-5 w-5 flex-shrink-0 ${isSelected ? 'text-primary' : 'text-muted-foreground'}`} />
+                                        <label
+                                          htmlFor={`finding-${finding.id}`}
+                                          className="text-sm cursor-pointer leading-tight"
+                                        >
+                                          {finding.name}
+                                        </label>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
                               </div>
-                            </div>
-                          ))}
-                        </div>
-                      </ScrollArea>
-                      {selectedFindingIds.length > 0 && (
-                        <div className="text-xs text-muted-foreground mt-1 p-2 bg-muted rounded">
-                          <strong>Selezionati ({selectedFindingIds.length}):</strong>{" "}
-                          {selectedFindingIds.map(id => diagnosticFindings.find(f => f.id === id)?.name).filter(Boolean).join(", ")}
-                        </div>
-                      )}
-                      <FormMessage />
-                    </FormItem>
-                  )}
+                            ))}
+                          </div>
+                        </ScrollArea>
+                        {selectedIds.length > 0 && (
+                          <div className="text-xs text-muted-foreground mt-1 p-2 bg-muted rounded">
+                            <strong>Selezionati ({selectedIds.length}):</strong>{" "}
+                            {selectedIds.map(id => diagnosticFindings.find(f => f.id === id)?.name).filter(Boolean).join(", ")}
+                          </div>
+                        )}
+                        <FormMessage />
+                      </FormItem>
+                    );
+                  }}
                 />
 
-                {showOtherFinding && (
-                  <FormField
-                    control={form.control}
-                    name="otherFindingDescription"
-                    render={({ field }) => (
+                <FormField
+                  control={form.control}
+                  name="otherFindingDescription"
+                  render={({ field }) => {
+                    const findingIds = form.getValues("selectedFindingIds") || [];
+                    const hasOther = findingIds.some(id => id.includes("-other"));
+                    if (!hasOther) return <></>;
+                    return (
                       <FormItem>
                         <FormLabel className="flex items-center gap-1">
                           <AlertCircle className="h-4 w-4 text-orange-500" />
@@ -375,67 +376,73 @@ export function DiagnosisFormDialog({
                         </FormControl>
                         <FormMessage />
                       </FormItem>
-                    )}
-                  />
-                )}
+                    );
+                  }}
+                />
 
                 <FormField
                   control={form.control}
                   name="selectedComponentIds"
-                  render={() => (
-                    <FormItem>
-                      <FormLabel>Componenti Danneggiati</FormLabel>
-                      <FormDescription>
-                        Seleziona i componenti che necessitano riparazione o sostituzione
-                      </FormDescription>
-                      <ScrollArea className="h-[220px] border rounded-md p-3">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                          {damagedComponentTypes.map((component) => {
-                            const isSelected = selectedComponentIds.includes(component.id);
-                            return (
-                              <div 
-                                key={component.id} 
-                                className={`flex items-center gap-2 p-2 rounded-lg border cursor-pointer transition-all ${
-                                  isSelected 
-                                    ? 'border-primary bg-primary/10' 
-                                    : 'border-transparent hover:bg-muted/50'
-                                }`}
-                                onClick={() => toggleComponent(component.id)}
-                              >
-                                <Checkbox
-                                  id={`component-${component.id}`}
-                                  checked={isSelected}
-                                  onCheckedChange={() => toggleComponent(component.id)}
-                                  data-testid={`checkbox-component-${component.id}`}
-                                />
-                                <CircuitBoard className={`h-5 w-5 flex-shrink-0 ${isSelected ? 'text-primary' : 'text-muted-foreground'}`} />
-                                <label
-                                  htmlFor={`component-${component.id}`}
-                                  className="text-sm cursor-pointer leading-tight"
+                  render={({ field }) => {
+                    const selectedIds = field.value || [];
+                    return (
+                      <FormItem>
+                        <FormLabel>Componenti Danneggiati</FormLabel>
+                        <FormDescription>
+                          Seleziona i componenti che necessitano riparazione o sostituzione
+                        </FormDescription>
+                        <ScrollArea className="h-[220px] border rounded-md p-3">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                            {damagedComponentTypes.map((component) => {
+                              const isSelected = selectedIds.includes(component.id);
+                              return (
+                                <div 
+                                  key={component.id} 
+                                  className={`flex items-center gap-2 p-2 rounded-lg border cursor-pointer transition-all ${
+                                    isSelected 
+                                      ? 'border-primary bg-primary/10' 
+                                      : 'border-transparent hover:bg-muted/50'
+                                  }`}
+                                  onClick={() => toggleComponent(component.id)}
                                 >
-                                  {component.name}
-                                </label>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </ScrollArea>
-                      {selectedComponentIds.length > 0 && (
-                        <div className="text-xs text-muted-foreground mt-1 p-2 bg-muted rounded">
-                          <strong>Selezionati ({selectedComponentIds.length}):</strong>{" "}
-                          {selectedComponentIds.map(id => damagedComponentTypes.find(c => c.id === id)?.name).filter(Boolean).join(", ")}
-                        </div>
-                      )}
-                      <FormMessage />
-                    </FormItem>
-                  )}
+                                  <Checkbox
+                                    id={`component-${component.id}`}
+                                    checked={isSelected}
+                                    onCheckedChange={() => toggleComponent(component.id)}
+                                    data-testid={`checkbox-component-${component.id}`}
+                                  />
+                                  <CircuitBoard className={`h-5 w-5 flex-shrink-0 ${isSelected ? 'text-primary' : 'text-muted-foreground'}`} />
+                                  <label
+                                    htmlFor={`component-${component.id}`}
+                                    className="text-sm cursor-pointer leading-tight"
+                                  >
+                                    {component.name}
+                                  </label>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </ScrollArea>
+                        {selectedIds.length > 0 && (
+                          <div className="text-xs text-muted-foreground mt-1 p-2 bg-muted rounded">
+                            <strong>Selezionati ({selectedIds.length}):</strong>{" "}
+                            {selectedIds.map(id => damagedComponentTypes.find(c => c.id === id)?.name).filter(Boolean).join(", ")}
+                          </div>
+                        )}
+                        <FormMessage />
+                      </FormItem>
+                    );
+                  }}
                 />
 
-                {showOtherComponent && (
-                  <FormField
-                    control={form.control}
-                    name="otherComponentDescription"
-                    render={({ field }) => (
+                <FormField
+                  control={form.control}
+                  name="otherComponentDescription"
+                  render={({ field }) => {
+                    const componentIds = form.getValues("selectedComponentIds") || [];
+                    const hasOther = componentIds.some(id => id.includes("-other"));
+                    if (!hasOther) return <></>;
+                    return (
                       <FormItem>
                         <FormLabel className="flex items-center gap-1">
                           <AlertCircle className="h-4 w-4 text-orange-500" />
@@ -450,9 +457,9 @@ export function DiagnosisFormDialog({
                         </FormControl>
                         <FormMessage />
                       </FormItem>
-                    )}
-                  />
-                )}
+                    );
+                  }}
+                />
               </CardContent>
             </Card>
 
