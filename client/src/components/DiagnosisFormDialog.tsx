@@ -24,7 +24,6 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Select,
@@ -254,22 +253,6 @@ export function DiagnosisFormDialog({
     onOpenChange(false);
   };
 
-  const toggleFinding = (findingId: string) => {
-    const current = form.getValues("selectedFindingIds");
-    const newValue = current.includes(findingId)
-      ? current.filter(id => id !== findingId)
-      : [...current, findingId];
-    form.setValue("selectedFindingIds", newValue, { shouldValidate: true });
-  };
-
-  const toggleComponent = (componentId: string) => {
-    const current = form.getValues("selectedComponentIds");
-    const newValue = current.includes(componentId)
-      ? current.filter(id => id !== componentId)
-      : [...current, componentId];
-    form.setValue("selectedComponentIds", newValue, { shouldValidate: true });
-  };
-
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
@@ -295,6 +278,12 @@ export function DiagnosisFormDialog({
                   name="selectedFindingIds"
                   render={({ field }) => {
                     const selectedIds = field.value || [];
+                    const handleToggle = (findingId: string) => {
+                      const newValue = selectedIds.includes(findingId)
+                        ? selectedIds.filter(id => id !== findingId)
+                        : [...selectedIds, findingId];
+                      field.onChange(newValue);
+                    };
                     return (
                       <FormItem>
                         <FormLabel>Problemi Riscontrati *</FormLabel>
@@ -319,21 +308,18 @@ export function DiagnosisFormDialog({
                                             ? 'border-primary bg-primary/10' 
                                             : 'border-transparent hover:bg-muted/50'
                                         }`}
-                                        onClick={() => toggleFinding(finding.id)}
+                                        onClick={() => handleToggle(finding.id)}
+                                        data-testid={`checkbox-finding-${finding.id}`}
                                       >
-                                        <Checkbox
-                                          id={`finding-${finding.id}`}
-                                          checked={isSelected}
-                                          onCheckedChange={() => toggleFinding(finding.id)}
-                                          data-testid={`checkbox-finding-${finding.id}`}
-                                        />
+                                        <div className={`w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0 ${
+                                          isSelected ? 'bg-primary border-primary' : 'border-muted-foreground'
+                                        }`}>
+                                          {isSelected && <span className="text-primary-foreground text-xs">✓</span>}
+                                        </div>
                                         <AlertCircle className={`h-5 w-5 flex-shrink-0 ${isSelected ? 'text-primary' : 'text-muted-foreground'}`} />
-                                        <label
-                                          htmlFor={`finding-${finding.id}`}
-                                          className="text-sm cursor-pointer leading-tight"
-                                        >
+                                        <span className="text-sm leading-tight">
                                           {finding.name}
-                                        </label>
+                                        </span>
                                       </div>
                                     );
                                   })}
@@ -385,6 +371,12 @@ export function DiagnosisFormDialog({
                   name="selectedComponentIds"
                   render={({ field }) => {
                     const selectedIds = field.value || [];
+                    const handleToggle = (componentId: string) => {
+                      const newValue = selectedIds.includes(componentId)
+                        ? selectedIds.filter(id => id !== componentId)
+                        : [...selectedIds, componentId];
+                      field.onChange(newValue);
+                    };
                     return (
                       <FormItem>
                         <FormLabel>Componenti Danneggiati</FormLabel>
@@ -403,21 +395,18 @@ export function DiagnosisFormDialog({
                                       ? 'border-primary bg-primary/10' 
                                       : 'border-transparent hover:bg-muted/50'
                                   }`}
-                                  onClick={() => toggleComponent(component.id)}
+                                  onClick={() => handleToggle(component.id)}
+                                  data-testid={`checkbox-component-${component.id}`}
                                 >
-                                  <Checkbox
-                                    id={`component-${component.id}`}
-                                    checked={isSelected}
-                                    onCheckedChange={() => toggleComponent(component.id)}
-                                    data-testid={`checkbox-component-${component.id}`}
-                                  />
+                                  <div className={`w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0 ${
+                                    isSelected ? 'bg-primary border-primary' : 'border-muted-foreground'
+                                  }`}>
+                                    {isSelected && <span className="text-primary-foreground text-xs">✓</span>}
+                                  </div>
                                   <CircuitBoard className={`h-5 w-5 flex-shrink-0 ${isSelected ? 'text-primary' : 'text-muted-foreground'}`} />
-                                  <label
-                                    htmlFor={`component-${component.id}`}
-                                    className="text-sm cursor-pointer leading-tight"
-                                  >
+                                  <span className="text-sm leading-tight">
                                     {component.name}
-                                  </label>
+                                  </span>
                                 </div>
                               );
                             })}
@@ -503,16 +492,17 @@ export function DiagnosisFormDialog({
                   control={form.control}
                   name="requiresExternalParts"
                   render={({ field }) => (
-                    <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-                      <FormControl>
-                        <Checkbox
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
-                          data-testid="checkbox-requires-parts"
-                        />
-                      </FormControl>
+                    <FormItem 
+                      className="flex flex-row items-start space-x-3 space-y-0 cursor-pointer"
+                      onClick={() => field.onChange(!field.value)}
+                    >
+                      <div className={`w-4 h-4 mt-0.5 rounded border-2 flex items-center justify-center flex-shrink-0 ${
+                        field.value ? 'bg-primary border-primary' : 'border-muted-foreground'
+                      }`}>
+                        {field.value && <span className="text-primary-foreground text-xs">✓</span>}
+                      </div>
                       <div className="space-y-1 leading-none">
-                        <FormLabel>Richiede Ricambi Esterni</FormLabel>
+                        <FormLabel className="cursor-pointer">Richiede Ricambi Esterni</FormLabel>
                         <FormDescription>
                           Spunta se è necessario ordinare ricambi esternamente
                         </FormDescription>
