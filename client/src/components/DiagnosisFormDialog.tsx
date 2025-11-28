@@ -102,7 +102,7 @@ interface DiagnosisFormDialogProps {
   repairOrderId: string;
   repairOrder?: { deviceTypeId?: string | null };
   existingDiagnosis?: ExistingDiagnosis | null;
-  onSuccess?: () => void;
+  onSuccess?: (outcome?: string) => void;
 }
 
 const diagnosisSchema = z.object({
@@ -437,7 +437,7 @@ export function DiagnosisFormDialog({
         payload
       );
     },
-    onSuccess: () => {
+    onSuccess: (_data, variables) => {
       toast({
         title: "Diagnosi creata",
         description: "La diagnosi tecnica è stata registrata con successo",
@@ -448,7 +448,7 @@ export function DiagnosisFormDialog({
       });
       resetFormState();
       onOpenChange(false);
-      onSuccess?.();
+      onSuccess?.(variables.diagnosisOutcome);
     },
     onError: (error: Error) => {
       toast({
@@ -468,7 +468,7 @@ export function DiagnosisFormDialog({
         payload
       );
     },
-    onSuccess: () => {
+    onSuccess: (_data, variables) => {
       toast({
         title: "Diagnosi aggiornata",
         description: "La diagnosi tecnica è stata aggiornata con successo",
@@ -479,7 +479,7 @@ export function DiagnosisFormDialog({
       });
       resetFormState();
       onOpenChange(false);
-      onSuccess?.();
+      onSuccess?.(variables.diagnosisOutcome);
     },
     onError: (error: Error) => {
       toast({

@@ -40,6 +40,42 @@ export const diagnosisOutcomeEnum = pgEnum("diagnosis_outcome", [
   "irriparabile",      // Danno tecnico non risolvibile
 ]);
 
+// Data Recovery Enums
+export const dataRecoveryTriggerEnum = pgEnum("data_recovery_trigger", [
+  "manual",            // Avviato manualmente dal tecnico
+  "automatic",         // Avviato automaticamente dopo diagnosi
+]);
+
+export const dataRecoveryHandlingEnum = pgEnum("data_recovery_handling", [
+  "internal",          // Recupero gestito internamente
+  "external",          // Recupero inviato a laboratorio esterno
+]);
+
+export const dataRecoveryStatusEnum = pgEnum("data_recovery_status", [
+  "pending",           // In attesa di assegnazione
+  "assigned",          // Assegnato al tecnico/laboratorio
+  "in_progress",       // Recupero in corso
+  "awaiting_shipment", // In attesa spedizione (solo esterno)
+  "shipped",           // Spedito al laboratorio (solo esterno)
+  "at_lab",            // Ricevuto dal laboratorio (solo esterno)
+  "completed",         // Recupero completato con successo
+  "partial",           // Recupero parziale
+  "failed",            // Recupero fallito
+  "cancelled",         // Annullato
+]);
+
+export const dataRecoveryEventTypeEnum = pgEnum("data_recovery_event_type", [
+  "created",           // Job creato
+  "assigned",          // Assegnato
+  "status_change",     // Cambio stato
+  "note_added",        // Nota aggiunta
+  "document_generated",// Documento generato
+  "shipped",           // Spedito
+  "tracking_update",   // Aggiornamento tracking
+  "completed",         // Completato
+  "failed",            // Fallito
+]);
+
 // Users table with role-based access
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -450,6 +486,93 @@ export const adminSettings = pgTable("admin_settings", {
   description: text("description"), // Descrizione dell'impostazione
   updatedBy: varchar("updated_by"), // ID admin che ha modificato
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+// ==========================================
+// DATA RECOVERY SYSTEM
+// ==========================================
+
+// External Labs (Laboratori esterni convenzionati)
+export const externalLabs = pgTable("external_labs", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull(),
+  code: text("code").notNull().unique(), // Codice breve es: "LAB001"
+  address: text("address").notNull(),
+  city: text("city").notNull(),
+  phone: text("phone"),
+  email: text("email").notNull(),
+  contactPerson: text("contact_person"), // Referente
+  apiEndpoint: text("api_endpoint"), // URL API se supportato
+  apiKey: text("api_key"), // Chiave API (criptata)
+  supportsApiIntegration: boolean("supports_api_integration").notNull().default(false),
+  trackingPrefix: text("tracking_prefix"), // Prefisso per tracking (es: "LAB-")
+  avgTurnaroundDays: integer("avg_turnaround_days").default(7), // Tempo medio lavorazione
+  baseCost: integer("base_cost"), // Costo base in centesimi
+  notes: text("notes"),
+  isActive: boolean("is_active").notNull().default(true),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+// Data Recovery Jobs (Lavorazioni recupero dati)
+export const dataRecoveryJobs = pgTable("data_recovery_jobs", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  jobNumber: text("job_number").notNull().unique(), // es: "REC-2024-0001"
+  parentRepairOrderId: varchar("parent_repair_order_id").notNull().references(() => repairOrders.id),
+  diagnosisId: varchar("diagnosis_id").references(() => repairDiagnostics.id),
+  triggerType: dataRecoveryTriggerEnum("trigger_type").notNull().default("manual"),
+  handlingType: dataRecoveryHandlingEnum("handling_type").notNull(),
+  status: dataRecoveryStatusEnum("status").notNull().default("pending"),
+  
+  // Device info snapshot (dal repair order principale)
+  deviceDescription: text("device_description").notNull(), // es: "iPhone 14 Pro - IMEI: 123456"
+  
+  // Internal handling
+  assignedToUserId: varchar("assigned_to_user_id"), // Tecnico interno assegnato
+  assignedToGroupId: varchar("assigned_to_group_id"), // Gruppo tecnici
+  
+  // External handling
+  externalLabId: varchar("external_lab_id").references(() => externalLabs.id),
+  externalLabJobRef: text("external_lab_job_ref"), // Riferimento laboratorio esterno
+  
+  // Shipping (for external)
+  shippingDocumentUrl: text("shipping_document_url"), // URL documento spedizione PDF
+  shippingLabelUrl: text("shipping_label_url"), // URL etichetta logistica PDF
+  trackingNumber: text("tracking_number"), // Numero tracking corriere
+  trackingCarrier: text("tracking_carrier"), // Nome corriere
+  shippedAt: timestamp("shipped_at"),
+  receivedAtLabAt: timestamp("received_at_lab_at"),
+  
+  // Outcome
+  recoveryOutcome: text("recovery_outcome"), // "success" | "partial" | "failed"
+  recoveredDataDescription: text("recovered_data_description"), // Cosa è stato recuperato
+  recoveredDataSize: text("recovered_data_size"), // Es: "256GB"
+  recoveredDataMediaType: text("recovered_data_media_type"), // Es: "USB Drive", "Cloud Upload"
+  
+  // Costs
+  estimatedCost: integer("estimated_cost"), // Costo stimato in centesimi
+  finalCost: integer("final_cost"), // Costo finale in centesimi
+  
+  // Notes
+  internalNotes: text("internal_notes"), // Note interne
+  customerNotes: text("customer_notes"), // Note visibili al cliente
+  
+  // Timestamps
+  createdBy: varchar("created_by").notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  completedAt: timestamp("completed_at"),
+});
+
+// Data Recovery Events (Timeline eventi)
+export const dataRecoveryEvents = pgTable("data_recovery_events", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  dataRecoveryJobId: varchar("data_recovery_job_id").notNull().references(() => dataRecoveryJobs.id),
+  eventType: dataRecoveryEventTypeEnum("event_type").notNull(),
+  title: text("title").notNull(), // Titolo breve evento
+  description: text("description"), // Descrizione dettagliata
+  metadata: text("metadata"), // JSON extra data (tracking info, etc)
+  createdBy: varchar("created_by"), // ID utente o "system"
+  createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
 // Support Tickets
@@ -1062,6 +1185,60 @@ export const updateAdminSettingSchema = z.object({
   description: z.string().optional(),
 });
 
+// Data Recovery Schemas
+export const insertExternalLabSchema = createInsertSchema(externalLabs).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertDataRecoveryJobSchema = createInsertSchema(dataRecoveryJobs).omit({
+  id: true,
+  jobNumber: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertDataRecoveryEventSchema = createInsertSchema(dataRecoveryEvents).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const createDataRecoveryEventSchema = z.object({
+  eventType: z.enum(["created", "status_change", "assigned", "shipped", "received", "completed", "note_added", "document_uploaded"]).default("note_added"),
+  title: z.string().min(1, "Title is required").max(200, "Title too long"),
+  description: z.string().max(2000, "Description too long").optional().nullable(),
+  metadata: z.record(z.unknown()).optional().nullable(),
+});
+
+export const updateDataRecoveryJobSchema = z.object({
+  status: z.enum(["pending", "assigned", "in_progress", "awaiting_shipment", "shipped", "at_lab", "completed", "partial", "failed", "cancelled"]).optional(),
+  assignedToUserId: z.string().optional().nullable(),
+  externalLabId: z.string().optional().nullable(),
+  externalLabJobRef: z.string().optional().nullable(),
+  trackingNumber: z.string().optional().nullable(),
+  trackingCarrier: z.string().optional().nullable(),
+  recoveryOutcome: z.enum(["success", "partial", "failed"]).optional().nullable(),
+  recoveredDataDescription: z.string().optional().nullable(),
+  recoveredDataSize: z.string().optional().nullable(),
+  recoveredDataMediaType: z.string().optional().nullable(),
+  estimatedCost: z.number().optional().nullable(),
+  finalCost: z.number().optional().nullable(),
+  internalNotes: z.string().optional().nullable(),
+  customerNotes: z.string().optional().nullable(),
+});
+
+export const createDataRecoveryJobSchema = z.object({
+  parentRepairOrderId: z.string().min(1),
+  triggerType: z.enum(["manual", "automatic"]).default("manual"),
+  handlingType: z.enum(["internal", "external"]),
+  deviceDescription: z.string().min(1),
+  assignedToUserId: z.string().optional().nullable(),
+  externalLabId: z.string().optional().nullable(),
+  estimatedCost: z.number().optional().nullable(),
+  internalNotes: z.string().optional().nullable(),
+  customerNotes: z.string().optional().nullable(),
+});
+
 // Update schemas for PATCH endpoints
 export const updateRepairStatusSchema = z.object({
   status: z.enum(["pending", "in_progress", "waiting_parts", "completed", "delivered", "cancelled"]),
@@ -1227,3 +1404,15 @@ export type InsertRepairDelivery = z.infer<typeof insertRepairDeliverySchema>;
 
 export type AdminSetting = typeof adminSettings.$inferSelect;
 export type InsertAdminSetting = z.infer<typeof insertAdminSettingSchema>;
+
+// Data Recovery Types
+export type ExternalLab = typeof externalLabs.$inferSelect;
+export type InsertExternalLab = z.infer<typeof insertExternalLabSchema>;
+
+export type DataRecoveryJob = typeof dataRecoveryJobs.$inferSelect;
+export type InsertDataRecoveryJob = z.infer<typeof insertDataRecoveryJobSchema>;
+export type CreateDataRecoveryJob = z.infer<typeof createDataRecoveryJobSchema>;
+export type UpdateDataRecoveryJob = z.infer<typeof updateDataRecoveryJobSchema>;
+
+export type DataRecoveryEvent = typeof dataRecoveryEvents.$inferSelect;
+export type InsertDataRecoveryEvent = z.infer<typeof insertDataRecoveryEventSchema>;

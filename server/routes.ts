@@ -15,6 +15,10 @@ import {
   insertNotificationPreferencesSchema, insertRepairAttachmentSchema, insertRepairDiagnosticsSchema,
   insertRepairQuoteSchema,
   customerWizardSchema,
+  createDataRecoveryJobSchema,
+  updateDataRecoveryJobSchema,
+  createDataRecoveryEventSchema,
+  insertExternalLabSchema,
   type Product
 } from "@shared/schema";
 import { ObjectStorageService, objectStorageClient, parseObjectPath } from "./objectStorage";
@@ -5443,6 +5447,536 @@ export function registerRoutes(app: Express): Server {
     try {
       await storage.deleteUnrepairableReason(req.params.id);
       res.status(204).send();
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // ==========================================
+  // DATA RECOVERY API ENDPOINTS
+  // ==========================================
+
+  // List external labs - Only admin and repair_center can see labs
+  app.get("/api/external-labs", requireAuth, requireRole(['admin', 'repair_center']), async (req, res) => {
+    try {
+      const activeOnly = req.query.activeOnly !== 'false';
+      const labs = await storage.listExternalLabs(activeOnly);
+      res.json(labs);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // Get single external lab - Only admin and repair_center can see lab details
+  app.get("/api/external-labs/:id", requireAuth, requireRole(['admin', 'repair_center']), async (req, res) => {
+    try {
+      const lab = await storage.getExternalLab(req.params.id);
+      if (!lab) {
+        return res.status(404).send("External lab not found");
+      }
+      res.json(lab);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // Admin: Create external lab
+  app.post("/api/admin/external-labs", requireAuth, requireRole('admin'), async (req, res) => {
+    try {
+      const lab = await storage.createExternalLab(req.body);
+      res.status(201).json(lab);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // Admin: Update external lab
+  app.patch("/api/admin/external-labs/:id", requireAuth, requireRole('admin'), async (req, res) => {
+    try {
+      const lab = await storage.updateExternalLab(req.params.id, req.body);
+      res.json(lab);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // Admin: Delete external lab
+  app.delete("/api/admin/external-labs/:id", requireAuth, requireRole('admin'), async (req, res) => {
+    try {
+      await storage.deleteExternalLab(req.params.id);
+      res.status(204).send();
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // Get data recovery job for a repair order - RBAC with ownership check
+  app.get("/api/repair-orders/:id/data-recovery", requireAuth, async (req, res) => {
+    try {
+      const user = req.user as any;
+      const repairOrderId = req.params.id;
+      
+      // First check if user has access to the repair order
+      const repairOrder = await storage.getRepairOrder(repairOrderId);
+      if (!repairOrder) {
+        return res.status(404).send("Repair order not found");
+      }
+      
+      // RBAC check based on role and ownership
+      if (user.role === 'customer' && repairOrder.customerId !== user.id) {
+        return res.status(403).send("Access denied");
+      }
+      if (user.role === 'reseller' && repairOrder.resellerId !== user.id) {
+        return res.status(403).send("Access denied");
+      }
+      if (user.role === 'repair_center' && repairOrder.repairCenterId !== user.repairCenterId) {
+        return res.status(403).send("Access denied");
+      }
+      
+      const job = await storage.getDataRecoveryJobByRepairOrderId(repairOrderId);
+      if (!job) {
+        return res.status(404).send("Data recovery job not found");
+      }
+      
+      // Include events for timeline
+      const events = await storage.listDataRecoveryEvents(job.id);
+      
+      // Include external lab details if applicable
+      let externalLab = null;
+      if (job.externalLabId) {
+        externalLab = await storage.getExternalLab(job.externalLabId);
+      }
+      
+      // Include assigned user details if applicable
+      let assignedUser = null;
+      if (job.assignedToUserId) {
+        assignedUser = await storage.getUser(job.assignedToUserId);
+      }
+      
+      res.json({
+        ...job,
+        events,
+        externalLab,
+        assignedUser: assignedUser ? { id: assignedUser.id, fullName: assignedUser.fullName, username: assignedUser.username } : null
+      });
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // Create data recovery job for a repair order
+  app.post("/api/repair-orders/:id/data-recovery", requireAuth, requireRole(['admin', 'repair_center']), async (req, res) => {
+    try {
+      const repairOrderId = req.params.id;
+      const user = req.user as any;
+      
+      // Validate request body with zod
+      const bodyValidation = createDataRecoveryJobSchema.omit({ parentRepairOrderId: true, deviceDescription: true }).safeParse(req.body);
+      if (!bodyValidation.success) {
+        return res.status(400).json({ error: "Invalid request body", details: bodyValidation.error.flatten() });
+      }
+      const validatedBody = bodyValidation.data;
+      
+      // Check if repair order exists
+      const repairOrder = await storage.getRepairOrder(repairOrderId);
+      if (!repairOrder) {
+        return res.status(404).send("Repair order not found");
+      }
+      
+      // Ownership check for repair_center role
+      if (user.role === 'repair_center' && repairOrder.repairCenterId !== user.repairCenterId) {
+        return res.status(403).send("Access denied - repair order does not belong to your repair center");
+      }
+      
+      // Check if data recovery job already exists
+      const existingJob = await storage.getDataRecoveryJobByRepairOrderId(repairOrderId);
+      if (existingJob && !["completed", "failed", "cancelled"].includes(existingJob.status)) {
+        return res.status(400).send("Data recovery job already in progress for this repair order");
+      }
+      
+      // Build device description from repair order
+      const deviceDescription = `${repairOrder.brand || ''} ${repairOrder.deviceModel} - ${repairOrder.imei ? `IMEI: ${repairOrder.imei}` : repairOrder.serial ? `S/N: ${repairOrder.serial}` : 'N/A'}`.trim();
+      
+      const job = await storage.createDataRecoveryJob({
+        parentRepairOrderId: repairOrderId,
+        triggerType: validatedBody.triggerType || "manual",
+        handlingType: validatedBody.handlingType,
+        deviceDescription,
+        assignedToUserId: validatedBody.assignedToUserId || null,
+        externalLabId: validatedBody.externalLabId || null,
+        estimatedCost: validatedBody.estimatedCost || null,
+        internalNotes: validatedBody.internalNotes || null,
+        customerNotes: validatedBody.customerNotes || null,
+      }, user.id);
+      
+      // Log activity using validated body only
+      await storage.createActivityLog({
+        userId: user.id,
+        action: "data_recovery_created",
+        entityType: "data_recovery_job",
+        entityId: job.id,
+        details: JSON.stringify({
+          repairOrderId,
+          handlingType: validatedBody.handlingType,
+          jobNumber: job.jobNumber
+        })
+      });
+      
+      res.status(201).json(job);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // Update data recovery job status
+  app.patch("/api/data-recovery/:id", requireAuth, requireRole(['admin', 'repair_center']), async (req, res) => {
+    try {
+      const user = req.user as any;
+      const jobId = req.params.id;
+      
+      // Validate request body with zod
+      const bodyValidation = updateDataRecoveryJobSchema.safeParse(req.body);
+      if (!bodyValidation.success) {
+        return res.status(400).json({ error: "Invalid request body", details: bodyValidation.error.flatten() });
+      }
+      const updates = bodyValidation.data;
+      
+      const existingJob = await storage.getDataRecoveryJob(jobId);
+      if (!existingJob) {
+        return res.status(404).send("Data recovery job not found");
+      }
+      
+      // Ownership check for repair_center role
+      if (user.role === 'repair_center') {
+        const repairOrder = await storage.getRepairOrder(existingJob.parentRepairOrderId);
+        if (repairOrder && repairOrder.repairCenterId !== user.repairCenterId) {
+          return res.status(403).send("Access denied - repair order does not belong to your repair center");
+        }
+      }
+      
+      const updatedJob = await storage.updateDataRecoveryJob(jobId, updates);
+      
+      // Create event for status change
+      if (updates.status && updates.status !== existingJob.status) {
+        const statusLabels: Record<string, string> = {
+          pending: "In Attesa",
+          assigned: "Assegnato",
+          in_progress: "In Lavorazione",
+          awaiting_shipment: "In Attesa Spedizione",
+          shipped: "Spedito",
+          at_lab: "Ricevuto dal Laboratorio",
+          completed: "Completato",
+          partial: "Recupero Parziale",
+          failed: "Fallito",
+          cancelled: "Annullato"
+        };
+        
+        await storage.createDataRecoveryEvent({
+          dataRecoveryJobId: jobId,
+          eventType: "status_change",
+          title: `Stato aggiornato a: ${statusLabels[updates.status] || updates.status}`,
+          description: updates.internalNotes || null,
+          createdBy: user.id,
+        });
+      }
+      
+      // Log activity
+      await storage.createActivityLog({
+        userId: user.id,
+        action: "data_recovery_updated",
+        entityType: "data_recovery_job",
+        entityId: jobId,
+        details: JSON.stringify(updates)
+      });
+      
+      res.json(updatedJob);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // Add event/note to data recovery job
+  app.post("/api/data-recovery/:id/events", requireAuth, requireRole(['admin', 'repair_center']), async (req, res) => {
+    try {
+      const user = req.user as any;
+      const jobId = req.params.id;
+      
+      // Validate request body with zod
+      const bodyValidation = createDataRecoveryEventSchema.safeParse(req.body);
+      if (!bodyValidation.success) {
+        return res.status(400).json({ error: "Invalid request body", details: bodyValidation.error.flatten() });
+      }
+      const validatedBody = bodyValidation.data;
+      
+      const existingJob = await storage.getDataRecoveryJob(jobId);
+      if (!existingJob) {
+        return res.status(404).send("Data recovery job not found");
+      }
+      
+      // Ownership check for repair_center role
+      if (user.role === 'repair_center') {
+        const repairOrder = await storage.getRepairOrder(existingJob.parentRepairOrderId);
+        if (repairOrder && repairOrder.repairCenterId !== user.repairCenterId) {
+          return res.status(403).send("Access denied - repair order does not belong to your repair center");
+        }
+      }
+      
+      const event = await storage.createDataRecoveryEvent({
+        dataRecoveryJobId: jobId,
+        eventType: validatedBody.eventType,
+        title: validatedBody.title,
+        description: validatedBody.description || null,
+        metadata: validatedBody.metadata ? JSON.stringify(validatedBody.metadata) : null,
+        createdBy: user.id,
+      });
+      
+      res.status(201).json(event);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // List all data recovery jobs (for admin dashboard)
+  app.get("/api/data-recovery", requireAuth, requireRole(['admin', 'repair_center']), async (req, res) => {
+    try {
+      const filters: { status?: string; handlingType?: string } = {};
+      if (req.query.status) filters.status = req.query.status as string;
+      if (req.query.handlingType) filters.handlingType = req.query.handlingType as string;
+      
+      const jobs = await storage.listDataRecoveryJobs(filters);
+      res.json(jobs);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // Get single data recovery job by ID
+  app.get("/api/data-recovery/:id", requireAuth, async (req, res) => {
+    try {
+      const job = await storage.getDataRecoveryJob(req.params.id);
+      if (!job) {
+        return res.status(404).send("Data recovery job not found");
+      }
+      
+      const events = await storage.listDataRecoveryEvents(job.id);
+      
+      let externalLab = null;
+      if (job.externalLabId) {
+        externalLab = await storage.getExternalLab(job.externalLabId);
+      }
+      
+      let assignedUser = null;
+      if (job.assignedToUserId) {
+        assignedUser = await storage.getUser(job.assignedToUserId);
+      }
+      
+      res.json({
+        ...job,
+        events,
+        externalLab,
+        assignedUser: assignedUser ? { id: assignedUser.id, fullName: assignedUser.fullName, username: assignedUser.username } : null
+      });
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // ==========================================
+  // DATA RECOVERY PDF DOCUMENTS
+  // ==========================================
+
+  // Generate shipping document for external lab data recovery
+  app.get("/api/data-recovery/:id/shipping-document", requireAuth, async (req, res) => {
+    try {
+      const job = await storage.getDataRecoveryJob(req.params.id);
+      if (!job) {
+        return res.status(404).send("Data recovery job not found");
+      }
+      
+      if (job.handlingType !== 'external') {
+        return res.status(400).send("Shipping document only available for external lab jobs");
+      }
+      
+      const externalLab = job.externalLabId ? await storage.getExternalLab(job.externalLabId) : null;
+      if (!externalLab) {
+        return res.status(400).send("External lab not found");
+      }
+      
+      // Get parent repair order details
+      const repairOrder = await storage.getRepairOrder(job.parentRepairOrderId);
+      const customer = repairOrder?.customerId ? await storage.getUser(repairOrder.customerId) : null;
+      
+      // Generate PDF
+      const PDFDocument = (await import('pdfkit')).default;
+      const doc = new PDFDocument({ margin: 50, size: 'A4' });
+      
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="invio-recupero-${job.jobNumber}.pdf"`);
+      
+      doc.pipe(res);
+      
+      // Header
+      doc.fontSize(20).font('Helvetica-Bold').text('DOCUMENTO DI INVIO', { align: 'center' });
+      doc.fontSize(12).font('Helvetica').text('Recupero Dati - Laboratorio Esterno', { align: 'center' });
+      doc.moveDown();
+      
+      // Job info box
+      doc.rect(50, doc.y, 500, 50).stroke();
+      const boxY = doc.y + 10;
+      doc.fontSize(10).font('Helvetica-Bold').text('PRATICA RECUPERO DATI', 60, boxY);
+      doc.font('Helvetica').text(`Numero: ${job.jobNumber}`, 60, boxY + 15);
+      doc.text(`Data: ${new Date(job.createdAt).toLocaleDateString('it-IT')}`, 60, boxY + 30);
+      if (repairOrder) {
+        doc.text(`Rif. Riparazione: ${repairOrder.orderNumber}`, 300, boxY + 15);
+      }
+      doc.y = boxY + 45;
+      doc.moveDown();
+      
+      // Lab destination info
+      doc.fontSize(12).font('Helvetica-Bold').text('DESTINATARIO - LABORATORIO ESTERNO');
+      doc.fontSize(10).font('Helvetica');
+      doc.text(`${externalLab.name}`);
+      doc.text(`${externalLab.address}`);
+      doc.text(`${externalLab.zipCode || ''} ${externalLab.city} ${externalLab.province ? `(${externalLab.province})` : ''}`);
+      if (externalLab.contactPerson) doc.text(`Att.ne: ${externalLab.contactPerson}`);
+      if (externalLab.phone) doc.text(`Tel: ${externalLab.phone}`);
+      doc.text(`Email: ${externalLab.email}`);
+      doc.moveDown();
+      
+      // Device info
+      doc.fontSize(12).font('Helvetica-Bold').text('DISPOSITIVO');
+      doc.fontSize(10).font('Helvetica');
+      doc.text(job.deviceDescription || 'N/A');
+      doc.moveDown();
+      
+      // Customer info (sender)
+      doc.fontSize(12).font('Helvetica-Bold').text('MITTENTE / CLIENTE');
+      doc.fontSize(10).font('Helvetica');
+      if (customer) {
+        doc.text(`Nome: ${customer.fullName || customer.username}`);
+        if (customer.phone) doc.text(`Telefono: ${customer.phone}`);
+        if (customer.email) doc.text(`Email: ${customer.email}`);
+      } else {
+        doc.text('N/A');
+      }
+      doc.moveDown();
+      
+      // Notes
+      if (job.customerNotes) {
+        doc.fontSize(12).font('Helvetica-Bold').text('NOTE PER IL LABORATORIO');
+        doc.fontSize(10).font('Helvetica');
+        doc.text(job.customerNotes);
+        doc.moveDown();
+      }
+      
+      // Terms and conditions
+      doc.moveDown();
+      doc.fontSize(9).font('Helvetica').text(
+        'CONDIZIONI DI SERVIZIO: Il laboratorio si impegna a effettuare la diagnosi del dispositivo ' +
+        'e a comunicare preventivo per il recupero dati. Il cliente autorizza il trattamento dei dati ' +
+        'contenuti nel dispositivo ai fini esclusivi del recupero. I dati recuperati saranno trattati ' +
+        'con la massima riservatezza e restituiti su supporto concordato.',
+        { align: 'justify' }
+      );
+      doc.moveDown(2);
+      
+      // Signature areas
+      doc.fontSize(10).font('Helvetica');
+      doc.text('_______________________________', 60);
+      doc.text('Firma Mittente', 60);
+      doc.text(`Data: ${new Date().toLocaleDateString('it-IT')}`, 60);
+      doc.text('_______________________________', 320);
+      doc.text('Timbro e Firma Laboratorio', 320);
+      doc.text('Data ricezione: ______________', 320);
+      
+      // Footer
+      doc.moveDown(2);
+      doc.fontSize(8).font('Helvetica').text(
+        `Documento generato il ${new Date().toLocaleDateString('it-IT')} alle ${new Date().toLocaleTimeString('it-IT')}`,
+        { align: 'center' }
+      );
+      
+      doc.end();
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // Generate shipping label for external lab data recovery
+  app.get("/api/data-recovery/:id/label", requireAuth, async (req, res) => {
+    try {
+      const job = await storage.getDataRecoveryJob(req.params.id);
+      if (!job) {
+        return res.status(404).send("Data recovery job not found");
+      }
+      
+      if (job.handlingType !== 'external') {
+        return res.status(400).send("Shipping label only available for external lab jobs");
+      }
+      
+      const externalLab = job.externalLabId ? await storage.getExternalLab(job.externalLabId) : null;
+      if (!externalLab) {
+        return res.status(400).send("External lab not found");
+      }
+      
+      // Generate PDF - A6 size for label
+      const PDFDocument = (await import('pdfkit')).default;
+      const doc = new PDFDocument({ 
+        margin: 20, 
+        size: [297.64, 419.53] // A6 in points
+      });
+      
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="etichetta-${job.jobNumber}.pdf"`);
+      
+      doc.pipe(res);
+      
+      // Border
+      doc.rect(10, 10, 277.64, 399.53).stroke();
+      
+      // Header with job number
+      doc.fontSize(14).font('Helvetica-Bold').text('RECUPERO DATI', { align: 'center' });
+      doc.fontSize(18).font('Helvetica-Bold').text(job.jobNumber, { align: 'center' });
+      doc.moveDown();
+      
+      // Divider line
+      doc.moveTo(20, doc.y).lineTo(277.64, doc.y).stroke();
+      doc.moveDown(0.5);
+      
+      // Destination label
+      doc.fontSize(10).font('Helvetica-Bold').text('DESTINATARIO:');
+      doc.fontSize(12).font('Helvetica-Bold').text(externalLab.name);
+      doc.fontSize(10).font('Helvetica');
+      doc.text(externalLab.address);
+      doc.text(`${externalLab.zipCode || ''} ${externalLab.city}`);
+      if (externalLab.province) doc.text(`(${externalLab.province})`);
+      if (externalLab.contactPerson) {
+        doc.moveDown(0.5);
+        doc.text(`Att.ne: ${externalLab.contactPerson}`);
+      }
+      doc.moveDown();
+      
+      // Divider line
+      doc.moveTo(20, doc.y).lineTo(277.64, doc.y).stroke();
+      doc.moveDown(0.5);
+      
+      // Device description
+      doc.fontSize(10).font('Helvetica-Bold').text('CONTENUTO:');
+      doc.fontSize(10).font('Helvetica').text(job.deviceDescription || 'Dispositivo per recupero dati');
+      doc.moveDown();
+      
+      // Warning box
+      doc.rect(20, doc.y, 257.64, 40).stroke();
+      doc.fontSize(8).font('Helvetica-Bold').text('ATTENZIONE - MATERIALE FRAGILE', 25, doc.y + 5, { align: 'center' });
+      doc.fontSize(7).font('Helvetica').text('Maneggiare con cura - Evitare urti e vibrazioni', 25, doc.y + 18, { align: 'center' });
+      doc.y += 45;
+      
+      // Reference number at bottom
+      doc.moveDown();
+      doc.fontSize(8).font('Helvetica').text(`Rif: ${job.jobNumber}`, { align: 'center' });
+      doc.text(`${new Date().toLocaleDateString('it-IT')}`, { align: 'center' });
+      
+      doc.end();
     } catch (error: any) {
       res.status(500).send(error.message);
     }

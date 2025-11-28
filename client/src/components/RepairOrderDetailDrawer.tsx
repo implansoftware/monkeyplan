@@ -27,11 +27,13 @@ import { PartsOrderDialog } from "@/components/PartsOrderDialog";
 import { RepairLogDialog } from "@/components/RepairLogDialog";
 import { TestChecklistDialog } from "@/components/TestChecklistDialog";
 import { DeliveryDialog } from "@/components/DeliveryDialog";
+import { DataRecoveryDialog } from "@/components/DataRecoveryDialog";
 import { useToast } from "@/hooks/use-toast";
 import {
   Wrench, Euro, FileText, Paperclip, Calendar, Package, ClipboardList,
   ClipboardCheck, PackageCheck, Play, CheckCircle, Stethoscope, Receipt,
-  Download, User, ArrowRight, Circle, CheckCircle2, AlertCircle, Gift, Shield, SkipForward
+  Download, User, ArrowRight, Circle, CheckCircle2, AlertCircle, Gift, Shield, SkipForward,
+  HardDrive, Building2, Clock, Truck, Loader2
 } from "lucide-react";
 import { format } from "date-fns";
 import { useAuth } from "@/hooks/use-auth";
@@ -127,6 +129,7 @@ export function RepairOrderDetailDrawer({
   const [deliveryDialogOpen, setDeliveryDialogOpen] = useState(false);
   const [skipQuoteDialogOpen, setSkipQuoteDialogOpen] = useState(false);
   const [skipQuoteReason, setSkipQuoteReason] = useState<'garanzia' | 'omaggio' | null>(null);
+  const [dataRecoveryDialogOpen, setDataRecoveryDialogOpen] = useState(false);
 
   const { data: repair, isLoading, error } = useQuery<RepairOrder>({
     queryKey: ["/api/repair-orders", repairOrderId],
@@ -199,6 +202,23 @@ export function RepairOrderDetailDrawer({
     queryKey: ["/api/repair-orders", repairOrderId, "diagnostics"],
     queryFn: async () => {
       const response = await fetch(`/api/repair-orders/${repairOrderId}/diagnostics`, {
+        credentials: "include",
+      });
+      if (!response.ok) {
+        if (response.status === 404) return null;
+        return null;
+      }
+      return response.json();
+    },
+    enabled: !!repairOrderId && open,
+    retry: false,
+  });
+
+  // Data Recovery Job query
+  const { data: dataRecoveryJob, isLoading: dataRecoveryLoading } = useQuery<any>({
+    queryKey: ["/api/repair-orders", repairOrderId, "data-recovery"],
+    queryFn: async () => {
+      const response = await fetch(`/api/repair-orders/${repairOrderId}/data-recovery`, {
         credentials: "include",
       });
       if (!response.ok) {
@@ -1099,6 +1119,138 @@ export function RepairOrderDetailDrawer({
 
             <Separator />
 
+            {/* Data Recovery Section - Show when diagnosis has unrepairable outcome or job exists */}
+            {(diagnosis?.outcome === 'irriparabile' || diagnosis?.outcome === 'non_conveniente' || dataRecoveryJob) && (
+              <>
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2 font-medium">
+                    <HardDrive className="h-4 w-4 text-blue-500" />
+                    Recupero Dati
+                  </div>
+                  
+                  {dataRecoveryLoading ? (
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Caricamento...
+                    </div>
+                  ) : dataRecoveryJob ? (
+                    <Card className="border-blue-200 dark:border-blue-800 bg-blue-50/50 dark:bg-blue-900/20">
+                      <CardContent className="p-4 space-y-3">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            {dataRecoveryJob.handlingType === 'internal' ? (
+                              <User className="h-4 w-4 text-green-500" />
+                            ) : (
+                              <Building2 className="h-4 w-4 text-blue-500" />
+                            )}
+                            <span className="font-medium">
+                              {dataRecoveryJob.handlingType === 'internal' ? 'Recupero Interno' : 'Laboratorio Esterno'}
+                            </span>
+                          </div>
+                          <Badge variant={
+                            dataRecoveryJob.status === 'completed' ? 'default' :
+                            dataRecoveryJob.status === 'failed' ? 'destructive' :
+                            dataRecoveryJob.status === 'cancelled' ? 'secondary' :
+                            'outline'
+                          }>
+                            {dataRecoveryJob.status === 'pending' && 'In Attesa'}
+                            {dataRecoveryJob.status === 'assigned' && 'Assegnato'}
+                            {dataRecoveryJob.status === 'in_progress' && 'In Lavorazione'}
+                            {dataRecoveryJob.status === 'awaiting_shipment' && 'In Attesa Spedizione'}
+                            {dataRecoveryJob.status === 'shipped' && 'Spedito'}
+                            {dataRecoveryJob.status === 'at_lab' && 'Al Laboratorio'}
+                            {dataRecoveryJob.status === 'completed' && 'Completato'}
+                            {dataRecoveryJob.status === 'partial' && 'Parziale'}
+                            {dataRecoveryJob.status === 'failed' && 'Fallito'}
+                            {dataRecoveryJob.status === 'cancelled' && 'Annullato'}
+                          </Badge>
+                        </div>
+                        
+                        <div className="text-sm text-muted-foreground">
+                          <p>Job: <span className="font-mono">{dataRecoveryJob.jobNumber}</span></p>
+                          {dataRecoveryJob.externalLab && (
+                            <p>Laboratorio: {dataRecoveryJob.externalLab.name}</p>
+                          )}
+                          {dataRecoveryJob.assignedUser && (
+                            <p>Assegnato a: {dataRecoveryJob.assignedUser.fullName || dataRecoveryJob.assignedUser.username}</p>
+                          )}
+                        </div>
+                        
+                        {/* Timeline of events */}
+                        {dataRecoveryJob.events && dataRecoveryJob.events.length > 0 && (
+                          <div className="space-y-2 pt-2 border-t border-blue-200 dark:border-blue-700">
+                            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Timeline</p>
+                            <div className="space-y-1">
+                              {dataRecoveryJob.events.slice(0, 3).map((event: any) => (
+                                <div key={event.id} className="flex items-center gap-2 text-xs">
+                                  <Clock className="h-3 w-3 text-muted-foreground" />
+                                  <span className="text-muted-foreground">
+                                    {format(new Date(event.createdAt), "dd/MM HH:mm")}
+                                  </span>
+                                  <span>{event.title}</span>
+                                </div>
+                              ))}
+                              {dataRecoveryJob.events.length > 3 && (
+                                <p className="text-xs text-muted-foreground">
+                                  + altri {dataRecoveryJob.events.length - 3} eventi
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                        
+                        {/* Download documents button for external handling */}
+                        {dataRecoveryJob.handlingType === 'external' && (
+                          <div className="flex gap-2 pt-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => window.open(`/api/data-recovery/${dataRecoveryJob.id}/shipping-document`, '_blank')}
+                              className="gap-1 text-xs"
+                              data-testid="button-download-shipping-doc"
+                            >
+                              <Download className="h-3 w-3" />
+                              Documento Invio
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => window.open(`/api/data-recovery/${dataRecoveryJob.id}/label`, '_blank')}
+                              className="gap-1 text-xs"
+                              data-testid="button-download-label"
+                            >
+                              <Truck className="h-3 w-3" />
+                              Etichetta
+                            </Button>
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  ) : (
+                    <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-4 space-y-3">
+                      <p className="text-sm">
+                        {diagnosis?.outcome === 'irriparabile' 
+                          ? 'Dispositivo dichiarato irriparabile. Vuoi proporre il recupero dati al cliente?'
+                          : 'Riparazione non conveniente. Vuoi proporre il recupero dati al cliente?'
+                        }
+                      </p>
+                      {canManageWorkflow && (
+                        <Button
+                          onClick={() => setDataRecoveryDialogOpen(true)}
+                          className="w-full gap-2"
+                          data-testid="button-start-data-recovery"
+                        >
+                          <HardDrive className="h-4 w-4" />
+                          Avvia Recupero Dati
+                        </Button>
+                      )}
+                    </div>
+                  )}
+                </div>
+                <Separator />
+              </>
+            )}
+
             {/* Attachments */}
             <div className="space-y-3">
               <div className="flex items-center gap-2 font-medium">
@@ -1121,9 +1273,19 @@ export function RepairOrderDetailDrawer({
                   repairOrderId={repairOrderId}
                   repairOrder={repair ? { deviceTypeId: repair.deviceTypeId } as any : undefined}
                   existingDiagnosis={diagnosis}
-                  onSuccess={() => {
+                  onSuccess={(outcome) => {
                     queryClient.invalidateQueries({ queryKey: ["/api/repair-orders", repairOrderId] });
                     queryClient.invalidateQueries({ queryKey: ["/api/repair-orders", repairOrderId, "diagnostics"] });
+                    queryClient.invalidateQueries({ queryKey: ["/api/repair-orders", repairOrderId, "data-recovery"] });
+                    if (outcome === 'irriparabile' || outcome === 'non_conveniente') {
+                      setTimeout(() => {
+                        toast({
+                          title: "Recupero Dati Suggerito",
+                          description: "Il dispositivo è stato dichiarato " + (outcome === 'irriparabile' ? 'irriparabile' : 'non conveniente da riparare') + ". Vuoi proporre il recupero dati al cliente?",
+                        });
+                        setDataRecoveryDialogOpen(true);
+                      }, 500);
+                    }
                   }}
                 />
                 <QuoteFormDialog
@@ -1154,6 +1316,16 @@ export function RepairOrderDetailDrawer({
                   onOpenChange={setDeliveryDialogOpen}
                   repairOrderId={repairOrderId}
                   onSuccess={() => queryClient.invalidateQueries({ queryKey: ["/api/repair-orders", repairOrderId] })}
+                />
+                <DataRecoveryDialog
+                  open={dataRecoveryDialogOpen}
+                  onOpenChange={setDataRecoveryDialogOpen}
+                  repairOrderId={repairOrderId}
+                  deviceDescription={repair ? `${repair.brand || ''} ${repair.deviceModel}`.trim() : undefined}
+                  onSuccess={() => {
+                    queryClient.invalidateQueries({ queryKey: ["/api/repair-orders", repairOrderId] });
+                    queryClient.invalidateQueries({ queryKey: ["/api/repair-orders", repairOrderId, "data-recovery"] });
+                  }}
                 />
                 
                 {/* Skip Quote Dialog */}

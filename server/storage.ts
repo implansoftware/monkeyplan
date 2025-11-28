@@ -14,13 +14,15 @@ import {
   RepairTestChecklist, InsertRepairTestChecklist, RepairDelivery, InsertRepairDelivery,
   AdminSetting, InsertAdminSetting,
   Promotion, InsertPromotion, UnrepairableReason, InsertUnrepairableReason,
+  ExternalLab, InsertExternalLab, DataRecoveryJob, InsertDataRecoveryJob, DataRecoveryEvent, InsertDataRecoveryEvent,
+  CreateDataRecoveryJob, UpdateDataRecoveryJob,
   users, repairCenters, products, repairOrders, tickets, ticketMessages,
   invoices, billingData, chatMessages, inventoryMovements, inventoryStock, activityLogs, analyticsCache,
   notifications, notificationPreferences, repairAttachments, repairAcceptance, repairDiagnostics,
   repairQuotes, partsOrders, repairLogs, repairTestChecklist, repairDelivery,
   deviceTypes, deviceBrands, deviceModels, issueTypes, aestheticDefects, accessoryTypes,
   diagnosticFindings, damagedComponentTypes, estimatedRepairTimes, adminSettings,
-  promotions, unrepairableReasons
+  promotions, unrepairableReasons, externalLabs, dataRecoveryJobs, dataRecoveryEvents
 } from "@shared/schema";
 import { db, pool } from "./db";
 import { eq, and, or, desc, lt, sql, not } from "drizzle-orm";
@@ -215,6 +217,24 @@ export interface IStorage {
   createUnrepairableReason(reason: InsertUnrepairableReason): Promise<UnrepairableReason>;
   updateUnrepairableReason(id: string, updates: Partial<InsertUnrepairableReason>): Promise<UnrepairableReason>;
   deleteUnrepairableReason(id: string): Promise<void>;
+  
+  // External Labs (Laboratori esterni per recupero dati)
+  listExternalLabs(activeOnly?: boolean): Promise<ExternalLab[]>;
+  getExternalLab(id: string): Promise<ExternalLab | undefined>;
+  createExternalLab(lab: InsertExternalLab): Promise<ExternalLab>;
+  updateExternalLab(id: string, updates: Partial<InsertExternalLab>): Promise<ExternalLab>;
+  deleteExternalLab(id: string): Promise<void>;
+  
+  // Data Recovery Jobs
+  createDataRecoveryJob(job: CreateDataRecoveryJob, createdBy: string): Promise<DataRecoveryJob>;
+  getDataRecoveryJob(id: string): Promise<DataRecoveryJob | undefined>;
+  listDataRecoveryJobs(filters?: { repairOrderId?: string; status?: string; handlingType?: string }): Promise<DataRecoveryJob[]>;
+  updateDataRecoveryJob(id: string, updates: UpdateDataRecoveryJob): Promise<DataRecoveryJob>;
+  getDataRecoveryJobByRepairOrderId(repairOrderId: string): Promise<DataRecoveryJob | undefined>;
+  
+  // Data Recovery Events
+  createDataRecoveryEvent(event: InsertDataRecoveryEvent): Promise<DataRecoveryEvent>;
+  listDataRecoveryEvents(jobId: string): Promise<DataRecoveryEvent[]>;
   
   sessionStore: session.Store;
 }
@@ -1755,6 +1775,145 @@ export class DatabaseStorage implements IStorage {
 
   async deleteUnrepairableReason(id: string): Promise<void> {
     await db.delete(unrepairableReasons).where(eq(unrepairableReasons.id, id));
+  }
+
+  // ==========================================
+  // DATA RECOVERY SYSTEM
+  // ==========================================
+
+  // External Labs
+  async listExternalLabs(activeOnly: boolean = true): Promise<ExternalLab[]> {
+    if (activeOnly) {
+      return await db.select().from(externalLabs).where(eq(externalLabs.isActive, true)).orderBy(externalLabs.name);
+    }
+    return await db.select().from(externalLabs).orderBy(externalLabs.name);
+  }
+
+  async getExternalLab(id: string): Promise<ExternalLab | undefined> {
+    const [lab] = await db.select().from(externalLabs).where(eq(externalLabs.id, id));
+    return lab || undefined;
+  }
+
+  async createExternalLab(lab: InsertExternalLab): Promise<ExternalLab> {
+    const [created] = await db.insert(externalLabs).values(lab).returning();
+    return created;
+  }
+
+  async updateExternalLab(id: string, updates: Partial<InsertExternalLab>): Promise<ExternalLab> {
+    const [updated] = await db.update(externalLabs)
+      .set(updates)
+      .where(eq(externalLabs.id, id))
+      .returning();
+    if (!updated) throw new Error("External lab not found");
+    return updated;
+  }
+
+  async deleteExternalLab(id: string): Promise<void> {
+    await db.delete(externalLabs).where(eq(externalLabs.id, id));
+  }
+
+  // Data Recovery Jobs
+  async createDataRecoveryJob(job: CreateDataRecoveryJob, createdBy: string): Promise<DataRecoveryJob> {
+    // Generate job number: REC-YYYY-NNNN
+    const year = new Date().getFullYear();
+    const countResult = await db.select({ count: sql<number>`count(*)` })
+      .from(dataRecoveryJobs)
+      .where(sql`EXTRACT(YEAR FROM created_at) = ${year}`);
+    const count = Number(countResult[0]?.count || 0) + 1;
+    const jobNumber = `REC-${year}-${count.toString().padStart(4, '0')}`;
+
+    const [created] = await db.insert(dataRecoveryJobs).values({
+      ...job,
+      jobNumber,
+      createdBy,
+      diagnosisId: null, // Will be set if triggered from diagnosis
+    }).returning();
+
+    // Create initial event
+    await this.createDataRecoveryEvent({
+      dataRecoveryJobId: created.id,
+      eventType: "created",
+      title: "Recupero dati avviato",
+      description: job.handlingType === "internal" 
+        ? "Recupero dati avviato internamente" 
+        : "Recupero dati inviato a laboratorio esterno",
+      createdBy,
+    });
+
+    return created;
+  }
+
+  async getDataRecoveryJob(id: string): Promise<DataRecoveryJob | undefined> {
+    const [job] = await db.select().from(dataRecoveryJobs).where(eq(dataRecoveryJobs.id, id));
+    return job || undefined;
+  }
+
+  async listDataRecoveryJobs(filters?: { repairOrderId?: string; status?: string; handlingType?: string }): Promise<DataRecoveryJob[]> {
+    const conditions = [];
+    
+    if (filters?.repairOrderId) {
+      conditions.push(eq(dataRecoveryJobs.parentRepairOrderId, filters.repairOrderId));
+    }
+    if (filters?.status) {
+      conditions.push(sql`${dataRecoveryJobs.status}::text = ${filters.status}`);
+    }
+    if (filters?.handlingType) {
+      conditions.push(sql`${dataRecoveryJobs.handlingType}::text = ${filters.handlingType}`);
+    }
+    
+    if (conditions.length > 0) {
+      return await db.select().from(dataRecoveryJobs).where(and(...conditions)).orderBy(desc(dataRecoveryJobs.createdAt));
+    }
+    
+    return await db.select().from(dataRecoveryJobs).orderBy(desc(dataRecoveryJobs.createdAt));
+  }
+
+  async updateDataRecoveryJob(id: string, updates: UpdateDataRecoveryJob): Promise<DataRecoveryJob> {
+    const updateData: any = { ...updates, updatedAt: new Date() };
+    
+    // If status changes to completed/partial/failed, set completedAt
+    if (updates.status && ["completed", "partial", "failed"].includes(updates.status)) {
+      updateData.completedAt = new Date();
+    }
+    
+    // If status changes to shipped, set shippedAt
+    if (updates.status === "shipped" && !updateData.shippedAt) {
+      updateData.shippedAt = new Date();
+    }
+    
+    // If status changes to at_lab, set receivedAtLabAt
+    if (updates.status === "at_lab" && !updateData.receivedAtLabAt) {
+      updateData.receivedAtLabAt = new Date();
+    }
+
+    const [updated] = await db.update(dataRecoveryJobs)
+      .set(updateData)
+      .where(eq(dataRecoveryJobs.id, id))
+      .returning();
+    
+    if (!updated) throw new Error("Data recovery job not found");
+    return updated;
+  }
+
+  async getDataRecoveryJobByRepairOrderId(repairOrderId: string): Promise<DataRecoveryJob | undefined> {
+    const [job] = await db.select()
+      .from(dataRecoveryJobs)
+      .where(eq(dataRecoveryJobs.parentRepairOrderId, repairOrderId))
+      .orderBy(desc(dataRecoveryJobs.createdAt));
+    return job || undefined;
+  }
+
+  // Data Recovery Events
+  async createDataRecoveryEvent(event: InsertDataRecoveryEvent): Promise<DataRecoveryEvent> {
+    const [created] = await db.insert(dataRecoveryEvents).values(event).returning();
+    return created;
+  }
+
+  async listDataRecoveryEvents(jobId: string): Promise<DataRecoveryEvent[]> {
+    return await db.select()
+      .from(dataRecoveryEvents)
+      .where(eq(dataRecoveryEvents.dataRecoveryJobId, jobId))
+      .orderBy(desc(dataRecoveryEvents.createdAt));
   }
 }
 
