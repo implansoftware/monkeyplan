@@ -16,14 +16,12 @@ import { Button } from "@/components/ui/button";
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -51,7 +49,6 @@ const deliverySchema = z.object({
   idDocumentType: z.string().optional(),
   idDocumentNumber: z.string().optional(),
   idDocumentPhoto: z.string().optional(),
-  notes: z.string().optional(),
 });
 
 type DeliveryFormData = z.infer<typeof deliverySchema>;
@@ -88,7 +85,6 @@ export function DeliveryDialog({
       idDocumentType: "",
       idDocumentNumber: "",
       idDocumentPhoto: "",
-      notes: "",
     },
   });
 
@@ -168,7 +164,6 @@ export function DeliveryDialog({
         idDocumentType: data.idDocumentType || null,
         idDocumentNumber: data.idDocumentNumber || null,
         idDocumentPhoto: data.idDocumentPhoto || null,
-        notes: data.notes || null,
       });
     },
     onSuccess: () => {
@@ -483,28 +478,6 @@ export function DeliveryDialog({
                 Carica una foto del documento di identità (opzionale)
               </p>
             </div>
-
-            <FormField
-              control={form.control}
-              name="notes"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Note</FormLabel>
-                  <FormControl>
-                    <Textarea
-                      {...field}
-                      placeholder="Note aggiuntive sulla consegna..."
-                      rows={2}
-                      data-testid="input-notes"
-                    />
-                  </FormControl>
-                  <FormDescription>
-                    Eventuali osservazioni sulla consegna
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
 
             <div className="flex justify-end gap-3">
               <Button
