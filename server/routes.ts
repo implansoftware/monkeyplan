@@ -5361,5 +5361,92 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // ============ PROMOTIONS (for "Non Conveniente" diagnosis outcome) ============
+
+  // Get all promotions (for diagnosis form)
+  app.get("/api/promotions", requireAuth, async (req, res) => {
+    try {
+      const activeOnly = req.query.activeOnly !== 'false'; // Default true
+      const promotions = await storage.listPromotions(activeOnly);
+      res.json(promotions);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // Admin: Create promotion
+  app.post("/api/admin/promotions", requireAuth, requireRole('admin'), async (req, res) => {
+    try {
+      const promotion = await storage.createPromotion(req.body);
+      res.status(201).json(promotion);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // Admin: Update promotion
+  app.patch("/api/admin/promotions/:id", requireAuth, requireRole('admin'), async (req, res) => {
+    try {
+      const promotion = await storage.updatePromotion(req.params.id, req.body);
+      res.json(promotion);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // Admin: Delete promotion
+  app.delete("/api/admin/promotions/:id", requireAuth, requireRole('admin'), async (req, res) => {
+    try {
+      await storage.deletePromotion(req.params.id);
+      res.status(204).send();
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // ============ UNREPAIRABLE REASONS (for "Irriparabile" diagnosis outcome) ============
+
+  // Get unrepairable reasons (filtered by device type)
+  app.get("/api/unrepairable-reasons", requireAuth, async (req, res) => {
+    try {
+      const deviceTypeId = req.query.deviceTypeId as string | undefined;
+      const activeOnly = req.query.activeOnly !== 'false'; // Default true
+      const reasons = await storage.listUnrepairableReasons(deviceTypeId, activeOnly);
+      res.json(reasons);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // Admin: Create unrepairable reason
+  app.post("/api/admin/unrepairable-reasons", requireAuth, requireRole('admin'), async (req, res) => {
+    try {
+      const reason = await storage.createUnrepairableReason(req.body);
+      res.status(201).json(reason);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // Admin: Update unrepairable reason
+  app.patch("/api/admin/unrepairable-reasons/:id", requireAuth, requireRole('admin'), async (req, res) => {
+    try {
+      const reason = await storage.updateUnrepairableReason(req.params.id, req.body);
+      res.json(reason);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // Admin: Delete unrepairable reason
+  app.delete("/api/admin/unrepairable-reasons/:id", requireAuth, requireRole('admin'), async (req, res) => {
+    try {
+      await storage.deleteUnrepairableReason(req.params.id);
+      res.status(204).send();
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
   return httpServer;
 }
