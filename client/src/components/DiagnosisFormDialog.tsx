@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -69,11 +69,25 @@ import {
 import { DiagnosisPhotoUploader } from "@/components/DiagnosisPhotoUploader";
 import type { DiagnosticFinding, DamagedComponentType, EstimatedRepairTime, RepairOrder } from "@shared/schema";
 
+interface ExistingDiagnosis {
+  id: string;
+  technicalDiagnosis?: string | null;
+  damagedComponents?: string[] | null;
+  estimatedRepairTime?: number | null;
+  requiresExternalParts?: boolean | null;
+  diagnosisNotes?: string | null;
+  photos?: string[] | null;
+  findingIds?: string[] | null;
+  componentIds?: string[] | null;
+  estimatedRepairTimeId?: string | null;
+}
+
 interface DiagnosisFormDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   repairOrderId: string;
   repairOrder?: { deviceTypeId?: string | null };
+  existingDiagnosis?: ExistingDiagnosis | null;
   onSuccess?: () => void;
 }
 
@@ -160,11 +174,14 @@ export function DiagnosisFormDialog({
   onOpenChange,
   repairOrderId,
   repairOrder,
+  existingDiagnosis,
   onSuccess,
 }: DiagnosisFormDialogProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [uploadedPhotos, setUploadedPhotos] = useState<string[]>([]);
+  
+  const isEditMode = !!existingDiagnosis;
 
   const deviceTypeId = repairOrder?.deviceTypeId;
 
@@ -232,61 +249,94 @@ export function DiagnosisFormDialog({
   const form = useForm<DiagnosisFormData>({
     resolver: zodResolver(diagnosisSchema),
     defaultValues: {
-      selectedFindingIds: [],
+      selectedFindingIds: existingDiagnosis?.findingIds || [],
       otherFindingDescription: "",
-      selectedComponentIds: [],
+      selectedComponentIds: existingDiagnosis?.componentIds || [],
       otherComponentDescription: "",
-      estimatedRepairTimeId: "",
-      requiresExternalParts: false,
-      diagnosisNotes: "",
+      estimatedRepairTimeId: existingDiagnosis?.estimatedRepairTimeId || "",
+      requiresExternalParts: existingDiagnosis?.requiresExternalParts || false,
+      diagnosisNotes: existingDiagnosis?.diagnosisNotes || "",
     },
   });
 
+  // Reset form when existingDiagnosis changes or dialog opens
   const resetFormState = useCallback(() => {
-    form.reset();
-    setUploadedPhotos([]);
-  }, [form]);
+    if (existingDiagnosis) {
+      form.reset({
+        selectedFindingIds: existingDiagnosis.findingIds || [],
+        otherFindingDescription: "",
+        selectedComponentIds: existingDiagnosis.componentIds || [],
+        otherComponentDescription: "",
+        estimatedRepairTimeId: existingDiagnosis.estimatedRepairTimeId || "",
+        requiresExternalParts: existingDiagnosis.requiresExternalParts || false,
+        diagnosisNotes: existingDiagnosis.diagnosisNotes || "",
+      });
+      setUploadedPhotos(existingDiagnosis.photos || []);
+    } else {
+      form.reset({
+        selectedFindingIds: [],
+        otherFindingDescription: "",
+        selectedComponentIds: [],
+        otherComponentDescription: "",
+        estimatedRepairTimeId: "",
+        requiresExternalParts: false,
+        diagnosisNotes: "",
+      });
+      setUploadedPhotos([]);
+    }
+  }, [form, existingDiagnosis]);
+
+  // Sync form values when dialog opens with existing diagnosis
+  useEffect(() => {
+    if (open) {
+      resetFormState();
+    }
+  }, [open, resetFormState]);
+
+  // Helper function to build payload from form data
+  const buildPayload = (data: DiagnosisFormData) => {
+    const findingsMap = new Map(diagnosticFindings.map(f => [f.id, f]));
+    const componentsMap = new Map(damagedComponentTypes.map(c => [c.id, c]));
+    const timesMap = new Map(estimatedRepairTimes.map(t => [t.id, t]));
+
+    const selectedFindingNames = data.selectedFindingIds
+      .map(id => findingsMap.get(id)?.name)
+      .filter(Boolean) as string[];
+    
+    let technicalDiagnosis = selectedFindingNames.join(", ");
+    const hasOtherFinding = data.selectedFindingIds.some(id => id.includes("-other"));
+    if (hasOtherFinding && data.otherFindingDescription?.trim()) {
+      technicalDiagnosis += technicalDiagnosis ? `, ${data.otherFindingDescription.trim()}` : data.otherFindingDescription.trim();
+    }
+
+    const selectedComponentNames = data.selectedComponentIds
+      .map(id => componentsMap.get(id)?.name)
+      .filter(Boolean) as string[];
+    
+    const hasOtherComponent = data.selectedComponentIds.some(id => id.includes("-other"));
+    if (hasOtherComponent && data.otherComponentDescription?.trim()) {
+      selectedComponentNames.push(data.otherComponentDescription.trim());
+    }
+
+    const selectedTime = timesMap.get(data.estimatedRepairTimeId);
+    const estimatedHours = selectedTime?.hoursMax ?? undefined;
+
+    return {
+      technicalDiagnosis,
+      damagedComponents: selectedComponentNames,
+      estimatedRepairTime: estimatedHours,
+      requiresExternalParts: data.requiresExternalParts,
+      diagnosisNotes: data.diagnosisNotes,
+      photos: uploadedPhotos,
+      findingIds: data.selectedFindingIds,
+      componentIds: data.selectedComponentIds,
+      estimatedRepairTimeId: data.estimatedRepairTimeId,
+    };
+  };
 
   const createDiagnosisMutation = useMutation({
     mutationFn: async (data: DiagnosisFormData) => {
-      const findingsMap = new Map(diagnosticFindings.map(f => [f.id, f]));
-      const componentsMap = new Map(damagedComponentTypes.map(c => [c.id, c]));
-      const timesMap = new Map(estimatedRepairTimes.map(t => [t.id, t]));
-
-      const selectedFindingNames = data.selectedFindingIds
-        .map(id => findingsMap.get(id)?.name)
-        .filter(Boolean) as string[];
-      
-      let technicalDiagnosis = selectedFindingNames.join(", ");
-      const hasOtherFinding = data.selectedFindingIds.some(id => id.includes("-other"));
-      if (hasOtherFinding && data.otherFindingDescription?.trim()) {
-        technicalDiagnosis += technicalDiagnosis ? `, ${data.otherFindingDescription.trim()}` : data.otherFindingDescription.trim();
-      }
-
-      const selectedComponentNames = data.selectedComponentIds
-        .map(id => componentsMap.get(id)?.name)
-        .filter(Boolean) as string[];
-      
-      const hasOtherComponent = data.selectedComponentIds.some(id => id.includes("-other"));
-      if (hasOtherComponent && data.otherComponentDescription?.trim()) {
-        selectedComponentNames.push(data.otherComponentDescription.trim());
-      }
-
-      const selectedTime = timesMap.get(data.estimatedRepairTimeId);
-      const estimatedHours = selectedTime?.hoursMax ?? undefined;
-
-      const payload = {
-        technicalDiagnosis,
-        damagedComponents: selectedComponentNames,
-        estimatedRepairTime: estimatedHours,
-        requiresExternalParts: data.requiresExternalParts,
-        diagnosisNotes: data.diagnosisNotes,
-        photos: uploadedPhotos,
-        findingIds: data.selectedFindingIds,
-        componentIds: data.selectedComponentIds,
-        estimatedRepairTimeId: data.estimatedRepairTimeId,
-      };
-      
+      const payload = buildPayload(data);
       return await apiRequest(
         "POST",
         `/api/repair-orders/${repairOrderId}/diagnostics`,
@@ -300,7 +350,38 @@ export function DiagnosisFormDialog({
       });
       queryClient.invalidateQueries({ queryKey: ["/api/repair-orders"] });
       queryClient.invalidateQueries({
-        queryKey: [`/api/repair-orders/${repairOrderId}`],
+        queryKey: ["/api/repair-orders", repairOrderId, "diagnostics"],
+      });
+      resetFormState();
+      onOpenChange(false);
+      onSuccess?.();
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Errore",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const updateDiagnosisMutation = useMutation({
+    mutationFn: async (data: DiagnosisFormData) => {
+      const payload = buildPayload(data);
+      return await apiRequest(
+        "PATCH",
+        `/api/repair-orders/${repairOrderId}/diagnostics`,
+        payload
+      );
+    },
+    onSuccess: () => {
+      toast({
+        title: "Diagnosi aggiornata",
+        description: "La diagnosi tecnica è stata aggiornata con successo",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/repair-orders"] });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/repair-orders", repairOrderId, "diagnostics"],
       });
       resetFormState();
       onOpenChange(false);
@@ -316,8 +397,14 @@ export function DiagnosisFormDialog({
   });
 
   const onSubmit = (data: DiagnosisFormData) => {
-    createDiagnosisMutation.mutate(data);
+    if (isEditMode) {
+      updateDiagnosisMutation.mutate(data);
+    } else {
+      createDiagnosisMutation.mutate(data);
+    }
   };
+  
+  const isPending = createDiagnosisMutation.isPending || updateDiagnosisMutation.isPending;
 
   const handleOpenChange = (newOpen: boolean) => {
     onOpenChange(newOpen);
@@ -334,10 +421,12 @@ export function DiagnosisFormDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Stethoscope className="h-5 w-5" />
-            Diagnosi Tecnica
+            {isEditMode ? "Modifica Diagnosi Tecnica" : "Diagnosi Tecnica"}
           </DialogTitle>
           <DialogDescription>
-            Registra i risultati della diagnosi tecnica per questa lavorazione
+            {isEditMode 
+              ? "Modifica i risultati della diagnosi tecnica per questa lavorazione"
+              : "Registra i risultati della diagnosi tecnica per questa lavorazione"}
           </DialogDescription>
         </DialogHeader>
 
@@ -616,12 +705,12 @@ export function DiagnosisFormDialog({
               </Button>
               <Button
                 type="submit"
-                disabled={createDiagnosisMutation.isPending}
+                disabled={isPending}
                 data-testid="button-submit-diagnosis"
               >
-                {createDiagnosisMutation.isPending
-                  ? "Creazione..."
-                  : "Crea Diagnosi"}
+                {isPending
+                  ? (isEditMode ? "Salvataggio..." : "Creazione...")
+                  : (isEditMode ? "Salva Modifiche" : "Crea Diagnosi")}
               </Button>
             </div>
           </form>

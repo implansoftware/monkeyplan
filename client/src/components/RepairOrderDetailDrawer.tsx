@@ -1120,7 +1120,11 @@ export function RepairOrderDetailDrawer({
                   onOpenChange={setDiagnosisDialogOpen}
                   repairOrderId={repairOrderId}
                   repairOrder={repair ? { deviceTypeId: repair.deviceTypeId } as any : undefined}
-                  onSuccess={() => queryClient.invalidateQueries({ queryKey: ["/api/repair-orders", repairOrderId] })}
+                  existingDiagnosis={diagnosis}
+                  onSuccess={() => {
+                    queryClient.invalidateQueries({ queryKey: ["/api/repair-orders", repairOrderId] });
+                    queryClient.invalidateQueries({ queryKey: ["/api/repair-orders", repairOrderId, "diagnostics"] });
+                  }}
                 />
                 <QuoteFormDialog
                   open={quoteDialogOpen}
