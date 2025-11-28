@@ -64,10 +64,18 @@ import {
   Navigation,
   Flame,
   Zap,
+  CheckCircle2,
+  XCircle,
+  Ban,
+  Gift,
+  CreditCard,
+  ArrowLeftRight,
+  HardDrive,
+  Database,
   type LucideIcon,
 } from "lucide-react";
 import { DiagnosisPhotoUploader } from "@/components/DiagnosisPhotoUploader";
-import type { DiagnosticFinding, DamagedComponentType, EstimatedRepairTime, RepairOrder } from "@shared/schema";
+import type { DiagnosticFinding, DamagedComponentType, EstimatedRepairTime, RepairOrder, Promotion, UnrepairableReason } from "@shared/schema";
 
 interface ExistingDiagnosis {
   id: string;
@@ -80,6 +88,12 @@ interface ExistingDiagnosis {
   findingIds?: string[] | null;
   componentIds?: string[] | null;
   estimatedRepairTimeId?: string | null;
+  diagnosisOutcome?: string | null;
+  unrepairableReasonId?: string | null;
+  unrepairableReasonOther?: string | null;
+  customerDataImportant?: boolean | null;
+  suggestedPromotionIds?: string[] | null;
+  dataRecoveryRequested?: boolean | null;
 }
 
 interface DiagnosisFormDialogProps {
@@ -99,6 +113,12 @@ const diagnosisSchema = z.object({
   estimatedRepairTimeId: z.string().min(1, "Seleziona un tempo stimato di riparazione"),
   requiresExternalParts: z.boolean().default(false),
   diagnosisNotes: z.string().optional(),
+  diagnosisOutcome: z.enum(["riparabile", "non_conveniente", "irriparabile"]).default("riparabile"),
+  unrepairableReasonId: z.string().optional(),
+  unrepairableReasonOther: z.string().optional(),
+  customerDataImportant: z.boolean().default(false),
+  suggestedPromotionIds: z.array(z.string()).default([]),
+  dataRecoveryRequested: z.boolean().default(false),
 }).refine((data) => {
   const hasOtherFinding = data.selectedFindingIds.some(id => id.includes("-other"));
   if (hasOtherFinding && !data.otherFindingDescription?.trim()) {
@@ -117,9 +137,35 @@ const diagnosisSchema = z.object({
 }, {
   message: "Descrivi il componente 'Altro' selezionato",
   path: ["otherComponentDescription"],
+}).refine((data) => {
+  if (data.diagnosisOutcome === "irriparabile" && !data.unrepairableReasonId && !data.unrepairableReasonOther?.trim()) {
+    return false;
+  }
+  return true;
+}, {
+  message: "Seleziona un motivo di irriparabilità o descrivi 'Altro'",
+  path: ["unrepairableReasonId"],
+}).refine((data) => {
+  if (data.diagnosisOutcome === "non_conveniente" && data.suggestedPromotionIds.length === 0) {
+    return false;
+  }
+  return true;
+}, {
+  message: "Seleziona almeno una promozione da proporre al cliente",
+  path: ["suggestedPromotionIds"],
 });
 
 type DiagnosisFormData = z.infer<typeof diagnosisSchema>;
+
+const getPromotionIcon = (iconName: string): LucideIcon => {
+  switch (iconName) {
+    case 'Smartphone': return Smartphone;
+    case 'CreditCard': return CreditCard;
+    case 'ArrowLeftRight': return ArrowLeftRight;
+    case 'Gift': return Gift;
+    default: return Gift;
+  }
+};
 
 // Mappa icone per i problemi riscontrati (findings) basata su parole chiave nel nome
 const getFindingIcon = (name: string): LucideIcon => {
@@ -227,6 +273,27 @@ export function DiagnosisFormDialog({
     enabled: open,
   });
 
+  const { data: promotions = [] } = useQuery<Promotion[]>({
+    queryKey: ["/api/promotions"],
+    queryFn: async () => {
+      const res = await fetch("/api/promotions", { credentials: "include" });
+      if (!res.ok) throw new Error("Errore nel caricamento promozioni");
+      return res.json();
+    },
+    enabled: open,
+  });
+
+  const { data: unrepairableReasons = [] } = useQuery<UnrepairableReason[]>({
+    queryKey: ["/api/unrepairable-reasons", { deviceTypeId }],
+    queryFn: async () => {
+      const url = buildQueryUrl("/api/unrepairable-reasons", { deviceTypeId: deviceTypeId ?? undefined });
+      const res = await fetch(url, { credentials: "include" });
+      if (!res.ok) throw new Error("Errore nel caricamento motivi irriparabilità");
+      return res.json();
+    },
+    enabled: open,
+  });
+
   // Memoize findingsByCategory to prevent re-calculation on every render
   const findingsByCategory = useMemo(() => {
     return diagnosticFindings.reduce((acc, finding) => {
@@ -256,8 +323,17 @@ export function DiagnosisFormDialog({
       estimatedRepairTimeId: existingDiagnosis?.estimatedRepairTimeId || "",
       requiresExternalParts: existingDiagnosis?.requiresExternalParts || false,
       diagnosisNotes: existingDiagnosis?.diagnosisNotes || "",
+      diagnosisOutcome: (existingDiagnosis?.diagnosisOutcome as "riparabile" | "non_conveniente" | "irriparabile") || "riparabile",
+      unrepairableReasonId: existingDiagnosis?.unrepairableReasonId || "",
+      unrepairableReasonOther: existingDiagnosis?.unrepairableReasonOther || "",
+      customerDataImportant: existingDiagnosis?.customerDataImportant || false,
+      suggestedPromotionIds: existingDiagnosis?.suggestedPromotionIds || [],
+      dataRecoveryRequested: existingDiagnosis?.dataRecoveryRequested || false,
     },
   });
+
+  const diagnosisOutcome = form.watch("diagnosisOutcome");
+  const customerDataImportant = form.watch("customerDataImportant");
 
   // Reset form when existingDiagnosis changes or dialog opens
   const resetFormState = useCallback(() => {
@@ -270,6 +346,12 @@ export function DiagnosisFormDialog({
         estimatedRepairTimeId: existingDiagnosis.estimatedRepairTimeId || "",
         requiresExternalParts: existingDiagnosis.requiresExternalParts || false,
         diagnosisNotes: existingDiagnosis.diagnosisNotes || "",
+        diagnosisOutcome: (existingDiagnosis.diagnosisOutcome as "riparabile" | "non_conveniente" | "irriparabile") || "riparabile",
+        unrepairableReasonId: existingDiagnosis.unrepairableReasonId || "",
+        unrepairableReasonOther: existingDiagnosis.unrepairableReasonOther || "",
+        customerDataImportant: existingDiagnosis.customerDataImportant || false,
+        suggestedPromotionIds: existingDiagnosis.suggestedPromotionIds || [],
+        dataRecoveryRequested: existingDiagnosis.dataRecoveryRequested || false,
       });
       setUploadedPhotos(existingDiagnosis.photos || []);
     } else {
@@ -281,6 +363,12 @@ export function DiagnosisFormDialog({
         estimatedRepairTimeId: "",
         requiresExternalParts: false,
         diagnosisNotes: "",
+        diagnosisOutcome: "riparabile",
+        unrepairableReasonId: "",
+        unrepairableReasonOther: "",
+        customerDataImportant: false,
+        suggestedPromotionIds: [],
+        dataRecoveryRequested: false,
       });
       setUploadedPhotos([]);
     }
@@ -331,6 +419,12 @@ export function DiagnosisFormDialog({
       findingIds: data.selectedFindingIds,
       componentIds: data.selectedComponentIds,
       estimatedRepairTimeId: data.estimatedRepairTimeId,
+      diagnosisOutcome: data.diagnosisOutcome,
+      unrepairableReasonId: data.unrepairableReasonId || null,
+      unrepairableReasonOther: data.unrepairableReasonOther || null,
+      customerDataImportant: data.customerDataImportant,
+      suggestedPromotionIds: data.suggestedPromotionIds,
+      dataRecoveryRequested: data.dataRecoveryRequested,
     };
   };
 
@@ -691,6 +785,348 @@ export function DiagnosisFormDialog({
                     onPhotosChange={setUploadedPhotos}
                   />
                 </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Stethoscope className="h-5 w-5" />
+                  Esito Diagnosi
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="diagnosisOutcome"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Seleziona l'esito della diagnosi *</FormLabel>
+                      <FormDescription>
+                        Indica se il dispositivo è riparabile o meno
+                      </FormDescription>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 pt-2">
+                        <div
+                          className={`flex flex-col items-center gap-3 p-4 rounded-lg border-2 cursor-pointer transition-all ${
+                            field.value === "riparabile"
+                              ? "border-green-500 bg-green-500/10"
+                              : "border-muted hover:bg-muted/50"
+                          }`}
+                          onClick={() => field.onChange("riparabile")}
+                          data-testid="outcome-riparabile"
+                        >
+                          <CheckCircle2 className={`h-12 w-12 ${field.value === "riparabile" ? "text-green-500" : "text-muted-foreground"}`} />
+                          <div className="text-center">
+                            <div className="font-semibold">Riparabile</div>
+                            <div className="text-xs text-muted-foreground">Il dispositivo può essere riparato</div>
+                          </div>
+                        </div>
+                        <div
+                          className={`flex flex-col items-center gap-3 p-4 rounded-lg border-2 cursor-pointer transition-all ${
+                            field.value === "non_conveniente"
+                              ? "border-amber-500 bg-amber-500/10"
+                              : "border-muted hover:bg-muted/50"
+                          }`}
+                          onClick={() => field.onChange("non_conveniente")}
+                          data-testid="outcome-non-conveniente"
+                        >
+                          <XCircle className={`h-12 w-12 ${field.value === "non_conveniente" ? "text-amber-500" : "text-muted-foreground"}`} />
+                          <div className="text-center">
+                            <div className="font-semibold">Non Conveniente</div>
+                            <div className="text-xs text-muted-foreground">Costo riparazione troppo alto</div>
+                          </div>
+                        </div>
+                        <div
+                          className={`flex flex-col items-center gap-3 p-4 rounded-lg border-2 cursor-pointer transition-all ${
+                            field.value === "irriparabile"
+                              ? "border-red-500 bg-red-500/10"
+                              : "border-muted hover:bg-muted/50"
+                          }`}
+                          onClick={() => field.onChange("irriparabile")}
+                          data-testid="outcome-irriparabile"
+                        >
+                          <Ban className={`h-12 w-12 ${field.value === "irriparabile" ? "text-red-500" : "text-muted-foreground"}`} />
+                          <div className="text-center">
+                            <div className="font-semibold">Irriparabile</div>
+                            <div className="text-xs text-muted-foreground">Tecnicamente non riparabile</div>
+                          </div>
+                        </div>
+                      </div>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {diagnosisOutcome === "non_conveniente" && (
+                  <div className="space-y-4 pt-4 border-t">
+                    <div className="bg-amber-500/10 p-3 rounded-lg border border-amber-500/30">
+                      <p className="text-sm text-amber-700 dark:text-amber-300 font-medium">
+                        Il costo della riparazione supera il valore del dispositivo. Proponi al cliente delle alternative:
+                      </p>
+                    </div>
+                    
+                    <FormField
+                      control={form.control}
+                      name="suggestedPromotionIds"
+                      render={({ field }) => {
+                        const selectedIds = field.value || [];
+                        const handleToggle = (promotionId: string) => {
+                          const newValue = selectedIds.includes(promotionId)
+                            ? selectedIds.filter(id => id !== promotionId)
+                            : [...selectedIds, promotionId];
+                          field.onChange(newValue);
+                        };
+                        return (
+                          <FormItem>
+                            <FormLabel>Promozioni Suggerite</FormLabel>
+                            <FormDescription>
+                              Seleziona le promozioni da proporre al cliente
+                            </FormDescription>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                              {promotions.map((promo) => {
+                                const isSelected = selectedIds.includes(promo.id);
+                                const PromoIcon = getPromotionIcon(promo.icon || "Gift");
+                                return (
+                                  <div
+                                    key={promo.id}
+                                    className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all ${
+                                      isSelected
+                                        ? "border-primary bg-primary/10"
+                                        : "border-muted hover:bg-muted/50"
+                                    }`}
+                                    onClick={() => handleToggle(promo.id)}
+                                    data-testid={`promotion-${promo.id}`}
+                                  >
+                                    <div className={`w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0 ${
+                                      isSelected ? "bg-primary border-primary" : "border-muted-foreground"
+                                    }`}>
+                                      {isSelected && <span className="text-primary-foreground text-xs">✓</span>}
+                                    </div>
+                                    <PromoIcon className={`h-6 w-6 flex-shrink-0 ${isSelected ? "text-primary" : "text-muted-foreground"}`} />
+                                    <div className="flex-1 min-w-0">
+                                      <div className="font-medium text-sm">{promo.name}</div>
+                                      {promo.description && (
+                                        <div className="text-xs text-muted-foreground truncate">{promo.description}</div>
+                                      )}
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                            <FormMessage />
+                          </FormItem>
+                        );
+                      }}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="customerDataImportant"
+                      render={({ field }) => (
+                        <FormItem
+                          className="flex flex-row items-start space-x-3 space-y-0 cursor-pointer p-3 rounded-lg border bg-muted/30"
+                          onClick={() => field.onChange(!field.value)}
+                          data-testid="toggle-customer-data-important-nc"
+                        >
+                          <div className={`w-5 h-5 mt-0.5 rounded border-2 flex items-center justify-center flex-shrink-0 ${
+                            field.value ? "bg-primary border-primary" : "border-muted-foreground"
+                          }`}>
+                            {field.value && <span className="text-primary-foreground text-xs">✓</span>}
+                          </div>
+                          <div className="space-y-1 leading-none flex-1">
+                            <div className="flex items-center gap-2">
+                              <Database className="h-5 w-5 text-blue-500" />
+                              <FormLabel className="cursor-pointer font-semibold">Il cliente ha dati importanti sul dispositivo</FormLabel>
+                            </div>
+                            <FormDescription>
+                              Spunta se il cliente necessita del recupero dati prima di procedere
+                            </FormDescription>
+                          </div>
+                        </FormItem>
+                      )}
+                    />
+
+                    {customerDataImportant && (
+                      <FormField
+                        control={form.control}
+                        name="dataRecoveryRequested"
+                        render={({ field }) => (
+                          <FormItem
+                            className="flex flex-row items-start space-x-3 space-y-0 cursor-pointer p-3 rounded-lg border border-blue-500/30 bg-blue-500/10"
+                            onClick={() => field.onChange(!field.value)}
+                            data-testid="toggle-data-recovery-nc"
+                          >
+                            <div className={`w-5 h-5 mt-0.5 rounded border-2 flex items-center justify-center flex-shrink-0 ${
+                              field.value ? "bg-blue-500 border-blue-500" : "border-muted-foreground"
+                            }`}>
+                              {field.value && <span className="text-white text-xs">✓</span>}
+                            </div>
+                            <div className="space-y-1 leading-none flex-1">
+                              <div className="flex items-center gap-2">
+                                <HardDrive className="h-5 w-5 text-blue-600" />
+                                <FormLabel className="cursor-pointer font-semibold text-blue-700 dark:text-blue-300">Richiedi Recupero Dati</FormLabel>
+                              </div>
+                              <FormDescription className="text-blue-600 dark:text-blue-400">
+                                Il servizio di recupero dati verrà attivato prima della restituzione
+                              </FormDescription>
+                            </div>
+                          </FormItem>
+                        )}
+                      />
+                    )}
+                  </div>
+                )}
+
+                {diagnosisOutcome === "irriparabile" && (
+                  <div className="space-y-4 pt-4 border-t">
+                    <div className="bg-red-500/10 p-3 rounded-lg border border-red-500/30">
+                      <p className="text-sm text-red-700 dark:text-red-300 font-medium">
+                        Il dispositivo presenta danni tecnici che ne impediscono la riparazione. Seleziona il motivo:
+                      </p>
+                    </div>
+
+                    <FormField
+                      control={form.control}
+                      name="unrepairableReasonId"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Motivo Irriparabilità *</FormLabel>
+                          <FormDescription>
+                            Seleziona il motivo tecnico per cui il dispositivo non può essere riparato
+                          </FormDescription>
+                          <div className="grid grid-cols-1 gap-2">
+                            {unrepairableReasons.map((reason) => {
+                              const isSelected = field.value === reason.id;
+                              return (
+                                <div
+                                  key={reason.id}
+                                  className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all ${
+                                    isSelected
+                                      ? "border-red-500 bg-red-500/10"
+                                      : "border-muted hover:bg-muted/50"
+                                  }`}
+                                  onClick={() => field.onChange(reason.id)}
+                                  data-testid={`unrepairable-reason-${reason.id}`}
+                                >
+                                  <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${
+                                    isSelected ? "border-red-500" : "border-muted-foreground"
+                                  }`}>
+                                    {isSelected && <div className="w-2.5 h-2.5 rounded-full bg-red-500" />}
+                                  </div>
+                                  <Ban className={`h-5 w-5 flex-shrink-0 ${isSelected ? "text-red-500" : "text-muted-foreground"}`} />
+                                  <div className="flex-1">
+                                    <div className="font-medium text-sm">{reason.name}</div>
+                                    {reason.description && (
+                                      <div className="text-xs text-muted-foreground">{reason.description}</div>
+                                    )}
+                                  </div>
+                                </div>
+                              );
+                            })}
+                            <div
+                              className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all ${
+                                field.value === "altro"
+                                  ? "border-red-500 bg-red-500/10"
+                                  : "border-muted hover:bg-muted/50"
+                              }`}
+                              onClick={() => field.onChange("altro")}
+                              data-testid="unrepairable-reason-altro"
+                            >
+                              <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${
+                                field.value === "altro" ? "border-red-500" : "border-muted-foreground"
+                              }`}>
+                                {field.value === "altro" && <div className="w-2.5 h-2.5 rounded-full bg-red-500" />}
+                              </div>
+                              <AlertCircle className={`h-5 w-5 flex-shrink-0 ${field.value === "altro" ? "text-red-500" : "text-muted-foreground"}`} />
+                              <div className="font-medium text-sm">Altro motivo</div>
+                            </div>
+                          </div>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    {form.watch("unrepairableReasonId") === "altro" && (
+                      <FormField
+                        control={form.control}
+                        name="unrepairableReasonOther"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="flex items-center gap-1">
+                              <AlertCircle className="h-4 w-4 text-red-500" />
+                              Descrivi il motivo *
+                            </FormLabel>
+                            <FormControl>
+                              <Textarea
+                                {...field}
+                                placeholder="Descrivi il motivo tecnico per cui il dispositivo non può essere riparato..."
+                                className="min-h-[80px]"
+                                data-testid="input-unrepairable-reason-other"
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    )}
+
+                    <FormField
+                      control={form.control}
+                      name="customerDataImportant"
+                      render={({ field }) => (
+                        <FormItem
+                          className="flex flex-row items-start space-x-3 space-y-0 cursor-pointer p-3 rounded-lg border bg-muted/30"
+                          onClick={() => field.onChange(!field.value)}
+                          data-testid="toggle-customer-data-important-ir"
+                        >
+                          <div className={`w-5 h-5 mt-0.5 rounded border-2 flex items-center justify-center flex-shrink-0 ${
+                            field.value ? "bg-primary border-primary" : "border-muted-foreground"
+                          }`}>
+                            {field.value && <span className="text-primary-foreground text-xs">✓</span>}
+                          </div>
+                          <div className="space-y-1 leading-none flex-1">
+                            <div className="flex items-center gap-2">
+                              <Database className="h-5 w-5 text-blue-500" />
+                              <FormLabel className="cursor-pointer font-semibold">Il cliente ha dati importanti sul dispositivo</FormLabel>
+                            </div>
+                            <FormDescription>
+                              Spunta se il cliente necessita del recupero dati prima di procedere
+                            </FormDescription>
+                          </div>
+                        </FormItem>
+                      )}
+                    />
+
+                    {customerDataImportant && (
+                      <FormField
+                        control={form.control}
+                        name="dataRecoveryRequested"
+                        render={({ field }) => (
+                          <FormItem
+                            className="flex flex-row items-start space-x-3 space-y-0 cursor-pointer p-3 rounded-lg border border-blue-500/30 bg-blue-500/10"
+                            onClick={() => field.onChange(!field.value)}
+                            data-testid="toggle-data-recovery-ir"
+                          >
+                            <div className={`w-5 h-5 mt-0.5 rounded border-2 flex items-center justify-center flex-shrink-0 ${
+                              field.value ? "bg-blue-500 border-blue-500" : "border-muted-foreground"
+                            }`}>
+                              {field.value && <span className="text-white text-xs">✓</span>}
+                            </div>
+                            <div className="space-y-1 leading-none flex-1">
+                              <div className="flex items-center gap-2">
+                                <HardDrive className="h-5 w-5 text-blue-600" />
+                                <FormLabel className="cursor-pointer font-semibold text-blue-700 dark:text-blue-300">Richiedi Recupero Dati</FormLabel>
+                              </div>
+                              <FormDescription className="text-blue-600 dark:text-blue-400">
+                                Il servizio di recupero dati verrà attivato prima della restituzione
+                              </FormDescription>
+                            </div>
+                          </FormItem>
+                        )}
+                      />
+                    )}
+                  </div>
+                )}
               </CardContent>
             </Card>
 
