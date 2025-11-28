@@ -31,6 +31,7 @@ export const quoteStatusEnum = pgEnum("quote_status", ["draft", "sent", "accepte
 export const repairPriorityEnum = pgEnum("repair_priority", ["low", "medium", "high", "urgent"]);
 export const partsOrderStatusEnum = pgEnum("parts_order_status", ["ordered", "in_transit", "received", "cancelled"]);
 export const repairLogTypeEnum = pgEnum("repair_log_type", ["status_change", "technician_note", "parts_installed", "test_result", "customer_contact"]);
+export const quoteBypassReasonEnum = pgEnum("quote_bypass_reason", ["garanzia", "omaggio"]);
 
 // Users table with role-based access
 export const users = pgTable("users", {
@@ -155,6 +156,8 @@ export const repairOrders = pgTable("repair_orders", {
   finalCost: integer("final_cost"), // in cents
   notes: text("notes"),
   ingressatoAt: timestamp("ingressato_at"), // Data ingresso in laboratorio
+  quoteBypassReason: quoteBypassReasonEnum("quote_bypass_reason"), // Motivo bypass preventivo (garanzia/omaggio)
+  quoteBypassedAt: timestamp("quote_bypassed_at"), // Data bypass preventivo
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
