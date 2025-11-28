@@ -5457,7 +5457,7 @@ export function registerRoutes(app: Express): Server {
   // ==========================================
 
   // List external labs - Only admin and repair_center can see labs
-  app.get("/api/external-labs", requireAuth, requireRole(['admin', 'repair_center']), async (req, res) => {
+  app.get("/api/external-labs", requireAuth, requireRole('admin', 'repair_center'), async (req, res) => {
     try {
       const activeOnly = req.query.activeOnly !== 'false';
       const labs = await storage.listExternalLabs(activeOnly);
@@ -5468,7 +5468,7 @@ export function registerRoutes(app: Express): Server {
   });
 
   // Get single external lab - Only admin and repair_center can see lab details
-  app.get("/api/external-labs/:id", requireAuth, requireRole(['admin', 'repair_center']), async (req, res) => {
+  app.get("/api/external-labs/:id", requireAuth, requireRole('admin', 'repair_center'), async (req, res) => {
     try {
       const lab = await storage.getExternalLab(req.params.id);
       if (!lab) {
@@ -5565,7 +5565,7 @@ export function registerRoutes(app: Express): Server {
   });
 
   // Create data recovery job for a repair order
-  app.post("/api/repair-orders/:id/data-recovery", requireAuth, requireRole(['admin', 'repair_center']), async (req, res) => {
+  app.post("/api/repair-orders/:id/data-recovery", requireAuth, requireRole('admin', 'repair_center'), async (req, res) => {
     try {
       const repairOrderId = req.params.id;
       const user = req.user as any;
@@ -5629,7 +5629,7 @@ export function registerRoutes(app: Express): Server {
   });
 
   // Update data recovery job status
-  app.patch("/api/data-recovery/:id", requireAuth, requireRole(['admin', 'repair_center']), async (req, res) => {
+  app.patch("/api/data-recovery/:id", requireAuth, requireRole('admin', 'repair_center'), async (req, res) => {
     try {
       const user = req.user as any;
       const jobId = req.params.id;
@@ -5696,7 +5696,7 @@ export function registerRoutes(app: Express): Server {
   });
 
   // Add event/note to data recovery job
-  app.post("/api/data-recovery/:id/events", requireAuth, requireRole(['admin', 'repair_center']), async (req, res) => {
+  app.post("/api/data-recovery/:id/events", requireAuth, requireRole('admin', 'repair_center'), async (req, res) => {
     try {
       const user = req.user as any;
       const jobId = req.params.id;
@@ -5737,7 +5737,7 @@ export function registerRoutes(app: Express): Server {
   });
 
   // List all data recovery jobs (for admin dashboard)
-  app.get("/api/data-recovery", requireAuth, requireRole(['admin', 'repair_center']), async (req, res) => {
+  app.get("/api/data-recovery", requireAuth, requireRole('admin', 'repair_center'), async (req, res) => {
     try {
       const filters: { status?: string; handlingType?: string } = {};
       if (req.query.status) filters.status = req.query.status as string;
