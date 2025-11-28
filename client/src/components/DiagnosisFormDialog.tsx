@@ -38,6 +38,33 @@ import {
   Camera, 
   AlertCircle,
   CircuitBoard,
+  Monitor,
+  Smartphone,
+  Hand,
+  Battery,
+  BatteryWarning,
+  Scan,
+  Sun,
+  Plug,
+  Square,
+  Layers,
+  Cpu,
+  Speaker,
+  Mic,
+  Volume2,
+  Wifi,
+  Bluetooth,
+  Signal,
+  Power,
+  RotateCcw,
+  Vibrate,
+  Camera as CameraIcon,
+  SquareStack,
+  Fingerprint,
+  Navigation,
+  Flame,
+  Zap,
+  type LucideIcon,
 } from "lucide-react";
 import { DiagnosisPhotoUploader } from "@/components/DiagnosisPhotoUploader";
 import type { DiagnosticFinding, DamagedComponentType, EstimatedRepairTime, RepairOrder } from "@shared/schema";
@@ -79,6 +106,54 @@ const diagnosisSchema = z.object({
 });
 
 type DiagnosisFormData = z.infer<typeof diagnosisSchema>;
+
+// Mappa icone per i problemi riscontrati (findings) basata su parole chiave nel nome
+const getFindingIcon = (name: string): LucideIcon => {
+  const lowerName = name.toLowerCase();
+  if (lowerName.includes('display') || lowerName.includes('schermo')) return Monitor;
+  if (lowerName.includes('touch')) return Hand;
+  if (lowerName.includes('lcd') || lowerName.includes('pannello')) return Layers;
+  if (lowerName.includes('burn') || lowerName.includes('fantasma')) return Flame;
+  if (lowerName.includes('batteria')) return Battery;
+  if (lowerName.includes('linee') || lowerName.includes('artefatti')) return Scan;
+  if (lowerName.includes('retroilluminazione') || lowerName.includes('backlight')) return Sun;
+  if (lowerName.includes('fotocamera') || lowerName.includes('camera')) return CameraIcon;
+  if (lowerName.includes('microfono') || lowerName.includes('mic')) return Mic;
+  if (lowerName.includes('altoparlante') || lowerName.includes('speaker') || lowerName.includes('audio')) return Volume2;
+  if (lowerName.includes('wifi') || lowerName.includes('wi-fi')) return Wifi;
+  if (lowerName.includes('bluetooth')) return Bluetooth;
+  if (lowerName.includes('segnale') || lowerName.includes('antenna') || lowerName.includes('rete')) return Signal;
+  if (lowerName.includes('accensione') || lowerName.includes('power') || lowerName.includes('avvio')) return Power;
+  if (lowerName.includes('riavvio') || lowerName.includes('restart') || lowerName.includes('loop')) return RotateCcw;
+  if (lowerName.includes('vibrazione')) return Vibrate;
+  if (lowerName.includes('sensore') || lowerName.includes('prossimità')) return Navigation;
+  if (lowerName.includes('impronta') || lowerName.includes('fingerprint') || lowerName.includes('face id')) return Fingerprint;
+  if (lowerName.includes('ricarica') || lowerName.includes('carica') || lowerName.includes('usb')) return Zap;
+  if (lowerName.includes('scheda') || lowerName.includes('madre') || lowerName.includes('logic')) return Cpu;
+  return AlertCircle; // default
+};
+
+// Mappa icone per i componenti danneggiati basata su parole chiave nel nome
+const getComponentIcon = (name: string): LucideIcon => {
+  const lowerName = name.toLowerCase();
+  if (lowerName.includes('vetro')) return Square;
+  if (lowerName.includes('lcd')) return Layers;
+  if (lowerName.includes('oled') || lowerName.includes('amoled')) return Monitor;
+  if (lowerName.includes('digitalizzatore') || lowerName.includes('touch') || lowerName.includes('digitizer')) return Hand;
+  if (lowerName.includes('cornice') || lowerName.includes('frame') || lowerName.includes('telaio')) return SquareStack;
+  if (lowerName.includes('retroilluminazione') || lowerName.includes('backlight')) return Sun;
+  if (lowerName.includes('batteria') || lowerName.includes('cella')) return Battery;
+  if (lowerName.includes('connettore')) return Plug;
+  if (lowerName.includes('fotocamera') || lowerName.includes('camera')) return CameraIcon;
+  if (lowerName.includes('altoparlante') || lowerName.includes('speaker')) return Speaker;
+  if (lowerName.includes('microfono') || lowerName.includes('mic')) return Mic;
+  if (lowerName.includes('antenna') || lowerName.includes('wifi')) return Wifi;
+  if (lowerName.includes('scheda') || lowerName.includes('madre') || lowerName.includes('logic') || lowerName.includes('chip')) return Cpu;
+  if (lowerName.includes('sensore')) return Navigation;
+  if (lowerName.includes('pulsante') || lowerName.includes('tasto')) return Power;
+  if (lowerName.includes('flex') || lowerName.includes('cavo')) return Zap;
+  return CircuitBoard; // default
+};
 
 export function DiagnosisFormDialog({
   open,
@@ -300,6 +375,7 @@ export function DiagnosisFormDialog({
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                                   {findings.map((finding) => {
                                     const isSelected = selectedIds.includes(finding.id);
+                                    const FindingIcon = getFindingIcon(finding.name);
                                     return (
                                       <div 
                                         key={finding.id} 
@@ -316,7 +392,7 @@ export function DiagnosisFormDialog({
                                         }`}>
                                           {isSelected && <span className="text-primary-foreground text-xs">✓</span>}
                                         </div>
-                                        <AlertCircle className={`h-5 w-5 flex-shrink-0 ${isSelected ? 'text-primary' : 'text-muted-foreground'}`} />
+                                        <FindingIcon className={`h-5 w-5 flex-shrink-0 ${isSelected ? 'text-primary' : 'text-muted-foreground'}`} />
                                         <span className="text-sm leading-tight">
                                           {finding.name}
                                         </span>
@@ -387,6 +463,7 @@ export function DiagnosisFormDialog({
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                             {damagedComponentTypes.map((component) => {
                               const isSelected = selectedIds.includes(component.id);
+                              const ComponentIcon = getComponentIcon(component.name);
                               return (
                                 <div 
                                   key={component.id} 
@@ -403,7 +480,7 @@ export function DiagnosisFormDialog({
                                   }`}>
                                     {isSelected && <span className="text-primary-foreground text-xs">✓</span>}
                                   </div>
-                                  <CircuitBoard className={`h-5 w-5 flex-shrink-0 ${isSelected ? 'text-primary' : 'text-muted-foreground'}`} />
+                                  <ComponentIcon className={`h-5 w-5 flex-shrink-0 ${isSelected ? 'text-primary' : 'text-muted-foreground'}`} />
                                   <span className="text-sm leading-tight">
                                     {component.name}
                                   </span>
