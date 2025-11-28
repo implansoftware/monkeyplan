@@ -55,7 +55,7 @@ export interface IStorage {
   getRepairOrder(id: string): Promise<RepairOrder | undefined>;
   createRepairOrder(order: InsertRepairOrder): Promise<RepairOrder>;
   createRepairWithAcceptance(order: InsertRepairOrder, acceptance: InsertRepairAcceptance): Promise<{ order: RepairOrder; acceptance: RepairAcceptance }>;
-  updateRepairOrder(id: string, updates: Partial<Pick<RepairOrder, 'status' | 'priority' | 'estimatedCost' | 'finalCost' | 'notes' | 'repairCenterId'>>): Promise<RepairOrder>;
+  updateRepairOrder(id: string, updates: Partial<Pick<RepairOrder, 'status' | 'priority' | 'estimatedCost' | 'finalCost' | 'notes' | 'repairCenterId' | 'quoteBypassReason' | 'quoteBypassedAt'>>): Promise<RepairOrder>;
   updateRepairOrderStatus(id: string, status: string): Promise<RepairOrder>;
   checkImeiSerialDuplicate(imei?: string, serial?: string, excludeId?: string): Promise<RepairOrder | undefined>;
   
@@ -392,7 +392,7 @@ export class DatabaseStorage implements IStorage {
     return order;
   }
 
-  async updateRepairOrder(id: string, updates: Partial<Pick<RepairOrder, 'status' | 'priority' | 'estimatedCost' | 'finalCost' | 'notes' | 'repairCenterId'>>): Promise<RepairOrder> {
+  async updateRepairOrder(id: string, updates: Partial<Pick<RepairOrder, 'status' | 'priority' | 'estimatedCost' | 'finalCost' | 'notes' | 'repairCenterId' | 'quoteBypassReason' | 'quoteBypassedAt'>>): Promise<RepairOrder> {
     const [order] = await db.update(repairOrders)
       .set({ ...updates, updatedAt: new Date() })
       .where(eq(repairOrders.id, id))

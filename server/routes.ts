@@ -3360,6 +3360,61 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // POST /api/repair-orders/:id/skip-quote - Skip quote (garanzia/omaggio)
+  app.post("/api/repair-orders/:id/skip-quote", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      // Only admin and repair_center can skip quote
+      if (req.user.role !== 'admin' && req.user.role !== 'repair_center') {
+        return res.status(403).send("Solo admin e centri riparazione possono saltare il preventivo");
+      }
+      
+      const repairOrder = await storage.getRepairOrder(req.params.id);
+      if (!repairOrder) {
+        return res.status(404).send("Ordine di riparazione non trovato");
+      }
+      
+      // Check repair center access
+      if (req.user.role === 'repair_center' && repairOrder.repairCenterId !== req.user.repairCenterId) {
+        return res.status(403).send("Accesso negato");
+      }
+      
+      // Validate status - can only skip quote from in_diagnosi
+      if (repairOrder.status !== 'in_diagnosi') {
+        return res.status(400).send("Il preventivo può essere saltato solo dallo stato 'in_diagnosi'");
+      }
+      
+      // Check that diagnosis exists
+      const diagnosis = await storage.getRepairDiagnostics(req.params.id);
+      if (!diagnosis) {
+        return res.status(400).send("La diagnosi deve essere completata prima di saltare il preventivo");
+      }
+      
+      // Validate bypass reason
+      const { reason } = req.body;
+      if (!reason || !['garanzia', 'omaggio'].includes(reason)) {
+        return res.status(400).send("Motivo non valido. Deve essere 'garanzia' o 'omaggio'");
+      }
+      
+      // Update repair order - skip to attesa_ricambi or in_riparazione based on diagnosis
+      const nextStatus = diagnosis.requiresExternalParts ? 'attesa_ricambi' : 'in_riparazione';
+      
+      await storage.updateRepairOrder(req.params.id, {
+        status: nextStatus as any,
+        quoteBypassReason: reason as any,
+        quoteBypassedAt: new Date(),
+      });
+      
+      res.json({ 
+        message: `Preventivo saltato (${reason === 'garanzia' ? 'In Garanzia' : 'Omaggio'}). Stato aggiornato a: ${nextStatus}`,
+        nextStatus 
+      });
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+
   // ============ FASE 5: PARTS ORDERS ============
 
   // GET /api/repair-orders/:id/parts - List parts orders
