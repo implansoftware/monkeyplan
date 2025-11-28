@@ -311,6 +311,9 @@ export const repairDiagnostics = pgTable("repair_diagnostics", {
   requiresExternalParts: boolean("requires_external_parts").notNull().default(false), // Necessità ricambi esterni
   diagnosisNotes: text("diagnosis_notes"), // Note aggiuntive del tecnico
   photos: text("photos").array(), // Array di URL foto diagnostiche
+  findingIds: text("finding_ids").array(), // IDs dei problemi selezionati dal catalogo
+  componentIds: text("component_ids").array(), // IDs dei componenti danneggiati dal catalogo
+  estimatedRepairTimeId: varchar("estimated_repair_time_id"), // ID del tempo stimato selezionato
   diagnosedBy: varchar("diagnosed_by").notNull(), // ID tecnico che ha fatto la diagnosi
   diagnosedAt: timestamp("diagnosed_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),

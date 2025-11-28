@@ -2959,6 +2959,9 @@ export function registerRoutes(app: Express): Server {
         requiresExternalParts: req.body.requiresExternalParts || false,
         diagnosisNotes: req.body.diagnosisNotes,
         photos: req.body.photos || [],
+        findingIds: req.body.findingIds || [],
+        componentIds: req.body.componentIds || [],
+        estimatedRepairTimeId: req.body.estimatedRepairTimeId,
         diagnosedBy: req.user.id,
       });
       
@@ -3024,6 +3027,9 @@ export function registerRoutes(app: Express): Server {
       if (req.body.requiresExternalParts !== undefined) updates.requiresExternalParts = req.body.requiresExternalParts;
       if (req.body.diagnosisNotes !== undefined) updates.diagnosisNotes = req.body.diagnosisNotes;
       if (req.body.photos !== undefined) updates.photos = req.body.photos;
+      if (req.body.findingIds !== undefined) updates.findingIds = req.body.findingIds;
+      if (req.body.componentIds !== undefined) updates.componentIds = req.body.componentIds;
+      if (req.body.estimatedRepairTimeId !== undefined) updates.estimatedRepairTimeId = req.body.estimatedRepairTimeId;
       
       const diagnostics = await storage.updateRepairDiagnostics(req.params.id, updates);
       
