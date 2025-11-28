@@ -71,6 +71,8 @@ type RepairOrder = {
   finalCost: number | null;
   notes: string | null;
   ingressatoAt: string | null;
+  quoteBypassReason: 'garanzia' | 'omaggio' | null;
+  quoteBypassedAt: string | null;
   createdAt: string;
   updatedAt: string;
 };
@@ -359,57 +361,83 @@ export function RepairOrderDetailDrawer({
                 <CardContent className="space-y-4">
                   {/* Visual Progress Steps - Grid Layout for better visibility */}
                   <div className="grid grid-cols-5 gap-2 text-xs">
-                    {[
-                      { key: 'ingressato', label: 'Ingresso', icon: Package, num: 1 },
-                      { key: 'in_diagnosi', label: 'Diagnosi', icon: Stethoscope, num: 2 },
-                      { key: 'preventivo_inviato', label: 'Preventivo', icon: Receipt, num: 3 },
-                      { key: 'preventivo_accettato', label: 'Accettato', icon: CheckCircle2, num: 4 },
-                      { key: 'attesa_ricambi', label: 'Ricambi', icon: Package, num: 5 },
-                      { key: 'in_riparazione', label: 'Riparazione', icon: Wrench, num: 6 },
-                      { key: 'in_test', label: 'Collaudo', icon: ClipboardCheck, num: 7 },
-                      { key: 'pronto_ritiro', label: 'Pronto', icon: CheckCircle, num: 8 },
-                      { key: 'consegnato', label: 'Consegnato', icon: PackageCheck, num: 9 },
-                    ].map((step) => {
-                      const statusOrder = ['ingressato', 'in_diagnosi', 'preventivo_inviato', 'preventivo_accettato', 'attesa_ricambi', 'in_riparazione', 'in_test', 'pronto_ritiro', 'consegnato'];
-                      const currentIndex = statusOrder.indexOf(repair.status);
-                      const stepIndex = statusOrder.indexOf(step.key);
-                      const isCompleted = stepIndex <= currentIndex; // Include current step as completed
-                      const isCurrent = step.key === repair.status;
-                      const StepIcon = step.icon;
+                    {(() => {
+                      const quoteSkipped = !!repair.quoteBypassReason;
+                      const bypassLabel = repair.quoteBypassReason === 'garanzia' ? 'Garanzia' : 
+                                         repair.quoteBypassReason === 'omaggio' ? 'Omaggio' : '';
+                      const BypassIcon = repair.quoteBypassReason === 'garanzia' ? Shield : Gift;
                       
-                      return (
-                        <div 
-                          key={step.key} 
-                          className={`flex flex-col items-center p-2 rounded-lg transition-all ${
-                            isCurrent ? 'bg-green-500/20 ring-2 ring-green-500 scale-105' :
-                            isCompleted ? 'bg-green-500/10' :
-                            'bg-muted/30'
-                          }`}
-                        >
-                          <div className={`w-7 h-7 rounded-full flex items-center justify-center mb-1 ${
-                            isCompleted ? 'bg-green-500 text-white' :
-                            'bg-muted text-muted-foreground'
-                          }`}>
-                            {isCompleted ? (
-                              <CheckCircle2 className="h-4 w-4" />
-                            ) : (
-                              <span className="text-xs font-bold">{step.num}</span>
-                            )}
+                      const steps = [
+                        { key: 'ingressato', label: 'Ingresso', icon: Package, num: 1 },
+                        { key: 'in_diagnosi', label: 'Diagnosi', icon: Stethoscope, num: 2 },
+                        { 
+                          key: 'preventivo_inviato', 
+                          label: quoteSkipped ? bypassLabel : 'Preventivo', 
+                          icon: quoteSkipped ? BypassIcon : Receipt, 
+                          num: 3,
+                          skipped: quoteSkipped
+                        },
+                        { 
+                          key: 'preventivo_accettato', 
+                          label: quoteSkipped ? 'Saltato' : 'Accettato', 
+                          icon: quoteSkipped ? SkipForward : CheckCircle2, 
+                          num: 4,
+                          skipped: quoteSkipped
+                        },
+                        { key: 'attesa_ricambi', label: 'Ricambi', icon: Package, num: 5 },
+                        { key: 'in_riparazione', label: 'Riparazione', icon: Wrench, num: 6 },
+                        { key: 'in_test', label: 'Collaudo', icon: ClipboardCheck, num: 7 },
+                        { key: 'pronto_ritiro', label: 'Pronto', icon: CheckCircle, num: 8 },
+                        { key: 'consegnato', label: 'Consegnato', icon: PackageCheck, num: 9 },
+                      ];
+                      
+                      return steps.map((step) => {
+                        const statusOrder = ['ingressato', 'in_diagnosi', 'preventivo_inviato', 'preventivo_accettato', 'attesa_ricambi', 'in_riparazione', 'in_test', 'pronto_ritiro', 'consegnato'];
+                        const currentIndex = statusOrder.indexOf(repair.status);
+                        const stepIndex = statusOrder.indexOf(step.key);
+                        const isCompleted = stepIndex <= currentIndex;
+                        const isCurrent = step.key === repair.status;
+                        const isSkipped = 'skipped' in step && step.skipped;
+                        const StepIcon = step.icon;
+                        
+                        return (
+                          <div 
+                            key={step.key} 
+                            className={`flex flex-col items-center p-2 rounded-lg transition-all ${
+                              isSkipped && isCompleted ? 'bg-amber-500/10' :
+                              isCurrent ? 'bg-green-500/20 ring-2 ring-green-500 scale-105' :
+                              isCompleted ? 'bg-green-500/10' :
+                              'bg-muted/30'
+                            }`}
+                          >
+                            <div className={`w-7 h-7 rounded-full flex items-center justify-center mb-1 ${
+                              isSkipped && isCompleted ? 'bg-amber-500 text-white' :
+                              isCompleted ? 'bg-green-500 text-white' :
+                              'bg-muted text-muted-foreground'
+                            }`}>
+                              {isCompleted ? (
+                                isSkipped ? <SkipForward className="h-4 w-4" /> : <CheckCircle2 className="h-4 w-4" />
+                              ) : (
+                                <span className="text-xs font-bold">{step.num}</span>
+                              )}
+                            </div>
+                            <StepIcon className={`h-4 w-4 mb-0.5 ${
+                              isSkipped && isCompleted ? 'text-amber-500' :
+                              isCompleted ? 'text-green-500' :
+                              'text-muted-foreground'
+                            }`} />
+                            <span className={`text-center leading-tight text-[10px] ${
+                              isSkipped && isCompleted ? 'font-bold text-amber-600 dark:text-amber-400' :
+                              isCurrent ? 'font-bold text-green-600 dark:text-green-400' :
+                              isCompleted ? 'text-green-600 dark:text-green-400 font-medium' :
+                              'text-muted-foreground'
+                            }`}>
+                              {step.label}
+                            </span>
                           </div>
-                          <StepIcon className={`h-4 w-4 mb-0.5 ${
-                            isCompleted ? 'text-green-500' :
-                            'text-muted-foreground'
-                          }`} />
-                          <span className={`text-center leading-tight text-[10px] ${
-                            isCurrent ? 'font-bold text-green-600 dark:text-green-400' :
-                            isCompleted ? 'text-green-600 dark:text-green-400 font-medium' :
-                            'text-muted-foreground'
-                          }`}>
-                            {step.label}
-                          </span>
-                        </div>
-                      );
-                    })}
+                        );
+                      });
+                    })()}
                   </div>
 
                   <Separator />
