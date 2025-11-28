@@ -355,7 +355,7 @@ export function RepairOrderDetailDrawer({
                       const statusOrder = ['ingressato', 'in_diagnosi', 'preventivo_inviato', 'preventivo_accettato', 'attesa_ricambi', 'in_riparazione', 'in_test', 'pronto_ritiro', 'consegnato'];
                       const currentIndex = statusOrder.indexOf(repair.status);
                       const stepIndex = statusOrder.indexOf(step.key);
-                      const isCompleted = stepIndex < currentIndex;
+                      const isCompleted = stepIndex <= currentIndex; // Include current step as completed
                       const isCurrent = step.key === repair.status;
                       const StepIcon = step.icon;
                       
@@ -363,14 +363,13 @@ export function RepairOrderDetailDrawer({
                         <div 
                           key={step.key} 
                           className={`flex flex-col items-center p-2 rounded-lg transition-all ${
-                            isCurrent ? 'bg-primary/20 ring-2 ring-primary scale-105' :
+                            isCurrent ? 'bg-green-500/20 ring-2 ring-green-500 scale-105' :
                             isCompleted ? 'bg-green-500/10' :
                             'bg-muted/30'
                           }`}
                         >
                           <div className={`w-7 h-7 rounded-full flex items-center justify-center mb-1 ${
                             isCompleted ? 'bg-green-500 text-white' :
-                            isCurrent ? 'bg-primary text-primary-foreground' :
                             'bg-muted text-muted-foreground'
                           }`}>
                             {isCompleted ? (
@@ -380,12 +379,11 @@ export function RepairOrderDetailDrawer({
                             )}
                           </div>
                           <StepIcon className={`h-4 w-4 mb-0.5 ${
-                            isCurrent ? 'text-primary' :
                             isCompleted ? 'text-green-500' :
                             'text-muted-foreground'
                           }`} />
                           <span className={`text-center leading-tight text-[10px] ${
-                            isCurrent ? 'font-bold text-primary' :
+                            isCurrent ? 'font-bold text-green-600 dark:text-green-400' :
                             isCompleted ? 'text-green-600 dark:text-green-400 font-medium' :
                             'text-muted-foreground'
                           }`}>
