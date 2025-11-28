@@ -191,6 +191,22 @@ export function RepairOrderDetailDrawer({
     retry: false,
   });
 
+  const { data: diagnosis } = useQuery<any>({
+    queryKey: ["/api/repair-orders", repairOrderId, "diagnostics"],
+    queryFn: async () => {
+      const response = await fetch(`/api/repair-orders/${repairOrderId}/diagnostics`, {
+        credentials: "include",
+      });
+      if (!response.ok) {
+        if (response.status === 404) return null;
+        return null;
+      }
+      return response.json();
+    },
+    enabled: !!repairOrderId && open,
+    retry: false,
+  });
+
   const updateQuoteStatusMutation = useMutation({
     mutationFn: async (status: string) => {
       return await apiRequest("PATCH", `/api/repair-orders/${repairOrderId}/quote`, { status });
@@ -409,9 +425,18 @@ export function RepairOrderDetailDrawer({
 
                     {/* Status: in_diagnosi - Need to complete diagnosis or create quote */}
                     {repair.status === 'in_diagnosi' && (
-                      <div className="bg-primary/10 border border-primary/20 rounded-lg p-4 space-y-3">
+                      <div className={`${diagnosis ? 'bg-green-500/10 border-green-500/20' : 'bg-primary/10 border-primary/20'} border rounded-lg p-4 space-y-3`}>
                         <p className="text-sm">
-                          Diagnosi in corso. <strong>Completa la diagnosi</strong> e poi <strong>crea il preventivo</strong> per il cliente.
+                          {diagnosis ? (
+                            <>
+                              <CheckCircle className="inline h-4 w-4 text-green-500 mr-1" />
+                              <strong>Diagnosi completata!</strong> Ora <strong>crea il preventivo</strong> per il cliente.
+                            </>
+                          ) : (
+                            <>
+                              Diagnosi in corso. <strong>Completa la diagnosi</strong> e poi <strong>crea il preventivo</strong> per il cliente.
+                            </>
+                          )}
                         </p>
                         <div className="grid grid-cols-2 gap-2">
                           <Button
@@ -421,7 +446,7 @@ export function RepairOrderDetailDrawer({
                             data-testid="button-diagnosis-edit"
                           >
                             <Stethoscope className="h-4 w-4" />
-                            Modifica Diagnosi
+                            {diagnosis ? 'Modifica Diagnosi' : 'Completa Diagnosi'}
                           </Button>
                           <Button
                             onClick={() => setQuoteDialogOpen(true)}
