@@ -253,17 +253,15 @@ export default function SupplierReturnsPage() {
   };
 
   const handleStatusChange = async (returnId: string, newStatus: string) => {
-    const now = new Date().toISOString();
-    const updates: Partial<SupplierReturn> = { status: newStatus as any };
-    
-    // Set timestamps based on status
-    if (newStatus === "requested") updates.requestedAt = now as any;
-    if (newStatus === "approved") updates.approvedAt = now as any;
-    if (newStatus === "shipped") updates.shippedAt = now as any;
-    if (newStatus === "received") updates.receivedAt = now as any;
-    if (newStatus === "refunded") updates.refundedAt = now as any;
-    
-    await updateReturnMutation.mutateAsync({ id: returnId, data: updates });
+    // Use the dedicated status endpoint which handles timestamps correctly on the backend
+    try {
+      await apiRequest("POST", `/api/supplier-returns/${returnId}/status`, { status: newStatus });
+      queryClient.invalidateQueries({ queryKey: ["/api/supplier-returns"] });
+      const statusLabel = STATUS_CONFIG[newStatus]?.label || newStatus;
+      toast({ title: "Stato aggiornato", description: `Reso aggiornato a: ${statusLabel}` });
+    } catch (error: any) {
+      toast({ title: "Errore", description: error.message, variant: "destructive" });
+    }
   };
 
   const openReturnDetails = (returnItem: SupplierReturnWithDetails) => {
