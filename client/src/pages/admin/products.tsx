@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Product, InsertProduct, RepairCenter } from "@shared/schema";
+import { Product, InsertProduct, RepairCenter, Supplier, ProductSupplier, InsertProductSupplier } from "@shared/schema";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -14,7 +14,7 @@ import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { Plus, Search, Pencil, Trash2, Package, Warehouse, AlertTriangle, X } from "lucide-react";
+import { Plus, Search, Pencil, Trash2, Package, Warehouse, AlertTriangle, X, Building2, Star, StarOff } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -28,6 +28,10 @@ interface ProductWithStock {
   product: Product;
   stockByCenter: Array<{ repairCenterId: string; repairCenterName: string; quantity: number }>;
   totalStock: number;
+}
+
+interface ProductSupplierWithDetails extends Omit<ProductSupplier, 'supplierName'> {
+  supplierName?: string | null;
 }
 
 const CATEGORIES = [
@@ -73,6 +77,10 @@ export default function AdminProducts() {
   const [initialStock, setInitialStock] = useState<InitialStockEntry[]>([]);
   const [editStock, setEditStock] = useState<Array<{ repairCenterId: string; repairCenterName: string; quantity: number; originalQuantity: number }>>([]);
   const [isLoadingStock, setIsLoadingStock] = useState(false);
+  const [productSuppliers, setProductSuppliers] = useState<ProductSupplierWithDetails[]>([]);
+  const [isLoadingSuppliers, setIsLoadingSuppliers] = useState(false);
+  const [supplierDialogOpen, setSupplierDialogOpen] = useState(false);
+  const [editingProductSupplier, setEditingProductSupplier] = useState<ProductSupplierWithDetails | null>(null);
   const { toast } = useToast();
 
   const { data: productsWithStock = [], isLoading } = useQuery<ProductWithStock[]>({
@@ -81,6 +89,10 @@ export default function AdminProducts() {
 
   const { data: repairCenters = [] } = useQuery<RepairCenter[]>({
     queryKey: ["/api/admin/repair-centers"],
+  });
+
+  const { data: suppliers = [] } = useQuery<Supplier[]>({
+    queryKey: ["/api/suppliers"],
   });
 
   const createProductMutation = useMutation({
@@ -144,6 +156,74 @@ export default function AdminProducts() {
     },
   });
 
+  const createProductSupplierMutation = useMutation({
+    mutationFn: async (data: InsertProductSupplier) => {
+      const res = await apiRequest("POST", "/api/product-suppliers", data);
+      return await res.json();
+    },
+    onSuccess: () => {
+      if (editingProduct) {
+        loadProductSuppliers(editingProduct.id);
+      }
+      setSupplierDialogOpen(false);
+      setEditingProductSupplier(null);
+      toast({ title: "Fornitore associato al prodotto" });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Errore", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const updateProductSupplierMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: Partial<InsertProductSupplier> }) => {
+      const res = await apiRequest("PATCH", `/api/product-suppliers/${id}`, data);
+      return await res.json();
+    },
+    onSuccess: () => {
+      if (editingProduct) {
+        loadProductSuppliers(editingProduct.id);
+      }
+      setSupplierDialogOpen(false);
+      setEditingProductSupplier(null);
+      toast({ title: "Associazione aggiornata" });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Errore", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const deleteProductSupplierMutation = useMutation({
+    mutationFn: async (id: string) => {
+      await apiRequest("DELETE", `/api/product-suppliers/${id}`);
+    },
+    onSuccess: () => {
+      if (editingProduct) {
+        loadProductSuppliers(editingProduct.id);
+      }
+      toast({ title: "Fornitore rimosso dal prodotto" });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Errore", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const loadProductSuppliers = async (productId: string) => {
+    setIsLoadingSuppliers(true);
+    try {
+      const res = await apiRequest("GET", `/api/product-suppliers?productId=${productId}`);
+      const data = await res.json();
+      const enrichedData = data.map((ps: ProductSupplier) => ({
+        ...ps,
+        supplierName: suppliers.find(s => s.id === ps.supplierId)?.name || "Fornitore sconosciuto"
+      }));
+      setProductSuppliers(enrichedData);
+    } catch {
+      setProductSuppliers([]);
+    } finally {
+      setIsLoadingSuppliers(false);
+    }
+  };
+
   const addCompatibleModel = () => {
     if (newModel.trim() && !compatibleModels.includes(newModel.trim())) {
       setCompatibleModels([...compatibleModels, newModel.trim()]);
@@ -200,6 +280,40 @@ export default function AdminProducts() {
     } finally {
       setIsLoadingStock(false);
     }
+    
+    loadProductSuppliers(product.id);
+  };
+
+  const handleSupplierSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!editingProduct) return;
+    
+    const formData = new FormData(e.currentTarget);
+    const purchasePriceValue = formData.get("purchasePrice") as string;
+    
+    const data: InsertProductSupplier = {
+      productId: editingProduct.id,
+      supplierId: formData.get("supplierId") as string,
+      supplierCode: formData.get("supplierCode") as string || undefined,
+      supplierName: formData.get("supplierName") as string || undefined,
+      purchasePrice: purchasePriceValue ? Math.round(parseFloat(purchasePriceValue) * 100) : undefined,
+      minOrderQty: formData.get("minOrderQty") ? parseInt(formData.get("minOrderQty") as string) : 1,
+      packSize: formData.get("packSize") ? parseInt(formData.get("packSize") as string) : 1,
+      leadTimeDays: formData.get("leadTimeDays") ? parseInt(formData.get("leadTimeDays") as string) : undefined,
+      isPreferred: formData.get("isPreferred") === "true",
+      isActive: true,
+    };
+
+    if (editingProductSupplier) {
+      updateProductSupplierMutation.mutate({ id: editingProductSupplier.id, data });
+    } else {
+      createProductSupplierMutation.mutate(data);
+    }
+  };
+
+  const openSupplierDialog = (ps?: ProductSupplierWithDetails) => {
+    setEditingProductSupplier(ps || null);
+    setSupplierDialogOpen(true);
   };
 
   const addEditStock = (repairCenterId: string) => {
@@ -702,6 +816,9 @@ export default function AdminProducts() {
             setEditCompatibleModels([]);
             setNewModel("");
             setEditStock([]);
+            setProductSuppliers([]);
+            setSupplierDialogOpen(false);
+            setEditingProductSupplier(null);
           }
         }}>
           <DialogContent className="max-w-2xl max-h-[90vh]">
@@ -718,10 +835,11 @@ export default function AdminProducts() {
               <ScrollArea className="max-h-[70vh] pr-4">
                 <form onSubmit={handleEditSubmit} className="space-y-6">
                   <Tabs defaultValue="info" className="w-full">
-                    <TabsList className="grid w-full grid-cols-4">
-                      <TabsTrigger value="info">Info Base</TabsTrigger>
+                    <TabsList className="grid w-full grid-cols-5">
+                      <TabsTrigger value="info">Info</TabsTrigger>
                       <TabsTrigger value="compatibility">Compatibilità</TabsTrigger>
                       <TabsTrigger value="pricing">Prezzi</TabsTrigger>
+                      <TabsTrigger value="suppliers">Fornitori</TabsTrigger>
                       <TabsTrigger value="inventory">Magazzino</TabsTrigger>
                     </TabsList>
 
@@ -934,28 +1052,260 @@ export default function AdminProducts() {
                       </div>
                     </TabsContent>
 
-                    <TabsContent value="inventory" className="space-y-4 mt-4">
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="edit-supplier">Fornitore</Label>
-                          <Input
-                            id="edit-supplier"
-                            name="supplier"
-                            defaultValue={editingProduct.supplier || ""}
-                            data-testid="edit-input-supplier"
-                          />
+                    <TabsContent value="suppliers" className="space-y-4 mt-4">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <Label className="text-base">Fornitori Associati</Label>
+                          <p className="text-xs text-muted-foreground">
+                            Gestisci i fornitori da cui acquistare questo prodotto
+                          </p>
                         </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="edit-supplierCode">Codice Fornitore</Label>
-                          <Input
-                            id="edit-supplierCode"
-                            name="supplierCode"
-                            defaultValue={editingProduct.supplierCode || ""}
-                            data-testid="edit-input-supplier-code"
-                          />
-                        </div>
+                        <Button 
+                          type="button" 
+                          variant="outline" 
+                          onClick={() => openSupplierDialog()}
+                          data-testid="button-add-product-supplier"
+                        >
+                          <Plus className="h-4 w-4 mr-2" />
+                          Aggiungi Fornitore
+                        </Button>
                       </div>
 
+                      {isLoadingSuppliers ? (
+                        <div className="space-y-2">
+                          <Skeleton className="h-12 w-full" />
+                          <Skeleton className="h-12 w-full" />
+                        </div>
+                      ) : productSuppliers.length === 0 ? (
+                        <div className="text-center py-8 border rounded-lg border-dashed">
+                          <Building2 className="h-10 w-10 mx-auto mb-3 text-muted-foreground opacity-50" />
+                          <p className="text-muted-foreground">Nessun fornitore associato</p>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Aggiungi almeno un fornitore per poter ordinare questo prodotto
+                          </p>
+                        </div>
+                      ) : (
+                        <div className="space-y-2">
+                          {productSuppliers.map((ps) => (
+                            <div 
+                              key={ps.id} 
+                              className="flex items-center gap-3 p-3 border rounded-lg"
+                              data-testid={`row-product-supplier-${ps.id}`}
+                            >
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2">
+                                  <span className="font-medium">
+                                    {suppliers.find(s => s.id === ps.supplierId)?.name || ps.supplierName}
+                                  </span>
+                                  {ps.isPreferred && (
+                                    <Badge variant="default" className="gap-1">
+                                      <Star className="h-3 w-3" />
+                                      Preferito
+                                    </Badge>
+                                  )}
+                                  {!ps.isActive && (
+                                    <Badge variant="secondary">Inattivo</Badge>
+                                  )}
+                                </div>
+                                <div className="flex items-center gap-4 text-sm text-muted-foreground mt-1">
+                                  {ps.supplierCode && (
+                                    <span>Cod: {ps.supplierCode}</span>
+                                  )}
+                                  {ps.purchasePrice && (
+                                    <span className="font-medium text-foreground">
+                                      {formatCurrency(ps.purchasePrice)}
+                                    </span>
+                                  )}
+                                  {ps.leadTimeDays && (
+                                    <span>{ps.leadTimeDays}gg consegna</span>
+                                  )}
+                                  {ps.minOrderQty && ps.minOrderQty > 1 && (
+                                    <span>Min: {ps.minOrderQty} pz</span>
+                                  )}
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => openSupplierDialog(ps)}
+                                  data-testid={`button-edit-ps-${ps.id}`}
+                                >
+                                  <Pencil className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => {
+                                    if (confirm("Rimuovere questo fornitore dal prodotto?")) {
+                                      deleteProductSupplierMutation.mutate(ps.id);
+                                    }
+                                  }}
+                                  disabled={deleteProductSupplierMutation.isPending}
+                                  data-testid={`button-delete-ps-${ps.id}`}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      <Dialog open={supplierDialogOpen} onOpenChange={setSupplierDialogOpen}>
+                        <DialogContent>
+                          <DialogHeader>
+                            <DialogTitle>
+                              {editingProductSupplier ? "Modifica Fornitore" : "Associa Fornitore"}
+                            </DialogTitle>
+                          </DialogHeader>
+                          <form onSubmit={handleSupplierSubmit} className="space-y-4">
+                            <div className="space-y-2">
+                              <Label htmlFor="ps-supplierId">Fornitore *</Label>
+                              <Select 
+                                name="supplierId" 
+                                defaultValue={editingProductSupplier?.supplierId}
+                              >
+                                <SelectTrigger data-testid="select-product-supplier">
+                                  <SelectValue placeholder="Seleziona fornitore..." />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {suppliers
+                                    .filter(s => s.isActive)
+                                    .map(s => (
+                                      <SelectItem key={s.id} value={s.id}>
+                                        {s.name} ({s.code})
+                                      </SelectItem>
+                                    ))
+                                  }
+                                </SelectContent>
+                              </Select>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4">
+                              <div className="space-y-2">
+                                <Label htmlFor="ps-supplierCode">Codice Articolo Fornitore</Label>
+                                <Input
+                                  id="ps-supplierCode"
+                                  name="supplierCode"
+                                  defaultValue={editingProductSupplier?.supplierCode || ""}
+                                  placeholder="Codice presso fornitore"
+                                  data-testid="input-ps-code"
+                                />
+                              </div>
+                              <div className="space-y-2">
+                                <Label htmlFor="ps-purchasePrice">Prezzo Acquisto (€)</Label>
+                                <Input
+                                  id="ps-purchasePrice"
+                                  name="purchasePrice"
+                                  type="number"
+                                  step="0.01"
+                                  min="0"
+                                  defaultValue={editingProductSupplier?.purchasePrice ? (editingProductSupplier.purchasePrice / 100).toFixed(2) : ""}
+                                  data-testid="input-ps-price"
+                                />
+                              </div>
+                            </div>
+
+                            <div className="grid grid-cols-3 gap-4">
+                              <div className="space-y-2">
+                                <Label htmlFor="ps-minOrderQty">Quantità Min.</Label>
+                                <Input
+                                  id="ps-minOrderQty"
+                                  name="minOrderQty"
+                                  type="number"
+                                  min="1"
+                                  defaultValue={editingProductSupplier?.minOrderQty || 1}
+                                  data-testid="input-ps-min-qty"
+                                />
+                              </div>
+                              <div className="space-y-2">
+                                <Label htmlFor="ps-packSize">Pezzi/Conf.</Label>
+                                <Input
+                                  id="ps-packSize"
+                                  name="packSize"
+                                  type="number"
+                                  min="1"
+                                  defaultValue={editingProductSupplier?.packSize || 1}
+                                  data-testid="input-ps-pack"
+                                />
+                              </div>
+                              <div className="space-y-2">
+                                <Label htmlFor="ps-leadTimeDays">Giorni Consegna</Label>
+                                <Input
+                                  id="ps-leadTimeDays"
+                                  name="leadTimeDays"
+                                  type="number"
+                                  min="0"
+                                  defaultValue={editingProductSupplier?.leadTimeDays || ""}
+                                  data-testid="input-ps-lead"
+                                />
+                              </div>
+                            </div>
+
+                            <div className="space-y-2">
+                              <Label htmlFor="ps-supplierName">Nome Prodotto (presso fornitore)</Label>
+                              <Input
+                                id="ps-supplierName"
+                                name="supplierName"
+                                defaultValue={editingProductSupplier?.supplierName || ""}
+                                placeholder="Come lo chiama il fornitore"
+                                data-testid="input-ps-name"
+                              />
+                            </div>
+
+                            <div className="flex items-center gap-2">
+                              <Label>Fornitore Preferito</Label>
+                              <Select 
+                                name="isPreferred" 
+                                defaultValue={editingProductSupplier?.isPreferred ? "true" : "false"}
+                              >
+                                <SelectTrigger className="w-32" data-testid="select-ps-preferred">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="true">
+                                    <div className="flex items-center gap-1">
+                                      <Star className="h-3 w-3" />
+                                      Si
+                                    </div>
+                                  </SelectItem>
+                                  <SelectItem value="false">
+                                    <div className="flex items-center gap-1">
+                                      <StarOff className="h-3 w-3" />
+                                      No
+                                    </div>
+                                  </SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+
+                            <div className="flex justify-end gap-2 pt-4">
+                              <Button 
+                                type="button" 
+                                variant="outline"
+                                onClick={() => setSupplierDialogOpen(false)}
+                              >
+                                Annulla
+                              </Button>
+                              <Button
+                                type="submit"
+                                disabled={createProductSupplierMutation.isPending || updateProductSupplierMutation.isPending}
+                                data-testid="button-submit-ps"
+                              >
+                                {(createProductSupplierMutation.isPending || updateProductSupplierMutation.isPending)
+                                  ? "Salvataggio..."
+                                  : editingProductSupplier ? "Aggiorna" : "Associa"}
+                              </Button>
+                            </div>
+                          </form>
+                        </DialogContent>
+                      </Dialog>
+                    </TabsContent>
+
+                    <TabsContent value="inventory" className="space-y-4 mt-4">
                       <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
                           <Label htmlFor="edit-minStock">Scorta Minima</Label>
