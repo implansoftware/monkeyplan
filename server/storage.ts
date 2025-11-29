@@ -16,13 +16,18 @@ import {
   Promotion, InsertPromotion, UnrepairableReason, InsertUnrepairableReason,
   ExternalLab, InsertExternalLab, DataRecoveryJob, InsertDataRecoveryJob, DataRecoveryEvent, InsertDataRecoveryEvent,
   CreateDataRecoveryJob, UpdateDataRecoveryJob,
+  Supplier, InsertSupplier, ProductSupplier, InsertProductSupplier,
+  SupplierOrder, InsertSupplierOrder, SupplierOrderItem, InsertSupplierOrderItem,
+  SupplierReturn, InsertSupplierReturn, SupplierReturnItem, InsertSupplierReturnItem,
+  SupplierCommunicationLog, InsertSupplierCommunicationLog,
   users, repairCenters, products, repairOrders, tickets, ticketMessages,
   invoices, billingData, chatMessages, inventoryMovements, inventoryStock, activityLogs, analyticsCache,
   notifications, notificationPreferences, repairAttachments, repairAcceptance, repairDiagnostics,
   repairQuotes, partsOrders, repairLogs, repairTestChecklist, repairDelivery,
   deviceTypes, deviceBrands, deviceModels, issueTypes, aestheticDefects, accessoryTypes,
   diagnosticFindings, damagedComponentTypes, estimatedRepairTimes, adminSettings,
-  promotions, unrepairableReasons, externalLabs, dataRecoveryJobs, dataRecoveryEvents
+  promotions, unrepairableReasons, externalLabs, dataRecoveryJobs, dataRecoveryEvents,
+  suppliers, productSuppliers, supplierOrders, supplierOrderItems, supplierReturns, supplierReturnItems, supplierCommunicationLogs
 } from "@shared/schema";
 import { db, pool } from "./db";
 import { eq, and, or, desc, lt, sql, not } from "drizzle-orm";
@@ -235,6 +240,54 @@ export interface IStorage {
   // Data Recovery Events
   createDataRecoveryEvent(event: InsertDataRecoveryEvent): Promise<DataRecoveryEvent>;
   listDataRecoveryEvents(jobId: string): Promise<DataRecoveryEvent[]>;
+  
+  // Suppliers (Fornitori)
+  listSuppliers(activeOnly?: boolean): Promise<Supplier[]>;
+  getSupplier(id: string): Promise<Supplier | undefined>;
+  getSupplierByCode(code: string): Promise<Supplier | undefined>;
+  createSupplier(supplier: InsertSupplier): Promise<Supplier>;
+  updateSupplier(id: string, updates: Partial<InsertSupplier>): Promise<Supplier>;
+  deleteSupplier(id: string): Promise<void>;
+  
+  // Product Suppliers (Relazione prodotti-fornitori)
+  listProductSuppliers(productId: string): Promise<ProductSupplier[]>;
+  listSupplierProducts(supplierId: string): Promise<ProductSupplier[]>;
+  getProductSupplier(id: string): Promise<ProductSupplier | undefined>;
+  createProductSupplier(productSupplier: InsertProductSupplier): Promise<ProductSupplier>;
+  updateProductSupplier(id: string, updates: Partial<InsertProductSupplier>): Promise<ProductSupplier>;
+  deleteProductSupplier(id: string): Promise<void>;
+  setPreferredSupplier(productId: string, supplierId: string): Promise<void>;
+  
+  // Supplier Orders (Ordini fornitori)
+  listSupplierOrders(filters?: { supplierId?: string; repairCenterId?: string; status?: string }): Promise<SupplierOrder[]>;
+  getSupplierOrder(id: string): Promise<SupplierOrder | undefined>;
+  createSupplierOrder(order: InsertSupplierOrder): Promise<SupplierOrder>;
+  updateSupplierOrder(id: string, updates: Partial<Omit<InsertSupplierOrder, 'orderNumber' | 'createdBy'>>): Promise<SupplierOrder>;
+  updateSupplierOrderStatus(id: string, status: string): Promise<SupplierOrder>;
+  
+  // Supplier Order Items (Righe ordine)
+  listSupplierOrderItems(orderId: string): Promise<SupplierOrderItem[]>;
+  createSupplierOrderItem(item: InsertSupplierOrderItem): Promise<SupplierOrderItem>;
+  updateSupplierOrderItem(id: string, updates: Partial<InsertSupplierOrderItem>): Promise<SupplierOrderItem>;
+  deleteSupplierOrderItem(id: string): Promise<void>;
+  updateSupplierOrderItemReceived(id: string, quantityReceived: number): Promise<SupplierOrderItem>;
+  
+  // Supplier Returns (Resi fornitori)
+  listSupplierReturns(filters?: { supplierId?: string; repairCenterId?: string; status?: string }): Promise<SupplierReturn[]>;
+  getSupplierReturn(id: string): Promise<SupplierReturn | undefined>;
+  createSupplierReturn(returnData: InsertSupplierReturn): Promise<SupplierReturn>;
+  updateSupplierReturn(id: string, updates: Partial<Omit<InsertSupplierReturn, 'returnNumber' | 'createdBy'>>): Promise<SupplierReturn>;
+  updateSupplierReturnStatus(id: string, status: string): Promise<SupplierReturn>;
+  
+  // Supplier Return Items (Righe reso)
+  listSupplierReturnItems(returnId: string): Promise<SupplierReturnItem[]>;
+  createSupplierReturnItem(item: InsertSupplierReturnItem): Promise<SupplierReturnItem>;
+  deleteSupplierReturnItem(id: string): Promise<void>;
+  
+  // Communication Logs (Log comunicazioni)
+  listSupplierCommunicationLogs(filters?: { supplierId?: string; entityType?: string; entityId?: string }): Promise<SupplierCommunicationLog[]>;
+  createSupplierCommunicationLog(log: InsertSupplierCommunicationLog): Promise<SupplierCommunicationLog>;
+  updateSupplierCommunicationLog(id: string, updates: Partial<InsertSupplierCommunicationLog>): Promise<SupplierCommunicationLog>;
   
   sessionStore: session.Store;
 }
@@ -1131,7 +1184,12 @@ export class DatabaseStorage implements IStorage {
 
   // Repair Quotes
   async createRepairQuote(quote: InsertRepairQuote): Promise<RepairQuote> {
-    const [created] = await db.insert(repairQuotes).values(quote).returning();
+    const count = await db.select().from(repairQuotes);
+    const quoteNumber = `PRV-${Date.now()}-${count.length + 1}`;
+    const [created] = await db.insert(repairQuotes).values({
+      ...quote,
+      quoteNumber,
+    }).returning();
     return created;
   }
 
@@ -1914,6 +1972,368 @@ export class DatabaseStorage implements IStorage {
       .from(dataRecoveryEvents)
       .where(eq(dataRecoveryEvents.dataRecoveryJobId, jobId))
       .orderBy(desc(dataRecoveryEvents.createdAt));
+  }
+
+  // ==========================================
+  // SUPPLIER MANAGEMENT
+  // ==========================================
+
+  // Suppliers
+  async listSuppliers(activeOnly: boolean = false): Promise<Supplier[]> {
+    let query = db.select().from(suppliers);
+    
+    if (activeOnly) {
+      query = query.where(eq(suppliers.isActive, true)) as any;
+    }
+    
+    return await query.orderBy(suppliers.name);
+  }
+
+  async getSupplier(id: string): Promise<Supplier | undefined> {
+    const [supplier] = await db.select().from(suppliers).where(eq(suppliers.id, id));
+    return supplier || undefined;
+  }
+
+  async getSupplierByCode(code: string): Promise<Supplier | undefined> {
+    const [supplier] = await db.select().from(suppliers).where(eq(suppliers.code, code));
+    return supplier || undefined;
+  }
+
+  async createSupplier(insertSupplier: InsertSupplier): Promise<Supplier> {
+    const [supplier] = await db.insert(suppliers).values(insertSupplier).returning();
+    return supplier;
+  }
+
+  async updateSupplier(id: string, updates: Partial<InsertSupplier>): Promise<Supplier> {
+    const [supplier] = await db.update(suppliers)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(suppliers.id, id))
+      .returning();
+    
+    if (!supplier) {
+      throw new Error("Fornitore non trovato");
+    }
+    
+    return supplier;
+  }
+
+  async deleteSupplier(id: string): Promise<void> {
+    await db.delete(suppliers).where(eq(suppliers.id, id));
+  }
+
+  // Product Suppliers
+  async listProductSuppliers(productId: string): Promise<ProductSupplier[]> {
+    return await db.select()
+      .from(productSuppliers)
+      .where(eq(productSuppliers.productId, productId))
+      .orderBy(desc(productSuppliers.isPreferred), productSuppliers.createdAt);
+  }
+
+  async listSupplierProducts(supplierId: string): Promise<ProductSupplier[]> {
+    return await db.select()
+      .from(productSuppliers)
+      .where(eq(productSuppliers.supplierId, supplierId))
+      .orderBy(productSuppliers.createdAt);
+  }
+
+  async getProductSupplier(id: string): Promise<ProductSupplier | undefined> {
+    const [ps] = await db.select().from(productSuppliers).where(eq(productSuppliers.id, id));
+    return ps || undefined;
+  }
+
+  async createProductSupplier(insertPS: InsertProductSupplier): Promise<ProductSupplier> {
+    const [ps] = await db.insert(productSuppliers).values(insertPS).returning();
+    return ps;
+  }
+
+  async updateProductSupplier(id: string, updates: Partial<InsertProductSupplier>): Promise<ProductSupplier> {
+    const [ps] = await db.update(productSuppliers)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(productSuppliers.id, id))
+      .returning();
+    
+    if (!ps) {
+      throw new Error("Relazione prodotto-fornitore non trovata");
+    }
+    
+    return ps;
+  }
+
+  async deleteProductSupplier(id: string): Promise<void> {
+    await db.delete(productSuppliers).where(eq(productSuppliers.id, id));
+  }
+
+  async setPreferredSupplier(productId: string, supplierId: string): Promise<void> {
+    await db.transaction(async (tx) => {
+      // Remove preferred flag from all suppliers for this product
+      await tx.update(productSuppliers)
+        .set({ isPreferred: false, updatedAt: new Date() })
+        .where(eq(productSuppliers.productId, productId));
+      
+      // Set preferred flag for the specified supplier
+      await tx.update(productSuppliers)
+        .set({ isPreferred: true, updatedAt: new Date() })
+        .where(and(
+          eq(productSuppliers.productId, productId),
+          eq(productSuppliers.supplierId, supplierId)
+        ));
+    });
+  }
+
+  // Supplier Orders
+  async listSupplierOrders(filters?: { supplierId?: string; repairCenterId?: string; status?: string }): Promise<SupplierOrder[]> {
+    const conditions = [];
+    
+    if (filters?.supplierId) {
+      conditions.push(eq(supplierOrders.supplierId, filters.supplierId));
+    }
+    if (filters?.repairCenterId) {
+      conditions.push(eq(supplierOrders.repairCenterId, filters.repairCenterId));
+    }
+    if (filters?.status) {
+      conditions.push(sql`${supplierOrders.status}::text = ${filters.status}`);
+    }
+    
+    if (conditions.length > 0) {
+      return await db.select().from(supplierOrders)
+        .where(and(...conditions))
+        .orderBy(desc(supplierOrders.createdAt));
+    }
+    
+    return await db.select().from(supplierOrders).orderBy(desc(supplierOrders.createdAt));
+  }
+
+  async getSupplierOrder(id: string): Promise<SupplierOrder | undefined> {
+    const [order] = await db.select().from(supplierOrders).where(eq(supplierOrders.id, id));
+    return order || undefined;
+  }
+
+  async createSupplierOrder(insertOrder: InsertSupplierOrder): Promise<SupplierOrder> {
+    const count = await db.select().from(supplierOrders);
+    const year = new Date().getFullYear();
+    const orderNumber = `ORD-FORN-${year}-${String(count.length + 1).padStart(5, '0')}`;
+    
+    const [order] = await db.insert(supplierOrders).values({
+      ...insertOrder,
+      orderNumber,
+    }).returning();
+    return order;
+  }
+
+  async updateSupplierOrder(id: string, updates: Partial<Omit<InsertSupplierOrder, 'orderNumber' | 'createdBy'>>): Promise<SupplierOrder> {
+    const [order] = await db.update(supplierOrders)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(supplierOrders.id, id))
+      .returning();
+    
+    if (!order) {
+      throw new Error("Ordine fornitore non trovato");
+    }
+    
+    return order;
+  }
+
+  async updateSupplierOrderStatus(id: string, status: string): Promise<SupplierOrder> {
+    const updateData: any = { 
+      status: status as any, 
+      updatedAt: new Date() 
+    };
+    
+    // Set timestamp based on status
+    if (status === 'sent') updateData.sentAt = new Date();
+    if (status === 'confirmed') updateData.confirmedAt = new Date();
+    if (status === 'shipped') updateData.shippedAt = new Date();
+    if (status === 'received') updateData.receivedAt = new Date();
+    
+    const [order] = await db.update(supplierOrders)
+      .set(updateData)
+      .where(eq(supplierOrders.id, id))
+      .returning();
+    
+    if (!order) {
+      throw new Error("Ordine fornitore non trovato");
+    }
+    
+    return order;
+  }
+
+  // Supplier Order Items
+  async listSupplierOrderItems(orderId: string): Promise<SupplierOrderItem[]> {
+    return await db.select()
+      .from(supplierOrderItems)
+      .where(eq(supplierOrderItems.supplierOrderId, orderId))
+      .orderBy(supplierOrderItems.createdAt);
+  }
+
+  async createSupplierOrderItem(item: InsertSupplierOrderItem): Promise<SupplierOrderItem> {
+    const [created] = await db.insert(supplierOrderItems).values(item).returning();
+    return created;
+  }
+
+  async updateSupplierOrderItem(id: string, updates: Partial<InsertSupplierOrderItem>): Promise<SupplierOrderItem> {
+    const [item] = await db.update(supplierOrderItems)
+      .set(updates)
+      .where(eq(supplierOrderItems.id, id))
+      .returning();
+    
+    if (!item) {
+      throw new Error("Riga ordine non trovata");
+    }
+    
+    return item;
+  }
+
+  async deleteSupplierOrderItem(id: string): Promise<void> {
+    await db.delete(supplierOrderItems).where(eq(supplierOrderItems.id, id));
+  }
+
+  async updateSupplierOrderItemReceived(id: string, quantityReceived: number): Promise<SupplierOrderItem> {
+    const [item] = await db.update(supplierOrderItems)
+      .set({ quantityReceived })
+      .where(eq(supplierOrderItems.id, id))
+      .returning();
+    
+    if (!item) {
+      throw new Error("Riga ordine non trovata");
+    }
+    
+    return item;
+  }
+
+  // Supplier Returns
+  async listSupplierReturns(filters?: { supplierId?: string; repairCenterId?: string; status?: string }): Promise<SupplierReturn[]> {
+    const conditions = [];
+    
+    if (filters?.supplierId) {
+      conditions.push(eq(supplierReturns.supplierId, filters.supplierId));
+    }
+    if (filters?.repairCenterId) {
+      conditions.push(eq(supplierReturns.repairCenterId, filters.repairCenterId));
+    }
+    if (filters?.status) {
+      conditions.push(sql`${supplierReturns.status}::text = ${filters.status}`);
+    }
+    
+    if (conditions.length > 0) {
+      return await db.select().from(supplierReturns)
+        .where(and(...conditions))
+        .orderBy(desc(supplierReturns.createdAt));
+    }
+    
+    return await db.select().from(supplierReturns).orderBy(desc(supplierReturns.createdAt));
+  }
+
+  async getSupplierReturn(id: string): Promise<SupplierReturn | undefined> {
+    const [returnData] = await db.select().from(supplierReturns).where(eq(supplierReturns.id, id));
+    return returnData || undefined;
+  }
+
+  async createSupplierReturn(insertReturn: InsertSupplierReturn): Promise<SupplierReturn> {
+    const count = await db.select().from(supplierReturns);
+    const year = new Date().getFullYear();
+    const returnNumber = `RES-FORN-${year}-${String(count.length + 1).padStart(5, '0')}`;
+    
+    const [returnData] = await db.insert(supplierReturns).values({
+      ...insertReturn,
+      returnNumber,
+    }).returning();
+    return returnData;
+  }
+
+  async updateSupplierReturn(id: string, updates: Partial<Omit<InsertSupplierReturn, 'returnNumber' | 'createdBy'>>): Promise<SupplierReturn> {
+    const [returnData] = await db.update(supplierReturns)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(supplierReturns.id, id))
+      .returning();
+    
+    if (!returnData) {
+      throw new Error("Reso fornitore non trovato");
+    }
+    
+    return returnData;
+  }
+
+  async updateSupplierReturnStatus(id: string, status: string): Promise<SupplierReturn> {
+    const updateData: any = { 
+      status: status as any, 
+      updatedAt: new Date() 
+    };
+    
+    // Set timestamp based on status
+    if (status === 'requested') updateData.requestedAt = new Date();
+    if (status === 'approved') updateData.approvedAt = new Date();
+    if (status === 'shipped') updateData.shippedAt = new Date();
+    if (status === 'received') updateData.receivedAt = new Date();
+    if (status === 'refunded') updateData.refundedAt = new Date();
+    
+    const [returnData] = await db.update(supplierReturns)
+      .set(updateData)
+      .where(eq(supplierReturns.id, id))
+      .returning();
+    
+    if (!returnData) {
+      throw new Error("Reso fornitore non trovato");
+    }
+    
+    return returnData;
+  }
+
+  // Supplier Return Items
+  async listSupplierReturnItems(returnId: string): Promise<SupplierReturnItem[]> {
+    return await db.select()
+      .from(supplierReturnItems)
+      .where(eq(supplierReturnItems.supplierReturnId, returnId))
+      .orderBy(supplierReturnItems.createdAt);
+  }
+
+  async createSupplierReturnItem(item: InsertSupplierReturnItem): Promise<SupplierReturnItem> {
+    const [created] = await db.insert(supplierReturnItems).values(item).returning();
+    return created;
+  }
+
+  async deleteSupplierReturnItem(id: string): Promise<void> {
+    await db.delete(supplierReturnItems).where(eq(supplierReturnItems.id, id));
+  }
+
+  // Supplier Communication Logs
+  async listSupplierCommunicationLogs(filters?: { supplierId?: string; entityType?: string; entityId?: string }): Promise<SupplierCommunicationLog[]> {
+    const conditions = [];
+    
+    if (filters?.supplierId) {
+      conditions.push(eq(supplierCommunicationLogs.supplierId, filters.supplierId));
+    }
+    if (filters?.entityType) {
+      conditions.push(eq(supplierCommunicationLogs.entityType, filters.entityType));
+    }
+    if (filters?.entityId) {
+      conditions.push(eq(supplierCommunicationLogs.entityId, filters.entityId));
+    }
+    
+    if (conditions.length > 0) {
+      return await db.select().from(supplierCommunicationLogs)
+        .where(and(...conditions))
+        .orderBy(desc(supplierCommunicationLogs.createdAt));
+    }
+    
+    return await db.select().from(supplierCommunicationLogs).orderBy(desc(supplierCommunicationLogs.createdAt));
+  }
+
+  async createSupplierCommunicationLog(log: InsertSupplierCommunicationLog): Promise<SupplierCommunicationLog> {
+    const [created] = await db.insert(supplierCommunicationLogs).values(log).returning();
+    return created;
+  }
+
+  async updateSupplierCommunicationLog(id: string, updates: Partial<InsertSupplierCommunicationLog>): Promise<SupplierCommunicationLog> {
+    const [log] = await db.update(supplierCommunicationLogs)
+      .set(updates)
+      .where(eq(supplierCommunicationLogs.id, id))
+      .returning();
+    
+    if (!log) {
+      throw new Error("Log comunicazione non trovato");
+    }
+    
+    return log;
   }
 }
 
