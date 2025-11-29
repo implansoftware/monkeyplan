@@ -276,7 +276,8 @@ export default function SupplierOrdersPage() {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
     
-    const productId = formData.get("productId") as string;
+    const productIdRaw = formData.get("productId") as string;
+    const productId = productIdRaw && productIdRaw !== "__none__" ? productIdRaw : undefined;
     const description = formData.get("description") as string;
     const supplierCode = formData.get("supplierCode") as string;
     const quantity = parseInt(formData.get("quantity") as string) || 1;
@@ -289,7 +290,7 @@ export default function SupplierOrdersPage() {
     }
     
     const itemData: Partial<SupplierOrderItem> = {
-      productId: productId || undefined,
+      productId,
       description,
       supplierCode: supplierCode || undefined,
       quantity,
@@ -875,12 +876,12 @@ export default function SupplierOrdersPage() {
           <form onSubmit={handleAddItem} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="productId">Prodotto (opzionale)</Label>
-              <Select name="productId" defaultValue={editingItem?.productId || ""}>
+              <Select name="productId" defaultValue={editingItem?.productId || "__none__"}>
                 <SelectTrigger data-testid="select-item-product">
                   <SelectValue placeholder="Seleziona prodotto..." />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Nessun prodotto collegato</SelectItem>
+                  <SelectItem value="__none__">Nessun prodotto collegato</SelectItem>
                   {selectedOrder && getSupplierProducts(selectedOrder.supplierId).map(p => (
                     <SelectItem key={p.id} value={p.id}>
                       {p.name} ({p.sku})
