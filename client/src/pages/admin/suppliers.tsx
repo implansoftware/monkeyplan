@@ -148,6 +148,7 @@ export default function AdminSuppliers() {
 
   const handleNewSupplier = () => {
     setEditingSupplier(null);
+    setSelectedCity(""); // Reset city for new supplier
     setActiveTab("general");
     setDialogOpen(true);
   };
