@@ -6806,11 +6806,15 @@ export function registerRoutes(app: Express): Server {
         repairCenterId = req.user.repairCenterId;
       }
       
-      const validated = insertPartsLoadDocumentSchema.parse({
+      // Convert documentDate string to Date object
+      const bodyWithDate = {
         ...req.body,
+        documentDate: req.body.documentDate ? new Date(req.body.documentDate) : undefined,
         repairCenterId,
         createdBy: req.user.id,
-      });
+      };
+      
+      const validated = insertPartsLoadDocumentSchema.parse(bodyWithDate);
       
       const doc = await storage.createPartsLoadDocument(validated);
       res.status(201).json(doc);
