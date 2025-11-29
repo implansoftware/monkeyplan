@@ -19,6 +19,13 @@ import {
   updateDataRecoveryJobSchema,
   createDataRecoveryEventSchema,
   insertExternalLabSchema,
+  insertSupplierSchema,
+  insertProductSupplierSchema,
+  insertSupplierOrderSchema,
+  insertSupplierOrderItemSchema,
+  insertSupplierReturnSchema,
+  insertSupplierReturnItemSchema,
+  insertSupplierCommunicationLogSchema,
   type Product
 } from "@shared/schema";
 import { ObjectStorageService, objectStorageClient, parseObjectPath } from "./objectStorage";
@@ -5980,6 +5987,672 @@ export function registerRoutes(app: Express): Server {
       doc.end();
     } catch (error: any) {
       res.status(500).send(error.message);
+    }
+  });
+
+  // ============ SUPPLIER MANAGEMENT SYSTEM ============
+
+  // ============ SUPPLIERS (Anagrafica Fornitori) ============
+
+  // GET /api/suppliers - List all suppliers
+  app.get("/api/suppliers", requireAuth, requireRole("admin", "repair_center"), async (req, res) => {
+    try {
+      const activeOnly = req.query.activeOnly === 'true';
+      const suppliers = await storage.listSuppliers(activeOnly);
+      res.json(suppliers);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // GET /api/suppliers/:id - Get supplier details
+  app.get("/api/suppliers/:id", requireAuth, requireRole("admin", "repair_center"), async (req, res) => {
+    try {
+      const supplier = await storage.getSupplier(req.params.id);
+      if (!supplier) {
+        return res.status(404).send("Fornitore non trovato");
+      }
+      res.json(supplier);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // POST /api/suppliers - Create new supplier (admin only)
+  app.post("/api/suppliers", requireAuth, requireRole("admin"), async (req, res) => {
+    try {
+      const validated = insertSupplierSchema.parse(req.body);
+      
+      // Check for duplicate code
+      const existing = await storage.getSupplierByCode(validated.code);
+      if (existing) {
+        return res.status(400).send("Codice fornitore già esistente");
+      }
+      
+      const supplier = await storage.createSupplier(validated);
+      res.status(201).json(supplier);
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+
+  // PATCH /api/suppliers/:id - Update supplier (admin only)
+  app.patch("/api/suppliers/:id", requireAuth, requireRole("admin"), async (req, res) => {
+    try {
+      const supplier = await storage.updateSupplier(req.params.id, req.body);
+      res.json(supplier);
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+
+  // DELETE /api/suppliers/:id - Delete supplier (admin only)
+  app.delete("/api/suppliers/:id", requireAuth, requireRole("admin"), async (req, res) => {
+    try {
+      await storage.deleteSupplier(req.params.id);
+      res.status(204).send();
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+
+  // ============ PRODUCT SUPPLIERS (Relazione Prodotti-Fornitori) ============
+
+  // GET /api/products/:id/suppliers - List suppliers for a product
+  app.get("/api/products/:id/suppliers", requireAuth, requireRole("admin", "repair_center"), async (req, res) => {
+    try {
+      const productSuppliers = await storage.listProductSuppliers(req.params.id);
+      
+      // Enrich with supplier details
+      const enriched = await Promise.all(productSuppliers.map(async (ps) => {
+        const supplier = await storage.getSupplier(ps.supplierId);
+        return { ...ps, supplier };
+      }));
+      
+      res.json(enriched);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // GET /api/suppliers/:id/products - List products from a supplier
+  app.get("/api/suppliers/:id/products", requireAuth, requireRole("admin", "repair_center"), async (req, res) => {
+    try {
+      const productSuppliers = await storage.listSupplierProducts(req.params.id);
+      
+      // Enrich with product details
+      const enriched = await Promise.all(productSuppliers.map(async (ps) => {
+        const product = await storage.getProduct(ps.productId);
+        return { ...ps, product };
+      }));
+      
+      res.json(enriched);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // POST /api/products/:id/suppliers - Add supplier to product (admin only)
+  app.post("/api/products/:id/suppliers", requireAuth, requireRole("admin"), async (req, res) => {
+    try {
+      const validated = insertProductSupplierSchema.parse({
+        ...req.body,
+        productId: req.params.id,
+      });
+      
+      const productSupplier = await storage.createProductSupplier(validated);
+      res.status(201).json(productSupplier);
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+
+  // PATCH /api/product-suppliers/:id - Update product supplier relationship (admin only)
+  app.patch("/api/product-suppliers/:id", requireAuth, requireRole("admin"), async (req, res) => {
+    try {
+      const updated = await storage.updateProductSupplier(req.params.id, req.body);
+      res.json(updated);
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+
+  // DELETE /api/product-suppliers/:id - Remove supplier from product (admin only)
+  app.delete("/api/product-suppliers/:id", requireAuth, requireRole("admin"), async (req, res) => {
+    try {
+      await storage.deleteProductSupplier(req.params.id);
+      res.status(204).send();
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+
+  // POST /api/products/:productId/suppliers/:supplierId/set-preferred - Set preferred supplier
+  app.post("/api/products/:productId/suppliers/:supplierId/set-preferred", requireAuth, requireRole("admin"), async (req, res) => {
+    try {
+      await storage.setPreferredSupplier(req.params.productId, req.params.supplierId);
+      res.json({ success: true });
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+
+  // ============ SUPPLIER ORDERS (Ordini a Fornitori) ============
+
+  // GET /api/supplier-orders - List supplier orders
+  app.get("/api/supplier-orders", requireAuth, requireRole("admin", "repair_center"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const filters: { supplierId?: string; repairCenterId?: string; status?: string } = {};
+      
+      // Repair centers can only see their own orders
+      if (req.user.role === 'repair_center') {
+        if (!req.user.repairCenterId) {
+          return res.json([]);
+        }
+        filters.repairCenterId = req.user.repairCenterId;
+      } else if (req.query.repairCenterId) {
+        filters.repairCenterId = req.query.repairCenterId as string;
+      }
+      
+      if (req.query.supplierId) {
+        filters.supplierId = req.query.supplierId as string;
+      }
+      if (req.query.status) {
+        filters.status = req.query.status as string;
+      }
+      
+      const orders = await storage.listSupplierOrders(filters);
+      
+      // Enrich with supplier names
+      const enriched = await Promise.all(orders.map(async (order) => {
+        const supplier = await storage.getSupplier(order.supplierId);
+        const repairCenter = await storage.getRepairCenter(order.repairCenterId);
+        return { ...order, supplierName: supplier?.name, repairCenterName: repairCenter?.name };
+      }));
+      
+      res.json(enriched);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // GET /api/supplier-orders/:id - Get supplier order details
+  app.get("/api/supplier-orders/:id", requireAuth, requireRole("admin", "repair_center"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const order = await storage.getSupplierOrder(req.params.id);
+      if (!order) {
+        return res.status(404).send("Ordine non trovato");
+      }
+      
+      // Repair center access check
+      if (req.user.role === 'repair_center' && order.repairCenterId !== req.user.repairCenterId) {
+        return res.status(403).send("Accesso negato");
+      }
+      
+      const [supplier, repairCenter, items] = await Promise.all([
+        storage.getSupplier(order.supplierId),
+        storage.getRepairCenter(order.repairCenterId),
+        storage.listSupplierOrderItems(order.id),
+      ]);
+      
+      // Enrich items with product info
+      const enrichedItems = await Promise.all(items.map(async (item) => {
+        const product = item.productId ? await storage.getProduct(item.productId) : null;
+        return { ...item, productName: product?.name };
+      }));
+      
+      res.json({ ...order, supplier, repairCenter, items: enrichedItems });
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // POST /api/supplier-orders - Create supplier order
+  app.post("/api/supplier-orders", requireAuth, requireRole("admin", "repair_center"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      // Determine repair center ID
+      let repairCenterId = req.body.repairCenterId;
+      if (req.user.role === 'repair_center') {
+        if (!req.user.repairCenterId) {
+          return res.status(400).send("Centro riparazione non assegnato");
+        }
+        repairCenterId = req.user.repairCenterId;
+      }
+      
+      const validated = insertSupplierOrderSchema.parse({
+        ...req.body,
+        repairCenterId,
+        createdBy: req.user.id,
+      });
+      
+      const order = await storage.createSupplierOrder(validated);
+      res.status(201).json(order);
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+
+  // PATCH /api/supplier-orders/:id - Update supplier order
+  app.patch("/api/supplier-orders/:id", requireAuth, requireRole("admin", "repair_center"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const order = await storage.getSupplierOrder(req.params.id);
+      if (!order) {
+        return res.status(404).send("Ordine non trovato");
+      }
+      
+      // Repair center access check
+      if (req.user.role === 'repair_center' && order.repairCenterId !== req.user.repairCenterId) {
+        return res.status(403).send("Accesso negato");
+      }
+      
+      // Don't allow editing after certain statuses
+      if (['received', 'cancelled'].includes(order.status)) {
+        return res.status(400).send("Ordine già completato o annullato");
+      }
+      
+      const updated = await storage.updateSupplierOrder(req.params.id, req.body);
+      res.json(updated);
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+
+  // POST /api/supplier-orders/:id/status - Update order status
+  app.post("/api/supplier-orders/:id/status", requireAuth, requireRole("admin", "repair_center"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const order = await storage.getSupplierOrder(req.params.id);
+      if (!order) {
+        return res.status(404).send("Ordine non trovato");
+      }
+      
+      // Repair center access check
+      if (req.user.role === 'repair_center' && order.repairCenterId !== req.user.repairCenterId) {
+        return res.status(403).send("Accesso negato");
+      }
+      
+      const { status } = req.body;
+      if (!status) {
+        return res.status(400).send("Stato richiesto");
+      }
+      
+      const updated = await storage.updateSupplierOrderStatus(req.params.id, status);
+      
+      // Log the communication if order was sent
+      if (status === 'sent') {
+        const supplier = await storage.getSupplier(order.supplierId);
+        if (supplier) {
+          await storage.createSupplierCommunicationLog({
+            supplierId: supplier.id,
+            communicationType: 'order_sent',
+            channel: supplier.communicationChannel,
+            entityType: 'supplier_order',
+            entityId: order.id,
+            content: `Ordine ${order.orderNumber} inviato`,
+            sentAt: new Date(),
+            createdBy: req.user.id,
+          });
+        }
+      }
+      
+      res.json(updated);
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+
+  // ============ SUPPLIER ORDER ITEMS (Righe Ordine) ============
+
+  // POST /api/supplier-orders/:id/items - Add item to order
+  app.post("/api/supplier-orders/:id/items", requireAuth, requireRole("admin", "repair_center"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const order = await storage.getSupplierOrder(req.params.id);
+      if (!order) {
+        return res.status(404).send("Ordine non trovato");
+      }
+      
+      // Repair center access check
+      if (req.user.role === 'repair_center' && order.repairCenterId !== req.user.repairCenterId) {
+        return res.status(403).send("Accesso negato");
+      }
+      
+      // Only allow adding items to draft orders
+      if (order.status !== 'draft') {
+        return res.status(400).send("Impossibile modificare ordine già inviato");
+      }
+      
+      const validated = insertSupplierOrderItemSchema.parse({
+        ...req.body,
+        supplierOrderId: req.params.id,
+      });
+      
+      const item = await storage.createSupplierOrderItem(validated);
+      
+      // Recalculate order totals
+      const items = await storage.listSupplierOrderItems(req.params.id);
+      const subtotal = items.reduce((sum, i) => sum + i.totalPrice, 0);
+      const taxAmount = Math.round(subtotal * 0.22); // 22% IVA
+      const shippingCost = order.shippingCost || 0;
+      const totalAmount = subtotal + taxAmount + shippingCost;
+      
+      await storage.updateSupplierOrder(req.params.id, { subtotal, taxAmount, totalAmount });
+      
+      res.status(201).json(item);
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+
+  // DELETE /api/supplier-order-items/:id - Remove item from order
+  app.delete("/api/supplier-order-items/:id", requireAuth, requireRole("admin", "repair_center"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      // Get item first to find the order
+      const items = await db.execute(sql`SELECT * FROM supplier_order_items WHERE id = ${req.params.id}`);
+      const item = items.rows[0] as any;
+      if (!item) {
+        return res.status(404).send("Riga non trovata");
+      }
+      
+      const order = await storage.getSupplierOrder(item.supplier_order_id);
+      if (!order) {
+        return res.status(404).send("Ordine non trovato");
+      }
+      
+      // Repair center access check
+      if (req.user.role === 'repair_center' && order.repairCenterId !== req.user.repairCenterId) {
+        return res.status(403).send("Accesso negato");
+      }
+      
+      // Only allow removing items from draft orders
+      if (order.status !== 'draft') {
+        return res.status(400).send("Impossibile modificare ordine già inviato");
+      }
+      
+      await storage.deleteSupplierOrderItem(req.params.id);
+      
+      // Recalculate order totals
+      const remainingItems = await storage.listSupplierOrderItems(order.id);
+      const subtotal = remainingItems.reduce((sum, i) => sum + i.totalPrice, 0);
+      const taxAmount = Math.round(subtotal * 0.22);
+      const shippingCost = order.shippingCost || 0;
+      const totalAmount = subtotal + taxAmount + shippingCost;
+      
+      await storage.updateSupplierOrder(order.id, { subtotal, taxAmount, totalAmount });
+      
+      res.status(204).send();
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+
+  // POST /api/supplier-order-items/:id/receive - Mark item as received
+  app.post("/api/supplier-order-items/:id/receive", requireAuth, requireRole("admin", "repair_center"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const { quantityReceived } = req.body;
+      if (typeof quantityReceived !== 'number' || quantityReceived < 0) {
+        return res.status(400).send("Quantità non valida");
+      }
+      
+      const item = await storage.updateSupplierOrderItemReceived(req.params.id, quantityReceived);
+      
+      // Check if all items are received to update order status
+      const items = await db.execute(sql`SELECT * FROM supplier_order_items WHERE id = ${req.params.id}`);
+      const currentItem = items.rows[0] as any;
+      if (currentItem) {
+        const orderItems = await storage.listSupplierOrderItems(currentItem.supplier_order_id);
+        const allReceived = orderItems.every(i => i.quantityReceived >= i.quantity);
+        
+        if (allReceived) {
+          await storage.updateSupplierOrderStatus(currentItem.supplier_order_id, 'received');
+          
+          // Create inventory movements for received items
+          for (const receivedItem of orderItems) {
+            if (receivedItem.productId) {
+              const order = await storage.getSupplierOrder(currentItem.supplier_order_id);
+              if (order) {
+                await storage.createInventoryMovement({
+                  productId: receivedItem.productId,
+                  repairCenterId: order.repairCenterId,
+                  type: 'restock',
+                  quantity: receivedItem.quantityReceived,
+                  userId: req.user.id,
+                  notes: `Ricevuto da ordine fornitore ${order.orderNumber}`,
+                });
+              }
+            }
+          }
+        }
+      }
+      
+      res.json(item);
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+
+  // ============ SUPPLIER RETURNS (Resi a Fornitori) ============
+
+  // GET /api/supplier-returns - List supplier returns
+  app.get("/api/supplier-returns", requireAuth, requireRole("admin", "repair_center"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const filters: { supplierId?: string; repairCenterId?: string; status?: string } = {};
+      
+      if (req.user.role === 'repair_center') {
+        if (!req.user.repairCenterId) {
+          return res.json([]);
+        }
+        filters.repairCenterId = req.user.repairCenterId;
+      } else if (req.query.repairCenterId) {
+        filters.repairCenterId = req.query.repairCenterId as string;
+      }
+      
+      if (req.query.supplierId) {
+        filters.supplierId = req.query.supplierId as string;
+      }
+      if (req.query.status) {
+        filters.status = req.query.status as string;
+      }
+      
+      const returns = await storage.listSupplierReturns(filters);
+      
+      // Enrich with supplier names
+      const enriched = await Promise.all(returns.map(async (ret) => {
+        const supplier = await storage.getSupplier(ret.supplierId);
+        return { ...ret, supplierName: supplier?.name };
+      }));
+      
+      res.json(enriched);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // GET /api/supplier-returns/:id - Get return details
+  app.get("/api/supplier-returns/:id", requireAuth, requireRole("admin", "repair_center"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const returnData = await storage.getSupplierReturn(req.params.id);
+      if (!returnData) {
+        return res.status(404).send("Reso non trovato");
+      }
+      
+      // Repair center access check
+      if (req.user.role === 'repair_center' && returnData.repairCenterId !== req.user.repairCenterId) {
+        return res.status(403).send("Accesso negato");
+      }
+      
+      const [supplier, items] = await Promise.all([
+        storage.getSupplier(returnData.supplierId),
+        storage.listSupplierReturnItems(returnData.id),
+      ]);
+      
+      res.json({ ...returnData, supplier, items });
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // POST /api/supplier-returns - Create supplier return
+  app.post("/api/supplier-returns", requireAuth, requireRole("admin", "repair_center"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      let repairCenterId = req.body.repairCenterId;
+      if (req.user.role === 'repair_center') {
+        if (!req.user.repairCenterId) {
+          return res.status(400).send("Centro riparazione non assegnato");
+        }
+        repairCenterId = req.user.repairCenterId;
+      }
+      
+      const validated = insertSupplierReturnSchema.parse({
+        ...req.body,
+        repairCenterId,
+        createdBy: req.user.id,
+      });
+      
+      const returnData = await storage.createSupplierReturn(validated);
+      res.status(201).json(returnData);
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+
+  // PATCH /api/supplier-returns/:id - Update return
+  app.patch("/api/supplier-returns/:id", requireAuth, requireRole("admin", "repair_center"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const returnData = await storage.getSupplierReturn(req.params.id);
+      if (!returnData) {
+        return res.status(404).send("Reso non trovato");
+      }
+      
+      if (req.user.role === 'repair_center' && returnData.repairCenterId !== req.user.repairCenterId) {
+        return res.status(403).send("Accesso negato");
+      }
+      
+      const updated = await storage.updateSupplierReturn(req.params.id, req.body);
+      res.json(updated);
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+
+  // POST /api/supplier-returns/:id/status - Update return status
+  app.post("/api/supplier-returns/:id/status", requireAuth, requireRole("admin", "repair_center"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const returnData = await storage.getSupplierReturn(req.params.id);
+      if (!returnData) {
+        return res.status(404).send("Reso non trovato");
+      }
+      
+      if (req.user.role === 'repair_center' && returnData.repairCenterId !== req.user.repairCenterId) {
+        return res.status(403).send("Accesso negato");
+      }
+      
+      const { status } = req.body;
+      if (!status) {
+        return res.status(400).send("Stato richiesto");
+      }
+      
+      const updated = await storage.updateSupplierReturnStatus(req.params.id, status);
+      res.json(updated);
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+
+  // POST /api/supplier-returns/:id/items - Add item to return
+  app.post("/api/supplier-returns/:id/items", requireAuth, requireRole("admin", "repair_center"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const returnData = await storage.getSupplierReturn(req.params.id);
+      if (!returnData) {
+        return res.status(404).send("Reso non trovato");
+      }
+      
+      if (req.user.role === 'repair_center' && returnData.repairCenterId !== req.user.repairCenterId) {
+        return res.status(403).send("Accesso negato");
+      }
+      
+      const validated = insertSupplierReturnItemSchema.parse({
+        ...req.body,
+        supplierReturnId: req.params.id,
+      });
+      
+      const item = await storage.createSupplierReturnItem(validated);
+      
+      // Update return total
+      const items = await storage.listSupplierReturnItems(req.params.id);
+      const totalAmount = items.reduce((sum, i) => sum + i.totalPrice, 0);
+      await storage.updateSupplierReturn(req.params.id, { totalAmount });
+      
+      res.status(201).json(item);
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+
+  // ============ SUPPLIER COMMUNICATION LOGS ============
+
+  // GET /api/supplier-communications - List communication logs
+  app.get("/api/supplier-communications", requireAuth, requireRole("admin", "repair_center"), async (req, res) => {
+    try {
+      const filters: { supplierId?: string; entityType?: string; entityId?: string } = {};
+      
+      if (req.query.supplierId) {
+        filters.supplierId = req.query.supplierId as string;
+      }
+      if (req.query.entityType) {
+        filters.entityType = req.query.entityType as string;
+      }
+      if (req.query.entityId) {
+        filters.entityId = req.query.entityId as string;
+      }
+      
+      const logs = await storage.listSupplierCommunicationLogs(filters);
+      res.json(logs);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // POST /api/supplier-communications - Create communication log (manual entry)
+  app.post("/api/supplier-communications", requireAuth, requireRole("admin", "repair_center"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const validated = insertSupplierCommunicationLogSchema.parse({
+        ...req.body,
+        createdBy: req.user.id,
+      });
+      
+      const log = await storage.createSupplierCommunicationLog(validated);
+      res.status(201).json(log);
+    } catch (error: any) {
+      res.status(400).send(error.message);
     }
   });
 
