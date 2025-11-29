@@ -90,12 +90,13 @@ export default function AdminSuppliers() {
     },
   });
 
+  type PaymentTerms = 'immediate' | 'cod' | 'bank_transfer_15' | 'bank_transfer_30' | 'bank_transfer_60' | 'bank_transfer_90' | 'riba_30' | 'riba_60' | 'credit_card' | 'paypal' | 'custom';
+
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
     
     const data: InsertSupplier = {
-      code: formData.get("code") as string,
       name: formData.get("name") as string,
       email: formData.get("email") as string || undefined,
       phone: formData.get("phone") as string || undefined,
@@ -113,12 +114,11 @@ export default function AdminSuppliers() {
       apiFormat: formData.get("apiFormat") as string || undefined,
       orderEmailTemplate: formData.get("orderEmailTemplate") as string || undefined,
       returnEmailTemplate: formData.get("returnEmailTemplate") as string || undefined,
-      paymentTerms: formData.get("paymentTerms") as string || undefined,
+      paymentTerms: (formData.get("paymentTerms") as PaymentTerms) || "bank_transfer_30",
       deliveryDays: formData.get("deliveryDays") ? parseInt(formData.get("deliveryDays") as string) : 3,
       minOrderAmount: formData.get("minOrderAmount") ? parseInt(formData.get("minOrderAmount") as string) * 100 : undefined,
       shippingCost: formData.get("shippingCost") ? parseInt(formData.get("shippingCost") as string) * 100 : undefined,
       freeShippingThreshold: formData.get("freeShippingThreshold") ? parseInt(formData.get("freeShippingThreshold") as string) * 100 : undefined,
-      notes: formData.get("notes") as string || undefined,
       internalNotes: formData.get("internalNotes") as string || undefined,
       isActive: true,
     };
@@ -189,28 +189,21 @@ export default function AdminSuppliers() {
                 </TabsList>
 
                 <TabsContent value="general" className="space-y-4 mt-4" forceMount hidden={activeTab !== "general"}>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="code">Codice Fornitore *</Label>
-                      <Input 
-                        id="code" 
-                        name="code" 
-                        placeholder="es: FORN001"
-                        defaultValue={editingSupplier?.code}
-                        required 
-                        data-testid="input-supplier-code" 
-                      />
+                  {editingSupplier && (
+                    <div className="p-3 bg-muted rounded-lg">
+                      <Label className="text-muted-foreground text-xs">Codice Fornitore</Label>
+                      <p className="font-mono font-semibold" data-testid="text-supplier-code">{editingSupplier.code}</p>
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="name">Ragione Sociale *</Label>
-                      <Input 
-                        id="name" 
-                        name="name" 
-                        defaultValue={editingSupplier?.name}
-                        required 
-                        data-testid="input-supplier-name" 
-                      />
-                    </div>
+                  )}
+                  <div className="space-y-2">
+                    <Label htmlFor="name">Ragione Sociale *</Label>
+                    <Input 
+                      id="name" 
+                      name="name" 
+                      defaultValue={editingSupplier?.name}
+                      required 
+                      data-testid="input-supplier-name" 
+                    />
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
@@ -233,21 +226,11 @@ export default function AdminSuppliers() {
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="notes">Note</Label>
-                    <Textarea 
-                      id="notes" 
-                      name="notes" 
-                      rows={2}
-                      defaultValue={editingSupplier?.notes || ""}
-                      data-testid="input-supplier-notes" 
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="internalNotes">Note Interne (non visibili al fornitore)</Label>
+                    <Label htmlFor="internalNotes">Note Interne</Label>
                     <Textarea 
                       id="internalNotes" 
                       name="internalNotes" 
-                      rows={2}
+                      rows={3}
                       defaultValue={editingSupplier?.internalNotes || ""}
                       data-testid="input-supplier-internal-notes" 
                     />
@@ -450,14 +433,28 @@ export default function AdminSuppliers() {
 
                 <TabsContent value="commercial" className="space-y-4 mt-4" forceMount hidden={activeTab !== "commercial"}>
                   <div className="space-y-2">
-                    <Label htmlFor="paymentTerms">Condizioni di Pagamento</Label>
-                    <Input 
-                      id="paymentTerms" 
+                    <Label>Condizioni di Pagamento</Label>
+                    <Select 
                       name="paymentTerms" 
-                      placeholder="es: 30gg DFFM"
-                      defaultValue={editingSupplier?.paymentTerms || ""}
-                      data-testid="input-supplier-payment-terms" 
-                    />
+                      defaultValue={editingSupplier?.paymentTerms || "bank_transfer_30"}
+                    >
+                      <SelectTrigger data-testid="select-payment-terms">
+                        <SelectValue placeholder="Seleziona condizioni" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="immediate">Pagamento Immediato</SelectItem>
+                        <SelectItem value="cod">Contrassegno</SelectItem>
+                        <SelectItem value="bank_transfer_15">Bonifico 15gg DFFM</SelectItem>
+                        <SelectItem value="bank_transfer_30">Bonifico 30gg DFFM</SelectItem>
+                        <SelectItem value="bank_transfer_60">Bonifico 60gg DFFM</SelectItem>
+                        <SelectItem value="bank_transfer_90">Bonifico 90gg DFFM</SelectItem>
+                        <SelectItem value="riba_30">RiBa 30gg DFFM</SelectItem>
+                        <SelectItem value="riba_60">RiBa 60gg DFFM</SelectItem>
+                        <SelectItem value="credit_card">Carta di Credito</SelectItem>
+                        <SelectItem value="paypal">PayPal</SelectItem>
+                        <SelectItem value="custom">Personalizzato</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">

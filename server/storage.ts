@@ -2017,7 +2017,22 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createSupplier(insertSupplier: InsertSupplier): Promise<Supplier> {
-    const [supplier] = await db.insert(suppliers).values(insertSupplier).returning();
+    // Auto-generate supplier code: FORN-0001, FORN-0002, etc.
+    const allSuppliers = await db.select({ code: suppliers.code }).from(suppliers);
+    let maxNumber = 0;
+    for (const s of allSuppliers) {
+      const match = s.code.match(/^FORN-(\d+)$/);
+      if (match) {
+        const num = parseInt(match[1], 10);
+        if (num > maxNumber) maxNumber = num;
+      }
+    }
+    const supplierCode = `FORN-${String(maxNumber + 1).padStart(4, '0')}`;
+    
+    const [supplier] = await db.insert(suppliers).values({
+      ...insertSupplier,
+      code: supplierCode,
+    }).returning();
     return supplier;
   }
 

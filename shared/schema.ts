@@ -131,6 +131,21 @@ export const communicationTypeEnum = pgEnum("communication_type", [
   "confirmation",      // Conferma
 ]);
 
+// Condizioni di pagamento fornitore
+export const supplierPaymentTermsEnum = pgEnum("supplier_payment_terms", [
+  "immediate",            // Pagamento immediato
+  "cod",                  // Contrassegno
+  "bank_transfer_15",     // Bonifico 15gg DFFM
+  "bank_transfer_30",     // Bonifico 30gg DFFM
+  "bank_transfer_60",     // Bonifico 60gg DFFM
+  "bank_transfer_90",     // Bonifico 90gg DFFM
+  "riba_30",              // RiBa 30gg DFFM
+  "riba_60",              // RiBa 60gg DFFM
+  "credit_card",          // Carta di credito
+  "paypal",               // PayPal
+  "custom",               // Personalizzato (specificare in note)
+]);
+
 // ==========================================
 // PARTS LOAD (CARICO RICAMBI) ENUMS
 // ==========================================
@@ -696,15 +711,14 @@ export const suppliers = pgTable("suppliers", {
   returnEmailTemplate: text("return_email_template"), // Template email resi
   
   // Condizioni commerciali
-  paymentTerms: text("payment_terms"), // Condizioni pagamento (es: "30gg DFFM")
+  paymentTerms: supplierPaymentTermsEnum("payment_terms").default("bank_transfer_30"), // Condizioni pagamento
   deliveryDays: integer("delivery_days").default(3), // Giorni medi consegna
   minOrderAmount: integer("min_order_amount"), // Ordine minimo in centesimi
   shippingCost: integer("shipping_cost"), // Costo spedizione in centesimi
   freeShippingThreshold: integer("free_shipping_threshold"), // Soglia spedizione gratuita
   
   // Note
-  notes: text("notes"),
-  internalNotes: text("internal_notes"), // Note interne non visibili
+  internalNotes: text("internal_notes"), // Note interne
   
   // Stato
   isActive: boolean("is_active").notNull().default(true),
@@ -1616,6 +1630,7 @@ export const insertDataRecoveryEventSchema = createInsertSchema(dataRecoveryEven
 // Supplier Management Schemas
 export const insertSupplierSchema = createInsertSchema(suppliers).omit({
   id: true,
+  code: true, // Auto-generated
   createdAt: true,
   updatedAt: true,
 });
