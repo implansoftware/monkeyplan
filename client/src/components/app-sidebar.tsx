@@ -18,6 +18,7 @@ import {
   Receipt,
   Truck,
   Undo2,
+  ClipboardList,
 } from "lucide-react";
 import {
   Sidebar,
@@ -55,6 +56,7 @@ const menuItems = {
     { title: "Ordini Fornitori", url: "/admin/supplier-orders", icon: Truck, group: "Magazzino" },
     { title: "Resi Fornitori", url: "/admin/supplier-returns", icon: Undo2, group: "Magazzino" },
     { title: "Ordini Ricambi", url: "/admin/parts-orders", icon: Truck, group: "Magazzino" },
+    { title: "Carico Ricambi", url: "/admin/parts-load", icon: ClipboardList, group: "Magazzino" },
     { title: "Fatture", url: "/admin/invoices", icon: FileText, group: "Fatturazione" },
     { title: "Activity Logs", url: "/admin/activity-logs", icon: Shield, group: "Sistema" },
     { title: "Impostazioni", url: "/admin/settings", icon: Settings, group: "Sistema" },
