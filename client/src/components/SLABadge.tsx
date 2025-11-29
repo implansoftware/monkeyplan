@@ -97,7 +97,7 @@ export function SLABadge({ repairId, status, fallbackDate, slaConfig = defaultSL
     staleTime: 60000,
   });
 
-  const statusEnteredAt = slaState?.stateEnteredAt || fallbackDate;
+  const statusEnteredAt = slaState?.stateEnteredAt || fallbackDate || null;
   const { severity, minutesInState, phase } = computeSLASeverity(status, statusEnteredAt, slaConfig);
 
   if (severity === "completed" || severity === "unknown") {

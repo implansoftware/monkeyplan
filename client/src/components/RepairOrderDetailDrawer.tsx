@@ -37,6 +37,7 @@ import {
 } from "lucide-react";
 import { format } from "date-fns";
 import { useAuth } from "@/hooks/use-auth";
+import { SLABadge, computeSLASeverity } from "@/components/SLABadge";
 
 type RepairQuote = {
   id: string;
@@ -361,12 +362,25 @@ export function RepairOrderDetailDrawer({
           </div>
         ) : repair ? (
           <div className="space-y-6 mt-6">
-            {/* Status */}
-            <div>
+            {/* Status and SLA */}
+            <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium text-muted-foreground">Stato</span>
                 {getStatusBadge(repair.status)}
               </div>
+              
+              {/* SLA Indicator */}
+              {!['consegnato', 'annullato', 'cancelled'].includes(repair.status) && (
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-muted-foreground">Tempo SLA</span>
+                  <SLABadge 
+                    repairId={repair.id}
+                    status={repair.status}
+                    fallbackDate={repair.createdAt}
+                    showLabel={true}
+                  />
+                </div>
+              )}
             </div>
 
             {/* Workflow Progress - Visual Timeline */}
