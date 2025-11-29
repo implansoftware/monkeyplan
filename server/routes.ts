@@ -6316,6 +6316,18 @@ export function registerRoutes(app: Express): Server {
         return res.status(400).send("Stato richiesto");
       }
       
+      // Validate minimum order amount before sending
+      if (status === 'sent') {
+        const supplier = await storage.getSupplier(order.supplierId);
+        if (supplier && supplier.minOrderAmount && supplier.minOrderAmount > 0) {
+          if ((order.subtotal || 0) < supplier.minOrderAmount) {
+            const minAmount = (supplier.minOrderAmount / 100).toFixed(2);
+            const currentAmount = ((order.subtotal || 0) / 100).toFixed(2);
+            return res.status(400).send(`Ordine minimo non raggiunto. Minimo: €${minAmount}, Attuale: €${currentAmount}`);
+          }
+        }
+      }
+      
       const updated = await storage.updateSupplierOrderStatus(req.params.id, status);
       
       // Log the communication if order was sent
@@ -6370,14 +6382,23 @@ export function registerRoutes(app: Express): Server {
       
       const item = await storage.createSupplierOrderItem(validated);
       
-      // Recalculate order totals
+      // Recalculate order totals with free shipping threshold check
       const items = await storage.listSupplierOrderItems(req.params.id);
       const subtotal = items.reduce((sum, i) => sum + i.totalPrice, 0);
       const taxAmount = Math.round(subtotal * 0.22); // 22% IVA
-      const shippingCost = order.shippingCost || 0;
+      
+      // Check free shipping threshold
+      const supplier = await storage.getSupplier(order.supplierId);
+      let shippingCost = order.shippingCost || 0;
+      if (supplier && supplier.freeShippingThreshold && supplier.freeShippingThreshold > 0) {
+        if (subtotal >= supplier.freeShippingThreshold) {
+          shippingCost = 0; // Free shipping!
+        }
+      }
+      
       const totalAmount = subtotal + taxAmount + shippingCost;
       
-      await storage.updateSupplierOrder(req.params.id, { subtotal, taxAmount, totalAmount });
+      await storage.updateSupplierOrder(req.params.id, { subtotal, taxAmount, shippingCost, totalAmount });
       
       res.status(201).json(item);
     } catch (error: any) {
@@ -6414,14 +6435,27 @@ export function registerRoutes(app: Express): Server {
       
       await storage.deleteSupplierOrderItem(req.params.id);
       
-      // Recalculate order totals
+      // Recalculate order totals with free shipping threshold check
       const remainingItems = await storage.listSupplierOrderItems(order.id);
       const subtotal = remainingItems.reduce((sum, i) => sum + i.totalPrice, 0);
       const taxAmount = Math.round(subtotal * 0.22);
-      const shippingCost = order.shippingCost || 0;
+      
+      // Check free shipping threshold
+      const supplier = await storage.getSupplier(order.supplierId);
+      let shippingCost = order.shippingCost || 0;
+      if (supplier && supplier.freeShippingThreshold && supplier.freeShippingThreshold > 0) {
+        // Reset shipping cost if below threshold
+        if (subtotal < supplier.freeShippingThreshold) {
+          // Keep existing shipping cost or set default
+          shippingCost = order.shippingCost || 0;
+        } else {
+          shippingCost = 0; // Free shipping!
+        }
+      }
+      
       const totalAmount = subtotal + taxAmount + shippingCost;
       
-      await storage.updateSupplierOrder(order.id, { subtotal, taxAmount, totalAmount });
+      await storage.updateSupplierOrder(order.id, { subtotal, taxAmount, shippingCost, totalAmount });
       
       res.status(204).send();
     } catch (error: any) {

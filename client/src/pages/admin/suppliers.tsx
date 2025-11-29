@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Supplier, InsertSupplier } from "@shared/schema";
 import { Button } from "@/components/ui/button";
@@ -19,6 +19,7 @@ import {
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ItalianCitySelect } from "@/components/italian-city-select";
 
 type CommunicationChannel = 'email' | 'api' | 'whatsapp';
 
@@ -39,7 +40,16 @@ export default function AdminSuppliers() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingSupplier, setEditingSupplier] = useState<Supplier | null>(null);
   const [activeTab, setActiveTab] = useState("general");
+  const [selectedCity, setSelectedCity] = useState("");
   const { toast } = useToast();
+
+  useEffect(() => {
+    if (editingSupplier) {
+      setSelectedCity(editingSupplier.city || "");
+    } else {
+      setSelectedCity("");
+    }
+  }, [editingSupplier]);
 
   const { data: suppliers = [], isLoading } = useQuery<Supplier[]>({
     queryKey: ["/api/suppliers"],
@@ -103,7 +113,7 @@ export default function AdminSuppliers() {
       whatsapp: formData.get("whatsapp") as string || undefined,
       website: formData.get("website") as string || undefined,
       address: formData.get("address") as string || undefined,
-      city: formData.get("city") as string || undefined,
+      city: selectedCity || undefined,
       zipCode: formData.get("zipCode") as string || undefined,
       country: formData.get("country") as string || "IT",
       vatNumber: formData.get("vatNumber") as string || undefined,
@@ -296,11 +306,12 @@ export default function AdminSuppliers() {
                   <div className="grid grid-cols-3 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="city">Città</Label>
-                      <Input 
-                        id="city" 
-                        name="city" 
-                        defaultValue={editingSupplier?.city || ""}
-                        data-testid="input-supplier-city" 
+                      <ItalianCitySelect
+                        value={selectedCity}
+                        onChange={setSelectedCity}
+                        placeholder="Seleziona città..."
+                        id="city"
+                        data-testid="select-supplier-city"
                       />
                     </div>
                     <div className="space-y-2">
