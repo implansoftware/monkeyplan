@@ -121,6 +121,14 @@ export default function SupplierReturnsPage() {
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
   const [selectedReturn, setSelectedReturn] = useState<SupplierReturnWithDetails | null>(null);
   
+  // Create form controlled states
+  const [formSupplierId, setFormSupplierId] = useState("");
+  const [formRepairCenterId, setFormRepairCenterId] = useState("");
+  const [formOrderId, setFormOrderId] = useState("__none__");
+  const [formReason, setFormReason] = useState("");
+  const [formReasonDetails, setFormReasonDetails] = useState("");
+  const [formTotalAmount, setFormTotalAmount] = useState("");
+  
   // Queries
   const { data: returns = [], isLoading } = useQuery<SupplierReturnWithDetails[]>({
     queryKey: ["/api/supplier-returns"],
@@ -181,30 +189,65 @@ export default function SupplierReturnsPage() {
     },
   });
 
+  // Reset form when dialog opens/closes
+  const resetCreateForm = () => {
+    setFormSupplierId("");
+    setFormRepairCenterId("");
+    setFormOrderId("__none__");
+    setFormReason("");
+    setFormReasonDetails("");
+    setFormTotalAmount("");
+  };
+
+  const handleCreateDialogChange = (open: boolean) => {
+    if (open) {
+      resetCreateForm();
+    }
+    setCreateDialogOpen(open);
+  };
+
+  // Filter orders by selected supplier
+  const filteredOrders = supplierOrders.filter(o => 
+    o.supplierId === formSupplierId && 
+    (o.status === "received" || o.status === "partially_received")
+  );
+
+  // When supplier changes, reset order selection
+  const handleSupplierChange = (supplierId: string) => {
+    setFormSupplierId(supplierId);
+    setFormOrderId("__none__");
+    setFormTotalAmount("");
+  };
+
+  // When order is selected, auto-fill total amount
+  const handleOrderSelect = (orderId: string) => {
+    setFormOrderId(orderId);
+    if (orderId && orderId !== "__none__") {
+      const order = supplierOrders.find(o => o.id === orderId);
+      if (order && order.totalAmount) {
+        setFormTotalAmount((order.totalAmount / 100).toFixed(2));
+      }
+    }
+  };
+
   // Handlers
   const handleCreateReturn = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const formData = new FormData(e.currentTarget);
     
-    const supplierId = formData.get("supplierId") as string;
-    const repairCenterId = formData.get("repairCenterId") as string;
-    const supplierOrderIdRaw = formData.get("supplierOrderId") as string;
-    const supplierOrderId = supplierOrderIdRaw && supplierOrderIdRaw !== "__none__" ? supplierOrderIdRaw : undefined;
-    const reason = formData.get("reason") as string;
-    const reasonDetails = formData.get("reasonDetails") as string;
-    const totalAmount = Math.round(parseFloat(formData.get("totalAmount") as string || "0") * 100);
+    const supplierOrderId = formOrderId !== "__none__" ? formOrderId : undefined;
+    const totalAmount = Math.round(parseFloat(formTotalAmount || "0") * 100);
     
-    if (!supplierId || !repairCenterId || !reason) {
+    if (!formSupplierId || !formRepairCenterId || !formReason) {
       toast({ title: "Errore", description: "Compila tutti i campi obbligatori", variant: "destructive" });
       return;
     }
     
     await createReturnMutation.mutateAsync({
-      supplierId,
-      repairCenterId,
+      supplierId: formSupplierId,
+      repairCenterId: formRepairCenterId,
       supplierOrderId,
-      reason: reason as any,
-      reasonDetails: reasonDetails || undefined,
+      reason: formReason as any,
+      reasonDetails: formReasonDetails || undefined,
       totalAmount,
     });
   };
@@ -459,7 +502,7 @@ export default function SupplierReturnsPage() {
       </Card>
 
       {/* Create Return Dialog */}
-      <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
+      <Dialog open={createDialogOpen} onOpenChange={handleCreateDialogChange}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle>Nuova Richiesta Reso</DialogTitle>
@@ -467,7 +510,7 @@ export default function SupplierReturnsPage() {
           <form onSubmit={handleCreateReturn} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="supplierId">Fornitore *</Label>
-              <Select name="supplierId">
+              <Select value={formSupplierId} onValueChange={handleSupplierChange}>
                 <SelectTrigger data-testid="select-new-supplier">
                   <SelectValue placeholder="Seleziona fornitore..." />
                 </SelectTrigger>
@@ -483,7 +526,7 @@ export default function SupplierReturnsPage() {
             
             <div className="space-y-2">
               <Label htmlFor="repairCenterId">Centro Riparazione *</Label>
-              <Select name="repairCenterId">
+              <Select value={formRepairCenterId} onValueChange={setFormRepairCenterId}>
                 <SelectTrigger data-testid="select-new-center">
                   <SelectValue placeholder="Seleziona centro..." />
                 </SelectTrigger>
@@ -499,26 +542,33 @@ export default function SupplierReturnsPage() {
             
             <div className="space-y-2">
               <Label htmlFor="supplierOrderId">Ordine Originale (opzionale)</Label>
-              <Select name="supplierOrderId">
+              <Select 
+                value={formOrderId} 
+                onValueChange={handleOrderSelect}
+                disabled={!formSupplierId}
+              >
                 <SelectTrigger data-testid="select-new-order">
-                  <SelectValue placeholder="Collega a un ordine..." />
+                  <SelectValue placeholder={formSupplierId ? "Collega a un ordine..." : "Prima seleziona un fornitore"} />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="__none__">Nessun ordine collegato</SelectItem>
-                  {supplierOrders
-                    .filter(o => o.status === "received" || o.status === "partially_received")
-                    .map(o => (
-                      <SelectItem key={o.id} value={o.id}>
-                        {o.orderNumber}
-                      </SelectItem>
-                    ))}
+                  {filteredOrders.map(o => (
+                    <SelectItem key={o.id} value={o.id}>
+                      {o.orderNumber} - {formatCurrency(o.totalAmount || 0)}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
+              {formSupplierId && filteredOrders.length === 0 && (
+                <p className="text-xs text-muted-foreground">
+                  Nessun ordine ricevuto per questo fornitore
+                </p>
+              )}
             </div>
             
             <div className="space-y-2">
               <Label htmlFor="reason">Motivo Reso *</Label>
-              <Select name="reason">
+              <Select value={formReason} onValueChange={setFormReason}>
                 <SelectTrigger data-testid="select-reason">
                   <SelectValue placeholder="Seleziona motivo..." />
                 </SelectTrigger>
@@ -536,7 +586,8 @@ export default function SupplierReturnsPage() {
               <Label htmlFor="reasonDetails">Dettagli Motivo</Label>
               <Textarea
                 id="reasonDetails"
-                name="reasonDetails"
+                value={formReasonDetails}
+                onChange={(e) => setFormReasonDetails(e.target.value)}
                 placeholder="Descrivi il problema in dettaglio..."
                 className="resize-none"
                 rows={3}
@@ -548,10 +599,11 @@ export default function SupplierReturnsPage() {
               <Label htmlFor="totalAmount">Valore Reso (€)</Label>
               <Input
                 id="totalAmount"
-                name="totalAmount"
                 type="number"
                 step="0.01"
                 min="0"
+                value={formTotalAmount}
+                onChange={(e) => setFormTotalAmount(e.target.value)}
                 placeholder="0.00"
                 data-testid="input-total"
               />
