@@ -120,6 +120,16 @@ export default function SupplierOrdersPage() {
   const [editingItem, setEditingItem] = useState<OrderItemWithProduct | null>(null);
   const [itemDialogOpen, setItemDialogOpen] = useState(false);
   
+  // Item form states for auto-population
+  const [itemFormData, setItemFormData] = useState({
+    productId: "__none__",
+    description: "",
+    supplierCode: "",
+    quantity: 1,
+    unitPrice: "",
+    notes: ""
+  });
+  
   // Queries
   const { data: orders = [], isLoading } = useQuery<SupplierOrderWithDetails[]>({
     queryKey: ["/api/supplier-orders"],
@@ -274,29 +284,24 @@ export default function SupplierOrdersPage() {
 
   const handleAddItem = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const formData = new FormData(e.currentTarget);
     
-    const productIdRaw = formData.get("productId") as string;
-    const productId = productIdRaw && productIdRaw !== "__none__" ? productIdRaw : undefined;
-    const description = formData.get("description") as string;
-    const supplierCode = formData.get("supplierCode") as string;
-    const quantity = parseInt(formData.get("quantity") as string) || 1;
-    const unitPrice = Math.round(parseFloat(formData.get("unitPrice") as string || "0") * 100);
-    const notes = formData.get("notes") as string;
+    const productId = itemFormData.productId !== "__none__" ? itemFormData.productId : undefined;
+    const quantity = itemFormData.quantity;
+    const unitPrice = Math.round(parseFloat(itemFormData.unitPrice || "0") * 100);
     
-    if (!description) {
+    if (!itemFormData.description) {
       toast({ title: "Errore", description: "La descrizione è obbligatoria", variant: "destructive" });
       return;
     }
     
     const itemData: Partial<SupplierOrderItem> = {
       productId,
-      description,
-      supplierCode: supplierCode || undefined,
+      description: itemFormData.description,
+      supplierCode: itemFormData.supplierCode || undefined,
       quantity,
       unitPrice,
       totalPrice: quantity * unitPrice,
-      notes: notes || undefined,
+      notes: itemFormData.notes || undefined,
     };
     
     if (editingItem) {
@@ -313,7 +318,48 @@ export default function SupplierOrdersPage() {
 
   const openItemDialog = (item?: OrderItemWithProduct) => {
     setEditingItem(item || null);
+    if (item) {
+      setItemFormData({
+        productId: item.productId || "__none__",
+        description: item.description,
+        supplierCode: item.supplierCode || "",
+        quantity: item.quantity,
+        unitPrice: item.unitPrice ? (item.unitPrice / 100).toFixed(2) : "",
+        notes: item.notes || ""
+      });
+    } else {
+      setItemFormData({
+        productId: "__none__",
+        description: "",
+        supplierCode: "",
+        quantity: 1,
+        unitPrice: "",
+        notes: ""
+      });
+    }
     setItemDialogOpen(true);
+  };
+
+  const handleProductSelect = (productId: string) => {
+    setItemFormData(prev => ({ ...prev, productId }));
+    
+    if (productId && productId !== "__none__") {
+      const product = products.find(p => p.id === productId);
+      if (product) {
+        const supplierLink = selectedOrder 
+          ? productSuppliers.find(ps => ps.productId === productId && ps.supplierId === selectedOrder.supplierId)
+          : null;
+        
+        setItemFormData(prev => ({
+          ...prev,
+          description: product.name,
+          supplierCode: supplierLink?.supplierSku || product.sku || "",
+          unitPrice: supplierLink?.unitPrice 
+            ? (supplierLink.unitPrice / 100).toFixed(2) 
+            : (product.costPrice ? (product.costPrice / 100).toFixed(2) : "")
+        }));
+      }
+    }
   };
 
   // Filter orders
@@ -876,7 +922,7 @@ export default function SupplierOrdersPage() {
           <form onSubmit={handleAddItem} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="productId">Prodotto (opzionale)</Label>
-              <Select name="productId" defaultValue={editingItem?.productId || "__none__"}>
+              <Select value={itemFormData.productId} onValueChange={handleProductSelect}>
                 <SelectTrigger data-testid="select-item-product">
                   <SelectValue placeholder="Seleziona prodotto..." />
                 </SelectTrigger>
@@ -898,9 +944,9 @@ export default function SupplierOrdersPage() {
               <Label htmlFor="description">Descrizione *</Label>
               <Input
                 id="description"
-                name="description"
                 required
-                defaultValue={editingItem?.description || ""}
+                value={itemFormData.description}
+                onChange={(e) => setItemFormData(prev => ({ ...prev, description: e.target.value }))}
                 placeholder="Descrizione articolo"
                 data-testid="input-item-description"
               />
@@ -911,8 +957,8 @@ export default function SupplierOrdersPage() {
                 <Label htmlFor="supplierCode">Codice Fornitore</Label>
                 <Input
                   id="supplierCode"
-                  name="supplierCode"
-                  defaultValue={editingItem?.supplierCode || ""}
+                  value={itemFormData.supplierCode}
+                  onChange={(e) => setItemFormData(prev => ({ ...prev, supplierCode: e.target.value }))}
                   placeholder="Codice articolo"
                   data-testid="input-item-code"
                 />
@@ -921,11 +967,11 @@ export default function SupplierOrdersPage() {
                 <Label htmlFor="quantity">Quantità *</Label>
                 <Input
                   id="quantity"
-                  name="quantity"
                   type="number"
                   min="1"
                   required
-                  defaultValue={editingItem?.quantity || 1}
+                  value={itemFormData.quantity}
+                  onChange={(e) => setItemFormData(prev => ({ ...prev, quantity: parseInt(e.target.value) || 1 }))}
                   data-testid="input-item-qty"
                 />
               </div>
@@ -935,12 +981,12 @@ export default function SupplierOrdersPage() {
               <Label htmlFor="unitPrice">Prezzo Unitario (€) *</Label>
               <Input
                 id="unitPrice"
-                name="unitPrice"
                 type="number"
                 step="0.01"
                 min="0"
                 required
-                defaultValue={editingItem?.unitPrice ? (editingItem.unitPrice / 100).toFixed(2) : ""}
+                value={itemFormData.unitPrice}
+                onChange={(e) => setItemFormData(prev => ({ ...prev, unitPrice: e.target.value }))}
                 data-testid="input-item-price"
               />
             </div>
@@ -949,8 +995,8 @@ export default function SupplierOrdersPage() {
               <Label htmlFor="notes">Note</Label>
               <Textarea
                 id="notes"
-                name="notes"
-                defaultValue={editingItem?.notes || ""}
+                value={itemFormData.notes}
+                onChange={(e) => setItemFormData(prev => ({ ...prev, notes: e.target.value }))}
                 placeholder="Note articolo..."
                 className="resize-none"
                 data-testid="textarea-item-notes"
