@@ -6213,6 +6213,35 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // GET /api/supplier-orders/:id/items - Get items for a supplier order
+  app.get("/api/supplier-orders/:id/items", requireAuth, requireRole("admin", "repair_center"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const order = await storage.getSupplierOrder(req.params.id);
+      if (!order) {
+        return res.status(404).send("Ordine non trovato");
+      }
+      
+      // Repair center access check
+      if (req.user.role === 'repair_center' && order.repairCenterId !== req.user.repairCenterId) {
+        return res.status(403).send("Accesso negato");
+      }
+      
+      const items = await storage.listSupplierOrderItems(order.id);
+      
+      // Enrich items with product info
+      const enrichedItems = await Promise.all(items.map(async (item) => {
+        const product = item.productId ? await storage.getProduct(item.productId) : null;
+        return { ...item, productName: product?.name };
+      }));
+      
+      res.json(enrichedItems);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
   // POST /api/supplier-orders - Create supplier order
   app.post("/api/supplier-orders", requireAuth, requireRole("admin", "repair_center"), async (req, res) => {
     try {
@@ -6515,6 +6544,35 @@ export function registerRoutes(app: Express): Server {
       ]);
       
       res.json({ ...returnData, supplier, items });
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // GET /api/supplier-returns/:id/items - Get items for a supplier return
+  app.get("/api/supplier-returns/:id/items", requireAuth, requireRole("admin", "repair_center"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const returnData = await storage.getSupplierReturn(req.params.id);
+      if (!returnData) {
+        return res.status(404).send("Reso non trovato");
+      }
+      
+      // Repair center access check
+      if (req.user.role === 'repair_center' && returnData.repairCenterId !== req.user.repairCenterId) {
+        return res.status(403).send("Accesso negato");
+      }
+      
+      const items = await storage.listSupplierReturnItems(returnData.id);
+      
+      // Enrich items with product info
+      const enrichedItems = await Promise.all(items.map(async (item) => {
+        const product = item.productId ? await storage.getProduct(item.productId) : null;
+        return { ...item, productName: product?.name };
+      }));
+      
+      res.json(enrichedItems);
     } catch (error: any) {
       res.status(500).send(error.message);
     }
