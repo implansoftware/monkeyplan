@@ -51,6 +51,7 @@ const menuItems = {
     { title: "Magazzino", url: "/admin/inventory", icon: Package, group: "Magazzino" },
     { title: "Prodotti", url: "/admin/products", icon: ShoppingCart, group: "Magazzino" },
     { title: "Fornitori", url: "/admin/suppliers", icon: Building2, group: "Magazzino" },
+    { title: "Ordini Fornitori", url: "/admin/supplier-orders", icon: Truck, group: "Magazzino" },
     { title: "Ordini Ricambi", url: "/admin/parts-orders", icon: Truck, group: "Magazzino" },
     { title: "Fatture", url: "/admin/invoices", icon: FileText, group: "Fatturazione" },
     { title: "Activity Logs", url: "/admin/activity-logs", icon: Shield, group: "Sistema" },
