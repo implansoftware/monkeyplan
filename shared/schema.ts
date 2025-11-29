@@ -76,6 +76,61 @@ export const dataRecoveryEventTypeEnum = pgEnum("data_recovery_event_type", [
   "failed",            // Fallito
 ]);
 
+// ==========================================
+// SUPPLIER MANAGEMENT ENUMS
+// ==========================================
+
+// Canale comunicazione preferito fornitore
+export const supplierCommunicationChannelEnum = pgEnum("supplier_communication_channel", [
+  "api",               // Integrazione API diretta
+  "email",             // Ordini via email
+  "whatsapp",          // Ordini via WhatsApp Business
+  "manual",            // Gestione manuale (telefono, portale web)
+]);
+
+// Stato ordine fornitore
+export const supplierOrderStatusEnum = pgEnum("supplier_order_status", [
+  "draft",             // Bozza (non ancora inviato)
+  "sent",              // Inviato al fornitore
+  "confirmed",         // Confermato dal fornitore
+  "partially_shipped", // Spedizione parziale
+  "shipped",           // Spedito completamente
+  "partially_received",// Ricevuto parzialmente
+  "received",          // Ricevuto completamente
+  "cancelled",         // Annullato
+]);
+
+// Stato reso fornitore
+export const supplierReturnStatusEnum = pgEnum("supplier_return_status", [
+  "draft",             // Bozza
+  "requested",         // Richiesta inviata
+  "approved",          // Approvato dal fornitore
+  "shipped",           // Merce spedita al fornitore
+  "received",          // Ricevuto dal fornitore
+  "refunded",          // Rimborsato/Accreditato
+  "rejected",          // Reso rifiutato
+  "cancelled",         // Annullato
+]);
+
+// Motivo reso
+export const returnReasonEnum = pgEnum("return_reason", [
+  "defective",         // Prodotto difettoso
+  "wrong_item",        // Articolo sbagliato
+  "damaged",           // Danneggiato durante trasporto
+  "not_as_described",  // Non conforme alla descrizione
+  "excess_stock",      // Eccedenza di magazzino
+  "other",             // Altro
+]);
+
+// Tipo comunicazione
+export const communicationTypeEnum = pgEnum("communication_type", [
+  "order",             // Ordine
+  "return_request",    // Richiesta reso
+  "inquiry",           // Richiesta informazioni
+  "tracking_update",   // Aggiornamento tracking
+  "confirmation",      // Conferma
+]);
+
 // Users table with role-based access
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -572,6 +627,242 @@ export const dataRecoveryEvents = pgTable("data_recovery_events", {
   description: text("description"), // Descrizione dettagliata
   metadata: text("metadata"), // JSON extra data (tracking info, etc)
   createdBy: varchar("created_by"), // ID utente o "system"
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+// ==========================================
+// SUPPLIER MANAGEMENT SYSTEM
+// ==========================================
+
+// Suppliers (Anagrafica Fornitori)
+export const suppliers = pgTable("suppliers", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  code: text("code").notNull().unique(), // Codice fornitore interno (es: "FORN001")
+  name: text("name").notNull(), // Ragione sociale
+  
+  // Contatti
+  email: text("email"),
+  phone: text("phone"),
+  whatsapp: text("whatsapp"), // Numero WhatsApp Business
+  website: text("website"),
+  
+  // Indirizzo
+  address: text("address"),
+  city: text("city"),
+  zipCode: text("zip_code"),
+  country: text("country").default("IT"),
+  
+  // Dati fiscali
+  vatNumber: text("vat_number"), // Partita IVA
+  fiscalCode: text("fiscal_code"), // Codice fiscale
+  
+  // Canale comunicazione preferito
+  communicationChannel: supplierCommunicationChannelEnum("communication_channel").notNull().default("email"),
+  
+  // Integrazione API (se canale = api)
+  apiEndpoint: text("api_endpoint"), // URL endpoint API
+  apiKey: text("api_key"), // Chiave API (criptata)
+  apiFormat: text("api_format"), // Formato: "json", "xml", "custom"
+  
+  // Integrazione Email
+  orderEmailTemplate: text("order_email_template"), // Template email ordini
+  returnEmailTemplate: text("return_email_template"), // Template email resi
+  
+  // Condizioni commerciali
+  paymentTerms: text("payment_terms"), // Condizioni pagamento (es: "30gg DFFM")
+  deliveryDays: integer("delivery_days").default(3), // Giorni medi consegna
+  minOrderAmount: integer("min_order_amount"), // Ordine minimo in centesimi
+  shippingCost: integer("shipping_cost"), // Costo spedizione in centesimi
+  freeShippingThreshold: integer("free_shipping_threshold"), // Soglia spedizione gratuita
+  
+  // Note
+  notes: text("notes"),
+  internalNotes: text("internal_notes"), // Note interne non visibili
+  
+  // Stato
+  isActive: boolean("is_active").notNull().default(true),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+// Product-Supplier Relationship (Molti-a-molti)
+export const productSuppliers = pgTable("product_suppliers", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  productId: varchar("product_id").notNull().references(() => products.id, { onDelete: "cascade" }),
+  supplierId: varchar("supplier_id").notNull().references(() => suppliers.id, { onDelete: "cascade" }),
+  
+  // Dati specifici fornitore per questo prodotto
+  supplierCode: text("supplier_code"), // Codice articolo del fornitore
+  supplierName: text("supplier_name"), // Nome prodotto presso il fornitore
+  purchasePrice: integer("purchase_price"), // Prezzo acquisto in centesimi
+  minOrderQty: integer("min_order_qty").default(1), // Quantità minima ordinabile
+  packSize: integer("pack_size").default(1), // Pezzi per confezione
+  leadTimeDays: integer("lead_time_days"), // Tempo approvvigionamento in giorni
+  
+  // Flag
+  isPreferred: boolean("is_preferred").notNull().default(false), // Fornitore preferito per questo prodotto
+  isActive: boolean("is_active").notNull().default(true),
+  
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+// Supplier Orders (Ordini a Fornitori)
+export const supplierOrders = pgTable("supplier_orders", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  orderNumber: text("order_number").notNull().unique(), // Numero ordine (es: "ORD-2024-0001")
+  supplierId: varchar("supplier_id").notNull().references(() => suppliers.id),
+  repairCenterId: varchar("repair_center_id").notNull().references(() => repairCenters.id), // Centro che ordina
+  
+  // Stato e tracking
+  status: supplierOrderStatusEnum("status").notNull().default("draft"),
+  
+  // Totali
+  subtotal: integer("subtotal").notNull().default(0), // Subtotale in centesimi
+  shippingCost: integer("shipping_cost").default(0), // Costo spedizione
+  taxAmount: integer("tax_amount").default(0), // IVA
+  totalAmount: integer("total_amount").notNull().default(0), // Totale
+  
+  // Date
+  expectedDelivery: timestamp("expected_delivery"), // Data consegna prevista
+  sentAt: timestamp("sent_at"), // Data invio ordine
+  confirmedAt: timestamp("confirmed_at"), // Data conferma fornitore
+  shippedAt: timestamp("shipped_at"), // Data spedizione
+  receivedAt: timestamp("received_at"), // Data ricezione completa
+  
+  // Tracking spedizione
+  trackingNumber: text("tracking_number"),
+  trackingCarrier: text("tracking_carrier"),
+  
+  // Collegamento opzionale a repair order (se ordine per riparazione specifica)
+  repairOrderId: varchar("repair_order_id").references(() => repairOrders.id),
+  
+  // Note
+  notes: text("notes"), // Note per il fornitore
+  internalNotes: text("internal_notes"), // Note interne
+  
+  // Audit
+  createdBy: varchar("created_by").notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+// Supplier Order Items (Righe ordine fornitore)
+export const supplierOrderItems = pgTable("supplier_order_items", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  supplierOrderId: varchar("supplier_order_id").notNull().references(() => supplierOrders.id, { onDelete: "cascade" }),
+  productId: varchar("product_id").references(() => products.id), // Collegamento prodotto (opzionale)
+  
+  // Dati articolo
+  supplierCode: text("supplier_code"), // Codice fornitore
+  description: text("description").notNull(), // Descrizione articolo
+  quantity: integer("quantity").notNull().default(1), // Quantità ordinata
+  unitPrice: integer("unit_price").notNull(), // Prezzo unitario in centesimi
+  totalPrice: integer("total_price").notNull(), // Prezzo totale riga
+  
+  // Quantità ricevute (per ricezioni parziali)
+  quantityReceived: integer("quantity_received").notNull().default(0),
+  
+  // Note
+  notes: text("notes"),
+  
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+// Supplier Returns (Resi a Fornitori)
+export const supplierReturns = pgTable("supplier_returns", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  returnNumber: text("return_number").notNull().unique(), // Numero reso (es: "RES-2024-0001")
+  supplierId: varchar("supplier_id").notNull().references(() => suppliers.id),
+  repairCenterId: varchar("repair_center_id").notNull().references(() => repairCenters.id),
+  supplierOrderId: varchar("supplier_order_id").references(() => supplierOrders.id), // Ordine originale (opzionale)
+  
+  // Stato
+  status: supplierReturnStatusEnum("status").notNull().default("draft"),
+  reason: returnReasonEnum("reason").notNull(),
+  reasonDetails: text("reason_details"), // Dettagli motivo reso
+  
+  // Totali
+  totalAmount: integer("total_amount").notNull().default(0), // Valore totale reso
+  refundAmount: integer("refund_amount"), // Importo rimborsato/accreditato
+  
+  // Date
+  requestedAt: timestamp("requested_at"), // Data richiesta reso
+  approvedAt: timestamp("approved_at"), // Data approvazione
+  shippedAt: timestamp("shipped_at"), // Data spedizione al fornitore
+  receivedAt: timestamp("received_at"), // Data ricezione da fornitore
+  refundedAt: timestamp("refunded_at"), // Data rimborso
+  
+  // Tracking spedizione
+  trackingNumber: text("tracking_number"),
+  trackingCarrier: text("tracking_carrier"),
+  
+  // RMA/Autorizzazione
+  rmaNumber: text("rma_number"), // Numero RMA fornitore
+  
+  // Note
+  notes: text("notes"),
+  internalNotes: text("internal_notes"),
+  
+  // Audit
+  createdBy: varchar("created_by").notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+// Supplier Return Items (Righe reso)
+export const supplierReturnItems = pgTable("supplier_return_items", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  supplierReturnId: varchar("supplier_return_id").notNull().references(() => supplierReturns.id, { onDelete: "cascade" }),
+  productId: varchar("product_id").references(() => products.id),
+  supplierOrderItemId: varchar("supplier_order_item_id").references(() => supplierOrderItems.id), // Riga ordine originale
+  
+  // Dati articolo
+  supplierCode: text("supplier_code"),
+  description: text("description").notNull(),
+  quantity: integer("quantity").notNull().default(1),
+  unitPrice: integer("unit_price").notNull(),
+  totalPrice: integer("total_price").notNull(),
+  
+  // Note
+  notes: text("notes"),
+  
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+// Communication Logs (Log comunicazioni con fornitori)
+export const supplierCommunicationLogs = pgTable("supplier_communication_logs", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  supplierId: varchar("supplier_id").notNull().references(() => suppliers.id),
+  
+  // Tipo e riferimento
+  communicationType: communicationTypeEnum("communication_type").notNull(),
+  channel: supplierCommunicationChannelEnum("channel").notNull(),
+  
+  // Riferimento entità (ordine o reso)
+  entityType: text("entity_type"), // "supplier_order" | "supplier_return"
+  entityId: varchar("entity_id"), // ID ordine o reso
+  
+  // Contenuto
+  subject: text("subject"), // Oggetto (per email)
+  content: text("content").notNull(), // Contenuto messaggio
+  
+  // Stato invio
+  sentAt: timestamp("sent_at"),
+  deliveredAt: timestamp("delivered_at"),
+  readAt: timestamp("read_at"),
+  failedAt: timestamp("failed_at"),
+  failureReason: text("failure_reason"),
+  
+  // Risposta (se applicabile)
+  responseContent: text("response_content"),
+  responseReceivedAt: timestamp("response_received_at"),
+  
+  // Metadati
+  metadata: text("metadata"), // JSON con dati extra (headers, message ID, etc.)
+  
+  // Audit
+  createdBy: varchar("created_by"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
@@ -1203,6 +1494,48 @@ export const insertDataRecoveryEventSchema = createInsertSchema(dataRecoveryEven
   createdAt: true,
 });
 
+// Supplier Management Schemas
+export const insertSupplierSchema = createInsertSchema(suppliers).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertProductSupplierSchema = createInsertSchema(productSuppliers).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertSupplierOrderSchema = createInsertSchema(supplierOrders).omit({
+  id: true,
+  orderNumber: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertSupplierOrderItemSchema = createInsertSchema(supplierOrderItems).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertSupplierReturnSchema = createInsertSchema(supplierReturns).omit({
+  id: true,
+  returnNumber: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertSupplierReturnItemSchema = createInsertSchema(supplierReturnItems).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertSupplierCommunicationLogSchema = createInsertSchema(supplierCommunicationLogs).omit({
+  id: true,
+  createdAt: true,
+});
+
 export const createDataRecoveryEventSchema = z.object({
   eventType: z.enum(["created", "status_change", "assigned", "shipped", "received", "completed", "note_added", "document_uploaded"]).default("note_added"),
   title: z.string().min(1, "Title is required").max(200, "Title too long"),
@@ -1416,3 +1749,25 @@ export type UpdateDataRecoveryJob = z.infer<typeof updateDataRecoveryJobSchema>;
 
 export type DataRecoveryEvent = typeof dataRecoveryEvents.$inferSelect;
 export type InsertDataRecoveryEvent = z.infer<typeof insertDataRecoveryEventSchema>;
+
+// Supplier Management Types
+export type Supplier = typeof suppliers.$inferSelect;
+export type InsertSupplier = z.infer<typeof insertSupplierSchema>;
+
+export type ProductSupplier = typeof productSuppliers.$inferSelect;
+export type InsertProductSupplier = z.infer<typeof insertProductSupplierSchema>;
+
+export type SupplierOrder = typeof supplierOrders.$inferSelect;
+export type InsertSupplierOrder = z.infer<typeof insertSupplierOrderSchema>;
+
+export type SupplierOrderItem = typeof supplierOrderItems.$inferSelect;
+export type InsertSupplierOrderItem = z.infer<typeof insertSupplierOrderItemSchema>;
+
+export type SupplierReturn = typeof supplierReturns.$inferSelect;
+export type InsertSupplierReturn = z.infer<typeof insertSupplierReturnSchema>;
+
+export type SupplierReturnItem = typeof supplierReturnItems.$inferSelect;
+export type InsertSupplierReturnItem = z.infer<typeof insertSupplierReturnItemSchema>;
+
+export type SupplierCommunicationLog = typeof supplierCommunicationLogs.$inferSelect;
+export type InsertSupplierCommunicationLog = z.infer<typeof insertSupplierCommunicationLogSchema>;
