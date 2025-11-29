@@ -6398,7 +6398,7 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  // POST /api/supplier-order-items/:id/receive - Mark item as received
+  // POST /api/supplier-order-items/:id/receive - Mark item as received (with incremental inventory movement)
   app.post("/api/supplier-order-items/:id/receive", requireAuth, requireRole("admin", "repair_center"), async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
@@ -6408,35 +6408,43 @@ export function registerRoutes(app: Express): Server {
         return res.status(400).send("Quantità non valida");
       }
       
+      // Get current item BEFORE update to calculate delta
+      const currentItems = await db.execute(sql`SELECT * FROM supplier_order_items WHERE id = ${req.params.id}`);
+      const currentItem = currentItems.rows[0] as any;
+      if (!currentItem) {
+        return res.status(404).send("Articolo non trovato");
+      }
+      
+      const oldQuantityReceived = currentItem.quantity_received || 0;
+      const delta = quantityReceived - oldQuantityReceived;
+      
+      // Update the item
       const item = await storage.updateSupplierOrderItemReceived(req.params.id, quantityReceived);
       
-      // Check if all items are received to update order status
-      const items = await db.execute(sql`SELECT * FROM supplier_order_items WHERE id = ${req.params.id}`);
-      const currentItem = items.rows[0] as any;
-      if (currentItem) {
-        const orderItems = await storage.listSupplierOrderItems(currentItem.supplier_order_id);
-        const allReceived = orderItems.every(i => i.quantityReceived >= i.quantity);
-        
-        if (allReceived) {
-          await storage.updateSupplierOrderStatus(currentItem.supplier_order_id, 'received');
-          
-          // Create inventory movements for received items
-          for (const receivedItem of orderItems) {
-            if (receivedItem.productId) {
-              const order = await storage.getSupplierOrder(currentItem.supplier_order_id);
-              if (order) {
-                await storage.createInventoryMovement({
-                  productId: receivedItem.productId,
-                  repairCenterId: order.repairCenterId,
-                  type: 'restock',
-                  quantity: receivedItem.quantityReceived,
-                  userId: req.user.id,
-                  notes: `Ricevuto da ordine fornitore ${order.orderNumber}`,
-                });
-              }
-            }
-          }
+      // Create incremental inventory movement only if delta > 0 and product is linked
+      if (delta > 0 && currentItem.product_id) {
+        const order = await storage.getSupplierOrder(currentItem.supplier_order_id);
+        if (order) {
+          await storage.createInventoryMovement({
+            productId: currentItem.product_id,
+            repairCenterId: order.repairCenterId,
+            movementType: 'in',
+            quantity: delta,
+            notes: `Ordine fornitore ${order.orderNumber} - Ricezione parziale (+${delta})`,
+            createdBy: req.user.id,
+          });
         }
+      }
+      
+      // Check if all items are received to update order status
+      const orderItems = await storage.listSupplierOrderItems(currentItem.supplier_order_id);
+      const allReceived = orderItems.every(i => (i.quantityReceived || 0) >= i.quantity);
+      const someReceived = orderItems.some(i => (i.quantityReceived || 0) > 0);
+      
+      if (allReceived) {
+        await storage.updateSupplierOrderStatus(currentItem.supplier_order_id, 'received');
+      } else if (someReceived) {
+        await storage.updateSupplierOrderStatus(currentItem.supplier_order_id, 'partially_received');
       }
       
       res.json(item);
@@ -6576,7 +6584,31 @@ export function registerRoutes(app: Express): Server {
         return res.status(400).send("Stato richiesto");
       }
       
+      // Only create inventory movements if status is changing FROM something else TO shipped
+      // This ensures idempotency - if already shipped, don't create duplicate movements
+      const wasAlreadyShipped = returnData.status === 'shipped';
+      
       const updated = await storage.updateSupplierReturnStatus(req.params.id, status);
+      
+      // Decrement inventory when return is shipped to supplier (only on first transition to shipped)
+      if (status === 'shipped' && !wasAlreadyShipped) {
+        const items = await storage.listSupplierReturnItems(returnData.id);
+        for (const item of items) {
+          // Only process items with quantity and a linked product
+          if (item.quantity > 0 && item.productId) {
+            // Create negative movement (out) for shipped returns
+            await storage.createInventoryMovement({
+              productId: item.productId,
+              repairCenterId: returnData.repairCenterId,
+              movementType: 'out',
+              quantity: item.quantity,
+              notes: `Reso fornitore ${returnData.returnNumber} - Spedito al fornitore`,
+              createdBy: req.user.id,
+            });
+          }
+        }
+      }
+      
       res.json(updated);
     } catch (error: any) {
       res.status(400).send(error.message);
