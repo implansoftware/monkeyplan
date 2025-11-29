@@ -2467,8 +2467,9 @@ export function registerRoutes(app: Express): Server {
       }
       
       if (req.user.role === 'admin') {
-        // Admin sees all inventory
-        inventory = await storage.listInventoryStock();
+        // Admin sees all inventory, optionally filtered by repairCenterId
+        const filterRepairCenterId = req.query.repairCenterId as string | undefined;
+        inventory = await storage.listInventoryStock(filterRepairCenterId);
       } else {
         // Repair center sees only their own inventory
         if (!req.user.repairCenterId) {
