@@ -31,6 +31,13 @@ The backend is an `Express.js` application with TypeScript, featuring a RESTful 
     *   **Parts Orders (FASE 5)**: Manages spare parts ordering with supplier tracking, order dates, expected arrival, and status lifecycle (ordered → in_transit → received). Auto-transitions repair status to 'attesa_ricambi' when parts are ordered and 'in_riparazione' when all parts are received.
     *   **Repair Logs (FASE 6)**: Tracks technician activities during repair including work hours, parts installed, test results, and photos. Supports log types: status_change, technician_note, parts_installed, test_result, customer_contact. Includes endpoint to start repair process.
     *   **Test & Delivery (FASE 7)**: Comprehensive device testing checklist (display, touch, battery, audio, camera, connectivity, buttons, sensors, charging, software) with pass/fail tracking. Delivery records capture recipient, method, signature, and ID verification. Complete workflow from 'in_riparazione' → 'in_test' → 'pronto_ritiro' → 'consegnato'.
+*   **Supplier/Procurement Module**: Complete supplier management system with multi-supplier support per product.
+    *   **Supplier Registry**: Full CRUD for suppliers with contact info, payment terms (bank transfer, credit card, PayPal, cash on delivery), delivery preferences, and communication channel configuration (API, email, WhatsApp).
+    *   **Multi-Supplier Products**: Many-to-many relationship between products and suppliers via `productSuppliers` table, storing supplier-specific SKU, unit price, lead time, and priority ranking.
+    *   **Supplier Orders**: Complete order workflow (draft → sent → confirmed → shipped → partially_received → received) with line items, pricing, tracking, and automatic inventory movements upon receipt. Uses incremental delta calculation for idempotent stock updates.
+    *   **Supplier Returns**: Return management with RMA tracking, refund workflow (draft → requested → approved → shipped → received → refunded/rejected), and automatic inventory decrements on shipment with idempotency protection.
+    *   **Communication Logs**: Tracks all communications with suppliers including order confirmations, status updates, and return requests.
+    *   **Inventory Integration**: Automatic stock movements when supplier orders are received (incremental 'in') or returns are shipped (one-time 'out'), ensuring accurate inventory tracking.
 
 ## External Dependencies
 
