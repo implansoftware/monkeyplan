@@ -188,7 +188,8 @@ export default function SupplierReturnsPage() {
     
     const supplierId = formData.get("supplierId") as string;
     const repairCenterId = formData.get("repairCenterId") as string;
-    const supplierOrderId = formData.get("supplierOrderId") as string;
+    const supplierOrderIdRaw = formData.get("supplierOrderId") as string;
+    const supplierOrderId = supplierOrderIdRaw && supplierOrderIdRaw !== "__none__" ? supplierOrderIdRaw : undefined;
     const reason = formData.get("reason") as string;
     const reasonDetails = formData.get("reasonDetails") as string;
     const totalAmount = Math.round(parseFloat(formData.get("totalAmount") as string || "0") * 100);
@@ -201,7 +202,7 @@ export default function SupplierReturnsPage() {
     await createReturnMutation.mutateAsync({
       supplierId,
       repairCenterId,
-      supplierOrderId: supplierOrderId || undefined,
+      supplierOrderId,
       reason: reason as any,
       reasonDetails: reasonDetails || undefined,
       totalAmount,
@@ -503,7 +504,7 @@ export default function SupplierReturnsPage() {
                   <SelectValue placeholder="Collega a un ordine..." />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Nessun ordine collegato</SelectItem>
+                  <SelectItem value="__none__">Nessun ordine collegato</SelectItem>
                   {supplierOrders
                     .filter(o => o.status === "received" || o.status === "partially_received")
                     .map(o => (
