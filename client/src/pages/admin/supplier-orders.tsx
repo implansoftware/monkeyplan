@@ -882,7 +882,7 @@ export default function SupplierOrdersPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="__none__">Nessun prodotto collegato</SelectItem>
-                  {selectedOrder && getSupplierProducts(selectedOrder.supplierId).map(p => (
+                  {products.map(p => (
                     <SelectItem key={p.id} value={p.id}>
                       {p.name} ({p.sku})
                     </SelectItem>
