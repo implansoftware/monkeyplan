@@ -64,6 +64,13 @@ export const dataRecoveryStatusEnum = pgEnum("data_recovery_status", [
   "cancelled",         // Annullato
 ]);
 
+// SLA Severity Enum - Gravità basata su soglie temporali
+export const slaSeverityEnum = pgEnum("sla_severity", [
+  "in_time",           // 🟢 Entro i tempi
+  "late",              // 🟡 In ritardo (superata soglia warning)
+  "urgent",            // 🔴 Urgente (superata soglia critica)
+]);
+
 export const dataRecoveryEventTypeEnum = pgEnum("data_recovery_event_type", [
   "created",           // Job creato
   "assigned",          // Assegnato
@@ -573,6 +580,32 @@ export const repairDelivery = pgTable("repair_delivery", {
   notes: text("notes"),
   deliveredBy: varchar("delivered_by").notNull(), // ID utente che ha consegnato
   deliveredAt: timestamp("delivered_at").notNull().defaultNow(),
+});
+
+// ==========================================
+// SLA TRACKING SYSTEM
+// ==========================================
+
+// Repair Order State History (Cronologia stati per calcolo SLA)
+export const repairOrderStateHistory = pgTable("repair_order_state_history", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  repairOrderId: varchar("repair_order_id").notNull().references(() => repairOrders.id),
+  status: repairStatusEnum("status").notNull(), // Stato in cui è entrato
+  enteredAt: timestamp("entered_at").notNull().defaultNow(), // Quando è entrato in questo stato
+  exitedAt: timestamp("exited_at"), // Quando è uscito da questo stato (null = stato corrente)
+  durationMinutes: integer("duration_minutes"), // Durata calcolata all'uscita
+  changedBy: varchar("changed_by"), // ID utente che ha cambiato stato
+});
+
+// Supplier Return State History (Cronologia stati resi per calcolo SLA)
+export const supplierReturnStateHistory = pgTable("supplier_return_state_history", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  supplierReturnId: varchar("supplier_return_id").notNull().references(() => supplierReturns.id),
+  status: text("status").notNull(), // Stato in cui è entrato
+  enteredAt: timestamp("entered_at").notNull().defaultNow(), // Quando è entrato in questo stato
+  exitedAt: timestamp("exited_at"), // Quando è uscito da questo stato (null = stato corrente)
+  durationMinutes: integer("duration_minutes"), // Durata calcolata all'uscita
+  changedBy: varchar("changed_by"), // ID utente che ha cambiato stato
 });
 
 // Admin Settings (Configurazione sistema)
@@ -1180,6 +1213,29 @@ export const repairOrdersRelations = relations(repairOrders, ({ one, many }) => 
     fields: [repairOrders.id],
     references: [repairDelivery.repairOrderId],
   }),
+  stateHistory: many(repairOrderStateHistory),
+}));
+
+export const repairOrderStateHistoryRelations = relations(repairOrderStateHistory, ({ one }) => ({
+  repairOrder: one(repairOrders, {
+    fields: [repairOrderStateHistory.repairOrderId],
+    references: [repairOrders.id],
+  }),
+  changedByUser: one(users, {
+    fields: [repairOrderStateHistory.changedBy],
+    references: [users.id],
+  }),
+}));
+
+export const supplierReturnStateHistoryRelations = relations(supplierReturnStateHistory, ({ one }) => ({
+  supplierReturn: one(supplierReturns, {
+    fields: [supplierReturnStateHistory.supplierReturnId],
+    references: [supplierReturns.id],
+  }),
+  changedByUser: one(users, {
+    fields: [supplierReturnStateHistory.changedBy],
+    references: [users.id],
+  }),
 }));
 
 export const repairAttachmentsRelations = relations(repairAttachments, ({ one }) => ({
@@ -1599,6 +1655,67 @@ export const insertRepairDeliverySchema = createInsertSchema(repairDelivery).omi
   deliveredAt: true,
 });
 
+// SLA State History Schemas
+export const insertRepairOrderStateHistorySchema = createInsertSchema(repairOrderStateHistory).omit({
+  id: true,
+});
+
+export const insertSupplierReturnStateHistorySchema = createInsertSchema(supplierReturnStateHistory).omit({
+  id: true,
+});
+
+// SLA Thresholds Configuration Schema (stored as JSON in admin_settings)
+export const slaThresholdsSchema = z.object({
+  // Soglie per ogni stato (in ore)
+  ingressato: z.object({
+    warning: z.number().default(24), // 🟡 dopo 24 ore
+    critical: z.number().default(48), // 🔴 dopo 48 ore
+  }).default({ warning: 24, critical: 48 }),
+  in_diagnosi: z.object({
+    warning: z.number().default(24),
+    critical: z.number().default(48),
+  }).default({ warning: 24, critical: 48 }),
+  preventivo_emesso: z.object({
+    warning: z.number().default(48),
+    critical: z.number().default(72),
+  }).default({ warning: 48, critical: 72 }),
+  attesa_ricambi: z.object({
+    warning: z.number().default(72),
+    critical: z.number().default(120),
+  }).default({ warning: 72, critical: 120 }),
+  in_riparazione: z.object({
+    warning: z.number().default(24),
+    critical: z.number().default(48),
+  }).default({ warning: 24, critical: 48 }),
+  in_test: z.object({
+    warning: z.number().default(8),
+    critical: z.number().default(24),
+  }).default({ warning: 8, critical: 24 }),
+  pronto_ritiro: z.object({
+    warning: z.number().default(48),
+    critical: z.number().default(72),
+  }).default({ warning: 48, critical: 72 }),
+  // Soglie per resi fornitori
+  supplier_return_draft: z.object({
+    warning: z.number().default(24),
+    critical: z.number().default(48),
+  }).default({ warning: 24, critical: 48 }),
+  supplier_return_requested: z.object({
+    warning: z.number().default(48),
+    critical: z.number().default(96),
+  }).default({ warning: 48, critical: 96 }),
+  supplier_return_approved: z.object({
+    warning: z.number().default(24),
+    critical: z.number().default(48),
+  }).default({ warning: 24, critical: 48 }),
+  supplier_return_shipped: z.object({
+    warning: z.number().default(72),
+    critical: z.number().default(120),
+  }).default({ warning: 72, critical: 120 }),
+});
+
+export type SlaThresholds = z.infer<typeof slaThresholdsSchema>;
+
 export const insertAdminSettingSchema = createInsertSchema(adminSettings).omit({
   id: true,
   updatedAt: true,
@@ -1882,6 +1999,16 @@ export type InsertRepairTestChecklist = z.infer<typeof insertRepairTestChecklist
 
 export type RepairDelivery = typeof repairDelivery.$inferSelect;
 export type InsertRepairDelivery = z.infer<typeof insertRepairDeliverySchema>;
+
+// SLA State History Types
+export type RepairOrderStateHistory = typeof repairOrderStateHistory.$inferSelect;
+export type InsertRepairOrderStateHistory = z.infer<typeof insertRepairOrderStateHistorySchema>;
+
+export type SupplierReturnStateHistory = typeof supplierReturnStateHistory.$inferSelect;
+export type InsertSupplierReturnStateHistory = z.infer<typeof insertSupplierReturnStateHistorySchema>;
+
+// SLA Severity Type
+export type SlaSeverity = "in_time" | "late" | "urgent";
 
 export type AdminSetting = typeof adminSettings.$inferSelect;
 export type InsertAdminSetting = z.infer<typeof insertAdminSettingSchema>;

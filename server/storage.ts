@@ -21,6 +21,9 @@ import {
   SupplierReturn, InsertSupplierReturn, SupplierReturnItem, InsertSupplierReturnItem,
   SupplierCommunicationLog, InsertSupplierCommunicationLog,
   PartsLoadDocument, InsertPartsLoadDocument, PartsLoadItem, InsertPartsLoadItem,
+  RepairOrderStateHistory, InsertRepairOrderStateHistory,
+  SupplierReturnStateHistory, InsertSupplierReturnStateHistory,
+  SlaThresholds, slaThresholdsSchema,
   users, repairCenters, products, repairOrders, tickets, ticketMessages,
   invoices, billingData, chatMessages, inventoryMovements, inventoryStock, activityLogs, analyticsCache,
   notifications, notificationPreferences, repairAttachments, repairAcceptance, repairDiagnostics,
@@ -29,7 +32,8 @@ import {
   diagnosticFindings, damagedComponentTypes, estimatedRepairTimes, adminSettings,
   promotions, unrepairableReasons, externalLabs, dataRecoveryJobs, dataRecoveryEvents,
   suppliers, productSuppliers, supplierOrders, supplierOrderItems, supplierReturns, supplierReturnItems, supplierCommunicationLogs,
-  partsLoadDocuments, partsLoadItems
+  partsLoadDocuments, partsLoadItems,
+  repairOrderStateHistory, supplierReturnStateHistory
 } from "@shared/schema";
 import { db, pool } from "./db";
 import { eq, and, or, desc, lt, sql, not } from "drizzle-orm";
@@ -67,7 +71,7 @@ export interface IStorage {
   createRepairOrder(order: InsertRepairOrder): Promise<RepairOrder>;
   createRepairWithAcceptance(order: InsertRepairOrder, acceptance: InsertRepairAcceptance): Promise<{ order: RepairOrder; acceptance: RepairAcceptance }>;
   updateRepairOrder(id: string, updates: Partial<Pick<RepairOrder, 'status' | 'priority' | 'estimatedCost' | 'finalCost' | 'notes' | 'repairCenterId' | 'quoteBypassReason' | 'quoteBypassedAt'>>): Promise<RepairOrder>;
-  updateRepairOrderStatus(id: string, status: string): Promise<RepairOrder>;
+  updateRepairOrderStatus(id: string, status: string, changedBy?: string): Promise<RepairOrder>;
   checkImeiSerialDuplicate(imei?: string, serial?: string, excludeId?: string): Promise<RepairOrder | undefined>;
   
   // Tickets
@@ -279,7 +283,7 @@ export interface IStorage {
   getSupplierReturn(id: string): Promise<SupplierReturn | undefined>;
   createSupplierReturn(returnData: InsertSupplierReturn): Promise<SupplierReturn>;
   updateSupplierReturn(id: string, updates: Partial<Omit<InsertSupplierReturn, 'returnNumber' | 'createdBy'>>): Promise<SupplierReturn>;
-  updateSupplierReturnStatus(id: string, status: string): Promise<SupplierReturn>;
+  updateSupplierReturnStatus(id: string, status: string, changedBy?: string): Promise<SupplierReturn>;
   
   // Supplier Return Items (Righe reso)
   listSupplierReturnItems(returnId: string): Promise<SupplierReturnItem[]>;
@@ -305,6 +309,21 @@ export interface IStorage {
   updatePartsLoadItem(id: string, updates: Partial<InsertPartsLoadItem>): Promise<PartsLoadItem>;
   deletePartsLoadItem(id: string): Promise<void>;
   matchPartsLoadItem(id: string, partsOrderId?: string, productId?: string): Promise<PartsLoadItem>;
+  
+  // SLA State History
+  listRepairOrderStateHistory(repairOrderId: string): Promise<RepairOrderStateHistory[]>;
+  createRepairOrderStateHistory(history: InsertRepairOrderStateHistory): Promise<RepairOrderStateHistory>;
+  closeRepairOrderStateHistory(repairOrderId: string, changedBy?: string): Promise<void>;
+  getCurrentRepairOrderState(repairOrderId: string): Promise<RepairOrderStateHistory | undefined>;
+  
+  listSupplierReturnStateHistory(supplierReturnId: string): Promise<SupplierReturnStateHistory[]>;
+  createSupplierReturnStateHistory(history: InsertSupplierReturnStateHistory): Promise<SupplierReturnStateHistory>;
+  closeSupplierReturnStateHistory(supplierReturnId: string, changedBy?: string): Promise<void>;
+  getCurrentSupplierReturnState(supplierReturnId: string): Promise<SupplierReturnStateHistory | undefined>;
+  
+  // SLA Thresholds
+  getSlaThresholds(): Promise<SlaThresholds>;
+  updateSlaThresholds(thresholds: SlaThresholds, updatedBy: string): Promise<void>;
   
   sessionStore: session.Store;
 }
@@ -459,6 +478,14 @@ export class DatabaseStorage implements IStorage {
       ...insertOrder,
       orderNumber,
     }).returning();
+    
+    // Create initial state history entry
+    await this.createRepairOrderStateHistory({
+      repairOrderId: order.id,
+      status: order.status as any,
+      enteredAt: new Date(),
+    });
+    
     return order;
   }
 
@@ -467,7 +494,7 @@ export class DatabaseStorage implements IStorage {
     insertAcceptance: InsertRepairAcceptance
   ): Promise<{ order: RepairOrder; acceptance: RepairAcceptance }> {
     // Use transaction to ensure atomicity
-    return await db.transaction(async (tx) => {
+    const result = await db.transaction(async (tx) => {
       // Generate order number
       const count = await tx.select().from(repairOrders);
       const orderNumber = `ORD-${Date.now()}-${count.length + 1}`;
@@ -488,13 +515,35 @@ export class DatabaseStorage implements IStorage {
       
       return { order, acceptance };
     });
+    
+    // Create initial state history entry (outside transaction to use class method)
+    await this.createRepairOrderStateHistory({
+      repairOrderId: result.order.id,
+      status: 'ingressato' as any,
+      enteredAt: new Date(),
+    });
+    
+    return result;
   }
 
-  async updateRepairOrderStatus(id: string, status: string): Promise<RepairOrder> {
+  async updateRepairOrderStatus(id: string, status: string, changedBy?: string): Promise<RepairOrder> {
+    // Close the current state history entry
+    await this.closeRepairOrderStateHistory(id, changedBy);
+    
+    // Update the repair order
     const [order] = await db.update(repairOrders)
       .set({ status: status as any, updatedAt: new Date() })
       .where(eq(repairOrders.id, id))
       .returning();
+    
+    // Create a new state history entry for the new status
+    await this.createRepairOrderStateHistory({
+      repairOrderId: id,
+      status: status as any,
+      enteredAt: new Date(),
+      changedBy,
+    });
+    
     return order;
   }
 
@@ -2269,6 +2318,14 @@ export class DatabaseStorage implements IStorage {
       ...insertReturn,
       returnNumber,
     }).returning();
+    
+    // Create initial state history entry
+    await this.createSupplierReturnStateHistory({
+      supplierReturnId: returnData.id,
+      status: returnData.status,
+      enteredAt: new Date(),
+    });
+    
     return returnData;
   }
 
@@ -2285,7 +2342,10 @@ export class DatabaseStorage implements IStorage {
     return returnData;
   }
 
-  async updateSupplierReturnStatus(id: string, status: string): Promise<SupplierReturn> {
+  async updateSupplierReturnStatus(id: string, status: string, changedBy?: string): Promise<SupplierReturn> {
+    // Close the current state history entry
+    await this.closeSupplierReturnStateHistory(id, changedBy);
+    
     const updateData: any = { 
       status: status as any, 
       updatedAt: new Date() 
@@ -2306,6 +2366,14 @@ export class DatabaseStorage implements IStorage {
     if (!returnData) {
       throw new Error("Reso fornitore non trovato");
     }
+    
+    // Create a new state history entry for the new status
+    await this.createSupplierReturnStateHistory({
+      supplierReturnId: id,
+      status: status,
+      enteredAt: new Date(),
+      changedBy,
+    });
     
     return returnData;
   }
@@ -2588,6 +2656,150 @@ export class DatabaseStorage implements IStorage {
     } else {
       throw new Error("Specificare partsOrderId o productId");
     }
+  }
+
+  // ==========================================
+  // SLA STATE HISTORY
+  // ==========================================
+  
+  async listRepairOrderStateHistory(repairOrderId: string): Promise<RepairOrderStateHistory[]> {
+    return await db.select()
+      .from(repairOrderStateHistory)
+      .where(eq(repairOrderStateHistory.repairOrderId, repairOrderId))
+      .orderBy(desc(repairOrderStateHistory.enteredAt));
+  }
+
+  async createRepairOrderStateHistory(history: InsertRepairOrderStateHistory): Promise<RepairOrderStateHistory> {
+    const [record] = await db.insert(repairOrderStateHistory).values(history).returning();
+    return record;
+  }
+
+  async closeRepairOrderStateHistory(repairOrderId: string, changedBy?: string): Promise<void> {
+    const now = new Date();
+    
+    // Find the current open state (exitedAt is null)
+    const [currentState] = await db.select()
+      .from(repairOrderStateHistory)
+      .where(and(
+        eq(repairOrderStateHistory.repairOrderId, repairOrderId),
+        sql`${repairOrderStateHistory.exitedAt} IS NULL`
+      ))
+      .limit(1);
+    
+    if (currentState) {
+      const enteredAt = new Date(currentState.enteredAt);
+      const durationMinutes = Math.floor((now.getTime() - enteredAt.getTime()) / (1000 * 60));
+      
+      await db.update(repairOrderStateHistory)
+        .set({ 
+          exitedAt: now,
+          durationMinutes,
+        })
+        .where(eq(repairOrderStateHistory.id, currentState.id));
+    }
+  }
+
+  async getCurrentRepairOrderState(repairOrderId: string): Promise<RepairOrderStateHistory | undefined> {
+    const [state] = await db.select()
+      .from(repairOrderStateHistory)
+      .where(and(
+        eq(repairOrderStateHistory.repairOrderId, repairOrderId),
+        sql`${repairOrderStateHistory.exitedAt} IS NULL`
+      ))
+      .limit(1);
+    return state || undefined;
+  }
+
+  async listSupplierReturnStateHistory(supplierReturnId: string): Promise<SupplierReturnStateHistory[]> {
+    return await db.select()
+      .from(supplierReturnStateHistory)
+      .where(eq(supplierReturnStateHistory.supplierReturnId, supplierReturnId))
+      .orderBy(desc(supplierReturnStateHistory.enteredAt));
+  }
+
+  async createSupplierReturnStateHistory(history: InsertSupplierReturnStateHistory): Promise<SupplierReturnStateHistory> {
+    const [record] = await db.insert(supplierReturnStateHistory).values(history).returning();
+    return record;
+  }
+
+  async closeSupplierReturnStateHistory(supplierReturnId: string, changedBy?: string): Promise<void> {
+    const now = new Date();
+    
+    // Find the current open state (exitedAt is null)
+    const [currentState] = await db.select()
+      .from(supplierReturnStateHistory)
+      .where(and(
+        eq(supplierReturnStateHistory.supplierReturnId, supplierReturnId),
+        sql`${supplierReturnStateHistory.exitedAt} IS NULL`
+      ))
+      .limit(1);
+    
+    if (currentState) {
+      const enteredAt = new Date(currentState.enteredAt);
+      const durationMinutes = Math.floor((now.getTime() - enteredAt.getTime()) / (1000 * 60));
+      
+      await db.update(supplierReturnStateHistory)
+        .set({ 
+          exitedAt: now,
+          durationMinutes,
+        })
+        .where(eq(supplierReturnStateHistory.id, currentState.id));
+    }
+  }
+
+  async getCurrentSupplierReturnState(supplierReturnId: string): Promise<SupplierReturnStateHistory | undefined> {
+    const [state] = await db.select()
+      .from(supplierReturnStateHistory)
+      .where(and(
+        eq(supplierReturnStateHistory.supplierReturnId, supplierReturnId),
+        sql`${supplierReturnStateHistory.exitedAt} IS NULL`
+      ))
+      .limit(1);
+    return state || undefined;
+  }
+
+  // ==========================================
+  // SLA THRESHOLDS
+  // ==========================================
+
+  async getSlaThresholds(): Promise<SlaThresholds> {
+    const [setting] = await db.select()
+      .from(adminSettings)
+      .where(eq(adminSettings.settingKey, 'sla_thresholds'))
+      .limit(1);
+    
+    if (setting) {
+      try {
+        const parsed = JSON.parse(setting.settingValue);
+        return slaThresholdsSchema.parse(parsed);
+      } catch {
+        // Return defaults if parsing fails
+        return slaThresholdsSchema.parse({});
+      }
+    }
+    
+    // Return defaults
+    return slaThresholdsSchema.parse({});
+  }
+
+  async updateSlaThresholds(thresholds: SlaThresholds, updatedBy: string): Promise<void> {
+    const settingValue = JSON.stringify(thresholds);
+    
+    await db.insert(adminSettings)
+      .values({
+        settingKey: 'sla_thresholds',
+        settingValue,
+        description: 'Soglie SLA per stati riparazioni e resi (valori in ore)',
+        updatedBy,
+      })
+      .onConflictDoUpdate({
+        target: adminSettings.settingKey,
+        set: {
+          settingValue,
+          updatedBy,
+          updatedAt: new Date(),
+        },
+      });
   }
 }
 

@@ -340,6 +340,86 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // SLA Thresholds - Get
+  app.get("/api/admin/settings/sla-thresholds", requireRole("admin"), async (req, res) => {
+    try {
+      const thresholds = await storage.getSlaThresholds();
+      res.json(thresholds);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // SLA Thresholds - Update
+  app.put("/api/admin/settings/sla-thresholds", requireRole("admin"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const thresholds = req.body;
+      await storage.updateSlaThresholds(thresholds, req.user.id);
+      
+      const updated = await storage.getSlaThresholds();
+      res.json(updated);
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+
+  // SLA Helper - Calculate severity based on time in state
+  app.get("/api/sla/severity", requireAuth, async (req, res) => {
+    try {
+      const { status, enteredAt } = req.query;
+      
+      if (!status || !enteredAt) {
+        return res.status(400).send("status and enteredAt are required");
+      }
+      
+      const thresholds = await storage.getSlaThresholds();
+      const statusKey = status as string;
+      
+      // Get threshold for this status
+      const threshold = (thresholds as any)[statusKey];
+      if (!threshold) {
+        return res.json({ severity: "in_time", hoursInState: 0 });
+      }
+      
+      const now = new Date();
+      const entered = new Date(enteredAt as string);
+      const hoursInState = (now.getTime() - entered.getTime()) / (1000 * 60 * 60);
+      
+      let severity: "in_time" | "late" | "urgent" = "in_time";
+      if (hoursInState >= threshold.critical) {
+        severity = "urgent";
+      } else if (hoursInState >= threshold.warning) {
+        severity = "late";
+      }
+      
+      res.json({ severity, hoursInState: Math.round(hoursInState * 10) / 10 });
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // Repair Order State History - List
+  app.get("/api/repairs/:id/state-history", requireAuth, async (req, res) => {
+    try {
+      const history = await storage.listRepairOrderStateHistory(req.params.id);
+      res.json(history);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // Supplier Return State History - List
+  app.get("/api/supplier-returns/:id/state-history", requireAuth, async (req, res) => {
+    try {
+      const history = await storage.listSupplierReturnStateHistory(req.params.id);
+      res.json(history);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
   // Admin Stats
   app.get("/api/admin/stats", requireRole("admin"), async (req, res) => {
     try {
