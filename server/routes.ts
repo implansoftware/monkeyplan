@@ -26,6 +26,8 @@ import {
   insertSupplierReturnSchema,
   insertSupplierReturnItemSchema,
   insertSupplierCommunicationLogSchema,
+  insertPartsLoadDocumentSchema,
+  insertPartsLoadItemSchema,
   type Product
 } from "@shared/schema";
 import { ObjectStorageService, objectStorageClient, parseObjectPath } from "./objectStorage";
@@ -6685,6 +6687,379 @@ export function registerRoutes(app: Express): Server {
       res.status(201).json(log);
     } catch (error: any) {
       res.status(400).send(error.message);
+    }
+  });
+
+  // ============ PARTS LOAD DOCUMENTS (CARICO RICAMBI) ============
+
+  // GET /api/parts-load - List parts load documents
+  app.get("/api/parts-load", requireAuth, requireRole("admin", "repair_center"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const filters: { repairCenterId?: string; supplierId?: string; status?: string } = {};
+      
+      // Filter by repair center for non-admin users
+      if (req.user.role === 'repair_center') {
+        if (!req.user.repairCenterId) {
+          return res.status(400).send("Centro riparazione non assegnato");
+        }
+        filters.repairCenterId = req.user.repairCenterId;
+      } else if (req.query.repairCenterId) {
+        filters.repairCenterId = req.query.repairCenterId as string;
+      }
+      
+      if (req.query.supplierId) {
+        filters.supplierId = req.query.supplierId as string;
+      }
+      if (req.query.status) {
+        filters.status = req.query.status as string;
+      }
+      
+      const documents = await storage.listPartsLoadDocuments(filters);
+      
+      // Enrich with supplier and repair center names
+      const enriched = await Promise.all(documents.map(async (doc) => {
+        const [supplier, repairCenter] = await Promise.all([
+          storage.getSupplier(doc.supplierId),
+          storage.getRepairCenter(doc.repairCenterId),
+        ]);
+        return {
+          ...doc,
+          supplierName: supplier?.name,
+          repairCenterName: repairCenter?.name,
+        };
+      }));
+      
+      res.json(enriched);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // GET /api/parts-load/:id - Get parts load document details
+  app.get("/api/parts-load/:id", requireAuth, requireRole("admin", "repair_center"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const doc = await storage.getPartsLoadDocument(req.params.id);
+      if (!doc) {
+        return res.status(404).send("Documento di carico non trovato");
+      }
+      
+      // Repair center access check
+      if (req.user.role === 'repair_center' && doc.repairCenterId !== req.user.repairCenterId) {
+        return res.status(403).send("Accesso negato");
+      }
+      
+      const [supplier, repairCenter, items] = await Promise.all([
+        storage.getSupplier(doc.supplierId),
+        storage.getRepairCenter(doc.repairCenterId),
+        storage.listPartsLoadItems(doc.id),
+      ]);
+      
+      // Enrich items with product/repair order info
+      const enrichedItems = await Promise.all(items.map(async (item) => {
+        let product = null;
+        let repairOrder = null;
+        let partsOrder = null;
+        
+        if (item.matchedProductId) {
+          product = await storage.getProduct(item.matchedProductId);
+        }
+        if (item.matchedRepairOrderId) {
+          repairOrder = await storage.getRepairOrder(item.matchedRepairOrderId);
+        }
+        if (item.matchedPartsOrderId) {
+          partsOrder = await storage.getPartsOrder(item.matchedPartsOrderId);
+        }
+        
+        return {
+          ...item,
+          product,
+          repairOrder,
+          partsOrder,
+        };
+      }));
+      
+      res.json({
+        ...doc,
+        supplier,
+        repairCenter,
+        items: enrichedItems,
+      });
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // POST /api/parts-load - Create parts load document
+  app.post("/api/parts-load", requireAuth, requireRole("admin", "repair_center"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      let repairCenterId = req.body.repairCenterId;
+      if (req.user.role === 'repair_center') {
+        if (!req.user.repairCenterId) {
+          return res.status(400).send("Centro riparazione non assegnato");
+        }
+        repairCenterId = req.user.repairCenterId;
+      }
+      
+      const validated = insertPartsLoadDocumentSchema.parse({
+        ...req.body,
+        repairCenterId,
+        createdBy: req.user.id,
+      });
+      
+      const doc = await storage.createPartsLoadDocument(validated);
+      res.status(201).json(doc);
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+
+  // PATCH /api/parts-load/:id - Update parts load document
+  app.patch("/api/parts-load/:id", requireAuth, requireRole("admin", "repair_center"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const doc = await storage.getPartsLoadDocument(req.params.id);
+      if (!doc) {
+        return res.status(404).send("Documento di carico non trovato");
+      }
+      
+      if (req.user.role === 'repair_center' && doc.repairCenterId !== req.user.repairCenterId) {
+        return res.status(403).send("Accesso negato");
+      }
+      
+      const updated = await storage.updatePartsLoadDocument(req.params.id, req.body);
+      res.json(updated);
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+
+  // POST /api/parts-load/:id/process - Process document (auto-match items)
+  app.post("/api/parts-load/:id/process", requireAuth, requireRole("admin", "repair_center"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const doc = await storage.getPartsLoadDocument(req.params.id);
+      if (!doc) {
+        return res.status(404).send("Documento di carico non trovato");
+      }
+      
+      if (req.user.role === 'repair_center' && doc.repairCenterId !== req.user.repairCenterId) {
+        return res.status(403).send("Accesso negato");
+      }
+      
+      // Update status to processing
+      await storage.updatePartsLoadDocument(req.params.id, { status: 'processing' as any });
+      
+      // Process document - auto-match items
+      const result = await storage.processPartsLoadDocument(req.params.id);
+      
+      res.json({
+        message: "Elaborazione completata",
+        ...result,
+      });
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+
+  // POST /api/parts-load/:id/items - Add item to parts load document
+  app.post("/api/parts-load/:id/items", requireAuth, requireRole("admin", "repair_center"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const doc = await storage.getPartsLoadDocument(req.params.id);
+      if (!doc) {
+        return res.status(404).send("Documento di carico non trovato");
+      }
+      
+      if (req.user.role === 'repair_center' && doc.repairCenterId !== req.user.repairCenterId) {
+        return res.status(403).send("Accesso negato");
+      }
+      
+      const validated = insertPartsLoadItemSchema.parse({
+        ...req.body,
+        partsLoadDocumentId: req.params.id,
+      });
+      
+      const item = await storage.createPartsLoadItem(validated);
+      res.status(201).json(item);
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+
+  // PATCH /api/parts-load-items/:id - Update parts load item
+  app.patch("/api/parts-load-items/:id", requireAuth, requireRole("admin", "repair_center"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const item = await storage.getPartsLoadItem(req.params.id);
+      if (!item) {
+        return res.status(404).send("Riga carico non trovata");
+      }
+      
+      const doc = await storage.getPartsLoadDocument(item.partsLoadDocumentId);
+      if (!doc) {
+        return res.status(404).send("Documento di carico non trovato");
+      }
+      
+      if (req.user.role === 'repair_center' && doc.repairCenterId !== req.user.repairCenterId) {
+        return res.status(403).send("Accesso negato");
+      }
+      
+      const updated = await storage.updatePartsLoadItem(req.params.id, req.body);
+      res.json(updated);
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+
+  // DELETE /api/parts-load-items/:id - Delete parts load item
+  app.delete("/api/parts-load-items/:id", requireAuth, requireRole("admin", "repair_center"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const item = await storage.getPartsLoadItem(req.params.id);
+      if (!item) {
+        return res.status(404).send("Riga carico non trovata");
+      }
+      
+      const doc = await storage.getPartsLoadDocument(item.partsLoadDocumentId);
+      if (!doc) {
+        return res.status(404).send("Documento di carico non trovato");
+      }
+      
+      if (req.user.role === 'repair_center' && doc.repairCenterId !== req.user.repairCenterId) {
+        return res.status(403).send("Accesso negato");
+      }
+      
+      await storage.deletePartsLoadItem(req.params.id);
+      res.status(204).send();
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+
+  // POST /api/parts-load-items/:id/match - Manual match item
+  app.post("/api/parts-load-items/:id/match", requireAuth, requireRole("admin", "repair_center"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const item = await storage.getPartsLoadItem(req.params.id);
+      if (!item) {
+        return res.status(404).send("Riga carico non trovata");
+      }
+      
+      const doc = await storage.getPartsLoadDocument(item.partsLoadDocumentId);
+      if (!doc) {
+        return res.status(404).send("Documento di carico non trovato");
+      }
+      
+      if (req.user.role === 'repair_center' && doc.repairCenterId !== req.user.repairCenterId) {
+        return res.status(403).send("Accesso negato");
+      }
+      
+      const { partsOrderId, productId } = req.body;
+      
+      if (!partsOrderId && !productId) {
+        return res.status(400).send("Specificare partsOrderId o productId");
+      }
+      
+      const matched = await storage.matchPartsLoadItem(req.params.id, partsOrderId, productId);
+      
+      // Recalculate document totals
+      const items = await storage.listPartsLoadItems(item.partsLoadDocumentId);
+      const matchedCount = items.filter(i => i.status === 'matched').length;
+      const stockCount = items.filter(i => i.status === 'stock').length;
+      const errorCount = items.filter(i => i.status === 'error').length;
+      
+      await storage.updatePartsLoadDocument(item.partsLoadDocumentId, {
+        matchedItems: matchedCount,
+        stockItems: stockCount,
+        errorItems: errorCount,
+        status: (errorCount === 0 && items.every(i => i.status !== 'pending') ? 'completed' : 'partial') as any,
+      });
+      
+      res.json(matched);
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+
+  // POST /api/parts-load-items/:id/add-to-inventory - Add matched item to inventory
+  app.post("/api/parts-load-items/:id/add-to-inventory", requireAuth, requireRole("admin", "repair_center"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const item = await storage.getPartsLoadItem(req.params.id);
+      if (!item) {
+        return res.status(404).send("Riga carico non trovata");
+      }
+      
+      if (item.addedToInventory) {
+        return res.status(400).send("Articolo già aggiunto all'inventario");
+      }
+      
+      if (item.status !== 'stock' || !item.matchedProductId) {
+        return res.status(400).send("L'articolo deve essere abbinato a un prodotto per essere aggiunto all'inventario");
+      }
+      
+      const doc = await storage.getPartsLoadDocument(item.partsLoadDocumentId);
+      if (!doc) {
+        return res.status(404).send("Documento di carico non trovato");
+      }
+      
+      if (req.user.role === 'repair_center' && doc.repairCenterId !== req.user.repairCenterId) {
+        return res.status(403).send("Accesso negato");
+      }
+      
+      const { stockLocation } = req.body;
+      
+      // Create inventory movement
+      const movement = await storage.createInventoryMovement({
+        productId: item.matchedProductId,
+        repairCenterId: doc.repairCenterId,
+        movementType: 'in',
+        quantity: item.quantity,
+        notes: `Carico ricambi ${doc.loadNumber} - ${item.description}`,
+        createdBy: req.user.id,
+      });
+      
+      // Update item
+      const updated = await storage.updatePartsLoadItem(req.params.id, {
+        addedToInventory: true,
+        inventoryMovementId: movement.id,
+        stockLocationConfirmed: stockLocation || item.stockLocationSuggested,
+      });
+      
+      res.json(updated);
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+
+  // GET /api/parts-orders/waiting - Get parts orders waiting for arrival
+  app.get("/api/parts-orders/waiting", requireAuth, requireRole("admin", "repair_center"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      let filters: { repairCenterId?: string; status?: string } = { status: 'ordered' };
+      
+      if (req.user.role === 'repair_center') {
+        filters.repairCenterId = req.user.repairCenterId || undefined;
+      }
+      
+      const orders = await storage.listAllPartsOrders(filters);
+      res.json(orders);
+    } catch (error: any) {
+      res.status(500).send(error.message);
     }
   });
 
