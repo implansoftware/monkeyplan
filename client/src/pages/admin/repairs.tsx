@@ -9,7 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { Search, Wrench, Download, CalendarIcon, Plus, Stethoscope, Receipt, ClipboardCheck, Package, Play, TestTube, Truck, Eye } from "lucide-react";
+import { Search, Wrench, Download, CalendarIcon, Plus, Stethoscope, Receipt, ClipboardCheck, Package, Play, TestTube, Truck, Eye, Clock, AlertTriangle, AlertCircle } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -19,11 +19,18 @@ import { it } from "date-fns/locale";
 import type { DateRange } from "react-day-picker";
 import { RepairOrderDetailDrawer } from "@/components/RepairOrderDetailDrawer";
 import { AcceptanceWizardDialog } from "@/components/AcceptanceWizardDialog";
-import { SLABadge } from "@/components/SLABadge";
+
+interface RepairOrderWithSLA extends RepairOrder {
+  slaSeverity: "in_time" | "late" | "urgent" | null;
+  slaMinutesInState: number;
+  slaPhase: string | null;
+  slaEnteredAt: string | null;
+}
 
 export default function AdminRepairs() {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [slaFilter, setSlaFilter] = useState<string>("all");
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
   const [isExporting, setIsExporting] = useState(false);
   const [selectedRepairId, setSelectedRepairId] = useState<string | null>(null);
@@ -31,8 +38,15 @@ export default function AdminRepairs() {
   const [wizardOpen, setWizardOpen] = useState(false);
   const { toast } = useToast();
 
-  const { data: repairs = [], isLoading } = useQuery<RepairOrder[]>({
-    queryKey: ["/api/repair-orders"],
+  const { data: repairs = [], isLoading } = useQuery<RepairOrderWithSLA[]>({
+    queryKey: ["/api/repair-orders", { slaSeverity: slaFilter }],
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      if (slaFilter !== "all") params.append("slaSeverity", slaFilter);
+      const res = await fetch(`/api/repair-orders?${params.toString()}`, { credentials: "include" });
+      if (!res.ok) throw new Error("Failed to fetch repairs");
+      return res.json();
+    },
   });
 
   const handleExport = async () => {
@@ -230,6 +244,37 @@ export default function AdminRepairs() {
                 <SelectItem value="annullato">Annullato</SelectItem>
               </SelectContent>
             </Select>
+            <Select value={slaFilter} onValueChange={setSlaFilter}>
+              <SelectTrigger className="w-full sm:w-40" data-testid="select-filter-sla">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">
+                  <span className="flex items-center gap-2">
+                    <Clock className="h-3 w-3" />
+                    Tutti SLA
+                  </span>
+                </SelectItem>
+                <SelectItem value="in_time">
+                  <span className="flex items-center gap-2">
+                    <Clock className="h-3 w-3 text-green-500" />
+                    In Tempo
+                  </span>
+                </SelectItem>
+                <SelectItem value="late">
+                  <span className="flex items-center gap-2">
+                    <AlertTriangle className="h-3 w-3 text-yellow-500" />
+                    In Ritardo
+                  </span>
+                </SelectItem>
+                <SelectItem value="urgent">
+                  <span className="flex items-center gap-2">
+                    <AlertCircle className="h-3 w-3 text-red-500" />
+                    Urgente
+                  </span>
+                </SelectItem>
+              </SelectContent>
+            </Select>
             <Popover>
               <PopoverTrigger asChild>
                 <Button variant="outline" className="w-full sm:w-64" data-testid="button-date-range">
@@ -365,11 +410,42 @@ export default function AdminRepairs() {
                           setDrawerOpen(true);
                         }}
                       >
-                        <SLABadge 
-                          repairId={repair.id}
-                          status={repair.status} 
-                          fallbackDate={repair.createdAt}
-                        />
+                        {repair.slaSeverity && (
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Badge 
+                                variant="outline" 
+                                className={
+                                  repair.slaSeverity === "urgent" 
+                                    ? "bg-red-500/10 text-red-700 dark:text-red-400 border-red-300 dark:border-red-700 gap-1 animate-pulse"
+                                    : repair.slaSeverity === "late"
+                                    ? "bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 border-yellow-300 dark:border-yellow-700 gap-1"
+                                    : "bg-green-500/10 text-green-700 dark:text-green-400 border-green-300 dark:border-green-700 gap-1"
+                                }
+                                data-testid={`badge-sla-${repair.slaSeverity}`}
+                              >
+                                {repair.slaSeverity === "urgent" ? (
+                                  <AlertCircle className="h-3 w-3" />
+                                ) : repair.slaSeverity === "late" ? (
+                                  <AlertTriangle className="h-3 w-3" />
+                                ) : (
+                                  <Clock className="h-3 w-3" />
+                                )}
+                              </Badge>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>
+                                {repair.slaPhase}: {
+                                  repair.slaMinutesInState >= 1440
+                                    ? `${Math.floor(repair.slaMinutesInState / 1440)} giorni ${Math.floor((repair.slaMinutesInState % 1440) / 60)}h`
+                                    : repair.slaMinutesInState >= 60
+                                    ? `${Math.floor(repair.slaMinutesInState / 60)}h ${repair.slaMinutesInState % 60}m`
+                                    : `${repair.slaMinutesInState} min`
+                                }
+                              </p>
+                            </TooltipContent>
+                          </Tooltip>
+                        )}
                       </TableCell>
                       <TableCell 
                         className="text-sm text-muted-foreground cursor-pointer"

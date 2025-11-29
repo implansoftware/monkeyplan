@@ -2124,7 +2124,33 @@ export function registerRoutes(app: Express): Server {
       }
       
       const orders = await storage.listRepairOrders(filters);
-      res.json(orders);
+      
+      // Compute SLA for each order
+      const { loadSLAConfig, computeSLASeverity } = await import("./sla-utils");
+      const slaConfig = await loadSLAConfig();
+      const slaSeverityFilter = req.query.slaSeverity as string | undefined;
+      
+      const ordersWithSLA = await Promise.all(orders.map(async (order) => {
+        const currentState = await storage.getCurrentRepairOrderState(order.id);
+        const stateEnteredAt = currentState?.enteredAt || order.createdAt;
+        const { severity, minutesInState, phase } = computeSLASeverity(order.status, stateEnteredAt, slaConfig);
+        
+        return {
+          ...order,
+          slaSeverity: severity,
+          slaMinutesInState: minutesInState,
+          slaPhase: phase,
+          slaEnteredAt: stateEnteredAt.toISOString(),
+        };
+      }));
+      
+      // Apply SLA severity filter if provided
+      let filteredOrders = ordersWithSLA;
+      if (slaSeverityFilter && slaSeverityFilter !== 'all') {
+        filteredOrders = ordersWithSLA.filter(order => order.slaSeverity === slaSeverityFilter);
+      }
+      
+      res.json(filteredOrders);
     } catch (error: any) {
       res.status(500).send(error.message);
     }
