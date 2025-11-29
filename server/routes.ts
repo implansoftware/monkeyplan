@@ -410,6 +410,27 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Repair Order Current SLA State
+  app.get("/api/repairs/:id/sla-state", requireAuth, async (req, res) => {
+    try {
+      const repair = await storage.getRepairOrder(req.params.id);
+      if (!repair) {
+        return res.status(404).send("Repair order not found");
+      }
+      
+      const currentState = await storage.getCurrentRepairOrderState(req.params.id);
+      const stateEnteredAt = currentState?.enteredAt || repair.createdAt;
+      
+      res.json({
+        status: repair.status,
+        stateEnteredAt: stateEnteredAt.toISOString(),
+        currentState: currentState || null
+      });
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
   // Supplier Return State History - List
   app.get("/api/supplier-returns/:id/state-history", requireAuth, async (req, res) => {
     try {

@@ -19,6 +19,7 @@ import { it } from "date-fns/locale";
 import type { DateRange } from "react-day-picker";
 import { RepairOrderDetailDrawer } from "@/components/RepairOrderDetailDrawer";
 import { AcceptanceWizardDialog } from "@/components/AcceptanceWizardDialog";
+import { SLABadge } from "@/components/SLABadge";
 
 export default function AdminRepairs() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -293,6 +294,7 @@ export default function AdminRepairs() {
                   <TableHead>Problema</TableHead>
                   <TableHead>Costo</TableHead>
                   <TableHead>Stato</TableHead>
+                  <TableHead>SLA</TableHead>
                   <TableHead>Data</TableHead>
                   <TableHead className="text-right">Azioni</TableHead>
                 </TableRow>
@@ -355,6 +357,19 @@ export default function AdminRepairs() {
                         }}
                       >
                         {getStatusBadge(repair.status)}
+                      </TableCell>
+                      <TableCell
+                        className="cursor-pointer"
+                        onClick={() => {
+                          setSelectedRepairId(repair.id);
+                          setDrawerOpen(true);
+                        }}
+                      >
+                        <SLABadge 
+                          repairId={repair.id}
+                          status={repair.status} 
+                          fallbackDate={repair.createdAt}
+                        />
                       </TableCell>
                       <TableCell 
                         className="text-sm text-muted-foreground cursor-pointer"
