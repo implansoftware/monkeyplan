@@ -188,7 +188,7 @@ export default function AdminSuppliers() {
                   <TabsTrigger value="commercial">Condizioni</TabsTrigger>
                 </TabsList>
 
-                <TabsContent value="general" className="space-y-4 mt-4">
+                <TabsContent value="general" className="space-y-4 mt-4" forceMount hidden={activeTab !== "general"}>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="code">Codice Fornitore *</Label>
@@ -254,7 +254,7 @@ export default function AdminSuppliers() {
                   </div>
                 </TabsContent>
 
-                <TabsContent value="contact" className="space-y-4 mt-4">
+                <TabsContent value="contact" className="space-y-4 mt-4" forceMount hidden={activeTab !== "contact"}>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="email">Email</Label>
@@ -341,7 +341,7 @@ export default function AdminSuppliers() {
                   </div>
                 </TabsContent>
 
-                <TabsContent value="communication" className="space-y-4 mt-4">
+                <TabsContent value="communication" className="space-y-4 mt-4" forceMount hidden={activeTab !== "communication"}>
                   <div className="space-y-2">
                     <Label htmlFor="communicationChannel">Canale Preferito *</Label>
                     <Select 
@@ -448,7 +448,7 @@ export default function AdminSuppliers() {
                   </div>
                 </TabsContent>
 
-                <TabsContent value="commercial" className="space-y-4 mt-4">
+                <TabsContent value="commercial" className="space-y-4 mt-4" forceMount hidden={activeTab !== "commercial"}>
                   <div className="space-y-2">
                     <Label htmlFor="paymentTerms">Condizioni di Pagamento</Label>
                     <Input 
