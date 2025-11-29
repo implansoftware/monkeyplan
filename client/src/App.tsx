@@ -31,6 +31,7 @@ import AdminChat from "@/pages/admin/chat";
 import AdminActivityLogs from "@/pages/admin/activity-logs";
 import AdminAnalytics from "@/pages/admin/analytics";
 import AdminSettings from "@/pages/admin/settings";
+import AdminSuppliers from "@/pages/admin/suppliers";
 import DiagnosisList from "@/pages/DiagnosisList";
 import QuotesList from "@/pages/QuotesList";
 
@@ -83,6 +84,7 @@ function Router() {
       <ProtectedRoute path="/admin/analytics" component={AdminAnalytics} />
       <ProtectedRoute path="/admin/diagnostics" component={DiagnosisList} />
       <ProtectedRoute path="/admin/quotes" component={QuotesList} />
+      <ProtectedRoute path="/admin/suppliers" component={AdminSuppliers} />
       <ProtectedRoute path="/admin/settings" component={AdminSettings} />
       
       {/* Reseller routes */}
