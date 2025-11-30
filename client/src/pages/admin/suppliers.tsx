@@ -70,13 +70,16 @@ export default function AdminSuppliers() {
   const [editingSupplier, setEditingSupplier] = useState<Supplier | null>(null);
   const [activeTab, setActiveTab] = useState("general");
   const [selectedCity, setSelectedCity] = useState("");
+  const [selectedApiType, setSelectedApiType] = useState<string>("");
   const { toast } = useToast();
 
   useEffect(() => {
     if (editingSupplier) {
       setSelectedCity(editingSupplier.city || "");
+      setSelectedApiType(editingSupplier.apiType || "");
     } else {
       setSelectedCity("");
+      setSelectedApiType("");
     }
   }, [editingSupplier]);
 
@@ -583,7 +586,8 @@ export default function AdminSuppliers() {
                     <Label htmlFor="apiType">Tipo Integrazione</Label>
                     <Select 
                       name="apiType" 
-                      defaultValue={editingSupplier?.apiType || ""}
+                      value={selectedApiType}
+                      onValueChange={setSelectedApiType}
                     >
                       <SelectTrigger data-testid="select-api-type">
                         <SelectValue placeholder="Seleziona tipo..." />
@@ -596,6 +600,11 @@ export default function AdminSuppliers() {
                         <SelectItem value="custom">Personalizzato</SelectItem>
                       </SelectContent>
                     </Select>
+                    {selectedApiType === 'foneday' && (
+                      <p className="text-xs text-muted-foreground">
+                        Gli endpoint Foneday sono preconfigurati automaticamente
+                      </p>
+                    )}
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
@@ -633,60 +642,62 @@ export default function AdminSuppliers() {
                     </div>
                   </div>
 
-                  <div className="border rounded-lg p-4 space-y-4">
-                    <div className="flex items-center gap-2 text-sm font-medium">
-                      <Link2 className="h-4 w-4" />
-                      Endpoint API
+                  {selectedApiType !== 'foneday' && (
+                    <div className="border rounded-lg p-4 space-y-4">
+                      <div className="flex items-center gap-2 text-sm font-medium">
+                        <Link2 className="h-4 w-4" />
+                        Endpoint API
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="apiProductsEndpoint">Endpoint Prodotti</Label>
+                          <Input 
+                            id="apiProductsEndpoint" 
+                            name="apiProductsEndpoint" 
+                            type="url"
+                            placeholder="https://api.fornitore.com/products"
+                            defaultValue={editingSupplier?.apiProductsEndpoint || ""}
+                            data-testid="input-api-products-endpoint" 
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="apiOrdersEndpoint">Endpoint Ordini</Label>
+                          <Input 
+                            id="apiOrdersEndpoint" 
+                            name="apiOrdersEndpoint" 
+                            type="url"
+                            placeholder="https://api.fornitore.com/orders"
+                            defaultValue={editingSupplier?.apiOrdersEndpoint || ""}
+                            data-testid="input-api-orders-endpoint" 
+                          />
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="apiCartEndpoint">Endpoint Carrello</Label>
+                          <Input 
+                            id="apiCartEndpoint" 
+                            name="apiCartEndpoint" 
+                            type="url"
+                            placeholder="https://api.fornitore.com/cart"
+                            defaultValue={editingSupplier?.apiCartEndpoint || ""}
+                            data-testid="input-api-cart-endpoint" 
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="apiInvoicesEndpoint">Endpoint Fatture</Label>
+                          <Input 
+                            id="apiInvoicesEndpoint" 
+                            name="apiInvoicesEndpoint" 
+                            type="url"
+                            placeholder="https://api.fornitore.com/invoices"
+                            defaultValue={editingSupplier?.apiInvoicesEndpoint || ""}
+                            data-testid="input-api-invoices-endpoint" 
+                          />
+                        </div>
+                      </div>
                     </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="apiProductsEndpoint">Endpoint Prodotti</Label>
-                        <Input 
-                          id="apiProductsEndpoint" 
-                          name="apiProductsEndpoint" 
-                          type="url"
-                          placeholder="https://api.fornitore.com/products"
-                          defaultValue={editingSupplier?.apiProductsEndpoint || ""}
-                          data-testid="input-api-products-endpoint" 
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="apiOrdersEndpoint">Endpoint Ordini</Label>
-                        <Input 
-                          id="apiOrdersEndpoint" 
-                          name="apiOrdersEndpoint" 
-                          type="url"
-                          placeholder="https://api.fornitore.com/orders"
-                          defaultValue={editingSupplier?.apiOrdersEndpoint || ""}
-                          data-testid="input-api-orders-endpoint" 
-                        />
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="apiCartEndpoint">Endpoint Carrello</Label>
-                        <Input 
-                          id="apiCartEndpoint" 
-                          name="apiCartEndpoint" 
-                          type="url"
-                          placeholder="https://api.fornitore.com/cart"
-                          defaultValue={editingSupplier?.apiCartEndpoint || ""}
-                          data-testid="input-api-cart-endpoint" 
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="apiInvoicesEndpoint">Endpoint Fatture</Label>
-                        <Input 
-                          id="apiInvoicesEndpoint" 
-                          name="apiInvoicesEndpoint" 
-                          type="url"
-                          placeholder="https://api.fornitore.com/invoices"
-                          defaultValue={editingSupplier?.apiInvoicesEndpoint || ""}
-                          data-testid="input-api-invoices-endpoint" 
-                        />
-                      </div>
-                    </div>
-                  </div>
+                  )}
 
                   <div className="border rounded-lg p-4 space-y-4">
                     <div className="flex items-center justify-between">
