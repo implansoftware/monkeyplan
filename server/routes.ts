@@ -8303,6 +8303,432 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // ----- UTILITY PRACTICE DOCUMENTS -----
+
+  // GET /api/utility/practices/:id/documents - List practice documents
+  app.get("/api/utility/practices/:id/documents", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const practice = await storage.getUtilityPractice(req.params.id);
+      if (!practice) return res.status(404).send("Pratica non trovata");
+      
+      // RBAC check
+      if (req.user.role === 'customer' && practice.customerId !== req.user.id) {
+        return res.status(403).send("Accesso negato");
+      }
+      if (req.user.role === 'reseller' && practice.resellerId !== req.user.id) {
+        return res.status(403).send("Accesso negato");
+      }
+      
+      const documents = await storage.listUtilityPracticeDocuments(req.params.id);
+      res.json(documents);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // POST /api/utility/practices/:id/documents - Upload practice document
+  app.post("/api/utility/practices/:id/documents", requireAuth, requireRole("admin", "reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const practice = await storage.getUtilityPractice(req.params.id);
+      if (!practice) return res.status(404).send("Pratica non trovata");
+      
+      // RBAC check for resellers
+      if (req.user.role === 'reseller' && practice.resellerId !== req.user.id) {
+        return res.status(403).send("Accesso negato");
+      }
+      
+      const document = await storage.createUtilityPracticeDocument({
+        ...req.body,
+        practiceId: req.params.id,
+        uploadedBy: req.user.id,
+      });
+      
+      // Create timeline event
+      await storage.createUtilityPracticeTimelineEvent({
+        practiceId: req.params.id,
+        eventType: 'document_uploaded',
+        title: `Documento caricato: ${req.body.fileName}`,
+        description: req.body.description,
+        payload: { documentId: document.id, category: req.body.category },
+        createdBy: req.user.id,
+      });
+      
+      res.status(201).json(document);
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+
+  // DELETE /api/utility/practices/:practiceId/documents/:id - Delete practice document
+  app.delete("/api/utility/practices/:practiceId/documents/:id", requireAuth, requireRole("admin", "reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const document = await storage.getUtilityPracticeDocument(req.params.id);
+      if (!document) return res.status(404).send("Documento non trovato");
+      
+      const practice = await storage.getUtilityPractice(document.practiceId);
+      if (!practice) return res.status(404).send("Pratica non trovata");
+      
+      // RBAC check for resellers
+      if (req.user.role === 'reseller' && practice.resellerId !== req.user.id) {
+        return res.status(403).send("Accesso negato");
+      }
+      
+      await storage.deleteUtilityPracticeDocument(req.params.id);
+      
+      // Create timeline event
+      await storage.createUtilityPracticeTimelineEvent({
+        practiceId: document.practiceId,
+        eventType: 'document_deleted',
+        title: `Documento eliminato: ${document.fileName}`,
+        createdBy: req.user.id,
+      });
+      
+      res.status(204).send();
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // ----- UTILITY PRACTICE TASKS -----
+
+  // GET /api/utility/practices/:id/tasks - List practice tasks
+  app.get("/api/utility/practices/:id/tasks", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const practice = await storage.getUtilityPractice(req.params.id);
+      if (!practice) return res.status(404).send("Pratica non trovata");
+      
+      // RBAC check
+      if (req.user.role === 'customer' && practice.customerId !== req.user.id) {
+        return res.status(403).send("Accesso negato");
+      }
+      if (req.user.role === 'reseller' && practice.resellerId !== req.user.id) {
+        return res.status(403).send("Accesso negato");
+      }
+      
+      const tasks = await storage.listUtilityPracticeTasks(req.params.id);
+      res.json(tasks);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // POST /api/utility/practices/:id/tasks - Create practice task
+  app.post("/api/utility/practices/:id/tasks", requireAuth, requireRole("admin", "reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const practice = await storage.getUtilityPractice(req.params.id);
+      if (!practice) return res.status(404).send("Pratica non trovata");
+      
+      // RBAC check for resellers
+      if (req.user.role === 'reseller' && practice.resellerId !== req.user.id) {
+        return res.status(403).send("Accesso negato");
+      }
+      
+      const task = await storage.createUtilityPracticeTask({
+        ...req.body,
+        practiceId: req.params.id,
+        createdBy: req.user.id,
+      });
+      
+      // Create timeline event
+      await storage.createUtilityPracticeTimelineEvent({
+        practiceId: req.params.id,
+        eventType: 'task_created',
+        title: `Nuova attività: ${req.body.title}`,
+        payload: { taskId: task.id },
+        createdBy: req.user.id,
+      });
+      
+      res.status(201).json(task);
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+
+  // PATCH /api/utility/practices/:practiceId/tasks/:id - Update practice task
+  app.patch("/api/utility/practices/:practiceId/tasks/:id", requireAuth, requireRole("admin", "reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const existingTask = await storage.getUtilityPracticeTask(req.params.id);
+      if (!existingTask) return res.status(404).send("Task non trovato");
+      
+      const practice = await storage.getUtilityPractice(existingTask.practiceId);
+      if (!practice) return res.status(404).send("Pratica non trovata");
+      
+      // RBAC check for resellers
+      if (req.user.role === 'reseller' && practice.resellerId !== req.user.id) {
+        return res.status(403).send("Accesso negato");
+      }
+      
+      // Handle task completion
+      let updates = { ...req.body };
+      if (req.body.status === 'completato' && existingTask.status !== 'completato') {
+        updates.completedAt = new Date();
+        updates.completedBy = req.user.id;
+        
+        // Create timeline event for completion
+        await storage.createUtilityPracticeTimelineEvent({
+          practiceId: existingTask.practiceId,
+          eventType: 'task_completed',
+          title: `Attività completata: ${existingTask.title}`,
+          payload: { taskId: existingTask.id },
+          createdBy: req.user.id,
+        });
+      }
+      
+      const task = await storage.updateUtilityPracticeTask(req.params.id, updates);
+      res.json(task);
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+
+  // DELETE /api/utility/practices/:practiceId/tasks/:id - Delete practice task
+  app.delete("/api/utility/practices/:practiceId/tasks/:id", requireAuth, requireRole("admin", "reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const task = await storage.getUtilityPracticeTask(req.params.id);
+      if (!task) return res.status(404).send("Task non trovato");
+      
+      const practice = await storage.getUtilityPractice(task.practiceId);
+      if (!practice) return res.status(404).send("Pratica non trovata");
+      
+      // RBAC check for resellers
+      if (req.user.role === 'reseller' && practice.resellerId !== req.user.id) {
+        return res.status(403).send("Accesso negato");
+      }
+      
+      await storage.deleteUtilityPracticeTask(req.params.id);
+      res.status(204).send();
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // ----- UTILITY PRACTICE NOTES -----
+
+  // GET /api/utility/practices/:id/notes - List practice notes
+  app.get("/api/utility/practices/:id/notes", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const practice = await storage.getUtilityPractice(req.params.id);
+      if (!practice) return res.status(404).send("Pratica non trovata");
+      
+      // RBAC check
+      if (req.user.role === 'customer' && practice.customerId !== req.user.id) {
+        return res.status(403).send("Accesso negato");
+      }
+      if (req.user.role === 'reseller' && practice.resellerId !== req.user.id) {
+        return res.status(403).send("Accesso negato");
+      }
+      
+      let notes = await storage.listUtilityPracticeNotes(req.params.id);
+      
+      // Filter internal notes for customers
+      if (req.user.role === 'customer') {
+        notes = notes.filter(n => n.visibility === 'customer');
+      }
+      
+      res.json(notes);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // POST /api/utility/practices/:id/notes - Create practice note
+  app.post("/api/utility/practices/:id/notes", requireAuth, requireRole("admin", "reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const practice = await storage.getUtilityPractice(req.params.id);
+      if (!practice) return res.status(404).send("Pratica non trovata");
+      
+      // RBAC check for resellers
+      if (req.user.role === 'reseller' && practice.resellerId !== req.user.id) {
+        return res.status(403).send("Accesso negato");
+      }
+      
+      const note = await storage.createUtilityPracticeNote({
+        ...req.body,
+        practiceId: req.params.id,
+        createdBy: req.user.id,
+      });
+      
+      // Create timeline event
+      await storage.createUtilityPracticeTimelineEvent({
+        practiceId: req.params.id,
+        eventType: 'note_added',
+        title: 'Nuova nota aggiunta',
+        description: req.body.body.substring(0, 100) + (req.body.body.length > 100 ? '...' : ''),
+        payload: { noteId: note.id, visibility: req.body.visibility },
+        createdBy: req.user.id,
+      });
+      
+      res.status(201).json(note);
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+
+  // DELETE /api/utility/practices/:practiceId/notes/:id - Delete practice note
+  app.delete("/api/utility/practices/:practiceId/notes/:id", requireAuth, requireRole("admin", "reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const notes = await storage.listUtilityPracticeNotes(req.params.practiceId);
+      const note = notes.find(n => n.id === req.params.id);
+      if (!note) return res.status(404).send("Nota non trovata");
+      
+      const practice = await storage.getUtilityPractice(note.practiceId);
+      if (!practice) return res.status(404).send("Pratica non trovata");
+      
+      // RBAC check for resellers
+      if (req.user.role === 'reseller' && practice.resellerId !== req.user.id) {
+        return res.status(403).send("Accesso negato");
+      }
+      
+      await storage.deleteUtilityPracticeNote(req.params.id);
+      res.status(204).send();
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // ----- UTILITY PRACTICE TIMELINE -----
+
+  // GET /api/utility/practices/:id/timeline - List practice timeline
+  app.get("/api/utility/practices/:id/timeline", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const practice = await storage.getUtilityPractice(req.params.id);
+      if (!practice) return res.status(404).send("Pratica non trovata");
+      
+      // RBAC check
+      if (req.user.role === 'customer' && practice.customerId !== req.user.id) {
+        return res.status(403).send("Accesso negato");
+      }
+      if (req.user.role === 'reseller' && practice.resellerId !== req.user.id) {
+        return res.status(403).send("Accesso negato");
+      }
+      
+      const timeline = await storage.listUtilityPracticeTimeline(req.params.id);
+      res.json(timeline);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // POST /api/utility/practices/:id/timeline - Add timeline event (comment)
+  app.post("/api/utility/practices/:id/timeline", requireAuth, requireRole("admin", "reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const practice = await storage.getUtilityPractice(req.params.id);
+      if (!practice) return res.status(404).send("Pratica non trovata");
+      
+      // RBAC check for resellers
+      if (req.user.role === 'reseller' && practice.resellerId !== req.user.id) {
+        return res.status(403).send("Accesso negato");
+      }
+      
+      const event = await storage.createUtilityPracticeTimelineEvent({
+        practiceId: req.params.id,
+        eventType: req.body.eventType || 'comment',
+        title: req.body.title,
+        description: req.body.description,
+        payload: req.body.payload,
+        createdBy: req.user.id,
+      });
+      
+      res.status(201).json(event);
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+
+  // ----- UTILITY PRACTICE STATE HISTORY -----
+
+  // GET /api/utility/practices/:id/state-history - List practice state history
+  app.get("/api/utility/practices/:id/state-history", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const practice = await storage.getUtilityPractice(req.params.id);
+      if (!practice) return res.status(404).send("Pratica non trovata");
+      
+      // RBAC check
+      if (req.user.role === 'customer' && practice.customerId !== req.user.id) {
+        return res.status(403).send("Accesso negato");
+      }
+      if (req.user.role === 'reseller' && practice.resellerId !== req.user.id) {
+        return res.status(403).send("Accesso negato");
+      }
+      
+      const history = await storage.listUtilityPracticeStateHistory(req.params.id);
+      res.json(history);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // ----- UTILITY PRACTICE STATUS UPDATE -----
+
+  // PATCH /api/utility/practices/:id/status - Update practice status with history
+  app.patch("/api/utility/practices/:id/status", requireAuth, requireRole("admin", "reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const practice = await storage.getUtilityPractice(req.params.id);
+      if (!practice) return res.status(404).send("Pratica non trovata");
+      
+      // RBAC check for resellers
+      if (req.user.role === 'reseller' && practice.resellerId !== req.user.id) {
+        return res.status(403).send("Accesso negato");
+      }
+      
+      const { status, reason } = req.body;
+      
+      // Create state history entry
+      await storage.createUtilityPracticeStateHistory({
+        practiceId: req.params.id,
+        fromStatus: practice.status,
+        toStatus: status,
+        reason,
+        changedBy: req.user.id,
+      });
+      
+      // Create timeline event
+      await storage.createUtilityPracticeTimelineEvent({
+        practiceId: req.params.id,
+        eventType: 'status_change',
+        title: `Stato cambiato: ${practice.status} → ${status}`,
+        description: reason,
+        payload: { fromStatus: practice.status, toStatus: status },
+        createdBy: req.user.id,
+      });
+      
+      // Update practice
+      const updated = await storage.updateUtilityPractice(req.params.id, { status });
+      
+      res.json(updated);
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+
   // ----- UTILITY REPORTS -----
 
   // GET /api/utility/reports/summary - Get utility summary report
