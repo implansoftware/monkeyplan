@@ -56,6 +56,7 @@ type WizardStep = "device-info" | "acceptance-checks" | "review";
 
 const acceptanceWizardSchema = z.object({
   customerId: z.string().min(1, "Customer is required"),
+  branchId: z.string().optional(),
   repairCenterId: z.string().min(1, "Centro di riparazione richiesto"),
   deviceType: z.string().min(1, "Device type required"),
   deviceModel: z.string().optional(),
@@ -329,6 +330,7 @@ export function AcceptanceWizardDialog({
     resolver: zodResolver(acceptanceWizardSchema),
     defaultValues: {
       customerId: customerId || "",
+      branchId: "",
       repairCenterId: "",
       deviceType: "",
       deviceModel: "",
@@ -354,6 +356,21 @@ export function AcceptanceWizardDialog({
       },
     },
   });
+
+  const selectedCustomerId = form.watch("customerId");
+
+  const { data: customerBranches = [] } = useQuery<Array<{
+    id: string;
+    branchCode: string;
+    branchName: string;
+    city: string | null;
+    isActive: boolean;
+  }>>({
+    queryKey: ["/api/customers", selectedCustomerId, "branches"],
+    enabled: !!selectedCustomerId && (user?.role === "admin" || user?.role === "repair_center"),
+  });
+
+  const activeBranches = customerBranches.filter(b => b.isActive);
 
   const createOrderMutation = useMutation({
     mutationFn: async (data: AcceptanceWizardData) => {
@@ -730,7 +747,41 @@ export function AcceptanceWizardDialog({
                 </FormItem>
               )}
             />
-          ) : (
+          ) : null}
+          
+          {!showNewCustomerForm && selectedCustomerId && activeBranches.length > 0 && (
+            <FormField
+              control={form.control}
+              name="branchId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Filiale (opzionale)</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value || ""}>
+                    <FormControl>
+                      <SelectTrigger data-testid="select-branch">
+                        <SelectValue placeholder="Seleziona filiale (opzionale)" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="">-- Nessuna filiale --</SelectItem>
+                      {activeBranches.map((branch) => (
+                        <SelectItem key={branch.id} value={branch.id}>
+                          [{branch.branchCode}] {branch.branchName}
+                          {branch.city && ` - ${branch.city}`}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormDescription>
+                    Se il cliente ha più sedi, seleziona la filiale di provenienza del dispositivo
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          )}
+          
+          {showNewCustomerForm && (
             <Card>
               <CardHeader className="pb-3">
                 <CardTitle className="text-base flex items-center gap-2">
