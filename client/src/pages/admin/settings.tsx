@@ -39,11 +39,11 @@ const defaultSLAThresholds: SLAThresholdsResponse = {
 };
 
 const phaseLabels: Record<string, string> = {
-  diagnosis: "Diagnosi",
-  quote: "Preventivo",
-  parts: "Attesa Ricambi",
-  test: "Test Finale",
-  delivery: "Consegna",
+  diagnosis: "1. Diagnosi",
+  quote: "2. Preventivo",
+  parts: "3. Attesa Ricambi",
+  test: "4. Test Finale",
+  delivery: "5. Consegna",
 };
 
 const phaseDescriptions: Record<string, string> = {
@@ -52,6 +52,14 @@ const phaseDescriptions: Record<string, string> = {
   parts: "Tempo massimo dall'ordine ricambi alla ricezione",
   test: "Tempo massimo dalla riparazione completata al test finale",
   delivery: "Tempo massimo dal dispositivo pronto al ritiro effettivo",
+};
+
+const phaseIcons: Record<string, string> = {
+  diagnosis: "🔍",
+  quote: "📋",
+  parts: "📦",
+  test: "✅",
+  delivery: "🚚",
 };
 
 function minutesToDisplay(minutes: number): { value: number; unit: string } {
@@ -308,17 +316,20 @@ export default function AdminSettings() {
                 const urgentDisplay = minutesToDisplay(slaThresholds[phase].urgentMinutes);
                 
                 return (
-                  <div key={phase} className="border rounded-lg p-4 space-y-4">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h4 className="font-semibold">{phaseLabels[phase]}</h4>
-                        <p className="text-sm text-muted-foreground">{phaseDescriptions[phase]}</p>
+                  <div key={phase} className="border rounded-lg p-4 space-y-4 bg-card">
+                    <div className="flex items-center justify-between flex-wrap gap-2">
+                      <div className="flex items-center gap-3">
+                        <span className="text-2xl">{phaseIcons[phase]}</span>
+                        <div>
+                          <h4 className="font-semibold text-lg">{phaseLabels[phase]}</h4>
+                          <p className="text-sm text-muted-foreground">{phaseDescriptions[phase]}</p>
+                        </div>
                       </div>
                       <div className="flex gap-2">
-                        <Badge variant="outline" className="bg-yellow-500/10 text-yellow-700 border-yellow-300">
+                        <Badge variant="outline" className="bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 border-yellow-300 dark:border-yellow-600">
                           Ritardo: {lateDisplay.value} {lateDisplay.unit}
                         </Badge>
-                        <Badge variant="outline" className="bg-red-500/10 text-red-700 border-red-300">
+                        <Badge variant="outline" className="bg-red-500/10 text-red-700 dark:text-red-400 border-red-300 dark:border-red-600">
                           Urgente: {urgentDisplay.value} {urgentDisplay.unit}
                         </Badge>
                       </div>

@@ -32,12 +32,12 @@ import { useToast } from "@/hooks/use-toast";
 import {
   Wrench, Euro, FileText, Paperclip, Calendar, Package, ClipboardList,
   ClipboardCheck, PackageCheck, Play, CheckCircle, Stethoscope, Receipt,
-  Download, User, ArrowRight, Circle, CheckCircle2, AlertCircle, Gift, Shield, SkipForward,
+  Download, User, ArrowRight, Circle, CheckCircle2, AlertCircle, AlertTriangle, Gift, Shield, SkipForward,
   HardDrive, Building2, Clock, Truck, Loader2
 } from "lucide-react";
 import { format } from "date-fns";
 import { useAuth } from "@/hooks/use-auth";
-import { SLABadge, computeSLASeverity } from "@/components/SLABadge";
+import { computeSLASeverity } from "@/components/SLABadge";
 
 type RepairQuote = {
   id: string;
@@ -148,6 +148,19 @@ export function RepairOrderDetailDrawer({
     },
     enabled: !!repairOrderId && open,
     retry: false,
+  });
+
+  const { data: slaState } = useQuery<{ status: string; stateEnteredAt: string; currentState: any }>({
+    queryKey: ["/api/repairs", repairOrderId, "sla-state"],
+    queryFn: async () => {
+      const response = await fetch(`/api/repairs/${repairOrderId}/sla-state`, {
+        credentials: "include",
+      });
+      if (!response.ok) return null;
+      return response.json();
+    },
+    enabled: !!repairOrderId && open,
+    staleTime: 60000,
   });
 
   const { data: quote } = useQuery<RepairQuote>({
@@ -370,17 +383,63 @@ export function RepairOrderDetailDrawer({
               </div>
               
               {/* SLA Indicator */}
-              {!['consegnato', 'annullato', 'cancelled'].includes(repair.status) && (
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium text-muted-foreground">Tempo SLA</span>
-                  <SLABadge 
-                    repairId={repair.id}
-                    status={repair.status}
-                    fallbackDate={repair.createdAt}
-                    showLabel={true}
-                  />
-                </div>
-              )}
+              {!['consegnato', 'annullato', 'cancelled'].includes(repair.status) && (() => {
+                const statusEnteredAt = slaState?.stateEnteredAt || repair.createdAt;
+                const { severity, minutesInState, phase } = computeSLASeverity(repair.status, statusEnteredAt);
+                
+                if (!severity || severity === "completed" || severity === "unknown") return null;
+                
+                const phaseLabels: Record<string, string> = {
+                  diagnosis: "Diagnosi",
+                  quote: "Preventivo", 
+                  parts: "Ricambi",
+                  test: "Test",
+                  delivery: "Consegna",
+                };
+                
+                const formatMinutes = (mins: number | null) => {
+                  if (mins === null) return "";
+                  if (mins >= 1440) {
+                    const days = Math.floor(mins / 1440);
+                    const hours = Math.floor((mins % 1440) / 60);
+                    return `${days} giorni ${hours}h`;
+                  }
+                  if (mins >= 60) {
+                    const hours = Math.floor(mins / 60);
+                    const minutes = mins % 60;
+                    return `${hours}h ${minutes}m`;
+                  }
+                  return `${mins} min`;
+                };
+                
+                return (
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium text-muted-foreground">Tempo SLA</span>
+                    <Badge 
+                      variant="outline" 
+                      className={
+                        severity === "urgent" 
+                          ? "bg-red-500/10 text-red-700 dark:text-red-400 border-red-300 dark:border-red-700 gap-1 animate-pulse"
+                          : severity === "late"
+                          ? "bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 border-yellow-300 dark:border-yellow-700 gap-1"
+                          : "bg-green-500/10 text-green-700 dark:text-green-400 border-green-300 dark:border-green-700 gap-1"
+                      }
+                    >
+                      {severity === "urgent" ? (
+                        <AlertCircle className="h-3 w-3" />
+                      ) : severity === "late" ? (
+                        <AlertTriangle className="h-3 w-3" />
+                      ) : (
+                        <Clock className="h-3 w-3" />
+                      )}
+                      <span>
+                        {severity === "urgent" ? "Urgente" : severity === "late" ? "In Ritardo" : "In Tempo"}
+                        {minutesInState !== null && phase && ` - ${phaseLabels[phase] || phase}: ${formatMinutes(minutesInState)}`}
+                      </span>
+                    </Badge>
+                  </div>
+                );
+              })()}
             </div>
 
             {/* Workflow Progress - Visual Timeline */}
