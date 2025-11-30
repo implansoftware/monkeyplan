@@ -6749,6 +6749,133 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // ============ FONEDAY API ENDPOINTS ============
+
+  // GET /api/foneday/orders - Get Foneday orders
+  app.get("/api/foneday/orders", requireAuth, requireRole("admin"), async (req, res) => {
+    try {
+      const { fonedayApi } = await import('./services/foneday');
+      const result = await fonedayApi.getOrders();
+      res.json(result);
+    } catch (error: any) {
+      console.error("Foneday orders error:", error);
+      res.status(500).json({ 
+        success: false, 
+        message: error.message || "Errore recupero ordini Foneday" 
+      });
+    }
+  });
+
+  // POST /api/foneday/cart/add - Add items to Foneday cart
+  app.post("/api/foneday/cart/add", requireAuth, requireRole("admin", "repair_center"), async (req, res) => {
+    try {
+      const { articles } = req.body;
+      if (!articles || !Array.isArray(articles) || articles.length === 0) {
+        return res.status(400).send("Articoli mancanti o non validi");
+      }
+
+      const { fonedayApi } = await import('./services/foneday');
+      const result = await fonedayApi.addToCart({ articles });
+      res.json(result);
+    } catch (error: any) {
+      console.error("Foneday cart add error:", error);
+      res.status(500).json({ 
+        success: false, 
+        message: error.message || "Errore aggiunta articoli al carrello" 
+      });
+    }
+  });
+
+  // POST /api/foneday/cart/remove - Remove items from Foneday cart
+  app.post("/api/foneday/cart/remove", requireAuth, requireRole("admin", "repair_center"), async (req, res) => {
+    try {
+      const { articles } = req.body;
+      if (!articles || !Array.isArray(articles) || articles.length === 0) {
+        return res.status(400).send("Articoli mancanti o non validi");
+      }
+
+      const { fonedayApi } = await import('./services/foneday');
+      const result = await fonedayApi.removeFromCart({ articles });
+      res.json(result);
+    } catch (error: any) {
+      console.error("Foneday cart remove error:", error);
+      res.status(500).json({ 
+        success: false, 
+        message: error.message || "Errore rimozione articoli dal carrello" 
+      });
+    }
+  });
+
+  // GET /api/foneday/invoices - Get Foneday invoices
+  app.get("/api/foneday/invoices", requireAuth, requireRole("admin"), async (req, res) => {
+    try {
+      const { fonedayApi } = await import('./services/foneday');
+      const result = await fonedayApi.getInvoices();
+      res.json(result);
+    } catch (error: any) {
+      console.error("Foneday invoices error:", error);
+      res.status(500).json({ 
+        success: false, 
+        message: error.message || "Errore recupero fatture Foneday" 
+      });
+    }
+  });
+
+  // GET /api/foneday/invoices/:number/pdf - Get invoice PDF
+  app.get("/api/foneday/invoices/:number/pdf", requireAuth, requireRole("admin"), async (req, res) => {
+    try {
+      const invoiceNumber = parseInt(req.params.number);
+      if (isNaN(invoiceNumber)) {
+        return res.status(400).send("Numero fattura non valido");
+      }
+
+      const { fonedayApi } = await import('./services/foneday');
+      const result = await fonedayApi.getInvoicePdf(invoiceNumber);
+      res.json(result);
+    } catch (error: any) {
+      console.error("Foneday invoice PDF error:", error);
+      res.status(500).json({ 
+        success: false, 
+        message: error.message || "Errore recupero PDF fattura" 
+      });
+    }
+  });
+
+  // GET /api/foneday/invoices/:number/xml - Get invoice XML
+  app.get("/api/foneday/invoices/:number/xml", requireAuth, requireRole("admin"), async (req, res) => {
+    try {
+      const invoiceNumber = parseInt(req.params.number);
+      if (isNaN(invoiceNumber)) {
+        return res.status(400).send("Numero fattura non valido");
+      }
+
+      const { fonedayApi } = await import('./services/foneday');
+      const xml = await fonedayApi.getInvoiceXml(invoiceNumber);
+      res.type('application/xml').send(xml);
+    } catch (error: any) {
+      console.error("Foneday invoice XML error:", error);
+      res.status(500).json({ 
+        success: false, 
+        message: error.message || "Errore recupero XML fattura" 
+      });
+    }
+  });
+
+  // GET /api/foneday/product/:sku - Get single Foneday product
+  app.get("/api/foneday/product/:sku", requireAuth, requireRole("admin", "repair_center"), async (req, res) => {
+    try {
+      const { fonedayApi } = await import('./services/foneday');
+      const result = await fonedayApi.getProduct(req.params.sku);
+      res.json(result);
+    } catch (error: any) {
+      console.error("Foneday product error:", error);
+      res.status(500).json({ 
+        success: false, 
+        message: error.message || "Errore recupero prodotto Foneday" 
+      });
+    }
+  });
+
   // ============ PRODUCT SUPPLIERS (Relazione Prodotti-Fornitori) ============
 
   // GET /api/products/:id/suppliers - List suppliers for a product
