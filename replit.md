@@ -50,6 +50,14 @@ The backend is an `Express.js` application with TypeScript, featuring a RESTful 
         *   **Sync Logging**: `supplier_sync_logs` table tracks synchronization operations with detailed metrics (products created/updated/failed, duration).
         *   **API Endpoints**: POST `/api/suppliers/:id/test-connection` for connection testing, POST `/api/suppliers/:id/sync-catalog` for catalog synchronization.
         *   **Frontend Tab**: Dedicated "API" tab in supplier management with API type selection, authentication config, multiple endpoint fields, and real-time sync status.
+*   **SIFAR Integration**: Direct integration with SIFAR supplier API for spare parts ordering by resellers.
+    *   **Reseller Credentials**: Secure per-reseller API credential storage (`sifarCredentials` table) with environment selection (collaudo/produzione) and client key management.
+    *   **Store Mapping**: `sifarStores` table links reseller accounts to SIFAR store codes (puntiVendita), enabling multi-location support.
+    *   **REST API Client**: `sifarService.ts` provides typed methods for catalog browsing (categories, groups, brands, models, articles), cart management (add, update, remove, view), and order submission with courier selection.
+    *   **Catalog Browser**: Hierarchical filtering interface allowing resellers to navigate Categories → Groups → Brands → Models → Articles with real-time stock and pricing display.
+    *   **Cart Workflow**: Draft → Active → Completed/Expired status progression with quantity updates, item removal, and order finalization with selected courier.
+    *   **Frontend Pages**: Three dedicated reseller pages (`/reseller/sifar/settings`, `/reseller/sifar/catalog`, `/reseller/sifar/cart`) with Italian UI for credential configuration, catalog browsing, and cart management.
+    *   **API Endpoints**: Backend routes for credential CRUD, store management, catalog queries, cart operations, and order submission with role-based access (reseller only).
 
 ## External Dependencies
 
