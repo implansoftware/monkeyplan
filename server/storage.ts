@@ -33,6 +33,7 @@ import {
   UtilityPracticeNote, InsertUtilityPracticeNote,
   UtilityPracticeTimelineEvent, InsertUtilityPracticeTimelineEvent,
   UtilityPracticeStateHistoryEntry, InsertUtilityPracticeStateHistoryEntry,
+  SifarCredential, InsertSifarCredential, SifarStore, InsertSifarStore,
   users, repairCenters, products, repairOrders, tickets, ticketMessages,
   invoices, billingData, chatMessages, inventoryMovements, inventoryStock, activityLogs, analyticsCache,
   notifications, notificationPreferences, repairAttachments, repairAcceptance, repairDiagnostics,
@@ -46,7 +47,8 @@ import {
   customerBranches,
   utilitySuppliers, utilityServices, utilityPractices, utilityCommissions,
   utilityPracticeDocuments, utilityPracticeTasks, utilityPracticeNotes,
-  utilityPracticeTimeline, utilityPracticeStateHistory
+  utilityPracticeTimeline, utilityPracticeStateHistory,
+  sifarCredentials, sifarStores
 } from "@shared/schema";
 import { db, pool } from "./db";
 import { eq, and, or, desc, lt, sql, not } from "drizzle-orm";
@@ -410,6 +412,19 @@ export interface IStorage {
   // Utility Practice State History
   listUtilityPracticeStateHistory(practiceId: string): Promise<UtilityPracticeStateHistoryEntry[]>;
   createUtilityPracticeStateHistory(entry: InsertUtilityPracticeStateHistoryEntry): Promise<UtilityPracticeStateHistoryEntry>;
+  
+  // SIFAR Integration
+  getSifarCredentialByReseller(resellerId: string): Promise<SifarCredential | undefined>;
+  getSifarCredential(id: string): Promise<SifarCredential | undefined>;
+  createSifarCredential(credential: InsertSifarCredential): Promise<SifarCredential>;
+  updateSifarCredential(id: string, updates: Partial<InsertSifarCredential>): Promise<SifarCredential>;
+  deleteSifarCredential(id: string): Promise<void>;
+  
+  listSifarStores(credentialId: string): Promise<SifarStore[]>;
+  getSifarStore(id: string): Promise<SifarStore | undefined>;
+  createSifarStore(store: InsertSifarStore): Promise<SifarStore>;
+  updateSifarStore(id: string, updates: Partial<InsertSifarStore>): Promise<SifarStore>;
+  deleteSifarStore(id: string): Promise<void>;
   
   sessionStore: session.Store;
 }
@@ -3374,6 +3389,78 @@ export class DatabaseStorage implements IStorage {
       .values(entry)
       .returning();
     return created;
+  }
+
+  // SIFAR Credentials
+  async getSifarCredentialByReseller(resellerId: string): Promise<SifarCredential | undefined> {
+    const [credential] = await db.select()
+      .from(sifarCredentials)
+      .where(eq(sifarCredentials.resellerId, resellerId))
+      .limit(1);
+    return credential;
+  }
+
+  async getSifarCredential(id: string): Promise<SifarCredential | undefined> {
+    const [credential] = await db.select()
+      .from(sifarCredentials)
+      .where(eq(sifarCredentials.id, id))
+      .limit(1);
+    return credential;
+  }
+
+  async createSifarCredential(credential: InsertSifarCredential): Promise<SifarCredential> {
+    const [created] = await db.insert(sifarCredentials)
+      .values(credential)
+      .returning();
+    return created;
+  }
+
+  async updateSifarCredential(id: string, updates: Partial<InsertSifarCredential>): Promise<SifarCredential> {
+    const [updated] = await db.update(sifarCredentials)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(sifarCredentials.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteSifarCredential(id: string): Promise<void> {
+    await db.delete(sifarCredentials)
+      .where(eq(sifarCredentials.id, id));
+  }
+
+  // SIFAR Stores
+  async listSifarStores(credentialId: string): Promise<SifarStore[]> {
+    return await db.select()
+      .from(sifarStores)
+      .where(eq(sifarStores.credentialId, credentialId));
+  }
+
+  async getSifarStore(id: string): Promise<SifarStore | undefined> {
+    const [store] = await db.select()
+      .from(sifarStores)
+      .where(eq(sifarStores.id, id))
+      .limit(1);
+    return store;
+  }
+
+  async createSifarStore(store: InsertSifarStore): Promise<SifarStore> {
+    const [created] = await db.insert(sifarStores)
+      .values(store)
+      .returning();
+    return created;
+  }
+
+  async updateSifarStore(id: string, updates: Partial<InsertSifarStore>): Promise<SifarStore> {
+    const [updated] = await db.update(sifarStores)
+      .set(updates)
+      .where(eq(sifarStores.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteSifarStore(id: string): Promise<void> {
+    await db.delete(sifarStores)
+      .where(eq(sifarStores.id, id));
   }
 }
 

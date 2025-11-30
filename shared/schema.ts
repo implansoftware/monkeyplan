@@ -969,6 +969,182 @@ export const supplierSyncLogs = pgTable("supplier_sync_logs", {
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
+// ==========================================
+// SIFAR INTEGRATION TABLES
+// ==========================================
+
+// Ambiente SIFAR (test/produzione)
+export const sifarEnvironmentEnum = pgEnum("sifar_environment", [
+  "collaudo",            // https://collaudo.sifar.it/apiv2/
+  "produzione",          // https://www.sifar.it/apiv2/
+]);
+
+// Stato carrello SIFAR
+export const sifarCartStatusEnum = pgEnum("sifar_cart_status", [
+  "active",              // Carrello attivo
+  "submitted",           // Ordine inviato
+  "expired",             // Carrello scaduto
+]);
+
+// Credenziali SIFAR per Reseller
+export const sifarCredentials = pgTable("sifar_credentials", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  resellerId: varchar("reseller_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  
+  // Credenziali SIFAR
+  clientKey: text("client_key").notNull(), // Token SIFAR (CLIENT_KEY)
+  allowedIp: text("allowed_ip"), // IP fisso autorizzato
+  partnerCode: text("partner_code"), // Codice partner (prefisso XX)
+  
+  // Ambiente
+  environment: sifarEnvironmentEnum("environment").notNull().default("collaudo"),
+  
+  // Configurazione default
+  defaultCourierId: text("default_courier_id"), // Corriere predefinito
+  
+  // Stato
+  isActive: boolean("is_active").notNull().default(true),
+  lastTestAt: timestamp("last_test_at"), // Ultimo test connessione
+  lastTestResult: text("last_test_result"), // Risultato ultimo test
+  
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+// Punti Vendita SIFAR (mappatura filiali)
+export const sifarStores = pgTable("sifar_stores", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  credentialId: varchar("credential_id").notNull().references(() => sifarCredentials.id, { onDelete: "cascade" }),
+  
+  // Dati SIFAR
+  storeCode: text("store_code").notNull(), // Codice punto vendita SIFAR (es: XX001)
+  storeName: text("store_name").notNull(), // Nome punto vendita
+  
+  // Mappatura interna (opzionale)
+  branchId: varchar("branch_id").references(() => customerBranches.id, { onDelete: "set null" }),
+  repairCenterId: varchar("repair_center_id").references(() => repairCenters.id, { onDelete: "set null" }),
+  
+  isActive: boolean("is_active").notNull().default(true),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+// Carrelli SIFAR attivi (per tracciamento)
+export const sifarCarts = pgTable("sifar_carts", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  credentialId: varchar("credential_id").notNull().references(() => sifarCredentials.id, { onDelete: "cascade" }),
+  storeId: varchar("store_id").notNull().references(() => sifarStores.id, { onDelete: "cascade" }),
+  
+  // Stato carrello
+  status: sifarCartStatusEnum("status").notNull().default("active"),
+  itemsCount: integer("items_count").notNull().default(0),
+  totalCents: integer("total_cents").notNull().default(0),
+  
+  // Dati carrello SIFAR (cache)
+  cartData: text("cart_data"), // JSON del carrello SIFAR
+  
+  // Tracking
+  lastSyncAt: timestamp("last_sync_at"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+// Ordini SIFAR (storico)
+export const sifarOrders = pgTable("sifar_orders", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  credentialId: varchar("credential_id").notNull().references(() => sifarCredentials.id, { onDelete: "cascade" }),
+  storeId: varchar("store_id").notNull().references(() => sifarStores.id, { onDelete: "cascade" }),
+  
+  // Dati ordine SIFAR
+  sifarOrderId: text("sifar_order_id"), // ID ordine restituito da SIFAR
+  sifarOrderNumber: text("sifar_order_number"), // Numero ordine SIFAR
+  
+  // Importi
+  subtotalCents: integer("subtotal_cents").notNull(),
+  shippingCents: integer("shipping_cents").default(0),
+  taxCents: integer("tax_cents").default(0),
+  totalCents: integer("total_cents").notNull(),
+  
+  // Spedizione
+  courierId: text("courier_id"),
+  courierName: text("courier_name"),
+  trackingNumber: text("tracking_number"),
+  
+  // Stato
+  status: text("status").notNull().default("pending"), // pending, confirmed, shipped, delivered
+  
+  // Dati completi ordine (JSON)
+  orderData: text("order_data"),
+  
+  // Link a ordine fornitore interno (opzionale)
+  supplierOrderId: varchar("supplier_order_id").references(() => supplierOrders.id, { onDelete: "set null" }),
+  
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+// Catalogo SIFAR sincronizzato
+export const sifarCatalog = pgTable("sifar_catalog", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  
+  // Identificatori SIFAR
+  codiceArticolo: text("codice_articolo").notNull().unique(), // Codice articolo SIFAR
+  ean: text("ean"), // Codice EAN
+  
+  // Dati prodotto
+  descrizione: text("descrizione").notNull(),
+  marca: text("marca"), // Brand (es: Samsung, Apple)
+  modello: text("modello"), // Modello dispositivo
+  categoria: text("categoria"), // Categoria ricambio
+  gruppo: text("gruppo"), // Gruppo/sottocategoria
+  
+  // Prezzo
+  prezzoNetto: integer("prezzo_netto"), // Prezzo in centesimi
+  aliquotaIva: integer("aliquota_iva").default(22), // Aliquota IVA %
+  
+  // Disponibilità
+  disponibile: boolean("disponibile").notNull().default(false),
+  giacenza: integer("giacenza"), // Quantità disponibile
+  contattaPerOrdinare: boolean("contatta_per_ordinare").default(false),
+  
+  // Immagine
+  imageUrl: text("image_url"),
+  
+  // Qualità
+  qualita: text("qualita"), // Original, Compatible, Refurbished
+  mesiGaranzia: integer("mesi_garanzia").default(0),
+  
+  // Sincronizzazione
+  lastSyncAt: timestamp("last_sync_at").notNull().defaultNow(),
+  rawData: text("raw_data"), // JSON completo risposta API
+  
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+// Modelli dispositivi SIFAR
+export const sifarModels = pgTable("sifar_models", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  
+  codiceModello: text("codice_modello").notNull().unique(), // Codice modello SIFAR
+  descrizione: text("descrizione").notNull(), // Descrizione (es: "Samsung Galaxy A41")
+  codiceMarca: text("codice_marca").notNull(), // Codice brand
+  nomeMarca: text("nome_marca"), // Nome brand
+  imageUrl: text("image_url"),
+  
+  lastSyncAt: timestamp("last_sync_at").notNull().defaultNow(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+// Compatibilità prodotto-modello SIFAR
+export const sifarProductCompatibility = pgTable("sifar_product_compatibility", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  
+  catalogId: varchar("catalog_id").notNull().references(() => sifarCatalog.id, { onDelete: "cascade" }),
+  modelId: varchar("model_id").notNull().references(() => sifarModels.id, { onDelete: "cascade" }),
+  
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
 // Supplier Orders (Ordini a Fornitori)
 export const supplierOrders = pgTable("supplier_orders", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -2263,6 +2439,46 @@ export const insertSupplierCommunicationLogSchema = createInsertSchema(supplierC
   createdAt: true,
 });
 
+// SIFAR Integration schemas
+export const insertSifarCredentialSchema = createInsertSchema(sifarCredentials).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertSifarStoreSchema = createInsertSchema(sifarStores).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertSifarCartSchema = createInsertSchema(sifarCarts).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertSifarOrderSchema = createInsertSchema(sifarOrders).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertSifarCatalogSchema = createInsertSchema(sifarCatalog).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertSifarModelSchema = createInsertSchema(sifarModels).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertSifarProductCompatibilitySchema = createInsertSchema(sifarProductCompatibility).omit({
+  id: true,
+  createdAt: true,
+});
+
 // Parts Load Documents schemas
 export const insertPartsLoadDocumentSchema = createInsertSchema(partsLoadDocuments).omit({
   id: true,
@@ -2585,6 +2801,28 @@ export type InsertSupplierReturnItem = z.infer<typeof insertSupplierReturnItemSc
 
 export type SupplierCommunicationLog = typeof supplierCommunicationLogs.$inferSelect;
 export type InsertSupplierCommunicationLog = z.infer<typeof insertSupplierCommunicationLogSchema>;
+
+// SIFAR Integration types
+export type SifarCredential = typeof sifarCredentials.$inferSelect;
+export type InsertSifarCredential = z.infer<typeof insertSifarCredentialSchema>;
+
+export type SifarStore = typeof sifarStores.$inferSelect;
+export type InsertSifarStore = z.infer<typeof insertSifarStoreSchema>;
+
+export type SifarCart = typeof sifarCarts.$inferSelect;
+export type InsertSifarCart = z.infer<typeof insertSifarCartSchema>;
+
+export type SifarOrder = typeof sifarOrders.$inferSelect;
+export type InsertSifarOrder = z.infer<typeof insertSifarOrderSchema>;
+
+export type SifarCatalogProduct = typeof sifarCatalog.$inferSelect;
+export type InsertSifarCatalogProduct = z.infer<typeof insertSifarCatalogSchema>;
+
+export type SifarModel = typeof sifarModels.$inferSelect;
+export type InsertSifarModel = z.infer<typeof insertSifarModelSchema>;
+
+export type SifarProductCompatibility = typeof sifarProductCompatibility.$inferSelect;
+export type InsertSifarProductCompatibility = z.infer<typeof insertSifarProductCompatibilitySchema>;
 
 // Parts Load types
 export type PartsLoadDocument = typeof partsLoadDocuments.$inferSelect;
