@@ -64,6 +64,7 @@ const menuItems = {
     { title: "Carico Ricambi", url: "/admin/parts-load", icon: ClipboardList, group: "Magazzino" },
     { title: "Utility", url: "/admin/utility", icon: Zap, group: "Utility" },
     { title: "Fornitori Utility", url: "/admin/utility/suppliers", icon: Phone, group: "Utility" },
+    { title: "Listino Servizi", url: "/admin/utility/services", icon: Package, group: "Utility" },
     { title: "Pratiche", url: "/admin/utility/practices", icon: FileCheck, group: "Utility" },
     { title: "Compensi", url: "/admin/utility/commissions", icon: Coins, group: "Utility" },
     { title: "Report Utility", url: "/admin/utility/reports", icon: PieChart, group: "Utility" },
