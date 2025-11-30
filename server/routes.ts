@@ -2768,8 +2768,11 @@ export function registerRoutes(app: Express): Server {
       } else if (req.user.role === 'customer') {
         // Customer sees only own invoices
         invoices = await storage.listInvoices({ customerId: req.user.id });
+      } else if (req.user.role === 'reseller') {
+        // Reseller sees invoices for their customers (via repair orders they created)
+        invoices = await storage.listInvoices({ resellerId: req.user.id });
       } else {
-        // Reseller/Repair Center: no access to invoices
+        // Repair Center: no access to invoices
         return res.status(403).send("Access denied");
       }
       

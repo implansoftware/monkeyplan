@@ -27,13 +27,44 @@ export default function ResellerInvoices() {
     queryKey: ["/api/invoices"],
   });
 
+  const filteredInvoices = invoices.filter((invoice) => {
+    const matchesSearch = invoice.invoiceNumber.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesStatus = statusFilter === "all" || invoice.paymentStatus === statusFilter;
+    let matchesDate = true;
+    if (dateRange?.from) {
+      const invoiceDate = new Date(invoice.createdAt);
+      matchesDate = invoiceDate >= dateRange.from;
+      if (dateRange.to) {
+        matchesDate = matchesDate && invoiceDate <= dateRange.to;
+      }
+    }
+    return matchesSearch && matchesStatus && matchesDate;
+  });
+
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case "paid": return <Badge>Pagata</Badge>;
+      case "pending": return <Badge variant="secondary">In sospeso</Badge>;
+      case "overdue": return <Badge variant="destructive">Scaduta</Badge>;
+      case "cancelled": return <Badge variant="outline">Annullata</Badge>;
+      default: return <Badge variant="outline">{status}</Badge>;
+    }
+  };
+
+  const formatCurrency = (cents: number) => {
+    return new Intl.NumberFormat("it-IT", {
+      style: "currency",
+      currency: "EUR",
+    }).format(cents / 100);
+  };
+
+  const totalAmount = filteredInvoices.reduce((sum, inv) => sum + inv.total, 0);
+  const paidAmount = filteredInvoices.filter(inv => inv.paymentStatus === 'paid').reduce((sum, inv) => sum + inv.total, 0);
+  const pendingAmount = filteredInvoices.filter(inv => inv.paymentStatus === 'pending').reduce((sum, inv) => sum + inv.total, 0);
+
   const handleExport = async () => {
     try {
       setIsExporting(true);
-      const params = new URLSearchParams();
-      if (statusFilter !== "all") params.append("status", statusFilter);
-      if (dateRange?.from) params.append("startDate", format(dateRange.from, "yyyy-MM-dd"));
-      if (dateRange?.to) params.append("endDate", format(dateRange.to, "yyyy-MM-dd"));
       
       const csv = [
         ['Numero', 'Data', 'Importo', 'Metodo Pagamento', 'Scadenza', 'Stato'].join(','),
@@ -71,41 +102,6 @@ export default function ResellerInvoices() {
       setIsExporting(false);
     }
   };
-
-  const filteredInvoices = invoices.filter((invoice) => {
-    const matchesSearch = invoice.invoiceNumber.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesStatus = statusFilter === "all" || invoice.paymentStatus === statusFilter;
-    let matchesDate = true;
-    if (dateRange?.from) {
-      const invoiceDate = new Date(invoice.createdAt);
-      matchesDate = invoiceDate >= dateRange.from;
-      if (dateRange.to) {
-        matchesDate = matchesDate && invoiceDate <= dateRange.to;
-      }
-    }
-    return matchesSearch && matchesStatus && matchesDate;
-  });
-
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case "paid": return <Badge>Pagata</Badge>;
-      case "pending": return <Badge variant="secondary">In sospeso</Badge>;
-      case "overdue": return <Badge variant="destructive">Scaduta</Badge>;
-      case "cancelled": return <Badge variant="outline">Annullata</Badge>;
-      default: return <Badge variant="outline">{status}</Badge>;
-    }
-  };
-
-  const formatCurrency = (cents: number) => {
-    return new Intl.NumberFormat("it-IT", {
-      style: "currency",
-      currency: "EUR",
-    }).format(cents / 100);
-  };
-
-  const totalAmount = filteredInvoices.reduce((sum, inv) => sum + inv.total, 0);
-  const paidAmount = filteredInvoices.filter(inv => inv.paymentStatus === 'paid').reduce((sum, inv) => sum + inv.total, 0);
-  const pendingAmount = filteredInvoices.filter(inv => inv.paymentStatus === 'pending').reduce((sum, inv) => sum + inv.total, 0);
 
   return (
     <div className="space-y-6" data-testid="page-reseller-invoices">

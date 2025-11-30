@@ -51,7 +51,7 @@ import {
   sifarCredentials, sifarStores
 } from "@shared/schema";
 import { db, pool } from "./db";
-import { eq, and, or, desc, lt, sql, not } from "drizzle-orm";
+import { eq, and, or, desc, lt, sql, not, inArray } from "drizzle-orm";
 import session from "express-session";
 import connectPg from "connect-pg-simple";
 
@@ -102,7 +102,7 @@ export interface IStorage {
   createTicketMessage(message: InsertTicketMessage): Promise<TicketMessage>;
   
   // Invoices
-  listInvoices(filters?: { customerId?: string; paymentStatus?: string }): Promise<Invoice[]>;
+  listInvoices(filters?: { customerId?: string; paymentStatus?: string; resellerId?: string }): Promise<Invoice[]>;
   getInvoice(id: string): Promise<Invoice | undefined>;
   createInvoice(invoice: InsertInvoice): Promise<Invoice>;
   updateInvoice(id: string, updates: Partial<Pick<Invoice, 'paymentStatus' | 'paidDate' | 'notes' | 'paymentMethod'>>): Promise<Invoice>;
@@ -764,7 +764,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Invoices
-  async listInvoices(filters?: { customerId?: string; paymentStatus?: string }): Promise<Invoice[]> {
+  async listInvoices(filters?: { customerId?: string; paymentStatus?: string; resellerId?: string }): Promise<Invoice[]> {
     const conditions = [];
     
     if (filters?.customerId) {
@@ -772,6 +772,17 @@ export class DatabaseStorage implements IStorage {
     }
     if (filters?.paymentStatus) {
       conditions.push(eq(invoices.paymentStatus, filters.paymentStatus as any));
+    }
+    if (filters?.resellerId) {
+      // Get customers associated with this reseller through repair orders
+      const resellerRepairs = await db.select({ customerId: repairOrders.customerId })
+        .from(repairOrders)
+        .where(eq(repairOrders.resellerId, filters.resellerId));
+      const customerIds = [...new Set(resellerRepairs.map(r => r.customerId).filter(Boolean))] as string[];
+      if (customerIds.length === 0) {
+        return []; // No customers found for this reseller
+      }
+      conditions.push(inArray(invoices.customerId, customerIds));
     }
     
     let query = db.select().from(invoices);
