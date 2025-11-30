@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, integer, real, timestamp, boolean, pgEnum } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, integer, real, timestamp, boolean, pgEnum, jsonb } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
@@ -241,6 +241,52 @@ export const utilityCommissionStatusEnum = pgEnum("utility_commission_status", [
   "invoiced",          // Fatturata
   "paid",              // Pagata
   "cancelled",         // Annullata
+]);
+
+// Priorità pratica utility
+export const utilityPracticePriorityEnum = pgEnum("utility_practice_priority", [
+  "bassa",
+  "normale",
+  "alta",
+  "urgente",
+]);
+
+// Stato task pratica utility
+export const utilityPracticeTaskStatusEnum = pgEnum("utility_practice_task_status", [
+  "da_fare",
+  "in_corso",
+  "completato",
+  "annullato",
+]);
+
+// Tipo evento timeline pratica utility
+export const utilityPracticeEventTypeEnum = pgEnum("utility_practice_event_type", [
+  "created",           // Pratica creata
+  "status_change",     // Cambio stato
+  "document_uploaded", // Documento caricato
+  "document_deleted",  // Documento eliminato
+  "task_created",      // Task creato
+  "task_completed",    // Task completato
+  "note_added",        // Nota aggiunta
+  "assigned",          // Pratica assegnata
+  "comment",           // Commento generico
+]);
+
+// Categoria documento pratica utility
+export const utilityDocumentCategoryEnum = pgEnum("utility_document_category", [
+  "contratto",
+  "documento_identita",
+  "codice_fiscale",
+  "bolletta",
+  "conferma_fornitore",
+  "fattura",
+  "altro",
+]);
+
+// Visibilità nota pratica utility
+export const utilityNoteVisibilityEnum = pgEnum("utility_note_visibility", [
+  "internal",          // Solo operatori
+  "customer",          // Visibile al cliente
 ]);
 
 // Users table with role-based access
@@ -1254,14 +1300,26 @@ export const utilityPractices = pgTable("utility_practices", {
   
   // Stato pratica
   status: utilityPracticeStatusEnum("status").notNull().default("bozza"),
+  priority: utilityPracticePriorityEnum("priority").notNull().default("normale"),
+  
+  // Assegnazione
+  assignedTo: varchar("assigned_to").references(() => users.id), // Operatore assegnato
   
   // Riferimento fornitore
   supplierReference: text("supplier_reference"), // Codice pratica del fornitore
+  externalIdentifiers: jsonb("external_identifiers").$type<Record<string, string>>(), // Altri codici esterni
+  
+  // Canale comunicazione preferito
+  communicationChannel: text("communication_channel"), // email, telefono, whatsapp
   
   // Date
   submittedAt: timestamp("submitted_at"), // Data invio al fornitore
   activatedAt: timestamp("activated_at"), // Data attivazione servizio
   expiresAt: timestamp("expires_at"), // Data scadenza contratto
+  expectedActivationDate: timestamp("expected_activation_date"), // Data attivazione prevista
+  goLiveDate: timestamp("go_live_date"), // Data effettiva go-live
+  contractEndDate: timestamp("contract_end_date"), // Data fine contratto
+  slaDueAt: timestamp("sla_due_at"), // Scadenza SLA
   
   // Importi effettivi (possono differire dal servizio base)
   monthlyPriceCents: integer("monthly_price_cents"),
@@ -1305,6 +1363,98 @@ export const utilityCommissions = pgTable("utility_commissions", {
   
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+// Utility Practice Documents (Documenti allegati alla pratica)
+export const utilityPracticeDocuments = pgTable("utility_practice_documents", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  practiceId: varchar("practice_id").notNull().references(() => utilityPractices.id, { onDelete: "cascade" }),
+  
+  // File info
+  objectKey: text("object_key").notNull(), // Key in object storage
+  fileName: text("file_name").notNull(),
+  fileSize: integer("file_size").notNull(), // in bytes
+  mimeType: text("mime_type"),
+  
+  // Categorizzazione
+  category: utilityDocumentCategoryEnum("category").notNull().default("altro"),
+  description: text("description"),
+  
+  // Tracking
+  uploadedBy: varchar("uploaded_by").notNull().references(() => users.id),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+// Utility Practice Tasks (Checklist attività)
+export const utilityPracticeTasks = pgTable("utility_practice_tasks", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  practiceId: varchar("practice_id").notNull().references(() => utilityPractices.id, { onDelete: "cascade" }),
+  
+  // Task info
+  title: text("title").notNull(),
+  description: text("description"),
+  status: utilityPracticeTaskStatusEnum("status").notNull().default("da_fare"),
+  
+  // Assegnazione e scadenza
+  assignedTo: varchar("assigned_to").references(() => users.id),
+  dueDate: timestamp("due_date"),
+  
+  // Ordinamento
+  sortOrder: integer("sort_order").notNull().default(0),
+  
+  // Tracking
+  createdBy: varchar("created_by").notNull().references(() => users.id),
+  completedAt: timestamp("completed_at"),
+  completedBy: varchar("completed_by").references(() => users.id),
+  
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+// Utility Practice Notes (Note e comunicazioni)
+export const utilityPracticeNotes = pgTable("utility_practice_notes", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  practiceId: varchar("practice_id").notNull().references(() => utilityPractices.id, { onDelete: "cascade" }),
+  
+  // Contenuto
+  body: text("body").notNull(),
+  visibility: utilityNoteVisibilityEnum("visibility").notNull().default("internal"),
+  
+  // Tracking
+  createdBy: varchar("created_by").notNull().references(() => users.id),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+// Utility Practice Timeline (Cronologia eventi)
+export const utilityPracticeTimeline = pgTable("utility_practice_timeline", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  practiceId: varchar("practice_id").notNull().references(() => utilityPractices.id, { onDelete: "cascade" }),
+  
+  // Evento
+  eventType: utilityPracticeEventTypeEnum("event_type").notNull(),
+  title: text("title").notNull(),
+  description: text("description"),
+  payload: jsonb("payload").$type<Record<string, unknown>>(), // Dati aggiuntivi evento
+  
+  // Tracking
+  createdBy: varchar("created_by").notNull().references(() => users.id),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+// Utility Practice State History (Storico cambi stato)
+export const utilityPracticeStateHistory = pgTable("utility_practice_state_history", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  practiceId: varchar("practice_id").notNull().references(() => utilityPractices.id, { onDelete: "cascade" }),
+  
+  // Transizione
+  fromStatus: utilityPracticeStatusEnum("from_status"),
+  toStatus: utilityPracticeStatusEnum("to_status").notNull(),
+  reason: text("reason"), // Motivo del cambio
+  
+  // Tracking
+  changedBy: varchar("changed_by").notNull().references(() => users.id),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
 // Support Tickets
@@ -2152,6 +2302,33 @@ export const insertUtilityCommissionSchema = createInsertSchema(utilityCommissio
   updatedAt: true,
 });
 
+export const insertUtilityPracticeDocumentSchema = createInsertSchema(utilityPracticeDocuments).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertUtilityPracticeTaskSchema = createInsertSchema(utilityPracticeTasks).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertUtilityPracticeNoteSchema = createInsertSchema(utilityPracticeNotes).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertUtilityPracticeTimelineSchema = createInsertSchema(utilityPracticeTimeline).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertUtilityPracticeStateHistorySchema = createInsertSchema(utilityPracticeStateHistory).omit({
+  id: true,
+  createdAt: true,
+});
+
 export const createDataRecoveryEventSchema = z.object({
   eventType: z.enum(["created", "status_change", "assigned", "shipped", "received", "completed", "note_added", "document_uploaded"]).default("note_added"),
   title: z.string().min(1, "Title is required").max(200, "Title too long"),
@@ -2430,3 +2607,18 @@ export type InsertUtilityPractice = z.infer<typeof insertUtilityPracticeSchema>;
 
 export type UtilityCommission = typeof utilityCommissions.$inferSelect;
 export type InsertUtilityCommission = z.infer<typeof insertUtilityCommissionSchema>;
+
+export type UtilityPracticeDocument = typeof utilityPracticeDocuments.$inferSelect;
+export type InsertUtilityPracticeDocument = z.infer<typeof insertUtilityPracticeDocumentSchema>;
+
+export type UtilityPracticeTask = typeof utilityPracticeTasks.$inferSelect;
+export type InsertUtilityPracticeTask = z.infer<typeof insertUtilityPracticeTaskSchema>;
+
+export type UtilityPracticeNote = typeof utilityPracticeNotes.$inferSelect;
+export type InsertUtilityPracticeNote = z.infer<typeof insertUtilityPracticeNoteSchema>;
+
+export type UtilityPracticeTimelineEvent = typeof utilityPracticeTimeline.$inferSelect;
+export type InsertUtilityPracticeTimelineEvent = z.infer<typeof insertUtilityPracticeTimelineSchema>;
+
+export type UtilityPracticeStateHistoryEntry = typeof utilityPracticeStateHistory.$inferSelect;
+export type InsertUtilityPracticeStateHistoryEntry = z.infer<typeof insertUtilityPracticeStateHistorySchema>;
