@@ -24,6 +24,7 @@ import {
   RepairOrderStateHistory, InsertRepairOrderStateHistory,
   SupplierReturnStateHistory, InsertSupplierReturnStateHistory,
   SlaThresholds, slaThresholdsSchema,
+  CustomerBranch, InsertCustomerBranch,
   users, repairCenters, products, repairOrders, tickets, ticketMessages,
   invoices, billingData, chatMessages, inventoryMovements, inventoryStock, activityLogs, analyticsCache,
   notifications, notificationPreferences, repairAttachments, repairAcceptance, repairDiagnostics,
@@ -33,7 +34,8 @@ import {
   promotions, unrepairableReasons, externalLabs, dataRecoveryJobs, dataRecoveryEvents,
   suppliers, productSuppliers, supplierOrders, supplierOrderItems, supplierReturns, supplierReturnItems, supplierCommunicationLogs,
   partsLoadDocuments, partsLoadItems,
-  repairOrderStateHistory, supplierReturnStateHistory
+  repairOrderStateHistory, supplierReturnStateHistory,
+  customerBranches
 } from "@shared/schema";
 import { db, pool } from "./db";
 import { eq, and, or, desc, lt, sql, not } from "drizzle-orm";
@@ -324,6 +326,14 @@ export interface IStorage {
   // SLA Thresholds
   getSlaThresholds(): Promise<SlaThresholds>;
   updateSlaThresholds(thresholds: SlaThresholds, updatedBy: string): Promise<void>;
+  
+  // Customer Branches (Filiali)
+  listCustomerBranches(parentCustomerId: string): Promise<CustomerBranch[]>;
+  getCustomerBranch(id: string): Promise<CustomerBranch | undefined>;
+  createCustomerBranch(branch: InsertCustomerBranch): Promise<CustomerBranch>;
+  updateCustomerBranch(id: string, updates: Partial<InsertCustomerBranch>): Promise<CustomerBranch>;
+  deleteCustomerBranch(id: string): Promise<void>;
+  getBranchByCode(parentCustomerId: string, branchCode: string): Promise<CustomerBranch | undefined>;
   
   sessionStore: session.Store;
 }
@@ -2800,6 +2810,59 @@ export class DatabaseStorage implements IStorage {
           updatedAt: new Date(),
         },
       });
+  }
+
+  // ==========================================
+  // CUSTOMER BRANCHES (FILIALI)
+  // ==========================================
+
+  async listCustomerBranches(parentCustomerId: string): Promise<CustomerBranch[]> {
+    return await db.select()
+      .from(customerBranches)
+      .where(eq(customerBranches.parentCustomerId, parentCustomerId))
+      .orderBy(customerBranches.branchName);
+  }
+
+  async getCustomerBranch(id: string): Promise<CustomerBranch | undefined> {
+    const [branch] = await db.select()
+      .from(customerBranches)
+      .where(eq(customerBranches.id, id));
+    return branch || undefined;
+  }
+
+  async createCustomerBranch(branch: InsertCustomerBranch): Promise<CustomerBranch> {
+    const [created] = await db.insert(customerBranches)
+      .values(branch)
+      .returning();
+    return created;
+  }
+
+  async updateCustomerBranch(id: string, updates: Partial<InsertCustomerBranch>): Promise<CustomerBranch> {
+    const [updated] = await db.update(customerBranches)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(customerBranches.id, id))
+      .returning();
+    
+    if (!updated) {
+      throw new Error("Branch not found");
+    }
+    
+    return updated;
+  }
+
+  async deleteCustomerBranch(id: string): Promise<void> {
+    await db.delete(customerBranches)
+      .where(eq(customerBranches.id, id));
+  }
+
+  async getBranchByCode(parentCustomerId: string, branchCode: string): Promise<CustomerBranch | undefined> {
+    const [branch] = await db.select()
+      .from(customerBranches)
+      .where(and(
+        eq(customerBranches.parentCustomerId, parentCustomerId),
+        eq(customerBranches.branchCode, branchCode)
+      ));
+    return branch || undefined;
   }
 }
 
