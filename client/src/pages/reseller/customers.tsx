@@ -7,12 +7,14 @@ import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { Users, Plus, Search, Mail, Phone } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Users, Plus, Search, Mail, Building2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
-import { User, RepairOrder } from "@shared/schema";
+import { User, RepairOrder, BillingData } from "@shared/schema";
+import { CustomerBranchManager } from "@/components/CustomerBranchManager";
 
 export default function ResellerCustomers() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -264,38 +266,60 @@ export default function ResellerCustomers() {
 
       {selectedCustomer && (
         <Dialog open={!!selectedCustomer} onOpenChange={() => setSelectedCustomer(null)}>
-          <DialogContent className="max-w-2xl">
+          <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Dettagli Cliente: {selectedCustomer.fullName}</DialogTitle>
             </DialogHeader>
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label>Email</Label>
-                  <p className="text-sm text-muted-foreground">{selectedCustomer.email}</p>
+            <Tabs defaultValue="info" className="w-full">
+              <TabsList className="grid w-full grid-cols-3">
+                <TabsTrigger value="info" data-testid="tab-customer-info">
+                  <Users className="h-4 w-4 mr-1" />
+                  Informazioni
+                </TabsTrigger>
+                <TabsTrigger value="branches" data-testid="tab-customer-branches">
+                  <Building2 className="h-4 w-4 mr-1" />
+                  Filiali
+                </TabsTrigger>
+                <TabsTrigger value="repairs" data-testid="tab-customer-repairs">
+                  Riparazioni
+                </TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="info" className="space-y-4 mt-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label>Email</Label>
+                    <p className="text-sm text-muted-foreground">{selectedCustomer.email}</p>
+                  </div>
+                  <div>
+                    <Label>Username</Label>
+                    <p className="text-sm text-muted-foreground">{selectedCustomer.username}</p>
+                  </div>
+                  <div>
+                    <Label>Data Registrazione</Label>
+                    <p className="text-sm text-muted-foreground">
+                      {format(new Date(selectedCustomer.createdAt), "dd/MM/yyyy HH:mm")}
+                    </p>
+                  </div>
+                  <div>
+                    <Label>Stato</Label>
+                    <p className="text-sm text-muted-foreground">
+                      {selectedCustomer.isActive ? "Attivo" : "Disattivato"}
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <Label>Username</Label>
-                  <p className="text-sm text-muted-foreground">{selectedCustomer.username}</p>
-                </div>
-                <div>
-                  <Label>Data Registrazione</Label>
-                  <p className="text-sm text-muted-foreground">
-                    {format(new Date(selectedCustomer.createdAt), "dd/MM/yyyy HH:mm")}
-                  </p>
-                </div>
-                <div>
-                  <Label>Stato</Label>
-                  <p className="text-sm text-muted-foreground">
-                    {selectedCustomer.isActive ? "Attivo" : "Disattivato"}
-                  </p>
-                </div>
-              </div>
+              </TabsContent>
 
-              <div>
-                <h3 className="font-semibold mb-2">Riparazioni Cliente</h3>
+              <TabsContent value="branches" className="mt-4">
+                <CustomerBranchManager 
+                  customerId={selectedCustomer.id} 
+                  customerName={selectedCustomer.fullName}
+                />
+              </TabsContent>
+
+              <TabsContent value="repairs" className="mt-4">
                 {getCustomerRepairs(selectedCustomer.id).length === 0 ? (
-                  <p className="text-sm text-muted-foreground">Nessuna riparazione registrata</p>
+                  <p className="text-sm text-muted-foreground py-8 text-center">Nessuna riparazione registrata</p>
                 ) : (
                   <Table>
                     <TableHeader>
@@ -320,8 +344,8 @@ export default function ResellerCustomers() {
                     </TableBody>
                   </Table>
                 )}
-              </div>
-            </div>
+              </TabsContent>
+            </Tabs>
           </DialogContent>
         </Dialog>
       )}
