@@ -79,14 +79,15 @@ export default function ResellerReports() {
   const totalRepairs = filteredRepairs.length;
   const completedRepairs = filteredRepairs.filter(r => r.status === 'consegnato').length;
   const inProgressRepairs = filteredRepairs.filter(r => ['in_riparazione', 'in_diagnosi', 'in_test'].includes(r.status)).length;
-  const pendingRepairs = filteredRepairs.filter(r => ['ingressato', 'attesa_ricambi', 'attesa_preventivo'].includes(r.status)).length;
+  const pendingRepairs = filteredRepairs.filter(r => ['ingressato', 'attesa_ricambi', 'preventivo_emesso', 'pending'].includes(r.status)).length;
 
   const statusOptions = [
     { value: "all", label: "Tutti gli stati" },
+    { value: "pending", label: "In Attesa" },
     { value: "ingressato", label: "Ingressato" },
     { value: "in_diagnosi", label: "In Diagnosi" },
-    { value: "attesa_preventivo", label: "Attesa Preventivo" },
-    { value: "preventivo_approvato", label: "Preventivo Approvato" },
+    { value: "preventivo_emesso", label: "Preventivo Emesso" },
+    { value: "preventivo_accettato", label: "Preventivo Accettato" },
     { value: "preventivo_rifiutato", label: "Preventivo Rifiutato" },
     { value: "attesa_ricambi", label: "Attesa Ricambi" },
     { value: "in_riparazione", label: "In Riparazione" },
