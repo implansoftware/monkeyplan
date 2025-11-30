@@ -7,6 +7,7 @@ import { z } from "zod";
 // Enums
 export const userRoleEnum = pgEnum("user_role", ["admin", "reseller", "repair_center", "customer"]);
 export const customerTypeEnum = pgEnum("customer_type", ["private", "company"]);
+export const companyCategoryEnum = pgEnum("company_category", ["standard", "franchising", "gdo"]);
 export const ticketStatusEnum = pgEnum("ticket_status", ["open", "in_progress", "closed"]);
 export const ticketPriorityEnum = pgEnum("ticket_priority", ["low", "medium", "high"]);
 export const repairStatusEnum = pgEnum("repair_status", [
@@ -285,6 +286,7 @@ export const repairOrders = pgTable("repair_orders", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   orderNumber: text("order_number").notNull().unique(),
   customerId: varchar("customer_id").notNull(),
+  branchId: varchar("branch_id"), // FK a customer_branches (opzionale, per clienti FRANCHISING/GDO)
   resellerId: varchar("reseller_id"),
   repairCenterId: varchar("repair_center_id"),
   deviceType: text("device_type").notNull(), // smartphone, laptop, tablet, tv, etc.
@@ -1078,6 +1080,7 @@ export const billingData = pgTable("billing_data", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   userId: varchar("user_id").notNull().unique(),
   customerType: customerTypeEnum("customer_type").notNull().default("private"),
+  companyCategory: companyCategoryEnum("company_category").default("standard"), // Solo per aziende: standard/franchising/gdo
   companyName: text("company_name"),
   vatNumber: text("vat_number"),
   fiscalCode: text("fiscal_code"),
@@ -1089,6 +1092,25 @@ export const billingData = pgTable("billing_data", {
   zipCode: text("zip_code").notNull(),
   country: text("country").notNull().default("IT"),
   googlePlaceId: text("google_place_id"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+// Customer Branches (Filiali/Punti Vendita per clienti FRANCHISING/GDO)
+export const customerBranches = pgTable("customer_branches", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  parentCustomerId: varchar("parent_customer_id").notNull(), // FK al cliente principale (FRANCHISING/GDO)
+  branchCode: text("branch_code").notNull(), // Codice identificativo (es. "PV001", "FR-MILANO-01")
+  branchName: text("branch_name").notNull(), // Nome della filiale/punto vendita
+  address: text("address"),
+  city: text("city"),
+  province: text("province"),
+  postalCode: text("postal_code"),
+  contactName: text("contact_name"), // Referente locale
+  contactPhone: text("contact_phone"),
+  contactEmail: text("contact_email"),
+  notes: text("notes"),
+  isActive: boolean("is_active").notNull().default(true),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
@@ -1180,6 +1202,10 @@ export const repairOrdersRelations = relations(repairOrders, ({ one, many }) => 
   customer: one(users, {
     fields: [repairOrders.customerId],
     references: [users.id],
+  }),
+  branch: one(customerBranches, {
+    fields: [repairOrders.branchId],
+    references: [customerBranches.id],
   }),
   reseller: one(users, {
     fields: [repairOrders.resellerId],
@@ -1393,11 +1419,20 @@ export const invoicesRelations = relations(invoices, ({ one }) => ({
   }),
 }));
 
-export const billingDataRelations = relations(billingData, ({ one }) => ({
+export const billingDataRelations = relations(billingData, ({ one, many }) => ({
   user: one(users, {
     fields: [billingData.userId],
     references: [users.id],
   }),
+  branches: many(customerBranches),
+}));
+
+export const customerBranchesRelations = relations(customerBranches, ({ one, many }) => ({
+  parentCustomer: one(users, {
+    fields: [customerBranches.parentCustomerId],
+    references: [users.id],
+  }),
+  repairOrders: many(repairOrders),
 }));
 
 export const inventoryStockRelations = relations(inventoryStock, ({ one }) => ({
@@ -1599,6 +1634,12 @@ export const insertInvoiceSchema = createInsertSchema(invoices).omit({
 });
 
 export const insertBillingDataSchema = createInsertSchema(billingData).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertCustomerBranchSchema = createInsertSchema(customerBranches).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
@@ -1969,6 +2010,9 @@ export type InsertInvoice = z.infer<typeof insertInvoiceSchema>;
 
 export type BillingData = typeof billingData.$inferSelect;
 export type InsertBillingData = z.infer<typeof insertBillingDataSchema>;
+
+export type CustomerBranch = typeof customerBranches.$inferSelect;
+export type InsertCustomerBranch = z.infer<typeof insertCustomerBranchSchema>;
 
 export type ChatMessage = typeof chatMessages.$inferSelect;
 export type InsertChatMessage = z.infer<typeof insertChatMessageSchema>;
