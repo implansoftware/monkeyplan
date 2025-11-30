@@ -6418,6 +6418,314 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // POST /api/suppliers/:id/test-connection - Test API connection to supplier
+  app.post("/api/suppliers/:id/test-connection", requireAuth, requireRole("admin"), async (req, res) => {
+    try {
+      const supplier = await storage.getSupplier(req.params.id);
+      if (!supplier) {
+        return res.status(404).send("Fornitore non trovato");
+      }
+
+      // Check if API is configured
+      if (!supplier.apiType || !supplier.apiSecretName) {
+        return res.status(400).send("Configurazione API incompleta. Configura il tipo API e il nome del segreto.");
+      }
+
+      // Get the API key from environment
+      const apiKey = process.env[supplier.apiSecretName];
+      if (!apiKey) {
+        return res.status(400).send(`Segreto "${supplier.apiSecretName}" non trovato nei Replit Secrets.`);
+      }
+
+      // Determine endpoint to test
+      const testEndpoint = supplier.apiProductsEndpoint || supplier.apiEndpoint;
+      if (!testEndpoint) {
+        return res.status(400).send("Nessun endpoint configurato per il test.");
+      }
+
+      // Build headers based on auth method
+      const headers: Record<string, string> = {
+        'Accept': 'application/json',
+      };
+
+      switch (supplier.apiAuthMethod) {
+        case 'bearer_token':
+          headers['Authorization'] = `Bearer ${apiKey}`;
+          break;
+        case 'api_key_header':
+          headers['X-API-Key'] = apiKey;
+          break;
+        case 'basic_auth':
+          headers['Authorization'] = `Basic ${Buffer.from(apiKey).toString('base64')}`;
+          break;
+        case 'none':
+          // No auth header
+          break;
+        default:
+          headers['Authorization'] = `Bearer ${apiKey}`;
+      }
+
+      // Make test request
+      const testUrl = supplier.apiAuthMethod === 'api_key_query' 
+        ? `${testEndpoint}${testEndpoint.includes('?') ? '&' : '?'}api_key=${apiKey}`
+        : testEndpoint;
+
+      const response = await fetch(testUrl, {
+        method: 'GET',
+        headers,
+        signal: AbortSignal.timeout(10000), // 10 second timeout
+      });
+
+      if (response.ok) {
+        res.json({ 
+          success: true, 
+          status: response.status,
+          message: "Connessione riuscita" 
+        });
+      } else {
+        res.status(400).json({ 
+          success: false, 
+          status: response.status,
+          message: `Errore API: ${response.statusText}` 
+        });
+      }
+    } catch (error: any) {
+      console.error("Supplier connection test error:", error);
+      res.status(500).json({ 
+        success: false, 
+        message: error.message || "Errore durante il test di connessione" 
+      });
+    }
+  });
+
+  // POST /api/suppliers/:id/sync-catalog - Sync supplier product catalog
+  app.post("/api/suppliers/:id/sync-catalog", requireAuth, requireRole("admin"), async (req, res) => {
+    try {
+      const supplier = await storage.getSupplier(req.params.id);
+      if (!supplier) {
+        return res.status(404).send("Fornitore non trovato");
+      }
+
+      // Check if sync is enabled
+      if (!supplier.catalogSyncEnabled) {
+        return res.status(400).send("Sincronizzazione catalogo non abilitata per questo fornitore.");
+      }
+
+      // Check if API is configured
+      if (!supplier.apiType || !supplier.apiSecretName || !supplier.apiProductsEndpoint) {
+        return res.status(400).send("Configurazione API incompleta. Configura tipo API, segreto e endpoint prodotti.");
+      }
+
+      // Get the API key from environment
+      const apiKey = process.env[supplier.apiSecretName];
+      if (!apiKey) {
+        return res.status(400).send(`Segreto "${supplier.apiSecretName}" non trovato nei Replit Secrets.`);
+      }
+
+      // Update sync status to syncing
+      await storage.updateSupplier(req.params.id, {
+        catalogSyncStatus: 'syncing' as any,
+      });
+
+      // Create sync log
+      const syncLog = await storage.createSupplierSyncLog({
+        supplierId: req.params.id,
+        syncType: 'catalog',
+        status: 'syncing' as any,
+        startedAt: new Date(),
+      });
+
+      // Build headers
+      const headers: Record<string, string> = {
+        'Accept': 'application/json',
+      };
+
+      switch (supplier.apiAuthMethod) {
+        case 'bearer_token':
+          headers['Authorization'] = `Bearer ${apiKey}`;
+          break;
+        case 'api_key_header':
+          headers['X-API-Key'] = apiKey;
+          break;
+        case 'basic_auth':
+          headers['Authorization'] = `Basic ${Buffer.from(apiKey).toString('base64')}`;
+          break;
+        default:
+          headers['Authorization'] = `Bearer ${apiKey}`;
+      }
+
+      try {
+        const endpoint = supplier.apiAuthMethod === 'api_key_query'
+          ? `${supplier.apiProductsEndpoint}${supplier.apiProductsEndpoint.includes('?') ? '&' : '?'}api_key=${apiKey}`
+          : supplier.apiProductsEndpoint;
+
+        const response = await fetch(endpoint, {
+          method: 'GET',
+          headers,
+          signal: AbortSignal.timeout(60000), // 60 second timeout for catalog fetch
+        });
+
+        if (!response.ok) {
+          throw new Error(`API error: ${response.status} ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        
+        // Parse products based on API type
+        let products: any[] = [];
+        
+        if (supplier.apiType === 'foneday') {
+          // Foneday specific parsing
+          products = Array.isArray(data) ? data : (data.products || data.items || []);
+        } else {
+          // Generic parsing
+          products = Array.isArray(data) ? data : (data.products || data.items || data.data || []);
+        }
+
+        let created = 0;
+        let updated = 0;
+        let failed = 0;
+
+        // Process products
+        for (const product of products) {
+          try {
+            // Map product data based on API type
+            let catalogProduct: any = {
+              supplierId: req.params.id,
+              externalSku: '',
+              productName: '',
+            };
+
+            if (supplier.apiType === 'foneday') {
+              catalogProduct = {
+                supplierId: req.params.id,
+                externalSku: product.sku || product.id?.toString() || '',
+                productName: product.name || product.title || '',
+                category: product.category || product.type || null,
+                brand: product.brand || product.manufacturer || null,
+                model: product.model || null,
+                description: product.description || null,
+                externalPrice: product.price ? parseFloat(product.price) * 100 : null,
+                currency: 'EUR',
+                availability: product.availability || product.stock_status || null,
+                stockQuantity: product.stock || product.quantity || null,
+                leadTimeDays: product.lead_time || product.delivery_days || null,
+                imageUrl: product.image || product.image_url || null,
+                productUrl: product.url || product.link || null,
+                rawData: product,
+                isActive: true,
+              };
+            } else {
+              // Generic mapping
+              catalogProduct = {
+                supplierId: req.params.id,
+                externalSku: product.sku || product.code || product.id?.toString() || '',
+                productName: product.name || product.title || product.productName || '',
+                category: product.category || product.categoryName || null,
+                brand: product.brand || product.manufacturer || null,
+                model: product.model || null,
+                description: product.description || null,
+                externalPrice: product.price ? parseFloat(product.price) * 100 : null,
+                currency: product.currency || 'EUR',
+                availability: product.availability || product.status || null,
+                stockQuantity: typeof product.stock === 'number' ? product.stock : null,
+                leadTimeDays: product.leadTime || product.deliveryDays || null,
+                imageUrl: product.image || product.imageUrl || product.image_url || null,
+                productUrl: product.url || product.link || null,
+                rawData: product,
+                isActive: true,
+              };
+            }
+
+            // Skip products without SKU or name
+            if (!catalogProduct.externalSku || !catalogProduct.productName) {
+              failed++;
+              continue;
+            }
+
+            // Upsert catalog product
+            const result = await storage.upsertSupplierCatalogProduct(catalogProduct);
+            if (result.created) {
+              created++;
+            } else {
+              updated++;
+            }
+          } catch (err) {
+            console.error("Error processing product:", err);
+            failed++;
+          }
+        }
+
+        // Update supplier with sync results
+        await storage.updateSupplier(req.params.id, {
+          catalogSyncStatus: failed > 0 && created + updated === 0 ? 'failed' : (failed > 0 ? 'partial' : 'success') as any,
+          catalogLastSyncAt: new Date(),
+          catalogProductsCount: created + updated,
+        });
+
+        // Update sync log
+        await storage.updateSupplierSyncLog(syncLog.id, {
+          status: failed > 0 && created + updated === 0 ? 'failed' : (failed > 0 ? 'partial' : 'success') as any,
+          completedAt: new Date(),
+          productsFetched: products.length,
+          productsCreated: created,
+          productsUpdated: updated,
+          productsFailed: failed,
+        });
+
+        res.json({
+          success: true,
+          productsFetched: products.length,
+          productsCreated: created,
+          productsUpdated: updated,
+          productsFailed: failed,
+          productsSynced: created + updated,
+        });
+      } catch (error: any) {
+        console.error("Catalog sync error:", error);
+
+        // Update supplier and log with error
+        await storage.updateSupplier(req.params.id, {
+          catalogSyncStatus: 'failed' as any,
+        });
+
+        await storage.updateSupplierSyncLog(syncLog.id, {
+          status: 'failed' as any,
+          completedAt: new Date(),
+          errorMessage: error.message,
+        });
+
+        res.status(500).json({
+          success: false,
+          message: error.message || "Errore durante la sincronizzazione del catalogo",
+        });
+      }
+    } catch (error: any) {
+      console.error("Sync catalog error:", error);
+      res.status(500).send(error.message);
+    }
+  });
+
+  // GET /api/suppliers/:id/catalog - List catalog products for a supplier
+  app.get("/api/suppliers/:id/catalog", requireAuth, requireRole("admin", "repair_center"), async (req, res) => {
+    try {
+      const products = await storage.listSupplierCatalogProducts(req.params.id);
+      res.json(products);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // GET /api/suppliers/:id/sync-logs - List sync logs for a supplier
+  app.get("/api/suppliers/:id/sync-logs", requireAuth, requireRole("admin"), async (req, res) => {
+    try {
+      const logs = await storage.listSupplierSyncLogs(req.params.id);
+      res.json(logs);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
   // ============ PRODUCT SUPPLIERS (Relazione Prodotti-Fornitori) ============
 
   // GET /api/products/:id/suppliers - List suppliers for a product

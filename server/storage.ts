@@ -17,6 +17,7 @@ import {
   ExternalLab, InsertExternalLab, DataRecoveryJob, InsertDataRecoveryJob, DataRecoveryEvent, InsertDataRecoveryEvent,
   CreateDataRecoveryJob, UpdateDataRecoveryJob,
   Supplier, InsertSupplier, ProductSupplier, InsertProductSupplier,
+  SupplierCatalogProduct, InsertSupplierCatalogProduct, SupplierSyncLog, InsertSupplierSyncLog,
   SupplierOrder, InsertSupplierOrder, SupplierOrderItem, InsertSupplierOrderItem,
   SupplierReturn, InsertSupplierReturn, SupplierReturnItem, InsertSupplierReturnItem,
   SupplierCommunicationLog, InsertSupplierCommunicationLog,
@@ -32,7 +33,7 @@ import {
   deviceTypes, deviceBrands, deviceModels, issueTypes, aestheticDefects, accessoryTypes,
   diagnosticFindings, damagedComponentTypes, estimatedRepairTimes, adminSettings,
   promotions, unrepairableReasons, externalLabs, dataRecoveryJobs, dataRecoveryEvents,
-  suppliers, productSuppliers, supplierOrders, supplierOrderItems, supplierReturns, supplierReturnItems, supplierCommunicationLogs,
+  suppliers, productSuppliers, supplierCatalogProducts, supplierSyncLogs, supplierOrders, supplierOrderItems, supplierReturns, supplierReturnItems, supplierCommunicationLogs,
   partsLoadDocuments, partsLoadItems,
   repairOrderStateHistory, supplierReturnStateHistory,
   customerBranches
@@ -256,6 +257,17 @@ export interface IStorage {
   createSupplier(supplier: InsertSupplier): Promise<Supplier>;
   updateSupplier(id: string, updates: Partial<InsertSupplier>): Promise<Supplier>;
   deleteSupplier(id: string): Promise<void>;
+  
+  // Supplier Catalog Products
+  listSupplierCatalogProducts(supplierId: string): Promise<SupplierCatalogProduct[]>;
+  getSupplierCatalogProduct(id: string): Promise<SupplierCatalogProduct | undefined>;
+  upsertSupplierCatalogProduct(product: InsertSupplierCatalogProduct): Promise<{ product: SupplierCatalogProduct; created: boolean }>;
+  mapCatalogProductToLocal(catalogProductId: string, linkedProductId: string): Promise<SupplierCatalogProduct>;
+  
+  // Supplier Sync Logs
+  listSupplierSyncLogs(supplierId: string): Promise<SupplierSyncLog[]>;
+  createSupplierSyncLog(log: InsertSupplierSyncLog): Promise<SupplierSyncLog>;
+  updateSupplierSyncLog(id: string, updates: Partial<InsertSupplierSyncLog>): Promise<SupplierSyncLog>;
   
   // Product Suppliers (Relazione prodotti-fornitori)
   listProductSuppliers(productId: string): Promise<ProductSupplier[]>;
@@ -2110,6 +2122,94 @@ export class DatabaseStorage implements IStorage {
 
   async deleteSupplier(id: string): Promise<void> {
     await db.delete(suppliers).where(eq(suppliers.id, id));
+  }
+
+  // Supplier Catalog Products
+  async listSupplierCatalogProducts(supplierId: string): Promise<SupplierCatalogProduct[]> {
+    return await db.select()
+      .from(supplierCatalogProducts)
+      .where(eq(supplierCatalogProducts.supplierId, supplierId))
+      .orderBy(supplierCatalogProducts.title);
+  }
+
+  async getSupplierCatalogProduct(id: string): Promise<SupplierCatalogProduct | undefined> {
+    const [product] = await db.select()
+      .from(supplierCatalogProducts)
+      .where(eq(supplierCatalogProducts.id, id));
+    return product || undefined;
+  }
+
+  async upsertSupplierCatalogProduct(product: InsertSupplierCatalogProduct): Promise<{ product: SupplierCatalogProduct; created: boolean }> {
+    // Check if product exists
+    const [existing] = await db.select()
+      .from(supplierCatalogProducts)
+      .where(and(
+        eq(supplierCatalogProducts.supplierId, product.supplierId),
+        eq(supplierCatalogProducts.externalSku, product.externalSku)
+      ));
+
+    if (existing) {
+      // Update existing
+      const [updated] = await db.update(supplierCatalogProducts)
+        .set({
+          ...product,
+          updatedAt: new Date(),
+        })
+        .where(eq(supplierCatalogProducts.id, existing.id))
+        .returning();
+      return { product: updated, created: false };
+    } else {
+      // Create new
+      const [created] = await db.insert(supplierCatalogProducts)
+        .values(product)
+        .returning();
+      return { product: created, created: true };
+    }
+  }
+
+  async mapCatalogProductToLocal(catalogProductId: string, linkedProductId: string): Promise<SupplierCatalogProduct> {
+    const [updated] = await db.update(supplierCatalogProducts)
+      .set({
+        linkedProductId,
+        linkedAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .where(eq(supplierCatalogProducts.id, catalogProductId))
+      .returning();
+
+    if (!updated) {
+      throw new Error("Prodotto catalogo non trovato");
+    }
+
+    return updated;
+  }
+
+  // Supplier Sync Logs
+  async listSupplierSyncLogs(supplierId: string): Promise<SupplierSyncLog[]> {
+    return await db.select()
+      .from(supplierSyncLogs)
+      .where(eq(supplierSyncLogs.supplierId, supplierId))
+      .orderBy(desc(supplierSyncLogs.createdAt));
+  }
+
+  async createSupplierSyncLog(log: InsertSupplierSyncLog): Promise<SupplierSyncLog> {
+    const [syncLog] = await db.insert(supplierSyncLogs)
+      .values(log)
+      .returning();
+    return syncLog;
+  }
+
+  async updateSupplierSyncLog(id: string, updates: Partial<InsertSupplierSyncLog>): Promise<SupplierSyncLog> {
+    const [syncLog] = await db.update(supplierSyncLogs)
+      .set(updates)
+      .where(eq(supplierSyncLogs.id, id))
+      .returning();
+
+    if (!syncLog) {
+      throw new Error("Log di sincronizzazione non trovato");
+    }
+
+    return syncLog;
   }
 
   // Product Suppliers

@@ -14,7 +14,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { 
   Plus, Search, Phone, Mail, Globe, Pencil, Trash2, Building2, 
-  MessageCircle, Code, Truck, AlertCircle
+  MessageCircle, Code, Truck, AlertCircle, RefreshCw, Database, 
+  CheckCircle2, Clock, XCircle, Loader2, Key, Link2
 } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -22,6 +23,9 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { ItalianCitySelect } from "@/components/italian-city-select";
 
 type CommunicationChannel = 'email' | 'api' | 'whatsapp';
+type SupplierApiType = 'foneday' | 'ifixit' | 'mobilax' | 'generic_rest' | 'custom';
+type SupplierApiAuthMethod = 'bearer_token' | 'api_key_header' | 'api_key_query' | 'basic_auth' | 'oauth2' | 'none';
+type SupplierSyncStatus = 'pending' | 'syncing' | 'success' | 'partial' | 'failed';
 
 const communicationChannelLabels: Record<CommunicationChannel, string> = {
   email: "Email",
@@ -33,6 +37,31 @@ const communicationChannelIcons: Record<CommunicationChannel, typeof Mail> = {
   email: Mail,
   api: Code,
   whatsapp: MessageCircle,
+};
+
+const apiTypeLabels: Record<SupplierApiType, string> = {
+  foneday: "Foneday",
+  ifixit: "iFixit",
+  mobilax: "Mobilax",
+  generic_rest: "REST Generico",
+  custom: "Personalizzato",
+};
+
+const apiAuthMethodLabels: Record<SupplierApiAuthMethod, string> = {
+  bearer_token: "Bearer Token",
+  api_key_header: "API Key (Header)",
+  api_key_query: "API Key (Query String)",
+  basic_auth: "Basic Auth (user:pass)",
+  oauth2: "OAuth 2.0",
+  none: "Nessuna",
+};
+
+const syncStatusConfig: Record<SupplierSyncStatus, { label: string; icon: typeof CheckCircle2; color: string }> = {
+  pending: { label: "In attesa", icon: Clock, color: "text-muted-foreground" },
+  syncing: { label: "Sincronizzazione...", icon: Loader2, color: "text-blue-500" },
+  success: { label: "Completata", icon: CheckCircle2, color: "text-green-500" },
+  partial: { label: "Parziale", icon: AlertCircle, color: "text-yellow-500" },
+  failed: { label: "Fallita", icon: XCircle, color: "text-red-500" },
 };
 
 export default function AdminSuppliers() {
@@ -100,6 +129,36 @@ export default function AdminSuppliers() {
     },
   });
 
+  const syncCatalogMutation = useMutation({
+    mutationFn: async (supplierId: string) => {
+      const res = await apiRequest("POST", `/api/suppliers/${supplierId}/sync-catalog`);
+      return await res.json();
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/suppliers"] });
+      toast({ 
+        title: "Sincronizzazione avviata", 
+        description: `Prodotti sincronizzati: ${data.productsSynced || 0}` 
+      });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Errore sincronizzazione", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const testConnectionMutation = useMutation({
+    mutationFn: async (supplierId: string) => {
+      const res = await apiRequest("POST", `/api/suppliers/${supplierId}/test-connection`);
+      return await res.json();
+    },
+    onSuccess: () => {
+      toast({ title: "Connessione riuscita", description: "L'API del fornitore è raggiungibile" });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Connessione fallita", description: error.message, variant: "destructive" });
+    },
+  });
+
   type PaymentTerms = 'immediate' | 'cod' | 'bank_transfer_15' | 'bank_transfer_30' | 'bank_transfer_60' | 'bank_transfer_90' | 'riba_30' | 'riba_60' | 'credit_card' | 'paypal' | 'custom';
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
@@ -131,6 +190,14 @@ export default function AdminSuppliers() {
       freeShippingThreshold: formData.get("freeShippingThreshold") ? parseInt(formData.get("freeShippingThreshold") as string) * 100 : undefined,
       internalNotes: formData.get("internalNotes") as string || undefined,
       isActive: true,
+      apiType: formData.get("apiType") as SupplierApiType || undefined,
+      apiSecretName: formData.get("apiSecretName") as string || undefined,
+      apiAuthMethod: formData.get("apiAuthMethod") as SupplierApiAuthMethod || undefined,
+      apiProductsEndpoint: formData.get("apiProductsEndpoint") as string || undefined,
+      apiOrdersEndpoint: formData.get("apiOrdersEndpoint") as string || undefined,
+      apiCartEndpoint: formData.get("apiCartEndpoint") as string || undefined,
+      apiInvoicesEndpoint: formData.get("apiInvoicesEndpoint") as string || undefined,
+      catalogSyncEnabled: formData.get("catalogSyncEnabled") === "on",
     };
 
     if (editingSupplier) {
@@ -192,11 +259,12 @@ export default function AdminSuppliers() {
             </DialogHeader>
             <form onSubmit={handleSubmit}>
               <Tabs value={activeTab} onValueChange={setActiveTab}>
-                <TabsList className="grid w-full grid-cols-4">
+                <TabsList className="grid w-full grid-cols-5">
                   <TabsTrigger value="general">Generale</TabsTrigger>
                   <TabsTrigger value="contact">Contatti</TabsTrigger>
                   <TabsTrigger value="communication">Comunicazione</TabsTrigger>
                   <TabsTrigger value="commercial">Condizioni</TabsTrigger>
+                  <TabsTrigger value="api">API</TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="general" className="space-y-4 mt-4" forceMount hidden={activeTab !== "general"}>
@@ -518,6 +586,209 @@ export default function AdminSuppliers() {
                         data-testid="input-supplier-free-shipping" 
                       />
                     </div>
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="api" className="space-y-4 mt-4" forceMount hidden={activeTab !== "api"}>
+                  <div className="space-y-2">
+                    <Label htmlFor="apiType">Tipo Integrazione</Label>
+                    <Select 
+                      name="apiType" 
+                      defaultValue={editingSupplier?.apiType || ""}
+                    >
+                      <SelectTrigger data-testid="select-api-type">
+                        <SelectValue placeholder="Seleziona tipo..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="foneday">Foneday</SelectItem>
+                        <SelectItem value="ifixit">iFixit</SelectItem>
+                        <SelectItem value="mobilax">Mobilax</SelectItem>
+                        <SelectItem value="generic_rest">REST Generico</SelectItem>
+                        <SelectItem value="custom">Personalizzato</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="apiAuthMethod">Metodo Autenticazione</Label>
+                      <Select 
+                        name="apiAuthMethod" 
+                        defaultValue={editingSupplier?.apiAuthMethod || "bearer_token"}
+                      >
+                        <SelectTrigger data-testid="select-api-auth-method">
+                          <SelectValue placeholder="Seleziona metodo..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="bearer_token">Bearer Token</SelectItem>
+                          <SelectItem value="api_key_header">API Key (Header)</SelectItem>
+                          <SelectItem value="api_key_query">API Key (Query String)</SelectItem>
+                          <SelectItem value="basic_auth">Basic Auth</SelectItem>
+                          <SelectItem value="oauth2">OAuth 2.0</SelectItem>
+                          <SelectItem value="none">Nessuna</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="apiSecretName">Nome Segreto (Replit Secrets)</Label>
+                      <div className="flex gap-2">
+                        <Input 
+                          id="apiSecretName" 
+                          name="apiSecretName" 
+                          placeholder="SUPPLIER_FONEDAY_API_KEY"
+                          defaultValue={editingSupplier?.apiSecretName || ""}
+                          data-testid="input-api-secret-name" 
+                        />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="icon"
+                          onClick={() => {
+                            const secretName = (document.getElementById('apiSecretName') as HTMLInputElement)?.value;
+                            if (secretName) {
+                              toast({ title: "Info", description: `Assicurati che il segreto "${secretName}" sia configurato nei Replit Secrets` });
+                            }
+                          }}
+                          data-testid="button-api-secret-info"
+                        >
+                          <Key className="h-4 w-4" />
+                        </Button>
+                      </div>
+                      <p className="text-xs text-muted-foreground">Il nome del segreto dove è memorizzata la chiave API</p>
+                    </div>
+                  </div>
+
+                  <div className="border rounded-lg p-4 space-y-4">
+                    <div className="flex items-center gap-2 text-sm font-medium">
+                      <Link2 className="h-4 w-4" />
+                      Endpoint API
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="apiProductsEndpoint">Endpoint Prodotti</Label>
+                        <Input 
+                          id="apiProductsEndpoint" 
+                          name="apiProductsEndpoint" 
+                          type="url"
+                          placeholder="https://api.fornitore.com/products"
+                          defaultValue={editingSupplier?.apiProductsEndpoint || ""}
+                          data-testid="input-api-products-endpoint" 
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="apiOrdersEndpoint">Endpoint Ordini</Label>
+                        <Input 
+                          id="apiOrdersEndpoint" 
+                          name="apiOrdersEndpoint" 
+                          type="url"
+                          placeholder="https://api.fornitore.com/orders"
+                          defaultValue={editingSupplier?.apiOrdersEndpoint || ""}
+                          data-testid="input-api-orders-endpoint" 
+                        />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="apiCartEndpoint">Endpoint Carrello</Label>
+                        <Input 
+                          id="apiCartEndpoint" 
+                          name="apiCartEndpoint" 
+                          type="url"
+                          placeholder="https://api.fornitore.com/cart"
+                          defaultValue={editingSupplier?.apiCartEndpoint || ""}
+                          data-testid="input-api-cart-endpoint" 
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="apiInvoicesEndpoint">Endpoint Fatture</Label>
+                        <Input 
+                          id="apiInvoicesEndpoint" 
+                          name="apiInvoicesEndpoint" 
+                          type="url"
+                          placeholder="https://api.fornitore.com/invoices"
+                          defaultValue={editingSupplier?.apiInvoicesEndpoint || ""}
+                          data-testid="input-api-invoices-endpoint" 
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="border rounded-lg p-4 space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2 text-sm font-medium">
+                        <Database className="h-4 w-4" />
+                        Sincronizzazione Catalogo
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Switch
+                          id="catalogSyncEnabled"
+                          name="catalogSyncEnabled"
+                          defaultChecked={editingSupplier?.catalogSyncEnabled || false}
+                          data-testid="switch-catalog-sync"
+                        />
+                        <Label htmlFor="catalogSyncEnabled" className="text-sm">Abilita sincronizzazione</Label>
+                      </div>
+                    </div>
+                    
+                    {editingSupplier && editingSupplier.catalogSyncStatus && (
+                      <div className="p-3 bg-muted rounded-lg">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            {(() => {
+                              const status = editingSupplier.catalogSyncStatus as SupplierSyncStatus;
+                              const config = syncStatusConfig[status];
+                              const StatusIcon = config?.icon || Clock;
+                              return (
+                                <>
+                                  <StatusIcon className={`h-4 w-4 ${config?.color || ''} ${status === 'syncing' ? 'animate-spin' : ''}`} />
+                                  <span className="text-sm">{config?.label || status}</span>
+                                </>
+                              );
+                            })()}
+                          </div>
+                          <div className="text-sm text-muted-foreground">
+                            {editingSupplier.catalogProductsCount || 0} prodotti
+                            {editingSupplier.catalogLastSyncAt && (
+                              <span className="ml-2">
+                                | Ultimo sync: {new Date(editingSupplier.catalogLastSyncAt).toLocaleString('it-IT')}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {editingSupplier && (
+                      <div className="flex gap-2">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => testConnectionMutation.mutate(editingSupplier.id)}
+                          disabled={testConnectionMutation.isPending}
+                          data-testid="button-test-connection"
+                        >
+                          {testConnectionMutation.isPending ? (
+                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          ) : (
+                            <Link2 className="h-4 w-4 mr-2" />
+                          )}
+                          Testa Connessione
+                        </Button>
+                        <Button
+                          type="button"
+                          onClick={() => syncCatalogMutation.mutate(editingSupplier.id)}
+                          disabled={syncCatalogMutation.isPending || !editingSupplier.catalogSyncEnabled}
+                          data-testid="button-sync-catalog"
+                        >
+                          {syncCatalogMutation.isPending ? (
+                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          ) : (
+                            <RefreshCw className="h-4 w-4 mr-2" />
+                          )}
+                          Sincronizza Ora
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 </TabsContent>
               </Tabs>

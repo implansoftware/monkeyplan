@@ -96,6 +96,34 @@ export const supplierCommunicationChannelEnum = pgEnum("supplier_communication_c
   "manual",            // Gestione manuale (telefono, portale web)
 ]);
 
+// Tipo integrazione API fornitore (provider specifici o generic)
+export const supplierApiTypeEnum = pgEnum("supplier_api_type", [
+  "foneday",           // Foneday.shop API
+  "ifixit",            // iFixit API
+  "mobilax",           // Mobilax API
+  "generic_rest",      // API REST generica
+  "custom",            // Integrazione custom
+]);
+
+// Metodo autenticazione API
+export const supplierApiAuthMethodEnum = pgEnum("supplier_api_auth_method", [
+  "bearer_token",      // Authorization: Bearer <token>
+  "api_key_header",    // X-API-Key: <key>
+  "api_key_query",     // ?api_key=<key>
+  "basic_auth",        // Authorization: Basic <base64>
+  "oauth2",            // OAuth 2.0
+  "none",              // Nessuna autenticazione
+]);
+
+// Stato sincronizzazione catalogo fornitore
+export const supplierSyncStatusEnum = pgEnum("supplier_sync_status", [
+  "pending",           // In attesa di sincronizzazione
+  "syncing",           // Sincronizzazione in corso
+  "success",           // Sincronizzazione completata
+  "partial",           // Sincronizzazione parziale (alcuni errori)
+  "failed",            // Sincronizzazione fallita
+]);
+
 // Stato ordine fornitore
 export const supplierOrderStatusEnum = pgEnum("supplier_order_status", [
   "draft",             // Bozza (non ancora inviato)
@@ -737,9 +765,23 @@ export const suppliers = pgTable("suppliers", {
   communicationChannel: supplierCommunicationChannelEnum("communication_channel").notNull().default("email"),
   
   // Integrazione API (se canale = api)
-  apiEndpoint: text("api_endpoint"), // URL endpoint API
-  apiKey: text("api_key"), // Chiave API (criptata)
-  apiFormat: text("api_format"), // Formato: "json", "xml", "custom"
+  apiType: supplierApiTypeEnum("api_type"), // Tipo integrazione (foneday, generic, etc.)
+  apiEndpoint: text("api_endpoint"), // URL base API (es: https://foneday.shop/api/v1)
+  apiSecretName: text("api_secret_name"), // Nome del secret per API key (riferimento a Replit Secrets)
+  apiAuthMethod: supplierApiAuthMethodEnum("api_auth_method").default("bearer_token"), // Metodo autenticazione
+  apiFormat: text("api_format").default("json"), // Formato: "json", "xml"
+  
+  // Endpoint specifici (sovrascrivono i default del tipo API)
+  apiProductsEndpoint: text("api_products_endpoint"), // Endpoint prodotti (es: /products)
+  apiOrdersEndpoint: text("api_orders_endpoint"), // Endpoint ordini (es: /orders)
+  apiCartEndpoint: text("api_cart_endpoint"), // Endpoint carrello (es: /shopping-cart-add-items)
+  apiInvoicesEndpoint: text("api_invoices_endpoint"), // Endpoint fatture (es: /invoices)
+  
+  // Stato sincronizzazione catalogo
+  catalogSyncEnabled: boolean("catalog_sync_enabled").default(false), // Sincronizzazione automatica abilitata
+  catalogSyncStatus: supplierSyncStatusEnum("catalog_sync_status"), // Stato ultima sincronizzazione
+  catalogLastSyncAt: timestamp("catalog_last_sync_at"), // Data ultima sincronizzazione
+  catalogProductsCount: integer("catalog_products_count").default(0), // Numero prodotti sincronizzati
   
   // Integrazione Email
   orderEmailTemplate: text("order_email_template"), // Template email ordini
@@ -768,7 +810,7 @@ export const productSuppliers = pgTable("product_suppliers", {
   supplierId: varchar("supplier_id").notNull().references(() => suppliers.id, { onDelete: "cascade" }),
   
   // Dati specifici fornitore per questo prodotto
-  supplierCode: text("supplier_code"), // Codice articolo del fornitore
+  supplierCode: text("supplier_code"), // Codice articolo del fornitore (SKU fornitore)
   supplierName: text("supplier_name"), // Nome prodotto presso il fornitore
   purchasePrice: integer("purchase_price"), // Prezzo acquisto in centesimi
   minOrderQty: integer("min_order_qty").default(1), // Quantità minima ordinabile
@@ -781,6 +823,69 @@ export const productSuppliers = pgTable("product_suppliers", {
   
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+// Supplier Catalog Products (Prodotti nel catalogo fornitore esterno - sincronizzati via API)
+export const supplierCatalogProducts = pgTable("supplier_catalog_products", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  supplierId: varchar("supplier_id").notNull().references(() => suppliers.id, { onDelete: "cascade" }),
+  
+  // Identificatori fornitore (dati originali dall'API)
+  externalSku: text("external_sku").notNull(), // SKU fornitore (es: "AA215P0195N" per Foneday)
+  externalEan: text("external_ean"), // EAN/Barcode
+  externalArtcode: text("external_artcode"), // Codice articolo fornitore
+  
+  // Dati prodotto
+  title: text("title").notNull(), // Nome prodotto
+  description: text("description"), // Descrizione
+  category: text("category"), // Categoria (es: "Display", "Battery")
+  brand: text("brand"), // Marca prodotto (es: "OEM", "Original")
+  modelBrand: text("model_brand"), // Marca dispositivo compatibile (es: "For Apple")
+  modelCodes: text("model_codes"), // Codici modello compatibili (JSON array)
+  suitableFor: text("suitable_for"), // Descrizione compatibilità
+  quality: text("quality"), // Qualità (es: "Refurbished", "OEM-Equivalent")
+  
+  // Prezzo e disponibilità
+  priceCents: integer("price_cents").notNull(), // Prezzo in centesimi
+  currency: text("currency").default("EUR"), // Valuta
+  inStock: boolean("in_stock").notNull().default(false), // Disponibilità
+  stockQuantity: integer("stock_quantity"), // Quantità disponibile (se fornita)
+  
+  // Immagini
+  imageUrl: text("image_url"), // URL immagine principale
+  thumbnailUrl: text("thumbnail_url"), // URL miniatura
+  
+  // Metadati sincronizzazione
+  rawData: text("raw_data"), // JSON completo risposta API (per debugging)
+  lastSyncAt: timestamp("last_sync_at").notNull().defaultNow(), // Ultima sincronizzazione
+  
+  // Link a prodotto interno (se mappato)
+  linkedProductId: varchar("linked_product_id").references(() => products.id, { onDelete: "set null" }),
+  
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+// Supplier Sync Logs (Log sincronizzazioni catalogo)
+export const supplierSyncLogs = pgTable("supplier_sync_logs", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  supplierId: varchar("supplier_id").notNull().references(() => suppliers.id, { onDelete: "cascade" }),
+  
+  // Risultati sincronizzazione
+  status: supplierSyncStatusEnum("status").notNull(),
+  productsTotal: integer("products_total").default(0), // Totale prodotti ricevuti
+  productsCreated: integer("products_created").default(0), // Nuovi prodotti
+  productsUpdated: integer("products_updated").default(0), // Prodotti aggiornati
+  productsFailed: integer("products_failed").default(0), // Prodotti con errori
+  
+  // Durata e dettagli
+  durationMs: integer("duration_ms"), // Durata in millisecondi
+  errorMessage: text("error_message"), // Messaggio errore (se fallita)
+  errorDetails: text("error_details"), // Dettagli tecnici errore (JSON)
+  
+  // Audit
+  triggeredBy: varchar("triggered_by"), // "system" o ID utente
+  createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
 // Supplier Orders (Ordini a Fornitori)
@@ -1799,6 +1904,17 @@ export const insertProductSupplierSchema = createInsertSchema(productSuppliers).
   updatedAt: true,
 });
 
+export const insertSupplierCatalogProductSchema = createInsertSchema(supplierCatalogProducts).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertSupplierSyncLogSchema = createInsertSchema(supplierSyncLogs).omit({
+  id: true,
+  createdAt: true,
+});
+
 export const insertSupplierOrderSchema = createInsertSchema(supplierOrders).omit({
   id: true,
   orderNumber: true,
@@ -2076,6 +2192,12 @@ export type InsertSupplier = z.infer<typeof insertSupplierSchema>;
 
 export type ProductSupplier = typeof productSuppliers.$inferSelect;
 export type InsertProductSupplier = z.infer<typeof insertProductSupplierSchema>;
+
+export type SupplierCatalogProduct = typeof supplierCatalogProducts.$inferSelect;
+export type InsertSupplierCatalogProduct = z.infer<typeof insertSupplierCatalogProductSchema>;
+
+export type SupplierSyncLog = typeof supplierSyncLogs.$inferSelect;
+export type InsertSupplierSyncLog = z.infer<typeof insertSupplierSyncLogSchema>;
 
 export type SupplierOrder = typeof supplierOrders.$inferSelect;
 export type InsertSupplierOrder = z.infer<typeof insertSupplierOrderSchema>;
