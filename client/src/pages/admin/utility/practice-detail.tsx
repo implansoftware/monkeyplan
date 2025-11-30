@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useParams, useLocation } from "wouter";
 import { 
@@ -125,6 +125,8 @@ export default function AdminUtilityPracticeDetail() {
   const [newNoteVisibility, setNewNoteVisibility] = useState<"internal" | "customer">("internal");
   const [newStatus, setNewStatus] = useState<PracticeStatus>("bozza");
   const [statusReason, setStatusReason] = useState("");
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { data: practice, isLoading } = useQuery<UtilityPractice>({
     queryKey: ["/api/utility/practices", params.id],
@@ -256,6 +258,55 @@ export default function AdminUtilityPracticeDetail() {
       toast({ title: "Stato aggiornato" });
     },
   });
+
+  const deleteDocumentMutation = useMutation({
+    mutationFn: async (id: string) => {
+      await apiRequest("DELETE", `/api/utility/practices/${params.id}/documents/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/utility/practices", params.id, "documents"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/utility/practices", params.id, "timeline"] });
+      toast({ title: "Documento eliminato" });
+    },
+  });
+
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    
+    setIsUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('category', 'altro');
+      
+      const res = await fetch(`/api/utility/practices/${params.id}/documents`, {
+        method: 'POST',
+        body: formData,
+        credentials: 'include',
+      });
+      
+      if (!res.ok) {
+        const errorText = await res.text();
+        throw new Error(errorText || 'Errore durante il caricamento');
+      }
+      
+      queryClient.invalidateQueries({ queryKey: ["/api/utility/practices", params.id, "documents"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/utility/practices", params.id, "timeline"] });
+      toast({ title: "Documento caricato con successo" });
+    } catch (error: any) {
+      toast({ 
+        title: "Errore", 
+        description: error.message || "Impossibile caricare il documento",
+        variant: "destructive" 
+      });
+    } finally {
+      setIsUploading(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
 
   if (isLoading) {
     return (
@@ -518,14 +569,27 @@ export default function AdminUtilityPracticeDetail() {
         </TabsContent>
 
         <TabsContent value="documenti" className="space-y-4">
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={handleFileUpload}
+            className="hidden"
+            accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.gif,.webp"
+            data-testid="input-file-upload"
+          />
           <div className="flex justify-between items-center">
             <div>
               <h3 className="text-lg font-semibold">Documenti allegati</h3>
               <p className="text-sm text-muted-foreground">{documents.length} documenti</p>
             </div>
-            <Button variant="outline" data-testid="button-upload-document">
+            <Button 
+              variant="outline" 
+              onClick={() => fileInputRef.current?.click()}
+              disabled={isUploading}
+              data-testid="button-upload-document"
+            >
               <Upload className="h-4 w-4 mr-2" />
-              Carica Documento
+              {isUploading ? "Caricamento..." : "Carica Documento"}
             </Button>
           </div>
 
@@ -556,7 +620,12 @@ export default function AdminUtilityPracticeDetail() {
                       <Button variant="ghost" size="icon" data-testid={`button-download-${doc.id}`}>
                         <Download className="h-4 w-4" />
                       </Button>
-                      <Button variant="ghost" size="icon" data-testid={`button-delete-doc-${doc.id}`}>
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        onClick={() => deleteDocumentMutation.mutate(doc.id)}
+                        data-testid={`button-delete-doc-${doc.id}`}
+                      >
                         <Trash2 className="h-4 w-4 text-destructive" />
                       </Button>
                     </div>

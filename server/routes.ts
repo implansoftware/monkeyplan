@@ -8329,9 +8329,10 @@ export function registerRoutes(app: Express): Server {
   });
 
   // POST /api/utility/practices/:id/documents - Upload practice document
-  app.post("/api/utility/practices/:id/documents", requireAuth, requireRole("admin", "reseller"), async (req, res) => {
+  app.post("/api/utility/practices/:id/documents", requireAuth, requireRole("admin", "reseller"), upload.single('file'), async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
+      if (!req.file) return res.status(400).send("Nessun file caricato");
       
       const practice = await storage.getUtilityPractice(req.params.id);
       if (!practice) return res.status(404).send("Pratica non trovata");
@@ -8341,9 +8342,36 @@ export function registerRoutes(app: Express): Server {
         return res.status(403).send("Accesso negato");
       }
       
+      // Generate unique object key
+      const objectId = randomUUID();
+      const privateDir = objectStorage.getPrivateObjectDir();
+      const objectKey = `${privateDir}/utility-documents/${req.params.id}/${objectId}`;
+      
+      // Parse bucket and object name
+      const { bucketName, objectName } = parseObjectPath(objectKey);
+      
+      // Upload to Google Cloud Storage
+      const bucket = objectStorageClient.bucket(bucketName);
+      const file = bucket.file(objectName);
+      
+      await file.save(req.file.buffer, {
+        metadata: {
+          contentType: req.file.mimetype,
+        },
+      });
+      
+      // Save to database
+      const category = req.body.category || 'altro';
+      const description = req.body.description || null;
+      
       const document = await storage.createUtilityPracticeDocument({
-        ...req.body,
         practiceId: req.params.id,
+        objectKey: objectKey,
+        fileName: req.file.originalname,
+        fileSize: req.file.size,
+        mimeType: req.file.mimetype,
+        category: category,
+        description: description,
         uploadedBy: req.user.id,
       });
       
@@ -8351,14 +8379,15 @@ export function registerRoutes(app: Express): Server {
       await storage.createUtilityPracticeTimelineEvent({
         practiceId: req.params.id,
         eventType: 'document_uploaded',
-        title: `Documento caricato: ${req.body.fileName}`,
-        description: req.body.description,
-        payload: { documentId: document.id, category: req.body.category },
+        title: `Documento caricato: ${req.file.originalname}`,
+        description: description,
+        payload: { documentId: document.id, category: category },
         createdBy: req.user.id,
       });
       
       res.status(201).json(document);
     } catch (error: any) {
+      console.error("Error uploading utility document:", error);
       res.status(400).send(error.message);
     }
   });
