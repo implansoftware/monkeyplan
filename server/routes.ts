@@ -5105,6 +5105,7 @@ export function registerRoutes(app: Express): Server {
       // Prepare billing data
       const billingInfo = {
         customerType: validatedData.customerType,
+        companyCategory: validatedData.customerType === 'company' ? ((validatedData as any).companyCategory || 'standard') : null,
         companyName: validatedData.customerType === 'company' ? validatedData.companyName : null,
         vatNumber: validatedData.customerType === 'company' ? (validatedData.vatNumber || null) : null,
         fiscalCode: validatedData.customerType === 'company' ? (validatedData.fiscalCode || null) : null,
