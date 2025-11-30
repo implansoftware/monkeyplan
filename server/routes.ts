@@ -28,6 +28,7 @@ import {
   insertSupplierCommunicationLogSchema,
   insertPartsLoadDocumentSchema,
   insertPartsLoadItemSchema,
+  insertCustomerBranchSchema,
   type Product
 } from "@shared/schema";
 import { ObjectStorageService, objectStorageClient, parseObjectPath } from "./objectStorage";
@@ -5131,6 +5132,222 @@ export function registerRoutes(app: Express): Server {
       if (error.name === 'ZodError') {
         return res.status(400).json({ error: "Validation failed", details: error.errors });
       }
+      res.status(500).send(error.message);
+    }
+  });
+
+  // ============ CUSTOMER BRANCHES (FILIALI) ============
+
+  // List branches for a customer (parent company)
+  app.get("/api/customers/:customerId/branches", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const { customerId } = req.params;
+      
+      // Check access: admin can see all, reseller/repair_center can see their customers, customer can see own
+      if (req.user.role === 'customer' && req.user.id !== customerId) {
+        return res.status(403).send("Forbidden");
+      }
+      
+      if (req.user.role === 'reseller' || req.user.role === 'repair_center') {
+        const customer = await storage.getUser(customerId);
+        if (!customer || customer.resellerId !== req.user.id) {
+          return res.status(403).send("Forbidden");
+        }
+      }
+      
+      const branches = await storage.listCustomerBranches(customerId);
+      res.json(branches);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // Get single branch
+  app.get("/api/branches/:branchId", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const branch = await storage.getCustomerBranch(req.params.branchId);
+      if (!branch) {
+        return res.status(404).send("Branch not found");
+      }
+      
+      // Check access
+      if (req.user.role === 'customer' && req.user.id !== branch.parentCustomerId) {
+        return res.status(403).send("Forbidden");
+      }
+      
+      if (req.user.role === 'reseller' || req.user.role === 'repair_center') {
+        const customer = await storage.getUser(branch.parentCustomerId);
+        if (!customer || customer.resellerId !== req.user.id) {
+          return res.status(403).send("Forbidden");
+        }
+      }
+      
+      res.json(branch);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // Create branch
+  app.post("/api/customers/:customerId/branches", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const { customerId } = req.params;
+      
+      // Only admin, reseller (for their customers), repair_center (for their customers) can create branches
+      if (!['admin', 'reseller', 'repair_center'].includes(req.user.role)) {
+        return res.status(403).send("Forbidden");
+      }
+      
+      // Check reseller/repair_center access to customer
+      if (req.user.role === 'reseller' || req.user.role === 'repair_center') {
+        const customer = await storage.getUser(customerId);
+        if (!customer || customer.resellerId !== req.user.id) {
+          return res.status(403).send("Forbidden");
+        }
+      }
+      
+      // Verify customer exists and is a company type (for franchising/gdo)
+      const billingData = await storage.getBillingDataByUserId(customerId);
+      if (!billingData) {
+        return res.status(400).send("Customer billing data not found");
+      }
+      
+      // Validate request body
+      const validatedData = insertCustomerBranchSchema.parse({
+        ...req.body,
+        parentCustomerId: customerId,
+      });
+      
+      // Check for duplicate branch code
+      const existingBranch = await storage.getBranchByCode(customerId, validatedData.branchCode);
+      if (existingBranch) {
+        return res.status(400).send("Branch code already exists for this customer");
+      }
+      
+      const branch = await storage.createCustomerBranch(validatedData);
+      
+      // Log activity
+      await logActivity(
+        req.user.id,
+        'CREATE',
+        'branch',
+        branch.id,
+        { customerId, branchCode: branch.branchCode },
+        req
+      );
+      
+      res.status(201).json(branch);
+    } catch (error: any) {
+      if (error.name === 'ZodError') {
+        return res.status(400).json({ error: "Validation failed", details: error.errors });
+      }
+      res.status(500).send(error.message);
+    }
+  });
+
+  // Update branch
+  app.patch("/api/branches/:branchId", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      // Only admin, reseller (for their customers), repair_center (for their customers) can update branches
+      if (!['admin', 'reseller', 'repair_center'].includes(req.user.role)) {
+        return res.status(403).send("Forbidden");
+      }
+      
+      const branch = await storage.getCustomerBranch(req.params.branchId);
+      if (!branch) {
+        return res.status(404).send("Branch not found");
+      }
+      
+      // Check access
+      if (req.user.role === 'reseller' || req.user.role === 'repair_center') {
+        const customer = await storage.getUser(branch.parentCustomerId);
+        if (!customer || customer.resellerId !== req.user.id) {
+          return res.status(403).send("Forbidden");
+        }
+      }
+      
+      // Validate allowed updates
+      const allowedFields = ['branchName', 'branchCode', 'address', 'city', 'province', 'postalCode', 
+                            'contactName', 'contactPhone', 'contactEmail', 'notes', 'isActive'];
+      const updates: Record<string, any> = {};
+      
+      for (const field of allowedFields) {
+        if (req.body[field] !== undefined) {
+          updates[field] = req.body[field];
+        }
+      }
+      
+      // If changing branch code, check for duplicates
+      if (updates.branchCode && updates.branchCode !== branch.branchCode) {
+        const existingBranch = await storage.getBranchByCode(branch.parentCustomerId, updates.branchCode);
+        if (existingBranch) {
+          return res.status(400).send("Branch code already exists for this customer");
+        }
+      }
+      
+      const updatedBranch = await storage.updateCustomerBranch(req.params.branchId, updates);
+      
+      // Log activity
+      await logActivity(
+        req.user.id,
+        'UPDATE',
+        'branch',
+        updatedBranch.id,
+        { updates },
+        req
+      );
+      
+      res.json(updatedBranch);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // Delete branch
+  app.delete("/api/branches/:branchId", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      // Only admin, reseller (for their customers) can delete branches
+      if (!['admin', 'reseller'].includes(req.user.role)) {
+        return res.status(403).send("Forbidden");
+      }
+      
+      const branch = await storage.getCustomerBranch(req.params.branchId);
+      if (!branch) {
+        return res.status(404).send("Branch not found");
+      }
+      
+      // Check access
+      if (req.user.role === 'reseller') {
+        const customer = await storage.getUser(branch.parentCustomerId);
+        if (!customer || customer.resellerId !== req.user.id) {
+          return res.status(403).send("Forbidden");
+        }
+      }
+      
+      await storage.deleteCustomerBranch(req.params.branchId);
+      
+      // Log activity
+      await logActivity(
+        req.user.id,
+        'DELETE',
+        'branch',
+        req.params.branchId,
+        { branchCode: branch.branchCode },
+        req
+      );
+      
+      res.status(204).send();
+    } catch (error: any) {
       res.status(500).send(error.message);
     }
   });
