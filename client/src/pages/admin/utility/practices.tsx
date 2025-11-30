@@ -76,7 +76,19 @@ export default function AdminUtilityPractices() {
 
   const { data: services = [] } = useQuery<UtilityService[]>({
     queryKey: ["/api/utility/services", selectedSupplierId],
+    queryFn: async () => {
+      const url = selectedSupplierId 
+        ? `/api/utility/services?supplierId=${selectedSupplierId}`
+        : "/api/utility/services";
+      const res = await fetch(url);
+      if (!res.ok) throw new Error("Failed to fetch services");
+      return res.json();
+    },
     enabled: !!selectedSupplierId,
+  });
+  
+  const { data: allServices = [] } = useQuery<UtilityService[]>({
+    queryKey: ["/api/utility/services"],
   });
 
   const { data: customers = [] } = useQuery<User[]>({
@@ -245,7 +257,7 @@ export default function AdminUtilityPractices() {
                   <TableHead>N. Pratica</TableHead>
                   <TableHead>Cliente</TableHead>
                   <TableHead>Fornitore</TableHead>
-                  <TableHead>Rif. Fornitore</TableHead>
+                  <TableHead>Servizio</TableHead>
                   <TableHead>Prezzo</TableHead>
                   <TableHead>Stato</TableHead>
                   <TableHead className="text-right">Azioni</TableHead>
@@ -254,6 +266,7 @@ export default function AdminUtilityPractices() {
               <TableBody>
                 {filteredPractices.map((practice) => {
                   const supplier = suppliers.find(s => s.id === practice.supplierId);
+                  const service = allServices.find(s => s.id === practice.serviceId);
                   const customer = customers.find(c => c.id === practice.customerId);
                   return (
                     <TableRow key={practice.id} data-testid={`row-practice-${practice.id}`}>
@@ -274,7 +287,14 @@ export default function AdminUtilityPractices() {
                         ) : "-"}
                       </TableCell>
                       <TableCell>
-                        {practice.supplierReference || "-"}
+                        {service ? (
+                          <div className="flex flex-col">
+                            <span className="font-medium text-sm">{service.name}</span>
+                            <span className="text-xs text-muted-foreground">
+                              {categoryLabels[service.category]}
+                            </span>
+                          </div>
+                        ) : "-"}
                       </TableCell>
                       <TableCell>
                         {practice.monthlyPriceCents 
