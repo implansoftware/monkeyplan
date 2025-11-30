@@ -27,7 +27,7 @@ export default function AdminResellers() {
 
   const createResellerMutation = useMutation({
     mutationFn: async (data: InsertUser) => {
-      const res = await apiRequest("POST", "/api/auth/register", data);
+      const res = await apiRequest("POST", "/api/admin/users", data);
       return await res.json();
     },
     onSuccess: () => {
