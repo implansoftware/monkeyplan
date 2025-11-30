@@ -18,64 +18,59 @@ interface HourlyRateResponse {
 }
 
 interface SLAThresholdConfig {
-  lateMinutes: number;
-  urgentMinutes: number;
+  warning: number;   // ore per soglia gialla
+  critical: number;  // ore per soglia rossa
 }
 
 interface SLAThresholdsResponse {
-  diagnosis: SLAThresholdConfig;
-  quote: SLAThresholdConfig;
-  parts: SLAThresholdConfig;
-  test: SLAThresholdConfig;
-  delivery: SLAThresholdConfig;
+  ingressato: SLAThresholdConfig;
+  in_diagnosi: SLAThresholdConfig;
+  preventivo_emesso: SLAThresholdConfig;
+  attesa_ricambi: SLAThresholdConfig;
+  in_riparazione: SLAThresholdConfig;
+  in_test: SLAThresholdConfig;
+  pronto_ritiro: SLAThresholdConfig;
 }
 
 const defaultSLAThresholds: SLAThresholdsResponse = {
-  diagnosis: { lateMinutes: 1440, urgentMinutes: 2880 },
-  quote: { lateMinutes: 720, urgentMinutes: 1440 },
-  parts: { lateMinutes: 4320, urgentMinutes: 10080 },
-  test: { lateMinutes: 480, urgentMinutes: 1440 },
-  delivery: { lateMinutes: 1440, urgentMinutes: 4320 },
+  ingressato: { warning: 24, critical: 48 },
+  in_diagnosi: { warning: 24, critical: 48 },
+  preventivo_emesso: { warning: 48, critical: 72 },
+  attesa_ricambi: { warning: 72, critical: 120 },
+  in_riparazione: { warning: 24, critical: 48 },
+  in_test: { warning: 8, critical: 24 },
+  pronto_ritiro: { warning: 24, critical: 72 },
 };
 
 const phaseLabels: Record<string, string> = {
-  diagnosis: "1. Diagnosi",
-  quote: "2. Preventivo",
-  parts: "3. Attesa Ricambi",
-  test: "4. Test Finale",
-  delivery: "5. Consegna",
+  ingressato: "1. Ingresso",
+  in_diagnosi: "2. Diagnosi",
+  preventivo_emesso: "3. Preventivo",
+  attesa_ricambi: "4. Attesa Ricambi",
+  in_riparazione: "5. In Riparazione",
+  in_test: "6. Test Finale",
+  pronto_ritiro: "7. Pronto Ritiro",
 };
 
 const phaseDescriptions: Record<string, string> = {
-  diagnosis: "Tempo massimo dalla presa in carico alla diagnosi completata",
-  quote: "Tempo massimo dalla diagnosi all'invio del preventivo",
-  parts: "Tempo massimo dall'ordine ricambi alla ricezione",
-  test: "Tempo massimo dalla riparazione completata al test finale",
-  delivery: "Tempo massimo dal dispositivo pronto al ritiro effettivo",
+  ingressato: "Tempo dalla presa in carico all'inizio diagnosi",
+  in_diagnosi: "Tempo per completare la diagnosi del dispositivo",
+  preventivo_emesso: "Tempo di attesa per risposta cliente al preventivo",
+  attesa_ricambi: "Tempo dall'ordine ricambi alla ricezione",
+  in_riparazione: "Tempo per completare la riparazione",
+  in_test: "Tempo per eseguire i test finali",
+  pronto_ritiro: "Tempo dal dispositivo pronto al ritiro effettivo",
 };
 
 const phaseIcons: Record<string, string> = {
-  diagnosis: "🔍",
-  quote: "📋",
-  parts: "📦",
-  test: "✅",
-  delivery: "🚚",
+  ingressato: "📥",
+  in_diagnosi: "🔍",
+  preventivo_emesso: "📋",
+  attesa_ricambi: "📦",
+  in_riparazione: "🔧",
+  in_test: "✅",
+  pronto_ritiro: "🚚",
 };
-
-function minutesToDisplay(minutes: number): { value: number; unit: string } {
-  if (minutes >= 1440 && minutes % 1440 === 0) {
-    return { value: minutes / 1440, unit: "giorni" };
-  } else if (minutes >= 60 && minutes % 60 === 0) {
-    return { value: minutes / 60, unit: "ore" };
-  }
-  return { value: minutes, unit: "minuti" };
-}
-
-function displayToMinutes(value: number, unit: string): number {
-  if (unit === "giorni") return value * 1440;
-  if (unit === "ore") return value * 60;
-  return value;
-}
 
 export default function AdminSettings() {
   const { toast } = useToast();
@@ -311,9 +306,8 @@ export default function AdminSettings() {
             </div>
           ) : (
             <div className="space-y-6">
-              {(Object.keys(slaThresholds) as Array<keyof SLAThresholdsResponse>).map((phase) => {
-                const lateDisplay = minutesToDisplay(slaThresholds[phase].lateMinutes);
-                const urgentDisplay = minutesToDisplay(slaThresholds[phase].urgentMinutes);
+              {(Object.keys(defaultSLAThresholds) as Array<keyof SLAThresholdsResponse>).map((phase) => {
+                const threshold = slaThresholds[phase] || defaultSLAThresholds[phase];
                 
                 return (
                   <div key={phase} className="border rounded-lg p-4 space-y-4 bg-card">
@@ -327,10 +321,10 @@ export default function AdminSettings() {
                       </div>
                       <div className="flex gap-2">
                         <Badge variant="outline" className="bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 border-yellow-300 dark:border-yellow-600">
-                          Ritardo: {lateDisplay.value} {lateDisplay.unit}
+                          Ritardo: {threshold.warning}h
                         </Badge>
                         <Badge variant="outline" className="bg-red-500/10 text-red-700 dark:text-red-400 border-red-300 dark:border-red-600">
-                          Urgente: {urgentDisplay.value} {urgentDisplay.unit}
+                          Urgente: {threshold.critical}h
                         </Badge>
                       </div>
                     </div>
@@ -339,24 +333,24 @@ export default function AdminSettings() {
                       <div className="space-y-2">
                         <Label className="flex items-center gap-2">
                           <div className="w-3 h-3 rounded-full bg-yellow-500" />
-                          Soglia Ritardo (giorni)
+                          Soglia Ritardo (ore)
                         </Label>
                         <Input
                           type="number"
-                          min="0"
-                          step="0.5"
-                          value={(slaThresholds[phase].lateMinutes / 1440).toFixed(1)}
+                          min="1"
+                          step="1"
+                          value={threshold.warning}
                           onChange={(e) => {
-                            const days = parseFloat(e.target.value) || 0;
+                            const hours = parseInt(e.target.value) || 1;
                             setSlaThresholds(prev => ({
                               ...prev,
                               [phase]: {
                                 ...prev[phase],
-                                lateMinutes: Math.round(days * 1440)
+                                warning: hours
                               }
                             }));
                           }}
-                          data-testid={`input-sla-late-${phase}`}
+                          data-testid={`input-sla-warning-${phase}`}
                         />
                         <p className="text-xs text-muted-foreground">
                           Oltre questa soglia il badge diventa giallo
@@ -365,24 +359,24 @@ export default function AdminSettings() {
                       <div className="space-y-2">
                         <Label className="flex items-center gap-2">
                           <div className="w-3 h-3 rounded-full bg-red-500" />
-                          Soglia Urgente (giorni)
+                          Soglia Urgente (ore)
                         </Label>
                         <Input
                           type="number"
-                          min="0"
-                          step="0.5"
-                          value={(slaThresholds[phase].urgentMinutes / 1440).toFixed(1)}
+                          min="1"
+                          step="1"
+                          value={threshold.critical}
                           onChange={(e) => {
-                            const days = parseFloat(e.target.value) || 0;
+                            const hours = parseInt(e.target.value) || 1;
                             setSlaThresholds(prev => ({
                               ...prev,
                               [phase]: {
                                 ...prev[phase],
-                                urgentMinutes: Math.round(days * 1440)
+                                critical: hours
                               }
                             }));
                           }}
-                          data-testid={`input-sla-urgent-${phase}`}
+                          data-testid={`input-sla-critical-${phase}`}
                         />
                         <p className="text-xs text-muted-foreground">
                           Oltre questa soglia il badge diventa rosso
