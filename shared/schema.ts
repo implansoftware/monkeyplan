@@ -101,6 +101,7 @@ export const supplierApiTypeEnum = pgEnum("supplier_api_type", [
   "foneday",           // Foneday.shop API
   "ifixit",            // iFixit API
   "mobilax",           // Mobilax API
+  "sifar",             // SIFAR API (ricambi telefonia)
   "generic_rest",      // API REST generica
   "custom",            // Integrazione custom
 ]);
