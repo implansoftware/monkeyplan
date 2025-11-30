@@ -879,6 +879,10 @@ export const suppliers = pgTable("suppliers", {
   
   // Stato
   isActive: boolean("is_active").notNull().default(true),
+  
+  // Accesso esterno - se true, rivenditori e centri riparazione possono vedere questo fornitore
+  isExternal: boolean("is_external").notNull().default(false),
+  
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });

@@ -262,6 +262,7 @@ export interface IStorage {
   
   // Suppliers (Fornitori)
   listSuppliers(activeOnly?: boolean): Promise<Supplier[]>;
+  listExternalSuppliers(): Promise<Supplier[]>; // Fornitori esterni visibili a reseller/repair_center
   getSupplier(id: string): Promise<Supplier | undefined>;
   getSupplierByCode(code: string): Promise<Supplier | undefined>;
   createSupplier(supplier: InsertSupplier): Promise<Supplier>;
@@ -270,6 +271,7 @@ export interface IStorage {
   
   // Supplier Catalog Products
   listSupplierCatalogProducts(supplierId: string): Promise<SupplierCatalogProduct[]>;
+  searchSupplierCatalogProducts(supplierId: string, query: string, limit?: number): Promise<SupplierCatalogProduct[]>;
   getSupplierCatalogProduct(id: string): Promise<SupplierCatalogProduct | undefined>;
   upsertSupplierCatalogProduct(product: InsertSupplierCatalogProduct): Promise<{ product: SupplierCatalogProduct; created: boolean }>;
   mapCatalogProductToLocal(catalogProductId: string, linkedProductId: string): Promise<SupplierCatalogProduct>;
@@ -2139,6 +2141,16 @@ export class DatabaseStorage implements IStorage {
     }
     
     return await query.orderBy(suppliers.name);
+  }
+
+  async listExternalSuppliers(): Promise<Supplier[]> {
+    return await db.select()
+      .from(suppliers)
+      .where(and(
+        eq(suppliers.isActive, true),
+        eq(suppliers.isExternal, true)
+      ))
+      .orderBy(suppliers.name);
   }
 
   async getSupplier(id: string): Promise<Supplier | undefined> {
