@@ -617,7 +617,14 @@ export default function AdminUtilityPracticeDetail() {
                           </span>
                         </div>
                       </div>
-                      <Button variant="ghost" size="icon" data-testid={`button-download-${doc.id}`}>
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        onClick={() => {
+                          window.open(`/api/utility/practices/${params.id}/documents/${doc.id}/download`, '_blank');
+                        }}
+                        data-testid={`button-download-${doc.id}`}
+                      >
                         <Download className="h-4 w-4" />
                       </Button>
                       <Button 

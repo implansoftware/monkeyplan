@@ -8392,6 +8392,50 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // GET /api/utility/practices/:practiceId/documents/:id/download - Download practice document
+  app.get("/api/utility/practices/:practiceId/documents/:id/download", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const document = await storage.getUtilityPracticeDocument(req.params.id);
+      if (!document) return res.status(404).send("Documento non trovato");
+      
+      const practice = await storage.getUtilityPractice(document.practiceId);
+      if (!practice) return res.status(404).send("Pratica non trovata");
+      
+      // RBAC check
+      if (req.user.role === 'customer' && practice.customerId !== req.user.id) {
+        return res.status(403).send("Accesso negato");
+      }
+      if (req.user.role === 'reseller' && practice.resellerId !== req.user.id) {
+        return res.status(403).send("Accesso negato");
+      }
+      
+      // Parse object key and get file from storage
+      const { bucketName, objectName } = parseObjectPath(document.objectKey);
+      const bucket = objectStorageClient.bucket(bucketName);
+      const file = bucket.file(objectName);
+      
+      // Check if file exists
+      const [exists] = await file.exists();
+      if (!exists) {
+        return res.status(404).send("File non trovato nello storage");
+      }
+      
+      // Set response headers for download
+      res.set({
+        'Content-Type': document.mimeType || 'application/octet-stream',
+        'Content-Disposition': `attachment; filename="${encodeURIComponent(document.fileName)}"`,
+      });
+      
+      // Stream file to response
+      file.createReadStream().pipe(res);
+    } catch (error: any) {
+      console.error("Error downloading utility document:", error);
+      res.status(500).send(error.message);
+    }
+  });
+
   // DELETE /api/utility/practices/:practiceId/documents/:id - Delete practice document
   app.delete("/api/utility/practices/:practiceId/documents/:id", requireAuth, requireRole("admin", "reseller"), async (req, res) => {
     try {
