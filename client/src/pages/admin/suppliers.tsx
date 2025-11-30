@@ -179,7 +179,6 @@ export default function AdminSuppliers() {
       fiscalCode: formData.get("fiscalCode") as string || undefined,
       communicationChannel: formData.get("communicationChannel") as CommunicationChannel || "email",
       apiEndpoint: formData.get("apiEndpoint") as string || undefined,
-      apiKey: formData.get("apiKey") as string || undefined,
       apiFormat: formData.get("apiFormat") as string || undefined,
       orderEmailTemplate: formData.get("orderEmailTemplate") as string || undefined,
       returnEmailTemplate: formData.get("returnEmailTemplate") as string || undefined,
@@ -453,31 +452,21 @@ export default function AdminSuppliers() {
                         data-testid="input-supplier-api-endpoint" 
                       />
                     </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="apiKey">Chiave API</Label>
-                        <Input 
-                          id="apiKey" 
-                          name="apiKey" 
-                          type="password"
-                          placeholder="••••••••"
-                          defaultValue={editingSupplier?.apiKey || ""}
-                          data-testid="input-supplier-api-key" 
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="apiFormat">Formato</Label>
-                        <Select name="apiFormat" defaultValue={editingSupplier?.apiFormat || "json"}>
-                          <SelectTrigger data-testid="select-api-format">
-                            <SelectValue placeholder="Formato" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="json">JSON</SelectItem>
-                            <SelectItem value="xml">XML</SelectItem>
-                            <SelectItem value="custom">Personalizzato</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="apiFormat">Formato</Label>
+                      <Select name="apiFormat" defaultValue={editingSupplier?.apiFormat || "json"}>
+                        <SelectTrigger data-testid="select-api-format">
+                          <SelectValue placeholder="Formato" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="json">JSON</SelectItem>
+                          <SelectItem value="xml">XML</SelectItem>
+                          <SelectItem value="custom">Personalizzato</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Per configurare la chiave API in modo sicuro, usa il tab "API"
+                      </p>
                     </div>
                   </div>
 
@@ -630,12 +619,37 @@ export default function AdminSuppliers() {
                       </Select>
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="apiSecretName">Nome Segreto (Replit Secrets)</Label>
-                      <div className="flex gap-2">
+                      <Label htmlFor="apiSecretName">Chiave API</Label>
+                      <div className="p-3 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg space-y-3">
+                        <div className="flex items-start gap-2">
+                          <AlertCircle className="h-4 w-4 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
+                          <div className="text-sm text-amber-800 dark:text-amber-200">
+                            <p className="font-medium">Configurazione sicura richiesta</p>
+                            <p className="text-amber-700 dark:text-amber-300 mt-1">
+                              Per sicurezza, la chiave API deve essere salvata nei Secrets di Replit, non in questo form.
+                            </p>
+                          </div>
+                        </div>
+                        <div className="space-y-2 pl-6">
+                          <p className="text-xs text-amber-700 dark:text-amber-300">
+                            <strong>Passaggio 1:</strong> Vai nella sezione "Secrets" di Replit (pannello a sinistra)
+                          </p>
+                          <p className="text-xs text-amber-700 dark:text-amber-300">
+                            <strong>Passaggio 2:</strong> Crea un nuovo segreto con un nome (es: SUPPLIER_FONEDAY_API_KEY)
+                          </p>
+                          <p className="text-xs text-amber-700 dark:text-amber-300">
+                            <strong>Passaggio 3:</strong> Incolla la tua chiave API come valore del segreto
+                          </p>
+                          <p className="text-xs text-amber-700 dark:text-amber-300">
+                            <strong>Passaggio 4:</strong> Inserisci qui sotto SOLO il nome del segreto che hai creato
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex gap-2 mt-2">
                         <Input 
                           id="apiSecretName" 
                           name="apiSecretName" 
-                          placeholder="SUPPLIER_FONEDAY_API_KEY"
+                          placeholder="es: SUPPLIER_FONEDAY_API_KEY"
                           defaultValue={editingSupplier?.apiSecretName || ""}
                           data-testid="input-api-secret-name" 
                         />
@@ -646,7 +660,16 @@ export default function AdminSuppliers() {
                           onClick={() => {
                             const secretName = (document.getElementById('apiSecretName') as HTMLInputElement)?.value;
                             if (secretName) {
-                              toast({ title: "Info", description: `Assicurati che il segreto "${secretName}" sia configurato nei Replit Secrets` });
+                              toast({ 
+                                title: "Verifica Segreto", 
+                                description: `Verifica che il segreto "${secretName}" sia configurato nella sezione Secrets di Replit` 
+                              });
+                            } else {
+                              toast({ 
+                                title: "Nome segreto mancante", 
+                                description: "Inserisci il nome del segreto che hai creato in Replit Secrets",
+                                variant: "destructive"
+                              });
                             }
                           }}
                           data-testid="button-api-secret-info"
@@ -654,7 +677,7 @@ export default function AdminSuppliers() {
                           <Key className="h-4 w-4" />
                         </Button>
                       </div>
-                      <p className="text-xs text-muted-foreground">Il nome del segreto dove è memorizzata la chiave API</p>
+                      <p className="text-xs text-muted-foreground">Inserisci SOLO il nome del segreto (non la chiave API)</p>
                     </div>
                   </div>
 
