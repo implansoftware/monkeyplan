@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { 
   Plus, Search, FileCheck, Pencil, Trash2, 
-  ArrowLeft, User as UserIcon
+  ArrowLeft, User as UserIcon, Eye
 } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -308,6 +308,15 @@ export default function AdminUtilityPractices() {
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex items-center justify-end gap-1">
+                          <Link href={`/admin/utility/practices/${practice.id}`}>
+                            <Button 
+                              variant="ghost" 
+                              size="icon"
+                              data-testid={`button-view-${practice.id}`}
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                          </Link>
                           <Button 
                             variant="ghost" 
                             size="icon"

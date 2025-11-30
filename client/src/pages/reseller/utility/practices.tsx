@@ -11,7 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { 
-  Plus, Search, FileCheck, Pencil, ArrowLeft, User as UserIcon
+  Plus, Search, FileCheck, Pencil, ArrowLeft, User as UserIcon, Eye
 } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -289,14 +289,25 @@ export default function ResellerUtilityPractices() {
                         </Badge>
                       </TableCell>
                       <TableCell className="text-right">
-                        <Button 
-                          variant="ghost" 
-                          size="icon"
-                          onClick={() => handleEdit(practice)}
-                          data-testid={`button-edit-${practice.id}`}
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </Button>
+                        <div className="flex items-center justify-end gap-1">
+                          <Link href={`/reseller/utility/practices/${practice.id}`}>
+                            <Button 
+                              variant="ghost" 
+                              size="icon"
+                              data-testid={`button-view-${practice.id}`}
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                          </Link>
+                          <Button 
+                            variant="ghost" 
+                            size="icon"
+                            onClick={() => handleEdit(practice)}
+                            data-testid={`button-edit-${practice.id}`}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   );
