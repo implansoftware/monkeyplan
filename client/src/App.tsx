@@ -54,6 +54,8 @@ import ResellerNewRepair from "@/pages/reseller/new-repair";
 import ResellerCustomers from "@/pages/reseller/customers";
 import ResellerTickets from "@/pages/reseller/tickets";
 import ResellerTicketDetail from "@/pages/reseller/ticket-detail";
+import ResellerInvoices from "@/pages/reseller/invoices";
+import ResellerReports from "@/pages/reseller/reports";
 
 // Reseller Utility pages
 import ResellerUtility from "@/pages/reseller/utility/index";
@@ -131,6 +133,8 @@ function Router() {
       <ProtectedRoute path="/reseller/utility/practices/:id" component={ResellerUtilityPracticeDetail} />
       <ProtectedRoute path="/reseller/utility/practices" component={ResellerUtilityPractices} />
       <ProtectedRoute path="/reseller/utility/commissions" component={ResellerUtilityCommissions} />
+      <ProtectedRoute path="/reseller/invoices" component={ResellerInvoices} />
+      <ProtectedRoute path="/reseller/reports" component={ResellerReports} />
       <ProtectedRoute path="/reseller/sifar/settings" component={ResellerSifarSettings} />
       <ProtectedRoute path="/reseller/sifar/catalog" component={ResellerSifarCatalog} />
       <ProtectedRoute path="/reseller/sifar/cart" component={ResellerSifarCart} />
