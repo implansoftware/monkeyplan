@@ -44,6 +44,12 @@ The backend is an `Express.js` application with TypeScript, featuring a RESTful 
     *   **Supplier Returns**: Return management with RMA tracking, refund workflow (draft → requested → approved → shipped → received → refunded/rejected), and automatic inventory decrements on shipment with idempotency protection.
     *   **Communication Logs**: Tracks all communications with suppliers including order confirmations, status updates, and return requests.
     *   **Inventory Integration**: Automatic stock movements when supplier orders are received (incremental 'in') or returns are shipped (one-time 'out'), ensuring accurate inventory tracking.
+    *   **External API Integration**: Supports external supplier APIs (Foneday, generic, custom) with configurable endpoints for products, orders, cart, and invoices.
+        *   **API Configuration**: API type selection (foneday, generic, custom), multiple authentication methods (bearer_token, basic_auth, api_key, oauth2), secure API key storage via Replit Secrets references.
+        *   **Catalog Synchronization**: `supplier_catalog_products` table stores synchronized product catalogs with external SKU mapping, pricing, stock data, and linking to local products.
+        *   **Sync Logging**: `supplier_sync_logs` table tracks synchronization operations with detailed metrics (products created/updated/failed, duration).
+        *   **API Endpoints**: POST `/api/suppliers/:id/test-connection` for connection testing, POST `/api/suppliers/:id/sync-catalog` for catalog synchronization.
+        *   **Frontend Tab**: Dedicated "API" tab in supplier management with API type selection, authentication config, multiple endpoint fields, and real-time sync status.
 
 ## External Dependencies
 
