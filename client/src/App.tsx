@@ -38,6 +38,13 @@ import AdminPartsLoad from "@/pages/admin/parts-load";
 import DiagnosisList from "@/pages/DiagnosisList";
 import QuotesList from "@/pages/QuotesList";
 
+// Admin Utility pages
+import AdminUtility from "@/pages/admin/utility/index";
+import AdminUtilitySuppliers from "@/pages/admin/utility/suppliers";
+import AdminUtilityPractices from "@/pages/admin/utility/practices";
+import AdminUtilityCommissions from "@/pages/admin/utility/commissions";
+import AdminUtilityReports from "@/pages/admin/utility/reports";
+
 // Reseller pages
 import ResellerDashboard from "@/pages/reseller/dashboard";
 import ResellerOrders from "@/pages/reseller/orders";
@@ -45,6 +52,11 @@ import ResellerNewRepair from "@/pages/reseller/new-repair";
 import ResellerCustomers from "@/pages/reseller/customers";
 import ResellerTickets from "@/pages/reseller/tickets";
 import ResellerTicketDetail from "@/pages/reseller/ticket-detail";
+
+// Reseller Utility pages
+import ResellerUtility from "@/pages/reseller/utility/index";
+import ResellerUtilityPractices from "@/pages/reseller/utility/practices";
+import ResellerUtilityCommissions from "@/pages/reseller/utility/commissions";
 
 // Repair Center pages
 import RepairCenterDashboard from "@/pages/repair-center/dashboard";
@@ -91,6 +103,11 @@ function Router() {
       <ProtectedRoute path="/admin/supplier-orders" component={AdminSupplierOrders} />
       <ProtectedRoute path="/admin/supplier-returns" component={AdminSupplierReturns} />
       <ProtectedRoute path="/admin/parts-load" component={AdminPartsLoad} />
+      <ProtectedRoute path="/admin/utility" component={AdminUtility} />
+      <ProtectedRoute path="/admin/utility/suppliers" component={AdminUtilitySuppliers} />
+      <ProtectedRoute path="/admin/utility/practices" component={AdminUtilityPractices} />
+      <ProtectedRoute path="/admin/utility/commissions" component={AdminUtilityCommissions} />
+      <ProtectedRoute path="/admin/utility/reports" component={AdminUtilityReports} />
       <ProtectedRoute path="/admin/settings" component={AdminSettings} />
       
       {/* Reseller routes */}
@@ -100,6 +117,9 @@ function Router() {
       <ProtectedRoute path="/reseller/new-repair" component={ResellerNewRepair} />
       <ProtectedRoute path="/reseller/tickets" component={ResellerTickets} />
       <ProtectedRoute path="/reseller/tickets/:id" component={ResellerTicketDetail} />
+      <ProtectedRoute path="/reseller/utility" component={ResellerUtility} />
+      <ProtectedRoute path="/reseller/utility/practices" component={ResellerUtilityPractices} />
+      <ProtectedRoute path="/reseller/utility/commissions" component={ResellerUtilityCommissions} />
       
       {/* Repair Center routes */}
       <ProtectedRoute path="/repair-center" component={RepairCenterDashboard} />

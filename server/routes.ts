@@ -24,6 +24,10 @@ import {
   insertSupplierOrderSchema,
   insertSupplierOrderItemSchema,
   insertSupplierReturnSchema,
+  insertUtilitySupplierSchema,
+  insertUtilityServiceSchema,
+  insertUtilityPracticeSchema,
+  insertUtilityCommissionSchema,
   insertSupplierReturnItemSchema,
   insertSupplierCommunicationLogSchema,
   insertPartsLoadDocumentSchema,
@@ -7972,6 +7976,395 @@ export function registerRoutes(app: Express): Server {
       
       const orders = await storage.listAllPartsOrders(filters);
       res.json(orders);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // ==========================================
+  // UTILITY MODULE API
+  // ==========================================
+
+  // ----- UTILITY SUPPLIERS -----
+
+  // GET /api/utility/suppliers - List utility suppliers
+  app.get("/api/utility/suppliers", requireAuth, requireRole("admin", "reseller"), async (req, res) => {
+    try {
+      const suppliers = await storage.listUtilitySuppliers();
+      res.json(suppliers);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // GET /api/utility/suppliers/:id - Get utility supplier
+  app.get("/api/utility/suppliers/:id", requireAuth, requireRole("admin", "reseller"), async (req, res) => {
+    try {
+      const supplier = await storage.getUtilitySupplier(req.params.id);
+      if (!supplier) {
+        return res.status(404).send("Fornitore utility non trovato");
+      }
+      res.json(supplier);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // POST /api/utility/suppliers - Create utility supplier
+  app.post("/api/utility/suppliers", requireAuth, requireRole("admin"), async (req, res) => {
+    try {
+      const validated = insertUtilitySupplierSchema.parse(req.body);
+      const supplier = await storage.createUtilitySupplier(validated);
+      res.status(201).json(supplier);
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+
+  // PATCH /api/utility/suppliers/:id - Update utility supplier
+  app.patch("/api/utility/suppliers/:id", requireAuth, requireRole("admin"), async (req, res) => {
+    try {
+      const supplier = await storage.updateUtilitySupplier(req.params.id, req.body);
+      res.json(supplier);
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+
+  // DELETE /api/utility/suppliers/:id - Delete utility supplier
+  app.delete("/api/utility/suppliers/:id", requireAuth, requireRole("admin"), async (req, res) => {
+    try {
+      await storage.deleteUtilitySupplier(req.params.id);
+      res.status(204).send();
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // ----- UTILITY SERVICES -----
+
+  // GET /api/utility/services - List utility services
+  app.get("/api/utility/services", requireAuth, requireRole("admin", "reseller"), async (req, res) => {
+    try {
+      const supplierId = req.query.supplierId as string | undefined;
+      const services = await storage.listUtilityServices(supplierId);
+      res.json(services);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // GET /api/utility/services/:id - Get utility service
+  app.get("/api/utility/services/:id", requireAuth, requireRole("admin", "reseller"), async (req, res) => {
+    try {
+      const service = await storage.getUtilityService(req.params.id);
+      if (!service) {
+        return res.status(404).send("Servizio utility non trovato");
+      }
+      res.json(service);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // POST /api/utility/services - Create utility service
+  app.post("/api/utility/services", requireAuth, requireRole("admin"), async (req, res) => {
+    try {
+      const validated = insertUtilityServiceSchema.parse(req.body);
+      const service = await storage.createUtilityService(validated);
+      res.status(201).json(service);
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+
+  // PATCH /api/utility/services/:id - Update utility service
+  app.patch("/api/utility/services/:id", requireAuth, requireRole("admin"), async (req, res) => {
+    try {
+      const service = await storage.updateUtilityService(req.params.id, req.body);
+      res.json(service);
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+
+  // DELETE /api/utility/services/:id - Delete utility service
+  app.delete("/api/utility/services/:id", requireAuth, requireRole("admin"), async (req, res) => {
+    try {
+      await storage.deleteUtilityService(req.params.id);
+      res.status(204).send();
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // ----- UTILITY PRACTICES -----
+
+  // GET /api/utility/practices - List utility practices
+  app.get("/api/utility/practices", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      let filters: { customerId?: string; resellerId?: string; status?: string; supplierId?: string } = {};
+      
+      // RBAC: filter based on role
+      if (req.user.role === 'customer') {
+        filters.customerId = req.user.id;
+      } else if (req.user.role === 'reseller') {
+        filters.resellerId = req.user.id;
+      }
+      // Admin sees all
+      
+      if (req.query.status) {
+        filters.status = req.query.status as string;
+      }
+      if (req.query.supplierId) {
+        filters.supplierId = req.query.supplierId as string;
+      }
+      
+      const practices = await storage.listUtilityPractices(filters);
+      res.json(practices);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // GET /api/utility/practices/:id - Get utility practice
+  app.get("/api/utility/practices/:id", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const practice = await storage.getUtilityPractice(req.params.id);
+      if (!practice) {
+        return res.status(404).send("Pratica utility non trovata");
+      }
+      
+      // RBAC check
+      if (req.user.role === 'customer' && practice.customerId !== req.user.id) {
+        return res.status(403).send("Accesso negato");
+      }
+      if (req.user.role === 'reseller' && practice.resellerId !== req.user.id) {
+        return res.status(403).send("Accesso negato");
+      }
+      
+      // Enrich with supplier and service info
+      const [supplier, service] = await Promise.all([
+        storage.getUtilitySupplier(practice.supplierId),
+        storage.getUtilityService(practice.serviceId),
+      ]);
+      
+      res.json({ ...practice, supplier, service });
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // POST /api/utility/practices - Create utility practice
+  app.post("/api/utility/practices", requireAuth, requireRole("admin", "reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const practiceData = { ...req.body };
+      
+      // If reseller, set resellerId automatically
+      if (req.user.role === 'reseller') {
+        practiceData.resellerId = req.user.id;
+      }
+      
+      const validated = insertUtilityPracticeSchema.parse(practiceData);
+      const practice = await storage.createUtilityPractice(validated);
+      res.status(201).json(practice);
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+
+  // PATCH /api/utility/practices/:id - Update utility practice
+  app.patch("/api/utility/practices/:id", requireAuth, requireRole("admin", "reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const practice = await storage.getUtilityPractice(req.params.id);
+      if (!practice) {
+        return res.status(404).send("Pratica utility non trovata");
+      }
+      
+      // Resellers can only update their own practices
+      if (req.user.role === 'reseller' && practice.resellerId !== req.user.id) {
+        return res.status(403).send("Accesso negato");
+      }
+      
+      const updated = await storage.updateUtilityPractice(req.params.id, req.body);
+      res.json(updated);
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+
+  // DELETE /api/utility/practices/:id - Delete utility practice
+  app.delete("/api/utility/practices/:id", requireAuth, requireRole("admin"), async (req, res) => {
+    try {
+      await storage.deleteUtilityPractice(req.params.id);
+      res.status(204).send();
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // ----- UTILITY COMMISSIONS -----
+
+  // GET /api/utility/commissions - List utility commissions
+  app.get("/api/utility/commissions", requireAuth, requireRole("admin", "reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      let filters: { practiceId?: string; status?: string; periodYear?: number } = {};
+      
+      if (req.query.practiceId) {
+        filters.practiceId = req.query.practiceId as string;
+      }
+      if (req.query.status) {
+        filters.status = req.query.status as string;
+      }
+      if (req.query.periodYear) {
+        filters.periodYear = parseInt(req.query.periodYear as string);
+      }
+      
+      // For resellers, we need to filter commissions by their practices
+      if (req.user.role === 'reseller') {
+        const practices = await storage.listUtilityPractices({ resellerId: req.user.id });
+        const practiceIds = practices.map(p => p.id);
+        
+        // Get all commissions and filter by practiceIds
+        const allCommissions = await storage.listUtilityCommissions(filters);
+        const filtered = allCommissions.filter(c => practiceIds.includes(c.practiceId));
+        return res.json(filtered);
+      }
+      
+      const commissions = await storage.listUtilityCommissions(filters);
+      res.json(commissions);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // GET /api/utility/commissions/:id - Get utility commission
+  app.get("/api/utility/commissions/:id", requireAuth, requireRole("admin", "reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const commission = await storage.getUtilityCommission(req.params.id);
+      if (!commission) {
+        return res.status(404).send("Commissione utility non trovata");
+      }
+      
+      // RBAC for resellers
+      if (req.user.role === 'reseller') {
+        const practice = await storage.getUtilityPractice(commission.practiceId);
+        if (!practice || practice.resellerId !== req.user.id) {
+          return res.status(403).send("Accesso negato");
+        }
+      }
+      
+      res.json(commission);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // POST /api/utility/commissions - Create utility commission
+  app.post("/api/utility/commissions", requireAuth, requireRole("admin"), async (req, res) => {
+    try {
+      const validated = insertUtilityCommissionSchema.parse(req.body);
+      const commission = await storage.createUtilityCommission(validated);
+      res.status(201).json(commission);
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+
+  // PATCH /api/utility/commissions/:id - Update utility commission
+  app.patch("/api/utility/commissions/:id", requireAuth, requireRole("admin"), async (req, res) => {
+    try {
+      const commission = await storage.updateUtilityCommission(req.params.id, req.body);
+      res.json(commission);
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+
+  // DELETE /api/utility/commissions/:id - Delete utility commission
+  app.delete("/api/utility/commissions/:id", requireAuth, requireRole("admin"), async (req, res) => {
+    try {
+      await storage.deleteUtilityCommission(req.params.id);
+      res.status(204).send();
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // ----- UTILITY REPORTS -----
+
+  // GET /api/utility/reports/summary - Get utility summary report
+  app.get("/api/utility/reports/summary", requireAuth, requireRole("admin", "reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const year = req.query.year ? parseInt(req.query.year as string) : new Date().getFullYear();
+      
+      // Get practices based on role
+      let practicesFilters: { resellerId?: string } = {};
+      if (req.user.role === 'reseller') {
+        practicesFilters.resellerId = req.user.id;
+      }
+      
+      const practices = await storage.listUtilityPractices(practicesFilters);
+      const commissions = await storage.listUtilityCommissions({ periodYear: year });
+      const suppliers = await storage.listUtilitySuppliers();
+      
+      // Filter commissions for resellers
+      let relevantCommissions = commissions;
+      if (req.user.role === 'reseller') {
+        const practiceIds = practices.map(p => p.id);
+        relevantCommissions = commissions.filter(c => practiceIds.includes(c.practiceId));
+      }
+      
+      // Calculate stats by category
+      const byCategory: Record<string, { count: number; revenue: number; commissions: number }> = {};
+      const byStatus: Record<string, number> = {};
+      
+      for (const practice of practices) {
+        const service = await storage.getUtilityService(practice.serviceId);
+        const category = service?.category || 'altro';
+        
+        if (!byCategory[category]) {
+          byCategory[category] = { count: 0, revenue: 0, commissions: 0 };
+        }
+        byCategory[category].count++;
+        byCategory[category].revenue += practice.monthlyPriceCents || 0;
+        byCategory[category].commissions += practice.commissionAmountCents || 0;
+        
+        byStatus[practice.status] = (byStatus[practice.status] || 0) + 1;
+      }
+      
+      // Calculate total commissions
+      const totalCommissions = relevantCommissions.reduce((sum, c) => sum + c.amountCents, 0);
+      const pendingCommissions = relevantCommissions.filter(c => c.status === 'pending').reduce((sum, c) => sum + c.amountCents, 0);
+      const paidCommissions = relevantCommissions.filter(c => c.status === 'paid').reduce((sum, c) => sum + c.amountCents, 0);
+      
+      res.json({
+        year,
+        totalPractices: practices.length,
+        activePractices: practices.filter(p => p.status === 'completata').length,
+        byCategory,
+        byStatus,
+        commissions: {
+          total: totalCommissions,
+          pending: pendingCommissions,
+          paid: paidCommissions,
+        },
+        supplierCount: suppliers.length,
+      });
     } catch (error: any) {
       res.status(500).send(error.message);
     }

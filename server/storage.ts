@@ -26,6 +26,8 @@ import {
   SupplierReturnStateHistory, InsertSupplierReturnStateHistory,
   SlaThresholds, slaThresholdsSchema,
   CustomerBranch, InsertCustomerBranch,
+  UtilitySupplier, InsertUtilitySupplier, UtilityService, InsertUtilityService,
+  UtilityPractice, InsertUtilityPractice, UtilityCommission, InsertUtilityCommission,
   users, repairCenters, products, repairOrders, tickets, ticketMessages,
   invoices, billingData, chatMessages, inventoryMovements, inventoryStock, activityLogs, analyticsCache,
   notifications, notificationPreferences, repairAttachments, repairAcceptance, repairDiagnostics,
@@ -36,7 +38,8 @@ import {
   suppliers, productSuppliers, supplierCatalogProducts, supplierSyncLogs, supplierOrders, supplierOrderItems, supplierReturns, supplierReturnItems, supplierCommunicationLogs,
   partsLoadDocuments, partsLoadItems,
   repairOrderStateHistory, supplierReturnStateHistory,
-  customerBranches
+  customerBranches,
+  utilitySuppliers, utilityServices, utilityPractices, utilityCommissions
 } from "@shared/schema";
 import { db, pool } from "./db";
 import { eq, and, or, desc, lt, sql, not } from "drizzle-orm";
@@ -346,6 +349,34 @@ export interface IStorage {
   updateCustomerBranch(id: string, updates: Partial<InsertCustomerBranch>): Promise<CustomerBranch>;
   deleteCustomerBranch(id: string): Promise<void>;
   getBranchByCode(parentCustomerId: string, branchCode: string): Promise<CustomerBranch | undefined>;
+  
+  // Utility Suppliers
+  listUtilitySuppliers(): Promise<UtilitySupplier[]>;
+  getUtilitySupplier(id: string): Promise<UtilitySupplier | undefined>;
+  createUtilitySupplier(supplier: InsertUtilitySupplier): Promise<UtilitySupplier>;
+  updateUtilitySupplier(id: string, updates: Partial<InsertUtilitySupplier>): Promise<UtilitySupplier>;
+  deleteUtilitySupplier(id: string): Promise<void>;
+  
+  // Utility Services
+  listUtilityServices(supplierId?: string): Promise<UtilityService[]>;
+  getUtilityService(id: string): Promise<UtilityService | undefined>;
+  createUtilityService(service: InsertUtilityService): Promise<UtilityService>;
+  updateUtilityService(id: string, updates: Partial<InsertUtilityService>): Promise<UtilityService>;
+  deleteUtilityService(id: string): Promise<void>;
+  
+  // Utility Practices
+  listUtilityPractices(filters?: { customerId?: string; resellerId?: string; status?: string; supplierId?: string }): Promise<UtilityPractice[]>;
+  getUtilityPractice(id: string): Promise<UtilityPractice | undefined>;
+  createUtilityPractice(practice: InsertUtilityPractice): Promise<UtilityPractice>;
+  updateUtilityPractice(id: string, updates: Partial<InsertUtilityPractice>): Promise<UtilityPractice>;
+  deleteUtilityPractice(id: string): Promise<void>;
+  
+  // Utility Commissions
+  listUtilityCommissions(filters?: { practiceId?: string; status?: string; periodYear?: number }): Promise<UtilityCommission[]>;
+  getUtilityCommission(id: string): Promise<UtilityCommission | undefined>;
+  createUtilityCommission(commission: InsertUtilityCommission): Promise<UtilityCommission>;
+  updateUtilityCommission(id: string, updates: Partial<InsertUtilityCommission>): Promise<UtilityCommission>;
+  deleteUtilityCommission(id: string): Promise<void>;
   
   sessionStore: session.Store;
 }
@@ -2963,6 +2994,221 @@ export class DatabaseStorage implements IStorage {
         eq(customerBranches.branchCode, branchCode)
       ));
     return branch || undefined;
+  }
+
+  // ==========================================
+  // UTILITY MODULE
+  // ==========================================
+
+  // Utility Suppliers
+  async listUtilitySuppliers(): Promise<UtilitySupplier[]> {
+    return await db.select()
+      .from(utilitySuppliers)
+      .orderBy(utilitySuppliers.name);
+  }
+
+  async getUtilitySupplier(id: string): Promise<UtilitySupplier | undefined> {
+    const [supplier] = await db.select()
+      .from(utilitySuppliers)
+      .where(eq(utilitySuppliers.id, id));
+    return supplier || undefined;
+  }
+
+  async createUtilitySupplier(supplier: InsertUtilitySupplier): Promise<UtilitySupplier> {
+    const [created] = await db.insert(utilitySuppliers)
+      .values(supplier)
+      .returning();
+    return created;
+  }
+
+  async updateUtilitySupplier(id: string, updates: Partial<InsertUtilitySupplier>): Promise<UtilitySupplier> {
+    const [updated] = await db.update(utilitySuppliers)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(utilitySuppliers.id, id))
+      .returning();
+    
+    if (!updated) {
+      throw new Error("Fornitore utility non trovato");
+    }
+    
+    return updated;
+  }
+
+  async deleteUtilitySupplier(id: string): Promise<void> {
+    await db.delete(utilitySuppliers)
+      .where(eq(utilitySuppliers.id, id));
+  }
+
+  // Utility Services
+  async listUtilityServices(supplierId?: string): Promise<UtilityService[]> {
+    if (supplierId) {
+      return await db.select()
+        .from(utilityServices)
+        .where(eq(utilityServices.supplierId, supplierId))
+        .orderBy(utilityServices.name);
+    }
+    return await db.select()
+      .from(utilityServices)
+      .orderBy(utilityServices.name);
+  }
+
+  async getUtilityService(id: string): Promise<UtilityService | undefined> {
+    const [service] = await db.select()
+      .from(utilityServices)
+      .where(eq(utilityServices.id, id));
+    return service || undefined;
+  }
+
+  async createUtilityService(service: InsertUtilityService): Promise<UtilityService> {
+    const [created] = await db.insert(utilityServices)
+      .values(service)
+      .returning();
+    return created;
+  }
+
+  async updateUtilityService(id: string, updates: Partial<InsertUtilityService>): Promise<UtilityService> {
+    const [updated] = await db.update(utilityServices)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(utilityServices.id, id))
+      .returning();
+    
+    if (!updated) {
+      throw new Error("Servizio utility non trovato");
+    }
+    
+    return updated;
+  }
+
+  async deleteUtilityService(id: string): Promise<void> {
+    await db.delete(utilityServices)
+      .where(eq(utilityServices.id, id));
+  }
+
+  // Utility Practices
+  async listUtilityPractices(filters?: { customerId?: string; resellerId?: string; status?: string; supplierId?: string }): Promise<UtilityPractice[]> {
+    const conditions = [];
+    
+    if (filters?.customerId) {
+      conditions.push(eq(utilityPractices.customerId, filters.customerId));
+    }
+    if (filters?.resellerId) {
+      conditions.push(eq(utilityPractices.resellerId, filters.resellerId));
+    }
+    if (filters?.status) {
+      conditions.push(eq(utilityPractices.status, filters.status as any));
+    }
+    if (filters?.supplierId) {
+      conditions.push(eq(utilityPractices.supplierId, filters.supplierId));
+    }
+    
+    if (conditions.length > 0) {
+      return await db.select()
+        .from(utilityPractices)
+        .where(and(...conditions))
+        .orderBy(desc(utilityPractices.createdAt));
+    }
+    
+    return await db.select()
+      .from(utilityPractices)
+      .orderBy(desc(utilityPractices.createdAt));
+  }
+
+  async getUtilityPractice(id: string): Promise<UtilityPractice | undefined> {
+    const [practice] = await db.select()
+      .from(utilityPractices)
+      .where(eq(utilityPractices.id, id));
+    return practice || undefined;
+  }
+
+  async createUtilityPractice(practice: InsertUtilityPractice): Promise<UtilityPractice> {
+    // Generate practice number
+    const year = new Date().getFullYear();
+    const [countResult] = await db.select({ count: sql<number>`count(*)` })
+      .from(utilityPractices)
+      .where(sql`EXTRACT(YEAR FROM ${utilityPractices.createdAt}) = ${year}`);
+    
+    const practiceNumber = `UTL-${year}-${String((countResult?.count || 0) + 1).padStart(4, '0')}`;
+    
+    const [created] = await db.insert(utilityPractices)
+      .values({ ...practice, practiceNumber })
+      .returning();
+    return created;
+  }
+
+  async updateUtilityPractice(id: string, updates: Partial<InsertUtilityPractice>): Promise<UtilityPractice> {
+    const [updated] = await db.update(utilityPractices)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(utilityPractices.id, id))
+      .returning();
+    
+    if (!updated) {
+      throw new Error("Pratica utility non trovata");
+    }
+    
+    return updated;
+  }
+
+  async deleteUtilityPractice(id: string): Promise<void> {
+    await db.delete(utilityPractices)
+      .where(eq(utilityPractices.id, id));
+  }
+
+  // Utility Commissions
+  async listUtilityCommissions(filters?: { practiceId?: string; status?: string; periodYear?: number }): Promise<UtilityCommission[]> {
+    const conditions = [];
+    
+    if (filters?.practiceId) {
+      conditions.push(eq(utilityCommissions.practiceId, filters.practiceId));
+    }
+    if (filters?.status) {
+      conditions.push(eq(utilityCommissions.status, filters.status as any));
+    }
+    if (filters?.periodYear) {
+      conditions.push(eq(utilityCommissions.periodYear, filters.periodYear));
+    }
+    
+    if (conditions.length > 0) {
+      return await db.select()
+        .from(utilityCommissions)
+        .where(and(...conditions))
+        .orderBy(desc(utilityCommissions.periodYear), desc(utilityCommissions.periodMonth));
+    }
+    
+    return await db.select()
+      .from(utilityCommissions)
+      .orderBy(desc(utilityCommissions.periodYear), desc(utilityCommissions.periodMonth));
+  }
+
+  async getUtilityCommission(id: string): Promise<UtilityCommission | undefined> {
+    const [commission] = await db.select()
+      .from(utilityCommissions)
+      .where(eq(utilityCommissions.id, id));
+    return commission || undefined;
+  }
+
+  async createUtilityCommission(commission: InsertUtilityCommission): Promise<UtilityCommission> {
+    const [created] = await db.insert(utilityCommissions)
+      .values(commission)
+      .returning();
+    return created;
+  }
+
+  async updateUtilityCommission(id: string, updates: Partial<InsertUtilityCommission>): Promise<UtilityCommission> {
+    const [updated] = await db.update(utilityCommissions)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(utilityCommissions.id, id))
+      .returning();
+    
+    if (!updated) {
+      throw new Error("Commissione utility non trovata");
+    }
+    
+    return updated;
+  }
+
+  async deleteUtilityCommission(id: string): Promise<void> {
+    await db.delete(utilityCommissions)
+      .where(eq(utilityCommissions.id, id));
   }
 }
 

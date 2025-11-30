@@ -209,6 +209,40 @@ export const partsLoadItemStatusEnum = pgEnum("parts_load_item_status", [
   "error",             // Errore abbinamento
 ]);
 
+// ==========================================
+// UTILITY MODULE ENUMS
+// ==========================================
+
+// Categoria servizio utility
+export const utilityCategoryEnum = pgEnum("utility_category", [
+  "fisso",             // Telefonia fissa
+  "mobile",            // Telefonia mobile
+  "centralino",        // Centralino/PBX
+  "luce",              // Energia elettrica
+  "gas",               // Gas naturale
+  "altro",             // Altro
+]);
+
+// Stato pratica utility
+export const utilityPracticeStatusEnum = pgEnum("utility_practice_status", [
+  "bozza",             // Bozza - in preparazione
+  "inviata",           // Inviata al fornitore
+  "in_lavorazione",    // In lavorazione dal fornitore
+  "attesa_documenti",  // In attesa documenti cliente
+  "completata",        // Pratica completata/attivata
+  "rifiutata",         // Rifiutata dal fornitore
+  "annullata",         // Annullata dal cliente
+]);
+
+// Stato commissione utility
+export const utilityCommissionStatusEnum = pgEnum("utility_commission_status", [
+  "pending",           // In attesa di maturazione
+  "accrued",           // Maturata
+  "invoiced",          // Fatturata
+  "paid",              // Pagata
+  "cancelled",         // Annullata
+]);
+
 // Users table with role-based access
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -1139,6 +1173,140 @@ export const partsLoadItems = pgTable("parts_load_items", {
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 
+// ==========================================
+// UTILITY MODULE TABLES
+// ==========================================
+
+// Utility Suppliers (Fornitori Utility - TIM, Vodafone, Enel, etc.)
+export const utilitySuppliers = pgTable("utility_suppliers", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  code: text("code").notNull().unique(), // Codice fornitore interno (es: "UTL-TIM")
+  name: text("name").notNull(), // Nome fornitore (es: "TIM Business")
+  
+  // Categoria principale servita
+  category: utilityCategoryEnum("category").notNull(),
+  
+  // Contatti
+  email: text("email"),
+  phone: text("phone"),
+  referentName: text("referent_name"), // Nome referente commerciale
+  referentPhone: text("referent_phone"),
+  referentEmail: text("referent_email"),
+  
+  // Portale/Accesso
+  portalUrl: text("portal_url"), // URL portale partner
+  portalUsername: text("portal_username"), // Username portale (non sensibile)
+  
+  // Condizioni commerciali
+  defaultCommissionPercent: real("default_commission_percent"), // Commissione % default
+  defaultCommissionFixed: integer("default_commission_fixed"), // Commissione fissa in centesimi
+  paymentTermsDays: integer("payment_terms_days").default(30), // Giorni pagamento commissioni
+  
+  // Note
+  notes: text("notes"),
+  
+  // Stato
+  isActive: boolean("is_active").notNull().default(true),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+// Utility Services (Prodotti/Servizi Utility - offerte specifiche)
+export const utilityServices = pgTable("utility_services", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  supplierId: varchar("supplier_id").notNull().references(() => utilitySuppliers.id, { onDelete: "cascade" }),
+  
+  code: text("code").notNull(), // Codice offerta (es: "TIM-MOBILE-PRO")
+  name: text("name").notNull(), // Nome offerta
+  description: text("description"),
+  category: utilityCategoryEnum("category").notNull(),
+  
+  // Pricing
+  monthlyPriceCents: integer("monthly_price_cents"), // Canone mensile in centesimi
+  activationFeeCents: integer("activation_fee_cents"), // Costo attivazione in centesimi
+  
+  // Commissioni per questo servizio (override fornitore)
+  commissionPercent: real("commission_percent"), // Commissione % (null = usa default fornitore)
+  commissionFixed: integer("commission_fixed"), // Commissione fissa in centesimi
+  commissionOneTime: integer("commission_one_time"), // Commissione una tantum attivazione
+  
+  // Durata contratto
+  contractMonths: integer("contract_months").default(24), // Durata contratto in mesi
+  
+  // Stato
+  isActive: boolean("is_active").notNull().default(true),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+// Utility Practices (Pratiche - contratti con clienti)
+export const utilityPractices = pgTable("utility_practices", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  practiceNumber: text("practice_number").notNull().unique(), // Numero pratica (es: "UTL-2024-0001")
+  
+  // Servizio e fornitore
+  serviceId: varchar("service_id").notNull().references(() => utilityServices.id),
+  supplierId: varchar("supplier_id").notNull().references(() => utilitySuppliers.id),
+  
+  // Cliente
+  customerId: varchar("customer_id").notNull().references(() => users.id),
+  resellerId: varchar("reseller_id").references(() => users.id), // Reseller che ha gestito la pratica
+  
+  // Stato pratica
+  status: utilityPracticeStatusEnum("status").notNull().default("bozza"),
+  
+  // Riferimento fornitore
+  supplierReference: text("supplier_reference"), // Codice pratica del fornitore
+  
+  // Date
+  submittedAt: timestamp("submitted_at"), // Data invio al fornitore
+  activatedAt: timestamp("activated_at"), // Data attivazione servizio
+  expiresAt: timestamp("expires_at"), // Data scadenza contratto
+  
+  // Importi effettivi (possono differire dal servizio base)
+  monthlyPriceCents: integer("monthly_price_cents"),
+  activationFeeCents: integer("activation_fee_cents"),
+  
+  // Commissione calcolata per questa pratica
+  commissionAmountCents: integer("commission_amount_cents"), // Importo commissione totale
+  
+  // Note
+  notes: text("notes"),
+  
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+// Utility Commissions (Compensi - tracking pagamenti commissioni)
+export const utilityCommissions = pgTable("utility_commissions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  practiceId: varchar("practice_id").notNull().references(() => utilityPractices.id, { onDelete: "cascade" }),
+  
+  // Periodo
+  periodMonth: integer("period_month").notNull(), // Mese (1-12)
+  periodYear: integer("period_year").notNull(), // Anno
+  
+  // Importo
+  amountCents: integer("amount_cents").notNull(), // Importo commissione in centesimi
+  
+  // Stato
+  status: utilityCommissionStatusEnum("status").notNull().default("pending"),
+  
+  // Date
+  accruedAt: timestamp("accrued_at"), // Data maturazione
+  invoicedAt: timestamp("invoiced_at"), // Data fatturazione
+  paidAt: timestamp("paid_at"), // Data pagamento
+  
+  // Riferimenti fattura
+  invoiceNumber: text("invoice_number"), // Numero fattura emessa
+  
+  // Note
+  notes: text("notes"),
+  
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
 // Support Tickets
 export const tickets = pgTable("tickets", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -1958,6 +2126,32 @@ export const insertPartsLoadItemSchema = createInsertSchema(partsLoadItems).omit
   updatedAt: true,
 });
 
+// Utility Module Schemas
+export const insertUtilitySupplierSchema = createInsertSchema(utilitySuppliers).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertUtilityServiceSchema = createInsertSchema(utilityServices).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertUtilityPracticeSchema = createInsertSchema(utilityPractices).omit({
+  id: true,
+  practiceNumber: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertUtilityCommissionSchema = createInsertSchema(utilityCommissions).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 export const createDataRecoveryEventSchema = z.object({
   eventType: z.enum(["created", "status_change", "assigned", "shipped", "received", "completed", "note_added", "document_uploaded"]).default("note_added"),
   title: z.string().min(1, "Title is required").max(200, "Title too long"),
@@ -2219,3 +2413,20 @@ export type PartsLoadDocument = typeof partsLoadDocuments.$inferSelect;
 export type InsertPartsLoadDocument = z.infer<typeof insertPartsLoadDocumentSchema>;
 export type PartsLoadItem = typeof partsLoadItems.$inferSelect;
 export type InsertPartsLoadItem = z.infer<typeof insertPartsLoadItemSchema>;
+
+// Utility Module Types
+export type UtilityCategory = "fisso" | "mobile" | "centralino" | "luce" | "gas" | "altro";
+export type UtilityPracticeStatus = "bozza" | "inviata" | "in_lavorazione" | "attesa_documenti" | "completata" | "rifiutata" | "annullata";
+export type UtilityCommissionStatus = "pending" | "accrued" | "invoiced" | "paid" | "cancelled";
+
+export type UtilitySupplier = typeof utilitySuppliers.$inferSelect;
+export type InsertUtilitySupplier = z.infer<typeof insertUtilitySupplierSchema>;
+
+export type UtilityService = typeof utilityServices.$inferSelect;
+export type InsertUtilityService = z.infer<typeof insertUtilityServiceSchema>;
+
+export type UtilityPractice = typeof utilityPractices.$inferSelect;
+export type InsertUtilityPractice = z.infer<typeof insertUtilityPracticeSchema>;
+
+export type UtilityCommission = typeof utilityCommissions.$inferSelect;
+export type InsertUtilityCommission = z.infer<typeof insertUtilityCommissionSchema>;

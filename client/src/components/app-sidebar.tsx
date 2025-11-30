@@ -19,6 +19,11 @@ import {
   Truck,
   Undo2,
   ClipboardList,
+  Zap,
+  Phone,
+  FileCheck,
+  Coins,
+  PieChart,
 } from "lucide-react";
 import {
   Sidebar,
@@ -57,6 +62,11 @@ const menuItems = {
     { title: "Resi Fornitori", url: "/admin/supplier-returns", icon: Undo2, group: "Magazzino" },
     { title: "Ordini Ricambi", url: "/admin/parts-orders", icon: Truck, group: "Magazzino" },
     { title: "Carico Ricambi", url: "/admin/parts-load", icon: ClipboardList, group: "Magazzino" },
+    { title: "Utility", url: "/admin/utility", icon: Zap, group: "Utility" },
+    { title: "Fornitori Utility", url: "/admin/utility/suppliers", icon: Phone, group: "Utility" },
+    { title: "Pratiche", url: "/admin/utility/practices", icon: FileCheck, group: "Utility" },
+    { title: "Compensi", url: "/admin/utility/commissions", icon: Coins, group: "Utility" },
+    { title: "Report Utility", url: "/admin/utility/reports", icon: PieChart, group: "Utility" },
     { title: "Fatture", url: "/admin/invoices", icon: FileText, group: "Fatturazione" },
     { title: "Activity Logs", url: "/admin/activity-logs", icon: Shield, group: "Sistema" },
     { title: "Impostazioni", url: "/admin/settings", icon: Settings, group: "Sistema" },
@@ -66,6 +76,9 @@ const menuItems = {
     { title: "Ordini", url: "/reseller/orders", icon: ShoppingCart, group: "Principale" },
     { title: "Clienti", url: "/reseller/customers", icon: Users, group: "Gestione" },
     { title: "Nuova Riparazione", url: "/reseller/new-repair", icon: Wrench, group: "Riparazioni" },
+    { title: "Utility", url: "/reseller/utility", icon: Zap, group: "Utility" },
+    { title: "Pratiche", url: "/reseller/utility/practices", icon: FileCheck, group: "Utility" },
+    { title: "Compensi", url: "/reseller/utility/commissions", icon: Coins, group: "Utility" },
     { title: "Ticket", url: "/reseller/tickets", icon: Ticket, group: "Assistenza" },
   ],
   repair_center: [
