@@ -6427,23 +6427,45 @@ export function registerRoutes(app: Express): Server {
       }
 
       // Check if API is configured
-      if (!supplier.apiType || !supplier.apiSecretName) {
-        return res.status(400).send("Configurazione API incompleta. Configura il tipo API e il nome del segreto.");
+      if (!supplier.apiType) {
+        return res.status(400).send("Tipo integrazione API non configurato.");
       }
 
-      // Get the API key from environment
+      // Use Foneday-specific service if type is foneday
+      if (supplier.apiType === 'foneday') {
+        const { fonedayApi } = await import('./services/foneday');
+        const result = await fonedayApi.testConnection();
+        
+        if (result.success) {
+          res.json({ 
+            success: true, 
+            message: result.message,
+            productsCount: result.productsCount
+          });
+        } else {
+          res.status(400).json({ 
+            success: false, 
+            message: result.message 
+          });
+        }
+        return;
+      }
+
+      // Generic API test for other types
+      if (!supplier.apiSecretName) {
+        return res.status(400).send("Nome segreto API non configurato.");
+      }
+
       const apiKey = process.env[supplier.apiSecretName];
       if (!apiKey) {
         return res.status(400).send(`Segreto "${supplier.apiSecretName}" non trovato nei Replit Secrets.`);
       }
 
-      // Determine endpoint to test
       const testEndpoint = supplier.apiProductsEndpoint || supplier.apiEndpoint;
       if (!testEndpoint) {
         return res.status(400).send("Nessun endpoint configurato per il test.");
       }
 
-      // Build headers based on auth method
       const headers: Record<string, string> = {
         'Accept': 'application/json',
       };
@@ -6459,13 +6481,11 @@ export function registerRoutes(app: Express): Server {
           headers['Authorization'] = `Basic ${Buffer.from(apiKey).toString('base64')}`;
           break;
         case 'none':
-          // No auth header
           break;
         default:
           headers['Authorization'] = `Bearer ${apiKey}`;
       }
 
-      // Make test request
       const testUrl = supplier.apiAuthMethod === 'api_key_query' 
         ? `${testEndpoint}${testEndpoint.includes('?') ? '&' : '?'}api_key=${apiKey}`
         : testEndpoint;
@@ -6473,7 +6493,7 @@ export function registerRoutes(app: Express): Server {
       const response = await fetch(testUrl, {
         method: 'GET',
         headers,
-        signal: AbortSignal.timeout(10000), // 10 second timeout
+        signal: AbortSignal.timeout(10000),
       });
 
       if (response.ok) {
@@ -6512,15 +6532,11 @@ export function registerRoutes(app: Express): Server {
       }
 
       // Check if API is configured
-      if (!supplier.apiType || !supplier.apiSecretName || !supplier.apiProductsEndpoint) {
-        return res.status(400).send("Configurazione API incompleta. Configura tipo API, segreto e endpoint prodotti.");
+      if (!supplier.apiType) {
+        return res.status(400).send("Tipo integrazione API non configurato.");
       }
 
-      // Get the API key from environment
-      const apiKey = process.env[supplier.apiSecretName];
-      if (!apiKey) {
-        return res.status(400).send(`Segreto "${supplier.apiSecretName}" non trovato nei Replit Secrets.`);
-      }
+      const startTime = Date.now();
 
       // Update sync status to syncing
       await storage.updateSupplier(req.params.id, {
@@ -6530,147 +6546,153 @@ export function registerRoutes(app: Express): Server {
       // Create sync log
       const syncLog = await storage.createSupplierSyncLog({
         supplierId: req.params.id,
-        syncType: 'catalog',
         status: 'syncing' as any,
-        startedAt: new Date(),
       });
 
-      // Build headers
-      const headers: Record<string, string> = {
-        'Accept': 'application/json',
-      };
-
-      switch (supplier.apiAuthMethod) {
-        case 'bearer_token':
-          headers['Authorization'] = `Bearer ${apiKey}`;
-          break;
-        case 'api_key_header':
-          headers['X-API-Key'] = apiKey;
-          break;
-        case 'basic_auth':
-          headers['Authorization'] = `Basic ${Buffer.from(apiKey).toString('base64')}`;
-          break;
-        default:
-          headers['Authorization'] = `Bearer ${apiKey}`;
-      }
+      let products: any[] = [];
+      let created = 0;
+      let updated = 0;
+      let failed = 0;
 
       try {
-        const endpoint = supplier.apiAuthMethod === 'api_key_query'
-          ? `${supplier.apiProductsEndpoint}${supplier.apiProductsEndpoint.includes('?') ? '&' : '?'}api_key=${apiKey}`
-          : supplier.apiProductsEndpoint;
-
-        const response = await fetch(endpoint, {
-          method: 'GET',
-          headers,
-          signal: AbortSignal.timeout(60000), // 60 second timeout for catalog fetch
-        });
-
-        if (!response.ok) {
-          throw new Error(`API error: ${response.status} ${response.statusText}`);
-        }
-
-        const data = await response.json();
-        
-        // Parse products based on API type
-        let products: any[] = [];
-        
+        // Use Foneday-specific service
         if (supplier.apiType === 'foneday') {
-          // Foneday specific parsing
-          products = Array.isArray(data) ? data : (data.products || data.items || []);
-        } else {
-          // Generic parsing
-          products = Array.isArray(data) ? data : (data.products || data.items || data.data || []);
-        }
+          const { fonedayApi } = await import('./services/foneday');
+          const result = await fonedayApi.getProducts();
+          products = result.products || [];
 
-        let created = 0;
-        let updated = 0;
-        let failed = 0;
-
-        // Process products
-        for (const product of products) {
-          try {
-            // Map product data based on API type
-            let catalogProduct: any = {
-              supplierId: req.params.id,
-              externalSku: '',
-              productName: '',
-            };
-
-            if (supplier.apiType === 'foneday') {
-              catalogProduct = {
+          // Process Foneday products
+          for (const product of products) {
+            try {
+              const catalogProduct = {
                 supplierId: req.params.id,
-                externalSku: product.sku || product.id?.toString() || '',
-                productName: product.name || product.title || '',
-                category: product.category || product.type || null,
-                brand: product.brand || product.manufacturer || null,
-                model: product.model || null,
-                description: product.description || null,
-                externalPrice: product.price ? parseFloat(product.price) * 100 : null,
+                externalSku: product.sku,
+                externalEan: product.ean || null,
+                externalArtcode: product.artcode || null,
+                title: product.title,
+                category: product.category || null,
+                brand: product.product_brand || null,
+                modelBrand: product.model_brand || null,
+                modelCodes: product.model_codes ? JSON.stringify(product.model_codes) : null,
+                suitableFor: product.suitable_for || null,
+                quality: product.quality || null,
+                priceCents: Math.round(product.price * 100),
                 currency: 'EUR',
-                availability: product.availability || product.stock_status || null,
-                stockQuantity: product.stock || product.quantity || null,
-                leadTimeDays: product.lead_time || product.delivery_days || null,
-                imageUrl: product.image || product.image_url || null,
-                productUrl: product.url || product.link || null,
-                rawData: product,
-                isActive: true,
+                inStock: product.instock === 'Y',
+                stockQuantity: null,
+                rawData: JSON.stringify(product),
               };
-            } else {
-              // Generic mapping
-              catalogProduct = {
+
+              if (!catalogProduct.externalSku || !catalogProduct.title) {
+                failed++;
+                continue;
+              }
+
+              const result = await storage.upsertSupplierCatalogProduct(catalogProduct);
+              if (result.created) {
+                created++;
+              } else {
+                updated++;
+              }
+            } catch (err) {
+              console.error("Error processing Foneday product:", err);
+              failed++;
+            }
+          }
+        } else {
+          // Generic API handling for other suppliers
+          if (!supplier.apiSecretName || !supplier.apiProductsEndpoint) {
+            throw new Error("Configurazione API incompleta per fornitore generico.");
+          }
+
+          const apiKey = process.env[supplier.apiSecretName];
+          if (!apiKey) {
+            throw new Error(`Segreto "${supplier.apiSecretName}" non trovato.`);
+          }
+
+          const headers: Record<string, string> = { 'Accept': 'application/json' };
+          switch (supplier.apiAuthMethod) {
+            case 'bearer_token':
+              headers['Authorization'] = `Bearer ${apiKey}`;
+              break;
+            case 'api_key_header':
+              headers['X-API-Key'] = apiKey;
+              break;
+            case 'basic_auth':
+              headers['Authorization'] = `Basic ${Buffer.from(apiKey).toString('base64')}`;
+              break;
+            default:
+              headers['Authorization'] = `Bearer ${apiKey}`;
+          }
+
+          const endpoint = supplier.apiAuthMethod === 'api_key_query'
+            ? `${supplier.apiProductsEndpoint}${supplier.apiProductsEndpoint.includes('?') ? '&' : '?'}api_key=${apiKey}`
+            : supplier.apiProductsEndpoint;
+
+          const response = await fetch(endpoint, {
+            method: 'GET',
+            headers,
+            signal: AbortSignal.timeout(60000),
+          });
+
+          if (!response.ok) {
+            throw new Error(`API error: ${response.status} ${response.statusText}`);
+          }
+
+          const data = await response.json();
+          products = Array.isArray(data) ? data : (data.products || data.items || data.data || []);
+
+          // Process generic products
+          for (const product of products) {
+            try {
+              const catalogProduct = {
                 supplierId: req.params.id,
                 externalSku: product.sku || product.code || product.id?.toString() || '',
-                productName: product.name || product.title || product.productName || '',
-                category: product.category || product.categoryName || null,
-                brand: product.brand || product.manufacturer || null,
-                model: product.model || null,
-                description: product.description || null,
-                externalPrice: product.price ? parseFloat(product.price) * 100 : null,
+                title: product.name || product.title || '',
+                category: product.category || null,
+                brand: product.brand || null,
+                priceCents: product.price ? Math.round(parseFloat(product.price) * 100) : 0,
                 currency: product.currency || 'EUR',
-                availability: product.availability || product.status || null,
-                stockQuantity: typeof product.stock === 'number' ? product.stock : null,
-                leadTimeDays: product.leadTime || product.deliveryDays || null,
-                imageUrl: product.image || product.imageUrl || product.image_url || null,
-                productUrl: product.url || product.link || null,
-                rawData: product,
-                isActive: true,
+                inStock: product.instock === 'Y' || product.in_stock === true || product.available === true,
+                rawData: JSON.stringify(product),
               };
-            }
 
-            // Skip products without SKU or name
-            if (!catalogProduct.externalSku || !catalogProduct.productName) {
+              if (!catalogProduct.externalSku || !catalogProduct.title) {
+                failed++;
+                continue;
+              }
+
+              const result = await storage.upsertSupplierCatalogProduct(catalogProduct);
+              if (result.created) {
+                created++;
+              } else {
+                updated++;
+              }
+            } catch (err) {
+              console.error("Error processing product:", err);
               failed++;
-              continue;
             }
-
-            // Upsert catalog product
-            const result = await storage.upsertSupplierCatalogProduct(catalogProduct);
-            if (result.created) {
-              created++;
-            } else {
-              updated++;
-            }
-          } catch (err) {
-            console.error("Error processing product:", err);
-            failed++;
           }
         }
 
+        const durationMs = Date.now() - startTime;
+        const finalStatus = failed > 0 && created + updated === 0 ? 'failed' : (failed > 0 ? 'partial' : 'success');
+
         // Update supplier with sync results
         await storage.updateSupplier(req.params.id, {
-          catalogSyncStatus: failed > 0 && created + updated === 0 ? 'failed' : (failed > 0 ? 'partial' : 'success') as any,
+          catalogSyncStatus: finalStatus as any,
           catalogLastSyncAt: new Date(),
           catalogProductsCount: created + updated,
         });
 
         // Update sync log
         await storage.updateSupplierSyncLog(syncLog.id, {
-          status: failed > 0 && created + updated === 0 ? 'failed' : (failed > 0 ? 'partial' : 'success') as any,
-          completedAt: new Date(),
-          productsFetched: products.length,
+          status: finalStatus as any,
+          productsTotal: products.length,
           productsCreated: created,
           productsUpdated: updated,
           productsFailed: failed,
+          durationMs: durationMs,
         });
 
         res.json({
@@ -6689,10 +6711,11 @@ export function registerRoutes(app: Express): Server {
           catalogSyncStatus: 'failed' as any,
         });
 
+        const durationMs = Date.now() - startTime;
         await storage.updateSupplierSyncLog(syncLog.id, {
           status: 'failed' as any,
-          completedAt: new Date(),
           errorMessage: error.message,
+          durationMs: durationMs,
         });
 
         res.status(500).json({
