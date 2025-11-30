@@ -64,7 +64,12 @@ export default function AdminUtilityCommissions() {
   const { toast } = useToast();
 
   const { data: commissions = [], isLoading } = useQuery<UtilityCommission[]>({
-    queryKey: ["/api/utility/commissions", { periodYear: yearFilter }],
+    queryKey: ["/api/utility/commissions", yearFilter],
+    queryFn: async () => {
+      const res = await fetch(`/api/utility/commissions?periodYear=${yearFilter}`);
+      if (!res.ok) throw new Error("Failed to fetch commissions");
+      return res.json();
+    },
   });
 
   const { data: practices = [] } = useQuery<UtilityPractice[]>({
