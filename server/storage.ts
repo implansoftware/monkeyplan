@@ -28,6 +28,11 @@ import {
   CustomerBranch, InsertCustomerBranch,
   UtilitySupplier, InsertUtilitySupplier, UtilityService, InsertUtilityService,
   UtilityPractice, InsertUtilityPractice, UtilityCommission, InsertUtilityCommission,
+  UtilityPracticeDocument, InsertUtilityPracticeDocument,
+  UtilityPracticeTask, InsertUtilityPracticeTask,
+  UtilityPracticeNote, InsertUtilityPracticeNote,
+  UtilityPracticeTimelineEvent, InsertUtilityPracticeTimelineEvent,
+  UtilityPracticeStateHistoryEntry, InsertUtilityPracticeStateHistoryEntry,
   users, repairCenters, products, repairOrders, tickets, ticketMessages,
   invoices, billingData, chatMessages, inventoryMovements, inventoryStock, activityLogs, analyticsCache,
   notifications, notificationPreferences, repairAttachments, repairAcceptance, repairDiagnostics,
@@ -39,7 +44,9 @@ import {
   partsLoadDocuments, partsLoadItems,
   repairOrderStateHistory, supplierReturnStateHistory,
   customerBranches,
-  utilitySuppliers, utilityServices, utilityPractices, utilityCommissions
+  utilitySuppliers, utilityServices, utilityPractices, utilityCommissions,
+  utilityPracticeDocuments, utilityPracticeTasks, utilityPracticeNotes,
+  utilityPracticeTimeline, utilityPracticeStateHistory
 } from "@shared/schema";
 import { db, pool } from "./db";
 import { eq, and, or, desc, lt, sql, not } from "drizzle-orm";
@@ -377,6 +384,32 @@ export interface IStorage {
   createUtilityCommission(commission: InsertUtilityCommission): Promise<UtilityCommission>;
   updateUtilityCommission(id: string, updates: Partial<InsertUtilityCommission>): Promise<UtilityCommission>;
   deleteUtilityCommission(id: string): Promise<void>;
+  
+  // Utility Practice Documents
+  listUtilityPracticeDocuments(practiceId: string): Promise<UtilityPracticeDocument[]>;
+  getUtilityPracticeDocument(id: string): Promise<UtilityPracticeDocument | undefined>;
+  createUtilityPracticeDocument(document: InsertUtilityPracticeDocument): Promise<UtilityPracticeDocument>;
+  deleteUtilityPracticeDocument(id: string): Promise<void>;
+  
+  // Utility Practice Tasks
+  listUtilityPracticeTasks(practiceId: string): Promise<UtilityPracticeTask[]>;
+  getUtilityPracticeTask(id: string): Promise<UtilityPracticeTask | undefined>;
+  createUtilityPracticeTask(task: InsertUtilityPracticeTask): Promise<UtilityPracticeTask>;
+  updateUtilityPracticeTask(id: string, updates: Partial<InsertUtilityPracticeTask>): Promise<UtilityPracticeTask>;
+  deleteUtilityPracticeTask(id: string): Promise<void>;
+  
+  // Utility Practice Notes
+  listUtilityPracticeNotes(practiceId: string): Promise<UtilityPracticeNote[]>;
+  createUtilityPracticeNote(note: InsertUtilityPracticeNote): Promise<UtilityPracticeNote>;
+  deleteUtilityPracticeNote(id: string): Promise<void>;
+  
+  // Utility Practice Timeline
+  listUtilityPracticeTimeline(practiceId: string): Promise<UtilityPracticeTimelineEvent[]>;
+  createUtilityPracticeTimelineEvent(event: InsertUtilityPracticeTimelineEvent): Promise<UtilityPracticeTimelineEvent>;
+  
+  // Utility Practice State History
+  listUtilityPracticeStateHistory(practiceId: string): Promise<UtilityPracticeStateHistoryEntry[]>;
+  createUtilityPracticeStateHistory(entry: InsertUtilityPracticeStateHistoryEntry): Promise<UtilityPracticeStateHistoryEntry>;
   
   sessionStore: session.Store;
 }
@@ -3209,6 +3242,138 @@ export class DatabaseStorage implements IStorage {
   async deleteUtilityCommission(id: string): Promise<void> {
     await db.delete(utilityCommissions)
       .where(eq(utilityCommissions.id, id));
+  }
+
+  // ==========================================
+  // UTILITY PRACTICE DOCUMENTS
+  // ==========================================
+  
+  async listUtilityPracticeDocuments(practiceId: string): Promise<UtilityPracticeDocument[]> {
+    return await db.select()
+      .from(utilityPracticeDocuments)
+      .where(eq(utilityPracticeDocuments.practiceId, practiceId))
+      .orderBy(desc(utilityPracticeDocuments.createdAt));
+  }
+  
+  async getUtilityPracticeDocument(id: string): Promise<UtilityPracticeDocument | undefined> {
+    const [document] = await db.select()
+      .from(utilityPracticeDocuments)
+      .where(eq(utilityPracticeDocuments.id, id));
+    return document || undefined;
+  }
+  
+  async createUtilityPracticeDocument(document: InsertUtilityPracticeDocument): Promise<UtilityPracticeDocument> {
+    const [created] = await db.insert(utilityPracticeDocuments)
+      .values(document)
+      .returning();
+    return created;
+  }
+  
+  async deleteUtilityPracticeDocument(id: string): Promise<void> {
+    await db.delete(utilityPracticeDocuments)
+      .where(eq(utilityPracticeDocuments.id, id));
+  }
+
+  // ==========================================
+  // UTILITY PRACTICE TASKS
+  // ==========================================
+  
+  async listUtilityPracticeTasks(practiceId: string): Promise<UtilityPracticeTask[]> {
+    return await db.select()
+      .from(utilityPracticeTasks)
+      .where(eq(utilityPracticeTasks.practiceId, practiceId))
+      .orderBy(utilityPracticeTasks.sortOrder);
+  }
+  
+  async getUtilityPracticeTask(id: string): Promise<UtilityPracticeTask | undefined> {
+    const [task] = await db.select()
+      .from(utilityPracticeTasks)
+      .where(eq(utilityPracticeTasks.id, id));
+    return task || undefined;
+  }
+  
+  async createUtilityPracticeTask(task: InsertUtilityPracticeTask): Promise<UtilityPracticeTask> {
+    const [created] = await db.insert(utilityPracticeTasks)
+      .values(task)
+      .returning();
+    return created;
+  }
+  
+  async updateUtilityPracticeTask(id: string, updates: Partial<InsertUtilityPracticeTask>): Promise<UtilityPracticeTask> {
+    const [updated] = await db.update(utilityPracticeTasks)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(utilityPracticeTasks.id, id))
+      .returning();
+    
+    if (!updated) {
+      throw new Error("Task pratica utility non trovato");
+    }
+    
+    return updated;
+  }
+  
+  async deleteUtilityPracticeTask(id: string): Promise<void> {
+    await db.delete(utilityPracticeTasks)
+      .where(eq(utilityPracticeTasks.id, id));
+  }
+
+  // ==========================================
+  // UTILITY PRACTICE NOTES
+  // ==========================================
+  
+  async listUtilityPracticeNotes(practiceId: string): Promise<UtilityPracticeNote[]> {
+    return await db.select()
+      .from(utilityPracticeNotes)
+      .where(eq(utilityPracticeNotes.practiceId, practiceId))
+      .orderBy(desc(utilityPracticeNotes.createdAt));
+  }
+  
+  async createUtilityPracticeNote(note: InsertUtilityPracticeNote): Promise<UtilityPracticeNote> {
+    const [created] = await db.insert(utilityPracticeNotes)
+      .values(note)
+      .returning();
+    return created;
+  }
+  
+  async deleteUtilityPracticeNote(id: string): Promise<void> {
+    await db.delete(utilityPracticeNotes)
+      .where(eq(utilityPracticeNotes.id, id));
+  }
+
+  // ==========================================
+  // UTILITY PRACTICE TIMELINE
+  // ==========================================
+  
+  async listUtilityPracticeTimeline(practiceId: string): Promise<UtilityPracticeTimelineEvent[]> {
+    return await db.select()
+      .from(utilityPracticeTimeline)
+      .where(eq(utilityPracticeTimeline.practiceId, practiceId))
+      .orderBy(desc(utilityPracticeTimeline.createdAt));
+  }
+  
+  async createUtilityPracticeTimelineEvent(event: InsertUtilityPracticeTimelineEvent): Promise<UtilityPracticeTimelineEvent> {
+    const [created] = await db.insert(utilityPracticeTimeline)
+      .values(event)
+      .returning();
+    return created;
+  }
+
+  // ==========================================
+  // UTILITY PRACTICE STATE HISTORY
+  // ==========================================
+  
+  async listUtilityPracticeStateHistory(practiceId: string): Promise<UtilityPracticeStateHistoryEntry[]> {
+    return await db.select()
+      .from(utilityPracticeStateHistory)
+      .where(eq(utilityPracticeStateHistory.practiceId, practiceId))
+      .orderBy(desc(utilityPracticeStateHistory.createdAt));
+  }
+  
+  async createUtilityPracticeStateHistory(entry: InsertUtilityPracticeStateHistoryEntry): Promise<UtilityPracticeStateHistoryEntry> {
+    const [created] = await db.insert(utilityPracticeStateHistory)
+      .values(entry)
+      .returning();
+    return created;
   }
 }
 
