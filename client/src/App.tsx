@@ -109,8 +109,8 @@ function Router() {
       <ProtectedRoute path="/admin/utility" component={AdminUtility} />
       <ProtectedRoute path="/admin/utility/suppliers" component={AdminUtilitySuppliers} />
       <ProtectedRoute path="/admin/utility/services" component={AdminUtilityServices} />
-      <ProtectedRoute path="/admin/utility/practices" component={AdminUtilityPractices} />
       <ProtectedRoute path="/admin/utility/practices/:id" component={AdminUtilityPracticeDetail} />
+      <ProtectedRoute path="/admin/utility/practices" component={AdminUtilityPractices} />
       <ProtectedRoute path="/admin/utility/commissions" component={AdminUtilityCommissions} />
       <ProtectedRoute path="/admin/utility/reports" component={AdminUtilityReports} />
       <ProtectedRoute path="/admin/settings" component={AdminSettings} />
@@ -123,8 +123,8 @@ function Router() {
       <ProtectedRoute path="/reseller/tickets" component={ResellerTickets} />
       <ProtectedRoute path="/reseller/tickets/:id" component={ResellerTicketDetail} />
       <ProtectedRoute path="/reseller/utility" component={ResellerUtility} />
-      <ProtectedRoute path="/reseller/utility/practices" component={ResellerUtilityPractices} />
       <ProtectedRoute path="/reseller/utility/practices/:id" component={ResellerUtilityPracticeDetail} />
+      <ProtectedRoute path="/reseller/utility/practices" component={ResellerUtilityPractices} />
       <ProtectedRoute path="/reseller/utility/commissions" component={ResellerUtilityCommissions} />
       
       {/* Repair Center routes */}
