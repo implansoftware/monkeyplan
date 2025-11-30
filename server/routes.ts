@@ -2271,10 +2271,25 @@ export function registerRoutes(app: Express): Server {
         return res.status(403).send("Unauthorized role");
       }
       
+      // Validate branchId if provided - must belong to the selected customer
+      if (req.body.branchId) {
+        const branch = await storage.getCustomerBranch(req.body.branchId);
+        if (!branch) {
+          return res.status(400).send("Branch not found");
+        }
+        if (branch.parentCustomerId !== customerId) {
+          return res.status(400).send("Branch does not belong to the selected customer");
+        }
+        if (!branch.isActive) {
+          return res.status(400).send("Branch is not active");
+        }
+      }
+      
       // Build order data
       const orderData: any = {
         ...validatedData,
         customerId,
+        branchId: req.body.branchId || null,
         status: hasAcceptance ? 'ingressato' : 'pending',
       };
       

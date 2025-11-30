@@ -22,6 +22,12 @@ The backend is an `Express.js` application with TypeScript, featuring a RESTful 
 *   **Dashboard & Analytics**: Provides role-specific dashboards with KPIs, charts (PieChart, BarChart), and tables for performance overview, low stock alerts, revenue, and customer stats.
 *   **Invoicing & Billing**: Backend API supports listing, viewing, creating, and updating invoices with RBAC.
 *   **User Management**: Backend API for listing and updating users, with specialized endpoints for resellers and customer registration. Includes tenant ownership tracking via `resellerId`.
+*   **Corporate Branch Management (Franchising/GDO)**: Hierarchical customer structure supporting corporate customers with multiple branches.
+    *   **Branch Registry**: Full CRUD for customer branches with branch code, name, address, contact info, and active status.
+    *   **Company Categories**: Enum `companyCategory` (standard/franchising/gdo) in `billingData` to identify corporate customer types.
+    *   **Branch-Repair Association**: Optional `branchId` field in `repairOrders` to track which branch submitted a repair.
+    *   **Acceptance Wizard Integration**: Branch dropdown in the acceptance wizard when the selected customer has active branches.
+    *   **Frontend Management**: CustomerBranchManager component with tabs interface in customer details view for resellers.
 *   **File Uploads & Attachments**: Backend API supports listing, uploading, and deleting attachments for repair orders with RBAC.
 *   **Repair Workflow System**: Extends `repair_orders` with detailed tracking (IMEI/serial, brand, ingress dates) and a comprehensive 10-state workflow enum. Includes `device_models` for catalog management, `repair_acceptance` for intake details, and `repair_diagnostics` for tracking test results and severity.
     *   **Acceptance Wizard**: Enables a multi-step process for creating repair orders, capturing device info, customer details, and acceptance checks. Automatically sets initial status to 'ingressato'.

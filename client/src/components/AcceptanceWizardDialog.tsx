@@ -219,9 +219,25 @@ export function AcceptanceWizardDialog({
     fullName: string;
     email: string;
   }>>({
-    queryKey: ["/api/users"],
-    select: (data: any[]) => data.filter((u) => u.role === "customer"),
-    enabled: user?.role === "admin" || user?.role === "repair_center",
+    queryKey: user?.role === "reseller" ? ["/api/reseller/customers"] : ["/api/users"],
+    select: (data: any[]) => {
+      if (!data) return [];
+      if (user?.role === "reseller") {
+        return data.map((u: any) => ({
+          id: u.id,
+          fullName: u.fullName || u.companyName || `${u.firstName || ''} ${u.lastName || ''}`.trim() || 'Cliente',
+          email: u.email || '',
+        }));
+      }
+      return data
+        .filter((u: any) => u.role === "customer")
+        .map((u: any) => ({
+          id: u.id,
+          fullName: u.fullName || u.companyName || 'Cliente',
+          email: u.email || '',
+        }));
+    },
+    enabled: user?.role === "admin" || user?.role === "repair_center" || user?.role === "reseller",
   });
 
   const { data: deviceTypes = [] } = useQuery<Array<{
@@ -367,14 +383,18 @@ export function AcceptanceWizardDialog({
     isActive: boolean;
   }>>({
     queryKey: ["/api/customers", selectedCustomerId, "branches"],
-    enabled: !!selectedCustomerId && (user?.role === "admin" || user?.role === "repair_center"),
+    enabled: !!selectedCustomerId && (user?.role === "admin" || user?.role === "repair_center" || user?.role === "reseller"),
   });
 
   const activeBranches = customerBranches.filter(b => b.isActive);
 
   const createOrderMutation = useMutation({
     mutationFn: async (data: AcceptanceWizardData) => {
-      const response = await apiRequest("POST", "/api/repair-orders", data);
+      const orderData = {
+        ...data,
+        branchId: data.branchId === "__none__" ? undefined : data.branchId,
+      };
+      const response = await apiRequest("POST", "/api/repair-orders", orderData);
       if (!response.ok) {
         const error = await response.json();
         throw new Error(error.error || "Failed to create order");
@@ -706,7 +726,7 @@ export function AcceptanceWizardDialog({
 
   const renderDeviceInfoStep = () => (
     <div className="space-y-4">
-      {(user?.role === "admin" || user?.role === "repair_center") && (
+      {(user?.role === "admin" || user?.role === "repair_center" || user?.role === "reseller") && (
         <>
           {!showNewCustomerForm ? (
             <FormField
@@ -763,7 +783,7 @@ export function AcceptanceWizardDialog({
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="">-- Nessuna filiale --</SelectItem>
+                      <SelectItem value="__none__">-- Nessuna filiale --</SelectItem>
                       {activeBranches.map((branch) => (
                         <SelectItem key={branch.id} value={branch.id}>
                           [{branch.branchCode}] {branch.branchName}
