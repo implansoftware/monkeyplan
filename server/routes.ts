@@ -8869,5 +8869,559 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // ============ SIFAR INTEGRATION API ============
+  
+  // GET /api/sifar/credentials - Get reseller's SIFAR credentials
+  app.get("/api/sifar/credentials", requireAuth, requireRole("reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const credential = await storage.getSifarCredentialByReseller(req.user.id);
+      if (!credential) {
+        return res.json(null);
+      }
+      
+      // Don't expose sensitive data
+      res.json({
+        id: credential.id,
+        environment: credential.environment,
+        isActive: credential.isActive,
+        lastSyncAt: credential.lastSyncAt,
+        createdAt: credential.createdAt,
+        hasClientKey: !!credential.clientKey,
+      });
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+  
+  // POST /api/sifar/credentials - Create/update SIFAR credentials
+  app.post("/api/sifar/credentials", requireAuth, requireRole("reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const { clientKey, environment } = req.body;
+      
+      if (!clientKey || !environment) {
+        return res.status(400).send("Client key e ambiente sono obbligatori");
+      }
+      
+      const existing = await storage.getSifarCredentialByReseller(req.user.id);
+      
+      let credential;
+      if (existing) {
+        credential = await storage.updateSifarCredential(existing.id, {
+          clientKey,
+          environment,
+        });
+      } else {
+        credential = await storage.createSifarCredential({
+          resellerId: req.user.id,
+          clientKey,
+          environment,
+          isActive: true,
+        });
+      }
+      
+      res.json({
+        id: credential.id,
+        environment: credential.environment,
+        isActive: credential.isActive,
+        hasClientKey: !!credential.clientKey,
+      });
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+  
+  // POST /api/sifar/test-connection - Test SIFAR connection
+  app.post("/api/sifar/test-connection", requireAuth, requireRole("reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const { storeCode } = req.body;
+      if (!storeCode) {
+        return res.status(400).send("Codice punto vendita obbligatorio");
+      }
+      
+      const credential = await storage.getSifarCredentialByReseller(req.user.id);
+      if (!credential) {
+        return res.status(404).send("Credenziali SIFAR non configurate");
+      }
+      
+      const { createSifarService } = await import("./sifarService");
+      const sifarService = createSifarService(credential);
+      
+      const result = await sifarService.testConnection(storeCode);
+      res.json(result);
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+  
+  // GET /api/sifar/stores - List SIFAR stores for reseller
+  app.get("/api/sifar/stores", requireAuth, requireRole("reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const credential = await storage.getSifarCredentialByReseller(req.user.id);
+      if (!credential) {
+        return res.json([]);
+      }
+      
+      const stores = await storage.listSifarStores(credential.id);
+      res.json(stores);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+  
+  // POST /api/sifar/stores - Add a SIFAR store
+  app.post("/api/sifar/stores", requireAuth, requireRole("reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const credential = await storage.getSifarCredentialByReseller(req.user.id);
+      if (!credential) {
+        return res.status(404).send("Credenziali SIFAR non configurate");
+      }
+      
+      const { storeCode, storeName, isDefault } = req.body;
+      
+      if (!storeCode) {
+        return res.status(400).send("Codice punto vendita obbligatorio");
+      }
+      
+      // If setting as default, unset other defaults
+      if (isDefault) {
+        const existingStores = await storage.listSifarStores(credential.id);
+        for (const store of existingStores) {
+          if (store.isDefault) {
+            await storage.updateSifarStore(store.id, { isDefault: false });
+          }
+        }
+      }
+      
+      const store = await storage.createSifarStore({
+        credentialId: credential.id,
+        storeCode,
+        storeName,
+        isDefault: isDefault || false,
+      });
+      
+      res.status(201).json(store);
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+  
+  // DELETE /api/sifar/stores/:id - Remove a SIFAR store
+  app.delete("/api/sifar/stores/:id", requireAuth, requireRole("reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const store = await storage.getSifarStore(req.params.id);
+      if (!store) {
+        return res.status(404).send("Punto vendita non trovato");
+      }
+      
+      const credential = await storage.getSifarCredentialByReseller(req.user.id);
+      if (!credential || store.credentialId !== credential.id) {
+        return res.status(403).send("Accesso negato");
+      }
+      
+      await storage.deleteSifarStore(req.params.id);
+      res.status(204).send();
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+  
+  // GET /api/sifar/catalog/brands - Get SIFAR brands
+  app.get("/api/sifar/catalog/brands", requireAuth, requireRole("reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const storeCode = req.query.storeCode as string;
+      if (!storeCode) {
+        return res.status(400).send("Codice punto vendita obbligatorio");
+      }
+      
+      const credential = await storage.getSifarCredentialByReseller(req.user.id);
+      if (!credential) {
+        return res.status(404).send("Credenziali SIFAR non configurate");
+      }
+      
+      const { createSifarService } = await import("./sifarService");
+      const sifarService = createSifarService(credential);
+      
+      const brands = await sifarService.getBrands(storeCode);
+      res.json(brands);
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+  
+  // GET /api/sifar/catalog/models - Get SIFAR models by brand
+  app.get("/api/sifar/catalog/models", requireAuth, requireRole("reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const storeCode = req.query.storeCode as string;
+      const brandCode = req.query.brandCode as string;
+      
+      if (!storeCode || !brandCode) {
+        return res.status(400).send("Codice punto vendita e marca obbligatori");
+      }
+      
+      const credential = await storage.getSifarCredentialByReseller(req.user.id);
+      if (!credential) {
+        return res.status(404).send("Credenziali SIFAR non configurate");
+      }
+      
+      const { createSifarService } = await import("./sifarService");
+      const sifarService = createSifarService(credential);
+      
+      const models = await sifarService.getModelsByBrand(storeCode, brandCode);
+      res.json(models);
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+  
+  // GET /api/sifar/catalog/categories - Get SIFAR categories
+  app.get("/api/sifar/catalog/categories", requireAuth, requireRole("reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const storeCode = req.query.storeCode as string;
+      if (!storeCode) {
+        return res.status(400).send("Codice punto vendita obbligatorio");
+      }
+      
+      const credential = await storage.getSifarCredentialByReseller(req.user.id);
+      if (!credential) {
+        return res.status(404).send("Credenziali SIFAR non configurate");
+      }
+      
+      const { createSifarService } = await import("./sifarService");
+      const sifarService = createSifarService(credential);
+      
+      const categories = await sifarService.getCategories(storeCode);
+      res.json(categories);
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+  
+  // GET /api/sifar/catalog/groups - Get SIFAR groups
+  app.get("/api/sifar/catalog/groups", requireAuth, requireRole("reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const storeCode = req.query.storeCode as string;
+      if (!storeCode) {
+        return res.status(400).send("Codice punto vendita obbligatorio");
+      }
+      
+      const credential = await storage.getSifarCredentialByReseller(req.user.id);
+      if (!credential) {
+        return res.status(404).send("Credenziali SIFAR non configurate");
+      }
+      
+      const { createSifarService } = await import("./sifarService");
+      const sifarService = createSifarService(credential);
+      
+      const groups = await sifarService.getGroups(storeCode);
+      res.json(groups);
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+  
+  // GET /api/sifar/catalog/articles - Get SIFAR articles by model
+  app.get("/api/sifar/catalog/articles", requireAuth, requireRole("reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const storeCode = req.query.storeCode as string;
+      const modelCode = req.query.modelCode as string;
+      const categoryCode = req.query.categoryCode as string | undefined;
+      const groupCode = req.query.groupCode as string | undefined;
+      
+      if (!storeCode || !modelCode) {
+        return res.status(400).send("Codice punto vendita e modello obbligatori");
+      }
+      
+      const credential = await storage.getSifarCredentialByReseller(req.user.id);
+      if (!credential) {
+        return res.status(404).send("Credenziali SIFAR non configurate");
+      }
+      
+      const { createSifarService } = await import("./sifarService");
+      const sifarService = createSifarService(credential);
+      
+      const articles = await sifarService.getArticlesByModel(storeCode, modelCode, categoryCode, groupCode);
+      res.json(articles);
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+  
+  // GET /api/sifar/catalog/article/:code - Get SIFAR article detail
+  app.get("/api/sifar/catalog/article/:code", requireAuth, requireRole("reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const storeCode = req.query.storeCode as string;
+      if (!storeCode) {
+        return res.status(400).send("Codice punto vendita obbligatorio");
+      }
+      
+      const credential = await storage.getSifarCredentialByReseller(req.user.id);
+      if (!credential) {
+        return res.status(404).send("Credenziali SIFAR non configurate");
+      }
+      
+      const { createSifarService } = await import("./sifarService");
+      const sifarService = createSifarService(credential);
+      
+      const article = await sifarService.getArticleDetail(storeCode, req.params.code);
+      res.json(article);
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+  
+  // GET /api/sifar/cart - Get cart detail
+  app.get("/api/sifar/cart", requireAuth, requireRole("reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const storeCode = req.query.storeCode as string;
+      if (!storeCode) {
+        return res.status(400).send("Codice punto vendita obbligatorio");
+      }
+      
+      const credential = await storage.getSifarCredentialByReseller(req.user.id);
+      if (!credential) {
+        return res.status(404).send("Credenziali SIFAR non configurate");
+      }
+      
+      const { createSifarService } = await import("./sifarService");
+      const sifarService = createSifarService(credential);
+      
+      const cart = await sifarService.getCartDetail(storeCode);
+      res.json(cart);
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+  
+  // POST /api/sifar/cart/add - Add item to cart
+  app.post("/api/sifar/cart/add", requireAuth, requireRole("reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const { storeCode, articleCode, quantity } = req.body;
+      
+      if (!storeCode || !articleCode || !quantity) {
+        return res.status(400).send("Dati incompleti");
+      }
+      
+      const credential = await storage.getSifarCredentialByReseller(req.user.id);
+      if (!credential) {
+        return res.status(404).send("Credenziali SIFAR non configurate");
+      }
+      
+      const { createSifarService } = await import("./sifarService");
+      const sifarService = createSifarService(credential);
+      
+      await sifarService.addToCart(storeCode, articleCode, quantity);
+      res.json({ success: true });
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+  
+  // POST /api/sifar/cart/update - Update cart item quantity
+  app.post("/api/sifar/cart/update", requireAuth, requireRole("reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const { storeCode, articleCode, quantity } = req.body;
+      
+      if (!storeCode || !articleCode || quantity === undefined) {
+        return res.status(400).send("Dati incompleti");
+      }
+      
+      const credential = await storage.getSifarCredentialByReseller(req.user.id);
+      if (!credential) {
+        return res.status(404).send("Credenziali SIFAR non configurate");
+      }
+      
+      const { createSifarService } = await import("./sifarService");
+      const sifarService = createSifarService(credential);
+      
+      await sifarService.updateCartItem(storeCode, articleCode, quantity);
+      res.json({ success: true });
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+  
+  // DELETE /api/sifar/cart/remove - Remove item from cart
+  app.delete("/api/sifar/cart/remove", requireAuth, requireRole("reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const storeCode = req.query.storeCode as string;
+      const articleCode = req.query.articleCode as string;
+      
+      if (!storeCode || !articleCode) {
+        return res.status(400).send("Dati incompleti");
+      }
+      
+      const credential = await storage.getSifarCredentialByReseller(req.user.id);
+      if (!credential) {
+        return res.status(404).send("Credenziali SIFAR non configurate");
+      }
+      
+      const { createSifarService } = await import("./sifarService");
+      const sifarService = createSifarService(credential);
+      
+      await sifarService.removeFromCart(storeCode, articleCode);
+      res.json({ success: true });
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+  
+  // DELETE /api/sifar/cart/clear - Clear cart
+  app.delete("/api/sifar/cart/clear", requireAuth, requireRole("reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const storeCode = req.query.storeCode as string;
+      if (!storeCode) {
+        return res.status(400).send("Codice punto vendita obbligatorio");
+      }
+      
+      const credential = await storage.getSifarCredentialByReseller(req.user.id);
+      if (!credential) {
+        return res.status(404).send("Credenziali SIFAR non configurate");
+      }
+      
+      const { createSifarService } = await import("./sifarService");
+      const sifarService = createSifarService(credential);
+      
+      await sifarService.clearCart(storeCode);
+      res.json({ success: true });
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+  
+  // GET /api/sifar/couriers - Get available couriers
+  app.get("/api/sifar/couriers", requireAuth, requireRole("reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const storeCode = req.query.storeCode as string;
+      if (!storeCode) {
+        return res.status(400).send("Codice punto vendita obbligatorio");
+      }
+      
+      const credential = await storage.getSifarCredentialByReseller(req.user.id);
+      if (!credential) {
+        return res.status(404).send("Credenziali SIFAR non configurate");
+      }
+      
+      const { createSifarService } = await import("./sifarService");
+      const sifarService = createSifarService(credential);
+      
+      const couriers = await sifarService.getCouriers(storeCode);
+      res.json(couriers);
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+  
+  // POST /api/sifar/order - Submit order
+  app.post("/api/sifar/order", requireAuth, requireRole("reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const { storeCode, courierId } = req.body;
+      
+      if (!storeCode || !courierId) {
+        return res.status(400).send("Dati incompleti");
+      }
+      
+      const credential = await storage.getSifarCredentialByReseller(req.user.id);
+      if (!credential) {
+        return res.status(404).send("Credenziali SIFAR non configurate");
+      }
+      
+      const { createSifarService } = await import("./sifarService");
+      const sifarService = createSifarService(credential);
+      
+      const order = await sifarService.submitOrder(storeCode, courierId);
+      res.json(order);
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+  
+  // GET /api/sifar/orders - Get order list
+  app.get("/api/sifar/orders", requireAuth, requireRole("reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const storeCode = req.query.storeCode as string;
+      if (!storeCode) {
+        return res.status(400).send("Codice punto vendita obbligatorio");
+      }
+      
+      const credential = await storage.getSifarCredentialByReseller(req.user.id);
+      if (!credential) {
+        return res.status(404).send("Credenziali SIFAR non configurate");
+      }
+      
+      const { createSifarService } = await import("./sifarService");
+      const sifarService = createSifarService(credential);
+      
+      const orders = await sifarService.getOrders(storeCode);
+      res.json(orders);
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+  
+  // GET /api/sifar/orders/:id - Get order detail
+  app.get("/api/sifar/orders/:id", requireAuth, requireRole("reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const storeCode = req.query.storeCode as string;
+      if (!storeCode) {
+        return res.status(400).send("Codice punto vendita obbligatorio");
+      }
+      
+      const credential = await storage.getSifarCredentialByReseller(req.user.id);
+      if (!credential) {
+        return res.status(404).send("Credenziali SIFAR non configurate");
+      }
+      
+      const { createSifarService } = await import("./sifarService");
+      const sifarService = createSifarService(credential);
+      
+      const order = await sifarService.getOrderDetail(storeCode, req.params.id);
+      res.json(order);
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+
   return httpServer;
 }
