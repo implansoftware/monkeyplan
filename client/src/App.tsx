@@ -61,6 +61,11 @@ import ResellerUtilityPractices from "@/pages/reseller/utility/practices";
 import ResellerUtilityPracticeDetail from "@/pages/reseller/utility/practice-detail";
 import ResellerUtilityCommissions from "@/pages/reseller/utility/commissions";
 
+// Reseller SIFAR pages
+import ResellerSifarSettings from "@/pages/reseller/sifar/settings";
+import ResellerSifarCatalog from "@/pages/reseller/sifar/catalog";
+import ResellerSifarCart from "@/pages/reseller/sifar/cart";
+
 // Repair Center pages
 import RepairCenterDashboard from "@/pages/repair-center/dashboard";
 import RepairCenterRepairs from "@/pages/repair-center/repairs";
@@ -126,6 +131,9 @@ function Router() {
       <ProtectedRoute path="/reseller/utility/practices/:id" component={ResellerUtilityPracticeDetail} />
       <ProtectedRoute path="/reseller/utility/practices" component={ResellerUtilityPractices} />
       <ProtectedRoute path="/reseller/utility/commissions" component={ResellerUtilityCommissions} />
+      <ProtectedRoute path="/reseller/sifar/settings" component={ResellerSifarSettings} />
+      <ProtectedRoute path="/reseller/sifar/catalog" component={ResellerSifarCatalog} />
+      <ProtectedRoute path="/reseller/sifar/cart" component={ResellerSifarCart} />
       
       {/* Repair Center routes */}
       <ProtectedRoute path="/repair-center" component={RepairCenterDashboard} />

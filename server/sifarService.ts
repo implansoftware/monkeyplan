@@ -133,11 +133,11 @@ export class SifarService {
         };
       }
 
-      const data = await response.json();
+      const json = await response.json();
       return {
-        responseCode: data.responseCode ?? 0,
-        responseMessage: data.responseMessage,
-        data: data,
+        responseCode: json.responseCode ?? 0,
+        responseMessage: json.responseMessage,
+        data: json as T,
       };
     } catch (error: any) {
       console.error("SIFAR API Error:", error);

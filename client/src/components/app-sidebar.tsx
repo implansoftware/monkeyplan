@@ -77,6 +77,8 @@ const menuItems = {
     { title: "Ordini", url: "/reseller/orders", icon: ShoppingCart, group: "Principale" },
     { title: "Clienti", url: "/reseller/customers", icon: Users, group: "Gestione" },
     { title: "Nuova Riparazione", url: "/reseller/new-repair", icon: Wrench, group: "Riparazioni" },
+    { title: "Catalogo Ricambi", url: "/reseller/sifar/catalog", icon: Package, group: "SIFAR" },
+    { title: "Config. SIFAR", url: "/reseller/sifar/settings", icon: Settings, group: "SIFAR" },
     { title: "Utility", url: "/reseller/utility", icon: Zap, group: "Utility" },
     { title: "Pratiche", url: "/reseller/utility/practices", icon: FileCheck, group: "Utility" },
     { title: "Compensi", url: "/reseller/utility/commissions", icon: Coins, group: "Utility" },
