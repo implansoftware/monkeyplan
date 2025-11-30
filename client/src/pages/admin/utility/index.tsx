@@ -13,6 +13,7 @@ import {
   ArrowRight,
   TrendingUp,
   Building2,
+  Package,
 } from "lucide-react";
 
 interface UtilitySummary {
@@ -203,14 +204,27 @@ export default function AdminUtility() {
         </Card>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
         <Card className="hover-elevate">
           <Link href="/admin/utility/suppliers">
             <CardContent className="p-6 flex flex-col items-center text-center cursor-pointer">
               <Phone className="h-10 w-10 text-primary mb-3" />
-              <h3 className="font-semibold mb-1">Fornitori Utility</h3>
+              <h3 className="font-semibold mb-1">Fornitori</h3>
               <p className="text-xs text-muted-foreground mb-3">
-                Gestisci provider di servizi
+                Provider di servizi
+              </p>
+              <ArrowRight className="h-4 w-4 text-muted-foreground" />
+            </CardContent>
+          </Link>
+        </Card>
+
+        <Card className="hover-elevate">
+          <Link href="/admin/utility/services">
+            <CardContent className="p-6 flex flex-col items-center text-center cursor-pointer">
+              <Package className="h-10 w-10 text-primary mb-3" />
+              <h3 className="font-semibold mb-1">Listino Servizi</h3>
+              <p className="text-xs text-muted-foreground mb-3">
+                Catalogo e prezzi
               </p>
               <ArrowRight className="h-4 w-4 text-muted-foreground" />
             </CardContent>
@@ -223,7 +237,7 @@ export default function AdminUtility() {
               <FileCheck className="h-10 w-10 text-primary mb-3" />
               <h3 className="font-semibold mb-1">Pratiche</h3>
               <p className="text-xs text-muted-foreground mb-3">
-                Gestisci contratti e pratiche
+                Contratti attivi
               </p>
               <ArrowRight className="h-4 w-4 text-muted-foreground" />
             </CardContent>
@@ -236,7 +250,7 @@ export default function AdminUtility() {
               <Coins className="h-10 w-10 text-primary mb-3" />
               <h3 className="font-semibold mb-1">Compensi</h3>
               <p className="text-xs text-muted-foreground mb-3">
-                Traccia commissioni e pagamenti
+                Commissioni e pagamenti
               </p>
               <ArrowRight className="h-4 w-4 text-muted-foreground" />
             </CardContent>

@@ -41,6 +41,7 @@ import QuotesList from "@/pages/QuotesList";
 // Admin Utility pages
 import AdminUtility from "@/pages/admin/utility/index";
 import AdminUtilitySuppliers from "@/pages/admin/utility/suppliers";
+import AdminUtilityServices from "@/pages/admin/utility/services";
 import AdminUtilityPractices from "@/pages/admin/utility/practices";
 import AdminUtilityCommissions from "@/pages/admin/utility/commissions";
 import AdminUtilityReports from "@/pages/admin/utility/reports";
@@ -105,6 +106,7 @@ function Router() {
       <ProtectedRoute path="/admin/parts-load" component={AdminPartsLoad} />
       <ProtectedRoute path="/admin/utility" component={AdminUtility} />
       <ProtectedRoute path="/admin/utility/suppliers" component={AdminUtilitySuppliers} />
+      <ProtectedRoute path="/admin/utility/services" component={AdminUtilityServices} />
       <ProtectedRoute path="/admin/utility/practices" component={AdminUtilityPractices} />
       <ProtectedRoute path="/admin/utility/commissions" component={AdminUtilityCommissions} />
       <ProtectedRoute path="/admin/utility/reports" component={AdminUtilityReports} />
