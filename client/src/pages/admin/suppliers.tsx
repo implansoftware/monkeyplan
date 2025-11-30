@@ -623,10 +623,13 @@ export default function AdminSuppliers() {
                       <Input 
                         id="apiSecretName" 
                         name="apiSecretName" 
-                        placeholder="SUPPLIER_FONEDAY_API_KEY"
+                        placeholder="FONEDAY_API_TOKEN"
                         defaultValue={editingSupplier?.apiSecretName || ""}
                         data-testid="input-api-secret-name" 
                       />
+                      <p className="text-xs text-muted-foreground">
+                        Nome del segreto nei Replit Secrets
+                      </p>
                     </div>
                   </div>
 
