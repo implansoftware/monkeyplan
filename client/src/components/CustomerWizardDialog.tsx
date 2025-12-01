@@ -192,32 +192,6 @@ export function CustomerWizardDialog({ open, onOpenChange, onSuccess }: Customer
                 )}
               />
 
-              <FormField
-                control={form.control as any}
-                name="companyCategory"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Categoria Azienda</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value || "standard"}>
-                      <FormControl>
-                        <SelectTrigger data-testid="select-company-category">
-                          <SelectValue placeholder="Seleziona categoria" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="standard">Standard</SelectItem>
-                        <SelectItem value="franchising">Franchising</SelectItem>
-                        <SelectItem value="gdo">GDO (Grande Distribuzione)</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormDescription>
-                      Franchising e GDO possono avere filiali/punti vendita
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
               <div className="grid grid-cols-2 gap-4">
                 <FormField
                   control={form.control as any}
@@ -456,13 +430,6 @@ export function CustomerWizardDialog({ open, onOpenChange, onSuccess }: Customer
                 <div>
                   <h4 className="font-medium mb-2">Ragione Sociale</h4>
                   <p className="text-sm" data-testid="text-review-company-name">{values.companyName}</p>
-                </div>
-                <div>
-                  <h4 className="font-medium mb-2">Categoria Azienda</h4>
-                  <p className="text-sm" data-testid="text-review-company-category">
-                    {(values as any).companyCategory === "franchising" ? "Franchising" : 
-                     (values as any).companyCategory === "gdo" ? "GDO (Grande Distribuzione)" : "Standard"}
-                  </p>
                 </div>
                 {values.vatNumber && (
                   <div>
