@@ -32,7 +32,7 @@ export default function AdminCustomers() {
   });
 
   const { data: resellers = [] } = useQuery<User[]>({
-    queryKey: ["/api/resellers"],
+    queryKey: ["/api/admin/resellers"],
   });
 
   const handleExport = async () => {

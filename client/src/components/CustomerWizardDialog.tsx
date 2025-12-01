@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
-import { customerWizardSchema } from "@shared/schema";
+import { customerWizardSchema, type User as UserType } from "@shared/schema";
 import type { z } from "zod";
+import { useAuth } from "@/hooks/use-auth";
 
 type InsertCustomerWizard = z.infer<typeof customerWizardSchema>;
 import { useToast } from "@/hooks/use-toast";
@@ -49,9 +50,18 @@ export function CustomerWizardDialog({ open, onOpenChange, onSuccess }: Customer
   const [step, setStep] = useState<WizardStep>("type");
   const [customerType, setCustomerType] = useState<"private" | "company">("private");
   const [createdCustomer, setCreatedCustomer] = useState<any>(null);
+  const [selectedResellerId, setSelectedResellerId] = useState<string | null>(null);
   
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { user } = useAuth();
+  const isAdmin = user?.role === "admin";
+
+  // Carica la lista dei rivenditori solo se l'utente è admin
+  const { data: resellers = [] } = useQuery<UserType[]>({
+    queryKey: ["/api/admin/resellers"],
+    enabled: isAdmin,
+  });
 
   const form = useForm<InsertCustomerWizard>({
     resolver: zodResolver(customerWizardSchema),
@@ -69,7 +79,11 @@ export function CustomerWizardDialog({ open, onOpenChange, onSuccess }: Customer
 
   const createCustomerMutation = useMutation({
     mutationFn: async (data: InsertCustomerWizard) => {
-      const response = await apiRequest("POST", "/api/customers", data);
+      // Se admin, includi il resellerId selezionato
+      const payload = isAdmin && selectedResellerId 
+        ? { ...data, resellerId: selectedResellerId }
+        : data;
+      const response = await apiRequest("POST", "/api/customers", payload);
       const result = await response.json() as {
         customer: {
           id: string;
@@ -123,6 +137,7 @@ export function CustomerWizardDialog({ open, onOpenChange, onSuccess }: Customer
     setStep("type");
     setCustomerType("private");
     setCreatedCustomer(null);
+    setSelectedResellerId(null);
     onOpenChange(false);
   };
 
@@ -388,6 +403,37 @@ export function CustomerWizardDialog({ open, onOpenChange, onSuccess }: Customer
               </FormItem>
             )}
           />
+
+          {/* Selezione rivenditore solo per admin */}
+          {isAdmin && resellers.length > 0 && (
+            <>
+              <Separator />
+              <FormItem>
+                <FormLabel>Rivenditore di Riferimento</FormLabel>
+                <Select 
+                  onValueChange={(value) => setSelectedResellerId(value === "none" ? null : value)} 
+                  value={selectedResellerId || "none"}
+                >
+                  <FormControl>
+                    <SelectTrigger data-testid="select-reseller">
+                      <SelectValue placeholder="Seleziona rivenditore (opzionale)" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value="none">Nessun rivenditore</SelectItem>
+                    {resellers.map((reseller) => (
+                      <SelectItem key={reseller.id} value={reseller.id}>
+                        {reseller.fullName} ({reseller.email})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FormDescription>
+                  Associa questo cliente a un rivenditore specifico
+                </FormDescription>
+              </FormItem>
+            </>
+          )}
         </div>
 
         <div className="flex justify-between pt-4">
@@ -476,6 +522,15 @@ export function CustomerWizardDialog({ open, onOpenChange, onSuccess }: Customer
               <div>
                 <h4 className="font-medium mb-2">IBAN</h4>
                 <p className="text-sm" data-testid="text-review-iban">{values.iban}</p>
+              </div>
+            )}
+
+            {isAdmin && selectedResellerId && (
+              <div>
+                <h4 className="font-medium mb-2">Rivenditore di Riferimento</h4>
+                <p className="text-sm" data-testid="text-review-reseller">
+                  {resellers.find(r => r.id === selectedResellerId)?.fullName || "N/D"}
+                </p>
               </div>
             )}
           </CardContent>
