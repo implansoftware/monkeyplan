@@ -6,6 +6,7 @@ import { z } from "zod";
 
 // Enums
 export const userRoleEnum = pgEnum("user_role", ["admin", "reseller", "repair_center", "customer"]);
+export const resellerCategoryEnum = pgEnum("reseller_category", ["standard", "franchising", "gdo"]);
 export const customerTypeEnum = pgEnum("customer_type", ["private", "company"]);
 export const companyCategoryEnum = pgEnum("company_category", ["standard", "franchising", "gdo"]);
 export const ticketStatusEnum = pgEnum("ticket_status", ["open", "in_progress", "closed"]);
@@ -299,6 +300,7 @@ export const users = pgTable("users", {
   fullName: text("full_name").notNull(),
   phone: text("phone"),
   role: userRoleEnum("role").notNull().default("customer"),
+  resellerCategory: resellerCategoryEnum("reseller_category").default("standard"), // Solo per role='reseller': standard/franchising/gdo
   isActive: boolean("is_active").notNull().default(true),
   repairCenterId: varchar("repair_center_id"),
   resellerId: varchar("reseller_id"), // Which reseller created this customer (only for customers)
@@ -2101,6 +2103,7 @@ export const insertUserSchema = createInsertSchema(users).omit({
   createdAt: true,
 }).extend({
   resellerId: z.string().nullable().optional(),
+  resellerCategory: z.enum(["standard", "franchising", "gdo"]).nullable().optional(),
 });
 
 export const insertRepairCenterSchema = createInsertSchema(repairCenters).omit({
