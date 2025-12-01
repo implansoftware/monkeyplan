@@ -19,6 +19,7 @@ export default function AdminResellers() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingReseller, setEditingReseller] = useState<Omit<User, 'password'> | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string>("standard");
+  const [selectedParentResellerId, setSelectedParentResellerId] = useState<string>("");
   const { toast } = useToast();
 
   type ResellerWithCount = Omit<User, 'password'> & { customerCount: number };
@@ -60,9 +61,19 @@ export default function AdminResellers() {
     },
   });
 
+  // Rivenditori padre (franchising/gdo) per il dropdown
+  const parentResellers = resellers.filter(r => 
+    r.resellerCategory === 'franchising' || r.resellerCategory === 'gdo'
+  );
+
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
+    
+    // Il parentResellerId si applica solo ai rivenditori standard
+    const parentId = selectedCategory === 'standard' && selectedParentResellerId 
+      ? selectedParentResellerId 
+      : null;
     
     if (editingReseller) {
       const updates: Partial<User> = {
@@ -71,6 +82,7 @@ export default function AdminResellers() {
         phone: formData.get("phone") as string || null,
         isActive: formData.get("isActive") === "true",
         resellerCategory: selectedCategory as any,
+        parentResellerId: parentId,
       };
       updateResellerMutation.mutate({ id: editingReseller.id, data: updates });
     } else {
@@ -83,6 +95,7 @@ export default function AdminResellers() {
         role: "reseller",
         isActive: true,
         resellerCategory: selectedCategory as any,
+        parentResellerId: parentId,
       };
       createResellerMutation.mutate(userData);
     }
@@ -107,10 +120,11 @@ export default function AdminResellers() {
           if (!open) {
             setEditingReseller(null);
             setSelectedCategory("standard");
+            setSelectedParentResellerId("");
           }
         }}>
           <DialogTrigger asChild>
-            <Button onClick={() => { setEditingReseller(null); setSelectedCategory("standard"); }} data-testid="button-add-reseller">
+            <Button onClick={() => { setEditingReseller(null); setSelectedCategory("standard"); setSelectedParentResellerId(""); }} data-testid="button-add-reseller">
               <Plus className="mr-2 h-4 w-4" />
               Nuovo Rivenditore
             </Button>
@@ -164,7 +178,10 @@ export default function AdminResellers() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="resellerCategory">Categoria</Label>
-                <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                <Select value={selectedCategory} onValueChange={(val) => {
+                  setSelectedCategory(val);
+                  if (val !== 'standard') setSelectedParentResellerId("");
+                }}>
                   <SelectTrigger id="resellerCategory" data-testid="select-reseller-category">
                     <SelectValue placeholder="Seleziona categoria" />
                   </SelectTrigger>
@@ -175,6 +192,24 @@ export default function AdminResellers() {
                   </SelectContent>
                 </Select>
               </div>
+              {selectedCategory === 'standard' && parentResellers.length > 0 && (
+                <div className="space-y-2">
+                  <Label htmlFor="parentResellerId">Rivenditore Padre (opzionale)</Label>
+                  <Select value={selectedParentResellerId} onValueChange={setSelectedParentResellerId}>
+                    <SelectTrigger id="parentResellerId" data-testid="select-parent-reseller">
+                      <SelectValue placeholder="Nessun rivenditore padre" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">Nessuno</SelectItem>
+                      {parentResellers.map((parent) => (
+                        <SelectItem key={parent.id} value={parent.id}>
+                          {parent.fullName} ({parent.resellerCategory === 'franchising' ? 'Franchising' : 'GDO'})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
               {editingReseller && (
                 <div className="space-y-2">
                   <Label htmlFor="isActive">Stato</Label>
@@ -237,6 +272,7 @@ export default function AdminResellers() {
                   <TableHead>Telefono</TableHead>
                   <TableHead>Username</TableHead>
                   <TableHead>Categoria</TableHead>
+                  <TableHead>Rivenditore Padre</TableHead>
                   <TableHead>Clienti</TableHead>
                   <TableHead>Stato</TableHead>
                   <TableHead className="text-right">Azioni</TableHead>
@@ -257,6 +293,13 @@ export default function AdminResellers() {
                          reseller.resellerCategory === 'gdo' ? 'GDO' : 'Standard'}
                       </Badge>
                     </TableCell>
+                    <TableCell data-testid={`text-parent-${reseller.id}`}>
+                      {reseller.parentResellerId ? (
+                        <span className="text-sm">
+                          {resellers.find(r => r.id === reseller.parentResellerId)?.fullName || '-'}
+                        </span>
+                      ) : '-'}
+                    </TableCell>
                     <TableCell data-testid={`text-customers-${reseller.id}`}>
                       <Badge variant="secondary">
                         <Users className="h-3 w-3 mr-1" />
@@ -275,6 +318,7 @@ export default function AdminResellers() {
                         onClick={() => {
                           setEditingReseller(reseller);
                           setSelectedCategory(reseller.resellerCategory || "standard");
+                          setSelectedParentResellerId(reseller.parentResellerId || "");
                           setDialogOpen(true);
                         }}
                         data-testid={`button-edit-${reseller.id}`}
