@@ -1,14 +1,15 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { RepairCenter, InsertRepairCenter } from "@shared/schema";
+import { RepairCenter, InsertRepairCenter, User } from "@shared/schema";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Search, MapPin, Phone, Mail, Pencil, Trash2, Building } from "lucide-react";
+import { Plus, Search, MapPin, Phone, Mail, Pencil, Trash2, Building, Store } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -16,10 +17,16 @@ import { Skeleton } from "@/components/ui/skeleton";
 export default function AdminRepairCenters() {
   const [searchQuery, setSearchQuery] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [editingCenter, setEditingCenter] = useState<RepairCenter | null>(null);
+  const [selectedResellerId, setSelectedResellerId] = useState<string>("");
   const { toast } = useToast();
 
   const { data: centers = [], isLoading } = useQuery<RepairCenter[]>({
     queryKey: ["/api/admin/repair-centers"],
+  });
+
+  const { data: resellers = [] } = useQuery<User[]>({
+    queryKey: ["/api/admin/resellers"],
   });
 
   const createCenterMutation = useMutation({
@@ -30,7 +37,26 @@ export default function AdminRepairCenters() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/repair-centers"] });
       setDialogOpen(false);
+      setEditingCenter(null);
+      setSelectedResellerId("");
       toast({ title: "Centro di riparazione creato" });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Errore", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const updateCenterMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: Partial<RepairCenter> }) => {
+      const res = await apiRequest("PATCH", `/api/admin/repair-centers/${id}`, data);
+      return await res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/repair-centers"] });
+      setDialogOpen(false);
+      setEditingCenter(null);
+      setSelectedResellerId("");
+      toast({ title: "Centro aggiornato" });
     },
     onError: (error: Error) => {
       toast({ title: "Errore", description: error.message, variant: "destructive" });
@@ -50,15 +76,29 @@ export default function AdminRepairCenters() {
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
-    const data: InsertRepairCenter = {
-      name: formData.get("name") as string,
-      address: formData.get("address") as string,
-      city: formData.get("city") as string,
-      phone: formData.get("phone") as string,
-      email: formData.get("email") as string,
-      isActive: true,
-    };
-    createCenterMutation.mutate(data);
+    
+    if (editingCenter) {
+      const updates: Partial<RepairCenter> = {
+        name: formData.get("name") as string,
+        address: formData.get("address") as string,
+        city: formData.get("city") as string,
+        phone: formData.get("phone") as string,
+        email: formData.get("email") as string,
+        resellerId: selectedResellerId || null,
+      };
+      updateCenterMutation.mutate({ id: editingCenter.id, data: updates });
+    } else {
+      const data: InsertRepairCenter = {
+        name: formData.get("name") as string,
+        address: formData.get("address") as string,
+        city: formData.get("city") as string,
+        phone: formData.get("phone") as string,
+        email: formData.get("email") as string,
+        resellerId: selectedResellerId || null,
+        isActive: true,
+      };
+      createCenterMutation.mutate(data);
+    }
   };
 
   const filteredCenters = centers.filter((center) =>
@@ -75,7 +115,13 @@ export default function AdminRepairCenters() {
             Gestisci tutti i centri di riparazione della rete
           </p>
         </div>
-        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <Dialog open={dialogOpen} onOpenChange={(open) => {
+          setDialogOpen(open);
+          if (!open) {
+            setEditingCenter(null);
+            setSelectedResellerId("");
+          }
+        }}>
           <DialogTrigger asChild>
             <Button data-testid="button-new-center">
               <Plus className="h-4 w-4 mr-2" />
@@ -84,31 +130,49 @@ export default function AdminRepairCenters() {
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Crea Nuovo Centro</DialogTitle>
+              <DialogTitle>{editingCenter ? "Modifica Centro" : "Crea Nuovo Centro"}</DialogTitle>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="name">Nome Centro</Label>
-                <Input id="name" name="name" required data-testid="input-name" />
+                <Input id="name" name="name" defaultValue={editingCenter?.name || ""} required data-testid="input-name" />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="address">Indirizzo</Label>
-                <Input id="address" name="address" required data-testid="input-address" />
+                <Input id="address" name="address" defaultValue={editingCenter?.address || ""} required data-testid="input-address" />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="city">Città</Label>
-                <Input id="city" name="city" required data-testid="input-city" />
+                <Input id="city" name="city" defaultValue={editingCenter?.city || ""} required data-testid="input-city" />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="phone">Telefono</Label>
-                <Input id="phone" name="phone" type="tel" required data-testid="input-phone" />
+                <Input id="phone" name="phone" type="tel" defaultValue={editingCenter?.phone || ""} required data-testid="input-phone" />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
-                <Input id="email" name="email" type="email" required data-testid="input-email" />
+                <Input id="email" name="email" type="email" defaultValue={editingCenter?.email || ""} required data-testid="input-email" />
               </div>
-              <Button type="submit" className="w-full" disabled={createCenterMutation.isPending} data-testid="button-submit-center">
-                {createCenterMutation.isPending ? "Creazione..." : "Crea Centro"}
+              <div className="space-y-2">
+                <Label htmlFor="resellerId">Rivenditore di Appartenenza</Label>
+                <Select value={selectedResellerId} onValueChange={setSelectedResellerId}>
+                  <SelectTrigger id="resellerId" data-testid="select-reseller-id">
+                    <SelectValue placeholder="Seleziona un rivenditore" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {resellers.map((reseller) => (
+                      <SelectItem key={reseller.id} value={reseller.id}>
+                        {reseller.fullName} ({reseller.email})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <Button type="submit" className="w-full" disabled={createCenterMutation.isPending || updateCenterMutation.isPending} data-testid="button-submit-center">
+                {editingCenter 
+                  ? (updateCenterMutation.isPending ? "Aggiornamento..." : "Aggiorna Centro")
+                  : (createCenterMutation.isPending ? "Creazione..." : "Crea Centro")
+                }
               </Button>
             </form>
           </DialogContent>
@@ -146,6 +210,7 @@ export default function AdminRepairCenters() {
                 <TableRow>
                   <TableHead>Nome</TableHead>
                   <TableHead>Località</TableHead>
+                  <TableHead>Rivenditore</TableHead>
                   <TableHead>Contatti</TableHead>
                   <TableHead>Stato</TableHead>
                   <TableHead className="text-right">Azioni</TableHead>
@@ -163,6 +228,16 @@ export default function AdminRepairCenters() {
                           <div className="text-xs text-muted-foreground">{center.address}</div>
                         </div>
                       </div>
+                    </TableCell>
+                    <TableCell>
+                      {center.resellerId ? (
+                        <div className="flex items-center gap-2 text-sm">
+                          <Store className="h-4 w-4 text-muted-foreground" />
+                          <span>{resellers.find(r => r.id === center.resellerId)?.fullName || 'Rivenditore non trovato'}</span>
+                        </div>
+                      ) : (
+                        <span className="text-muted-foreground text-sm">-</span>
+                      )}
                     </TableCell>
                     <TableCell>
                       <div className="text-sm space-y-1">
@@ -183,7 +258,16 @@ export default function AdminRepairCenters() {
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
-                        <Button variant="ghost" size="icon" data-testid={`button-edit-${center.id}`}>
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          onClick={() => {
+                            setEditingCenter(center);
+                            setSelectedResellerId(center.resellerId || "");
+                            setDialogOpen(true);
+                          }}
+                          data-testid={`button-edit-${center.id}`}
+                        >
                           <Pencil className="h-4 w-4" />
                         </Button>
                         <Button

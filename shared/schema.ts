@@ -314,6 +314,7 @@ export const repairCenters = pgTable("repair_centers", {
   city: text("city").notNull(),
   phone: text("phone").notNull(),
   email: text("email").notNull(),
+  resellerId: varchar("reseller_id"), // Rivenditore di appartenenza
   isActive: boolean("is_active").notNull().default(true),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });

@@ -630,6 +630,26 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  app.patch("/api/admin/repair-centers/:id", requireRole("admin"), async (req, res) => {
+    try {
+      const { name, address, city, phone, email, resellerId, isActive } = req.body;
+      const updates: any = {};
+      if (name !== undefined) updates.name = name;
+      if (address !== undefined) updates.address = address;
+      if (city !== undefined) updates.city = city;
+      if (phone !== undefined) updates.phone = phone;
+      if (email !== undefined) updates.email = email;
+      if (resellerId !== undefined) updates.resellerId = resellerId;
+      if (isActive !== undefined) updates.isActive = isActive;
+      
+      const center = await storage.updateRepairCenter(req.params.id, updates);
+      setActivityEntity(res, { type: 'repair-centers', id: center.id });
+      res.json(center);
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+
   app.delete("/api/admin/repair-centers/:id", requireRole("admin"), async (req, res) => {
     try {
       await storage.deleteRepairCenter(req.params.id);
