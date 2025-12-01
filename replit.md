@@ -24,9 +24,8 @@ The backend is an `Express.js` application with TypeScript, featuring a RESTful 
 *   **User Management**: Backend API for listing and updating users, with specialized endpoints for resellers and customer registration. Includes tenant ownership tracking via `resellerId`.
     *   **Reseller Classification**: Resellers can be categorized as Standard, Franchising, or GDO (Grande Distribuzione Organizzata) via `resellerCategory` field in users table. Frontend supports creation, editing, filtering by category, and export with category column.
     *   **Users vs Customers Separation**: Admin UI has separate pages for staff users (admin/reseller/repair_center) and customers, with tenant-aware filtering for resellers and repair centers.
-*   **Corporate Branch Management (Franchising/GDO)**: Hierarchical customer structure supporting corporate customers with multiple branches.
+*   **Corporate Branch Management**: Hierarchical customer structure supporting corporate customers with multiple branches.
     *   **Branch Registry**: Full CRUD for customer branches with branch code, name, address, contact info, and active status.
-    *   **Company Categories**: Enum `companyCategory` (standard/franchising/gdo) in `billingData` to identify corporate customer types.
     *   **Branch-Repair Association**: Optional `branchId` field in `repairOrders` to track which branch submitted a repair.
     *   **Acceptance Wizard Integration**: Branch dropdown in the acceptance wizard when the selected customer has active branches.
     *   **Frontend Management**: CustomerBranchManager component with tabs interface in customer details view for resellers.
