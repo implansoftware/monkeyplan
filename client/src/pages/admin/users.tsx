@@ -22,9 +22,11 @@ import type { DateRange } from "react-day-picker";
 export default function AdminUsers() {
   const [searchQuery, setSearchQuery] = useState("");
   const [roleFilter, setRoleFilter] = useState<string>("all");
+  const [resellerCategoryFilter, setResellerCategoryFilter] = useState<string>("all");
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [selectedRole, setSelectedRole] = useState<string>("reseller");
   const [isExporting, setIsExporting] = useState(false);
   const { toast } = useToast();
 
@@ -32,18 +34,27 @@ export default function AdminUsers() {
     queryKey: ["/api/users"],
   });
 
+  const getResellerCategoryLabel = (category: string | null | undefined) => {
+    switch (category) {
+      case "franchising": return "Franchising";
+      case "gdo": return "GDO";
+      case "standard": return "Standard";
+      default: return "Standard";
+    }
+  };
+
   const handleExport = async () => {
-    // Export users as CSV (no backend endpoint for Excel export yet)
     try {
       setIsExporting(true);
       
       const csv = [
-        ['Nome Completo', 'Email', 'Username', 'Ruolo', 'Stato'].join(','),
+        ['Nome Completo', 'Email', 'Username', 'Ruolo', 'Categoria Rivenditore', 'Stato'].join(','),
         ...filteredUsers.map(u => [
           u.fullName,
           u.email,
           u.username,
           getRoleLabel(u.role),
+          u.role === 'reseller' ? getResellerCategoryLabel(u.resellerCategory) : '-',
           u.isActive ? 'Attivo' : 'Inattivo'
         ].join(','))
       ].join('\n');
@@ -119,24 +130,28 @@ export default function AdminUsers() {
     const formData = new FormData(e.currentTarget);
     
     if (editingUser) {
-      // Update existing user
       const updates: Partial<User> = {
         email: formData.get("email") as string,
         fullName: formData.get("fullName") as string,
-        role: formData.get("role") as any,
+        role: selectedRole as any,
         isActive: formData.get("isActive") === "true",
       };
+      if (selectedRole === 'reseller') {
+        updates.resellerCategory = formData.get("resellerCategory") as any || 'standard';
+      }
       updateUserMutation.mutate({ id: editingUser.id, data: updates });
     } else {
-      // Create new user
       const data: InsertUser = {
         username: formData.get("username") as string,
         password: formData.get("password") as string,
         email: formData.get("email") as string,
         fullName: formData.get("fullName") as string,
-        role: formData.get("role") as any,
+        role: selectedRole as any,
         isActive: true,
       };
+      if (selectedRole === 'reseller') {
+        data.resellerCategory = formData.get("resellerCategory") as any || 'standard';
+      }
       createUserMutation.mutate(data);
     }
   };
@@ -148,7 +163,9 @@ export default function AdminUsers() {
       user.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
       user.username.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesRole = roleFilter === "all" || user.role === roleFilter;
-    return matchesSearch && matchesRole;
+    const matchesResellerCategory = resellerCategoryFilter === "all" || 
+      (user.role === 'reseller' && (user.resellerCategory || 'standard') === resellerCategoryFilter);
+    return matchesSearch && matchesRole && (resellerCategoryFilter === "all" || matchesResellerCategory);
   });
 
   const getRoleBadgeVariant = (role: string) => {
@@ -189,7 +206,15 @@ export default function AdminUsers() {
             <Download className="h-4 w-4 mr-2" />
             {isExporting ? "Esportazione..." : "Esporta CSV"}
           </Button>
-          <Dialog open={dialogOpen} onOpenChange={(open) => { setDialogOpen(open); if (!open) setEditingUser(null); }}>
+          <Dialog open={dialogOpen} onOpenChange={(open) => { 
+            setDialogOpen(open); 
+            if (!open) {
+              setEditingUser(null);
+              setSelectedRole("reseller");
+            } else if (editingUser) {
+              setSelectedRole(editingUser.role);
+            }
+          }}>
             <DialogTrigger asChild>
               <Button data-testid="button-new-user">
                 <Plus className="h-4 w-4 mr-2" />
@@ -223,7 +248,11 @@ export default function AdminUsers() {
               )}
               <div className="space-y-2">
                 <Label htmlFor="role">Ruolo</Label>
-                <Select name="role" defaultValue={editingUser?.role || "reseller"}>
+                <Select 
+                  name="role" 
+                  value={selectedRole}
+                  onValueChange={setSelectedRole}
+                >
                   <SelectTrigger id="role" data-testid="select-role">
                     <SelectValue />
                   </SelectTrigger>
@@ -234,6 +263,21 @@ export default function AdminUsers() {
                   </SelectContent>
                 </Select>
               </div>
+              {selectedRole === 'reseller' && (
+                <div className="space-y-2">
+                  <Label htmlFor="resellerCategory">Categoria Rivenditore</Label>
+                  <Select name="resellerCategory" defaultValue={editingUser?.resellerCategory || "standard"}>
+                    <SelectTrigger id="resellerCategory" data-testid="select-reseller-category">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="standard">Standard</SelectItem>
+                      <SelectItem value="franchising">Franchising</SelectItem>
+                      <SelectItem value="gdo">GDO (Grande Distribuzione)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
               {editingUser && (
                 <div className="space-y-2">
                   <Label htmlFor="isActive">Stato</Label>
@@ -287,7 +331,17 @@ export default function AdminUsers() {
                 <SelectItem value="admin">Admin</SelectItem>
                 <SelectItem value="reseller">Rivenditori</SelectItem>
                 <SelectItem value="repair_center">Centri Riparazione</SelectItem>
-                <SelectItem value="customer">Clienti</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={resellerCategoryFilter} onValueChange={setResellerCategoryFilter}>
+              <SelectTrigger className="w-full sm:w-48" data-testid="select-filter-reseller-category">
+                <SelectValue placeholder="Categoria Rivenditore" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tutte le categorie</SelectItem>
+                <SelectItem value="standard">Standard</SelectItem>
+                <SelectItem value="franchising">Franchising</SelectItem>
+                <SelectItem value="gdo">GDO</SelectItem>
               </SelectContent>
             </Select>
             <Popover>
@@ -346,6 +400,7 @@ export default function AdminUsers() {
                   <TableHead>Email</TableHead>
                   <TableHead>Username</TableHead>
                   <TableHead>Ruolo</TableHead>
+                  <TableHead>Categoria</TableHead>
                   <TableHead>Stato</TableHead>
                   <TableHead className="text-right">Azioni</TableHead>
                 </TableRow>
@@ -362,6 +417,15 @@ export default function AdminUsers() {
                       </Badge>
                     </TableCell>
                     <TableCell>
+                      {user.role === 'reseller' ? (
+                        <Badge variant="outline">
+                          {getResellerCategoryLabel(user.resellerCategory)}
+                        </Badge>
+                      ) : (
+                        <span className="text-muted-foreground">-</span>
+                      )}
+                    </TableCell>
+                    <TableCell>
                       <Badge variant={user.isActive ? "default" : "secondary"}>
                         {user.isActive ? "Attivo" : "Inattivo"}
                       </Badge>
@@ -371,7 +435,7 @@ export default function AdminUsers() {
                         <Button
                           variant="ghost"
                           size="icon"
-                          onClick={() => { setEditingUser(user); setDialogOpen(true); }}
+                          onClick={() => { setEditingUser(user); setSelectedRole(user.role); setDialogOpen(true); }}
                           data-testid={`button-edit-${user.id}`}
                         >
                           <Pencil className="h-4 w-4" />

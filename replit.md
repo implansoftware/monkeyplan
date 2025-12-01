@@ -22,6 +22,8 @@ The backend is an `Express.js` application with TypeScript, featuring a RESTful 
 *   **Dashboard & Analytics**: Provides role-specific dashboards with KPIs, charts (PieChart, BarChart), and tables for performance overview, low stock alerts, revenue, and customer stats.
 *   **Invoicing & Billing**: Backend API supports listing, viewing, creating, and updating invoices with RBAC.
 *   **User Management**: Backend API for listing and updating users, with specialized endpoints for resellers and customer registration. Includes tenant ownership tracking via `resellerId`.
+    *   **Reseller Classification**: Resellers can be categorized as Standard, Franchising, or GDO (Grande Distribuzione Organizzata) via `resellerCategory` field in users table. Frontend supports creation, editing, filtering by category, and export with category column.
+    *   **Users vs Customers Separation**: Admin UI has separate pages for staff users (admin/reseller/repair_center) and customers, with tenant-aware filtering for resellers and repair centers.
 *   **Corporate Branch Management (Franchising/GDO)**: Hierarchical customer structure supporting corporate customers with multiple branches.
     *   **Branch Registry**: Full CRUD for customer branches with branch code, name, address, contact info, and active status.
     *   **Company Categories**: Enum `companyCategory` (standard/franchising/gdo) in `billingData` to identify corporate customer types.
