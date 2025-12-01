@@ -53,8 +53,6 @@ const menuItems = {
     { title: "Lavorazioni", url: "/admin/repairs", icon: Wrench, group: "Centri" },
     { title: "Diagnosi", url: "/admin/diagnostics", icon: Stethoscope, group: "Centri" },
     { title: "Preventivi", url: "/admin/quotes", icon: Receipt, group: "Centri" },
-    { title: "Ticket", url: "/admin/tickets", icon: Ticket, group: "Assistenza" },
-    { title: "Live Chat", url: "/admin/chat", icon: MessageSquare, group: "Assistenza" },
     { title: "Magazzino", url: "/admin/inventory", icon: Package, group: "Magazzino" },
     { title: "Prodotti", url: "/admin/products", icon: ShoppingCart, group: "Magazzino" },
     { title: "Fornitori", url: "/admin/suppliers", icon: Building2, group: "Magazzino" },
@@ -71,6 +69,8 @@ const menuItems = {
     { title: "Fatture", url: "/admin/invoices", icon: FileText, group: "Fatturazione" },
     { title: "Activity Logs", url: "/admin/activity-logs", icon: Shield, group: "Sistema" },
     { title: "Impostazioni", url: "/admin/settings", icon: Settings, group: "Sistema" },
+    { title: "Ticket", url: "/admin/tickets", icon: Ticket, group: "Assistenza" },
+    { title: "Live Chat", url: "/admin/chat", icon: MessageSquare, group: "Assistenza" },
   ],
   reseller: [
     { title: "Dashboard", url: "/reseller", icon: LayoutDashboard, group: "Principale" },
