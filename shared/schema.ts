@@ -8,7 +8,6 @@ import { z } from "zod";
 export const userRoleEnum = pgEnum("user_role", ["admin", "reseller", "repair_center", "customer"]);
 export const resellerCategoryEnum = pgEnum("reseller_category", ["standard", "franchising", "gdo"]);
 export const customerTypeEnum = pgEnum("customer_type", ["private", "company"]);
-export const companyCategoryEnum = pgEnum("company_category", ["standard", "franchising", "gdo"]);
 export const ticketStatusEnum = pgEnum("ticket_status", ["open", "in_progress", "closed"]);
 export const ticketPriorityEnum = pgEnum("ticket_priority", ["low", "medium", "high"]);
 export const repairStatusEnum = pgEnum("repair_status", [
@@ -1682,7 +1681,6 @@ export const billingData = pgTable("billing_data", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   userId: varchar("user_id").notNull().unique(),
   customerType: customerTypeEnum("customer_type").notNull().default("private"),
-  companyCategory: companyCategoryEnum("company_category").default("standard"), // Solo per aziende: standard/franchising/gdo
   companyName: text("company_name"),
   vatNumber: text("vat_number"),
   fiscalCode: text("fiscal_code"),
@@ -2619,7 +2617,6 @@ export const privateCustomerSchema = baseCustomerSchema.extend({
 const companyCustomerSchemaBase = baseCustomerSchema.extend({
   customerType: z.literal("company"),
   companyName: z.string().min(1).trim(),
-  companyCategory: z.enum(["standard", "franchising", "gdo"]).optional().default("standard"),
   vatNumber: z.string().optional(),
   fiscalCode: z.string().optional(),
   pec: z.string().email().optional(),
