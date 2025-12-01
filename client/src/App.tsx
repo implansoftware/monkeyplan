@@ -35,6 +35,7 @@ import AdminSuppliers from "@/pages/admin/suppliers";
 import AdminSupplierOrders from "@/pages/admin/supplier-orders";
 import AdminSupplierReturns from "@/pages/admin/supplier-returns";
 import AdminPartsLoad from "@/pages/admin/parts-load";
+import AdminCustomers from "@/pages/admin/customers";
 import DiagnosisList from "@/pages/DiagnosisList";
 import QuotesList from "@/pages/QuotesList";
 
@@ -94,6 +95,7 @@ function Router() {
       {/* Admin routes */}
       <ProtectedRoute path="/" component={AdminDashboard} />
       <ProtectedRoute path="/admin/users" component={AdminUsers} />
+      <ProtectedRoute path="/admin/customers" component={AdminCustomers} />
       <ProtectedRoute path="/admin/resellers" component={AdminResellers} />
       <ProtectedRoute path="/admin/repair-centers" component={AdminRepairCenters} />
       <ProtectedRoute path="/admin/repairs" component={AdminRepairs} />
