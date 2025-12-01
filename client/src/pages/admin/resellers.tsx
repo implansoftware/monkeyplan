@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Search, Pencil, Store, Users } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -17,6 +18,7 @@ export default function AdminResellers() {
   const [searchQuery, setSearchQuery] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingReseller, setEditingReseller] = useState<Omit<User, 'password'> | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<string>("standard");
   const { toast } = useToast();
 
   type ResellerWithCount = Omit<User, 'password'> & { customerCount: number };
@@ -68,6 +70,7 @@ export default function AdminResellers() {
         email: formData.get("email") as string,
         phone: formData.get("phone") as string || null,
         isActive: formData.get("isActive") === "true",
+        resellerCategory: selectedCategory as any,
       };
       updateResellerMutation.mutate({ id: editingReseller.id, data: updates });
     } else {
@@ -79,6 +82,7 @@ export default function AdminResellers() {
         phone: formData.get("phone") as string || null,
         role: "reseller",
         isActive: true,
+        resellerCategory: selectedCategory as any,
       };
       createResellerMutation.mutate(userData);
     }
@@ -98,9 +102,15 @@ export default function AdminResellers() {
           <h1 className="text-3xl font-bold" data-testid="text-page-title">Rivenditori</h1>
           <p className="text-muted-foreground">Gestisci i rivenditori e visualizza i loro clienti</p>
         </div>
-        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <Dialog open={dialogOpen} onOpenChange={(open) => {
+          setDialogOpen(open);
+          if (!open) {
+            setEditingReseller(null);
+            setSelectedCategory("standard");
+          }
+        }}>
           <DialogTrigger asChild>
-            <Button onClick={() => setEditingReseller(null)} data-testid="button-add-reseller">
+            <Button onClick={() => { setEditingReseller(null); setSelectedCategory("standard"); }} data-testid="button-add-reseller">
               <Plus className="mr-2 h-4 w-4" />
               Nuovo Rivenditore
             </Button>
@@ -151,6 +161,19 @@ export default function AdminResellers() {
                   defaultValue={editingReseller?.phone || ""} 
                   data-testid="input-phone" 
                 />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="resellerCategory">Categoria</Label>
+                <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                  <SelectTrigger id="resellerCategory" data-testid="select-reseller-category">
+                    <SelectValue placeholder="Seleziona categoria" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="standard">Standard</SelectItem>
+                    <SelectItem value="franchising">Franchising</SelectItem>
+                    <SelectItem value="gdo">GDO (Grande Distribuzione)</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               {editingReseller && (
                 <div className="space-y-2">
@@ -213,6 +236,7 @@ export default function AdminResellers() {
                   <TableHead>Email</TableHead>
                   <TableHead>Telefono</TableHead>
                   <TableHead>Username</TableHead>
+                  <TableHead>Categoria</TableHead>
                   <TableHead>Clienti</TableHead>
                   <TableHead>Stato</TableHead>
                   <TableHead className="text-right">Azioni</TableHead>
@@ -227,6 +251,12 @@ export default function AdminResellers() {
                     <TableCell data-testid={`text-email-${reseller.id}`}>{reseller.email}</TableCell>
                     <TableCell data-testid={`text-phone-${reseller.id}`}>{reseller.phone || "-"}</TableCell>
                     <TableCell data-testid={`text-username-${reseller.id}`}>{reseller.username}</TableCell>
+                    <TableCell data-testid={`text-category-${reseller.id}`}>
+                      <Badge variant="outline">
+                        {reseller.resellerCategory === 'franchising' ? 'Franchising' : 
+                         reseller.resellerCategory === 'gdo' ? 'GDO' : 'Standard'}
+                      </Badge>
+                    </TableCell>
                     <TableCell data-testid={`text-customers-${reseller.id}`}>
                       <Badge variant="secondary">
                         <Users className="h-3 w-3 mr-1" />
@@ -244,6 +274,7 @@ export default function AdminResellers() {
                         size="icon"
                         onClick={() => {
                           setEditingReseller(reseller);
+                          setSelectedCategory(reseller.resellerCategory || "standard");
                           setDialogOpen(true);
                         }}
                         data-testid={`button-edit-${reseller.id}`}
