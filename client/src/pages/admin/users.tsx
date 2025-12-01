@@ -27,11 +27,16 @@ export default function AdminUsers() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [selectedRole, setSelectedRole] = useState<string>("reseller");
+  const [selectedResellerId, setSelectedResellerId] = useState<string>("");
   const [isExporting, setIsExporting] = useState(false);
   const { toast } = useToast();
 
   const { data: users = [], isLoading } = useQuery<User[]>({
     queryKey: ["/api/users"],
+  });
+
+  const { data: resellers = [] } = useQuery<User[]>({
+    queryKey: ["/api/admin/resellers"],
   });
 
   const getResellerCategoryLabel = (category: string | null | undefined) => {
@@ -48,13 +53,17 @@ export default function AdminUsers() {
       setIsExporting(true);
       
       const csv = [
-        ['Nome Completo', 'Email', 'Username', 'Ruolo', 'Categoria Rivenditore', 'Stato'].join(','),
+        ['Nome Completo', 'Email', 'Username', 'Ruolo', 'Categoria/Rivenditore', 'Stato'].join(','),
         ...filteredUsers.map(u => [
           u.fullName,
           u.email,
           u.username,
           getRoleLabel(u.role),
-          u.role === 'reseller' ? getResellerCategoryLabel(u.resellerCategory) : '-',
+          u.role === 'reseller' 
+            ? getResellerCategoryLabel(u.resellerCategory) 
+            : u.role === 'repair_center' && u.resellerId 
+              ? (resellers.find(r => r.id === u.resellerId)?.fullName || '-')
+              : '-',
           u.isActive ? 'Attivo' : 'Inattivo'
         ].join(','))
       ].join('\n');
@@ -139,6 +148,9 @@ export default function AdminUsers() {
       if (selectedRole === 'reseller') {
         updates.resellerCategory = formData.get("resellerCategory") as any || 'standard';
       }
+      if (selectedRole === 'repair_center') {
+        updates.resellerId = selectedResellerId || null;
+      }
       updateUserMutation.mutate({ id: editingUser.id, data: updates });
     } else {
       const data: InsertUser = {
@@ -151,6 +163,9 @@ export default function AdminUsers() {
       };
       if (selectedRole === 'reseller') {
         data.resellerCategory = formData.get("resellerCategory") as any || 'standard';
+      }
+      if (selectedRole === 'repair_center' && selectedResellerId) {
+        data.resellerId = selectedResellerId;
       }
       createUserMutation.mutate(data);
     }
@@ -211,8 +226,10 @@ export default function AdminUsers() {
             if (!open) {
               setEditingUser(null);
               setSelectedRole("reseller");
+              setSelectedResellerId("");
             } else if (editingUser) {
               setSelectedRole(editingUser.role);
+              setSelectedResellerId(editingUser.resellerId || "");
             }
           }}>
             <DialogTrigger asChild>
@@ -274,6 +291,26 @@ export default function AdminUsers() {
                       <SelectItem value="standard">Standard</SelectItem>
                       <SelectItem value="franchising">Franchising</SelectItem>
                       <SelectItem value="gdo">GDO (Grande Distribuzione)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+              {selectedRole === 'repair_center' && (
+                <div className="space-y-2">
+                  <Label htmlFor="resellerId">Rivenditore di Appartenenza</Label>
+                  <Select 
+                    value={selectedResellerId} 
+                    onValueChange={setSelectedResellerId}
+                  >
+                    <SelectTrigger id="resellerId" data-testid="select-reseller-id">
+                      <SelectValue placeholder="Seleziona un rivenditore" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {resellers.map((reseller) => (
+                        <SelectItem key={reseller.id} value={reseller.id}>
+                          {reseller.fullName} ({reseller.email})
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
@@ -400,7 +437,7 @@ export default function AdminUsers() {
                   <TableHead>Email</TableHead>
                   <TableHead>Username</TableHead>
                   <TableHead>Ruolo</TableHead>
-                  <TableHead>Categoria</TableHead>
+                  <TableHead>Categoria/Rivenditore</TableHead>
                   <TableHead>Stato</TableHead>
                   <TableHead className="text-right">Azioni</TableHead>
                 </TableRow>
@@ -421,6 +458,10 @@ export default function AdminUsers() {
                         <Badge variant="outline">
                           {getResellerCategoryLabel(user.resellerCategory)}
                         </Badge>
+                      ) : user.role === 'repair_center' && user.resellerId ? (
+                        <span className="text-sm">
+                          {resellers.find(r => r.id === user.resellerId)?.fullName || 'Rivenditore non trovato'}
+                        </span>
                       ) : (
                         <span className="text-muted-foreground">-</span>
                       )}
@@ -435,7 +476,12 @@ export default function AdminUsers() {
                         <Button
                           variant="ghost"
                           size="icon"
-                          onClick={() => { setEditingUser(user); setSelectedRole(user.role); setDialogOpen(true); }}
+                          onClick={() => { 
+                            setEditingUser(user); 
+                            setSelectedRole(user.role); 
+                            setSelectedResellerId(user.resellerId || "");
+                            setDialogOpen(true); 
+                          }}
                           data-testid={`button-edit-${user.id}`}
                         >
                           <Pencil className="h-4 w-4" />

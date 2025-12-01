@@ -302,7 +302,7 @@ export const users = pgTable("users", {
   resellerCategory: resellerCategoryEnum("reseller_category").default("standard"), // Solo per role='reseller': standard/franchising/gdo
   isActive: boolean("is_active").notNull().default(true),
   repairCenterId: varchar("repair_center_id"),
-  resellerId: varchar("reseller_id"), // Which reseller created this customer (only for customers)
+  resellerId: varchar("reseller_id"), // Which reseller this user belongs to (for customers and repair_centers)
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
