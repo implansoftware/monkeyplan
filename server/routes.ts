@@ -5007,8 +5007,9 @@ export function registerRoutes(app: Express): Server {
         return res.status(403).send("Only admins can list users");
       }
       
-      const users = await storage.listUsers();
-      res.json(users);
+      const allUsers = await storage.listUsers();
+      const staffUsers = allUsers.filter(u => u.role !== 'customer');
+      res.json(staffUsers);
     } catch (error: any) {
       res.status(500).send(error.message);
     }
