@@ -65,6 +65,7 @@ export interface IStorage {
   updateUser(id: string, updates: Partial<Pick<User, 'username' | 'email' | 'fullName' | 'role' | 'isActive' | 'repairCenterId'>>): Promise<User>;
   listUsers(): Promise<User[]>;
   listStaffUsers(): Promise<{ id: string; username: string; role: string }[]>;
+  listCustomers(filters?: { resellerId?: string; repairCenterId?: string }): Promise<User[]>;
   deleteUser(id: string): Promise<void>;
   createCustomerWithBilling(userData: InsertUser, billingInfo: InsertBillingData): Promise<{ user: User; billing: BillingData }>;
   
@@ -502,6 +503,51 @@ export class DatabaseStorage implements IStorage {
       .orderBy(users.username);
     
     return staffUsers;
+  }
+
+  async listCustomers(filters?: { resellerId?: string; repairCenterId?: string }): Promise<User[]> {
+    if (filters?.resellerId) {
+      return await db
+        .select()
+        .from(users)
+        .where(
+          and(
+            eq(users.role, 'customer'),
+            eq(users.resellerId, filters.resellerId)
+          )
+        )
+        .orderBy(desc(users.createdAt));
+    }
+    
+    if (filters?.repairCenterId) {
+      const customerIds = await db
+        .selectDistinct({ customerId: repairOrders.customerId })
+        .from(repairOrders)
+        .where(eq(repairOrders.repairCenterId, filters.repairCenterId));
+      
+      const ids = customerIds.map(c => c.customerId).filter((id): id is string => id !== null);
+      
+      if (ids.length === 0) {
+        return [];
+      }
+      
+      return await db
+        .select()
+        .from(users)
+        .where(
+          and(
+            eq(users.role, 'customer'),
+            inArray(users.id, ids)
+          )
+        )
+        .orderBy(desc(users.createdAt));
+    }
+    
+    return await db
+      .select()
+      .from(users)
+      .where(eq(users.role, 'customer'))
+      .orderBy(desc(users.createdAt));
   }
 
   async deleteUser(id: string): Promise<void> {

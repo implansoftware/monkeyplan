@@ -5057,6 +5057,38 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // ============ CUSTOMER MANAGEMENT ============
+
+  app.get("/api/customers", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      let customers;
+      
+      switch (req.user.role) {
+        case 'admin':
+          // Admin sees all customers, optionally filtered by resellerId
+          const resellerFilter = req.query.resellerId as string | undefined;
+          customers = await storage.listCustomers(resellerFilter ? { resellerId: resellerFilter } : undefined);
+          break;
+        case 'reseller':
+          // Reseller sees only their customers
+          customers = await storage.listCustomers({ resellerId: req.user.id });
+          break;
+        case 'repair_center':
+          // Repair center sees customers from their repair orders
+          customers = await storage.listCustomers({ repairCenterId: req.user.repairCenterId || undefined });
+          break;
+        default:
+          return res.status(403).send("Forbidden");
+      }
+      
+      res.json(customers);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
   // ============ CUSTOMER REGISTRATION WIZARD ============
 
   app.post("/api/customers", requireAuth, async (req, res) => {
