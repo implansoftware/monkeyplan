@@ -230,6 +230,9 @@ export default function AdminUsers() {
             } else if (editingUser) {
               setSelectedRole(editingUser.role);
               setSelectedResellerId(editingUser.resellerId || "");
+            } else {
+              setSelectedRole("reseller");
+              setSelectedResellerId("");
             }
           }}>
             <DialogTrigger asChild>
