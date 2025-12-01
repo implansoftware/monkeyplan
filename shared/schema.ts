@@ -300,6 +300,7 @@ export const users = pgTable("users", {
   phone: text("phone"),
   role: userRoleEnum("role").notNull().default("customer"),
   resellerCategory: resellerCategoryEnum("reseller_category").default("standard"), // Solo per role='reseller': standard/franchising/gdo
+  parentResellerId: varchar("parent_reseller_id"), // Per sotto-rivenditori: ID del rivenditore padre (franchising/gdo)
   isActive: boolean("is_active").notNull().default(true),
   repairCenterId: varchar("repair_center_id"),
   resellerId: varchar("reseller_id"), // Which reseller this user belongs to (for customers and repair_centers)
