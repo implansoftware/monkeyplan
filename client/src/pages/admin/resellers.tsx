@@ -195,12 +195,12 @@ export default function AdminResellers() {
               {selectedCategory === 'standard' && parentResellers.length > 0 && (
                 <div className="space-y-2">
                   <Label htmlFor="parentResellerId">Rivenditore Padre (opzionale)</Label>
-                  <Select value={selectedParentResellerId} onValueChange={setSelectedParentResellerId}>
+                  <Select value={selectedParentResellerId || "none"} onValueChange={(val) => setSelectedParentResellerId(val === "none" ? "" : val)}>
                     <SelectTrigger id="parentResellerId" data-testid="select-parent-reseller">
                       <SelectValue placeholder="Nessun rivenditore padre" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Nessuno</SelectItem>
+                      <SelectItem value="none">Nessuno</SelectItem>
                       {parentResellers.map((parent) => (
                         <SelectItem key={parent.id} value={parent.id}>
                           {parent.fullName} ({parent.resellerCategory === 'franchising' ? 'Franchising' : 'GDO'})
