@@ -47,7 +47,6 @@ const menuItems = {
   admin: [
     { title: "Dashboard", url: "/", icon: LayoutDashboard, group: "Principale" },
     { title: "Analytics", url: "/admin/analytics", icon: BarChart3, group: "Principale" },
-    { title: "Utenti", url: "/admin/users", icon: Users, group: "Principale" },
     { title: "Clienti", url: "/admin/customers", icon: Users, group: "Principale" },
     { title: "Rivenditori", url: "/admin/resellers", icon: Store, group: "Principale" },
     { title: "Centri di Riparazione", url: "/admin/repair-centers", icon: Building, group: "Centri" },
