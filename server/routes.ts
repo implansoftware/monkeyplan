@@ -561,9 +561,15 @@ export function registerRoutes(app: Express): Server {
       // Hash password before storing
       const hashedPassword = await hashPassword(validatedData.password);
       
+      // Only set resellerCategory for reseller role
+      const resellerCategory = validatedData.role === 'reseller' 
+        ? (validatedData.resellerCategory || 'standard') 
+        : null;
+      
       const user = await storage.createUser({
         ...validatedData,
         password: hashedPassword,
+        resellerCategory,
       });
       
       setActivityEntity(res, { type: 'users', id: user.id });
@@ -5030,7 +5036,7 @@ export function registerRoutes(app: Express): Server {
       }
       
       const allowedUpdates = req.user.role === 'admin' 
-        ? ['username', 'email', 'fullName', 'role', 'isActive', 'repairCenterId'] as const
+        ? ['username', 'email', 'fullName', 'role', 'isActive', 'repairCenterId', 'resellerCategory'] as const
         : ['email', 'fullName'] as const; // Non-admin can only update own profile fields
       
       const updates: any = {};
@@ -5046,6 +5052,16 @@ export function registerRoutes(app: Express): Server {
         const center = await storage.getRepairCenter(updates.repairCenterId);
         if (!center) {
           return res.status(400).send("Invalid repair center ID");
+        }
+      }
+      
+      // Validate resellerCategory: only valid for reseller role
+      if (updates.resellerCategory) {
+        const targetRole = updates.role || user.role;
+        if (targetRole !== 'reseller') {
+          delete updates.resellerCategory; // Ignore resellerCategory for non-resellers
+        } else if (!['standard', 'franchising', 'gdo'].includes(updates.resellerCategory)) {
+          return res.status(400).send("Invalid reseller category");
         }
       }
       
