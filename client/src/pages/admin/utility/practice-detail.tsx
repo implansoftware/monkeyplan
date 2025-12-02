@@ -2,7 +2,7 @@ import { useState, useRef } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useParams, useLocation } from "wouter";
 import { 
-  UtilityPractice, UtilitySupplier, UtilityService, User,
+  UtilityPractice, UtilitySupplier, UtilityService, User, Product,
   UtilityPracticeTask, UtilityPracticeNote, UtilityPracticeDocument,
   UtilityPracticeTimelineEvent, UtilityPracticeStateHistoryEntry
 } from "@shared/schema";
@@ -22,7 +22,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { 
   ArrowLeft, FileText, CheckSquare, Clock, MessageSquare, 
   Plus, Trash2, Upload, Download, Calendar, User as UserIcon,
-  AlertCircle, CheckCircle, Circle, Play, XCircle, History
+  AlertCircle, CheckCircle, Circle, Play, XCircle, History, Package
 } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -141,6 +141,11 @@ export default function AdminUtilityPracticeDetail() {
   const { data: service } = useQuery<UtilityService>({
     queryKey: ["/api/utility/services", practice?.serviceId],
     enabled: !!practice?.serviceId,
+  });
+
+  const { data: product } = useQuery<Product>({
+    queryKey: ["/api/products", practice?.productId],
+    enabled: !!practice?.productId,
   });
 
   const { data: customer } = useQuery<User>({
@@ -346,7 +351,9 @@ export default function AdminUtilityPracticeDetail() {
           <div>
             <h1 className="text-2xl font-bold" data-testid="text-practice-number">{practice.practiceNumber}</h1>
             <p className="text-muted-foreground">
-              {supplier?.name} - {service?.name}
+              {practice.itemType === "product" 
+                ? product?.name || "Prodotto" 
+                : `${supplier?.name || ""} - ${service?.name || ""}`}
             </p>
           </div>
         </div>
@@ -412,17 +419,47 @@ export default function AdminUtilityPracticeDetail() {
 
             <Card>
               <CardHeader>
-                <CardTitle className="text-lg">Dettagli Servizio</CardTitle>
+                <CardTitle className="text-lg">
+                  {practice.itemType === "product" ? "Dettagli Prodotto" : "Dettagli Servizio"}
+                </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
-                <div>
-                  <p className="text-sm text-muted-foreground">Fornitore</p>
-                  <p className="font-medium" data-testid="text-supplier-name">{supplier?.name || "-"}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Servizio</p>
-                  <p className="font-medium" data-testid="text-service-name">{service?.name || "-"}</p>
-                </div>
+                {practice.itemType === "product" ? (
+                  <>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Tipo</p>
+                      <Badge variant="outline" className="mt-1">
+                        <Package className="h-3 w-3 mr-1" />
+                        Prodotto
+                      </Badge>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Prodotto</p>
+                      <p className="font-medium" data-testid="text-product-name">{product?.name || "-"}</p>
+                    </div>
+                    {product?.sku && (
+                      <div>
+                        <p className="text-sm text-muted-foreground">SKU</p>
+                        <p className="font-medium">{product.sku}</p>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Tipo</p>
+                      <Badge variant="outline" className="mt-1">Servizio Utility</Badge>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Fornitore</p>
+                      <p className="font-medium" data-testid="text-supplier-name">{supplier?.name || "-"}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Servizio</p>
+                      <p className="font-medium" data-testid="text-service-name">{service?.name || "-"}</p>
+                    </div>
+                  </>
+                )}
                 <div>
                   <p className="text-sm text-muted-foreground">Canone Mensile</p>
                   <p className="font-medium" data-testid="text-monthly-price">{formatCurrency(practice.monthlyPriceCents)}</p>
