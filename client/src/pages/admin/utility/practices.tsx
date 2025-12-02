@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { 
   Plus, Search, FileCheck, Pencil, Trash2, 
-  ArrowLeft, User as UserIcon, Eye, Package, Calendar, Euro, ClipboardPaste, X
+  ArrowLeft, User as UserIcon, Eye, Package, Calendar, Euro, ClipboardPaste, X, Building2, User2
 } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -966,13 +966,44 @@ export default function AdminUtilityPractices() {
                       </Button>
                     </div>
                     {useTemporarySupplier ? (
-                      <Input
-                        value={temporarySupplierName}
-                        onChange={(e) => setTemporarySupplierName(e.target.value)}
-                        placeholder="Nome fornitore temporaneo"
-                        required
-                        data-testid="input-temporary-supplier-name"
-                      />
+                      <div className="relative">
+                        <Input
+                          value={temporarySupplierName}
+                          onChange={(e) => setTemporarySupplierName(e.target.value)}
+                          placeholder="Nome fornitore temporaneo"
+                          required
+                          data-testid="input-temporary-supplier-name"
+                        />
+                        {temporarySupplierName.length >= 2 && (() => {
+                          const matches = suppliers.filter(s => 
+                            s.isActive && s.name.toLowerCase().includes(temporarySupplierName.toLowerCase())
+                          ).slice(0, 5);
+                          if (matches.length === 0) return null;
+                          return (
+                            <div className="absolute z-50 w-full mt-1 bg-popover border rounded-md shadow-lg max-h-48 overflow-auto">
+                              <div className="p-1 text-xs text-muted-foreground border-b">
+                                Fornitori esistenti trovati:
+                              </div>
+                              {matches.map(supplier => (
+                                <button
+                                  key={supplier.id}
+                                  type="button"
+                                  className="w-full px-3 py-2 text-left text-sm hover-elevate flex items-center gap-2"
+                                  onClick={() => {
+                                    setUseTemporarySupplier(false);
+                                    setSelectedSupplierId(supplier.id);
+                                    setTemporarySupplierName("");
+                                  }}
+                                  data-testid={`suggestion-supplier-${supplier.id}`}
+                                >
+                                  <Building2 className="h-4 w-4 text-muted-foreground" />
+                                  <span>{supplier.name}</span>
+                                </button>
+                              ))}
+                            </div>
+                          );
+                        })()}
+                      </div>
                     ) : (
                       <Select 
                         name="supplierId" 
@@ -1208,7 +1239,7 @@ export default function AdminUtilityPractices() {
               </div>
               {useTemporaryCustomer ? (
                 <div className="space-y-2 p-3 border rounded-md bg-muted/30">
-                  <div>
+                  <div className="relative">
                     <Label className="text-xs">Nome Cliente *</Label>
                     <Input
                       value={temporaryCustomerName}
@@ -1217,6 +1248,41 @@ export default function AdminUtilityPractices() {
                       required
                       data-testid="input-temporary-customer-name"
                     />
+                    {temporaryCustomerName.length >= 2 && (() => {
+                      const matches = customerUsers.filter(c => 
+                        c.fullName?.toLowerCase().includes(temporaryCustomerName.toLowerCase()) ||
+                        c.email?.toLowerCase().includes(temporaryCustomerName.toLowerCase())
+                      ).slice(0, 5);
+                      if (matches.length === 0) return null;
+                      return (
+                        <div className="absolute z-50 w-full mt-1 bg-popover border rounded-md shadow-lg max-h-48 overflow-auto">
+                          <div className="p-1 text-xs text-muted-foreground border-b">
+                            Clienti esistenti trovati:
+                          </div>
+                          {matches.map(customer => (
+                            <button
+                              key={customer.id}
+                              type="button"
+                              className="w-full px-3 py-2 text-left text-sm hover-elevate flex items-center gap-2"
+                              onClick={() => {
+                                setUseTemporaryCustomer(false);
+                                setSelectedCustomerId(customer.id);
+                                setTemporaryCustomerName("");
+                                setTemporaryCustomerEmail("");
+                                setTemporaryCustomerPhone("");
+                              }}
+                              data-testid={`suggestion-customer-${customer.id}`}
+                            >
+                              <User2 className="h-4 w-4 text-muted-foreground" />
+                              <div className="flex flex-col">
+                                <span>{customer.fullName}</span>
+                                <span className="text-xs text-muted-foreground">{customer.email}</span>
+                              </div>
+                            </button>
+                          ))}
+                        </div>
+                      );
+                    })()}
                   </div>
                   <div className="grid grid-cols-2 gap-2">
                     <div>
