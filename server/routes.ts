@@ -9021,7 +9021,9 @@ export function registerRoutes(app: Express): Server {
       console.log("[PDF] Starting text extraction...");
       
       // Extract text directly from PDF using pdf-parse
-      const pdfParser = new PDFParse(req.file.buffer);
+      // Convert Buffer to Uint8Array as required by the library
+      const uint8Array = new Uint8Array(req.file.buffer);
+      const pdfParser = new PDFParse(uint8Array);
       await pdfParser.load();
       const extractedText = await pdfParser.getText();
       const info = await pdfParser.getInfo();
