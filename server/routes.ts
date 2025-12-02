@@ -7,6 +7,9 @@ import { scrypt, randomBytes, randomUUID } from "crypto";
 import { promisify } from "util";
 import ExcelJS from "exceljs";
 import multer from "multer";
+import Tesseract from "tesseract.js";
+import * as pdfjsLib from "pdfjs-dist/legacy/build/pdf.mjs";
+import { createCanvas } from "canvas";
 import {
   insertUserSchema, insertRepairCenterSchema, insertProductSchema,
   insertRepairOrderSchema, insertRepairAcceptanceSchema, insertTicketSchema, insertInvoiceSchema,
@@ -278,6 +281,143 @@ function autoLogMiddleware(req: Request, res: Response, next: Function) {
   });
 
   next();
+}
+
+// Helper function to parse OCR extracted text and identify key data
+function parseExtractedText(text: string): {
+  supplierName: string | null;
+  serviceName: string | null;
+  customerName: string | null;
+  customerEmail: string | null;
+  customerPhone: string | null;
+  supplierReference: string | null;
+  notes: string | null;
+} {
+  const result = {
+    supplierName: null as string | null,
+    serviceName: null as string | null,
+    customerName: null as string | null,
+    customerEmail: null as string | null,
+    customerPhone: null as string | null,
+    supplierReference: null as string | null,
+    notes: null as string | null,
+  };
+  
+  const normalizedText = text.toLowerCase();
+  const lines = text.split('\n').map(l => l.trim()).filter(l => l);
+  
+  // Known utility suppliers (Italian market)
+  const knownSuppliers = [
+    { keywords: ['fastweb'], name: 'Fastweb' },
+    { keywords: ['tim', 'telecom italia'], name: 'TIM' },
+    { keywords: ['vodafone'], name: 'Vodafone' },
+    { keywords: ['wind', 'windtre', 'wind tre'], name: 'WindTre' },
+    { keywords: ['iliad'], name: 'Iliad' },
+    { keywords: ['enel', 'enel energia'], name: 'Enel Energia' },
+    { keywords: ['eni', 'eni gas', 'eni luce'], name: 'Eni' },
+    { keywords: ['a2a'], name: 'A2A' },
+    { keywords: ['edison'], name: 'Edison' },
+    { keywords: ['sorgenia'], name: 'Sorgenia' },
+    { keywords: ['acea'], name: 'Acea' },
+    { keywords: ['hera'], name: 'Hera' },
+    { keywords: ['iren'], name: 'Iren' },
+    { keywords: ['sky'], name: 'Sky' },
+    { keywords: ['dazn'], name: 'DAZN' },
+    { keywords: ['ho.', 'ho mobile'], name: 'ho. Mobile' },
+    { keywords: ['kena', 'kena mobile'], name: 'Kena Mobile' },
+    { keywords: ['poste mobile', 'postemobile'], name: 'PosteMobile' },
+    { keywords: ['very mobile', 'verymobile'], name: 'Very Mobile' },
+  ];
+  
+  // Find supplier
+  for (const supplier of knownSuppliers) {
+    for (const keyword of supplier.keywords) {
+      if (normalizedText.includes(keyword)) {
+        result.supplierName = supplier.name;
+        break;
+      }
+    }
+    if (result.supplierName) break;
+  }
+  
+  // Find email (robust regex)
+  const emailMatch = text.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/);
+  if (emailMatch) {
+    result.customerEmail = emailMatch[0].toLowerCase();
+  }
+  
+  // Find phone numbers (Italian format)
+  const phonePatterns = [
+    /(?:\+39\s?)?(?:3[0-9]{2}[\s.-]?[0-9]{6,7})/g, // Mobile
+    /(?:\+39\s?)?(?:0[0-9]{1,4}[\s.-]?[0-9]{5,8})/g, // Landline
+  ];
+  for (const pattern of phonePatterns) {
+    const phoneMatch = text.match(pattern);
+    if (phoneMatch) {
+      result.customerPhone = phoneMatch[0].replace(/[\s.-]/g, '');
+      break;
+    }
+  }
+  
+  // Find customer name - look for patterns like "Intestatario:", "Cliente:", "Nome:", "Cognome:"
+  const namePatterns = [
+    /(?:intestatario|cliente|nominativo|titolare|contraente|richiedente)[:\s]+([A-Za-zÀ-ÿ\s]+?)(?:\n|,|;|$)/i,
+    /(?:nome\s*(?:e\s*)?cognome|cognome\s*(?:e\s*)?nome)[:\s]+([A-Za-zÀ-ÿ\s]+?)(?:\n|,|;|$)/i,
+    /(?:sig\.?|signor|signora)[:\s]+([A-Za-zÀ-ÿ\s]+?)(?:\n|,|;|$)/i,
+  ];
+  for (const pattern of namePatterns) {
+    const match = text.match(pattern);
+    if (match && match[1]) {
+      const name = match[1].trim();
+      if (name.length >= 3 && name.length <= 100) {
+        result.customerName = name;
+        break;
+      }
+    }
+  }
+  
+  // Find service/offer name - look for patterns like "Offerta:", "Piano:", "Servizio:", "Tariffa:"
+  const servicePatterns = [
+    /(?:offerta|piano|tariffa|promozione|prodotto)[:\s]+([^\n]+)/i,
+    /(?:servizio\s+(?:attivato|richiesto))[:\s]+([^\n]+)/i,
+  ];
+  for (const pattern of servicePatterns) {
+    const match = text.match(pattern);
+    if (match && match[1]) {
+      const service = match[1].trim();
+      if (service.length >= 3 && service.length <= 200) {
+        result.serviceName = service;
+        break;
+      }
+    }
+  }
+  
+  // Find supplier reference/practice number
+  const refPatterns = [
+    /(?:codice\s*(?:pratica|contratto|ordine|richiesta)|numero\s*(?:pratica|contratto|ordine)|pratica\s*n[.°]?|contratto\s*n[.°]?|rif\.?|riferimento)[:\s]*([A-Z0-9\-\/]+)/i,
+    /(?:PDA|CRM|ID)[:\s]*([A-Z0-9\-\/]+)/i,
+  ];
+  for (const pattern of refPatterns) {
+    const match = text.match(pattern);
+    if (match && match[1]) {
+      const ref = match[1].trim();
+      if (ref.length >= 3 && ref.length <= 50) {
+        result.supplierReference = ref;
+        break;
+      }
+    }
+  }
+  
+  // Extract first meaningful lines as notes (max 500 chars)
+  const meaningfulLines = lines
+    .filter(l => l.length > 10 && l.length < 200)
+    .slice(0, 5)
+    .join('\n');
+  if (meaningfulLines) {
+    result.notes = meaningfulLines.substring(0, 500);
+  }
+  
+  return result;
 }
 
 export function registerRoutes(app: Express): Server {
@@ -8860,6 +9000,132 @@ export function registerRoutes(app: Express): Server {
   });
 
   // ----- UTILITY PRACTICES -----
+
+  // POST /api/utility/practices/extract-pdf - Extract data from PDF using OCR
+  app.post("/api/utility/practices/extract-pdf", requireAuth, requireRole("admin", "reseller"), upload.single('pdf'), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      if (!req.file) return res.status(400).send("Nessun file PDF caricato");
+      
+      // Check file type
+      if (req.file.mimetype !== 'application/pdf') {
+        return res.status(400).send("Il file deve essere un PDF");
+      }
+      
+      console.log("[OCR] Starting PDF extraction...");
+      
+      // Load PDF from buffer
+      const pdfData = new Uint8Array(req.file.buffer);
+      const loadingTask = pdfjsLib.getDocument({ data: pdfData });
+      const pdfDoc = await loadingTask.promise;
+      
+      console.log(`[OCR] PDF loaded, pages: ${pdfDoc.numPages}`);
+      
+      let extractedText = "";
+      
+      // Process each page (max 5 pages to avoid timeout)
+      const maxPages = Math.min(pdfDoc.numPages, 5);
+      
+      for (let pageNum = 1; pageNum <= maxPages; pageNum++) {
+        console.log(`[OCR] Processing page ${pageNum}/${maxPages}...`);
+        
+        const page = await pdfDoc.getPage(pageNum);
+        const viewport = page.getViewport({ scale: 2.0 }); // Higher scale for better OCR
+        
+        // Create canvas to render PDF page
+        const canvas = createCanvas(viewport.width, viewport.height);
+        const context = canvas.getContext('2d');
+        
+        // Render PDF page to canvas
+        await page.render({
+          canvasContext: context as any,
+          viewport: viewport
+        }).promise;
+        
+        // Convert canvas to PNG buffer
+        const imageBuffer = canvas.toBuffer('image/png');
+        
+        // OCR the image with Tesseract
+        const { data: { text } } = await Tesseract.recognize(
+          imageBuffer,
+          'ita+eng', // Italian + English
+          {
+            logger: (m) => {
+              if (m.status === 'recognizing text') {
+                console.log(`[OCR] Page ${pageNum}: ${Math.round(m.progress * 100)}%`);
+              }
+            }
+          }
+        );
+        
+        extractedText += text + "\n\n";
+      }
+      
+      console.log("[OCR] Text extraction complete, parsing data...");
+      
+      // Parse extracted text to find supplier, service, customer
+      const parsedData = parseExtractedText(extractedText);
+      
+      // Try to match supplier from database
+      let matchedSupplier = null;
+      if (parsedData.supplierName) {
+        const suppliers = await storage.listUtilitySuppliers();
+        matchedSupplier = suppliers.find(s => 
+          s.name.toLowerCase().includes(parsedData.supplierName!.toLowerCase()) ||
+          parsedData.supplierName!.toLowerCase().includes(s.name.toLowerCase())
+        );
+      }
+      
+      // Try to match customer from database
+      let matchedCustomer = null;
+      if (parsedData.customerName || parsedData.customerEmail) {
+        // Get customers accessible by this user
+        let customers: any[] = [];
+        if (req.user.role === 'admin') {
+          customers = await storage.listCustomers();
+        } else if (req.user.role === 'reseller') {
+          customers = await storage.listCustomersByReseller(req.user.id);
+        }
+        
+        // Match by email first (more reliable), then by name
+        if (parsedData.customerEmail) {
+          matchedCustomer = customers.find(c => 
+            c.email?.toLowerCase() === parsedData.customerEmail!.toLowerCase()
+          );
+        }
+        if (!matchedCustomer && parsedData.customerName) {
+          matchedCustomer = customers.find(c => 
+            c.fullName?.toLowerCase().includes(parsedData.customerName!.toLowerCase()) ||
+            parsedData.customerName!.toLowerCase().includes(c.fullName?.toLowerCase() || '')
+          );
+        }
+      }
+      
+      res.json({
+        success: true,
+        rawText: extractedText.substring(0, 5000), // Limit raw text size
+        parsed: {
+          supplierName: parsedData.supplierName,
+          serviceName: parsedData.serviceName,
+          customerName: parsedData.customerName,
+          customerEmail: parsedData.customerEmail,
+          customerPhone: parsedData.customerPhone,
+          supplierReference: parsedData.supplierReference,
+          notes: parsedData.notes,
+        },
+        matched: {
+          supplierId: matchedSupplier?.id || null,
+          supplierName: matchedSupplier?.name || null,
+          customerId: matchedCustomer?.id || null,
+          customerName: matchedCustomer?.fullName || null,
+        }
+      });
+      
+    } catch (error: any) {
+      console.error("[OCR] Error:", error);
+      res.status(500).send("Errore durante l'estrazione del PDF: " + error.message);
+    }
+  });
 
   // GET /api/utility/practices - List utility practices
   app.get("/api/utility/practices", requireAuth, async (req, res) => {
