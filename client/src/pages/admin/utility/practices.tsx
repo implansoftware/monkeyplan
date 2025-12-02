@@ -81,7 +81,13 @@ export default function AdminUtilityPractices() {
   const [practiceProducts, setPracticeProducts] = useState<PracticeProductItem[]>([]);
   const [useCustomService, setUseCustomService] = useState(false);
   const [customServiceName, setCustomServiceName] = useState("");
+  const [useTemporarySupplier, setUseTemporarySupplier] = useState(false);
+  const [temporarySupplierName, setTemporarySupplierName] = useState("");
   const [selectedCustomerId, setSelectedCustomerId] = useState<string>("");
+  const [useTemporaryCustomer, setUseTemporaryCustomer] = useState(false);
+  const [temporaryCustomerName, setTemporaryCustomerName] = useState("");
+  const [temporaryCustomerEmail, setTemporaryCustomerEmail] = useState("");
+  const [temporaryCustomerPhone, setTemporaryCustomerPhone] = useState("");
   const [newCustomerDialogOpen, setNewCustomerDialogOpen] = useState(false);
   const [newCustomerName, setNewCustomerName] = useState("");
   const [newCustomerEmail, setNewCustomerEmail] = useState("");
@@ -214,16 +220,24 @@ export default function AdminUtilityPractices() {
     
     const parsed = parseImportText(importText);
     
+    // Handle supplier: try catalog first, fallback to temporary
     if (parsed.supplierName) {
       const matchedSupplier = suppliers.find(s => 
         s.name.toLowerCase().includes(parsed.supplierName!.toLowerCase()) ||
         parsed.supplierName!.toLowerCase().includes(s.name.toLowerCase())
       );
       if (matchedSupplier) {
+        setUseTemporarySupplier(false);
         setSelectedSupplierId(matchedSupplier.id);
+        setTemporarySupplierName("");
+      } else {
+        setUseTemporarySupplier(true);
+        setTemporarySupplierName(parsed.supplierName);
+        setSelectedSupplierId("");
       }
     }
     
+    // Handle customer: try catalog first, fallback to temporary
     if (parsed.customerName || parsed.customerEmail) {
       const matchedCustomer = customers.find(c => {
         if (parsed.customerEmail && c.email?.toLowerCase() === parsed.customerEmail.toLowerCase()) {
@@ -235,11 +249,17 @@ export default function AdminUtilityPractices() {
         return false;
       });
       if (matchedCustomer) {
+        setUseTemporaryCustomer(false);
         setSelectedCustomerId(matchedCustomer.id);
-      } else if (parsed.customerName) {
-        setNewCustomerName(parsed.customerName);
-        setNewCustomerEmail(parsed.customerEmail || "");
-        setNewCustomerPhone(parsed.customerPhone || "");
+        setTemporaryCustomerName("");
+        setTemporaryCustomerEmail("");
+        setTemporaryCustomerPhone("");
+      } else {
+        setUseTemporaryCustomer(true);
+        setTemporaryCustomerName(parsed.customerName || "");
+        setTemporaryCustomerEmail(parsed.customerEmail || "");
+        setTemporaryCustomerPhone(parsed.customerPhone || "");
+        setSelectedCustomerId("");
       }
     }
     
@@ -385,7 +405,6 @@ export default function AdminUtilityPractices() {
     
     const data: Partial<InsertUtilityPractice> = {
       itemType: selectedItemType,
-      customerId: selectedCustomerId,
       supplierReference: formData.get("supplierReference") as string || undefined,
       status: selectedStatus,
       priceType: selectedPriceType,
@@ -401,8 +420,28 @@ export default function AdminUtilityPractices() {
       notes: formData.get("notes") as string || undefined,
     };
 
+    // Handle customer (catalog or temporary)
+    if (useTemporaryCustomer) {
+      data.customerId = null;
+      data.temporaryCustomerName = temporaryCustomerName.trim();
+      data.temporaryCustomerEmail = temporaryCustomerEmail.trim() || null;
+      data.temporaryCustomerPhone = temporaryCustomerPhone.trim() || null;
+    } else {
+      data.customerId = selectedCustomerId;
+      data.temporaryCustomerName = null;
+      data.temporaryCustomerEmail = null;
+      data.temporaryCustomerPhone = null;
+    }
+
     if (selectedItemType === "service") {
-      data.supplierId = selectedSupplierId;
+      // Handle supplier (catalog or temporary)
+      if (useTemporarySupplier) {
+        data.supplierId = null;
+        data.temporarySupplierName = temporarySupplierName.trim();
+      } else {
+        data.supplierId = selectedSupplierId;
+        data.temporarySupplierName = null;
+      }
       if (useCustomService) {
         data.customServiceName = customServiceName.trim();
         data.serviceId = null;
@@ -416,9 +455,16 @@ export default function AdminUtilityPractices() {
       data.serviceId = null;
       data.customServiceName = null;
       data.supplierId = null;
+      data.temporarySupplierName = null;
     } else if (selectedItemType === "service_with_products") {
-      // Servizio + Prodotti: include both service and products
-      data.supplierId = selectedSupplierId;
+      // Handle supplier (catalog or temporary)
+      if (useTemporarySupplier) {
+        data.supplierId = null;
+        data.temporarySupplierName = temporarySupplierName.trim();
+      } else {
+        data.supplierId = selectedSupplierId;
+        data.temporarySupplierName = null;
+      }
       if (useCustomService) {
         data.customServiceName = customServiceName.trim();
         data.serviceId = null;
@@ -456,6 +502,18 @@ export default function AdminUtilityPractices() {
     const hasCustomService = !!(practice as any).customServiceName;
     setUseCustomService(hasCustomService);
     setCustomServiceName((practice as any).customServiceName || "");
+    
+    // Set temporary supplier mode
+    const hasTemporarySupplier = !!(practice as any).temporarySupplierName;
+    setUseTemporarySupplier(hasTemporarySupplier);
+    setTemporarySupplierName((practice as any).temporarySupplierName || "");
+    
+    // Set temporary customer mode
+    const hasTemporaryCustomer = !!(practice as any).temporaryCustomerName;
+    setUseTemporaryCustomer(hasTemporaryCustomer);
+    setTemporaryCustomerName((practice as any).temporaryCustomerName || "");
+    setTemporaryCustomerEmail((practice as any).temporaryCustomerEmail || "");
+    setTemporaryCustomerPhone((practice as any).temporaryCustomerPhone || "");
     
     // Load existing practice products
     if (practice.itemType === "product" || practice.itemType === "service_with_products") {
@@ -504,6 +562,12 @@ export default function AdminUtilityPractices() {
     setPracticeProducts([]);
     setUseCustomService(false);
     setCustomServiceName("");
+    setUseTemporarySupplier(false);
+    setTemporarySupplierName("");
+    setUseTemporaryCustomer(false);
+    setTemporaryCustomerName("");
+    setTemporaryCustomerEmail("");
+    setTemporaryCustomerPhone("");
     setShowImportField(false);
     setImportText("");
     setSupplierReferenceValue("");
@@ -872,27 +936,65 @@ export default function AdminUtilityPractices() {
               <div className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="supplierId">Fornitore *</Label>
-                    <Select 
-                      name="supplierId" 
-                      value={selectedSupplierId}
-                      onValueChange={(val) => {
-                        setSelectedSupplierId(val);
-                        setSelectedServiceId("");
-                      }}
-                      required
-                    >
-                      <SelectTrigger data-testid="select-supplier">
-                        <SelectValue placeholder="Seleziona fornitore" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {suppliers.filter(s => s.isActive).map((supplier) => (
-                          <SelectItem key={supplier.id} value={supplier.id}>
-                            {supplier.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <Label>Fornitore *</Label>
+                    <div className="flex gap-2 mb-2">
+                      <Button
+                        type="button"
+                        variant={!useTemporarySupplier ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => {
+                          setUseTemporarySupplier(false);
+                          setTemporarySupplierName("");
+                        }}
+                        className="flex-1"
+                        data-testid="button-supplier-catalog"
+                      >
+                        Da Catalogo
+                      </Button>
+                      <Button
+                        type="button"
+                        variant={useTemporarySupplier ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => {
+                          setUseTemporarySupplier(true);
+                          setSelectedSupplierId("");
+                        }}
+                        className="flex-1"
+                        data-testid="button-supplier-temporary"
+                      >
+                        Temporaneo
+                      </Button>
+                    </div>
+                    {useTemporarySupplier ? (
+                      <Input
+                        value={temporarySupplierName}
+                        onChange={(e) => setTemporarySupplierName(e.target.value)}
+                        placeholder="Nome fornitore temporaneo"
+                        required
+                        data-testid="input-temporary-supplier-name"
+                      />
+                    ) : (
+                      <Select 
+                        name="supplierId" 
+                        value={selectedSupplierId}
+                        onValueChange={(val) => {
+                          setSelectedSupplierId(val);
+                          setSelectedServiceId("");
+                        }}
+                        required
+                      >
+                        <SelectTrigger data-testid="select-supplier">
+                          <SelectValue placeholder="Seleziona fornitore" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {suppliers.filter(s => s.isActive).map((supplier) => (
+                            <SelectItem key={supplier.id} value={supplier.id}>
+                              {supplier.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
                   </div>
                   <div className="space-y-2">
                     <Label>Tipo Servizio</Label>
@@ -1073,36 +1175,102 @@ export default function AdminUtilityPractices() {
             )}
 
             <div className="space-y-2">
-              <Label htmlFor="customerId">Cliente *</Label>
-              <div className="flex gap-2">
-                <Select 
-                  name="customerId" 
-                  value={selectedCustomerId}
-                  onValueChange={setSelectedCustomerId}
-                  required
-                >
-                  <SelectTrigger data-testid="select-customer" className="flex-1">
-                    <SelectValue placeholder="Seleziona cliente" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {customerUsers.map((customer) => (
-                      <SelectItem key={customer.id} value={customer.id}>
-                        {customer.fullName} ({customer.email})
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+              <Label>Cliente *</Label>
+              <div className="flex gap-2 mb-2">
                 <Button
                   type="button"
-                  variant="outline"
-                  size="icon"
-                  onClick={() => setNewCustomerDialogOpen(true)}
-                  title="Nuovo cliente"
-                  data-testid="button-new-customer"
+                  variant={!useTemporaryCustomer ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => {
+                    setUseTemporaryCustomer(false);
+                    setTemporaryCustomerName("");
+                    setTemporaryCustomerEmail("");
+                    setTemporaryCustomerPhone("");
+                  }}
+                  className="flex-1"
+                  data-testid="button-customer-catalog"
                 >
-                  <Plus className="h-4 w-4" />
+                  Da Anagrafica
+                </Button>
+                <Button
+                  type="button"
+                  variant={useTemporaryCustomer ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => {
+                    setUseTemporaryCustomer(true);
+                    setSelectedCustomerId("");
+                  }}
+                  className="flex-1"
+                  data-testid="button-customer-temporary"
+                >
+                  Temporaneo
                 </Button>
               </div>
+              {useTemporaryCustomer ? (
+                <div className="space-y-2 p-3 border rounded-md bg-muted/30">
+                  <div>
+                    <Label className="text-xs">Nome Cliente *</Label>
+                    <Input
+                      value={temporaryCustomerName}
+                      onChange={(e) => setTemporaryCustomerName(e.target.value)}
+                      placeholder="Nome e cognome"
+                      required
+                      data-testid="input-temporary-customer-name"
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <Label className="text-xs">Email</Label>
+                      <Input
+                        type="email"
+                        value={temporaryCustomerEmail}
+                        onChange={(e) => setTemporaryCustomerEmail(e.target.value)}
+                        placeholder="email@esempio.it"
+                        data-testid="input-temporary-customer-email"
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs">Telefono</Label>
+                      <Input
+                        value={temporaryCustomerPhone}
+                        onChange={(e) => setTemporaryCustomerPhone(e.target.value)}
+                        placeholder="+39..."
+                        data-testid="input-temporary-customer-phone"
+                      />
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex gap-2">
+                  <Select 
+                    name="customerId" 
+                    value={selectedCustomerId}
+                    onValueChange={setSelectedCustomerId}
+                    required
+                  >
+                    <SelectTrigger data-testid="select-customer" className="flex-1">
+                      <SelectValue placeholder="Seleziona cliente" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {customerUsers.map((customer) => (
+                        <SelectItem key={customer.id} value={customer.id}>
+                          {customer.fullName} ({customer.email})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    onClick={() => setNewCustomerDialogOpen(true)}
+                    title="Nuovo cliente"
+                    data-testid="button-new-customer"
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </div>
+              )}
             </div>
 
             <div className="grid grid-cols-2 gap-4">
