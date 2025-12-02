@@ -382,17 +382,40 @@ export default function ResellerUtilityPractices() {
                               {categoryLabels[service.category]} {supplier ? `• ${supplier.name}` : ""}
                             </span>
                           </div>
-                        ) : itemType === "product" && product ? (
-                          <div className="flex items-center gap-2">
-                            <Package className="h-4 w-4 text-muted-foreground" />
-                            <span className="font-medium text-sm">{product.name}</span>
+                        ) : itemType === "product" ? (
+                          <div className="flex flex-col">
+                            {(practice as any).practiceProducts?.length > 0 ? (
+                              <>
+                                {(practice as any).practiceProducts.slice(0, 2).map((pp: any, idx: number) => {
+                                  const prod = products.find(p => p.id === pp.productId);
+                                  return (
+                                    <div key={idx} className="flex items-center gap-1">
+                                      <Package className="h-3 w-3 text-muted-foreground" />
+                                      <span className="text-sm">{prod?.name || "Prodotto"} x{pp.quantity}</span>
+                                    </div>
+                                  );
+                                })}
+                                {(practice as any).practiceProducts.length > 2 && (
+                                  <span className="text-xs text-muted-foreground">
+                                    +{(practice as any).practiceProducts.length - 2} altri prodotti
+                                  </span>
+                                )}
+                              </>
+                            ) : product ? (
+                              <div className="flex items-center gap-2">
+                                <Package className="h-4 w-4 text-muted-foreground" />
+                                <span className="font-medium text-sm">{product.name}</span>
+                              </div>
+                            ) : "-"}
                           </div>
                         ) : "-"}
                       </TableCell>
                       <TableCell>
-                        {practice.monthlyPriceCents 
-                          ? formatCurrency(practice.monthlyPriceCents) + "/mese"
-                          : "-"}
+                        {practice.priceType === "forfait" && practice.flatPriceCents
+                          ? formatCurrency(practice.flatPriceCents)
+                          : practice.monthlyPriceCents 
+                            ? formatCurrency(practice.monthlyPriceCents) + "/mese"
+                            : "-"}
                       </TableCell>
                       <TableCell>
                         <Badge className={statusColors[practice.status]}>

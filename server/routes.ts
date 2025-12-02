@@ -8790,7 +8790,23 @@ export function registerRoutes(app: Express): Server {
       }
       
       const practices = await storage.listUtilityPractices(filters);
-      res.json(practices);
+      
+      // Enrich with product count for each practice
+      const enrichedPractices = await Promise.all(
+        practices.map(async (practice) => {
+          if (practice.itemType === 'product') {
+            const practiceProducts = await storage.listUtilityPracticeProducts(practice.id);
+            return { 
+              ...practice, 
+              productCount: practiceProducts.length,
+              practiceProducts: practiceProducts
+            };
+          }
+          return { ...practice, productCount: 0, practiceProducts: [] };
+        })
+      );
+      
+      res.json(enrichedPractices);
     } catch (error: any) {
       res.status(500).send(error.message);
     }
