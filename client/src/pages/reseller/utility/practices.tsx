@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { UtilityPractice, InsertUtilityPractice, UtilitySupplier, UtilityService, User, Product } from "@shared/schema";
 import { Button } from "@/components/ui/button";
@@ -11,7 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { 
-  Plus, Search, FileCheck, Pencil, ArrowLeft, User as UserIcon, Eye, Package, Calendar, Euro, Trash2, FileUp, Loader2
+  Plus, Search, FileCheck, Pencil, ArrowLeft, User as UserIcon, Eye, Package, Calendar, Euro, Trash2
 } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -85,8 +85,6 @@ export default function ResellerUtilityPractices() {
   const [newCustomerName, setNewCustomerName] = useState("");
   const [newCustomerEmail, setNewCustomerEmail] = useState("");
   const [newCustomerPhone, setNewCustomerPhone] = useState("");
-  const [isExtractingPdf, setIsExtractingPdf] = useState(false);
-  const pdfInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
   const { data: practices = [], isLoading } = useQuery<UtilityPractice[]>({
@@ -305,81 +303,6 @@ export default function ResellerUtilityPractices() {
     setUseCustomService(false);
     setCustomServiceName("");
     setDialogOpen(true);
-  };
-
-  const handlePdfExtract = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-    
-    if (file.type !== 'application/pdf') {
-      toast({
-        title: "Errore",
-        description: "Il file deve essere un PDF",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    setIsExtractingPdf(true);
-    
-    try {
-      const formData = new FormData();
-      formData.append('pdf', file);
-      
-      const response = await fetch('/api/utility/practices/extract-pdf', {
-        method: 'POST',
-        body: formData,
-        credentials: 'include',
-      });
-      
-      if (!response.ok) {
-        const error = await response.text();
-        throw new Error(error);
-      }
-      
-      const result = await response.json();
-      
-      // Apply extracted data to form
-      if (result.matched.supplierId) {
-        setSelectedSupplierId(result.matched.supplierId);
-      }
-      
-      if (result.matched.customerId) {
-        setSelectedCustomerId(result.matched.customerId);
-      }
-      
-      if (result.parsed.serviceName) {
-        setUseCustomService(true);
-        setCustomServiceName(result.parsed.serviceName);
-      }
-      
-      // Show result summary
-      let extractedInfo: string[] = [];
-      if (result.matched.supplierName) extractedInfo.push(`Fornitore: ${result.matched.supplierName}`);
-      if (result.matched.customerName) extractedInfo.push(`Cliente: ${result.matched.customerName}`);
-      if (result.parsed.serviceName) extractedInfo.push(`Servizio: ${result.parsed.serviceName}`);
-      if (result.parsed.supplierReference) extractedInfo.push(`Riferimento: ${result.parsed.supplierReference}`);
-      
-      toast({
-        title: "Dati estratti dal PDF",
-        description: extractedInfo.length > 0 
-          ? extractedInfo.join('\n') 
-          : "Nessun dato riconosciuto. Verifica il PDF.",
-      });
-      
-    } catch (error: any) {
-      toast({
-        title: "Errore estrazione",
-        description: error.message || "Impossibile estrarre dati dal PDF",
-        variant: "destructive",
-      });
-    } finally {
-      setIsExtractingPdf(false);
-      // Reset file input
-      if (pdfInputRef.current) {
-        pdfInputRef.current.value = '';
-      }
-    }
   };
 
   const addProduct = () => {
@@ -632,48 +555,6 @@ export default function ResellerUtilityPractices() {
                 : "Crea una nuova pratica di servizio utility."}
             </DialogDescription>
           </DialogHeader>
-          
-          {/* PDF/Image Extraction Button */}
-          {!editingPractice && (
-            <div className="border rounded-lg p-3 bg-muted/30">
-              <div className="flex items-center justify-between gap-2">
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <FileUp className="h-4 w-4" />
-                  <span>Estrai dati da PDF o immagine</span>
-                </div>
-                <div>
-                  <input
-                    ref={pdfInputRef}
-                    type="file"
-                    accept="application/pdf,image/jpeg,image/png,image/webp"
-                    onChange={handlePdfExtract}
-                    className="hidden"
-                    data-testid="input-pdf-extract"
-                  />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => pdfInputRef.current?.click()}
-                    disabled={isExtractingPdf}
-                    data-testid="button-extract-pdf"
-                  >
-                    {isExtractingPdf ? (
-                      <>
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                        Estrazione...
-                      </>
-                    ) : (
-                      <>
-                        <FileUp className="h-4 w-4 mr-2" />
-                        Carica File
-                      </>
-                    )}
-                  </Button>
-                </div>
-              </div>
-            </div>
-          )}
           
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
