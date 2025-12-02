@@ -1482,9 +1482,13 @@ export const utilityPractices = pgTable("utility_practices", {
   
   // Fornitore
   supplierId: varchar("supplier_id").references(() => utilitySuppliers.id),
+  temporarySupplierName: text("temporary_supplier_name"), // Nome fornitore temporaneo (alternativo a supplierId)
   
   // Cliente
-  customerId: varchar("customer_id").notNull().references(() => users.id),
+  customerId: varchar("customer_id").references(() => users.id), // Reso opzionale per permettere cliente temporaneo
+  temporaryCustomerName: text("temporary_customer_name"), // Nome cliente temporaneo
+  temporaryCustomerEmail: text("temporary_customer_email"), // Email cliente temporaneo
+  temporaryCustomerPhone: text("temporary_customer_phone"), // Telefono cliente temporaneo
   resellerId: varchar("reseller_id").references(() => users.id), // Reseller che ha gestito la pratica
   
   // Stato pratica
