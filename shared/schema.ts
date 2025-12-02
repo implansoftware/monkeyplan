@@ -1475,6 +1475,7 @@ export const utilityPractices = pgTable("utility_practices", {
   
   // Servizio utility (presente se itemType = "service" o "service_with_products")
   serviceId: varchar("service_id").references(() => utilityServices.id),
+  customServiceName: text("custom_service_name"), // Nome servizio temporaneo/custom (alternativo a serviceId)
   
   // Prodotto legacy (per retrocompatibilità, usare utility_practice_products per multi-prodotti)
   productId: varchar("product_id").references(() => products.id),
