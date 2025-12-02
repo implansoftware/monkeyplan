@@ -80,6 +80,11 @@ export default function ResellerUtilityPractices() {
   const [practiceProducts, setPracticeProducts] = useState<PracticeProductItem[]>([]);
   const [useCustomService, setUseCustomService] = useState(false);
   const [customServiceName, setCustomServiceName] = useState("");
+  const [selectedCustomerId, setSelectedCustomerId] = useState<string>("");
+  const [newCustomerDialogOpen, setNewCustomerDialogOpen] = useState(false);
+  const [newCustomerName, setNewCustomerName] = useState("");
+  const [newCustomerEmail, setNewCustomerEmail] = useState("");
+  const [newCustomerPhone, setNewCustomerPhone] = useState("");
   const { toast } = useToast();
 
   const { data: practices = [], isLoading } = useQuery<UtilityPractice[]>({
@@ -147,13 +152,44 @@ export default function ResellerUtilityPractices() {
     },
   });
 
+  const createCustomerMutation = useMutation({
+    mutationFn: async (data: { fullName: string; email?: string; phone?: string }) => {
+      const res = await apiRequest("POST", "/api/customers/quick", data);
+      return await res.json();
+    },
+    onSuccess: (newCustomer: User) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/customers"] });
+      setSelectedCustomerId(newCustomer.id);
+      setNewCustomerDialogOpen(false);
+      setNewCustomerName("");
+      setNewCustomerEmail("");
+      setNewCustomerPhone("");
+      toast({ title: "Cliente creato", description: `${newCustomer.fullName} aggiunto con successo` });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Errore", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const handleCreateCustomer = () => {
+    if (!newCustomerName.trim()) {
+      toast({ title: "Errore", description: "Il nome è obbligatorio", variant: "destructive" });
+      return;
+    }
+    createCustomerMutation.mutate({
+      fullName: newCustomerName.trim(),
+      email: newCustomerEmail.trim() || undefined,
+      phone: newCustomerPhone.trim() || undefined,
+    });
+  };
+
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
     
     const data: Partial<InsertUtilityPractice> = {
       itemType: selectedItemType,
-      customerId: formData.get("customerId") as string,
+      customerId: selectedCustomerId,
       supplierReference: formData.get("supplierReference") as string || undefined,
       status: selectedStatus,
       priceType: selectedPriceType,
@@ -211,6 +247,7 @@ export default function ResellerUtilityPractices() {
     setSelectedSupplierId(practice.supplierId || "");
     setSelectedServiceId(practice.serviceId || "");
     setSelectedProductId(practice.productId || "");
+    setSelectedCustomerId(practice.customerId || "");
     setSelectedStatus(practice.status);
     setSelectedPriceType((practice.priceType as PriceType) || "mensile");
     
@@ -259,6 +296,7 @@ export default function ResellerUtilityPractices() {
     setSelectedSupplierId("");
     setSelectedServiceId("");
     setSelectedProductId("");
+    setSelectedCustomerId("");
     setSelectedStatus("bozza");
     setSelectedPriceType("mensile");
     setPracticeProducts([]);
@@ -761,22 +799,35 @@ export default function ResellerUtilityPractices() {
 
             <div className="space-y-2">
               <Label htmlFor="customerId">Cliente *</Label>
-              <Select 
-                name="customerId" 
-                defaultValue={editingPractice?.customerId}
-                required
-              >
-                <SelectTrigger data-testid="select-customer">
-                  <SelectValue placeholder="Seleziona cliente" />
-                </SelectTrigger>
-                <SelectContent>
-                  {customerUsers.map((customer) => (
-                    <SelectItem key={customer.id} value={customer.id}>
-                      {customer.fullName} ({customer.email})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div className="flex gap-2">
+                <Select 
+                  name="customerId" 
+                  value={selectedCustomerId}
+                  onValueChange={setSelectedCustomerId}
+                  required
+                >
+                  <SelectTrigger data-testid="select-customer" className="flex-1">
+                    <SelectValue placeholder="Seleziona cliente" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {customerUsers.map((customer) => (
+                      <SelectItem key={customer.id} value={customer.id}>
+                        {customer.fullName} ({customer.email})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  onClick={() => setNewCustomerDialogOpen(true)}
+                  title="Nuovo cliente"
+                  data-testid="button-new-customer"
+                >
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
@@ -895,6 +946,74 @@ export default function ResellerUtilityPractices() {
               </Button>
             </div>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog creazione nuovo cliente */}
+      <Dialog open={newCustomerDialogOpen} onOpenChange={setNewCustomerDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Nuovo Cliente</DialogTitle>
+            <DialogDescription>
+              Crea rapidamente un nuovo cliente. Solo il nome è obbligatorio.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="newCustomerName">Nome Completo *</Label>
+              <Input
+                id="newCustomerName"
+                value={newCustomerName}
+                onChange={(e) => setNewCustomerName(e.target.value)}
+                placeholder="Mario Rossi"
+                data-testid="input-new-customer-name"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="newCustomerEmail">Email (opzionale)</Label>
+              <Input
+                id="newCustomerEmail"
+                type="email"
+                value={newCustomerEmail}
+                onChange={(e) => setNewCustomerEmail(e.target.value)}
+                placeholder="mario.rossi@email.com"
+                data-testid="input-new-customer-email"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="newCustomerPhone">Telefono (opzionale)</Label>
+              <Input
+                id="newCustomerPhone"
+                value={newCustomerPhone}
+                onChange={(e) => setNewCustomerPhone(e.target.value)}
+                placeholder="+39 123 456 7890"
+                data-testid="input-new-customer-phone"
+              />
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setNewCustomerDialogOpen(false);
+                  setNewCustomerName("");
+                  setNewCustomerEmail("");
+                  setNewCustomerPhone("");
+                }}
+                data-testid="button-cancel-new-customer"
+              >
+                Annulla
+              </Button>
+              <Button
+                type="button"
+                onClick={handleCreateCustomer}
+                disabled={createCustomerMutation.isPending}
+                data-testid="button-save-new-customer"
+              >
+                {createCustomerMutation.isPending ? "Creazione..." : "Crea Cliente"}
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

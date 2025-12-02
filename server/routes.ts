@@ -5722,6 +5722,100 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // ============ QUICK CUSTOMER CREATION ============
+  
+  app.post("/api/customers/quick", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      // Only admin and reseller can quick-create customers
+      if (!['admin', 'reseller'].includes(req.user.role)) {
+        return res.status(403).send("Forbidden");
+      }
+      
+      // Validate minimal fields
+      const quickCreateSchema = z.object({
+        fullName: z.string().min(2, "Nome richiesto (minimo 2 caratteri)"),
+        email: z.string().email("Email non valida").optional().nullable(),
+        phone: z.string().optional().nullable(),
+      });
+      
+      const validatedData = quickCreateSchema.parse(req.body);
+      
+      // Generate unique username from fullName
+      let baseUsername = validatedData.fullName
+        .toLowerCase()
+        .replace(/[^a-z0-9]/g, '')
+        .substring(0, 20);
+      
+      if (baseUsername.length < 3) {
+        baseUsername = 'cliente';
+      }
+      
+      let username = baseUsername;
+      let counter = 1;
+      
+      // Ensure username is unique
+      while (await storage.getUserByUsername(username)) {
+        username = `${baseUsername}${counter}`;
+        counter++;
+      }
+      
+      // Generate unique email if not provided
+      let email = validatedData.email;
+      if (!email) {
+        email = `${username}@temp.monkeyplan.local`;
+        // Ensure email is unique
+        let emailCounter = 1;
+        while (await storage.getUserByEmail(email)) {
+          email = `${username}${emailCounter}@temp.monkeyplan.local`;
+          emailCounter++;
+        }
+      } else {
+        // Check if provided email is already in use
+        const existingUser = await storage.getUserByEmail(email);
+        if (existingUser) {
+          return res.status(400).send("Email già in uso");
+        }
+      }
+      
+      // Generate temporary password
+      const tempPassword = randomBytes(8).toString('hex');
+      const hashedPassword = await hashPassword(tempPassword);
+      
+      // Determine resellerId based on role
+      let assignedResellerId: string | null = null;
+      if (req.user.role === 'reseller') {
+        assignedResellerId = req.user.id;
+      } else if (req.user.role === 'admin') {
+        assignedResellerId = (req.body.resellerId as string) || null;
+      }
+      
+      // Create customer
+      const customer = await storage.createUser({
+        username,
+        password: hashedPassword,
+        email,
+        fullName: validatedData.fullName,
+        phone: validatedData.phone || null,
+        role: 'customer',
+        isActive: true,
+        resellerId: assignedResellerId,
+      });
+      
+      // Remove password from response
+      const { password: _, ...customerWithoutPassword } = customer;
+      
+      setActivityEntity(res, { type: 'users', id: customer.id });
+      res.status(201).json(customerWithoutPassword);
+    } catch (error: any) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).send(error.errors[0]?.message || "Dati non validi");
+      }
+      res.status(400).send(error.message);
+    }
+  });
+
   // ============ CUSTOMER REGISTRATION WIZARD ============
 
   app.post("/api/customers", requireAuth, async (req, res) => {
