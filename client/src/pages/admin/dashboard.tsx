@@ -61,43 +61,43 @@ export default function AdminDashboard() {
     }).format(cents / 100);
   };
 
-  const ticketsChartData = stats ? [
-    { name: "Aperti", value: stats.ticketsByStatus.open, fill: COLORS[0] },
-    { name: "In Corso", value: stats.ticketsByStatus.in_progress, fill: COLORS[1] },
-    { name: "Chiusi", value: stats.ticketsByStatus.closed, fill: COLORS[2] },
+  const ticketsChartData = stats?.ticketsByStatus ? [
+    { name: "Aperti", value: stats.ticketsByStatus.open || 0, fill: COLORS[0] },
+    { name: "In Corso", value: stats.ticketsByStatus.in_progress || 0, fill: COLORS[1] },
+    { name: "Chiusi", value: stats.ticketsByStatus.closed || 0, fill: COLORS[2] },
   ] : [];
 
-  const repairsChartData = stats ? [
-    { name: "Pendenti", value: stats.repairsByStatus.pending },
-    { name: "In Corso", value: stats.repairsByStatus.in_progress },
-    { name: "Completate", value: stats.repairsByStatus.completed },
-    { name: "Annullate", value: stats.repairsByStatus.cancelled },
+  const repairsChartData = stats?.repairsByStatus ? [
+    { name: "Pendenti", value: stats.repairsByStatus.pending || 0 },
+    { name: "In Corso", value: stats.repairsByStatus.in_progress || 0 },
+    { name: "Completate", value: stats.repairsByStatus.completed || 0 },
+    { name: "Annullate", value: stats.repairsByStatus.cancelled || 0 },
   ] : [];
 
   const kpiCards = [
     {
       title: "Fatturato Totale",
-      value: stats ? formatCurrency(stats.overview.totalRevenue) : "€0.00",
+      value: stats?.overview ? formatCurrency(stats.overview.totalRevenue || 0) : "€0.00",
       icon: TrendingUp,
-      subtitle: `${stats?.overview.paidInvoices ?? 0} fatture pagate`,
+      subtitle: `${stats?.overview?.paidInvoices ?? 0} fatture pagate`,
     },
     {
       title: "Riparazioni Totali",
-      value: stats?.overview.totalRepairs ?? 0,
+      value: stats?.overview?.totalRepairs ?? 0,
       icon: Wrench,
-      subtitle: `${stats?.overview.activeRepairs ?? 0} in corso`,
+      subtitle: `${stats?.overview?.activeRepairs ?? 0} in corso`,
     },
     {
       title: "Ticket Totali",
-      value: stats?.overview.totalTickets ?? 0,
+      value: stats?.overview?.totalTickets ?? 0,
       icon: Ticket,
-      subtitle: `${stats?.overview.openTickets ?? 0} aperti`,
+      subtitle: `${stats?.overview?.openTickets ?? 0} aperti`,
     },
     {
       title: "Tempo Medio Riparazione",
-      value: stats ? `${stats.overview.avgRepairTime.toFixed(1)} giorni` : "0 giorni",
+      value: stats?.overview ? `${(stats.overview.avgRepairTime || 0).toFixed(1)} giorni` : "0 giorni",
       icon: Building,
-      subtitle: `${stats?.overview.completedRepairs ?? 0} completate`,
+      subtitle: `${stats?.overview?.completedRepairs ?? 0} completate`,
     },
   ];
 
