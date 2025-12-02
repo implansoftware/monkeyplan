@@ -1525,6 +1525,22 @@ export const utilityPractices = pgTable("utility_practices", {
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 
+// Utility Practice Products (Prodotti associati alla pratica - relazione many-to-many)
+export const utilityPracticeProducts = pgTable("utility_practice_products", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  practiceId: varchar("practice_id").notNull().references(() => utilityPractices.id, { onDelete: "cascade" }),
+  productId: varchar("product_id").notNull().references(() => products.id),
+  
+  // Quantità e prezzo
+  quantity: integer("quantity").notNull().default(1),
+  unitPriceCents: integer("unit_price_cents").notNull(), // Prezzo unitario in centesimi
+  
+  // Note specifiche per questo prodotto nella pratica
+  notes: text("notes"),
+  
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
 // Utility Commissions (Compensi - tracking pagamenti commissioni)
 export const utilityCommissions = pgTable("utility_commissions", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -2526,6 +2542,11 @@ export const insertUtilityPracticeSchema = createInsertSchema(utilityPractices).
   updatedAt: true,
 });
 
+export const insertUtilityPracticeProductSchema = createInsertSchema(utilityPracticeProducts).omit({
+  id: true,
+  createdAt: true,
+});
+
 export const insertUtilityCommissionSchema = createInsertSchema(utilityCommissions).omit({
   id: true,
   createdAt: true,
@@ -2855,6 +2876,9 @@ export type InsertUtilityService = z.infer<typeof insertUtilityServiceSchema>;
 
 export type UtilityPractice = typeof utilityPractices.$inferSelect;
 export type InsertUtilityPractice = z.infer<typeof insertUtilityPracticeSchema>;
+
+export type UtilityPracticeProduct = typeof utilityPracticeProducts.$inferSelect;
+export type InsertUtilityPracticeProduct = z.infer<typeof insertUtilityPracticeProductSchema>;
 
 export type UtilityCommission = typeof utilityCommissions.$inferSelect;
 export type InsertUtilityCommission = z.infer<typeof insertUtilityCommissionSchema>;
