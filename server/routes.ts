@@ -3021,6 +3021,19 @@ export function registerRoutes(app: Express): Server {
       res.status(500).send(error.message);
     }
   });
+
+  // Get single product by ID (all roles can view)
+  app.get("/api/products/:id", requireAuth, async (req, res) => {
+    try {
+      const product = await storage.getProduct(req.params.id);
+      if (!product) {
+        return res.status(404).send("Product not found");
+      }
+      res.json(product);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
   
   // Get products with stock by repair center (admin only)
   app.get("/api/products/with-stock", requireAuth, async (req, res) => {
