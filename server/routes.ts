@@ -1566,6 +1566,249 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // POST /api/reseller/parts-load - Create parts load document
+  app.post("/api/reseller/parts-load", requireRole("reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      // Get repair centers associated with this reseller
+      const allCenters = await storage.listRepairCenters();
+      const resellerCenterIds = allCenters
+        .filter(c => c.resellerId === req.user!.id)
+        .map(c => c.id);
+      
+      if (resellerCenterIds.length === 0) {
+        return res.status(400).send("Nessun centro di riparazione associato");
+      }
+      
+      // Verify the repairCenterId belongs to this reseller
+      const repairCenterId = req.body.repairCenterId;
+      if (!repairCenterId || !resellerCenterIds.includes(repairCenterId)) {
+        return res.status(403).send("Centro di riparazione non autorizzato");
+      }
+      
+      // Convert documentDate string to Date object
+      const bodyWithDate = {
+        ...req.body,
+        documentDate: req.body.documentDate ? new Date(req.body.documentDate) : undefined,
+        createdBy: req.user.id,
+      };
+      
+      const validated = insertPartsLoadDocumentSchema.parse(bodyWithDate);
+      
+      const doc = await storage.createPartsLoadDocument(validated);
+      res.status(201).json(doc);
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+
+  // PATCH /api/reseller/parts-load/:id - Update parts load document
+  app.patch("/api/reseller/parts-load/:id", requireRole("reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const doc = await storage.getPartsLoadDocument(req.params.id);
+      if (!doc) {
+        return res.status(404).send("Documento non trovato");
+      }
+      
+      // Verify reseller has access to this document's repair center
+      const allCenters = await storage.listRepairCenters();
+      const resellerCenterIds = allCenters
+        .filter(c => c.resellerId === req.user!.id)
+        .map(c => c.id);
+      
+      if (!resellerCenterIds.includes(doc.repairCenterId)) {
+        return res.status(403).send("Accesso negato");
+      }
+      
+      // Only allow updates on draft documents
+      if (doc.status !== 'draft') {
+        return res.status(400).send("Solo i documenti in bozza possono essere modificati");
+      }
+      
+      const updated = await storage.updatePartsLoadDocument(req.params.id, req.body);
+      res.json(updated);
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+
+  // POST /api/reseller/parts-load/:id/items - Add item to parts load document
+  app.post("/api/reseller/parts-load/:id/items", requireRole("reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const doc = await storage.getPartsLoadDocument(req.params.id);
+      if (!doc) {
+        return res.status(404).send("Documento non trovato");
+      }
+      
+      // Verify reseller has access
+      const allCenters = await storage.listRepairCenters();
+      const resellerCenterIds = allCenters
+        .filter(c => c.resellerId === req.user!.id)
+        .map(c => c.id);
+      
+      if (!resellerCenterIds.includes(doc.repairCenterId)) {
+        return res.status(403).send("Accesso negato");
+      }
+      
+      // Only allow adding items to draft documents
+      if (doc.status !== 'draft') {
+        return res.status(400).send("Solo i documenti in bozza possono essere modificati");
+      }
+      
+      const validated = insertPartsLoadItemSchema.parse({
+        ...req.body,
+        partsLoadDocumentId: doc.id,
+      });
+      
+      const item = await storage.createPartsLoadItem(validated);
+      
+      // Update document totals
+      const items = await storage.listPartsLoadItems(doc.id);
+      const totalAmount = items.reduce((sum, i) => sum + (i.totalPrice || 0), 0);
+      await storage.updatePartsLoadDocument(doc.id, {
+        totalItems: items.length,
+        totalAmount,
+      });
+      
+      res.status(201).json(item);
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+
+  // PATCH /api/reseller/parts-load-items/:id - Update parts load item
+  app.patch("/api/reseller/parts-load-items/:id", requireRole("reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const item = await storage.getPartsLoadItem(req.params.id);
+      if (!item) {
+        return res.status(404).send("Riga non trovata");
+      }
+      
+      const doc = await storage.getPartsLoadDocument(item.partsLoadDocumentId);
+      if (!doc) {
+        return res.status(404).send("Documento non trovato");
+      }
+      
+      // Verify reseller has access
+      const allCenters = await storage.listRepairCenters();
+      const resellerCenterIds = allCenters
+        .filter(c => c.resellerId === req.user!.id)
+        .map(c => c.id);
+      
+      if (!resellerCenterIds.includes(doc.repairCenterId)) {
+        return res.status(403).send("Accesso negato");
+      }
+      
+      if (doc.status !== 'draft') {
+        return res.status(400).send("Solo i documenti in bozza possono essere modificati");
+      }
+      
+      const updated = await storage.updatePartsLoadItem(req.params.id, req.body);
+      
+      // Update document totals
+      const items = await storage.listPartsLoadItems(doc.id);
+      const totalAmount = items.reduce((sum, i) => sum + (i.totalPrice || 0), 0);
+      await storage.updatePartsLoadDocument(doc.id, {
+        totalAmount,
+      });
+      
+      res.json(updated);
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+
+  // DELETE /api/reseller/parts-load-items/:id - Delete parts load item
+  app.delete("/api/reseller/parts-load-items/:id", requireRole("reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const item = await storage.getPartsLoadItem(req.params.id);
+      if (!item) {
+        return res.status(404).send("Riga non trovata");
+      }
+      
+      const doc = await storage.getPartsLoadDocument(item.partsLoadDocumentId);
+      if (!doc) {
+        return res.status(404).send("Documento non trovato");
+      }
+      
+      // Verify reseller has access
+      const allCenters = await storage.listRepairCenters();
+      const resellerCenterIds = allCenters
+        .filter(c => c.resellerId === req.user!.id)
+        .map(c => c.id);
+      
+      if (!resellerCenterIds.includes(doc.repairCenterId)) {
+        return res.status(403).send("Accesso negato");
+      }
+      
+      if (doc.status !== 'draft') {
+        return res.status(400).send("Solo i documenti in bozza possono essere modificati");
+      }
+      
+      await storage.deletePartsLoadItem(req.params.id);
+      
+      // Update document totals
+      const items = await storage.listPartsLoadItems(doc.id);
+      const totalAmount = items.reduce((sum, i) => sum + (i.totalPrice || 0), 0);
+      await storage.updatePartsLoadDocument(doc.id, {
+        totalItems: items.length,
+        totalAmount,
+      });
+      
+      res.status(204).send();
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+
+  // POST /api/reseller/parts-load/:id/process - Process document (auto-match items)
+  app.post("/api/reseller/parts-load/:id/process", requireRole("reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const doc = await storage.getPartsLoadDocument(req.params.id);
+      if (!doc) {
+        return res.status(404).send("Documento non trovato");
+      }
+      
+      // Verify reseller has access
+      const allCenters = await storage.listRepairCenters();
+      const resellerCenterIds = allCenters
+        .filter(c => c.resellerId === req.user!.id)
+        .map(c => c.id);
+      
+      if (!resellerCenterIds.includes(doc.repairCenterId)) {
+        return res.status(403).send("Accesso negato");
+      }
+      
+      if (doc.status !== 'draft') {
+        return res.status(400).send("Solo i documenti in bozza possono essere elaborati");
+      }
+      
+      // Update status to processing
+      await storage.updatePartsLoadDocument(req.params.id, { status: 'processing' as any });
+      
+      // Process document - auto-match items
+      const result = await storage.processPartsLoadDocument(req.params.id);
+      
+      res.json({
+        message: "Elaborazione completata",
+        ...result,
+      });
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+
   // ============ REPAIR CENTER ROUTES ============
 
   app.get("/api/repair-center/stats", requireRole("repair_center"), async (req, res) => {
