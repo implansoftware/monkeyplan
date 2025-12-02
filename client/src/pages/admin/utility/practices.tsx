@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { UtilityPractice, InsertUtilityPractice, UtilitySupplier, UtilityService, User } from "@shared/schema";
+import { UtilityPractice, InsertUtilityPractice, UtilitySupplier, UtilityService, User, Product } from "@shared/schema";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { 
   Plus, Search, FileCheck, Pencil, Trash2, 
-  ArrowLeft, User as UserIcon, Eye
+  ArrowLeft, User as UserIcon, Eye, Package
 } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -57,6 +57,8 @@ const formatCurrency = (cents: number) => {
   }).format(cents / 100);
 };
 
+type ItemType = "service" | "product";
+
 export default function AdminUtilityPractices() {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -64,6 +66,9 @@ export default function AdminUtilityPractices() {
   const [editingPractice, setEditingPractice] = useState<UtilityPractice | null>(null);
   const [selectedSupplierId, setSelectedSupplierId] = useState<string>("");
   const [selectedStatus, setSelectedStatus] = useState<PracticeStatus>("bozza");
+  const [selectedItemType, setSelectedItemType] = useState<ItemType>("service");
+  const [selectedProductId, setSelectedProductId] = useState<string>("");
+  const [selectedServiceId, setSelectedServiceId] = useState<string>("");
   const { toast } = useToast();
 
   const { data: practices = [], isLoading } = useQuery<UtilityPractice[]>({
@@ -93,6 +98,10 @@ export default function AdminUtilityPractices() {
 
   const { data: customers = [] } = useQuery<User[]>({
     queryKey: ["/api/users"],
+  });
+
+  const { data: products = [] } = useQuery<Product[]>({
+    queryKey: ["/api/products"],
   });
 
   const createMutation = useMutation({
@@ -144,9 +153,8 @@ export default function AdminUtilityPractices() {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
     
-    const data: InsertUtilityPractice = {
-      supplierId: formData.get("supplierId") as string,
-      serviceId: formData.get("serviceId") as string,
+    const data: Partial<InsertUtilityPractice> = {
+      itemType: selectedItemType,
       customerId: formData.get("customerId") as string,
       supplierReference: formData.get("supplierReference") as string || undefined,
       status: selectedStatus,
@@ -159,23 +167,39 @@ export default function AdminUtilityPractices() {
       notes: formData.get("notes") as string || undefined,
     };
 
+    if (selectedItemType === "service") {
+      data.supplierId = selectedSupplierId;
+      data.serviceId = selectedServiceId;
+      data.productId = null;
+    } else {
+      data.productId = selectedProductId;
+      data.serviceId = null;
+      data.supplierId = null;
+    }
+
     if (editingPractice) {
       updateMutation.mutate({ id: editingPractice.id, data });
     } else {
-      createMutation.mutate(data);
+      createMutation.mutate(data as InsertUtilityPractice);
     }
   };
 
   const handleEdit = (practice: UtilityPractice) => {
     setEditingPractice(practice);
-    setSelectedSupplierId(practice.supplierId);
+    setSelectedItemType((practice.itemType as ItemType) || "service");
+    setSelectedSupplierId(practice.supplierId || "");
+    setSelectedServiceId(practice.serviceId || "");
+    setSelectedProductId(practice.productId || "");
     setSelectedStatus(practice.status);
     setDialogOpen(true);
   };
 
   const handleNewPractice = () => {
     setEditingPractice(null);
+    setSelectedItemType("service");
     setSelectedSupplierId("");
+    setSelectedServiceId("");
+    setSelectedProductId("");
     setSelectedStatus("bozza");
     setDialogOpen(true);
   };
@@ -256,8 +280,8 @@ export default function AdminUtilityPractices() {
                 <TableRow>
                   <TableHead>N. Pratica</TableHead>
                   <TableHead>Cliente</TableHead>
-                  <TableHead>Fornitore</TableHead>
-                  <TableHead>Servizio</TableHead>
+                  <TableHead>Tipo</TableHead>
+                  <TableHead>Servizio/Prodotto</TableHead>
                   <TableHead>Prezzo</TableHead>
                   <TableHead>Stato</TableHead>
                   <TableHead className="text-right">Azioni</TableHead>
@@ -267,7 +291,9 @@ export default function AdminUtilityPractices() {
                 {filteredPractices.map((practice) => {
                   const supplier = suppliers.find(s => s.id === practice.supplierId);
                   const service = allServices.find(s => s.id === practice.serviceId);
+                  const product = products.find(p => p.id === practice.productId);
                   const customer = customers.find(c => c.id === practice.customerId);
+                  const itemType = practice.itemType || "service";
                   return (
                     <TableRow key={practice.id} data-testid={`row-practice-${practice.id}`}>
                       <TableCell className="font-medium">
@@ -282,17 +308,22 @@ export default function AdminUtilityPractices() {
                         ) : "-"}
                       </TableCell>
                       <TableCell>
-                        {supplier ? (
-                          <Badge variant="outline">{supplier.name}</Badge>
-                        ) : "-"}
+                        <Badge variant="outline">
+                          {itemType === "service" ? "Servizio" : "Prodotto"}
+                        </Badge>
                       </TableCell>
                       <TableCell>
-                        {service ? (
+                        {itemType === "service" && service ? (
                           <div className="flex flex-col">
                             <span className="font-medium text-sm">{service.name}</span>
                             <span className="text-xs text-muted-foreground">
-                              {categoryLabels[service.category]}
+                              {categoryLabels[service.category]} {supplier ? `• ${supplier.name}` : ""}
                             </span>
+                          </div>
+                        ) : itemType === "product" && product ? (
+                          <div className="flex items-center gap-2">
+                            <Package className="h-4 w-4 text-muted-foreground" />
+                            <span className="font-medium text-sm">{product.name}</span>
                           </div>
                         ) : "-"}
                       </TableCell>
@@ -361,48 +392,101 @@ export default function AdminUtilityPractices() {
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="supplierId">Fornitore *</Label>
-                <Select 
-                  name="supplierId" 
-                  value={selectedSupplierId}
-                  onValueChange={setSelectedSupplierId}
-                  required
+            <div className="space-y-2">
+              <Label>Tipo Pratica *</Label>
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant={selectedItemType === "service" ? "default" : "outline"}
+                  onClick={() => setSelectedItemType("service")}
+                  className="flex-1"
+                  data-testid="button-item-type-service"
                 >
-                  <SelectTrigger data-testid="select-supplier">
-                    <SelectValue placeholder="Seleziona fornitore" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {suppliers.filter(s => s.isActive).map((supplier) => (
-                      <SelectItem key={supplier.id} value={supplier.id}>
-                        {supplier.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="serviceId">Servizio *</Label>
-                <Select 
-                  name="serviceId" 
-                  defaultValue={editingPractice?.serviceId}
-                  disabled={!selectedSupplierId}
-                  required
+                  <FileCheck className="h-4 w-4 mr-2" />
+                  Servizio Utility
+                </Button>
+                <Button
+                  type="button"
+                  variant={selectedItemType === "product" ? "default" : "outline"}
+                  onClick={() => setSelectedItemType("product")}
+                  className="flex-1"
+                  data-testid="button-item-type-product"
                 >
-                  <SelectTrigger data-testid="select-service">
-                    <SelectValue placeholder="Seleziona servizio" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {services.filter(s => s.isActive).map((service) => (
-                      <SelectItem key={service.id} value={service.id}>
-                        {service.name} ({categoryLabels[service.category]})
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  <Package className="h-4 w-4 mr-2" />
+                  Prodotto
+                </Button>
               </div>
             </div>
+
+            {selectedItemType === "service" ? (
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="supplierId">Fornitore *</Label>
+                  <Select 
+                    name="supplierId" 
+                    value={selectedSupplierId}
+                    onValueChange={(val) => {
+                      setSelectedSupplierId(val);
+                      setSelectedServiceId("");
+                    }}
+                    required
+                  >
+                    <SelectTrigger data-testid="select-supplier">
+                      <SelectValue placeholder="Seleziona fornitore" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {suppliers.filter(s => s.isActive).map((supplier) => (
+                        <SelectItem key={supplier.id} value={supplier.id}>
+                          {supplier.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="serviceId">Servizio *</Label>
+                  <Select 
+                    name="serviceId" 
+                    value={selectedServiceId}
+                    onValueChange={setSelectedServiceId}
+                    disabled={!selectedSupplierId}
+                    required
+                  >
+                    <SelectTrigger data-testid="select-service">
+                      <SelectValue placeholder="Seleziona servizio" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {services.filter(s => s.isActive).map((service) => (
+                        <SelectItem key={service.id} value={service.id}>
+                          {service.name} ({categoryLabels[service.category]})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <Label htmlFor="productId">Prodotto *</Label>
+                <Select 
+                  name="productId" 
+                  value={selectedProductId}
+                  onValueChange={setSelectedProductId}
+                  required
+                >
+                  <SelectTrigger data-testid="select-product">
+                    <SelectValue placeholder="Seleziona prodotto" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {products.filter(p => p.isActive).map((product) => (
+                      <SelectItem key={product.id} value={product.id}>
+                        {product.name} {product.sku ? `(${product.sku})` : ""}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
 
             <div className="space-y-2">
               <Label htmlFor="customerId">Cliente *</Label>
