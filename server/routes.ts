@@ -9022,10 +9022,11 @@ export function registerRoutes(app: Express): Server {
       
       // Extract text directly from PDF using pdf-parse
       const pdfParser = new PDFParse(req.file.buffer);
-      const pdfData = await pdfParser.parse();
-      const extractedText = pdfData.text;
+      await pdfParser.load();
+      const extractedText = await pdfParser.getText();
+      const info = await pdfParser.getInfo();
       
-      console.log(`[PDF] Extracted ${extractedText.length} characters from ${pdfData.numpages} pages`);
+      console.log(`[PDF] Extracted ${extractedText.length} characters from ${info?.numPages || 'unknown'} pages`);
       
       if (!extractedText || extractedText.trim().length < 50) {
         return res.status(400).send("Il PDF non contiene testo estraibile. Potrebbe essere un PDF scansionato (immagine).");
