@@ -7,9 +7,9 @@ import { scrypt, randomBytes, randomUUID } from "crypto";
 import { promisify } from "util";
 import ExcelJS from "exceljs";
 import multer from "multer";
-import Tesseract from "tesseract.js";
-import * as pdfjsLib from "pdfjs-dist/legacy/build/pdf.mjs";
-import { createCanvas } from "canvas";
+import { createRequire } from "module";
+const require = createRequire(import.meta.url);
+const pdfParse = require("pdf-parse");
 import {
   insertUserSchema, insertRepairCenterSchema, insertProductSchema,
   insertRepairOrderSchema, insertRepairAcceptanceSchema, insertTicketSchema, insertInvoiceSchema,
@@ -9001,7 +9001,7 @@ export function registerRoutes(app: Express): Server {
 
   // ----- UTILITY PRACTICES -----
 
-  // POST /api/utility/practices/extract-pdf - Extract data from PDF using OCR
+  // POST /api/utility/practices/extract-pdf - Extract data from PDF
   app.post("/api/utility/practices/extract-pdf", requireAuth, requireRole("admin", "reseller"), upload.single('pdf'), async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
@@ -9012,56 +9012,22 @@ export function registerRoutes(app: Express): Server {
         return res.status(400).send("Il file deve essere un PDF");
       }
       
-      console.log("[OCR] Starting PDF extraction...");
-      
-      // Load PDF from buffer
-      const pdfData = new Uint8Array(req.file.buffer);
-      const loadingTask = pdfjsLib.getDocument({ data: pdfData });
-      const pdfDoc = await loadingTask.promise;
-      
-      console.log(`[OCR] PDF loaded, pages: ${pdfDoc.numPages}`);
-      
-      let extractedText = "";
-      
-      // Process each page (max 5 pages to avoid timeout)
-      const maxPages = Math.min(pdfDoc.numPages, 5);
-      
-      for (let pageNum = 1; pageNum <= maxPages; pageNum++) {
-        console.log(`[OCR] Processing page ${pageNum}/${maxPages}...`);
-        
-        const page = await pdfDoc.getPage(pageNum);
-        const viewport = page.getViewport({ scale: 2.0 }); // Higher scale for better OCR
-        
-        // Create canvas to render PDF page
-        const canvas = createCanvas(viewport.width, viewport.height);
-        const context = canvas.getContext('2d');
-        
-        // Render PDF page to canvas
-        await page.render({
-          canvasContext: context as any,
-          viewport: viewport
-        }).promise;
-        
-        // Convert canvas to PNG buffer
-        const imageBuffer = canvas.toBuffer('image/png');
-        
-        // OCR the image with Tesseract
-        const { data: { text } } = await Tesseract.recognize(
-          imageBuffer,
-          'ita+eng', // Italian + English
-          {
-            logger: (m) => {
-              if (m.status === 'recognizing text') {
-                console.log(`[OCR] Page ${pageNum}: ${Math.round(m.progress * 100)}%`);
-              }
-            }
-          }
-        );
-        
-        extractedText += text + "\n\n";
+      // Check file size (max 10MB)
+      if (req.file.size > 10 * 1024 * 1024) {
+        return res.status(400).send("Il file PDF è troppo grande (max 10MB)");
       }
       
-      console.log("[OCR] Text extraction complete, parsing data...");
+      console.log("[PDF] Starting text extraction...");
+      
+      // Extract text directly from PDF using pdf-parse
+      const pdfData = await pdfParse(req.file.buffer);
+      const extractedText = pdfData.text;
+      
+      console.log(`[PDF] Extracted ${extractedText.length} characters from ${pdfData.numpages} pages`);
+      
+      if (!extractedText || extractedText.trim().length < 50) {
+        return res.status(400).send("Il PDF non contiene testo estraibile. Potrebbe essere un PDF scansionato (immagine).");
+      }
       
       // Parse extracted text to find supplier, service, customer
       const parsedData = parseExtractedText(extractedText);
@@ -9122,7 +9088,7 @@ export function registerRoutes(app: Express): Server {
       });
       
     } catch (error: any) {
-      console.error("[OCR] Error:", error);
+      console.error("[PDF] Error:", error);
       res.status(500).send("Errore durante l'estrazione del PDF: " + error.message);
     }
   });
