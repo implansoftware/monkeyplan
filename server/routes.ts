@@ -8801,13 +8801,14 @@ export function registerRoutes(app: Express): Server {
         return res.status(403).send("Accesso negato");
       }
       
-      // Enrich with supplier and service info
-      const [supplier, service] = await Promise.all([
-        storage.getUtilitySupplier(practice.supplierId),
-        storage.getUtilityService(practice.serviceId),
+      // Enrich with supplier, service, and product info
+      const [supplier, service, product] = await Promise.all([
+        practice.supplierId ? storage.getUtilitySupplier(practice.supplierId) : null,
+        practice.serviceId ? storage.getUtilityService(practice.serviceId) : null,
+        practice.productId ? storage.getProduct(practice.productId) : null,
       ]);
       
-      res.json({ ...practice, supplier, service });
+      res.json({ ...practice, supplier, service, product });
     } catch (error: any) {
       res.status(500).send(error.message);
     }
