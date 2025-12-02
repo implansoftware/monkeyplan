@@ -97,7 +97,7 @@ export default function AdminUtilityPractices() {
   });
 
   const { data: customers = [] } = useQuery<User[]>({
-    queryKey: ["/api/users"],
+    queryKey: ["/api/customers"],
   });
 
   const { data: products = [] } = useQuery<Product[]>({
@@ -211,7 +211,7 @@ export default function AdminUtilityPractices() {
     return matchesSearch && matchesStatus;
   });
 
-  const customerUsers = customers.filter(u => u.role === "customer");
+  const customerUsers = customers;
 
   return (
     <div className="p-6 space-y-6">
