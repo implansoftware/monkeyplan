@@ -59,6 +59,13 @@ const formatCurrency = (cents: number) => {
 type ItemType = "service" | "product";
 type PriceType = "mensile" | "forfait";
 
+interface PracticeProductItem {
+  productId: string;
+  quantity: number;
+  unitPriceCents: number;
+  notes?: string;
+}
+
 export default function ResellerUtilityPractices() {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -70,6 +77,7 @@ export default function ResellerUtilityPractices() {
   const [selectedProductId, setSelectedProductId] = useState<string>("");
   const [selectedServiceId, setSelectedServiceId] = useState<string>("");
   const [selectedPriceType, setSelectedPriceType] = useState<PriceType>("mensile");
+  const [practiceProducts, setPracticeProducts] = useState<PracticeProductItem[]>([]);
   const { toast } = useToast();
 
   const { data: practices = [], isLoading } = useQuery<UtilityPractice[]>({
@@ -161,19 +169,24 @@ export default function ResellerUtilityPractices() {
       data.serviceId = selectedServiceId;
       data.productId = null;
     } else {
-      data.productId = selectedProductId;
+      data.productId = practiceProducts.length > 0 ? practiceProducts[0].productId : null;
       data.serviceId = null;
       data.supplierId = null;
     }
 
+    // Include products array for product type practices
+    const submitData = selectedItemType === "product" && practiceProducts.length > 0
+      ? { ...data, products: practiceProducts }
+      : data;
+
     if (editingPractice) {
-      updateMutation.mutate({ id: editingPractice.id, data });
+      updateMutation.mutate({ id: editingPractice.id, data: submitData });
     } else {
-      createMutation.mutate(data as InsertUtilityPractice);
+      createMutation.mutate(submitData as InsertUtilityPractice);
     }
   };
 
-  const handleEdit = (practice: UtilityPractice) => {
+  const handleEdit = async (practice: UtilityPractice) => {
     setEditingPractice(practice);
     setSelectedItemType((practice.itemType as ItemType) || "service");
     setSelectedSupplierId(practice.supplierId || "");
@@ -181,6 +194,38 @@ export default function ResellerUtilityPractices() {
     setSelectedProductId(practice.productId || "");
     setSelectedStatus(practice.status);
     setSelectedPriceType((practice.priceType as PriceType) || "mensile");
+    
+    // Load existing practice products
+    if (practice.itemType === "product") {
+      try {
+        const res = await fetch(`/api/utility/practices/${practice.id}`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data.practiceProducts && data.practiceProducts.length > 0) {
+            setPracticeProducts(data.practiceProducts.map((pp: any) => ({
+              productId: pp.productId,
+              quantity: pp.quantity,
+              unitPriceCents: pp.unitPriceCents,
+              notes: pp.notes || "",
+            })));
+          } else if (practice.productId) {
+            const product = products.find(p => p.id === practice.productId);
+            setPracticeProducts([{
+              productId: practice.productId,
+              quantity: 1,
+              unitPriceCents: product?.unitPrice || 0,
+            }]);
+          } else {
+            setPracticeProducts([]);
+          }
+        }
+      } catch {
+        setPracticeProducts([]);
+      }
+    } else {
+      setPracticeProducts([]);
+    }
+    
     setDialogOpen(true);
   };
 
@@ -192,7 +237,34 @@ export default function ResellerUtilityPractices() {
     setSelectedProductId("");
     setSelectedStatus("bozza");
     setSelectedPriceType("mensile");
+    setPracticeProducts([]);
     setDialogOpen(true);
+  };
+
+  const addProduct = () => {
+    setPracticeProducts([...practiceProducts, { productId: "", quantity: 1, unitPriceCents: 0 }]);
+  };
+
+  const removeProduct = (index: number) => {
+    setPracticeProducts(practiceProducts.filter((_, i) => i !== index));
+  };
+
+  const updateProduct = (index: number, field: keyof PracticeProductItem, value: any) => {
+    const updated = [...practiceProducts];
+    updated[index] = { ...updated[index], [field]: value };
+    
+    if (field === "productId" && value) {
+      const product = products.find(p => p.id === value);
+      if (product && updated[index].unitPriceCents === 0) {
+        updated[index].unitPriceCents = product.unitPrice || 0;
+      }
+    }
+    
+    setPracticeProducts(updated);
+  };
+
+  const calculateProductsTotal = () => {
+    return practiceProducts.reduce((sum, p) => sum + (p.quantity * p.unitPriceCents), 0);
   };
 
   const filteredPractices = practices.filter((practice) => {
@@ -444,25 +516,104 @@ export default function ResellerUtilityPractices() {
                 </div>
               </div>
             ) : (
-              <div className="space-y-2">
-                <Label htmlFor="productId">Prodotto *</Label>
-                <Select 
-                  name="productId" 
-                  value={selectedProductId}
-                  onValueChange={setSelectedProductId}
-                  required
-                >
-                  <SelectTrigger data-testid="select-product">
-                    <SelectValue placeholder="Seleziona prodotto" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {products.filter(p => p.isActive).map((product) => (
-                      <SelectItem key={product.id} value={product.id}>
-                        {product.name} {product.sku ? `(${product.sku})` : ""}
-                      </SelectItem>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <Label>Prodotti *</Label>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={addProduct}
+                    data-testid="button-add-product"
+                  >
+                    <Plus className="h-4 w-4 mr-1" />
+                    Aggiungi Prodotto
+                  </Button>
+                </div>
+                
+                {practiceProducts.length === 0 ? (
+                  <div className="text-center py-4 border rounded-md border-dashed">
+                    <Package className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
+                    <p className="text-sm text-muted-foreground">
+                      Nessun prodotto aggiunto. Clicca "Aggiungi Prodotto" per iniziare.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {practiceProducts.map((item, index) => (
+                      <div key={index} className="border rounded-lg p-3 space-y-3">
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm font-medium">Prodotto {index + 1}</span>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => removeProduct(index)}
+                            data-testid={`button-remove-product-${index}`}
+                          >
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        </div>
+                        <div className="grid grid-cols-3 gap-3">
+                          <div className="col-span-3">
+                            <Label className="text-xs">Prodotto</Label>
+                            <Select
+                              value={item.productId}
+                              onValueChange={(val) => updateProduct(index, "productId", val)}
+                            >
+                              <SelectTrigger data-testid={`select-product-${index}`}>
+                                <SelectValue placeholder="Seleziona prodotto" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {products.filter(p => p.isActive).map((product) => (
+                                  <SelectItem key={product.id} value={product.id}>
+                                    {product.name} {product.sku ? `(${product.sku})` : ""}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div>
+                            <Label className="text-xs">Quantità</Label>
+                            <Input
+                              type="number"
+                              min="1"
+                              value={item.quantity}
+                              onChange={(e) => updateProduct(index, "quantity", parseInt(e.target.value) || 1)}
+                              data-testid={`input-quantity-${index}`}
+                            />
+                          </div>
+                          <div>
+                            <Label className="text-xs">Prezzo Unit. (EUR)</Label>
+                            <Input
+                              type="number"
+                              step="0.01"
+                              min="0"
+                              value={(item.unitPriceCents / 100).toFixed(2)}
+                              onChange={(e) => updateProduct(index, "unitPriceCents", Math.round(parseFloat(e.target.value || "0") * 100))}
+                              data-testid={`input-unit-price-${index}`}
+                            />
+                          </div>
+                          <div>
+                            <Label className="text-xs">Totale</Label>
+                            <div className="h-9 flex items-center px-3 bg-muted rounded-md text-sm font-medium">
+                              {formatCurrency(item.quantity * item.unitPriceCents)}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
                     ))}
-                  </SelectContent>
-                </Select>
+                    
+                    {practiceProducts.length > 0 && (
+                      <div className="flex justify-end pt-2 border-t">
+                        <div className="text-right">
+                          <span className="text-sm text-muted-foreground mr-2">Totale Prodotti:</span>
+                          <span className="font-bold">{formatCurrency(calculateProductsTotal())}</span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             )}
 
