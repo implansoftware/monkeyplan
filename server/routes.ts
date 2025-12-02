@@ -8814,14 +8814,23 @@ export function registerRoutes(app: Express): Server {
         return res.status(403).send("Accesso negato");
       }
       
-      // Enrich with supplier, service, and product info
-      const [supplier, service, product] = await Promise.all([
+      // Enrich with supplier, service, product info and practice products
+      const [supplier, service, product, practiceProducts] = await Promise.all([
         practice.supplierId ? storage.getUtilitySupplier(practice.supplierId) : null,
         practice.serviceId ? storage.getUtilityService(practice.serviceId) : null,
         practice.productId ? storage.getProduct(practice.productId) : null,
+        storage.listUtilityPracticeProducts(practice.id),
       ]);
       
-      res.json({ ...practice, supplier, service, product });
+      // Enrich practice products with product details
+      const productsWithDetails = await Promise.all(
+        practiceProducts.map(async (pp) => {
+          const productDetail = await storage.getProduct(pp.productId);
+          return { ...pp, product: productDetail };
+        })
+      );
+      
+      res.json({ ...practice, supplier, service, product, practiceProducts: productsWithDetails });
     } catch (error: any) {
       res.status(500).send(error.message);
     }
@@ -8832,7 +8841,7 @@ export function registerRoutes(app: Express): Server {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
-      const practiceData = { ...req.body };
+      const { products: productsArray, ...practiceData } = req.body;
       
       // If reseller, set resellerId automatically
       if (req.user.role === 'reseller') {
@@ -8841,6 +8850,20 @@ export function registerRoutes(app: Express): Server {
       
       const validated = insertUtilityPracticeSchema.parse(practiceData);
       const practice = await storage.createUtilityPractice(validated);
+      
+      // If products array is provided, create practice products
+      if (productsArray && Array.isArray(productsArray) && productsArray.length > 0) {
+        for (const productItem of productsArray) {
+          await storage.createUtilityPracticeProduct({
+            practiceId: practice.id,
+            productId: productItem.productId,
+            quantity: productItem.quantity || 1,
+            unitPriceCents: productItem.unitPriceCents || 0,
+            notes: productItem.notes || null,
+          });
+        }
+      }
+      
       res.status(201).json(practice);
     } catch (error: any) {
       res.status(400).send(error.message);
@@ -8862,7 +8885,28 @@ export function registerRoutes(app: Express): Server {
         return res.status(403).send("Accesso negato");
       }
       
-      const updated = await storage.updateUtilityPractice(req.params.id, req.body);
+      const { products: productsArray, ...practiceData } = req.body;
+      
+      const updated = await storage.updateUtilityPractice(req.params.id, practiceData);
+      
+      // If products array is provided, sync practice products
+      if (productsArray && Array.isArray(productsArray)) {
+        // Delete existing products and recreate
+        await storage.deleteUtilityPracticeProductsByPractice(req.params.id);
+        
+        for (const productItem of productsArray) {
+          if (productItem.productId) {
+            await storage.createUtilityPracticeProduct({
+              practiceId: req.params.id,
+              productId: productItem.productId,
+              quantity: productItem.quantity || 1,
+              unitPriceCents: productItem.unitPriceCents || 0,
+              notes: productItem.notes || null,
+            });
+          }
+        }
+      }
+      
       res.json(updated);
     } catch (error: any) {
       res.status(400).send(error.message);

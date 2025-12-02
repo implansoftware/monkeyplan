@@ -27,7 +27,8 @@ import {
   SlaThresholds, slaThresholdsSchema,
   CustomerBranch, InsertCustomerBranch,
   UtilitySupplier, InsertUtilitySupplier, UtilityService, InsertUtilityService,
-  UtilityPractice, InsertUtilityPractice, UtilityCommission, InsertUtilityCommission,
+  UtilityPractice, InsertUtilityPractice, UtilityPracticeProduct, InsertUtilityPracticeProduct,
+  UtilityCommission, InsertUtilityCommission,
   UtilityPracticeDocument, InsertUtilityPracticeDocument,
   UtilityPracticeTask, InsertUtilityPracticeTask,
   UtilityPracticeNote, InsertUtilityPracticeNote,
@@ -45,7 +46,7 @@ import {
   partsLoadDocuments, partsLoadItems,
   repairOrderStateHistory, supplierReturnStateHistory,
   customerBranches,
-  utilitySuppliers, utilityServices, utilityPractices, utilityCommissions,
+  utilitySuppliers, utilityServices, utilityPractices, utilityPracticeProducts, utilityCommissions,
   utilityPracticeDocuments, utilityPracticeTasks, utilityPracticeNotes,
   utilityPracticeTimeline, utilityPracticeStateHistory,
   sifarCredentials, sifarStores
@@ -385,6 +386,13 @@ export interface IStorage {
   createUtilityPractice(practice: InsertUtilityPractice): Promise<UtilityPractice>;
   updateUtilityPractice(id: string, updates: Partial<InsertUtilityPractice>): Promise<UtilityPractice>;
   deleteUtilityPractice(id: string): Promise<void>;
+  
+  // Utility Practice Products
+  listUtilityPracticeProducts(practiceId: string): Promise<UtilityPracticeProduct[]>;
+  createUtilityPracticeProduct(product: InsertUtilityPracticeProduct): Promise<UtilityPracticeProduct>;
+  updateUtilityPracticeProduct(id: string, updates: Partial<InsertUtilityPracticeProduct>): Promise<UtilityPracticeProduct>;
+  deleteUtilityPracticeProduct(id: string): Promise<void>;
+  deleteUtilityPracticeProductsByPractice(practiceId: string): Promise<void>;
   
   // Utility Commissions
   listUtilityCommissions(filters?: { practiceId?: string; status?: string; periodYear?: number }): Promise<UtilityCommission[]>;
@@ -3310,6 +3318,44 @@ export class DatabaseStorage implements IStorage {
   async deleteUtilityPractice(id: string): Promise<void> {
     await db.delete(utilityPractices)
       .where(eq(utilityPractices.id, id));
+  }
+
+  // Utility Practice Products
+  async listUtilityPracticeProducts(practiceId: string): Promise<UtilityPracticeProduct[]> {
+    return await db.select()
+      .from(utilityPracticeProducts)
+      .where(eq(utilityPracticeProducts.practiceId, practiceId))
+      .orderBy(utilityPracticeProducts.createdAt);
+  }
+
+  async createUtilityPracticeProduct(product: InsertUtilityPracticeProduct): Promise<UtilityPracticeProduct> {
+    const [created] = await db.insert(utilityPracticeProducts)
+      .values(product)
+      .returning();
+    return created;
+  }
+
+  async updateUtilityPracticeProduct(id: string, updates: Partial<InsertUtilityPracticeProduct>): Promise<UtilityPracticeProduct> {
+    const [updated] = await db.update(utilityPracticeProducts)
+      .set(updates)
+      .where(eq(utilityPracticeProducts.id, id))
+      .returning();
+    
+    if (!updated) {
+      throw new Error("Prodotto pratica non trovato");
+    }
+    
+    return updated;
+  }
+
+  async deleteUtilityPracticeProduct(id: string): Promise<void> {
+    await db.delete(utilityPracticeProducts)
+      .where(eq(utilityPracticeProducts.id, id));
+  }
+
+  async deleteUtilityPracticeProductsByPractice(practiceId: string): Promise<void> {
+    await db.delete(utilityPracticeProducts)
+      .where(eq(utilityPracticeProducts.practiceId, practiceId));
   }
 
   // Utility Commissions
