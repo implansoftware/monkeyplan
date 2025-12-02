@@ -362,7 +362,7 @@ export default function AdminUtilityPracticeDetail() {
             <p className="text-muted-foreground">
               {practice.itemType === "product" 
                 ? product?.name || "Prodotto" 
-                : `${supplier?.name || ""} - ${service?.name || ""}`}
+                : `${supplier?.name || ""} - ${(practice as any).customServiceName || service?.name || ""}`}
             </p>
           </div>
         </div>
@@ -458,7 +458,14 @@ export default function AdminUtilityPracticeDetail() {
                     </div>
                     <div>
                       <p className="text-sm text-muted-foreground">Servizio</p>
-                      <p className="font-medium" data-testid="text-service-name">{service?.name || "-"}</p>
+                      <div className="flex items-center gap-2">
+                        <p className="font-medium" data-testid="text-service-name">
+                          {(practice as any).customServiceName || service?.name || "-"}
+                        </p>
+                        {(practice as any).customServiceName && (
+                          <Badge variant="outline" className="text-xs">Temporaneo</Badge>
+                        )}
+                      </div>
                     </div>
                   </>
                 )}

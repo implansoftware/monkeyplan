@@ -424,11 +424,18 @@ export default function AdminUtilityPractices() {
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        {(itemType === "service" || itemType === "service_with_products") && service ? (
+                        {(itemType === "service" || itemType === "service_with_products") && (service || (practice as any).customServiceName) ? (
                           <div className="flex flex-col">
-                            <span className="font-medium text-sm">{service.name}</span>
+                            <div className="flex items-center gap-1">
+                              <span className="font-medium text-sm">
+                                {(practice as any).customServiceName || service?.name}
+                              </span>
+                              {(practice as any).customServiceName && (
+                                <Badge variant="outline" className="text-xs py-0 px-1">Temp.</Badge>
+                              )}
+                            </div>
                             <span className="text-xs text-muted-foreground">
-                              {categoryLabels[service.category]} {supplier ? `• ${supplier.name}` : ""}
+                              {service ? categoryLabels[service.category] : ""} {supplier ? `• ${supplier.name}` : ""}
                             </span>
                             {itemType === "service_with_products" && (practice as any).practiceProducts?.length > 0 && (
                               <div className="mt-1 pt-1 border-t">

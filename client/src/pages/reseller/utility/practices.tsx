@@ -11,7 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { 
-  Plus, Search, FileCheck, Pencil, ArrowLeft, User as UserIcon, Eye, Package, Calendar, Euro
+  Plus, Search, FileCheck, Pencil, ArrowLeft, User as UserIcon, Eye, Package, Calendar, Euro, Trash2
 } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -403,11 +403,18 @@ export default function ResellerUtilityPractices() {
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        {(itemType === "service" || itemType === "service_with_products") && service ? (
+                        {(itemType === "service" || itemType === "service_with_products") && (service || (practice as any).customServiceName) ? (
                           <div className="flex flex-col">
-                            <span className="font-medium text-sm">{service.name}</span>
+                            <div className="flex items-center gap-1">
+                              <span className="font-medium text-sm">
+                                {(practice as any).customServiceName || service?.name}
+                              </span>
+                              {(practice as any).customServiceName && (
+                                <Badge variant="outline" className="text-xs py-0 px-1">Temp.</Badge>
+                              )}
+                            </div>
                             <span className="text-xs text-muted-foreground">
-                              {categoryLabels[service.category]} {supplier ? `• ${supplier.name}` : ""}
+                              {service ? categoryLabels[service.category] : ""} {supplier ? `• ${supplier.name}` : ""}
                             </span>
                             {itemType === "service_with_products" && (practice as any).practiceProducts?.length > 0 && (
                               <div className="mt-1 pt-1 border-t">
