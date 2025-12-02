@@ -7,10 +7,7 @@ import { scrypt, randomBytes, randomUUID } from "crypto";
 import { promisify } from "util";
 import ExcelJS from "exceljs";
 import multer from "multer";
-import { createRequire } from "module";
-const require = createRequire(import.meta.url);
-const pdfParseLib = require("pdf-parse");
-const { PDFParse } = pdfParseLib;
+import * as pdfjsLib from "pdfjs-dist/legacy/build/pdf.mjs";
 import {
   insertUserSchema, insertRepairCenterSchema, insertProductSchema,
   insertRepairOrderSchema, insertRepairAcceptanceSchema, insertTicketSchema, insertInvoiceSchema,
@@ -9020,15 +9017,24 @@ export function registerRoutes(app: Express): Server {
       
       console.log("[PDF] Starting text extraction...");
       
-      // Extract text directly from PDF using pdf-parse
-      // Convert Buffer to Uint8Array as required by the library
+      // Extract text directly from PDF using pdfjs-dist (no rendering needed)
       const uint8Array = new Uint8Array(req.file.buffer);
-      const pdfParser = new PDFParse(uint8Array);
-      await pdfParser.load();
-      const extractedText = await pdfParser.getText();
-      const info = await pdfParser.getInfo();
+      const loadingTask = pdfjsLib.getDocument({ data: uint8Array });
+      const pdfDoc = await loadingTask.promise;
       
-      console.log(`[PDF] Extracted ${extractedText.length} characters from ${info?.numPages || 'unknown'} pages`);
+      let extractedText = "";
+      const maxPages = Math.min(pdfDoc.numPages, 10); // Limit to 10 pages
+      
+      for (let pageNum = 1; pageNum <= maxPages; pageNum++) {
+        const page = await pdfDoc.getPage(pageNum);
+        const textContent = await page.getTextContent();
+        const pageText = textContent.items
+          .map((item: any) => item.str)
+          .join(" ");
+        extractedText += pageText + "\n\n";
+      }
+      
+      console.log(`[PDF] Extracted ${extractedText.length} characters from ${pdfDoc.numPages} pages`);
       
       if (!extractedText || extractedText.trim().length < 50) {
         return res.status(400).send("Il PDF non contiene testo estraibile. Potrebbe essere un PDF scansionato (immagine).");
