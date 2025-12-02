@@ -1234,6 +1234,64 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Reseller Inventory - view inventory of associated repair centers (enriched with product and center details)
+  app.get("/api/reseller/inventory", requireRole("reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      // Get all repair centers associated with this reseller
+      const allCenters = await storage.listRepairCenters();
+      const resellerCenters = allCenters.filter(c => c.resellerId === req.user!.id);
+      
+      if (resellerCenters.length === 0) {
+        return res.json([]);
+      }
+      
+      // Get inventory and products
+      const inventory = await storage.listInventoryStockByReseller(req.user.id);
+      const productsList = await storage.listProducts();
+      
+      // Create lookup maps
+      const productsMap = new Map(productsList.map(p => [p.id, p]));
+      const centersMap = new Map(resellerCenters.map(c => [c.id, { id: c.id, name: c.name, city: c.city }]));
+      
+      // Enrich inventory with product and repair center details
+      const enrichedInventory = inventory.map(item => ({
+        ...item,
+        product: productsMap.get(item.productId) || null,
+        repairCenter: centersMap.get(item.repairCenterId) || null,
+      }));
+      
+      res.json(enrichedInventory);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // Reseller Products - view all products
+  app.get("/api/reseller/products", requireRole("reseller"), async (req, res) => {
+    try {
+      const productsList = await storage.listProducts();
+      res.json(productsList);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // Reseller Repair Centers - list repair centers associated with this reseller (limited fields)
+  app.get("/api/reseller/repair-centers", requireRole("reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      const allCenters = await storage.listRepairCenters();
+      const resellerCenters = allCenters
+        .filter(c => c.resellerId === req.user!.id)
+        .map(c => ({ id: c.id, name: c.name, city: c.city })); // Only expose necessary fields
+      res.json(resellerCenters);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
   // ============ REPAIR CENTER ROUTES ============
 
   app.get("/api/repair-center/stats", requireRole("repair_center"), async (req, res) => {

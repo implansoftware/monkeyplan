@@ -119,6 +119,7 @@ export interface IStorage {
   
   // Inventory
   listInventoryStock(repairCenterId?: string): Promise<InventoryStock[]>;
+  listInventoryStockByReseller(resellerId: string): Promise<InventoryStock[]>;
   getInventoryStock(productId: string, repairCenterId: string): Promise<InventoryStock | undefined>;
   createInventoryMovement(movement: InsertInventoryMovement): Promise<InventoryMovement>;
   listInventoryMovements(filters?: { repairCenterId?: string; productId?: string }): Promise<InventoryMovement[]>;
@@ -913,6 +914,23 @@ export class DatabaseStorage implements IStorage {
     }
     
     return await query;
+  }
+
+  async listInventoryStockByReseller(resellerId: string): Promise<InventoryStock[]> {
+    // Get all repair centers associated with this reseller
+    const resellerCenters = await db.select()
+      .from(repairCenters)
+      .where(eq(repairCenters.resellerId, resellerId));
+    
+    if (resellerCenters.length === 0) {
+      return [];
+    }
+    
+    const centerIds = resellerCenters.map(c => c.id);
+    
+    return await db.select()
+      .from(inventoryStock)
+      .where(inArray(inventoryStock.repairCenterId, centerIds));
   }
 
   async createInventoryMovement(insertMovement: InsertInventoryMovement): Promise<InventoryMovement> {

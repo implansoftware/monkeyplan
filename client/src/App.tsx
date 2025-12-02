@@ -69,8 +69,10 @@ import ResellerSifarSettings from "@/pages/reseller/sifar/settings";
 import ResellerSifarCatalog from "@/pages/reseller/sifar/catalog";
 import ResellerSifarCart from "@/pages/reseller/sifar/cart";
 
-// Reseller Repairs
+// Reseller Repairs & Inventory
 import ResellerRepairs from "@/pages/reseller/repairs";
+import ResellerInventory from "@/pages/reseller/inventory";
+import ResellerProducts from "@/pages/reseller/products";
 
 // Repair Center pages
 import RepairCenterDashboard from "@/pages/repair-center/dashboard";
@@ -135,6 +137,8 @@ function Router() {
       <ProtectedRoute path="/reseller/repairs" component={ResellerRepairs} />
       <ProtectedRoute path="/reseller/diagnostics" component={DiagnosisList} />
       <ProtectedRoute path="/reseller/quotes" component={QuotesList} />
+      <ProtectedRoute path="/reseller/inventory" component={ResellerInventory} />
+      <ProtectedRoute path="/reseller/products" component={ResellerProducts} />
       <ProtectedRoute path="/reseller/tickets" component={ResellerTickets} />
       <ProtectedRoute path="/reseller/tickets/:id" component={ResellerTicketDetail} />
       <ProtectedRoute path="/reseller/utility" component={ResellerUtility} />

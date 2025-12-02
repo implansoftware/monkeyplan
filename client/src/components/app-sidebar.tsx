@@ -79,6 +79,8 @@ const menuItems = {
     { title: "Lavorazioni", url: "/reseller/repairs", icon: Wrench, group: "Riparazioni" },
     { title: "Diagnosi", url: "/reseller/diagnostics", icon: Stethoscope, group: "Riparazioni" },
     { title: "Preventivi", url: "/reseller/quotes", icon: Receipt, group: "Riparazioni" },
+    { title: "Magazzino", url: "/reseller/inventory", icon: Package, group: "Inventario" },
+    { title: "Prodotti", url: "/reseller/products", icon: Package, group: "Inventario" },
     { title: "Catalogo Ricambi", url: "/reseller/sifar/catalog", icon: Package, group: "SIFAR" },
     { title: "Carrello SIFAR", url: "/reseller/sifar/cart", icon: ShoppingCart, group: "SIFAR" },
     { title: "Config. SIFAR", url: "/reseller/sifar/settings", icon: Settings, group: "SIFAR" },
