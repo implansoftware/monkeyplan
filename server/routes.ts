@@ -8791,10 +8791,10 @@ export function registerRoutes(app: Express): Server {
       
       const practices = await storage.listUtilityPractices(filters);
       
-      // Enrich with product count for each practice
+      // Enrich with product count for each practice (for product or service_with_products types)
       const enrichedPractices = await Promise.all(
         practices.map(async (practice) => {
-          if (practice.itemType === 'product') {
+          if (practice.itemType === 'product' || practice.itemType === 'service_with_products') {
             const practiceProducts = await storage.listUtilityPracticeProducts(practice.id);
             return { 
               ...practice, 

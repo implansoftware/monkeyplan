@@ -57,7 +57,7 @@ const formatCurrency = (cents: number) => {
   }).format(cents / 100);
 };
 
-type ItemType = "service" | "product";
+type ItemType = "service" | "product" | "service_with_products";
 type PriceType = "mensile" | "forfait";
 
 interface PracticeProductItem {
@@ -185,14 +185,19 @@ export default function AdminUtilityPractices() {
       data.supplierId = selectedSupplierId;
       data.serviceId = selectedServiceId;
       data.productId = null;
-    } else {
+    } else if (selectedItemType === "product") {
       data.productId = practiceProducts.length > 0 ? practiceProducts[0].productId : null;
       data.serviceId = null;
       data.supplierId = null;
+    } else if (selectedItemType === "service_with_products") {
+      // Servizio + Prodotti: include both service and products
+      data.supplierId = selectedSupplierId;
+      data.serviceId = selectedServiceId;
+      data.productId = practiceProducts.length > 0 ? practiceProducts[0].productId : null;
     }
 
-    // Include products array for product type practices
-    const submitData = selectedItemType === "product" && practiceProducts.length > 0
+    // Include products array for product or service_with_products type practices
+    const submitData = (selectedItemType === "product" || selectedItemType === "service_with_products") && practiceProducts.length > 0
       ? { ...data, products: practiceProducts }
       : data;
 
@@ -213,7 +218,7 @@ export default function AdminUtilityPractices() {
     setSelectedPriceType((practice.priceType as PriceType) || "mensile");
     
     // Load existing practice products
-    if (practice.itemType === "product") {
+    if (practice.itemType === "product" || practice.itemType === "service_with_products") {
       try {
         const res = await fetch(`/api/utility/practices/${practice.id}`);
         if (res.ok) {
@@ -391,16 +396,36 @@ export default function AdminUtilityPractices() {
                       </TableCell>
                       <TableCell>
                         <Badge variant="outline">
-                          {itemType === "service" ? "Servizio" : "Prodotto"}
+                          {itemType === "service" ? "Servizio" : 
+                           itemType === "product" ? "Prodotto" : 
+                           itemType === "service_with_products" ? "Servizio + Prodotti" : itemType}
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        {itemType === "service" && service ? (
+                        {(itemType === "service" || itemType === "service_with_products") && service ? (
                           <div className="flex flex-col">
                             <span className="font-medium text-sm">{service.name}</span>
                             <span className="text-xs text-muted-foreground">
                               {categoryLabels[service.category]} {supplier ? `• ${supplier.name}` : ""}
                             </span>
+                            {itemType === "service_with_products" && (practice as any).practiceProducts?.length > 0 && (
+                              <div className="mt-1 pt-1 border-t">
+                                {(practice as any).practiceProducts.slice(0, 2).map((pp: any, idx: number) => {
+                                  const prod = products.find(p => p.id === pp.productId);
+                                  return (
+                                    <div key={idx} className="flex items-center gap-1">
+                                      <Package className="h-3 w-3 text-muted-foreground" />
+                                      <span className="text-xs">{prod?.name || "Prodotto"} x{pp.quantity}</span>
+                                    </div>
+                                  );
+                                })}
+                                {(practice as any).practiceProducts.length > 2 && (
+                                  <span className="text-xs text-muted-foreground">
+                                    +{(practice as any).practiceProducts.length - 2} altri
+                                  </span>
+                                )}
+                              </div>
+                            )}
                           </div>
                         ) : itemType === "product" ? (
                           <div className="flex flex-col">
@@ -499,7 +524,7 @@ export default function AdminUtilityPractices() {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
               <Label>Tipo Pratica *</Label>
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2">
                 <Button
                   type="button"
                   variant={selectedItemType === "service" ? "default" : "outline"}
@@ -508,7 +533,7 @@ export default function AdminUtilityPractices() {
                   data-testid="button-item-type-service"
                 >
                   <FileCheck className="h-4 w-4 mr-2" />
-                  Servizio Utility
+                  Servizio
                 </Button>
                 <Button
                   type="button"
@@ -520,10 +545,21 @@ export default function AdminUtilityPractices() {
                   <Package className="h-4 w-4 mr-2" />
                   Prodotto
                 </Button>
+                <Button
+                  type="button"
+                  variant={selectedItemType === "service_with_products" ? "default" : "outline"}
+                  onClick={() => setSelectedItemType("service_with_products")}
+                  className="flex-1"
+                  data-testid="button-item-type-service-with-products"
+                >
+                  <FileCheck className="h-4 w-4 mr-1" />
+                  <Package className="h-4 w-4 mr-2" />
+                  Servizio + Prodotti
+                </Button>
               </div>
             </div>
 
-            {selectedItemType === "service" ? (
+            {(selectedItemType === "service" || selectedItemType === "service_with_products") && (
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="supplierId">Fornitore *</Label>
@@ -570,7 +606,9 @@ export default function AdminUtilityPractices() {
                   </Select>
                 </div>
               </div>
-            ) : (
+            )}
+
+            {(selectedItemType === "product" || selectedItemType === "service_with_products") && (
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <Label>Prodotti *</Label>
