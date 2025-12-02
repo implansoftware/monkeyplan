@@ -52,6 +52,12 @@ The backend is an `Express.js` application with TypeScript, featuring a RESTful 
         *   **Sync Logging**: `supplier_sync_logs` table tracks synchronization operations with detailed metrics (products created/updated/failed, duration).
         *   **API Endpoints**: POST `/api/suppliers/:id/test-connection` for connection testing, POST `/api/suppliers/:id/sync-catalog` for catalog synchronization.
         *   **Frontend Tab**: Dedicated "API" tab in supplier management with API type selection, authentication config, multiple endpoint fields, and real-time sync status.
+*   **Utility Practices Management**: Complete multi-product support for utility practices (telephony, gas, electricity services).
+    *   **Multi-Product Support**: `utility_practice_products` junction table enables multiple products per practice with quantity, unit price, and notes for each.
+    *   **Transactional Integrity**: `createUtilityPracticeWithProducts` and `syncUtilityPracticeProductsTransactional` methods ensure atomic operations - practice and products commit/rollback together.
+    *   **Dynamic Form Interface**: Add/remove products dynamically in creation and editing forms with real-time total calculation.
+    *   **Product Tables**: Detail views show all products with quantity, unit price, and calculated totals for admin and reseller roles.
+    *   **Enriched API Responses**: GET endpoints return practice with embedded `practiceProducts` array containing full product details.
 *   **SIFAR Integration**: Direct integration with SIFAR supplier API for spare parts ordering by resellers.
     *   **Reseller Credentials**: Secure per-reseller API credential storage (`sifarCredentials` table) with environment selection (collaudo/produzione) and client key management.
     *   **Store Mapping**: `sifarStores` table links reseller accounts to SIFAR store codes (puntiVendita), enabling multi-location support.
