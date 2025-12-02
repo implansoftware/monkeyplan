@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
@@ -213,6 +213,7 @@ export function AcceptanceWizardDialog({
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { user } = useUser();
+  const dialogContentRef = useRef<HTMLDivElement>(null);
 
   const { data: customers = [] } = useQuery<Array<{
     id: string;
@@ -573,6 +574,12 @@ export function AcceptanceWizardDialog({
     createCustomerMutation.mutate(newCustomerData);
   };
 
+  const scrollToTop = () => {
+    if (dialogContentRef.current) {
+      dialogContentRef.current.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+
   const handleNext = async () => {
     let fieldsToValidate: (keyof AcceptanceWizardData)[] = [];
     
@@ -585,8 +592,10 @@ export function AcceptanceWizardDialog({
     if (isValid) {
       if (step === "device-info") {
         setStep("acceptance-checks");
+        scrollToTop();
       } else if (step === "acceptance-checks") {
         setStep("review");
+        scrollToTop();
       }
     }
   };
@@ -594,8 +603,10 @@ export function AcceptanceWizardDialog({
   const handleBack = () => {
     if (step === "acceptance-checks") {
       setStep("device-info");
+      scrollToTop();
     } else if (step === "review") {
       setStep("acceptance-checks");
+      scrollToTop();
     }
   };
 
@@ -2039,7 +2050,7 @@ export function AcceptanceWizardDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent ref={dialogContentRef} className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Smartphone className="w-5 h-5" />
