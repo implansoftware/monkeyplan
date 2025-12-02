@@ -328,6 +328,7 @@ export interface IStorage {
   
   // Parts Load Documents (Carico Ricambi)
   listPartsLoadDocuments(filters?: { repairCenterId?: string; supplierId?: string; status?: string }): Promise<PartsLoadDocument[]>;
+  listPartsLoadDocumentsByRepairCenters(repairCenterIds: string[]): Promise<PartsLoadDocument[]>;
   getPartsLoadDocument(id: string): Promise<PartsLoadDocument | undefined>;
   createPartsLoadDocument(doc: InsertPartsLoadDocument): Promise<PartsLoadDocument>;
   updatePartsLoadDocument(id: string, updates: Partial<InsertPartsLoadDocument>): Promise<PartsLoadDocument>;
@@ -2747,6 +2748,15 @@ export class DatabaseStorage implements IStorage {
     }
     
     return await db.select().from(partsLoadDocuments).orderBy(desc(partsLoadDocuments.createdAt));
+  }
+
+  async listPartsLoadDocumentsByRepairCenters(repairCenterIds: string[]): Promise<PartsLoadDocument[]> {
+    if (repairCenterIds.length === 0) {
+      return [];
+    }
+    return await db.select().from(partsLoadDocuments)
+      .where(inArray(partsLoadDocuments.repairCenterId, repairCenterIds))
+      .orderBy(desc(partsLoadDocuments.createdAt));
   }
 
   async getPartsLoadDocument(id: string): Promise<PartsLoadDocument | undefined> {

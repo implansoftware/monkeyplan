@@ -85,6 +85,7 @@ const menuItems = {
     { title: "Fornitori", url: "/reseller/suppliers", icon: Truck, group: "Fornitori" },
     { title: "Ordini Ricambi", url: "/reseller/supplier-orders", icon: ShoppingCart, group: "Fornitori" },
     { title: "Resi Fornitori", url: "/reseller/supplier-returns", icon: RotateCcw, group: "Fornitori" },
+    { title: "Carico Ricambi", url: "/reseller/parts-load", icon: ClipboardList, group: "Fornitori" },
     { title: "Catalogo Ricambi", url: "/reseller/sifar/catalog", icon: Package, group: "SIFAR" },
     { title: "Carrello SIFAR", url: "/reseller/sifar/cart", icon: ShoppingCart, group: "SIFAR" },
     { title: "Config. SIFAR", url: "/reseller/sifar/settings", icon: Settings, group: "SIFAR" },

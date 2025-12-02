@@ -1482,6 +1482,90 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // ============ RESELLER PARTS LOAD (CARICO RICAMBI) ============
+
+  // GET /api/reseller/parts-load - List parts load documents for reseller's repair centers
+  app.get("/api/reseller/parts-load", requireRole("reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      // Get repair centers associated with this reseller
+      const allCenters = await storage.listRepairCenters();
+      const resellerCenters = allCenters.filter(c => c.resellerId === req.user!.id);
+      const resellerCenterIds = resellerCenters.map(c => c.id);
+      
+      if (resellerCenterIds.length === 0) {
+        return res.json([]);
+      }
+      
+      // Use storage-level filtering for security
+      const docs = await storage.listPartsLoadDocumentsByRepairCenters(resellerCenterIds);
+      
+      // Get suppliers for enrichment
+      const suppliers = await storage.listSuppliers();
+      const suppliersMap = new Map(suppliers.map(s => [s.id, { id: s.id, name: s.name, code: s.code }]));
+      const centersMap = new Map(resellerCenters.map(c => [c.id, { id: c.id, name: c.name, city: c.city }]));
+      
+      // Enrich documents
+      const enrichedDocs = docs.map(doc => ({
+        ...doc,
+        supplierName: suppliersMap.get(doc.supplierId)?.name || null,
+        repairCenterName: centersMap.get(doc.repairCenterId)?.name || null,
+      }));
+      
+      res.json(enrichedDocs);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // GET /api/reseller/parts-load/:id - Get parts load document details
+  app.get("/api/reseller/parts-load/:id", requireRole("reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const doc = await storage.getPartsLoadDocument(req.params.id);
+      if (!doc) {
+        return res.status(404).send("Documento non trovato");
+      }
+      
+      // Verify reseller has access to this document's repair center
+      const allCenters = await storage.listRepairCenters();
+      const resellerCenterIds = allCenters
+        .filter(c => c.resellerId === req.user!.id)
+        .map(c => c.id);
+      
+      if (!resellerCenterIds.includes(doc.repairCenterId)) {
+        return res.status(403).send("Accesso negato");
+      }
+      
+      // Get items
+      const items = await storage.listPartsLoadItems(doc.id);
+      
+      // Get supplier and center info
+      const supplier = await storage.getSupplier(doc.supplierId);
+      const center = allCenters.find(c => c.id === doc.repairCenterId);
+      
+      // Get products for items enrichment
+      const products = await storage.listProducts();
+      const productsMap = new Map(products.map(p => [p.id, p]));
+      
+      const enrichedItems = items.map(item => ({
+        ...item,
+        product: item.productId ? productsMap.get(item.productId) : null,
+      }));
+      
+      res.json({
+        ...doc,
+        items: enrichedItems,
+        supplier: supplier ? { id: supplier.id, name: supplier.name, code: supplier.code } : null,
+        repairCenter: center ? { id: center.id, name: center.name, city: center.city } : null,
+      });
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
   // ============ REPAIR CENTER ROUTES ============
 
   app.get("/api/repair-center/stats", requireRole("repair_center"), async (req, res) => {
