@@ -11,7 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { 
-  Plus, Search, FileCheck, Pencil, ArrowLeft, User as UserIcon, Eye, Package
+  Plus, Search, FileCheck, Pencil, ArrowLeft, User as UserIcon, Eye, Package, Calendar, Euro
 } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -57,6 +57,7 @@ const formatCurrency = (cents: number) => {
 };
 
 type ItemType = "service" | "product";
+type PriceType = "mensile" | "forfait";
 
 export default function ResellerUtilityPractices() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -68,6 +69,7 @@ export default function ResellerUtilityPractices() {
   const [selectedItemType, setSelectedItemType] = useState<ItemType>("service");
   const [selectedProductId, setSelectedProductId] = useState<string>("");
   const [selectedServiceId, setSelectedServiceId] = useState<string>("");
+  const [selectedPriceType, setSelectedPriceType] = useState<PriceType>("mensile");
   const { toast } = useToast();
 
   const { data: practices = [], isLoading } = useQuery<UtilityPractice[]>({
@@ -144,8 +146,12 @@ export default function ResellerUtilityPractices() {
       customerId: formData.get("customerId") as string,
       supplierReference: formData.get("supplierReference") as string || undefined,
       status: selectedStatus,
-      monthlyPriceCents: formData.get("monthlyPriceCents") 
+      priceType: selectedPriceType,
+      monthlyPriceCents: selectedPriceType === "mensile" && formData.get("monthlyPriceCents") 
         ? Math.round(parseFloat(formData.get("monthlyPriceCents") as string) * 100) 
+        : undefined,
+      flatPriceCents: selectedPriceType === "forfait" && formData.get("flatPriceCents")
+        ? Math.round(parseFloat(formData.get("flatPriceCents") as string) * 100)
         : undefined,
       notes: formData.get("notes") as string || undefined,
     };
@@ -174,6 +180,7 @@ export default function ResellerUtilityPractices() {
     setSelectedServiceId(practice.serviceId || "");
     setSelectedProductId(practice.productId || "");
     setSelectedStatus(practice.status);
+    setSelectedPriceType((practice.priceType as PriceType) || "mensile");
     setDialogOpen(true);
   };
 
@@ -184,6 +191,7 @@ export default function ResellerUtilityPractices() {
     setSelectedServiceId("");
     setSelectedProductId("");
     setSelectedStatus("bozza");
+    setSelectedPriceType("mensile");
     setDialogOpen(true);
   };
 
@@ -508,17 +516,61 @@ export default function ResellerUtilityPractices() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="monthlyPriceCents">Prezzo Mensile (EUR)</Label>
-              <Input
-                id="monthlyPriceCents"
-                name="monthlyPriceCents"
-                type="number"
-                step="0.01"
-                defaultValue={editingPractice?.monthlyPriceCents 
-                  ? (editingPractice.monthlyPriceCents / 100).toFixed(2) 
-                  : ""}
-                data-testid="input-monthly-price"
-              />
+              <Label>Tipo Prezzo *</Label>
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant={selectedPriceType === "mensile" ? "default" : "outline"}
+                  onClick={() => setSelectedPriceType("mensile")}
+                  className="flex-1"
+                  data-testid="button-price-mensile"
+                >
+                  <Calendar className="h-4 w-4 mr-2" />
+                  Mensile
+                </Button>
+                <Button
+                  type="button"
+                  variant={selectedPriceType === "forfait" ? "default" : "outline"}
+                  onClick={() => setSelectedPriceType("forfait")}
+                  className="flex-1"
+                  data-testid="button-price-forfait"
+                >
+                  <Euro className="h-4 w-4 mr-2" />
+                  Forfait
+                </Button>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              {selectedPriceType === "mensile" ? (
+                <>
+                  <Label htmlFor="monthlyPriceCents">Prezzo Mensile (EUR)</Label>
+                  <Input
+                    id="monthlyPriceCents"
+                    name="monthlyPriceCents"
+                    type="number"
+                    step="0.01"
+                    defaultValue={editingPractice?.monthlyPriceCents 
+                      ? (editingPractice.monthlyPriceCents / 100).toFixed(2) 
+                      : ""}
+                    data-testid="input-monthly-price"
+                  />
+                </>
+              ) : (
+                <>
+                  <Label htmlFor="flatPriceCents">Prezzo Forfait (EUR)</Label>
+                  <Input
+                    id="flatPriceCents"
+                    name="flatPriceCents"
+                    type="number"
+                    step="0.01"
+                    defaultValue={editingPractice?.flatPriceCents 
+                      ? (editingPractice.flatPriceCents / 100).toFixed(2) 
+                      : ""}
+                    data-testid="input-flat-price"
+                  />
+                </>
+              )}
             </div>
 
             <div className="space-y-2">

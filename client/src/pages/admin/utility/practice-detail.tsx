@@ -461,8 +461,14 @@ export default function AdminUtilityPracticeDetail() {
                   </>
                 )}
                 <div>
-                  <p className="text-sm text-muted-foreground">Canone Mensile</p>
-                  <p className="font-medium" data-testid="text-monthly-price">{formatCurrency(practice.monthlyPriceCents)}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {practice.priceType === "forfait" ? "Prezzo Forfait" : "Canone Mensile"}
+                  </p>
+                  <p className="font-medium" data-testid="text-price">
+                    {practice.priceType === "forfait" 
+                      ? formatCurrency(practice.flatPriceCents) 
+                      : formatCurrency(practice.monthlyPriceCents)}
+                  </p>
                 </div>
               </CardContent>
             </Card>
