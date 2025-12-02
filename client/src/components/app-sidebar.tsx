@@ -75,7 +75,6 @@ const menuItems = {
   ],
   reseller: [
     { title: "Dashboard", url: "/reseller", icon: LayoutDashboard, group: "Principale" },
-    { title: "Ordini", url: "/reseller/orders", icon: ShoppingCart, group: "Principale" },
     { title: "Clienti", url: "/reseller/customers", icon: Users, group: "Gestione" },
     { title: "Lavorazioni", url: "/reseller/repairs", icon: Wrench, group: "Riparazioni" },
     { title: "Diagnosi", url: "/reseller/diagnostics", icon: Stethoscope, group: "Riparazioni" },
