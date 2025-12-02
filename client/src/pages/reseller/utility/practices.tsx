@@ -633,19 +633,19 @@ export default function ResellerUtilityPractices() {
             </DialogDescription>
           </DialogHeader>
           
-          {/* PDF Extraction Button */}
+          {/* PDF/Image Extraction Button */}
           {!editingPractice && (
             <div className="border rounded-lg p-3 bg-muted/30">
               <div className="flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <FileUp className="h-4 w-4" />
-                  <span>Estrai dati automaticamente da un PDF</span>
+                  <span>Estrai dati da PDF o immagine</span>
                 </div>
                 <div>
                   <input
                     ref={pdfInputRef}
                     type="file"
-                    accept="application/pdf"
+                    accept="application/pdf,image/jpeg,image/png,image/webp"
                     onChange={handlePdfExtract}
                     className="hidden"
                     data-testid="input-pdf-extract"
@@ -666,7 +666,7 @@ export default function ResellerUtilityPractices() {
                     ) : (
                       <>
                         <FileUp className="h-4 w-4 mr-2" />
-                        Carica PDF
+                        Carica File
                       </>
                     )}
                   </Button>

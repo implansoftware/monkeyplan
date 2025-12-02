@@ -9001,43 +9001,59 @@ export function registerRoutes(app: Express): Server {
 
   // ----- UTILITY PRACTICES -----
 
-  // POST /api/utility/practices/extract-pdf - Extract data from PDF
+  // POST /api/utility/practices/extract-pdf - Extract data from PDF or image
   app.post("/api/utility/practices/extract-pdf", requireAuth, requireRole("admin", "reseller"), upload.single('pdf'), async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
-      if (!req.file) return res.status(400).send("Nessun file PDF caricato");
+      if (!req.file) return res.status(400).send("Nessun file caricato");
       
-      // Check file type
-      if (req.file.mimetype !== 'application/pdf') {
-        return res.status(400).send("Il file deve essere un PDF");
+      // Check file type - accept PDF and images
+      const allowedTypes = ['application/pdf', 'image/jpeg', 'image/png', 'image/webp'];
+      if (!allowedTypes.includes(req.file.mimetype)) {
+        return res.status(400).send("Formato file non supportato. Usa PDF, JPG, PNG o WebP.");
       }
       
       // Check file size (max 10MB)
       if (req.file.size > 10 * 1024 * 1024) {
-        return res.status(400).send("Il file PDF è troppo grande (max 10MB)");
+        return res.status(400).send("Il file è troppo grande (max 10MB)");
       }
-      
-      console.log("[PDF] Starting text extraction...");
-      
-      // Extract text directly from PDF using pdfjs-dist
-      const uint8Array = new Uint8Array(req.file.buffer);
-      const loadingTask = pdfjsLib.getDocument({ data: uint8Array });
-      const pdfDoc = await loadingTask.promise;
       
       let extractedText = "";
-      const maxPages = Math.min(pdfDoc.numPages, 5); // Limit to 5 pages
       
-      // First try: extract text directly (for digital PDFs)
-      for (let pageNum = 1; pageNum <= maxPages; pageNum++) {
-        const page = await pdfDoc.getPage(pageNum);
-        const textContent = await page.getTextContent();
-        const pageText = textContent.items
-          .map((item: any) => item.str)
-          .join(" ");
-        extractedText += pageText + "\n\n";
-      }
-      
-      console.log(`[PDF] Direct extraction: ${extractedText.trim().length} characters from ${pdfDoc.numPages} pages`);
+      // Handle images directly with OCR
+      if (req.file.mimetype.startsWith('image/')) {
+        console.log(`[OCR] Processing image: ${req.file.mimetype}`);
+        
+        const { data: { text } } = await Tesseract.recognize(
+          req.file.buffer,
+          'ita+eng',
+          { logger: () => {} }
+        );
+        
+        extractedText = text;
+        console.log(`[OCR] Extracted ${text.length} characters from image`);
+      } else {
+        // Handle PDF
+        console.log("[PDF] Starting text extraction...");
+        
+        // Extract text directly from PDF using pdfjs-dist
+        const uint8Array = new Uint8Array(req.file.buffer);
+        const loadingTask = pdfjsLib.getDocument({ data: uint8Array });
+        const pdfDoc = await loadingTask.promise;
+        
+        const maxPages = Math.min(pdfDoc.numPages, 5); // Limit to 5 pages
+        
+        // First try: extract text directly (for digital PDFs)
+        for (let pageNum = 1; pageNum <= maxPages; pageNum++) {
+          const page = await pdfDoc.getPage(pageNum);
+          const textContent = await page.getTextContent();
+          const pageText = textContent.items
+            .map((item: any) => item.str)
+            .join(" ");
+          extractedText += pageText + "\n\n";
+        }
+        
+        console.log(`[PDF] Direct extraction: ${extractedText.trim().length} characters from ${pdfDoc.numPages} pages`);
       
       // If not enough text, try to extract embedded images and OCR them
       if (extractedText.trim().length < 100) {
@@ -9119,11 +9135,12 @@ export function registerRoutes(app: Express): Server {
           }
         }
       }
+      } // Close else block for PDF handling
       
-      console.log(`[PDF] Total extracted: ${extractedText.length} characters`);
+      console.log(`[OCR/PDF] Total extracted: ${extractedText.length} characters`);
       
       if (!extractedText || extractedText.trim().length < 30) {
-        return res.status(400).send("Impossibile estrarre testo dal PDF. Prova con un documento diverso.");
+        return res.status(400).send("Impossibile estrarre testo dal file. Prova con un documento diverso.");
       }
       
       // Parse extracted text to find supplier, service, customer
