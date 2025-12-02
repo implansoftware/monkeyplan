@@ -9,7 +9,8 @@ import ExcelJS from "exceljs";
 import multer from "multer";
 import { createRequire } from "module";
 const require = createRequire(import.meta.url);
-const pdfParse = require("pdf-parse");
+const pdfParseLib = require("pdf-parse");
+const { PDFParse } = pdfParseLib;
 import {
   insertUserSchema, insertRepairCenterSchema, insertProductSchema,
   insertRepairOrderSchema, insertRepairAcceptanceSchema, insertTicketSchema, insertInvoiceSchema,
@@ -9020,7 +9021,8 @@ export function registerRoutes(app: Express): Server {
       console.log("[PDF] Starting text extraction...");
       
       // Extract text directly from PDF using pdf-parse
-      const pdfData = await pdfParse(req.file.buffer);
+      const pdfParser = new PDFParse(req.file.buffer);
+      const pdfData = await pdfParser.parse();
       const extractedText = pdfData.text;
       
       console.log(`[PDF] Extracted ${extractedText.length} characters from ${pdfData.numpages} pages`);
