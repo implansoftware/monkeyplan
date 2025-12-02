@@ -1195,8 +1195,13 @@ export function registerRoutes(app: Express): Server {
 
   app.get("/api/reseller/customers", requireRole("reseller"), async (req, res) => {
     try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
       const allUsers = await storage.listUsers();
-      const customers = allUsers.filter(user => user.role === "customer");
+      // Filter customers that belong to this reseller
+      const customers = allUsers.filter(user => 
+        user.role === "customer" && user.resellerId === req.user!.id
+      );
       res.json(customers);
     } catch (error: any) {
       res.status(500).send(error.message);
@@ -1205,6 +1210,8 @@ export function registerRoutes(app: Express): Server {
 
   app.post("/api/reseller/customers", requireRole("reseller"), async (req, res) => {
     try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
       const baseSchema = insertUserSchema.pick({
         username: true,
         password: true,
@@ -1226,6 +1233,7 @@ export function registerRoutes(app: Express): Server {
         phone: validatedData.phone,
         isActive: validatedData.isActive,
         role: "customer", // Force customer role
+        resellerId: req.user.id, // Associate with the reseller
       });
       setActivityEntity(res, { type: 'users', id: user.id });
       res.status(201).json(user);
