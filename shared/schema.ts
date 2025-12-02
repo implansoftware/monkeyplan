@@ -1470,9 +1470,17 @@ export const utilityPractices = pgTable("utility_practices", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   practiceNumber: text("practice_number").notNull().unique(), // Numero pratica (es: "UTL-2024-0001")
   
-  // Servizio e fornitore
-  serviceId: varchar("service_id").notNull().references(() => utilityServices.id),
-  supplierId: varchar("supplier_id").notNull().references(() => utilitySuppliers.id),
+  // Tipo item: servizio o prodotto
+  itemType: text("item_type").notNull().default("service"), // "service" o "product"
+  
+  // Servizio utility (opzionale se itemType = "product")
+  serviceId: varchar("service_id").references(() => utilityServices.id),
+  
+  // Prodotto (opzionale se itemType = "service")
+  productId: varchar("product_id").references(() => products.id),
+  
+  // Fornitore
+  supplierId: varchar("supplier_id").references(() => utilitySuppliers.id),
   
   // Cliente
   customerId: varchar("customer_id").notNull().references(() => users.id),
