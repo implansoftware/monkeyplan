@@ -110,6 +110,23 @@ const formatDateShort = (date: string | Date | null | undefined) => {
   return format(new Date(date), "dd/MM/yyyy", { locale: it });
 };
 
+interface PracticeProductWithDetail {
+  id: string;
+  practiceId: string;
+  productId: string;
+  quantity: number;
+  unitPriceCents: number;
+  notes: string | null;
+  product: Product | null;
+}
+
+interface EnrichedPractice extends UtilityPractice {
+  supplier?: UtilitySupplier | null;
+  service?: UtilityService | null;
+  product?: Product | null;
+  practiceProducts?: PracticeProductWithDetail[];
+}
+
 export default function ResellerUtilityPracticeDetail() {
   const params = useParams<{ id: string }>();
   const [, setLocation] = useLocation();
@@ -128,25 +145,17 @@ export default function ResellerUtilityPracticeDetail() {
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const { data: practice, isLoading } = useQuery<UtilityPractice>({
+  const { data: practiceData, isLoading } = useQuery<EnrichedPractice>({
     queryKey: ["/api/utility/practices", params.id],
     enabled: !!params.id,
   });
 
-  const { data: supplier } = useQuery<UtilitySupplier>({
-    queryKey: ["/api/utility/suppliers", practice?.supplierId],
-    enabled: !!practice?.supplierId,
-  });
-
-  const { data: service } = useQuery<UtilityService>({
-    queryKey: ["/api/utility/services", practice?.serviceId],
-    enabled: !!practice?.serviceId,
-  });
-
-  const { data: product } = useQuery<Product>({
-    queryKey: ["/api/products", practice?.productId],
-    enabled: !!practice?.productId,
-  });
+  // Extract enriched data from response
+  const practice = practiceData;
+  const supplier = practiceData?.supplier;
+  const service = practiceData?.service;
+  const product = practiceData?.product;
+  const practiceProducts = practiceData?.practiceProducts || [];
 
   const { data: customer } = useQuery<User>({
     queryKey: ["/api/customers", practice?.customerId],
@@ -420,7 +429,7 @@ export default function ResellerUtilityPracticeDetail() {
             <Card>
               <CardHeader>
                 <CardTitle className="text-lg">
-                  {practice.itemType === "product" ? "Dettagli Prodotto" : "Dettagli Servizio"}
+                  {practice.itemType === "product" ? "Dettagli Prodotti" : "Dettagli Servizio"}
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
@@ -433,14 +442,52 @@ export default function ResellerUtilityPracticeDetail() {
                         Prodotto
                       </Badge>
                     </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">Prodotto</p>
-                      <p className="font-medium" data-testid="text-product-name">{product?.name || "-"}</p>
-                    </div>
-                    {product?.sku && (
+                    {practiceProducts.length > 0 ? (
+                      <div className="space-y-2">
+                        <p className="text-sm text-muted-foreground">Prodotti ({practiceProducts.length})</p>
+                        <div className="border rounded-md overflow-hidden">
+                          <table className="w-full text-sm">
+                            <thead className="bg-muted/50">
+                              <tr>
+                                <th className="text-left p-2 font-medium">Prodotto</th>
+                                <th className="text-right p-2 font-medium">Qtà</th>
+                                <th className="text-right p-2 font-medium">Prezzo Unit.</th>
+                                <th className="text-right p-2 font-medium">Totale</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {practiceProducts.map((pp, index) => (
+                                <tr key={pp.id} className={index % 2 === 0 ? "bg-background" : "bg-muted/30"}>
+                                  <td className="p-2">
+                                    <div className="font-medium">{pp.product?.name || "-"}</div>
+                                    {pp.product?.sku && (
+                                      <div className="text-xs text-muted-foreground">{pp.product.sku}</div>
+                                    )}
+                                  </td>
+                                  <td className="p-2 text-right">{pp.quantity}</td>
+                                  <td className="p-2 text-right">{formatCurrency(pp.unitPriceCents)}</td>
+                                  <td className="p-2 text-right font-medium">{formatCurrency(pp.quantity * pp.unitPriceCents)}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                            <tfoot className="bg-muted/50 border-t">
+                              <tr>
+                                <td colSpan={3} className="p-2 text-right font-medium">Totale Prodotti:</td>
+                                <td className="p-2 text-right font-bold" data-testid="text-products-total">
+                                  {formatCurrency(practiceProducts.reduce((sum, pp) => sum + (pp.quantity * pp.unitPriceCents), 0))}
+                                </td>
+                              </tr>
+                            </tfoot>
+                          </table>
+                        </div>
+                      </div>
+                    ) : (
                       <div>
-                        <p className="text-sm text-muted-foreground">SKU</p>
-                        <p className="font-medium">{product.sku}</p>
+                        <p className="text-sm text-muted-foreground">Prodotto</p>
+                        <p className="font-medium" data-testid="text-product-name">{product?.name || "-"}</p>
+                        {product?.sku && (
+                          <p className="text-xs text-muted-foreground">SKU: {product.sku}</p>
+                        )}
                       </div>
                     )}
                   </>

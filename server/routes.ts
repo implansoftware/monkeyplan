@@ -8849,21 +8849,26 @@ export function registerRoutes(app: Express): Server {
       }
       
       const validated = insertUtilityPracticeSchema.parse(practiceData);
-      const practice = await storage.createUtilityPractice(validated);
       
-      // If products array is provided, create practice products
+      // If products array is provided, create practice with products transactionally
       if (productsArray && Array.isArray(productsArray) && productsArray.length > 0) {
-        for (const productItem of productsArray) {
-          await storage.createUtilityPracticeProduct({
-            practiceId: practice.id,
-            productId: productItem.productId,
-            quantity: productItem.quantity || 1,
-            unitPriceCents: productItem.unitPriceCents || 0,
-            notes: productItem.notes || null,
-          });
+        const validProducts = productsArray
+          .filter((p: any) => p.productId)
+          .map((p: any) => ({
+            productId: p.productId,
+            quantity: p.quantity || 1,
+            unitPriceCents: p.unitPriceCents || 0,
+            notes: p.notes || null,
+          }));
+        
+        if (validProducts.length > 0) {
+          const result = await storage.createUtilityPracticeWithProducts(validated, validProducts);
+          return res.status(201).json(result.practice);
         }
       }
       
+      // Create practice without products
+      const practice = await storage.createUtilityPractice(validated);
       res.status(201).json(practice);
     } catch (error: any) {
       res.status(400).send(error.message);
@@ -8889,21 +8894,22 @@ export function registerRoutes(app: Express): Server {
       
       const updated = await storage.updateUtilityPractice(req.params.id, practiceData);
       
-      // If products array is provided, sync practice products
+      // If products array is provided, sync practice products transactionally
       if (productsArray && Array.isArray(productsArray)) {
-        // Delete existing products and recreate
-        await storage.deleteUtilityPracticeProductsByPractice(req.params.id);
+        const validProducts = productsArray
+          .filter((p: any) => p.productId)
+          .map((p: any) => ({
+            productId: p.productId,
+            quantity: p.quantity || 1,
+            unitPriceCents: p.unitPriceCents || 0,
+            notes: p.notes || null,
+          }));
         
-        for (const productItem of productsArray) {
-          if (productItem.productId) {
-            await storage.createUtilityPracticeProduct({
-              practiceId: req.params.id,
-              productId: productItem.productId,
-              quantity: productItem.quantity || 1,
-              unitPriceCents: productItem.unitPriceCents || 0,
-              notes: productItem.notes || null,
-            });
-          }
+        if (validProducts.length > 0) {
+          await storage.syncUtilityPracticeProductsTransactional(req.params.id, validProducts);
+        } else {
+          // If empty array, just delete all products
+          await storage.deleteUtilityPracticeProductsByPractice(req.params.id);
         }
       }
       

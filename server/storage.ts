@@ -384,6 +384,7 @@ export interface IStorage {
   listUtilityPractices(filters?: { customerId?: string; resellerId?: string; status?: string; supplierId?: string }): Promise<UtilityPractice[]>;
   getUtilityPractice(id: string): Promise<UtilityPractice | undefined>;
   createUtilityPractice(practice: InsertUtilityPractice): Promise<UtilityPractice>;
+  createUtilityPracticeWithProducts(practice: InsertUtilityPractice, products: Array<{ productId: string; quantity: number; unitPriceCents: number; notes?: string | null }>): Promise<{ practice: UtilityPractice; products: UtilityPracticeProduct[] }>;
   updateUtilityPractice(id: string, updates: Partial<InsertUtilityPractice>): Promise<UtilityPractice>;
   deleteUtilityPractice(id: string): Promise<void>;
   
@@ -393,6 +394,7 @@ export interface IStorage {
   updateUtilityPracticeProduct(id: string, updates: Partial<InsertUtilityPracticeProduct>): Promise<UtilityPracticeProduct>;
   deleteUtilityPracticeProduct(id: string): Promise<void>;
   deleteUtilityPracticeProductsByPractice(practiceId: string): Promise<void>;
+  syncUtilityPracticeProductsTransactional(practiceId: string, products: Array<{ productId: string; quantity: number; unitPriceCents: number; notes?: string | null }>): Promise<UtilityPracticeProduct[]>;
   
   // Utility Commissions
   listUtilityCommissions(filters?: { practiceId?: string; status?: string; periodYear?: number }): Promise<UtilityCommission[]>;
@@ -3302,6 +3304,43 @@ export class DatabaseStorage implements IStorage {
     return created;
   }
 
+  async createUtilityPracticeWithProducts(
+    practice: InsertUtilityPractice,
+    products: Array<{ productId: string; quantity: number; unitPriceCents: number; notes?: string | null }>
+  ): Promise<{ practice: UtilityPractice; products: UtilityPracticeProduct[] }> {
+    return await db.transaction(async (tx) => {
+      // Generate practice number within transaction
+      const year = new Date().getFullYear();
+      const [countResult] = await tx.select({ count: sql<number>`count(*)` })
+        .from(utilityPractices)
+        .where(sql`EXTRACT(YEAR FROM ${utilityPractices.createdAt}) = ${year}`);
+      
+      const practiceNumber = `UTL-${year}-${String((countResult?.count || 0) + 1).padStart(4, '0')}`;
+      
+      // Create practice
+      const [createdPractice] = await tx.insert(utilityPractices)
+        .values({ ...practice, practiceNumber })
+        .returning();
+      
+      // Create all products
+      const createdProducts: UtilityPracticeProduct[] = [];
+      for (const product of products) {
+        const [created] = await tx.insert(utilityPracticeProducts)
+          .values({
+            practiceId: createdPractice.id,
+            productId: product.productId,
+            quantity: product.quantity,
+            unitPriceCents: product.unitPriceCents,
+            notes: product.notes || null,
+          })
+          .returning();
+        createdProducts.push(created);
+      }
+      
+      return { practice: createdPractice, products: createdProducts };
+    });
+  }
+
   async updateUtilityPractice(id: string, updates: Partial<InsertUtilityPractice>): Promise<UtilityPractice> {
     const [updated] = await db.update(utilityPractices)
       .set({ ...updates, updatedAt: new Date() })
@@ -3356,6 +3395,34 @@ export class DatabaseStorage implements IStorage {
   async deleteUtilityPracticeProductsByPractice(practiceId: string): Promise<void> {
     await db.delete(utilityPracticeProducts)
       .where(eq(utilityPracticeProducts.practiceId, practiceId));
+  }
+
+  async syncUtilityPracticeProductsTransactional(
+    practiceId: string, 
+    products: Array<{ productId: string; quantity: number; unitPriceCents: number; notes?: string | null }>
+  ): Promise<UtilityPracticeProduct[]> {
+    return await db.transaction(async (tx) => {
+      // Delete all existing products for this practice
+      await tx.delete(utilityPracticeProducts)
+        .where(eq(utilityPracticeProducts.practiceId, practiceId));
+      
+      // Create all new products
+      const createdProducts: UtilityPracticeProduct[] = [];
+      for (const product of products) {
+        const [created] = await tx.insert(utilityPracticeProducts)
+          .values({
+            practiceId,
+            productId: product.productId,
+            quantity: product.quantity,
+            unitPriceCents: product.unitPriceCents,
+            notes: product.notes || null,
+          })
+          .returning();
+        createdProducts.push(created);
+      }
+      
+      return createdProducts;
+    });
   }
 
   // Utility Commissions
