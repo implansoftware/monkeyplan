@@ -219,23 +219,14 @@ export function AcceptanceWizardDialog({
     fullName: string;
     email: string;
   }>>({
-    queryKey: user?.role === "reseller" ? ["/api/reseller/customers"] : ["/api/users"],
+    queryKey: user?.role === "reseller" ? ["/api/reseller/customers"] : ["/api/customers"],
     select: (data: any[]) => {
       if (!data) return [];
-      if (user?.role === "reseller") {
-        return data.map((u: any) => ({
-          id: u.id,
-          fullName: u.fullName || u.companyName || `${u.firstName || ''} ${u.lastName || ''}`.trim() || 'Cliente',
-          email: u.email || '',
-        }));
-      }
-      return data
-        .filter((u: any) => u.role === "customer")
-        .map((u: any) => ({
-          id: u.id,
-          fullName: u.fullName || u.companyName || 'Cliente',
-          email: u.email || '',
-        }));
+      return data.map((u: any) => ({
+        id: u.id,
+        fullName: u.fullName || u.companyName || `${u.firstName || ''} ${u.lastName || ''}`.trim() || 'Cliente',
+        email: u.email || '',
+      }));
     },
     enabled: user?.role === "admin" || user?.role === "repair_center" || user?.role === "reseller",
   });
