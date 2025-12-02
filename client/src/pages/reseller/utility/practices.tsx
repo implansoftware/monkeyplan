@@ -78,6 +78,8 @@ export default function ResellerUtilityPractices() {
   const [selectedServiceId, setSelectedServiceId] = useState<string>("");
   const [selectedPriceType, setSelectedPriceType] = useState<PriceType>("mensile");
   const [practiceProducts, setPracticeProducts] = useState<PracticeProductItem[]>([]);
+  const [useCustomService, setUseCustomService] = useState(false);
+  const [customServiceName, setCustomServiceName] = useState("");
   const { toast } = useToast();
 
   const { data: practices = [], isLoading } = useQuery<UtilityPractice[]>({
@@ -166,15 +168,28 @@ export default function ResellerUtilityPractices() {
 
     if (selectedItemType === "service") {
       data.supplierId = selectedSupplierId;
-      data.serviceId = selectedServiceId;
+      if (useCustomService) {
+        data.customServiceName = customServiceName.trim();
+        data.serviceId = null;
+      } else {
+        data.serviceId = selectedServiceId;
+        data.customServiceName = null;
+      }
       data.productId = null;
     } else if (selectedItemType === "product") {
       data.productId = practiceProducts.length > 0 ? practiceProducts[0].productId : null;
       data.serviceId = null;
+      data.customServiceName = null;
       data.supplierId = null;
     } else if (selectedItemType === "service_with_products") {
       data.supplierId = selectedSupplierId;
-      data.serviceId = selectedServiceId;
+      if (useCustomService) {
+        data.customServiceName = customServiceName.trim();
+        data.serviceId = null;
+      } else {
+        data.serviceId = selectedServiceId;
+        data.customServiceName = null;
+      }
       data.productId = practiceProducts.length > 0 ? practiceProducts[0].productId : null;
     }
 
@@ -198,6 +213,11 @@ export default function ResellerUtilityPractices() {
     setSelectedProductId(practice.productId || "");
     setSelectedStatus(practice.status);
     setSelectedPriceType((practice.priceType as PriceType) || "mensile");
+    
+    // Set custom service mode
+    const hasCustomService = !!(practice as any).customServiceName;
+    setUseCustomService(hasCustomService);
+    setCustomServiceName((practice as any).customServiceName || "");
     
     // Load existing practice products
     if (practice.itemType === "product" || practice.itemType === "service_with_products") {
@@ -242,6 +262,8 @@ export default function ResellerUtilityPractices() {
     setSelectedStatus("bozza");
     setSelectedPriceType("mensile");
     setPracticeProducts([]);
+    setUseCustomService(false);
+    setCustomServiceName("");
     setDialogOpen(true);
   };
 
@@ -527,50 +549,103 @@ export default function ResellerUtilityPractices() {
             </div>
 
             {(selectedItemType === "service" || selectedItemType === "service_with_products") && (
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="supplierId">Fornitore *</Label>
-                  <Select 
-                    name="supplierId" 
-                    value={selectedSupplierId}
-                    onValueChange={(val) => {
-                      setSelectedSupplierId(val);
-                      setSelectedServiceId("");
-                    }}
-                    required
-                  >
-                    <SelectTrigger data-testid="select-supplier">
-                      <SelectValue placeholder="Seleziona fornitore" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {suppliers.filter(s => s.isActive).map((supplier) => (
-                        <SelectItem key={supplier.id} value={supplier.id}>
-                          {supplier.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="supplierId">Fornitore *</Label>
+                    <Select 
+                      name="supplierId" 
+                      value={selectedSupplierId}
+                      onValueChange={(val) => {
+                        setSelectedSupplierId(val);
+                        setSelectedServiceId("");
+                      }}
+                      required
+                    >
+                      <SelectTrigger data-testid="select-supplier">
+                        <SelectValue placeholder="Seleziona fornitore" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {suppliers.filter(s => s.isActive).map((supplier) => (
+                          <SelectItem key={supplier.id} value={supplier.id}>
+                            {supplier.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Tipo Servizio</Label>
+                    <div className="flex gap-2">
+                      <Button
+                        type="button"
+                        variant={!useCustomService ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => {
+                          setUseCustomService(false);
+                          setCustomServiceName("");
+                        }}
+                        className="flex-1"
+                        data-testid="button-service-catalog"
+                      >
+                        Da Catalogo
+                      </Button>
+                      <Button
+                        type="button"
+                        variant={useCustomService ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => {
+                          setUseCustomService(true);
+                          setSelectedServiceId("");
+                        }}
+                        className="flex-1"
+                        data-testid="button-service-custom"
+                      >
+                        Temporaneo
+                      </Button>
+                    </div>
+                  </div>
                 </div>
+                
                 <div className="space-y-2">
-                  <Label htmlFor="serviceId">Servizio *</Label>
-                  <Select 
-                    name="serviceId" 
-                    value={selectedServiceId}
-                    onValueChange={setSelectedServiceId}
-                    disabled={!selectedSupplierId}
-                    required
-                  >
-                    <SelectTrigger data-testid="select-service">
-                      <SelectValue placeholder="Seleziona servizio" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {services.filter(s => s.isActive).map((service) => (
-                        <SelectItem key={service.id} value={service.id}>
-                          {service.name} ({categoryLabels[service.category]})
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  {useCustomService ? (
+                    <>
+                      <Label htmlFor="customServiceName">Nome Servizio Temporaneo *</Label>
+                      <Input
+                        id="customServiceName"
+                        value={customServiceName}
+                        onChange={(e) => setCustomServiceName(e.target.value)}
+                        placeholder="Es: Contratto speciale fibra 1Gbps"
+                        required
+                        data-testid="input-custom-service-name"
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Inserisci una descrizione del servizio non presente nel catalogo
+                      </p>
+                    </>
+                  ) : (
+                    <>
+                      <Label htmlFor="serviceId">Servizio *</Label>
+                      <Select 
+                        name="serviceId" 
+                        value={selectedServiceId}
+                        onValueChange={setSelectedServiceId}
+                        disabled={!selectedSupplierId}
+                        required
+                      >
+                        <SelectTrigger data-testid="select-service">
+                          <SelectValue placeholder="Seleziona servizio" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {services.filter(s => s.isActive).map((service) => (
+                            <SelectItem key={service.id} value={service.id}>
+                              {service.name} ({categoryLabels[service.category]})
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </>
+                  )}
                 </div>
               </div>
             )}
