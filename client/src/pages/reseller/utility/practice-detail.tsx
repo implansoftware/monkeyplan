@@ -429,19 +429,43 @@ export default function ResellerUtilityPracticeDetail() {
             <Card>
               <CardHeader>
                 <CardTitle className="text-lg">
-                  {practice.itemType === "product" ? "Dettagli Prodotti" : "Dettagli Servizio"}
+                  {practice.itemType === "product" ? "Dettagli Prodotti" : 
+                   practice.itemType === "service_with_products" ? "Dettagli Servizio + Prodotti" : 
+                   "Dettagli Servizio"}
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
-                {practice.itemType === "product" ? (
+                {/* Tipo Badge */}
+                <div>
+                  <p className="text-sm text-muted-foreground">Tipo</p>
+                  <Badge variant="outline" className="mt-1">
+                    {practice.itemType === "product" ? (
+                      <><Package className="h-3 w-3 mr-1" />Prodotto</>
+                    ) : practice.itemType === "service_with_products" ? (
+                      <><FileText className="h-3 w-3 mr-1" /><Package className="h-3 w-3 mr-1" />Servizio + Prodotti</>
+                    ) : (
+                      <>Servizio Utility</>
+                    )}
+                  </Badge>
+                </div>
+
+                {/* Sezione Servizio (per service e service_with_products) */}
+                {(practice.itemType === "service" || practice.itemType === "service_with_products") && (
                   <>
                     <div>
-                      <p className="text-sm text-muted-foreground">Tipo</p>
-                      <Badge variant="outline" className="mt-1">
-                        <Package className="h-3 w-3 mr-1" />
-                        Prodotto
-                      </Badge>
+                      <p className="text-sm text-muted-foreground">Fornitore</p>
+                      <p className="font-medium" data-testid="text-supplier-name">{supplier?.name || "-"}</p>
                     </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Servizio</p>
+                      <p className="font-medium" data-testid="text-service-name">{service?.name || "-"}</p>
+                    </div>
+                  </>
+                )}
+
+                {/* Sezione Prodotti (per product e service_with_products) */}
+                {(practice.itemType === "product" || practice.itemType === "service_with_products") && (
+                  <>
                     {practiceProducts.length > 0 ? (
                       <div className="space-y-2">
                         <p className="text-sm text-muted-foreground">Prodotti ({practiceProducts.length})</p>
@@ -481,7 +505,7 @@ export default function ResellerUtilityPracticeDetail() {
                           </table>
                         </div>
                       </div>
-                    ) : (
+                    ) : practice.itemType === "product" && product ? (
                       <div>
                         <p className="text-sm text-muted-foreground">Prodotto</p>
                         <p className="font-medium" data-testid="text-product-name">{product?.name || "-"}</p>
@@ -489,24 +513,10 @@ export default function ResellerUtilityPracticeDetail() {
                           <p className="text-xs text-muted-foreground">SKU: {product.sku}</p>
                         )}
                       </div>
-                    )}
-                  </>
-                ) : (
-                  <>
-                    <div>
-                      <p className="text-sm text-muted-foreground">Tipo</p>
-                      <Badge variant="outline" className="mt-1">Servizio Utility</Badge>
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">Fornitore</p>
-                      <p className="font-medium" data-testid="text-supplier-name">{supplier?.name || "-"}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">Servizio</p>
-                      <p className="font-medium" data-testid="text-service-name">{service?.name || "-"}</p>
-                    </div>
+                    ) : null}
                   </>
                 )}
+
                 <div>
                   <p className="text-sm text-muted-foreground">
                     {practice.priceType === "forfait" ? "Prezzo Forfait" : "Canone Mensile"}
