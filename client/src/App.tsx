@@ -60,9 +60,12 @@ import ResellerReports from "@/pages/reseller/reports";
 
 // Reseller Utility pages
 import ResellerUtility from "@/pages/reseller/utility/index";
+import ResellerUtilitySuppliers from "@/pages/reseller/utility/suppliers";
+import ResellerUtilityServices from "@/pages/reseller/utility/services";
 import ResellerUtilityPractices from "@/pages/reseller/utility/practices";
 import ResellerUtilityPracticeDetail from "@/pages/reseller/utility/practice-detail";
 import ResellerUtilityCommissions from "@/pages/reseller/utility/commissions";
+import ResellerUtilityReports from "@/pages/reseller/utility/reports";
 
 // Reseller SIFAR pages
 import ResellerSifarSettings from "@/pages/reseller/sifar/settings";
@@ -150,9 +153,12 @@ function Router() {
       <ProtectedRoute path="/reseller/tickets" component={ResellerTickets} />
       <ProtectedRoute path="/reseller/tickets/:id" component={ResellerTicketDetail} />
       <ProtectedRoute path="/reseller/utility" component={ResellerUtility} />
+      <ProtectedRoute path="/reseller/utility/suppliers" component={ResellerUtilitySuppliers} />
+      <ProtectedRoute path="/reseller/utility/services" component={ResellerUtilityServices} />
       <ProtectedRoute path="/reseller/utility/practices/:id" component={ResellerUtilityPracticeDetail} />
       <ProtectedRoute path="/reseller/utility/practices" component={ResellerUtilityPractices} />
       <ProtectedRoute path="/reseller/utility/commissions" component={ResellerUtilityCommissions} />
+      <ProtectedRoute path="/reseller/utility/reports" component={ResellerUtilityReports} />
       <ProtectedRoute path="/reseller/invoices" component={ResellerInvoices} />
       <ProtectedRoute path="/reseller/reports" component={ResellerReports} />
       <ProtectedRoute path="/reseller/sifar/settings" component={ResellerSifarSettings} />

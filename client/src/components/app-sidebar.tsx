@@ -91,8 +91,11 @@ const menuItems = {
     { title: "Fatture", url: "/reseller/invoices", icon: FileText, group: "Fatturazione" },
     { title: "Report", url: "/reseller/reports", icon: BarChart3, group: "Fatturazione" },
     { title: "Utility", url: "/reseller/utility", icon: Zap, group: "Utility" },
+    { title: "Fornitori Utility", url: "/reseller/utility/suppliers", icon: Phone, group: "Utility" },
+    { title: "Listino Servizi", url: "/reseller/utility/services", icon: Package, group: "Utility" },
     { title: "Pratiche", url: "/reseller/utility/practices", icon: FileCheck, group: "Utility" },
     { title: "Compensi", url: "/reseller/utility/commissions", icon: Coins, group: "Utility" },
+    { title: "Report Utility", url: "/reseller/utility/reports", icon: PieChart, group: "Utility" },
     { title: "Ticket", url: "/reseller/tickets", icon: Ticket, group: "Assistenza" },
   ],
   repair_center: [
