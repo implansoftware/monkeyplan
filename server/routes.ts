@@ -8,6 +8,8 @@ import { promisify } from "util";
 import ExcelJS from "exceljs";
 import multer from "multer";
 import * as pdfjsLib from "pdfjs-dist/legacy/build/pdf.mjs";
+import Tesseract from "tesseract.js";
+import { createCanvas } from "canvas";
 import {
   insertUserSchema, insertRepairCenterSchema, insertProductSchema,
   insertRepairOrderSchema, insertRepairAcceptanceSchema, insertTicketSchema, insertInvoiceSchema,
@@ -9017,14 +9019,15 @@ export function registerRoutes(app: Express): Server {
       
       console.log("[PDF] Starting text extraction...");
       
-      // Extract text directly from PDF using pdfjs-dist (no rendering needed)
+      // Extract text directly from PDF using pdfjs-dist
       const uint8Array = new Uint8Array(req.file.buffer);
       const loadingTask = pdfjsLib.getDocument({ data: uint8Array });
       const pdfDoc = await loadingTask.promise;
       
       let extractedText = "";
-      const maxPages = Math.min(pdfDoc.numPages, 10); // Limit to 10 pages
+      const maxPages = Math.min(pdfDoc.numPages, 5); // Limit to 5 pages
       
+      // First try: extract text directly (for digital PDFs)
       for (let pageNum = 1; pageNum <= maxPages; pageNum++) {
         const page = await pdfDoc.getPage(pageNum);
         const textContent = await page.getTextContent();
@@ -9034,10 +9037,72 @@ export function registerRoutes(app: Express): Server {
         extractedText += pageText + "\n\n";
       }
       
-      console.log(`[PDF] Extracted ${extractedText.length} characters from ${pdfDoc.numPages} pages`);
+      console.log(`[PDF] Direct extraction: ${extractedText.trim().length} characters from ${pdfDoc.numPages} pages`);
       
-      if (!extractedText || extractedText.trim().length < 50) {
-        return res.status(400).send("Il PDF non contiene testo estraibile. Potrebbe essere un PDF scansionato (immagine).");
+      // If not enough text, try OCR (for scanned PDFs)
+      if (extractedText.trim().length < 100) {
+        console.log("[PDF] Insufficient text, attempting OCR...");
+        extractedText = "";
+        
+        for (let pageNum = 1; pageNum <= maxPages; pageNum++) {
+          console.log(`[OCR] Processing page ${pageNum}/${maxPages}...`);
+          
+          const page = await pdfDoc.getPage(pageNum);
+          const viewport = page.getViewport({ scale: 1.5 });
+          
+          // Create canvas
+          const canvas = createCanvas(Math.floor(viewport.width), Math.floor(viewport.height));
+          const context = canvas.getContext('2d');
+          
+          // Fill with white background
+          context.fillStyle = 'white';
+          context.fillRect(0, 0, canvas.width, canvas.height);
+          
+          // Render PDF page - use custom canvas factory
+          const canvasFactory = {
+            create: (width: number, height: number) => {
+              const c = createCanvas(width, height);
+              return { canvas: c, context: c.getContext('2d') };
+            },
+            reset: (canvasAndContext: any, width: number, height: number) => {
+              canvasAndContext.canvas.width = width;
+              canvasAndContext.canvas.height = height;
+            },
+            destroy: (canvasAndContext: any) => {
+              canvasAndContext.canvas = null;
+              canvasAndContext.context = null;
+            }
+          };
+          
+          try {
+            await page.render({
+              canvasContext: context as any,
+              viewport: viewport,
+              canvasFactory: canvasFactory as any
+            }).promise;
+            
+            // Convert canvas to PNG buffer
+            const imageBuffer = canvas.toBuffer('image/png');
+            
+            // OCR the image with Tesseract
+            const { data: { text } } = await Tesseract.recognize(
+              imageBuffer,
+              'ita+eng',
+              { logger: () => {} }
+            );
+            
+            extractedText += text + "\n\n";
+            console.log(`[OCR] Page ${pageNum}: extracted ${text.length} characters`);
+          } catch (ocrError: any) {
+            console.error(`[OCR] Error on page ${pageNum}:`, ocrError.message);
+          }
+        }
+      }
+      
+      console.log(`[PDF] Total extracted: ${extractedText.length} characters`);
+      
+      if (!extractedText || extractedText.trim().length < 30) {
+        return res.status(400).send("Impossibile estrarre testo dal PDF. Prova con un documento diverso.");
       }
       
       // Parse extracted text to find supplier, service, customer
