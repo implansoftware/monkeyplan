@@ -295,6 +295,7 @@ export interface IStorage {
   
   // Supplier Orders (Ordini fornitori)
   listSupplierOrders(filters?: { supplierId?: string; repairCenterId?: string; status?: string }): Promise<SupplierOrder[]>;
+  listSupplierOrdersByRepairCenters(repairCenterIds: string[]): Promise<SupplierOrder[]>;
   getSupplierOrder(id: string): Promise<SupplierOrder | undefined>;
   createSupplierOrder(order: InsertSupplierOrder): Promise<SupplierOrder>;
   updateSupplierOrder(id: string, updates: Partial<Omit<InsertSupplierOrder, 'orderNumber' | 'createdBy'>>): Promise<SupplierOrder>;
@@ -309,6 +310,7 @@ export interface IStorage {
   
   // Supplier Returns (Resi fornitori)
   listSupplierReturns(filters?: { supplierId?: string; repairCenterId?: string; status?: string }): Promise<SupplierReturn[]>;
+  listSupplierReturnsByRepairCenters(repairCenterIds: string[]): Promise<SupplierReturn[]>;
   getSupplierReturn(id: string): Promise<SupplierReturn | undefined>;
   createSupplierReturn(returnData: InsertSupplierReturn): Promise<SupplierReturn>;
   updateSupplierReturn(id: string, updates: Partial<Omit<InsertSupplierReturn, 'returnNumber' | 'createdBy'>>): Promise<SupplierReturn>;
@@ -2454,6 +2456,15 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(supplierOrders).orderBy(desc(supplierOrders.createdAt));
   }
 
+  async listSupplierOrdersByRepairCenters(repairCenterIds: string[]): Promise<SupplierOrder[]> {
+    if (repairCenterIds.length === 0) {
+      return [];
+    }
+    return await db.select().from(supplierOrders)
+      .where(inArray(supplierOrders.repairCenterId, repairCenterIds))
+      .orderBy(desc(supplierOrders.createdAt));
+  }
+
   async getSupplierOrder(id: string): Promise<SupplierOrder | undefined> {
     const [order] = await db.select().from(supplierOrders).where(eq(supplierOrders.id, id));
     return order || undefined;
@@ -2572,6 +2583,15 @@ export class DatabaseStorage implements IStorage {
     }
     
     return await db.select().from(supplierReturns).orderBy(desc(supplierReturns.createdAt));
+  }
+
+  async listSupplierReturnsByRepairCenters(repairCenterIds: string[]): Promise<SupplierReturn[]> {
+    if (repairCenterIds.length === 0) {
+      return [];
+    }
+    return await db.select().from(supplierReturns)
+      .where(inArray(supplierReturns.repairCenterId, repairCenterIds))
+      .orderBy(desc(supplierReturns.createdAt));
   }
 
   async getSupplierReturn(id: string): Promise<SupplierReturn | undefined> {

@@ -73,6 +73,9 @@ import ResellerSifarCart from "@/pages/reseller/sifar/cart";
 import ResellerRepairs from "@/pages/reseller/repairs";
 import ResellerInventory from "@/pages/reseller/inventory";
 import ResellerProducts from "@/pages/reseller/products";
+import ResellerSuppliers from "@/pages/reseller/suppliers";
+import ResellerSupplierOrders from "@/pages/reseller/supplier-orders";
+import ResellerSupplierReturns from "@/pages/reseller/supplier-returns";
 
 // Repair Center pages
 import RepairCenterDashboard from "@/pages/repair-center/dashboard";
@@ -139,6 +142,9 @@ function Router() {
       <ProtectedRoute path="/reseller/quotes" component={QuotesList} />
       <ProtectedRoute path="/reseller/inventory" component={ResellerInventory} />
       <ProtectedRoute path="/reseller/products" component={ResellerProducts} />
+      <ProtectedRoute path="/reseller/suppliers" component={ResellerSuppliers} />
+      <ProtectedRoute path="/reseller/supplier-orders" component={ResellerSupplierOrders} />
+      <ProtectedRoute path="/reseller/supplier-returns" component={ResellerSupplierReturns} />
       <ProtectedRoute path="/reseller/tickets" component={ResellerTickets} />
       <ProtectedRoute path="/reseller/tickets/:id" component={ResellerTicketDetail} />
       <ProtectedRoute path="/reseller/utility" component={ResellerUtility} />

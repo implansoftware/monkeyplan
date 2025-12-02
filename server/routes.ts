@@ -1292,6 +1292,196 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Reseller Suppliers - view suppliers used by associated repair centers
+  app.get("/api/reseller/suppliers", requireRole("reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      // Get repair centers associated with this reseller
+      const allCenters = await storage.listRepairCenters();
+      const resellerCenterIds = allCenters
+        .filter(c => c.resellerId === req.user!.id)
+        .map(c => c.id);
+      
+      if (resellerCenterIds.length === 0) {
+        return res.json([]);
+      }
+      
+      // Get all supplier orders for these centers to find which suppliers they use
+      const allSupplierOrders = await storage.listSupplierOrders();
+      const supplierIdsUsed = new Set(
+        allSupplierOrders
+          .filter(o => resellerCenterIds.includes(o.repairCenterId))
+          .map(o => o.supplierId)
+      );
+      
+      // Get all suppliers and filter to those used by reseller centers
+      const allSuppliers = await storage.listSuppliers(true); // Only active
+      const resellerSuppliers = allSuppliers
+        .filter(s => supplierIdsUsed.has(s.id))
+        .map(s => ({
+          id: s.id,
+          code: s.code,
+          name: s.name,
+          email: s.email,
+          phone: s.phone,
+          city: s.city,
+          deliveryDays: s.deliveryDays,
+          isActive: s.isActive,
+        }));
+      
+      res.json(resellerSuppliers);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // Reseller Supplier Orders - view orders from associated repair centers
+  app.get("/api/reseller/supplier-orders", requireRole("reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      // Get repair centers associated with this reseller
+      const allCenters = await storage.listRepairCenters();
+      const resellerCenters = allCenters.filter(c => c.resellerId === req.user!.id);
+      const resellerCenterIds = resellerCenters.map(c => c.id);
+      
+      if (resellerCenterIds.length === 0) {
+        return res.json([]);
+      }
+      
+      // Use storage-level filtering for security
+      const resellerOrders = await storage.listSupplierOrdersByRepairCenters(resellerCenterIds);
+      
+      // Get suppliers for enrichment
+      const suppliers = await storage.listSuppliers();
+      const suppliersMap = new Map(suppliers.map(s => [s.id, { id: s.id, name: s.name, code: s.code }]));
+      const centersMap = new Map(resellerCenters.map(c => [c.id, { id: c.id, name: c.name, city: c.city }]));
+      
+      // Enrich orders
+      const enrichedOrders = resellerOrders.map(order => ({
+        ...order,
+        supplier: suppliersMap.get(order.supplierId) || null,
+        repairCenter: centersMap.get(order.repairCenterId) || null,
+      }));
+      
+      res.json(enrichedOrders);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // Reseller Supplier Order Details
+  app.get("/api/reseller/supplier-orders/:id", requireRole("reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const order = await storage.getSupplierOrder(req.params.id);
+      if (!order) {
+        return res.status(404).send("Ordine non trovato");
+      }
+      
+      // Verify reseller has access to this order's repair center
+      const allCenters = await storage.listRepairCenters();
+      const resellerCenterIds = allCenters
+        .filter(c => c.resellerId === req.user!.id)
+        .map(c => c.id);
+      
+      if (!resellerCenterIds.includes(order.repairCenterId)) {
+        return res.status(403).send("Accesso negato");
+      }
+      
+      // Get items
+      const items = await storage.listSupplierOrderItems(order.id);
+      
+      // Get supplier info
+      const supplier = await storage.getSupplier(order.supplierId);
+      const center = allCenters.find(c => c.id === order.repairCenterId);
+      
+      res.json({
+        ...order,
+        items,
+        supplier: supplier ? { id: supplier.id, name: supplier.name, code: supplier.code } : null,
+        repairCenter: center ? { id: center.id, name: center.name, city: center.city } : null,
+      });
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // Reseller Supplier Returns - view returns from associated repair centers
+  app.get("/api/reseller/supplier-returns", requireRole("reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      // Get repair centers associated with this reseller
+      const allCenters = await storage.listRepairCenters();
+      const resellerCenters = allCenters.filter(c => c.resellerId === req.user!.id);
+      const resellerCenterIds = resellerCenters.map(c => c.id);
+      
+      if (resellerCenterIds.length === 0) {
+        return res.json([]);
+      }
+      
+      // Use storage-level filtering for security
+      const resellerReturns = await storage.listSupplierReturnsByRepairCenters(resellerCenterIds);
+      
+      // Get suppliers for enrichment
+      const suppliers = await storage.listSuppliers();
+      const suppliersMap = new Map(suppliers.map(s => [s.id, { id: s.id, name: s.name, code: s.code }]));
+      const centersMap = new Map(resellerCenters.map(c => [c.id, { id: c.id, name: c.name, city: c.city }]));
+      
+      // Enrich returns
+      const enrichedReturns = resellerReturns.map(ret => ({
+        ...ret,
+        supplier: suppliersMap.get(ret.supplierId) || null,
+        repairCenter: centersMap.get(ret.repairCenterId) || null,
+      }));
+      
+      res.json(enrichedReturns);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // Reseller Supplier Return Details
+  app.get("/api/reseller/supplier-returns/:id", requireRole("reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const ret = await storage.getSupplierReturn(req.params.id);
+      if (!ret) {
+        return res.status(404).send("Reso non trovato");
+      }
+      
+      // Verify reseller has access to this return's repair center
+      const allCenters = await storage.listRepairCenters();
+      const resellerCenterIds = allCenters
+        .filter(c => c.resellerId === req.user!.id)
+        .map(c => c.id);
+      
+      if (!resellerCenterIds.includes(ret.repairCenterId)) {
+        return res.status(403).send("Accesso negato");
+      }
+      
+      // Get items
+      const items = await storage.listSupplierReturnItems(ret.id);
+      
+      // Get supplier info
+      const supplier = await storage.getSupplier(ret.supplierId);
+      const center = allCenters.find(c => c.id === ret.repairCenterId);
+      
+      res.json({
+        ...ret,
+        items,
+        supplier: supplier ? { id: supplier.id, name: supplier.name, code: supplier.code } : null,
+        repairCenter: center ? { id: center.id, name: center.name, city: center.city } : null,
+      });
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
   // ============ REPAIR CENTER ROUTES ============
 
   app.get("/api/repair-center/stats", requireRole("repair_center"), async (req, res) => {
