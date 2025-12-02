@@ -9039,62 +9039,83 @@ export function registerRoutes(app: Express): Server {
       
       console.log(`[PDF] Direct extraction: ${extractedText.trim().length} characters from ${pdfDoc.numPages} pages`);
       
-      // If not enough text, try OCR (for scanned PDFs)
+      // If not enough text, try to extract embedded images and OCR them
       if (extractedText.trim().length < 100) {
-        console.log("[PDF] Insufficient text, attempting OCR...");
+        console.log("[PDF] Insufficient text, extracting embedded images for OCR...");
         extractedText = "";
         
         for (let pageNum = 1; pageNum <= maxPages; pageNum++) {
           console.log(`[OCR] Processing page ${pageNum}/${maxPages}...`);
           
-          const page = await pdfDoc.getPage(pageNum);
-          const viewport = page.getViewport({ scale: 1.5 });
-          
-          // Create canvas
-          const canvas = createCanvas(Math.floor(viewport.width), Math.floor(viewport.height));
-          const context = canvas.getContext('2d');
-          
-          // Fill with white background
-          context.fillStyle = 'white';
-          context.fillRect(0, 0, canvas.width, canvas.height);
-          
-          // Render PDF page - use custom canvas factory
-          const canvasFactory = {
-            create: (width: number, height: number) => {
-              const c = createCanvas(width, height);
-              return { canvas: c, context: c.getContext('2d') };
-            },
-            reset: (canvasAndContext: any, width: number, height: number) => {
-              canvasAndContext.canvas.width = width;
-              canvasAndContext.canvas.height = height;
-            },
-            destroy: (canvasAndContext: any) => {
-              canvasAndContext.canvas = null;
-              canvasAndContext.context = null;
-            }
-          };
-          
           try {
-            await page.render({
-              canvasContext: context as any,
-              viewport: viewport,
-              canvasFactory: canvasFactory as any
-            }).promise;
+            const page = await pdfDoc.getPage(pageNum);
+            const ops = await page.getOperatorList();
             
-            // Convert canvas to PNG buffer
-            const imageBuffer = canvas.toBuffer('image/png');
-            
-            // OCR the image with Tesseract
-            const { data: { text } } = await Tesseract.recognize(
-              imageBuffer,
-              'ita+eng',
-              { logger: () => {} }
-            );
-            
-            extractedText += text + "\n\n";
-            console.log(`[OCR] Page ${pageNum}: extracted ${text.length} characters`);
-          } catch (ocrError: any) {
-            console.error(`[OCR] Error on page ${pageNum}:`, ocrError.message);
+            // Look for image objects in the page
+            for (let i = 0; i < ops.fnArray.length; i++) {
+              // OPS.paintImageXObject = 85
+              if (ops.fnArray[i] === 85) {
+                const imageName = ops.argsArray[i][0];
+                try {
+                  const img = await page.objs.get(imageName);
+                  
+                  if (img && img.data && img.width && img.height) {
+                    console.log(`[OCR] Found image: ${img.width}x${img.height}`);
+                    
+                    // Create canvas and draw RGBA image data
+                    const canvas = createCanvas(img.width, img.height);
+                    const ctx = canvas.getContext('2d');
+                    
+                    // Convert image data to ImageData format
+                    const imageData = ctx.createImageData(img.width, img.height);
+                    
+                    // Handle different image formats
+                    if (img.data.length === img.width * img.height * 4) {
+                      // RGBA format
+                      imageData.data.set(img.data);
+                    } else if (img.data.length === img.width * img.height * 3) {
+                      // RGB format - convert to RGBA
+                      for (let j = 0; j < img.width * img.height; j++) {
+                        imageData.data[j * 4] = img.data[j * 3];
+                        imageData.data[j * 4 + 1] = img.data[j * 3 + 1];
+                        imageData.data[j * 4 + 2] = img.data[j * 3 + 2];
+                        imageData.data[j * 4 + 3] = 255;
+                      }
+                    } else if (img.data.length === img.width * img.height) {
+                      // Grayscale - convert to RGBA
+                      for (let j = 0; j < img.width * img.height; j++) {
+                        imageData.data[j * 4] = img.data[j];
+                        imageData.data[j * 4 + 1] = img.data[j];
+                        imageData.data[j * 4 + 2] = img.data[j];
+                        imageData.data[j * 4 + 3] = 255;
+                      }
+                    } else {
+                      console.log(`[OCR] Unknown image format: ${img.data.length} bytes for ${img.width}x${img.height}`);
+                      continue;
+                    }
+                    
+                    ctx.putImageData(imageData, 0, 0);
+                    const imageBuffer = canvas.toBuffer('image/png');
+                    
+                    // OCR the image
+                    const { data: { text } } = await Tesseract.recognize(
+                      imageBuffer,
+                      'ita+eng',
+                      { logger: () => {} }
+                    );
+                    
+                    if (text.trim().length > 20) {
+                      extractedText += text + "\n\n";
+                      console.log(`[OCR] Extracted ${text.length} characters from image`);
+                    }
+                  }
+                } catch (imgError: any) {
+                  // Skip this image
+                }
+              }
+            }
+          } catch (pageError: any) {
+            console.error(`[OCR] Error on page ${pageNum}:`, pageError.message);
           }
         }
       }
