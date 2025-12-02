@@ -8866,6 +8866,23 @@ export function registerRoutes(app: Express): Server {
       
       const validated = insertUtilityPracticeSchema.parse(practiceData);
       
+      // XOR validation: for service/service_with_products, require either serviceId OR customServiceName (not both)
+      if (validated.itemType === 'service' || validated.itemType === 'service_with_products') {
+        const hasService = !!validated.serviceId;
+        const hasCustomService = !!validated.customServiceName?.trim();
+        
+        if (!hasService && !hasCustomService) {
+          return res.status(400).send("Per pratiche di tipo servizio, è richiesto un servizio dal catalogo oppure un servizio temporaneo");
+        }
+        if (hasService && hasCustomService) {
+          return res.status(400).send("Selezionare un servizio dal catalogo OPPURE inserire un servizio temporaneo, non entrambi");
+        }
+      } else if (validated.itemType === 'product') {
+        // For product-only practices, clear service fields
+        validated.serviceId = null;
+        validated.customServiceName = null;
+      }
+      
       // If products array is provided, create practice with products transactionally
       if (productsArray && Array.isArray(productsArray) && productsArray.length > 0) {
         const validProducts = productsArray
@@ -8907,6 +8924,26 @@ export function registerRoutes(app: Express): Server {
       }
       
       const { products: productsArray, ...practiceData } = req.body;
+      
+      // XOR validation for service fields on update
+      const finalItemType = practiceData.itemType || practice.itemType;
+      if (finalItemType === 'service' || finalItemType === 'service_with_products') {
+        const finalServiceId = practiceData.serviceId !== undefined ? practiceData.serviceId : practice.serviceId;
+        const finalCustomService = practiceData.customServiceName !== undefined ? practiceData.customServiceName : practice.customServiceName;
+        const hasService = !!finalServiceId;
+        const hasCustomService = !!finalCustomService?.trim();
+        
+        if (!hasService && !hasCustomService) {
+          return res.status(400).send("Per pratiche di tipo servizio, è richiesto un servizio dal catalogo oppure un servizio temporaneo");
+        }
+        if (hasService && hasCustomService) {
+          return res.status(400).send("Selezionare un servizio dal catalogo OPPURE inserire un servizio temporaneo, non entrambi");
+        }
+      } else if (finalItemType === 'product') {
+        // For product-only practices, clear service fields
+        practiceData.serviceId = null;
+        practiceData.customServiceName = null;
+      }
       
       const updated = await storage.updateUtilityPractice(req.params.id, practiceData);
       
