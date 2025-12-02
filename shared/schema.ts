@@ -1510,7 +1510,9 @@ export const utilityPractices = pgTable("utility_practices", {
   slaDueAt: timestamp("sla_due_at"), // Scadenza SLA
   
   // Importi effettivi (possono differire dal servizio base)
-  monthlyPriceCents: integer("monthly_price_cents"),
+  priceType: text("price_type").notNull().default("mensile"), // "mensile" o "forfait"
+  monthlyPriceCents: integer("monthly_price_cents"), // Prezzo mensile in centesimi
+  flatPriceCents: integer("flat_price_cents"), // Prezzo forfait in centesimi
   activationFeeCents: integer("activation_fee_cents"),
   
   // Commissione calcolata per questa pratica
