@@ -13,6 +13,7 @@ import { Plus, Search, Pencil, Store, Users } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
+import { AddressAutocomplete } from "@/components/address-autocomplete";
 
 export default function AdminResellers() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -20,6 +21,7 @@ export default function AdminResellers() {
   const [editingReseller, setEditingReseller] = useState<Omit<User, 'password'> | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string>("standard");
   const [selectedParentResellerId, setSelectedParentResellerId] = useState<string>("");
+  const [addressData, setAddressData] = useState({ indirizzo: "", citta: "", cap: "", provincia: "" });
   const { toast } = useToast();
 
   type ResellerWithCount = Omit<User, 'password'> & { customerCount: number };
@@ -80,11 +82,13 @@ export default function AdminResellers() {
       ragioneSociale: formData.get("ragioneSociale") as string || null,
       partitaIva: formData.get("partitaIva") as string || null,
       codiceFiscale: formData.get("codiceFiscale") as string || null,
-      indirizzo: formData.get("indirizzo") as string || null,
-      citta: formData.get("citta") as string || null,
-      cap: formData.get("cap") as string || null,
-      provincia: formData.get("provincia") as string || null,
+      indirizzo: addressData.indirizzo || null,
+      citta: addressData.citta || null,
+      cap: addressData.cap || null,
+      provincia: addressData.provincia || null,
       iban: formData.get("iban") as string || null,
+      codiceUnivoco: formData.get("codiceUnivoco") as string || null,
+      pec: formData.get("pec") as string || null,
     };
     
     if (editingReseller) {
@@ -135,6 +139,7 @@ export default function AdminResellers() {
             setEditingReseller(null);
             setSelectedCategory("standard");
             setSelectedParentResellerId("");
+            setAddressData({ indirizzo: "", citta: "", cap: "", provincia: "" });
           }
         }}>
           <DialogTrigger asChild>
@@ -222,13 +227,20 @@ export default function AdminResellers() {
                     />
                   </div>
                   <div className="space-y-2 col-span-2">
-                    <Label htmlFor="indirizzo">Indirizzo</Label>
-                    <Input 
-                      id="indirizzo" 
-                      name="indirizzo" 
-                      defaultValue={editingReseller?.indirizzo || ""} 
-                      placeholder="Via/Piazza e numero civico"
-                      data-testid="input-indirizzo" 
+                    <Label>Indirizzo</Label>
+                    <AddressAutocomplete
+                      value={addressData.indirizzo || editingReseller?.indirizzo || ""}
+                      onChange={(val) => setAddressData(prev => ({ ...prev, indirizzo: val }))}
+                      onAddressSelect={(result) => {
+                        setAddressData({
+                          indirizzo: result.address || result.fullAddress,
+                          citta: result.city,
+                          cap: result.postalCode,
+                          provincia: result.province,
+                        });
+                      }}
+                      placeholder="Inizia a digitare per vedere i suggerimenti..."
+                      data-testid="input-indirizzo"
                     />
                   </div>
                   <div className="space-y-2">
@@ -236,7 +248,8 @@ export default function AdminResellers() {
                     <Input 
                       id="citta" 
                       name="citta" 
-                      defaultValue={editingReseller?.citta || ""} 
+                      value={addressData.citta || editingReseller?.citta || ""}
+                      onChange={(e) => setAddressData(prev => ({ ...prev, citta: e.target.value }))}
                       data-testid="input-citta" 
                     />
                   </div>
@@ -246,7 +259,8 @@ export default function AdminResellers() {
                       <Input 
                         id="cap" 
                         name="cap" 
-                        defaultValue={editingReseller?.cap || ""} 
+                        value={addressData.cap || editingReseller?.cap || ""}
+                        onChange={(e) => setAddressData(prev => ({ ...prev, cap: e.target.value }))}
                         data-testid="input-cap" 
                       />
                     </div>
@@ -256,11 +270,34 @@ export default function AdminResellers() {
                         id="provincia" 
                         name="provincia" 
                         maxLength={2}
-                        defaultValue={editingReseller?.provincia || ""} 
+                        value={addressData.provincia || editingReseller?.provincia || ""}
+                        onChange={(e) => setAddressData(prev => ({ ...prev, provincia: e.target.value }))}
                         placeholder="XX"
                         data-testid="input-provincia" 
                       />
                     </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="codiceUnivoco">Codice Univoco (SDI)</Label>
+                    <Input 
+                      id="codiceUnivoco" 
+                      name="codiceUnivoco" 
+                      maxLength={7}
+                      defaultValue={editingReseller?.codiceUnivoco || ""} 
+                      placeholder="7 caratteri"
+                      data-testid="input-codiceUnivoco" 
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="pec">PEC</Label>
+                    <Input 
+                      id="pec" 
+                      name="pec" 
+                      type="email"
+                      defaultValue={editingReseller?.pec || ""} 
+                      placeholder="email@pec.it"
+                      data-testid="input-pec" 
+                    />
                   </div>
                   <div className="space-y-2 col-span-2">
                     <Label htmlFor="iban">IBAN</Label>

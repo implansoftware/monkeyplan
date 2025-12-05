@@ -313,6 +313,8 @@ export const users = pgTable("users", {
   citta: text("citta"),
   provincia: text("provincia"),
   iban: text("iban"),
+  codiceUnivoco: text("codice_univoco"), // Codice SDI per fatturazione elettronica
+  pec: text("pec"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
