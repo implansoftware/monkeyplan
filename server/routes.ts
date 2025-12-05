@@ -1355,8 +1355,29 @@ export function registerRoutes(app: Express): Server {
   app.get("/api/reseller/repairs", requireRole("reseller"), async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
-      const repairs = await storage.listRepairOrders({ resellerId: req.user.id });
-      res.json(repairs);
+      
+      // Get repairs where resellerId matches OR customer belongs to this reseller
+      const customers = await storage.listCustomers({ resellerId: req.user.id });
+      const customerIds = customers.map(c => c.id);
+      
+      // Get repairs by resellerId OR by customerIds
+      const repairsByReseller = await storage.listRepairOrders({ resellerId: req.user.id });
+      const repairsByCustomers = customerIds.length > 0 
+        ? await storage.listRepairOrders({ customerIds })
+        : [];
+      
+      // Merge and deduplicate
+      const allRepairs = [...repairsByReseller];
+      for (const repair of repairsByCustomers) {
+        if (!allRepairs.find(r => r.id === repair.id)) {
+          allRepairs.push(repair);
+        }
+      }
+      
+      // Sort by createdAt desc
+      allRepairs.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      
+      res.json(allRepairs);
     } catch (error: any) {
       res.status(500).send(error.message);
     }
@@ -3139,16 +3160,13 @@ export function registerRoutes(app: Express): Server {
          order.repairCenterId === req.user.repairCenterId);
       
       // For resellers, also check if the order's customer belongs to them
-      if (!hasAccess && req.user.role === 'reseller' && order.customerId) {
-        const customer = await storage.getUser(order.customerId);
-        console.log('[DEBUG] Reseller access check:', {
-          userId: req.user.id,
-          customerId: order.customerId,
-          customerResellerId: customer?.resellerId,
-          match: customer?.resellerId === req.user.id
-        });
-        if (customer && customer.resellerId === req.user.id) {
-          hasAccess = true;
+      if (!hasAccess && req.user.role === 'reseller') {
+        // Check if customer belongs to this reseller
+        if (order.customerId) {
+          const customer = await storage.getUser(order.customerId);
+          if (customer && customer.resellerId === req.user.id) {
+            hasAccess = true;
+          }
         }
       }
       
