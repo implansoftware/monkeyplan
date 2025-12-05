@@ -9,7 +9,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Search, Pencil, Store, Users } from "lucide-react";
+import { Plus, Search, Pencil, Store, Users, Power } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -57,6 +58,24 @@ export default function AdminResellers() {
       setDialogOpen(false);
       setEditingReseller(null);
       toast({ title: "Rivenditore aggiornato con successo" });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Errore", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const toggleStatusMutation = useMutation({
+    mutationFn: async ({ id, isActive }: { id: string; isActive: boolean }) => {
+      const res = await apiRequest("PATCH", `/api/users/${id}`, { isActive });
+      return await res.json();
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/users"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/resellers"] });
+      toast({ 
+        title: variables.isActive ? "Rivenditore attivato" : "Rivenditore disattivato",
+        description: variables.isActive ? "L'account è ora attivo" : "L'account è stato disattivato"
+      });
     },
     onError: (error: Error) => {
       toast({ title: "Errore", description: error.message, variant: "destructive" });
@@ -443,9 +462,19 @@ export default function AdminResellers() {
                       </Badge>
                     </TableCell>
                     <TableCell data-testid={`badge-status-${reseller.id}`}>
-                      <Badge variant={reseller.isActive ? "default" : "secondary"}>
-                        {reseller.isActive ? "Attivo" : "Inattivo"}
-                      </Badge>
+                      <div className="flex items-center gap-2">
+                        <Switch
+                          checked={reseller.isActive}
+                          onCheckedChange={(checked) => 
+                            toggleStatusMutation.mutate({ id: reseller.id, isActive: checked })
+                          }
+                          disabled={toggleStatusMutation.isPending}
+                          data-testid={`switch-status-${reseller.id}`}
+                        />
+                        <span className={`text-sm ${reseller.isActive ? 'text-green-600' : 'text-muted-foreground'}`}>
+                          {reseller.isActive ? "Attivo" : "Inattivo"}
+                        </span>
+                      </div>
                     </TableCell>
                     <TableCell className="text-right">
                       <Button
