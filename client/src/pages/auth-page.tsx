@@ -154,23 +154,6 @@ export default function AuthPage() {
                         required
                       />
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="register-role">Ruolo</Label>
-                      <Select
-                        value={registerData.role}
-                        onValueChange={(value: any) => setRegisterData({ ...registerData, role: value })}
-                      >
-                        <SelectTrigger id="register-role" data-testid="select-register-role">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="customer">Cliente</SelectItem>
-                          <SelectItem value="reseller">Rivenditore</SelectItem>
-                          <SelectItem value="repair_center">Centro Riparazione</SelectItem>
-                          <SelectItem value="admin">Amministratore</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
                     <Button
                       type="submit"
                       className="w-full"
