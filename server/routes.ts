@@ -10296,26 +10296,34 @@ export function registerRoutes(app: Express): Server {
   app.get("/api/geocode/autocomplete", requireAuth, async (req, res) => {
     try {
       const query = req.query.q as string;
+      console.log("[Geocode] Query received:", query);
+      
       if (!query || query.length < 3) {
+        console.log("[Geocode] Query too short or missing, returning empty");
         return res.json({ suggestions: [] });
       }
       
       const mapboxToken = process.env.MAPBOX_ACCESS_TOKEN;
       if (!mapboxToken) {
-        console.error("MAPBOX_ACCESS_TOKEN not configured");
+        console.error("[Geocode] MAPBOX_ACCESS_TOKEN not configured");
         return res.json({ suggestions: [] });
       }
+      console.log("[Geocode] Token available, calling Mapbox for:", query);
       
       // Mapbox Geocoding API v6 - restrict to Italy for better results
       const url = `https://api.mapbox.com/search/geocode/v6/forward?q=${encodeURIComponent(query)}&access_token=${mapboxToken}&autocomplete=true&limit=5&country=IT&types=address,place&language=it`;
       
       const response = await fetch(url);
+      console.log("[Geocode] Mapbox response status:", response.status);
+      
       if (!response.ok) {
-        console.error("Mapbox API error:", response.status, await response.text());
+        const errorText = await response.text();
+        console.error("[Geocode] Mapbox API error:", response.status, errorText);
         return res.json({ suggestions: [] });
       }
       
       const data = await response.json();
+      console.log("[Geocode] Mapbox features count:", data.features?.length || 0);
       
       // Parse Mapbox response and extract address components
       const suggestions = (data.features || []).map((feature: any) => {
