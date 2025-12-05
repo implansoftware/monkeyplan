@@ -31,6 +31,7 @@ import AdminChat from "@/pages/admin/chat";
 import AdminActivityLogs from "@/pages/admin/activity-logs";
 import AdminAnalytics from "@/pages/admin/analytics";
 import AdminSettings from "@/pages/admin/settings";
+import AdminServiceCatalog from "@/pages/admin/service-catalog";
 import AdminSuppliers from "@/pages/admin/suppliers";
 import AdminSupplierOrders from "@/pages/admin/supplier-orders";
 import AdminSupplierReturns from "@/pages/admin/supplier-returns";
@@ -136,6 +137,7 @@ function Router() {
       <ProtectedRoute path="/admin/utility/commissions" component={AdminUtilityCommissions} />
       <ProtectedRoute path="/admin/utility/reports" component={AdminUtilityReports} />
       <ProtectedRoute path="/admin/settings" component={AdminSettings} />
+      <ProtectedRoute path="/admin/service-catalog" component={AdminServiceCatalog} />
       
       {/* Reseller routes */}
       <ProtectedRoute path="/reseller" component={ResellerDashboard} />

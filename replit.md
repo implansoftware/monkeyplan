@@ -59,6 +59,13 @@ The backend is an `Express.js` application with TypeScript, featuring a RESTful 
     *   **Dynamic Form Interface**: Add/remove products dynamically in creation and editing forms with real-time total calculation.
     *   **Product Tables**: Detail views show all products with quantity, unit price, and calculated totals for admin and reseller roles.
     *   **Enriched API Responses**: GET endpoints return practice with embedded `practiceProducts` array containing full product details.
+*   **Service Catalog (Catalogo Interventi)**: Standardized repair service pricing system with customizable rates.
+    *   **Master Catalog**: `service_items` table stores standard repair services with code, name, description, category, default price, and labor time.
+    *   **Categories**: display, batteria, software, hardware, diagnostica, altro.
+    *   **Custom Pricing**: `service_item_prices` table enables custom prices per reseller or repair center.
+    *   **Price Resolution**: Hierarchy for effective price: repair center custom → reseller custom → base price.
+    *   **Admin Management**: Full CRUD interface at `/admin/service-catalog` for managing services and custom price lists.
+    *   **API Endpoints**: Admin endpoints for service management, public endpoints with effective pricing for quote creation.
 *   **SIFAR Integration**: Direct integration with SIFAR supplier API for spare parts ordering by resellers.
     *   **Reseller Credentials**: Secure per-reseller API credential storage (`sifarCredentials` table) with environment selection (collaudo/produzione) and client key management.
     *   **Store Mapping**: `sifarStores` table links reseller accounts to SIFAR store codes (puntiVendita), enabling multi-location support.

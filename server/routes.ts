@@ -33,6 +33,10 @@ import {
   insertPartsLoadDocumentSchema,
   insertPartsLoadItemSchema,
   insertCustomerBranchSchema,
+  insertServiceItemSchema,
+  insertServiceItemPriceSchema,
+  updateServiceItemSchema,
+  updateServiceItemPriceSchema,
   type Product
 } from "@shared/schema";
 import { ObjectStorageService, objectStorageClient, parseObjectPath } from "./objectStorage";
@@ -342,6 +346,171 @@ export function registerRoutes(app: Express): Server {
       });
     } catch (error: any) {
       res.status(500).send(error.message);
+    }
+  });
+
+  // ==========================================
+  // SERVICE CATALOG (CATALOGO INTERVENTI) - Admin Only
+  // ==========================================
+  
+  // List all service items
+  app.get("/api/admin/service-items", requireRole("admin"), async (req, res) => {
+    try {
+      const items = await storage.listServiceItems();
+      res.json(items);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // Get single service item
+  app.get("/api/admin/service-items/:id", requireRole("admin"), async (req, res) => {
+    try {
+      const item = await storage.getServiceItem(req.params.id);
+      if (!item) {
+        return res.status(404).send("Intervento non trovato");
+      }
+      res.json(item);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // Create service item
+  app.post("/api/admin/service-items", requireRole("admin"), async (req, res) => {
+    try {
+      const validatedData = insertServiceItemSchema.parse(req.body);
+      const item = await storage.createServiceItem(validatedData);
+      res.status(201).json(item);
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+
+  // Update service item
+  app.patch("/api/admin/service-items/:id", requireRole("admin"), async (req, res) => {
+    try {
+      const validatedData = updateServiceItemSchema.parse(req.body);
+      const item = await storage.updateServiceItem(req.params.id, validatedData);
+      res.json(item);
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+
+  // Delete service item
+  app.delete("/api/admin/service-items/:id", requireRole("admin"), async (req, res) => {
+    try {
+      await storage.deleteServiceItem(req.params.id);
+      res.sendStatus(204);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // ==========================================
+  // SERVICE ITEM PRICES (LISTINI PREZZI) - Admin Only
+  // ==========================================
+  
+  // List prices for a service item
+  app.get("/api/admin/service-items/:id/prices", requireRole("admin"), async (req, res) => {
+    try {
+      const prices = await storage.listServiceItemPrices(req.params.id);
+      res.json(prices);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // Create custom price for reseller or repair center
+  app.post("/api/admin/service-item-prices", requireRole("admin"), async (req, res) => {
+    try {
+      const validatedData = insertServiceItemPriceSchema.parse(req.body);
+      const price = await storage.createServiceItemPrice(validatedData);
+      res.status(201).json(price);
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+
+  // Update custom price
+  app.patch("/api/admin/service-item-prices/:id", requireRole("admin"), async (req, res) => {
+    try {
+      const validatedData = updateServiceItemPriceSchema.parse(req.body);
+      const price = await storage.updateServiceItemPrice(req.params.id, validatedData);
+      res.json(price);
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+
+  // Delete custom price
+  app.delete("/api/admin/service-item-prices/:id", requireRole("admin"), async (req, res) => {
+    try {
+      await storage.deleteServiceItemPrice(req.params.id);
+      res.sendStatus(204);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // ==========================================
+  // PUBLIC SERVICE CATALOG ENDPOINTS (for Quote creation)
+  // ==========================================
+  
+  // Get available service items with effective prices for current user context
+  app.get("/api/service-items", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const items = await storage.listServiceItems();
+      const activeItems = items.filter(item => item.isActive);
+      
+      // Get effective prices based on user role
+      const resellerId = req.user.role === 'reseller' ? req.user.id : 
+                         (req.query.resellerId as string) || undefined;
+      const repairCenterId = req.user.role === 'repair_center' ? req.user.repairCenterId : 
+                             (req.query.repairCenterId as string) || undefined;
+      
+      const itemsWithPrices = await Promise.all(activeItems.map(async (item) => {
+        const effectivePrice = await storage.getEffectiveServicePrice(
+          item.id, 
+          resellerId, 
+          repairCenterId || undefined
+        );
+        return {
+          ...item,
+          effectivePriceCents: effectivePrice.priceCents,
+          effectiveLaborMinutes: effectivePrice.laborMinutes,
+          priceSource: effectivePrice.source
+        };
+      }));
+      
+      res.json(itemsWithPrices);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // Get effective price for a specific service item (used in quote creation)
+  app.get("/api/service-items/:id/price", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const resellerId = req.user.role === 'reseller' ? req.user.id : 
+                         (req.query.resellerId as string) || undefined;
+      const repairCenterId = req.user.role === 'repair_center' ? req.user.repairCenterId : 
+                             (req.query.repairCenterId as string) || undefined;
+      
+      const effectivePrice = await storage.getEffectiveServicePrice(
+        req.params.id,
+        resellerId,
+        repairCenterId || undefined
+      );
+      
+      res.json(effectivePrice);
+    } catch (error: any) {
+      res.status(400).send(error.message);
     }
   });
 

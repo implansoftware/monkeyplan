@@ -70,6 +70,7 @@ const menuItems = {
     { title: "Report Utility", url: "/admin/utility/reports", icon: PieChart, group: "Utility" },
     { title: "Fatture", url: "/admin/invoices", icon: FileText, group: "Fatturazione" },
     { title: "Activity Logs", url: "/admin/activity-logs", icon: Shield, group: "Sistema" },
+    { title: "Catalogo Interventi", url: "/admin/service-catalog", icon: Package, group: "Sistema" },
     { title: "Impostazioni", url: "/admin/settings", icon: Settings, group: "Sistema" },
     { title: "Ticket", url: "/admin/tickets", icon: Ticket, group: "Assistenza" },
     { title: "Live Chat", url: "/admin/chat", icon: MessageSquare, group: "Assistenza" },

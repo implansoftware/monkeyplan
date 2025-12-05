@@ -1690,6 +1690,50 @@ export const utilityPracticeStateHistory = pgTable("utility_practice_state_histo
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
+// ==========================================
+// SERVICE CATALOG (CATALOGO INTERVENTI)
+// ==========================================
+
+// Service Items (Interventi - gestiti da Admin)
+export const serviceItems = pgTable("service_items", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  code: text("code").notNull().unique(), // Codice intervento (es. "DISP-001")
+  name: text("name").notNull(), // Nome intervento (es. "Sostituzione Display")
+  description: text("description"), // Descrizione dettagliata
+  category: text("category").notNull(), // Categoria (display, batteria, software, ecc.)
+  
+  // Compatibilità dispositivi (opzionale)
+  deviceTypeId: varchar("device_type_id").references(() => deviceTypes.id), // Tipo dispositivo compatibile
+  
+  // Prezzi e tempi default
+  defaultPriceCents: integer("default_price_cents").notNull(), // Prezzo base in centesimi
+  defaultLaborMinutes: integer("default_labor_minutes").notNull().default(60), // Tempo manodopera stimato in minuti
+  
+  // Stato
+  isActive: boolean("is_active").notNull().default(true),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+// Service Item Prices (Prezzi personalizzati per rivenditori/centri)
+export const serviceItemPrices = pgTable("service_item_prices", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  serviceItemId: varchar("service_item_id").notNull().references(() => serviceItems.id, { onDelete: "cascade" }),
+  
+  // Owner (uno dei due deve essere valorizzato, se entrambi null = prezzo base)
+  resellerId: varchar("reseller_id").references(() => users.id, { onDelete: "cascade" }), // Rivenditore
+  repairCenterId: varchar("repair_center_id").references(() => repairCenters.id, { onDelete: "cascade" }), // Centro riparazione
+  
+  // Prezzi personalizzati
+  priceCents: integer("price_cents").notNull(), // Prezzo personalizzato in centesimi
+  laborMinutes: integer("labor_minutes"), // Tempo personalizzato (opzionale, se null usa default)
+  
+  // Stato
+  isActive: boolean("is_active").notNull().default(true),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
 // Support Tickets
 export const tickets = pgTable("tickets", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -2040,6 +2084,30 @@ export const deviceModelsRelations = relations(deviceModels, ({ one }) => ({
   }),
 }));
 
+// Service Catalog Relations
+export const serviceItemsRelations = relations(serviceItems, ({ one, many }) => ({
+  deviceType: one(deviceTypes, {
+    fields: [serviceItems.deviceTypeId],
+    references: [deviceTypes.id],
+  }),
+  customPrices: many(serviceItemPrices),
+}));
+
+export const serviceItemPricesRelations = relations(serviceItemPrices, ({ one }) => ({
+  serviceItem: one(serviceItems, {
+    fields: [serviceItemPrices.serviceItemId],
+    references: [serviceItems.id],
+  }),
+  reseller: one(users, {
+    fields: [serviceItemPrices.resellerId],
+    references: [users.id],
+  }),
+  repairCenter: one(repairCenters, {
+    fields: [serviceItemPrices.repairCenterId],
+    references: [repairCenters.id],
+  }),
+}));
+
 export const ticketsRelations = relations(tickets, ({ one, many }) => ({
   customer: one(users, {
     fields: [tickets.customerId],
@@ -2270,6 +2338,47 @@ export const insertRepairQuoteSchema = createInsertSchema(repairQuotes).omit({
   createdAt: true,
   updatedAt: true,
 });
+
+// Service Catalog Schemas
+export const insertServiceItemSchema = createInsertSchema(serviceItems).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertServiceItemPriceSchema = createInsertSchema(serviceItemPrices)
+  .omit({
+    id: true,
+    createdAt: true,
+    updatedAt: true,
+  })
+  .refine(
+    (data) => {
+      const hasReseller = !!data.resellerId;
+      const hasRepairCenter = !!data.repairCenterId;
+      return (hasReseller && !hasRepairCenter) || (!hasReseller && hasRepairCenter);
+    },
+    {
+      message: "Deve essere specificato esattamente uno tra resellerId e repairCenterId",
+    }
+  );
+
+export const updateServiceItemSchema = createInsertSchema(serviceItems)
+  .omit({
+    id: true,
+    createdAt: true,
+    updatedAt: true,
+  })
+  .partial();
+
+export const updateServiceItemPriceSchema = createInsertSchema(serviceItemPrices)
+  .omit({
+    id: true,
+    createdAt: true,
+    updatedAt: true,
+    serviceItemId: true,
+  })
+  .partial();
 
 export const insertTicketSchema = createInsertSchema(tickets).omit({
   id: true,
@@ -2763,6 +2872,13 @@ export type InsertRepairDiagnostics = z.infer<typeof insertRepairDiagnosticsSche
 
 export type RepairQuote = typeof repairQuotes.$inferSelect;
 export type InsertRepairQuote = z.infer<typeof insertRepairQuoteSchema>;
+
+// Service Catalog Types
+export type ServiceItem = typeof serviceItems.$inferSelect;
+export type InsertServiceItem = z.infer<typeof insertServiceItemSchema>;
+
+export type ServiceItemPrice = typeof serviceItemPrices.$inferSelect;
+export type InsertServiceItemPrice = z.infer<typeof insertServiceItemPriceSchema>;
 
 export type Ticket = typeof tickets.$inferSelect;
 export type InsertTicket = z.infer<typeof insertTicketSchema>;

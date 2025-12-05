@@ -35,6 +35,7 @@ import {
   UtilityPracticeTimelineEvent, InsertUtilityPracticeTimelineEvent,
   UtilityPracticeStateHistoryEntry, InsertUtilityPracticeStateHistoryEntry,
   SifarCredential, InsertSifarCredential, SifarStore, InsertSifarStore,
+  ServiceItem, InsertServiceItem, ServiceItemPrice, InsertServiceItemPrice,
   users, repairCenters, products, repairOrders, tickets, ticketMessages,
   invoices, billingData, chatMessages, inventoryMovements, inventoryStock, activityLogs, analyticsCache,
   notifications, notificationPreferences, repairAttachments, repairAcceptance, repairDiagnostics,
@@ -49,7 +50,8 @@ import {
   utilitySuppliers, utilityServices, utilityPractices, utilityPracticeProducts, utilityCommissions,
   utilityPracticeDocuments, utilityPracticeTasks, utilityPracticeNotes,
   utilityPracticeTimeline, utilityPracticeStateHistory,
-  sifarCredentials, sifarStores
+  sifarCredentials, sifarStores,
+  serviceItems, serviceItemPrices
 } from "@shared/schema";
 import { db, pool } from "./db";
 import { eq, and, or, desc, lt, sql, not, inArray } from "drizzle-orm";
@@ -442,6 +444,24 @@ export interface IStorage {
   createSifarStore(store: InsertSifarStore): Promise<SifarStore>;
   updateSifarStore(id: string, updates: Partial<InsertSifarStore>): Promise<SifarStore>;
   deleteSifarStore(id: string): Promise<void>;
+  
+  // Service Catalog (Catalogo Interventi)
+  listServiceItems(): Promise<ServiceItem[]>;
+  getServiceItem(id: string): Promise<ServiceItem | undefined>;
+  createServiceItem(item: InsertServiceItem): Promise<ServiceItem>;
+  updateServiceItem(id: string, updates: Partial<InsertServiceItem>): Promise<ServiceItem>;
+  deleteServiceItem(id: string): Promise<void>;
+  
+  // Service Item Prices (Listini Prezzi)
+  listServiceItemPrices(serviceItemId: string): Promise<ServiceItemPrice[]>;
+  getServiceItemPricesForEntity(resellerId?: string, repairCenterId?: string): Promise<ServiceItemPrice[]>;
+  getServiceItemPrice(id: string): Promise<ServiceItemPrice | undefined>;
+  createServiceItemPrice(price: InsertServiceItemPrice): Promise<ServiceItemPrice>;
+  updateServiceItemPrice(id: string, updates: Partial<InsertServiceItemPrice>): Promise<ServiceItemPrice>;
+  deleteServiceItemPrice(id: string): Promise<void>;
+  
+  // Get effective price for a service item (considers reseller/repair center customizations)
+  getEffectiveServicePrice(serviceItemId: string, resellerId?: string, repairCenterId?: string): Promise<{ priceCents: number; laborMinutes: number; source: 'base' | 'reseller' | 'repair_center' }>;
   
   sessionStore: session.Store;
 }
@@ -3691,6 +3711,151 @@ export class DatabaseStorage implements IStorage {
   async deleteSifarStore(id: string): Promise<void> {
     await db.delete(sifarStores)
       .where(eq(sifarStores.id, id));
+  }
+
+  // ==========================================
+  // SERVICE CATALOG (CATALOGO INTERVENTI)
+  // ==========================================
+
+  async listServiceItems(): Promise<ServiceItem[]> {
+    return await db.select()
+      .from(serviceItems)
+      .orderBy(desc(serviceItems.createdAt));
+  }
+
+  async getServiceItem(id: string): Promise<ServiceItem | undefined> {
+    const [item] = await db.select()
+      .from(serviceItems)
+      .where(eq(serviceItems.id, id))
+      .limit(1);
+    return item;
+  }
+
+  async createServiceItem(item: InsertServiceItem): Promise<ServiceItem> {
+    const [created] = await db.insert(serviceItems)
+      .values(item)
+      .returning();
+    return created;
+  }
+
+  async updateServiceItem(id: string, updates: Partial<InsertServiceItem>): Promise<ServiceItem> {
+    const [updated] = await db.update(serviceItems)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(serviceItems.id, id))
+      .returning();
+    if (!updated) throw new Error("Service item not found");
+    return updated;
+  }
+
+  async deleteServiceItem(id: string): Promise<void> {
+    await db.delete(serviceItems)
+      .where(eq(serviceItems.id, id));
+  }
+
+  // Service Item Prices
+  async listServiceItemPrices(serviceItemId: string): Promise<ServiceItemPrice[]> {
+    return await db.select()
+      .from(serviceItemPrices)
+      .where(eq(serviceItemPrices.serviceItemId, serviceItemId));
+  }
+
+  async getServiceItemPricesForEntity(resellerId?: string, repairCenterId?: string): Promise<ServiceItemPrice[]> {
+    if (repairCenterId) {
+      return await db.select()
+        .from(serviceItemPrices)
+        .where(eq(serviceItemPrices.repairCenterId, repairCenterId));
+    }
+    if (resellerId) {
+      return await db.select()
+        .from(serviceItemPrices)
+        .where(eq(serviceItemPrices.resellerId, resellerId));
+    }
+    return [];
+  }
+
+  async getServiceItemPrice(id: string): Promise<ServiceItemPrice | undefined> {
+    const [price] = await db.select()
+      .from(serviceItemPrices)
+      .where(eq(serviceItemPrices.id, id))
+      .limit(1);
+    return price;
+  }
+
+  async createServiceItemPrice(price: InsertServiceItemPrice): Promise<ServiceItemPrice> {
+    const [created] = await db.insert(serviceItemPrices)
+      .values(price)
+      .returning();
+    return created;
+  }
+
+  async updateServiceItemPrice(id: string, updates: Partial<InsertServiceItemPrice>): Promise<ServiceItemPrice> {
+    const [updated] = await db.update(serviceItemPrices)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(serviceItemPrices.id, id))
+      .returning();
+    if (!updated) throw new Error("Service item price not found");
+    return updated;
+  }
+
+  async deleteServiceItemPrice(id: string): Promise<void> {
+    await db.delete(serviceItemPrices)
+      .where(eq(serviceItemPrices.id, id));
+  }
+
+  async getEffectiveServicePrice(
+    serviceItemId: string, 
+    resellerId?: string, 
+    repairCenterId?: string
+  ): Promise<{ priceCents: number; laborMinutes: number; source: 'base' | 'reseller' | 'repair_center' }> {
+    // Get base service item
+    const item = await this.getServiceItem(serviceItemId);
+    if (!item) throw new Error("Service item not found");
+
+    // Priority: repair_center > reseller > base
+    if (repairCenterId) {
+      const [centerPrice] = await db.select()
+        .from(serviceItemPrices)
+        .where(and(
+          eq(serviceItemPrices.serviceItemId, serviceItemId),
+          eq(serviceItemPrices.repairCenterId, repairCenterId),
+          eq(serviceItemPrices.isActive, true)
+        ))
+        .limit(1);
+      
+      if (centerPrice) {
+        return {
+          priceCents: centerPrice.priceCents,
+          laborMinutes: centerPrice.laborMinutes ?? item.defaultLaborMinutes,
+          source: 'repair_center'
+        };
+      }
+    }
+
+    if (resellerId) {
+      const [resellerPrice] = await db.select()
+        .from(serviceItemPrices)
+        .where(and(
+          eq(serviceItemPrices.serviceItemId, serviceItemId),
+          eq(serviceItemPrices.resellerId, resellerId),
+          eq(serviceItemPrices.isActive, true)
+        ))
+        .limit(1);
+      
+      if (resellerPrice) {
+        return {
+          priceCents: resellerPrice.priceCents,
+          laborMinutes: resellerPrice.laborMinutes ?? item.defaultLaborMinutes,
+          source: 'reseller'
+        };
+      }
+    }
+
+    // Return base price
+    return {
+      priceCents: item.defaultPriceCents,
+      laborMinutes: item.defaultLaborMinutes,
+      source: 'base'
+    };
   }
 }
 
