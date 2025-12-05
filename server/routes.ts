@@ -3057,15 +3057,21 @@ export function registerRoutes(app: Express): Server {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
-      const filters: { customerId?: string; resellerId?: string; repairCenterId?: string; status?: string } = {};
+      const filters: { customerId?: string; customerIds?: string[]; resellerId?: string; repairCenterId?: string; status?: string } = {};
       
       // Role-based filtering
       if (req.user.role === 'customer') {
         // Customers see only their own orders
         filters.customerId = req.user.id;
       } else if (req.user.role === 'reseller') {
-        // Resellers see orders they created
-        filters.resellerId = req.user.id;
+        // Resellers see orders of their customers (customers who belong to this reseller)
+        const resellerCustomers = await storage.listUsers({ resellerId: req.user.id, role: 'customer' });
+        const customerIds = resellerCustomers.map(c => c.id);
+        if (customerIds.length === 0) {
+          // No customers means no orders
+          return res.json([]);
+        }
+        filters.customerIds = customerIds;
       } else if (req.user.role === 'repair_center') {
         // Repair centers see only orders explicitly assigned to their center
         if (!req.user.repairCenterId) {
@@ -3123,7 +3129,7 @@ export function registerRoutes(app: Express): Server {
       if (!order) return res.status(404).send("Repair order not found");
       
       // Check access based on role
-      const hasAccess = 
+      let hasAccess = 
         req.user.role === 'admin' ||
         order.customerId === req.user.id ||
         order.resellerId === req.user.id ||
@@ -3131,6 +3137,14 @@ export function registerRoutes(app: Express): Server {
          req.user.repairCenterId && 
          order.repairCenterId && 
          order.repairCenterId === req.user.repairCenterId);
+      
+      // For resellers, also check if the order's customer belongs to them
+      if (!hasAccess && req.user.role === 'reseller' && order.customerId) {
+        const customer = await storage.getUser(order.customerId);
+        if (customer && customer.resellerId === req.user.id) {
+          hasAccess = true;
+        }
+      }
       
       if (!hasAccess) return res.status(403).send("Forbidden");
       

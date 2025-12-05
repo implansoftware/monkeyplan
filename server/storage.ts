@@ -639,12 +639,15 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Repair Orders
-  async listRepairOrders(filters?: { customerId?: string; resellerId?: string; repairCenterId?: string; status?: string }): Promise<RepairOrder[]> {
+  async listRepairOrders(filters?: { customerId?: string; customerIds?: string[]; resellerId?: string; repairCenterId?: string; status?: string }): Promise<RepairOrder[]> {
     let query = db.select().from(repairOrders);
     
     if (filters) {
       const conditions = [];
       if (filters.customerId) conditions.push(eq(repairOrders.customerId, filters.customerId));
+      if (filters.customerIds && filters.customerIds.length > 0) {
+        conditions.push(inArray(repairOrders.customerId, filters.customerIds));
+      }
       if (filters.resellerId) conditions.push(eq(repairOrders.resellerId, filters.resellerId));
       if (filters.repairCenterId) conditions.push(eq(repairOrders.repairCenterId, filters.repairCenterId));
       if (filters.status) conditions.push(eq(repairOrders.status, filters.status as any));
