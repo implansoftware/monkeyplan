@@ -3825,7 +3825,7 @@ export class DatabaseStorage implements IStorage {
       if (centerPrice) {
         return {
           priceCents: centerPrice.priceCents,
-          laborMinutes: centerPrice.laborMinutes ?? item.defaultLaborMinutes,
+          laborMinutes: item.defaultLaborMinutes, // Sempre dal catalogo
           source: 'repair_center'
         };
       }
@@ -3844,7 +3844,7 @@ export class DatabaseStorage implements IStorage {
       if (resellerPrice) {
         return {
           priceCents: resellerPrice.priceCents,
-          laborMinutes: resellerPrice.laborMinutes ?? item.defaultLaborMinutes,
+          laborMinutes: item.defaultLaborMinutes, // Sempre dal catalogo
           source: 'reseller'
         };
       }

@@ -107,7 +107,6 @@ interface PriceFormData {
   resellerId?: string;
   repairCenterId?: string;
   priceCents: number;
-  laborMinutes?: number;
   isActive: boolean;
 }
 
@@ -290,7 +289,6 @@ export default function AdminServiceCatalog() {
     const data: PriceFormData = {
       serviceItemId: selectedItemForPrices.id,
       priceCents: cents,
-      laborMinutes: priceFormData.laborMinutes,
       isActive: true,
     };
 
@@ -576,7 +574,7 @@ export default function AdminServiceCatalog() {
                               {formatCurrency(price.priceCents)}
                             </TableCell>
                             <TableCell className="text-right">
-                              {price.laborMinutes ?? selectedItemForPrices.defaultLaborMinutes} min
+                              {selectedItemForPrices.defaultLaborMinutes} min
                             </TableCell>
                             <TableCell>
                               <Badge variant={price.isActive ? "default" : "secondary"}>
@@ -794,38 +792,24 @@ export default function AdminServiceCatalog() {
               </div>
             )}
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Prezzo Personalizzato (€)</Label>
-                <div className="relative">
-                  <Euro className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    placeholder="0.00"
-                    value={customPriceEuros}
-                    onChange={(e) => setCustomPriceEuros(e.target.value)}
-                    className="pl-10"
-                    data-testid="input-custom-price"
-                  />
-                </div>
+            <div className="space-y-2">
+              <Label>Prezzo Personalizzato (€)</Label>
+              <div className="relative">
+                <Euro className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  placeholder="0.00"
+                  value={customPriceEuros}
+                  onChange={(e) => setCustomPriceEuros(e.target.value)}
+                  className="pl-10"
+                  data-testid="input-custom-price"
+                />
               </div>
-              <div className="space-y-2">
-                <Label>Durata (opzionale)</Label>
-                <div className="relative">
-                  <Clock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    type="number"
-                    min="0"
-                    placeholder={selectedItemForPrices?.defaultLaborMinutes.toString()}
-                    value={priceFormData.laborMinutes || ""}
-                    onChange={(e) => setPriceFormData({ ...priceFormData, laborMinutes: parseInt(e.target.value) || undefined })}
-                    className="pl-10"
-                    data-testid="input-custom-labor"
-                  />
-                </div>
-              </div>
+              <p className="text-xs text-muted-foreground">
+                Durata intervento: {selectedItemForPrices?.defaultLaborMinutes} min (dal catalogo)
+              </p>
             </div>
           </div>
 
