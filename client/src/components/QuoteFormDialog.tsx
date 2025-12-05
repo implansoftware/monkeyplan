@@ -298,6 +298,7 @@ export function QuoteFormDialog({
                     Manuale
                   </Button>
                   <Select
+                    value=""
                     onValueChange={(productId) => {
                       const product = products.find(p => p.id === productId);
                       if (product) {
@@ -310,9 +311,9 @@ export function QuoteFormDialog({
                       }
                     }}
                   >
-                    <SelectTrigger className="w-[160px]" data-testid="select-product-from-inventory">
-                      <Package className="h-4 w-4 mr-2" />
-                      <SelectValue placeholder="Magazzino" />
+                    <SelectTrigger className="w-[140px]" data-testid="select-product-from-inventory">
+                      <Package className="h-4 w-4 mr-2 flex-shrink-0" />
+                      <span>Magazzino</span>
                     </SelectTrigger>
                     <SelectContent>
                       {products.length === 0 ? (
@@ -334,6 +335,7 @@ export function QuoteFormDialog({
                     </SelectContent>
                   </Select>
                   <Select
+                    value=""
                     onValueChange={(serviceId) => {
                       const service = serviceItems.find(s => s.id === serviceId);
                       if (service) {
@@ -346,9 +348,9 @@ export function QuoteFormDialog({
                       }
                     }}
                   >
-                    <SelectTrigger className="w-[160px]" data-testid="select-service-from-catalog">
-                      <Wrench className="h-4 w-4 mr-2" />
-                      <SelectValue placeholder="Catalogo" />
+                    <SelectTrigger className="w-[140px]" data-testid="select-service-from-catalog">
+                      <Wrench className="h-4 w-4 mr-2 flex-shrink-0" />
+                      <span>Catalogo</span>
                     </SelectTrigger>
                     <SelectContent>
                       {serviceItems.length === 0 ? (
