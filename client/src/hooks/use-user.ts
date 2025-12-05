@@ -9,6 +9,16 @@ type User = {
   isActive: boolean;
   repairCenterId: string | null;
   resellerId: string | null;
+  ragioneSociale: string | null;
+  partitaIva: string | null;
+  codiceFiscale: string | null;
+  indirizzo: string | null;
+  cap: string | null;
+  citta: string | null;
+  provincia: string | null;
+  iban: string | null;
+  codiceUnivoco: string | null;
+  pec: string | null;
 };
 
 export function useUser() {

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { RepairCenter, InsertRepairCenter } from "@shared/schema";
 import { Button } from "@/components/ui/button";
@@ -8,11 +8,13 @@ import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Plus, Search, MapPin, Phone, Mail, Pencil, Trash2, Building, Clock } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AddressAutocomplete } from "@/components/address-autocomplete";
+import { useUser } from "@/hooks/use-user";
 
 export default function ResellerRepairCenters() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -20,7 +22,17 @@ export default function ResellerRepairCenters() {
   const [editingCenter, setEditingCenter] = useState<RepairCenter | null>(null);
   const [addressData, setAddressData] = useState({ address: "", city: "", cap: "", provincia: "" });
   const [hourlyRateEuros, setHourlyRateEuros] = useState<string>("");
+  const [useMyFiscalData, setUseMyFiscalData] = useState(false);
+  const [fiscalFields, setFiscalFields] = useState({
+    ragioneSociale: "",
+    partitaIva: "",
+    codiceFiscale: "",
+    iban: "",
+    codiceUnivoco: "",
+    pec: "",
+  });
   const { toast } = useToast();
+  const { user } = useUser();
 
   const { data: centers = [], isLoading } = useQuery<RepairCenter[]>({
     queryKey: ["/api/reseller/repair-centers"],
@@ -71,25 +83,44 @@ export default function ResellerRepairCenters() {
     },
   });
 
+  const handleUseMyFiscalDataChange = (checked: boolean) => {
+    setUseMyFiscalData(checked);
+    if (checked && user) {
+      setFiscalFields({
+        ragioneSociale: user.ragioneSociale || "",
+        partitaIva: user.partitaIva || "",
+        codiceFiscale: user.codiceFiscale || "",
+        iban: user.iban || "",
+        codiceUnivoco: user.codiceUnivoco || "",
+        pec: user.pec || "",
+      });
+      if (user.indirizzo) {
+        setAddressData({
+          address: user.indirizzo || "",
+          city: user.citta || "",
+          cap: user.cap || "",
+          provincia: user.provincia || "",
+        });
+      }
+    }
+  };
+
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
     
-    const finalAddress = addressData.address || (editingCenter?.address ?? "");
-    const finalCity = addressData.city || (editingCenter?.city ?? "");
-    
-    if (!finalAddress.trim() || !finalCity.trim()) {
+    if (!addressData.address.trim() || !addressData.city.trim()) {
       toast({ title: "Errore", description: "Indirizzo e Città sono campi obbligatori", variant: "destructive" });
       return;
     }
     
     const fiscalData = {
-      ragioneSociale: (formData.get("ragioneSociale") as string)?.trim() || null,
-      partitaIva: (formData.get("partitaIva") as string)?.trim() || null,
-      codiceFiscale: (formData.get("codiceFiscale") as string)?.trim() || null,
-      iban: (formData.get("iban") as string)?.trim() || null,
-      codiceUnivoco: (formData.get("codiceUnivoco") as string)?.trim() || null,
-      pec: (formData.get("pec") as string)?.trim() || null,
+      ragioneSociale: fiscalFields.ragioneSociale?.trim() || null,
+      partitaIva: fiscalFields.partitaIva?.trim() || null,
+      codiceFiscale: fiscalFields.codiceFiscale?.trim() || null,
+      iban: fiscalFields.iban?.trim() || null,
+      codiceUnivoco: fiscalFields.codiceUnivoco?.trim() || null,
+      pec: fiscalFields.pec?.trim() || null,
     };
     
     const hourlyRateCentsValue = hourlyRateEuros 
@@ -99,10 +130,10 @@ export default function ResellerRepairCenters() {
     if (editingCenter) {
       const updates: Partial<RepairCenter> = {
         name: formData.get("name") as string,
-        address: finalAddress,
-        city: finalCity,
-        cap: addressData.cap?.trim() || editingCenter.cap || null,
-        provincia: addressData.provincia?.trim() || editingCenter.provincia || null,
+        address: addressData.address,
+        city: addressData.city,
+        cap: addressData.cap?.trim() || null,
+        provincia: addressData.provincia?.trim() || null,
         phone: formData.get("phone") as string,
         email: formData.get("email") as string,
         hourlyRateCents: hourlyRateCentsValue,
@@ -112,8 +143,8 @@ export default function ResellerRepairCenters() {
     } else {
       const data = {
         name: formData.get("name") as string,
-        address: finalAddress,
-        city: finalCity,
+        address: addressData.address,
+        city: addressData.city,
         cap: addressData.cap?.trim() || null,
         provincia: addressData.provincia?.trim() || null,
         phone: formData.get("phone") as string,
@@ -146,6 +177,10 @@ export default function ResellerRepairCenters() {
             setEditingCenter(null);
             setAddressData({ address: "", city: "", cap: "", provincia: "" });
             setHourlyRateEuros("");
+            setUseMyFiscalData(false);
+            setFiscalFields({ ragioneSociale: "", partitaIva: "", codiceFiscale: "", iban: "", codiceUnivoco: "", pec: "" });
+          } else if (!editingCenter) {
+            setFiscalFields({ ragioneSociale: "", partitaIva: "", codiceFiscale: "", iban: "", codiceUnivoco: "", pec: "" });
           }
         }}>
           <DialogTrigger asChild>
@@ -173,14 +208,30 @@ export default function ResellerRepairCenters() {
               </div>
               
               <div className="border-t pt-4 mt-4">
-                <h4 className="font-medium text-sm text-muted-foreground mb-3">Dati Fiscali</h4>
+                <div className="flex items-center justify-between mb-3">
+                  <h4 className="font-medium text-sm text-muted-foreground">Dati Fiscali</h4>
+                  {!editingCenter && (
+                    <div className="flex items-center gap-2">
+                      <Checkbox 
+                        id="useMyFiscalData" 
+                        checked={useMyFiscalData}
+                        onCheckedChange={(checked) => handleUseMyFiscalDataChange(checked as boolean)}
+                        data-testid="checkbox-use-my-fiscal-data"
+                      />
+                      <Label htmlFor="useMyFiscalData" className="text-sm cursor-pointer">
+                        Usa i miei dati fiscali
+                      </Label>
+                    </div>
+                  )}
+                </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-2">
                     <Label htmlFor="ragioneSociale">Ragione Sociale</Label>
                     <Input 
                       id="ragioneSociale" 
                       name="ragioneSociale" 
-                      defaultValue={editingCenter?.ragioneSociale || ""} 
+                      value={fiscalFields.ragioneSociale}
+                      onChange={(e) => setFiscalFields(prev => ({ ...prev, ragioneSociale: e.target.value }))}
                       data-testid="input-ragioneSociale" 
                     />
                   </div>
@@ -189,7 +240,8 @@ export default function ResellerRepairCenters() {
                     <Input 
                       id="partitaIva" 
                       name="partitaIva" 
-                      defaultValue={editingCenter?.partitaIva || ""} 
+                      value={fiscalFields.partitaIva}
+                      onChange={(e) => setFiscalFields(prev => ({ ...prev, partitaIva: e.target.value }))}
                       data-testid="input-partitaIva" 
                     />
                   </div>
@@ -198,14 +250,15 @@ export default function ResellerRepairCenters() {
                     <Input 
                       id="codiceFiscale" 
                       name="codiceFiscale" 
-                      defaultValue={editingCenter?.codiceFiscale || ""} 
+                      value={fiscalFields.codiceFiscale}
+                      onChange={(e) => setFiscalFields(prev => ({ ...prev, codiceFiscale: e.target.value }))}
                       data-testid="input-codiceFiscale" 
                     />
                   </div>
                   <div className="space-y-2 col-span-2">
                     <Label>Indirizzo *</Label>
                     <AddressAutocomplete
-                      value={addressData.address || editingCenter?.address || ""}
+                      value={addressData.address}
                       onChange={(val) => setAddressData(prev => ({ ...prev, address: val }))}
                       onAddressSelect={(result) => {
                         setAddressData({
@@ -224,7 +277,7 @@ export default function ResellerRepairCenters() {
                     <Input 
                       id="city" 
                       name="city" 
-                      value={addressData.city || editingCenter?.city || ""}
+                      value={addressData.city}
                       onChange={(e) => setAddressData(prev => ({ ...prev, city: e.target.value }))}
                       data-testid="input-city" 
                     />
@@ -235,7 +288,7 @@ export default function ResellerRepairCenters() {
                       <Input 
                         id="cap" 
                         name="cap" 
-                        value={addressData.cap || editingCenter?.cap || ""}
+                        value={addressData.cap}
                         onChange={(e) => setAddressData(prev => ({ ...prev, cap: e.target.value }))}
                         data-testid="input-cap" 
                       />
@@ -246,7 +299,7 @@ export default function ResellerRepairCenters() {
                         id="provincia" 
                         name="provincia" 
                         maxLength={2}
-                        value={addressData.provincia || editingCenter?.provincia || ""}
+                        value={addressData.provincia}
                         onChange={(e) => setAddressData(prev => ({ ...prev, provincia: e.target.value }))}
                         placeholder="XX"
                         data-testid="input-provincia" 
@@ -259,7 +312,8 @@ export default function ResellerRepairCenters() {
                       id="codiceUnivoco" 
                       name="codiceUnivoco" 
                       maxLength={7}
-                      defaultValue={editingCenter?.codiceUnivoco || ""} 
+                      value={fiscalFields.codiceUnivoco}
+                      onChange={(e) => setFiscalFields(prev => ({ ...prev, codiceUnivoco: e.target.value }))}
                       placeholder="7 caratteri"
                       data-testid="input-codiceUnivoco" 
                     />
@@ -270,7 +324,8 @@ export default function ResellerRepairCenters() {
                       id="pec" 
                       name="pec" 
                       type="email"
-                      defaultValue={editingCenter?.pec || ""} 
+                      value={fiscalFields.pec}
+                      onChange={(e) => setFiscalFields(prev => ({ ...prev, pec: e.target.value }))}
                       placeholder="email@pec.it"
                       data-testid="input-pec" 
                     />
@@ -280,7 +335,8 @@ export default function ResellerRepairCenters() {
                     <Input 
                       id="iban" 
                       name="iban" 
-                      defaultValue={editingCenter?.iban || ""} 
+                      value={fiscalFields.iban}
+                      onChange={(e) => setFiscalFields(prev => ({ ...prev, iban: e.target.value }))}
                       placeholder="IT..."
                       data-testid="input-iban" 
                     />
@@ -410,6 +466,20 @@ export default function ResellerRepairCenters() {
                           onClick={() => {
                             setEditingCenter(center);
                             setHourlyRateEuros(center.hourlyRateCents ? (center.hourlyRateCents / 100).toFixed(2) : "");
+                            setFiscalFields({
+                              ragioneSociale: center.ragioneSociale || "",
+                              partitaIva: center.partitaIva || "",
+                              codiceFiscale: center.codiceFiscale || "",
+                              iban: center.iban || "",
+                              codiceUnivoco: center.codiceUnivoco || "",
+                              pec: center.pec || "",
+                            });
+                            setAddressData({
+                              address: center.address || "",
+                              city: center.city || "",
+                              cap: center.cap || "",
+                              provincia: center.provincia || "",
+                            });
                             setDialogOpen(true);
                           }}
                           data-testid={`button-edit-${center.id}`}
