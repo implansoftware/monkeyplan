@@ -105,11 +105,18 @@ export function QuoteFormDialog({
   });
 
   // Fetch service catalog items with resolved prices
+  const serviceItemsQueryParams = new URLSearchParams();
+  if (repairOrder?.repairCenterId) serviceItemsQueryParams.set('repairCenterId', repairOrder.repairCenterId);
+  if (repairOrder?.resellerId) serviceItemsQueryParams.set('resellerId', repairOrder.resellerId);
+  const serviceItemsUrl = `/api/service-items${serviceItemsQueryParams.toString() ? '?' + serviceItemsQueryParams.toString() : ''}`;
+  
   const { data: serviceItems = [] } = useQuery<ServiceItemWithPrice[]>({
-    queryKey: ["/api/service-items", { 
-      repairCenterId: repairOrder?.repairCenterId,
-      resellerId: repairOrder?.resellerId 
-    }],
+    queryKey: ["/api/service-items", repairOrder?.repairCenterId, repairOrder?.resellerId],
+    queryFn: async () => {
+      const res = await fetch(serviceItemsUrl, { credentials: 'include' });
+      if (!res.ok) throw new Error(`${res.status}: ${await res.text()}`);
+      return res.json();
+    },
     enabled: open,
   });
 
