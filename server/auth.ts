@@ -47,12 +47,19 @@ export function setupAuth(app: Express) {
       const user = await storage.getUserByUsername(username);
       if (!user) {
         console.log('[AUTH] User not found:', username);
-        return done(null, false);
+        return done(null, false, { message: "Credenziali non valide" });
       }
+      
+      // Check if user is active (approved)
+      if (!user.isActive) {
+        console.log('[AUTH] User not active (pending approval):', username);
+        return done(null, false, { message: "Account in attesa di approvazione" });
+      }
+      
       const passwordMatch = await comparePasswords(password, user.password);
       console.log('[AUTH] Password match:', passwordMatch, 'for user:', username);
       if (!passwordMatch) {
-        return done(null, false);
+        return done(null, false, { message: "Credenziali non valide" });
       } else {
         return done(null, user);
       }
@@ -62,7 +69,23 @@ export function setupAuth(app: Express) {
   passport.serializeUser((user, done) => done(null, user.id));
   passport.deserializeUser(async (id: string, done) => {
     const user = await storage.getUser(id);
+    // If user is inactive, invalidate session
+    if (user && !user.isActive) {
+      return done(null, false);
+    }
     done(null, user);
+  });
+
+  // Global middleware to enforce isActive on all authenticated requests
+  app.use((req, res, next) => {
+    if (req.isAuthenticated() && req.user && !req.user.isActive) {
+      req.logout((err) => {
+        if (err) console.error('[AUTH] Error logging out inactive user:', err);
+        return res.status(401).send("Account disattivato");
+      });
+    } else {
+      next();
+    }
   });
 
   app.post("/api/register", async (req, res, next) => {
@@ -71,27 +94,51 @@ export function setupAuth(app: Express) {
       return res.status(400).send("Username already exists");
     }
 
-    // Restrict role assignment - only allow customer registration by default
-    // Admin/Reseller/Repair Center users must be created by admin via /api/admin/users
-    const allowedRoles = ["customer"];
-    if (req.body.role && !allowedRoles.includes(req.body.role)) {
+    // Allow customer and reseller registration
+    // Resellers require admin approval (isActive=false until approved)
+    const allowedRoles = ["customer", "reseller"];
+    const requestedRole = req.body.role || "customer";
+    
+    if (!allowedRoles.includes(requestedRole)) {
       return res.status(403).send("Cannot register with that role. Contact administrator.");
     }
 
+    // Resellers start inactive and need admin approval
+    const isActive = requestedRole === "reseller" ? false : true;
+
     const user = await storage.createUser({
       ...req.body,
-      role: req.body.role || "customer", // Default to customer
+      role: requestedRole,
+      isActive,
       password: await hashPassword(req.body.password),
     });
 
-    req.login(user, (err) => {
-      if (err) return next(err);
-      res.status(201).json(user);
-    });
+    // Only auto-login for customers (resellers need approval first)
+    if (requestedRole === "customer") {
+      req.login(user, (err) => {
+        if (err) return next(err);
+        res.status(201).json(user);
+      });
+    } else {
+      // Reseller registration - don't auto-login
+      res.status(201).json({ 
+        message: "Registrazione completata. Il tuo account rivenditore è in attesa di approvazione.",
+        pending: true 
+      });
+    }
   });
 
-  app.post("/api/login", passport.authenticate("local"), (req, res) => {
-    res.status(200).json(req.user);
+  app.post("/api/login", (req, res, next) => {
+    passport.authenticate("local", (err: any, user: any, info: any) => {
+      if (err) return next(err);
+      if (!user) {
+        return res.status(401).send(info?.message || "Credenziali non valide");
+      }
+      req.login(user, (err) => {
+        if (err) return next(err);
+        res.status(200).json(user);
+      });
+    })(req, res, next);
   });
 
   app.post("/api/logout", (req, res, next) => {
