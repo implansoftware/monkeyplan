@@ -304,6 +304,15 @@ export const users = pgTable("users", {
   isActive: boolean("is_active").notNull().default(true),
   repairCenterId: varchar("repair_center_id"),
   resellerId: varchar("reseller_id"), // Which reseller this user belongs to (for customers and repair_centers)
+  // Dati fiscali (principalmente per rivenditori)
+  partitaIva: text("partita_iva"),
+  codiceFiscale: text("codice_fiscale"),
+  ragioneSociale: text("ragione_sociale"),
+  indirizzo: text("indirizzo"),
+  cap: text("cap"),
+  citta: text("citta"),
+  provincia: text("provincia"),
+  iban: text("iban"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
