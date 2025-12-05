@@ -1312,17 +1312,150 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  // Reseller Repair Centers - list repair centers associated with this reseller (limited fields)
+  // Reseller Repair Centers - list repair centers associated with this reseller
   app.get("/api/reseller/repair-centers", requireRole("reseller"), async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       const allCenters = await storage.listRepairCenters();
-      const resellerCenters = allCenters
-        .filter(c => c.resellerId === req.user!.id)
-        .map(c => ({ id: c.id, name: c.name, city: c.city })); // Only expose necessary fields
+      // Return all fields for management, filter by resellerId
+      const resellerCenters = allCenters.filter(c => c.resellerId === req.user!.id);
       res.json(resellerCenters);
     } catch (error: any) {
       res.status(500).send(error.message);
+    }
+  });
+
+  // Reseller Repair Centers - get single repair center by ID
+  app.get("/api/reseller/repair-centers/:id", requireRole("reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      const center = await storage.getRepairCenter(req.params.id);
+      if (!center) {
+        return res.status(404).send("Centro di riparazione non trovato");
+      }
+      // Verify this center belongs to the reseller
+      if (center.resellerId !== req.user.id) {
+        return res.status(403).send("Non autorizzato ad accedere a questo centro");
+      }
+      res.json(center);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // Reseller Repair Centers - create new repair center
+  app.post("/api/reseller/repair-centers", requireRole("reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      // Validate input using schema
+      const validationResult = insertRepairCenterSchema.safeParse({
+        ...req.body,
+        resellerId: req.user.id, // Force resellerId to logged-in reseller
+        isActive: true,
+      });
+      
+      if (!validationResult.success) {
+        return res.status(400).send(validationResult.error.errors.map(e => e.message).join(", "));
+      }
+      
+      const validated = validationResult.data;
+
+      const center = await storage.createRepairCenter({
+        name: validated.name,
+        address: validated.address,
+        city: validated.city,
+        cap: validated.cap || null,
+        provincia: validated.provincia || null,
+        phone: validated.phone,
+        email: validated.email,
+        resellerId: req.user.id, // Always set to current reseller
+        isActive: true,
+        hourlyRateCents: validated.hourlyRateCents || null,
+        ragioneSociale: validated.ragioneSociale || null,
+        partitaIva: validated.partitaIva || null,
+        codiceFiscale: validated.codiceFiscale || null,
+        iban: validated.iban || null,
+        codiceUnivoco: validated.codiceUnivoco || null,
+        pec: validated.pec || null,
+      });
+      
+      setActivityEntity(res, { type: 'repair-centers', id: center.id });
+      res.status(201).json(center);
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+
+  // Reseller Repair Centers - update repair center
+  app.patch("/api/reseller/repair-centers/:id", requireRole("reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      // Verify this center belongs to the reseller
+      const existingCenter = await storage.getRepairCenter(req.params.id);
+      if (!existingCenter) {
+        return res.status(404).send("Centro di riparazione non trovato");
+      }
+      if (existingCenter.resellerId !== req.user.id) {
+        return res.status(403).send("Non autorizzato a modificare questo centro");
+      }
+
+      // Validate input using partial schema (exclude resellerId changes)
+      const partialSchema = insertRepairCenterSchema.partial().omit({ resellerId: true });
+      const validationResult = partialSchema.safeParse(req.body);
+      
+      if (!validationResult.success) {
+        return res.status(400).send(validationResult.error.errors.map(e => e.message).join(", "));
+      }
+      
+      const validated = validationResult.data;
+      
+      const updates: any = {};
+      if (validated.name !== undefined) updates.name = validated.name;
+      if (validated.address !== undefined) updates.address = validated.address;
+      if (validated.city !== undefined) updates.city = validated.city;
+      if (validated.phone !== undefined) updates.phone = validated.phone;
+      if (validated.email !== undefined) updates.email = validated.email;
+      if (validated.isActive !== undefined) updates.isActive = validated.isActive;
+      if (validated.hourlyRateCents !== undefined) updates.hourlyRateCents = validated.hourlyRateCents;
+      if (validated.cap !== undefined) updates.cap = validated.cap;
+      if (validated.provincia !== undefined) updates.provincia = validated.provincia;
+      if (validated.ragioneSociale !== undefined) updates.ragioneSociale = validated.ragioneSociale;
+      if (validated.partitaIva !== undefined) updates.partitaIva = validated.partitaIva;
+      if (validated.codiceFiscale !== undefined) updates.codiceFiscale = validated.codiceFiscale;
+      if (validated.iban !== undefined) updates.iban = validated.iban;
+      if (validated.codiceUnivoco !== undefined) updates.codiceUnivoco = validated.codiceUnivoco;
+      if (validated.pec !== undefined) updates.pec = validated.pec;
+      // Never allow changing resellerId via reseller endpoint
+      
+      const center = await storage.updateRepairCenter(req.params.id, updates);
+      setActivityEntity(res, { type: 'repair-centers', id: center.id });
+      res.json(center);
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+
+  // Reseller Repair Centers - delete repair center
+  app.delete("/api/reseller/repair-centers/:id", requireRole("reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      // Verify this center belongs to the reseller
+      const existingCenter = await storage.getRepairCenter(req.params.id);
+      if (!existingCenter) {
+        return res.status(404).send("Centro di riparazione non trovato");
+      }
+      if (existingCenter.resellerId !== req.user.id) {
+        return res.status(403).send("Non autorizzato a eliminare questo centro");
+      }
+
+      await storage.deleteRepairCenter(req.params.id);
+      setActivityEntity(res, { type: 'repair-centers', id: req.params.id });
+      res.status(204).send();
+    } catch (error: any) {
+      res.status(400).send(error.message);
     }
   });
 
