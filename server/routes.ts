@@ -10288,5 +10288,84 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // ==========================================
+  // MAPBOX ADDRESS AUTOCOMPLETE
+  // ==========================================
+  
+  // GET /api/geocode/autocomplete - Proxy per Mapbox Geocoding API (address autocomplete)
+  app.get("/api/geocode/autocomplete", requireAuth, async (req, res) => {
+    try {
+      const query = req.query.q as string;
+      if (!query || query.length < 3) {
+        return res.json({ suggestions: [] });
+      }
+      
+      const mapboxToken = process.env.MAPBOX_ACCESS_TOKEN;
+      if (!mapboxToken) {
+        console.error("MAPBOX_ACCESS_TOKEN not configured");
+        return res.json({ suggestions: [] });
+      }
+      
+      // Mapbox Geocoding API v6 - restrict to Italy for better results
+      const url = `https://api.mapbox.com/search/geocode/v6/forward?q=${encodeURIComponent(query)}&access_token=${mapboxToken}&autocomplete=true&limit=5&country=IT&types=address,place&language=it`;
+      
+      const response = await fetch(url);
+      if (!response.ok) {
+        console.error("Mapbox API error:", response.status, await response.text());
+        return res.json({ suggestions: [] });
+      }
+      
+      const data = await response.json();
+      
+      // Parse Mapbox response and extract address components
+      const suggestions = (data.features || []).map((feature: any) => {
+        const props = feature.properties || {};
+        const context = props.context || {};
+        
+        // Extract address components from Mapbox response
+        let address = props.name || props.full_address || "";
+        let city = "";
+        let province = "";
+        let postalCode = "";
+        let country = "IT";
+        
+        // Mapbox v6 context structure: place, region, postcode, country
+        if (context.place) {
+          city = context.place.name || "";
+        }
+        if (context.region) {
+          // Italian region codes (e.g., "Lombardia") - we want province abbreviation
+          province = context.region.region_code || context.region.name?.substring(0, 2).toUpperCase() || "";
+        }
+        if (context.postcode) {
+          postalCode = context.postcode.name || "";
+        }
+        if (context.country) {
+          country = context.country.country_code?.toUpperCase() || "IT";
+        }
+        
+        // For place type (city/town), use the name as city and clear address
+        if (props.feature_type === "place") {
+          city = props.name || "";
+          address = "";
+        }
+        
+        return {
+          fullAddress: props.full_address || props.name || "",
+          address,
+          city,
+          province,
+          postalCode,
+          country
+        };
+      });
+      
+      res.json({ suggestions });
+    } catch (error: any) {
+      console.error("Geocode autocomplete error:", error.message);
+      res.json({ suggestions: [] });
+    }
+  });
+
   return httpServer;
 }
