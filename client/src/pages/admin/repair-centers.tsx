@@ -20,8 +20,7 @@ export default function AdminRepairCenters() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingCenter, setEditingCenter] = useState<RepairCenter | null>(null);
   const [selectedResellerId, setSelectedResellerId] = useState<string>("");
-  const [selectedAddress, setSelectedAddress] = useState("");
-  const [selectedCity, setSelectedCity] = useState("");
+  const [addressData, setAddressData] = useState({ address: "", city: "", cap: "", provincia: "" });
   const { toast } = useToast();
 
   const { data: centers = [], isLoading } = useQuery<RepairCenter[]>({
@@ -80,25 +79,50 @@ export default function AdminRepairCenters() {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
     
+    // Validazione indirizzo
+    const finalAddress = addressData.address || (editingCenter?.address ?? "");
+    const finalCity = addressData.city || (editingCenter?.city ?? "");
+    
+    if (!finalAddress.trim() || !finalCity.trim()) {
+      toast({ title: "Errore", description: "Indirizzo e Città sono campi obbligatori", variant: "destructive" });
+      return;
+    }
+    
+    // Dati fiscali - converti stringhe vuote in null
+    const fiscalData = {
+      ragioneSociale: (formData.get("ragioneSociale") as string)?.trim() || null,
+      partitaIva: (formData.get("partitaIva") as string)?.trim() || null,
+      codiceFiscale: (formData.get("codiceFiscale") as string)?.trim() || null,
+      iban: (formData.get("iban") as string)?.trim() || null,
+      codiceUnivoco: (formData.get("codiceUnivoco") as string)?.trim() || null,
+      pec: (formData.get("pec") as string)?.trim() || null,
+    };
+    
     if (editingCenter) {
       const updates: Partial<RepairCenter> = {
         name: formData.get("name") as string,
-        address: selectedAddress,
-        city: selectedCity,
+        address: finalAddress,
+        city: finalCity,
+        cap: addressData.cap?.trim() || editingCenter.cap || null,
+        provincia: addressData.provincia?.trim() || editingCenter.provincia || null,
         phone: formData.get("phone") as string,
         email: formData.get("email") as string,
         resellerId: selectedResellerId || null,
+        ...fiscalData,
       };
       updateCenterMutation.mutate({ id: editingCenter.id, data: updates });
     } else {
       const data: InsertRepairCenter = {
         name: formData.get("name") as string,
-        address: selectedAddress,
-        city: selectedCity,
+        address: finalAddress,
+        city: finalCity,
+        cap: addressData.cap?.trim() || null,
+        provincia: addressData.provincia?.trim() || null,
         phone: formData.get("phone") as string,
         email: formData.get("email") as string,
         resellerId: selectedResellerId || null,
         isActive: true,
+        ...fiscalData,
       };
       createCenterMutation.mutate(data);
     }
@@ -123,8 +147,7 @@ export default function AdminRepairCenters() {
           if (!open) {
             setEditingCenter(null);
             setSelectedResellerId("");
-            setSelectedAddress("");
-            setSelectedCity("");
+            setAddressData({ address: "", city: "", cap: "", provincia: "" });
           }
         }}>
           <DialogTrigger asChild>
@@ -133,7 +156,7 @@ export default function AdminRepairCenters() {
               Nuovo Centro
             </Button>
           </DialogTrigger>
-          <DialogContent>
+          <DialogContent className="max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>{editingCenter ? "Modifica Centro" : "Crea Nuovo Centro"}</DialogTitle>
             </DialogHeader>
@@ -143,34 +166,6 @@ export default function AdminRepairCenters() {
                 <Input id="name" name="name" defaultValue={editingCenter?.name || ""} required data-testid="input-name" />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="address">Indirizzo</Label>
-                <AddressAutocomplete
-                  id="address"
-                  name="address"
-                  value={selectedAddress || editingCenter?.address || ""}
-                  onChange={setSelectedAddress}
-                  onAddressSelect={(result) => {
-                    setSelectedAddress(result.address);
-                    setSelectedCity(result.city);
-                  }}
-                  placeholder="Inizia a digitare l'indirizzo..."
-                  required
-                  data-testid="input-address"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="city">Città</Label>
-                <Input
-                  id="city"
-                  name="city"
-                  value={selectedCity || editingCenter?.city || ""}
-                  onChange={(e) => setSelectedCity(e.target.value)}
-                  placeholder="Città"
-                  required
-                  data-testid="input-city"
-                />
-              </div>
-              <div className="space-y-2">
                 <Label htmlFor="phone">Telefono</Label>
                 <Input id="phone" name="phone" type="tel" defaultValue={editingCenter?.phone || ""} required data-testid="input-phone" />
               </div>
@@ -178,6 +173,123 @@ export default function AdminRepairCenters() {
                 <Label htmlFor="email">Email</Label>
                 <Input id="email" name="email" type="email" defaultValue={editingCenter?.email || ""} required data-testid="input-email" />
               </div>
+              
+              <div className="border-t pt-4 mt-4">
+                <h4 className="font-medium text-sm text-muted-foreground mb-3">Dati Fiscali</h4>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-2">
+                    <Label htmlFor="ragioneSociale">Ragione Sociale</Label>
+                    <Input 
+                      id="ragioneSociale" 
+                      name="ragioneSociale" 
+                      defaultValue={editingCenter?.ragioneSociale || ""} 
+                      data-testid="input-ragioneSociale" 
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="partitaIva">Partita IVA</Label>
+                    <Input 
+                      id="partitaIva" 
+                      name="partitaIva" 
+                      defaultValue={editingCenter?.partitaIva || ""} 
+                      data-testid="input-partitaIva" 
+                    />
+                  </div>
+                  <div className="space-y-2 col-span-2">
+                    <Label htmlFor="codiceFiscale">Codice Fiscale</Label>
+                    <Input 
+                      id="codiceFiscale" 
+                      name="codiceFiscale" 
+                      defaultValue={editingCenter?.codiceFiscale || ""} 
+                      data-testid="input-codiceFiscale" 
+                    />
+                  </div>
+                  <div className="space-y-2 col-span-2">
+                    <Label>Indirizzo</Label>
+                    <AddressAutocomplete
+                      value={addressData.address || editingCenter?.address || ""}
+                      onChange={(val) => setAddressData(prev => ({ ...prev, address: val }))}
+                      onAddressSelect={(result) => {
+                        setAddressData({
+                          address: result.address || result.fullAddress,
+                          city: result.city,
+                          cap: result.postalCode,
+                          provincia: result.province,
+                        });
+                      }}
+                      placeholder="Inizia a digitare per vedere i suggerimenti..."
+                      data-testid="input-address"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="city">Città</Label>
+                    <Input 
+                      id="city" 
+                      name="city" 
+                      value={addressData.city || editingCenter?.city || ""}
+                      onChange={(e) => setAddressData(prev => ({ ...prev, city: e.target.value }))}
+                      data-testid="input-city" 
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="space-y-2">
+                      <Label htmlFor="cap">CAP</Label>
+                      <Input 
+                        id="cap" 
+                        name="cap" 
+                        value={addressData.cap || editingCenter?.cap || ""}
+                        onChange={(e) => setAddressData(prev => ({ ...prev, cap: e.target.value }))}
+                        data-testid="input-cap" 
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="provincia">Prov.</Label>
+                      <Input 
+                        id="provincia" 
+                        name="provincia" 
+                        maxLength={2}
+                        value={addressData.provincia || editingCenter?.provincia || ""}
+                        onChange={(e) => setAddressData(prev => ({ ...prev, provincia: e.target.value }))}
+                        placeholder="XX"
+                        data-testid="input-provincia" 
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="codiceUnivoco">Codice Univoco (SDI)</Label>
+                    <Input 
+                      id="codiceUnivoco" 
+                      name="codiceUnivoco" 
+                      maxLength={7}
+                      defaultValue={editingCenter?.codiceUnivoco || ""} 
+                      placeholder="7 caratteri"
+                      data-testid="input-codiceUnivoco" 
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="pec">PEC</Label>
+                    <Input 
+                      id="pec" 
+                      name="pec" 
+                      type="email"
+                      defaultValue={editingCenter?.pec || ""} 
+                      placeholder="email@pec.it"
+                      data-testid="input-pec" 
+                    />
+                  </div>
+                  <div className="space-y-2 col-span-2">
+                    <Label htmlFor="iban">IBAN</Label>
+                    <Input 
+                      id="iban" 
+                      name="iban" 
+                      defaultValue={editingCenter?.iban || ""} 
+                      placeholder="IT..."
+                      data-testid="input-iban" 
+                    />
+                  </div>
+                </div>
+              </div>
+              
               <div className="space-y-2">
                 <Label htmlFor="resellerId">Rivenditore di Appartenenza</Label>
                 <Select value={selectedResellerId} onValueChange={setSelectedResellerId}>
