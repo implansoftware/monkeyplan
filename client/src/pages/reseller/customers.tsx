@@ -1,26 +1,25 @@
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Users, Plus, Search, Mail, Building2 } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
-import { queryClient, apiRequest } from "@/lib/queryClient";
+import { queryClient } from "@/lib/queryClient";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
-import { User, RepairOrder, BillingData } from "@shared/schema";
+import { User, RepairOrder } from "@shared/schema";
 import { CustomerBranchManager } from "@/components/CustomerBranchManager";
+import { CustomerWizardDialog } from "@/components/CustomerWizardDialog";
 
 export default function ResellerCustomers() {
   const [searchQuery, setSearchQuery] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState<User | null>(null);
-  const { toast } = useToast();
 
   const { data: allUsers = [], isLoading } = useQuery<User[]>({
     queryKey: ["/api/reseller/customers"],
@@ -32,44 +31,9 @@ export default function ResellerCustomers() {
 
   const customers = allUsers.filter(user => user.role === "customer");
 
-  const createCustomerMutation = useMutation({
-    mutationFn: async (data: {
-      username: string;
-      email: string;
-      password: string;
-      fullName: string;
-    }) => {
-      const res = await apiRequest("POST", "/api/reseller/customers", {
-        ...data,
-        isActive: true,
-      });
-      return await res.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/reseller/customers"] });
-      setDialogOpen(false);
-      toast({ title: "Cliente creato con successo" });
-    },
-    onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
-    },
-  });
-
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const formData = new FormData(e.currentTarget);
-    
-    const username = formData.get("username") as string;
-    const email = formData.get("email") as string;
-    const password = formData.get("password") as string;
-    const fullName = formData.get("fullName") as string;
-
-    if (!username || !email || !password || !fullName) {
-      toast({ title: "Errore", description: "Compila tutti i campi", variant: "destructive" });
-      return;
-    }
-
-    createCustomerMutation.mutate({ username, email, password, fullName });
+  const handleCustomerCreated = () => {
+    queryClient.invalidateQueries({ queryKey: ["/api/reseller/customers"] });
+    setDialogOpen(false);
   };
 
   const filteredCustomers = customers.filter((customer) =>
@@ -102,70 +66,17 @@ export default function ResellerCustomers() {
             Gestisci la tua base clienti e visualizza le loro riparazioni
           </p>
         </div>
-        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogTrigger asChild>
-            <Button data-testid="button-new-customer">
-              <Plus className="h-4 w-4 mr-2" />
-              Nuovo Cliente
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Crea Nuovo Cliente</DialogTitle>
-            </DialogHeader>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="fullName">Nome Completo *</Label>
-                <Input
-                  id="fullName"
-                  name="fullName"
-                  required
-                  placeholder="Mario Rossi"
-                  data-testid="input-fullname"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="email">Email *</Label>
-                <Input
-                  id="email"
-                  name="email"
-                  type="email"
-                  required
-                  placeholder="mario.rossi@email.com"
-                  data-testid="input-email"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="username">Username *</Label>
-                <Input
-                  id="username"
-                  name="username"
-                  required
-                  placeholder="mariorossi"
-                  data-testid="input-username"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="password">Password *</Label>
-                <Input
-                  id="password"
-                  name="password"
-                  type="password"
-                  required
-                  placeholder="Password sicura"
-                  data-testid="input-password"
-                />
-              </div>
-
-              <Button type="submit" className="w-full" disabled={createCustomerMutation.isPending} data-testid="button-submit-customer">
-                {createCustomerMutation.isPending ? "Creazione..." : "Crea Cliente"}
-              </Button>
-            </form>
-          </DialogContent>
-        </Dialog>
+        <>
+          <Button onClick={() => setDialogOpen(true)} data-testid="button-new-customer">
+            <Plus className="h-4 w-4 mr-2" />
+            Nuovo Cliente
+          </Button>
+          <CustomerWizardDialog 
+            open={dialogOpen} 
+            onOpenChange={setDialogOpen}
+            onSuccess={handleCustomerCreated}
+          />
+        </>
       </div>
 
       <Card>
