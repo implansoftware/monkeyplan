@@ -324,11 +324,20 @@ export const repairCenters = pgTable("repair_centers", {
   name: text("name").notNull(),
   address: text("address").notNull(),
   city: text("city").notNull(),
+  cap: text("cap"),
+  provincia: text("provincia"),
   phone: text("phone").notNull(),
   email: text("email").notNull(),
   resellerId: varchar("reseller_id"), // Rivenditore di appartenenza
   isActive: boolean("is_active").notNull().default(true),
   createdAt: timestamp("created_at").notNull().defaultNow(),
+  // Dati fiscali
+  ragioneSociale: text("ragione_sociale"),
+  partitaIva: text("partita_iva"),
+  codiceFiscale: text("codice_fiscale"),
+  iban: text("iban"),
+  codiceUnivoco: text("codice_univoco"),
+  pec: text("pec"),
 });
 
 // Product type enum
