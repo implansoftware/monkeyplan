@@ -330,7 +330,7 @@ export function RepairOrderDetailDrawer({
     switch (status) {
       case "ingressato": return <Badge variant="secondary" data-testid={`status-${status}`}>Ingressato</Badge>;
       case "in_diagnosi": return <Badge variant="outline" data-testid={`status-${status}`}>In Diagnosi</Badge>;
-      case "preventivo_inviato": return <Badge variant="outline" data-testid={`status-${status}`}>Preventivo Inviato</Badge>;
+      case "preventivo_emesso": return <Badge variant="outline" data-testid={`status-${status}`}>Preventivo Emesso</Badge>;
       case "preventivo_accettato": return <Badge data-testid={`status-${status}`}>Preventivo Accettato</Badge>;
       case "preventivo_rifiutato": return <Badge variant="destructive" data-testid={`status-${status}`}>Preventivo Rifiutato</Badge>;
       case "attesa_ricambi": return <Badge variant="outline" data-testid={`status-${status}`}>Attesa Ricambi</Badge>;
@@ -471,7 +471,7 @@ export function RepairOrderDetailDrawer({
                         { key: 'ingressato', label: 'Ingresso', icon: Package, num: 1 },
                         { key: 'in_diagnosi', label: 'Diagnosi', icon: Stethoscope, num: 2 },
                         { 
-                          key: 'preventivo_inviato', 
+                          key: 'preventivo_emesso', 
                           label: quoteSkipped ? bypassLabel : 'Preventivo', 
                           icon: quoteSkipped ? BypassIcon : Receipt, 
                           num: 3,
@@ -492,7 +492,7 @@ export function RepairOrderDetailDrawer({
                       ];
                       
                       return steps.map((step) => {
-                        const statusOrder = ['ingressato', 'in_diagnosi', 'preventivo_inviato', 'preventivo_accettato', 'attesa_ricambi', 'in_riparazione', 'in_test', 'pronto_ritiro', 'consegnato'];
+                        const statusOrder = ['ingressato', 'in_diagnosi', 'preventivo_emesso', 'preventivo_accettato', 'attesa_ricambi', 'in_riparazione', 'in_test', 'pronto_ritiro', 'consegnato'];
                         const currentIndex = statusOrder.indexOf(repair.status);
                         const stepIndex = statusOrder.indexOf(step.key);
                         const isCompleted = stepIndex <= currentIndex;
@@ -620,8 +620,8 @@ export function RepairOrderDetailDrawer({
                       </div>
                     )}
 
-                    {/* Status: preventivo_inviato - Waiting for customer response */}
-                    {repair.status === 'preventivo_inviato' && (
+                    {/* Status: preventivo_emesso - Waiting for customer response */}
+                    {repair.status === 'preventivo_emesso' && (
                       <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-4 space-y-3">
                         <p className="text-sm">
                           Preventivo inviato al cliente. <strong>In attesa di risposta</strong>. Puoi modificare il preventivo se necessario.

@@ -67,7 +67,7 @@ export default function ResellerRepairs() {
     switch (status) {
       case "ingressato": return <Badge variant="secondary">Ingressato</Badge>;
       case "in_diagnosi": return <Badge variant="outline">In Diagnosi</Badge>;
-      case "preventivo_inviato": return <Badge variant="outline">Preventivo Inviato</Badge>;
+      case "preventivo_emesso": return <Badge variant="outline">Preventivo Emesso</Badge>;
       case "preventivo_accettato": return <Badge>Preventivo Accettato</Badge>;
       case "preventivo_rifiutato": return <Badge variant="destructive">Preventivo Rifiutato</Badge>;
       case "attesa_ricambi": return <Badge variant="outline">Attesa Ricambi</Badge>;
@@ -118,7 +118,7 @@ export default function ResellerRepairs() {
                 <SelectItem value="all">Tutti gli stati</SelectItem>
                 <SelectItem value="ingressato">Ingressato</SelectItem>
                 <SelectItem value="in_diagnosi">In Diagnosi</SelectItem>
-                <SelectItem value="preventivo_inviato">Preventivo Inviato</SelectItem>
+                <SelectItem value="preventivo_emesso">Preventivo Emesso</SelectItem>
                 <SelectItem value="preventivo_accettato">Preventivo Accettato</SelectItem>
                 <SelectItem value="preventivo_rifiutato">Preventivo Rifiutato</SelectItem>
                 <SelectItem value="attesa_ricambi">Attesa Ricambi</SelectItem>

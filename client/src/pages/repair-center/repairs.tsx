@@ -69,7 +69,7 @@ export default function RepairCenterRepairs() {
     switch (status) {
       case "ingressato": return <Badge variant="secondary" data-testid={`badge-status-ingressato`}>Ingressato</Badge>;
       case "in_diagnosi": return <Badge variant="outline" data-testid={`badge-status-in_diagnosi`}>In Diagnosi</Badge>;
-      case "preventivo_inviato": return <Badge variant="outline" data-testid={`badge-status-preventivo_inviato`}>Preventivo Inviato</Badge>;
+      case "preventivo_emesso": return <Badge variant="outline" data-testid={`badge-status-preventivo_emesso`}>Preventivo Emesso</Badge>;
       case "preventivo_accettato": return <Badge data-testid={`badge-status-preventivo_accettato`}>Preventivo Accettato</Badge>;
       case "preventivo_rifiutato": return <Badge variant="destructive" data-testid={`badge-status-preventivo_rifiutato`}>Preventivo Rifiutato</Badge>;
       case "attesa_ricambi": return <Badge variant="outline" data-testid={`badge-status-attesa_ricambi`}>Attesa Ricambi</Badge>;
@@ -138,7 +138,7 @@ export default function RepairCenterRepairs() {
                 <SelectItem value="all">Tutti gli stati</SelectItem>
                 <SelectItem value="ingressato">Ingressato</SelectItem>
                 <SelectItem value="in_diagnosi">In Diagnosi</SelectItem>
-                <SelectItem value="preventivo_inviato">Preventivo Inviato</SelectItem>
+                <SelectItem value="preventivo_emesso">Preventivo Emesso</SelectItem>
                 <SelectItem value="preventivo_accettato">Preventivo Accettato</SelectItem>
                 <SelectItem value="attesa_ricambi">Attesa Ricambi</SelectItem>
                 <SelectItem value="in_riparazione">In Riparazione</SelectItem>
