@@ -20,7 +20,7 @@ import {
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ItalianCitySelect } from "@/components/italian-city-select";
+import { AddressAutocomplete } from "@/components/address-autocomplete";
 
 type CommunicationChannel = 'email' | 'api' | 'whatsapp';
 type SupplierApiType = 'foneday' | 'ifixit' | 'mobilax' | 'generic_rest' | 'custom';
@@ -70,15 +70,21 @@ export default function AdminSuppliers() {
   const [editingSupplier, setEditingSupplier] = useState<Supplier | null>(null);
   const [activeTab, setActiveTab] = useState("general");
   const [selectedCity, setSelectedCity] = useState("");
+  const [selectedZipCode, setSelectedZipCode] = useState("");
+  const [selectedAddress, setSelectedAddress] = useState("");
   const [selectedApiType, setSelectedApiType] = useState<string>("");
   const { toast } = useToast();
 
   useEffect(() => {
     if (editingSupplier) {
       setSelectedCity(editingSupplier.city || "");
+      setSelectedZipCode(editingSupplier.zipCode || "");
+      setSelectedAddress(editingSupplier.address || "");
       setSelectedApiType(editingSupplier.apiType || "");
     } else {
       setSelectedCity("");
+      setSelectedZipCode("");
+      setSelectedAddress("");
       setSelectedApiType("");
     }
   }, [editingSupplier]);
@@ -174,9 +180,9 @@ export default function AdminSuppliers() {
       phone: formData.get("phone") as string || undefined,
       whatsapp: formData.get("whatsapp") as string || undefined,
       website: formData.get("website") as string || undefined,
-      address: formData.get("address") as string || undefined,
+      address: selectedAddress || undefined,
       city: selectedCity || undefined,
-      zipCode: formData.get("zipCode") as string || undefined,
+      zipCode: selectedZipCode || undefined,
       country: formData.get("country") as string || "IT",
       vatNumber: formData.get("vatNumber") as string || undefined,
       fiscalCode: formData.get("fiscalCode") as string || undefined,
@@ -217,7 +223,9 @@ export default function AdminSuppliers() {
 
   const handleNewSupplier = () => {
     setEditingSupplier(null);
-    setSelectedCity(""); // Reset city for new supplier
+    setSelectedCity("");
+    setSelectedZipCode("");
+    setSelectedAddress("");
     setActiveTab("general");
     setDialogOpen(true);
   };
@@ -367,22 +375,30 @@ export default function AdminSuppliers() {
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="address">Indirizzo</Label>
-                    <Input 
-                      id="address" 
-                      name="address" 
-                      defaultValue={editingSupplier?.address || ""}
-                      data-testid="input-supplier-address" 
+                    <AddressAutocomplete
+                      id="address"
+                      name="address"
+                      value={selectedAddress}
+                      onChange={setSelectedAddress}
+                      onAddressSelect={(result) => {
+                        setSelectedAddress(result.address);
+                        setSelectedCity(result.city);
+                        setSelectedZipCode(result.postalCode);
+                      }}
+                      placeholder="Inizia a digitare l'indirizzo..."
+                      data-testid="input-supplier-address"
                     />
                   </div>
                   <div className="grid grid-cols-3 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="city">Città</Label>
-                      <ItalianCitySelect
-                        value={selectedCity}
-                        onChange={setSelectedCity}
-                        placeholder="Seleziona città..."
+                      <Input
                         id="city"
-                        data-testid="select-supplier-city"
+                        name="city"
+                        value={selectedCity}
+                        onChange={(e) => setSelectedCity(e.target.value)}
+                        placeholder="Città"
+                        data-testid="input-supplier-city"
                       />
                     </div>
                     <div className="space-y-2">
@@ -390,7 +406,9 @@ export default function AdminSuppliers() {
                       <Input 
                         id="zipCode" 
                         name="zipCode" 
-                        defaultValue={editingSupplier?.zipCode || ""}
+                        value={selectedZipCode}
+                        onChange={(e) => setSelectedZipCode(e.target.value)}
+                        placeholder="CAP"
                         data-testid="input-supplier-zip" 
                       />
                     </div>

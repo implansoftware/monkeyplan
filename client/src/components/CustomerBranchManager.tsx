@@ -14,6 +14,7 @@ import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Building2, Plus, Edit2, Trash2, MapPin, Phone, Mail } from "lucide-react";
 import type { CustomerBranch } from "@shared/schema";
+import { AddressAutocomplete } from "@/components/address-autocomplete";
 
 interface CustomerBranchManagerProps {
   customerId: string;
@@ -24,6 +25,10 @@ interface CustomerBranchManagerProps {
 export function CustomerBranchManager({ customerId, customerName, readOnly = false }: CustomerBranchManagerProps) {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editBranch, setEditBranch] = useState<CustomerBranch | null>(null);
+  const [selectedAddress, setSelectedAddress] = useState("");
+  const [selectedCity, setSelectedCity] = useState("");
+  const [selectedProvince, setSelectedProvince] = useState("");
+  const [selectedPostalCode, setSelectedPostalCode] = useState("");
   const { toast } = useToast();
 
   const { data: branches = [], isLoading } = useQuery<CustomerBranch[]>({
@@ -80,10 +85,10 @@ export function CustomerBranchManager({ customerId, customerName, readOnly = fal
     const data = {
       branchCode: formData.get("branchCode") as string,
       branchName: formData.get("branchName") as string,
-      address: formData.get("address") as string || null,
-      city: formData.get("city") as string || null,
-      province: formData.get("province") as string || null,
-      postalCode: formData.get("postalCode") as string || null,
+      address: selectedAddress || null,
+      city: selectedCity || null,
+      province: selectedProvince || null,
+      postalCode: selectedPostalCode || null,
       contactName: formData.get("contactName") as string || null,
       contactPhone: formData.get("contactPhone") as string || null,
       contactEmail: formData.get("contactEmail") as string || null,
@@ -104,6 +109,10 @@ export function CustomerBranchManager({ customerId, customerName, readOnly = fal
 
   const openEditDialog = (branch: CustomerBranch) => {
     setEditBranch(branch);
+    setSelectedAddress(branch.address || "");
+    setSelectedCity(branch.city || "");
+    setSelectedProvince(branch.province || "");
+    setSelectedPostalCode(branch.postalCode || "");
     setDialogOpen(true);
   };
 
@@ -111,6 +120,10 @@ export function CustomerBranchManager({ customerId, customerName, readOnly = fal
     setDialogOpen(open);
     if (!open) {
       setEditBranch(null);
+      setSelectedAddress("");
+      setSelectedCity("");
+      setSelectedProvince("");
+      setSelectedPostalCode("");
     }
   };
 
@@ -184,11 +197,18 @@ export function CustomerBranchManager({ customerId, customerName, readOnly = fal
 
                 <div className="space-y-2">
                   <Label htmlFor="address">Indirizzo</Label>
-                  <Input
+                  <AddressAutocomplete
                     id="address"
                     name="address"
-                    placeholder="es. Via Roma, 123"
-                    defaultValue={editBranch?.address || ""}
+                    value={selectedAddress}
+                    onChange={setSelectedAddress}
+                    onAddressSelect={(result) => {
+                      setSelectedAddress(result.address);
+                      setSelectedCity(result.city);
+                      setSelectedProvince(result.province);
+                      setSelectedPostalCode(result.postalCode);
+                    }}
+                    placeholder="Inizia a digitare l'indirizzo..."
                     data-testid="input-branch-address"
                   />
                 </div>
@@ -200,7 +220,8 @@ export function CustomerBranchManager({ customerId, customerName, readOnly = fal
                       id="city"
                       name="city"
                       placeholder="es. Milano"
-                      defaultValue={editBranch?.city || ""}
+                      value={selectedCity}
+                      onChange={(e) => setSelectedCity(e.target.value)}
                       data-testid="input-branch-city"
                     />
                   </div>
@@ -211,7 +232,8 @@ export function CustomerBranchManager({ customerId, customerName, readOnly = fal
                       name="province"
                       placeholder="es. MI"
                       maxLength={2}
-                      defaultValue={editBranch?.province || ""}
+                      value={selectedProvince}
+                      onChange={(e) => setSelectedProvince(e.target.value)}
                       data-testid="input-branch-province"
                     />
                   </div>
@@ -222,7 +244,8 @@ export function CustomerBranchManager({ customerId, customerName, readOnly = fal
                       name="postalCode"
                       placeholder="es. 20100"
                       maxLength={5}
-                      defaultValue={editBranch?.postalCode || ""}
+                      value={selectedPostalCode}
+                      onChange={(e) => setSelectedPostalCode(e.target.value)}
                       data-testid="input-branch-cap"
                     />
                   </div>

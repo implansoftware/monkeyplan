@@ -37,6 +37,7 @@ import {
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Building2, User, CheckCircle2, ChevronRight, ChevronLeft } from "lucide-react";
+import { AddressAutocomplete } from "@/components/address-autocomplete";
 
 interface CustomerWizardDialogProps {
   open: boolean;
@@ -325,9 +326,20 @@ export function CustomerWizardDialog({ open, onOpenChange, onSuccess }: Customer
               <FormItem>
                 <FormLabel>Indirizzo *</FormLabel>
                 <FormControl>
-                  <Input {...field} data-testid="input-address" />
+                  <AddressAutocomplete
+                    id="address"
+                    value={field.value}
+                    onChange={field.onChange}
+                    onAddressSelect={(result) => {
+                      field.onChange(result.address);
+                      form.setValue("city", result.city);
+                      form.setValue("zipCode", result.postalCode);
+                    }}
+                    placeholder="Inizia a digitare l'indirizzo..."
+                    data-testid="input-address"
+                  />
                 </FormControl>
-                <FormDescription>Inserisci l'indirizzo completo</FormDescription>
+                <FormDescription>Inizia a digitare per vedere i suggerimenti</FormDescription>
                 <FormMessage />
               </FormItem>
             )}
@@ -341,7 +353,7 @@ export function CustomerWizardDialog({ open, onOpenChange, onSuccess }: Customer
                 <FormItem>
                   <FormLabel>Città *</FormLabel>
                   <FormControl>
-                    <Input {...field} data-testid="input-city" />
+                    <Input {...field} placeholder="Città" data-testid="input-city" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -355,7 +367,7 @@ export function CustomerWizardDialog({ open, onOpenChange, onSuccess }: Customer
                 <FormItem>
                   <FormLabel>CAP *</FormLabel>
                   <FormControl>
-                    <Input {...field} data-testid="input-zip-code" />
+                    <Input {...field} placeholder="CAP" data-testid="input-zip-code" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

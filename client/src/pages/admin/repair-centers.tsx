@@ -13,12 +13,15 @@ import { Plus, Search, MapPin, Phone, Mail, Pencil, Trash2, Building, Store } fr
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
+import { AddressAutocomplete } from "@/components/address-autocomplete";
 
 export default function AdminRepairCenters() {
   const [searchQuery, setSearchQuery] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingCenter, setEditingCenter] = useState<RepairCenter | null>(null);
   const [selectedResellerId, setSelectedResellerId] = useState<string>("");
+  const [selectedAddress, setSelectedAddress] = useState("");
+  const [selectedCity, setSelectedCity] = useState("");
   const { toast } = useToast();
 
   const { data: centers = [], isLoading } = useQuery<RepairCenter[]>({
@@ -80,8 +83,8 @@ export default function AdminRepairCenters() {
     if (editingCenter) {
       const updates: Partial<RepairCenter> = {
         name: formData.get("name") as string,
-        address: formData.get("address") as string,
-        city: formData.get("city") as string,
+        address: selectedAddress,
+        city: selectedCity,
         phone: formData.get("phone") as string,
         email: formData.get("email") as string,
         resellerId: selectedResellerId || null,
@@ -90,8 +93,8 @@ export default function AdminRepairCenters() {
     } else {
       const data: InsertRepairCenter = {
         name: formData.get("name") as string,
-        address: formData.get("address") as string,
-        city: formData.get("city") as string,
+        address: selectedAddress,
+        city: selectedCity,
         phone: formData.get("phone") as string,
         email: formData.get("email") as string,
         resellerId: selectedResellerId || null,
@@ -120,6 +123,8 @@ export default function AdminRepairCenters() {
           if (!open) {
             setEditingCenter(null);
             setSelectedResellerId("");
+            setSelectedAddress("");
+            setSelectedCity("");
           }
         }}>
           <DialogTrigger asChild>
@@ -139,11 +144,31 @@ export default function AdminRepairCenters() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="address">Indirizzo</Label>
-                <Input id="address" name="address" defaultValue={editingCenter?.address || ""} required data-testid="input-address" />
+                <AddressAutocomplete
+                  id="address"
+                  name="address"
+                  value={selectedAddress || editingCenter?.address || ""}
+                  onChange={setSelectedAddress}
+                  onAddressSelect={(result) => {
+                    setSelectedAddress(result.address);
+                    setSelectedCity(result.city);
+                  }}
+                  placeholder="Inizia a digitare l'indirizzo..."
+                  required
+                  data-testid="input-address"
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="city">Città</Label>
-                <Input id="city" name="city" defaultValue={editingCenter?.city || ""} required data-testid="input-city" />
+                <Input
+                  id="city"
+                  name="city"
+                  value={selectedCity || editingCenter?.city || ""}
+                  onChange={(e) => setSelectedCity(e.target.value)}
+                  placeholder="Città"
+                  required
+                  data-testid="input-city"
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="phone">Telefono</Label>
