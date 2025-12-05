@@ -104,6 +104,23 @@ function requireRole(...roles: string[]) {
   };
 }
 
+// Helper to check if a reseller can manage a repair order
+// Returns true if the reseller owns the order directly OR owns the customer
+async function canResellerManageOrder(resellerId: string, order: any): Promise<boolean> {
+  // Direct ownership via order.resellerId
+  if (order.resellerId === resellerId) {
+    return true;
+  }
+  // Indirect ownership via customer.resellerId
+  if (order.customerId) {
+    const customer = await storage.getUser(order.customerId);
+    if (customer && customer.resellerId === resellerId) {
+      return true;
+    }
+  }
+  return false;
+}
+
 // Helper to set entity metadata for activity logging
 // Call this in handlers after creating/updating/deleting entities
 // Example: setActivityEntity(res, { type: 'users', id: user.id });
@@ -4107,22 +4124,28 @@ export function registerRoutes(app: Express): Server {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
-      // Only repair center technicians and admins can create diagnostics
-      if (req.user.role !== 'admin' && req.user.role !== 'repair_center') {
-        return res.status(403).send("Only repair centers and admins can create diagnostics");
-      }
-      
       // Verify repair order exists
       const order = await storage.getRepairOrder(req.params.id);
       if (!order) {
         return res.status(404).send("Repair order not found");
       }
       
-      // Repair center can only diagnose their own orders
-      if (req.user.role === 'repair_center') {
+      // Role-based access control for creating diagnostics
+      if (req.user.role === 'admin') {
+        // Admin can create diagnostics for any order
+      } else if (req.user.role === 'repair_center') {
+        // Repair center can only diagnose their own orders
         if (!req.user.repairCenterId || order.repairCenterId !== req.user.repairCenterId) {
           return res.status(403).send("Access denied");
         }
+      } else if (req.user.role === 'reseller') {
+        // Reseller can diagnose orders of their customers
+        const canManage = await canResellerManageOrder(req.user.id, order);
+        if (!canManage) {
+          return res.status(403).send("Access denied");
+        }
+      } else {
+        return res.status(403).send("Only admins, repair centers and resellers can create diagnostics");
       }
       
       // Check if diagnostics already exists
@@ -4176,22 +4199,28 @@ export function registerRoutes(app: Express): Server {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
-      // Only repair center technicians and admins can update diagnostics
-      if (req.user.role !== 'admin' && req.user.role !== 'repair_center') {
-        return res.status(403).send("Only repair centers and admins can update diagnostics");
-      }
-      
       // Verify repair order exists
       const order = await storage.getRepairOrder(req.params.id);
       if (!order) {
         return res.status(404).send("Repair order not found");
       }
       
-      // Repair center can only update their own orders
-      if (req.user.role === 'repair_center') {
+      // Role-based access control for updating diagnostics
+      if (req.user.role === 'admin') {
+        // Admin can update diagnostics for any order
+      } else if (req.user.role === 'repair_center') {
+        // Repair center can only update their own orders
         if (!req.user.repairCenterId || order.repairCenterId !== req.user.repairCenterId) {
           return res.status(403).send("Access denied");
         }
+      } else if (req.user.role === 'reseller') {
+        // Reseller can update diagnostics for orders of their customers
+        const canManage = await canResellerManageOrder(req.user.id, order);
+        if (!canManage) {
+          return res.status(403).send("Access denied");
+        }
+      } else {
+        return res.status(403).send("Only admins, repair centers and resellers can update diagnostics");
       }
       
       // Check if diagnostics exists
@@ -4298,21 +4327,27 @@ export function registerRoutes(app: Express): Server {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
-      // Only admin and repair_center can create quotes
-      if (req.user.role !== 'admin' && req.user.role !== 'repair_center') {
-        return res.status(403).send("Only admins and repair centers can create quotes");
-      }
-      
       const repairOrder = await storage.getRepairOrder(req.params.id);
       if (!repairOrder) {
         return res.status(404).send("Repair order not found");
       }
       
-      // Repair center can only create quotes for their assigned orders
-      if (req.user.role === 'repair_center') {
+      // Role-based access control for creating quotes
+      if (req.user.role === 'admin') {
+        // Admin can create quotes for any order
+      } else if (req.user.role === 'repair_center') {
+        // Repair center can only create quotes for their assigned orders
         if (repairOrder.repairCenterId !== req.user.repairCenterId) {
           return res.status(403).send("Access denied");
         }
+      } else if (req.user.role === 'reseller') {
+        // Reseller can create quotes for orders of their customers
+        const canManage = await canResellerManageOrder(req.user.id, repairOrder);
+        if (!canManage) {
+          return res.status(403).send("Access denied");
+        }
+      } else {
+        return res.status(403).send("Only admins, repair centers and resellers can create quotes");
       }
       
       // Check if quote already exists
@@ -4415,21 +4450,27 @@ export function registerRoutes(app: Express): Server {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
-      // Only admin and repair_center can update quotes
-      if (req.user.role !== 'admin' && req.user.role !== 'repair_center') {
-        return res.status(403).send("Only admins and repair centers can update quotes");
-      }
-      
       const repairOrder = await storage.getRepairOrder(req.params.id);
       if (!repairOrder) {
         return res.status(404).send("Repair order not found");
       }
       
-      // Repair center can only update quotes for their assigned orders
-      if (req.user.role === 'repair_center') {
+      // Role-based access control for updating quotes
+      if (req.user.role === 'admin') {
+        // Admin can update quotes for any order
+      } else if (req.user.role === 'repair_center') {
+        // Repair center can only update quotes for their assigned orders
         if (repairOrder.repairCenterId !== req.user.repairCenterId) {
           return res.status(403).send("Access denied");
         }
+      } else if (req.user.role === 'reseller') {
+        // Reseller can update quotes for orders of their customers
+        const canManage = await canResellerManageOrder(req.user.id, repairOrder);
+        if (!canManage) {
+          return res.status(403).send("Access denied");
+        }
+      } else {
+        return res.status(403).send("Only admins, repair centers and resellers can update quotes");
       }
       
       const existingQuote = await storage.getRepairQuote(req.params.id);
@@ -4557,19 +4598,25 @@ export function registerRoutes(app: Express): Server {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
-      // Only admin and repair_center can skip quote
-      if (req.user.role !== 'admin' && req.user.role !== 'repair_center') {
-        return res.status(403).send("Solo admin e centri riparazione possono saltare il preventivo");
-      }
-      
       const repairOrder = await storage.getRepairOrder(req.params.id);
       if (!repairOrder) {
         return res.status(404).send("Ordine di riparazione non trovato");
       }
       
-      // Check repair center access
-      if (req.user.role === 'repair_center' && repairOrder.repairCenterId !== req.user.repairCenterId) {
-        return res.status(403).send("Accesso negato");
+      // Role-based access control for skipping quote
+      if (req.user.role === 'admin') {
+        // Admin can skip quote for any order
+      } else if (req.user.role === 'repair_center') {
+        if (repairOrder.repairCenterId !== req.user.repairCenterId) {
+          return res.status(403).send("Accesso negato");
+        }
+      } else if (req.user.role === 'reseller') {
+        const canManage = await canResellerManageOrder(req.user.id, repairOrder);
+        if (!canManage) {
+          return res.status(403).send("Accesso negato");
+        }
+      } else {
+        return res.status(403).send("Solo admin, centri riparazione e rivenditori possono saltare il preventivo");
       }
       
       // Validate status - can only skip quote from in_diagnosi
@@ -4623,8 +4670,11 @@ export function registerRoutes(app: Express): Server {
       if (req.user.role === 'customer' && repairOrder.customerId !== req.user.id) {
         return res.status(403).send("Access denied");
       }
-      if (req.user.role === 'reseller' && repairOrder.resellerId !== req.user.id) {
-        return res.status(403).send("Access denied");
+      if (req.user.role === 'reseller') {
+        const canManage = await canResellerManageOrder(req.user.id, repairOrder);
+        if (!canManage) {
+          return res.status(403).send("Access denied");
+        }
       }
       if (req.user.role === 'repair_center' && repairOrder.repairCenterId !== req.user.repairCenterId) {
         return res.status(403).send("Access denied");
@@ -4642,19 +4692,25 @@ export function registerRoutes(app: Express): Server {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
-      // Only admin and repair_center can order parts
-      if (req.user.role !== 'admin' && req.user.role !== 'repair_center') {
-        return res.status(403).send("Only admins and repair centers can order parts");
-      }
-      
       const repairOrder = await storage.getRepairOrder(req.params.id);
       if (!repairOrder) {
         return res.status(404).send("Repair order not found");
       }
       
-      // Repair center access check
-      if (req.user.role === 'repair_center' && repairOrder.repairCenterId !== req.user.repairCenterId) {
-        return res.status(403).send("Access denied");
+      // Role-based access control for creating parts order
+      if (req.user.role === 'admin') {
+        // Admin can create parts order for any order
+      } else if (req.user.role === 'repair_center') {
+        if (repairOrder.repairCenterId !== req.user.repairCenterId) {
+          return res.status(403).send("Access denied");
+        }
+      } else if (req.user.role === 'reseller') {
+        const canManage = await canResellerManageOrder(req.user.id, repairOrder);
+        if (!canManage) {
+          return res.status(403).send("Access denied");
+        }
+      } else {
+        return res.status(403).send("Only admins, repair centers and resellers can order parts");
       }
       
       // Convert expectedArrival string to Date if provided
@@ -4724,13 +4780,31 @@ export function registerRoutes(app: Express): Server {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
-      if (req.user.role !== 'admin' && req.user.role !== 'repair_center') {
-        return res.status(403).send("Only admins and repair centers can update parts status");
-      }
-      
       const partsOrder = await storage.getPartsOrder(req.params.id);
       if (!partsOrder) {
         return res.status(404).send("Parts order not found");
+      }
+      
+      // Get the repair order to check access
+      const repairOrder = await storage.getRepairOrder(partsOrder.repairOrderId);
+      if (!repairOrder) {
+        return res.status(404).send("Repair order not found");
+      }
+      
+      // Role-based access control for updating parts status
+      if (req.user.role === 'admin') {
+        // Admin can update parts status for any order
+      } else if (req.user.role === 'repair_center') {
+        if (repairOrder.repairCenterId !== req.user.repairCenterId) {
+          return res.status(403).send("Access denied");
+        }
+      } else if (req.user.role === 'reseller') {
+        const canManage = await canResellerManageOrder(req.user.id, repairOrder);
+        if (!canManage) {
+          return res.status(403).send("Access denied");
+        }
+      } else {
+        return res.status(403).send("Only admins, repair centers and resellers can update parts status");
       }
       
       const receivedAt = req.body.status === 'received' ? new Date() : undefined;
@@ -4738,10 +4812,8 @@ export function registerRoutes(app: Express): Server {
       
       // If parts received, update inventory
       if (req.body.status === 'received') {
-        const repairOrder = await storage.getRepairOrder(partsOrder.repairOrderId);
-        
         // If linked to a product, add to inventory
-        if (partsOrder.productId && repairOrder?.repairCenterId) {
+        if (partsOrder.productId && repairOrder.repairCenterId) {
           await storage.createInventoryMovement({
             productId: partsOrder.productId,
             repairCenterId: repairOrder.repairCenterId,
@@ -4782,12 +4854,19 @@ export function registerRoutes(app: Express): Server {
         return res.status(404).send("Repair order not found");
       }
       
-      // Only admin, repair_center can see logs
-      if (req.user.role !== 'admin' && req.user.role !== 'repair_center') {
-        return res.status(403).send("Access denied");
-      }
-      
-      if (req.user.role === 'repair_center' && repairOrder.repairCenterId !== req.user.repairCenterId) {
+      // Role-based access control for viewing logs
+      if (req.user.role === 'admin') {
+        // Admin can view logs for any order
+      } else if (req.user.role === 'repair_center') {
+        if (repairOrder.repairCenterId !== req.user.repairCenterId) {
+          return res.status(403).send("Access denied");
+        }
+      } else if (req.user.role === 'reseller') {
+        const canManage = await canResellerManageOrder(req.user.id, repairOrder);
+        if (!canManage) {
+          return res.status(403).send("Access denied");
+        }
+      } else {
         return res.status(403).send("Access denied");
       }
       
@@ -4803,17 +4882,25 @@ export function registerRoutes(app: Express): Server {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
-      if (req.user.role !== 'admin' && req.user.role !== 'repair_center') {
-        return res.status(403).send("Only admins and repair centers can add logs");
-      }
-      
       const repairOrder = await storage.getRepairOrder(req.params.id);
       if (!repairOrder) {
         return res.status(404).send("Repair order not found");
       }
       
-      if (req.user.role === 'repair_center' && repairOrder.repairCenterId !== req.user.repairCenterId) {
-        return res.status(403).send("Access denied");
+      // Role-based access control for creating logs
+      if (req.user.role === 'admin') {
+        // Admin can add logs for any order
+      } else if (req.user.role === 'repair_center') {
+        if (repairOrder.repairCenterId !== req.user.repairCenterId) {
+          return res.status(403).send("Access denied");
+        }
+      } else if (req.user.role === 'reseller') {
+        const canManage = await canResellerManageOrder(req.user.id, repairOrder);
+        if (!canManage) {
+          return res.status(403).send("Access denied");
+        }
+      } else {
+        return res.status(403).send("Only admins, repair centers and resellers can add logs");
       }
       
       const log = await storage.createRepairLog({
@@ -4838,17 +4925,25 @@ export function registerRoutes(app: Express): Server {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
-      if (req.user.role !== 'admin' && req.user.role !== 'repair_center') {
-        return res.status(403).send("Only admins and repair centers can start repairs");
-      }
-      
       const repairOrder = await storage.getRepairOrder(req.params.id);
       if (!repairOrder) {
         return res.status(404).send("Repair order not found");
       }
       
-      if (req.user.role === 'repair_center' && repairOrder.repairCenterId !== req.user.repairCenterId) {
-        return res.status(403).send("Access denied");
+      // Role-based access control for starting repair
+      if (req.user.role === 'admin') {
+        // Admin can start repair for any order
+      } else if (req.user.role === 'repair_center') {
+        if (repairOrder.repairCenterId !== req.user.repairCenterId) {
+          return res.status(403).send("Access denied");
+        }
+      } else if (req.user.role === 'reseller') {
+        const canManage = await canResellerManageOrder(req.user.id, repairOrder);
+        if (!canManage) {
+          return res.status(403).send("Access denied");
+        }
+      } else {
+        return res.status(403).send("Only admins, repair centers and resellers can start repairs");
       }
       
       // Can start repair from preventivo_accettato or attesa_ricambi
@@ -4886,11 +4981,19 @@ export function registerRoutes(app: Express): Server {
         return res.status(404).send("Repair order not found");
       }
       
-      if (req.user.role !== 'admin' && req.user.role !== 'repair_center') {
-        return res.status(403).send("Access denied");
-      }
-      
-      if (req.user.role === 'repair_center' && repairOrder.repairCenterId !== req.user.repairCenterId) {
+      // Role-based access control for viewing test checklist
+      if (req.user.role === 'admin') {
+        // Admin can view test checklist for any order
+      } else if (req.user.role === 'repair_center') {
+        if (repairOrder.repairCenterId !== req.user.repairCenterId) {
+          return res.status(403).send("Access denied");
+        }
+      } else if (req.user.role === 'reseller') {
+        const canManage = await canResellerManageOrder(req.user.id, repairOrder);
+        if (!canManage) {
+          return res.status(403).send("Access denied");
+        }
+      } else {
         return res.status(403).send("Access denied");
       }
       
@@ -4906,17 +5009,25 @@ export function registerRoutes(app: Express): Server {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
-      if (req.user.role !== 'admin' && req.user.role !== 'repair_center') {
-        return res.status(403).send("Only admins and repair centers can update test checklist");
-      }
-      
       const repairOrder = await storage.getRepairOrder(req.params.id);
       if (!repairOrder) {
         return res.status(404).send("Repair order not found");
       }
       
-      if (req.user.role === 'repair_center' && repairOrder.repairCenterId !== req.user.repairCenterId) {
-        return res.status(403).send("Access denied");
+      // Role-based access control for updating test checklist
+      if (req.user.role === 'admin') {
+        // Admin can update test checklist for any order
+      } else if (req.user.role === 'repair_center') {
+        if (repairOrder.repairCenterId !== req.user.repairCenterId) {
+          return res.status(403).send("Access denied");
+        }
+      } else if (req.user.role === 'reseller') {
+        const canManage = await canResellerManageOrder(req.user.id, repairOrder);
+        if (!canManage) {
+          return res.status(403).send("Access denied");
+        }
+      } else {
+        return res.status(403).send("Only admins, repair centers and resellers can update test checklist");
       }
       
       // Check if checklist exists
@@ -4975,17 +5086,25 @@ export function registerRoutes(app: Express): Server {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
-      if (req.user.role !== 'admin' && req.user.role !== 'repair_center') {
-        return res.status(403).send("Only admins and repair centers can mark as ready");
-      }
-      
       const repairOrder = await storage.getRepairOrder(req.params.id);
       if (!repairOrder) {
         return res.status(404).send("Repair order not found");
       }
       
-      if (req.user.role === 'repair_center' && repairOrder.repairCenterId !== req.user.repairCenterId) {
-        return res.status(403).send("Access denied");
+      // Role-based access control for marking as ready for pickup
+      if (req.user.role === 'admin') {
+        // Admin can mark any order as ready
+      } else if (req.user.role === 'repair_center') {
+        if (repairOrder.repairCenterId !== req.user.repairCenterId) {
+          return res.status(403).send("Access denied");
+        }
+      } else if (req.user.role === 'reseller') {
+        const canManage = await canResellerManageOrder(req.user.id, repairOrder);
+        if (!canManage) {
+          return res.status(403).send("Access denied");
+        }
+      } else {
+        return res.status(403).send("Only admins, repair centers and resellers can mark as ready");
       }
       
       // Must have passed tests
@@ -5017,17 +5136,25 @@ export function registerRoutes(app: Express): Server {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
-      if (req.user.role !== 'admin' && req.user.role !== 'repair_center') {
-        return res.status(403).send("Only admins and repair centers can complete delivery");
-      }
-      
       const repairOrder = await storage.getRepairOrder(req.params.id);
       if (!repairOrder) {
         return res.status(404).send("Repair order not found");
       }
       
-      if (req.user.role === 'repair_center' && repairOrder.repairCenterId !== req.user.repairCenterId) {
-        return res.status(403).send("Access denied");
+      // Role-based access control for completing delivery
+      if (req.user.role === 'admin') {
+        // Admin can complete delivery for any order
+      } else if (req.user.role === 'repair_center') {
+        if (repairOrder.repairCenterId !== req.user.repairCenterId) {
+          return res.status(403).send("Access denied");
+        }
+      } else if (req.user.role === 'reseller') {
+        const canManage = await canResellerManageOrder(req.user.id, repairOrder);
+        if (!canManage) {
+          return res.status(403).send("Access denied");
+        }
+      } else {
+        return res.status(403).send("Only admins, repair centers and resellers can complete delivery");
       }
       
       // Must be ready for pickup
@@ -5081,8 +5208,11 @@ export function registerRoutes(app: Express): Server {
       if (req.user.role === 'customer' && repairOrder.customerId !== req.user.id) {
         return res.status(403).send("Access denied");
       }
-      if (req.user.role === 'reseller' && repairOrder.resellerId !== req.user.id) {
-        return res.status(403).send("Access denied");
+      if (req.user.role === 'reseller') {
+        const canManage = await canResellerManageOrder(req.user.id, repairOrder);
+        if (!canManage) {
+          return res.status(403).send("Access denied");
+        }
       }
       if (req.user.role === 'repair_center' && repairOrder.repairCenterId !== req.user.repairCenterId) {
         return res.status(403).send("Access denied");

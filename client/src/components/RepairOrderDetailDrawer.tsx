@@ -275,7 +275,7 @@ export function RepairOrderDetailDrawer({
   ) : false;
 
   const canManageWorkflow = user ? (
-    user.role === 'admin' || user.role === 'repair_center'
+    user.role === 'admin' || user.role === 'repair_center' || user.role === 'reseller'
   ) : false;
 
   const canViewWorkflow = user ? (
@@ -542,8 +542,8 @@ export function RepairOrderDetailDrawer({
 
                   <Separator />
 
-                  {/* Next Action - The Main CTA - Only for admin/repair_center */}
-                  {canManageWorkflow ? (
+                  {/* Next Action - The Main CTA */}
+                  {canManageWorkflow && (
                   <div className="space-y-3">
                     <div className="flex items-center gap-2">
                       <AlertCircle className="h-4 w-4 text-primary" />
@@ -798,27 +798,6 @@ export function RepairOrderDetailDrawer({
                       </div>
                     )}
                   </div>
-                  ) : (
-                    <div className="bg-muted/50 border border-muted rounded-lg p-4">
-                      <p className="text-sm text-muted-foreground">
-                        Stato attuale: <strong>{(() => {
-                          switch(repair.status) {
-                            case 'ingressato': return 'Ingressato - In attesa diagnosi';
-                            case 'in_diagnosi': return 'In Diagnosi';
-                            case 'preventivo_inviato': return 'Preventivo Inviato';
-                            case 'preventivo_accettato': return 'Preventivo Accettato';
-                            case 'preventivo_rifiutato': return 'Preventivo Rifiutato';
-                            case 'attesa_ricambi': return 'In Attesa Ricambi';
-                            case 'in_riparazione': return 'In Riparazione';
-                            case 'in_test': return 'In Test/Collaudo';
-                            case 'pronto_ritiro': return 'Pronto per Ritiro';
-                            case 'consegnato': return 'Consegnato';
-                            case 'annullato': return 'Annullato';
-                            default: return repair.status;
-                          }
-                        })()}</strong>
-                      </p>
-                    </div>
                   )}
 
                   <Separator />
