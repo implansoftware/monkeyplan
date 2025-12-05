@@ -10,9 +10,9 @@ import { format } from "date-fns";
 import { Shield, User, FileEdit, Trash2, Plus } from "lucide-react";
 
 export default function AdminActivityLogs() {
-  const [actionFilter, setActionFilter] = useState<string>("");
+  const [actionFilter, setActionFilter] = useState<string>("all");
   const [entityTypeFilter, setEntityTypeFilter] = useState<string>("");
-  const [userIdFilter, setUserIdFilter] = useState<string>("");
+  const [userIdFilter, setUserIdFilter] = useState<string>("all");
   const [startDateFilter, setStartDateFilter] = useState<string>("");
   const [endDateFilter, setEndDateFilter] = useState<string>("");
 
@@ -20,14 +20,20 @@ export default function AdminActivityLogs() {
     queryKey: ["/api/admin/users"],
   });
 
+  // Costruisci URL con query parameters
+  const buildLogsUrl = () => {
+    const params = new URLSearchParams();
+    if (actionFilter && actionFilter !== "all") params.append("action", actionFilter);
+    if (entityTypeFilter) params.append("entityType", entityTypeFilter);
+    if (userIdFilter && userIdFilter !== "all") params.append("userId", userIdFilter);
+    if (startDateFilter) params.append("startDate", startDateFilter);
+    if (endDateFilter) params.append("endDate", endDateFilter);
+    const queryString = params.toString();
+    return queryString ? `/api/admin/activity-logs?${queryString}` : "/api/admin/activity-logs";
+  };
+
   const { data: logs, isLoading } = useQuery<ActivityLog[]>({
-    queryKey: ["/api/admin/activity-logs", { 
-      action: actionFilter, 
-      entityType: entityTypeFilter,
-      userId: userIdFilter,
-      startDate: startDateFilter,
-      endDate: endDateFilter
-    }],
+    queryKey: [buildLogsUrl()],
   });
 
   const getActionIcon = (action: string) => {
@@ -77,7 +83,7 @@ export default function AdminActivityLogs() {
                 <SelectValue placeholder="Azione" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Tutte</SelectItem>
+                <SelectItem value="all">Tutte</SelectItem>
                 <SelectItem value="CREATE">CREATE</SelectItem>
                 <SelectItem value="UPDATE">UPDATE</SelectItem>
                 <SelectItem value="DELETE">DELETE</SelectItem>
@@ -99,7 +105,7 @@ export default function AdminActivityLogs() {
                 <SelectValue placeholder="Utente" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Tutti</SelectItem>
+                <SelectItem value="all">Tutti</SelectItem>
                 {users?.map((user) => (
                   <SelectItem key={user.id} value={user.id}>
                     {user.username}
