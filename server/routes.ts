@@ -3141,6 +3141,12 @@ export function registerRoutes(app: Express): Server {
       // For resellers, also check if the order's customer belongs to them
       if (!hasAccess && req.user.role === 'reseller' && order.customerId) {
         const customer = await storage.getUser(order.customerId);
+        console.log('[DEBUG] Reseller access check:', {
+          userId: req.user.id,
+          customerId: order.customerId,
+          customerResellerId: customer?.resellerId,
+          match: customer?.resellerId === req.user.id
+        });
         if (customer && customer.resellerId === req.user.id) {
           hasAccess = true;
         }
