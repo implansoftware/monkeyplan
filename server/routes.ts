@@ -3149,12 +3149,26 @@ export function registerRoutes(app: Express): Server {
       const order = await storage.getRepairOrder(req.params.id);
       if (!order) return res.status(404).send("Repair order not found");
       
+      console.log('[DEBUG] Order access check:', {
+        userId: req.user.id,
+        userRole: req.user.role,
+        orderId: order.id,
+        orderCustomerId: order.customerId,
+        orderResellerId: order.resellerId
+      });
+      
       // For resellers, check if the order's customer belongs to them FIRST
       // This handles the case where order.resellerId is NULL but customer.resellerId matches
       if (req.user.role === 'reseller' && order.customerId) {
         const customer = await storage.getUser(order.customerId);
+        console.log('[DEBUG] Reseller customer check:', {
+          customerFound: !!customer,
+          customerResellerId: customer?.resellerId,
+          match: customer?.resellerId === req.user.id
+        });
         if (customer && customer.resellerId === req.user.id) {
           // Reseller owns this customer, grant access immediately
+          console.log('[DEBUG] Granting reseller access via customer ownership');
           return res.json(order);
         }
       }
