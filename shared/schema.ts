@@ -72,6 +72,15 @@ export const slaSeverityEnum = pgEnum("sla_severity", [
   "urgent",            // 🔴 Urgente (superata soglia critica)
 ]);
 
+// Appointment Status Enum - Stato appuntamenti consegna
+export const appointmentStatusEnum = pgEnum("appointment_status", [
+  "scheduled",         // Prenotato
+  "confirmed",         // Confermato dal centro
+  "completed",         // Consegna completata
+  "cancelled",         // Annullato
+  "no_show",           // Cliente non presentato
+]);
+
 export const dataRecoveryEventTypeEnum = pgEnum("data_recovery_event_type", [
   "created",           // Job creato
   "assigned",          // Assegnato
@@ -716,6 +725,56 @@ export const repairDelivery = pgTable("repair_delivery", {
   notes: text("notes"),
   deliveredBy: varchar("delivered_by").notNull(), // ID utente che ha consegnato
   deliveredAt: timestamp("delivered_at").notNull().defaultNow(),
+});
+
+// ==========================================
+// DELIVERY APPOINTMENT SYSTEM
+// ==========================================
+
+// Repair Center Availability (Disponibilità settimanale centro riparazione)
+export const repairCenterAvailability = pgTable("repair_center_availability", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  repairCenterId: varchar("repair_center_id").notNull().references(() => repairCenters.id, { onDelete: 'cascade' }),
+  weekday: integer("weekday").notNull(), // 0=Domenica, 1=Lunedì, ..., 6=Sabato
+  startTime: text("start_time").notNull(), // "09:00" formato HH:mm
+  endTime: text("end_time").notNull(), // "18:00" formato HH:mm
+  slotDurationMinutes: integer("slot_duration_minutes").notNull().default(30), // Durata slot in minuti
+  capacityPerSlot: integer("capacity_per_slot").notNull().default(1), // Appuntamenti max per slot
+  isClosed: boolean("is_closed").notNull().default(false), // Giorno di chiusura
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+// Repair Center Blackouts (Giorni di chiusura straordinaria/ferie)
+export const repairCenterBlackouts = pgTable("repair_center_blackouts", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  repairCenterId: varchar("repair_center_id").notNull().references(() => repairCenters.id, { onDelete: 'cascade' }),
+  date: text("date").notNull(), // "2024-12-25" formato YYYY-MM-DD
+  startTime: text("start_time"), // null = giorno intero, altrimenti "09:00"
+  endTime: text("end_time"), // null = giorno intero, altrimenti "13:00"
+  reason: text("reason"), // "Natale", "Ferie", "Manutenzione"
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+// Delivery Appointments (Appuntamenti per consegna dispositivi)
+export const deliveryAppointments = pgTable("delivery_appointments", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  repairOrderId: varchar("repair_order_id").notNull().references(() => repairOrders.id),
+  repairCenterId: varchar("repair_center_id").notNull().references(() => repairCenters.id),
+  resellerId: varchar("reseller_id").references(() => users.id), // Chi ha prenotato (reseller)
+  customerId: varchar("customer_id").references(() => users.id), // Cliente finale
+  date: text("date").notNull(), // "2024-12-20" formato YYYY-MM-DD
+  startTime: text("start_time").notNull(), // "10:00" formato HH:mm
+  endTime: text("end_time").notNull(), // "10:30" formato HH:mm
+  status: appointmentStatusEnum("status").notNull().default("scheduled"),
+  notes: text("notes"), // Note aggiuntive
+  confirmedBy: varchar("confirmed_by"), // ID utente che ha confermato
+  confirmedAt: timestamp("confirmed_at"), // Data conferma
+  cancelledBy: varchar("cancelled_by"), // ID utente che ha annullato
+  cancelledAt: timestamp("cancelled_at"), // Data annullamento
+  cancelReason: text("cancel_reason"), // Motivo annullamento
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 
 // ==========================================
@@ -2461,6 +2520,26 @@ export const insertRepairDeliverySchema = createInsertSchema(repairDelivery).omi
   deliveredAt: true,
 });
 
+// Delivery Appointment Schemas
+export const insertRepairCenterAvailabilitySchema = createInsertSchema(repairCenterAvailability).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertRepairCenterBlackoutSchema = createInsertSchema(repairCenterBlackouts).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertDeliveryAppointmentSchema = createInsertSchema(deliveryAppointments).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  confirmedAt: true,
+  cancelledAt: true,
+});
+
 // SLA State History Schemas
 export const insertRepairOrderStateHistorySchema = createInsertSchema(repairOrderStateHistory).omit({
   id: true,
@@ -2924,6 +3003,19 @@ export type InsertRepairTestChecklist = z.infer<typeof insertRepairTestChecklist
 
 export type RepairDelivery = typeof repairDelivery.$inferSelect;
 export type InsertRepairDelivery = z.infer<typeof insertRepairDeliverySchema>;
+
+// Delivery Appointment Types
+export type RepairCenterAvailability = typeof repairCenterAvailability.$inferSelect;
+export type InsertRepairCenterAvailability = z.infer<typeof insertRepairCenterAvailabilitySchema>;
+
+export type RepairCenterBlackout = typeof repairCenterBlackouts.$inferSelect;
+export type InsertRepairCenterBlackout = z.infer<typeof insertRepairCenterBlackoutSchema>;
+
+export type DeliveryAppointment = typeof deliveryAppointments.$inferSelect;
+export type InsertDeliveryAppointment = z.infer<typeof insertDeliveryAppointmentSchema>;
+
+// Appointment Status Type
+export type AppointmentStatus = "scheduled" | "confirmed" | "completed" | "cancelled" | "no_show";
 
 // SLA State History Types
 export type RepairOrderStateHistory = typeof repairOrderStateHistory.$inferSelect;
