@@ -75,6 +75,18 @@ export default function AdminResellers() {
       ? selectedParentResellerId 
       : null;
     
+    // Dati fiscali comuni
+    const fiscalData = {
+      ragioneSociale: formData.get("ragioneSociale") as string || null,
+      partitaIva: formData.get("partitaIva") as string || null,
+      codiceFiscale: formData.get("codiceFiscale") as string || null,
+      indirizzo: formData.get("indirizzo") as string || null,
+      citta: formData.get("citta") as string || null,
+      cap: formData.get("cap") as string || null,
+      provincia: formData.get("provincia") as string || null,
+      iban: formData.get("iban") as string || null,
+    };
+    
     if (editingReseller) {
       const updates: Partial<User> = {
         fullName: formData.get("fullName") as string,
@@ -83,6 +95,7 @@ export default function AdminResellers() {
         isActive: formData.get("isActive") === "true",
         resellerCategory: selectedCategory as any,
         parentResellerId: parentId,
+        ...fiscalData,
       };
       updateResellerMutation.mutate({ id: editingReseller.id, data: updates });
     } else {
@@ -96,6 +109,7 @@ export default function AdminResellers() {
         isActive: true,
         resellerCategory: selectedCategory as any,
         parentResellerId: parentId,
+        ...fiscalData,
       };
       createResellerMutation.mutate(userData);
     }
@@ -129,7 +143,7 @@ export default function AdminResellers() {
               Nuovo Rivenditore
             </Button>
           </DialogTrigger>
-          <DialogContent data-testid="dialog-reseller-form">
+          <DialogContent className="max-h-[90vh] overflow-y-auto" data-testid="dialog-reseller-form">
             <DialogHeader>
               <DialogTitle>{editingReseller ? "Modifica Rivenditore" : "Nuovo Rivenditore"}</DialogTitle>
             </DialogHeader>
@@ -176,6 +190,91 @@ export default function AdminResellers() {
                   data-testid="input-phone" 
                 />
               </div>
+              
+              <div className="border-t pt-4 mt-4">
+                <h4 className="font-medium text-sm text-muted-foreground mb-3">Dati Fiscali</h4>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-2">
+                    <Label htmlFor="ragioneSociale">Ragione Sociale</Label>
+                    <Input 
+                      id="ragioneSociale" 
+                      name="ragioneSociale" 
+                      defaultValue={editingReseller?.ragioneSociale || ""} 
+                      data-testid="input-ragioneSociale" 
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="partitaIva">Partita IVA</Label>
+                    <Input 
+                      id="partitaIva" 
+                      name="partitaIva" 
+                      defaultValue={editingReseller?.partitaIva || ""} 
+                      data-testid="input-partitaIva" 
+                    />
+                  </div>
+                  <div className="space-y-2 col-span-2">
+                    <Label htmlFor="codiceFiscale">Codice Fiscale</Label>
+                    <Input 
+                      id="codiceFiscale" 
+                      name="codiceFiscale" 
+                      defaultValue={editingReseller?.codiceFiscale || ""} 
+                      data-testid="input-codiceFiscale" 
+                    />
+                  </div>
+                  <div className="space-y-2 col-span-2">
+                    <Label htmlFor="indirizzo">Indirizzo</Label>
+                    <Input 
+                      id="indirizzo" 
+                      name="indirizzo" 
+                      defaultValue={editingReseller?.indirizzo || ""} 
+                      placeholder="Via/Piazza e numero civico"
+                      data-testid="input-indirizzo" 
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="citta">Città</Label>
+                    <Input 
+                      id="citta" 
+                      name="citta" 
+                      defaultValue={editingReseller?.citta || ""} 
+                      data-testid="input-citta" 
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="space-y-2">
+                      <Label htmlFor="cap">CAP</Label>
+                      <Input 
+                        id="cap" 
+                        name="cap" 
+                        defaultValue={editingReseller?.cap || ""} 
+                        data-testid="input-cap" 
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="provincia">Prov.</Label>
+                      <Input 
+                        id="provincia" 
+                        name="provincia" 
+                        maxLength={2}
+                        defaultValue={editingReseller?.provincia || ""} 
+                        placeholder="XX"
+                        data-testid="input-provincia" 
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-2 col-span-2">
+                    <Label htmlFor="iban">IBAN</Label>
+                    <Input 
+                      id="iban" 
+                      name="iban" 
+                      defaultValue={editingReseller?.iban || ""} 
+                      placeholder="IT..."
+                      data-testid="input-iban" 
+                    />
+                  </div>
+                </div>
+              </div>
+              
               <div className="space-y-2">
                 <Label htmlFor="resellerCategory">Categoria</Label>
                 <Select value={selectedCategory} onValueChange={(val) => {
