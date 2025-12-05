@@ -603,9 +603,25 @@ export function registerRoutes(app: Express): Server {
   });
 
   // Public endpoint to list repair centers (for dropdowns)
+  // Filters by role: resellers see only their centers, admins see all
   app.get("/api/repair-centers", requireAuth, async (req, res) => {
     try {
-      const centers = await storage.listRepairCenters();
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      let centers = await storage.listRepairCenters();
+      
+      // Filter based on role
+      if (req.user.role === 'reseller') {
+        // Resellers see only their own repair centers
+        centers = centers.filter(c => c.resellerId === req.user!.id && c.isActive);
+      } else if (req.user.role === 'repair_center') {
+        // Repair center users see only active centers (they typically work at one)
+        centers = centers.filter(c => c.isActive);
+      } else {
+        // Admin sees all active centers
+        centers = centers.filter(c => c.isActive);
+      }
+      
       // Return only essential fields for selection
       res.json(centers.map(c => ({
         id: c.id,
