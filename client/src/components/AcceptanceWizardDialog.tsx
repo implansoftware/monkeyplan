@@ -331,7 +331,7 @@ export function AcceptanceWizardDialog({
     email: string | null;
   }>>({
     queryKey: ["/api/repair-centers"],
-    enabled: user?.role === "admin" || user?.role === "repair_center",
+    enabled: user?.role === "admin" || user?.role === "repair_center" || user?.role === "reseller",
   });
 
   const form = useForm<AcceptanceWizardData>({
