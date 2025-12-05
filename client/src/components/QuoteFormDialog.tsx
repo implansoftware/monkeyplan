@@ -34,11 +34,17 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { FileText, Plus, Trash2, Package, Calculator, Info } from "lucide-react";
-import type { Product, RepairDiagnostics, RepairOrder, RepairCenter } from "@shared/schema";
+import { FileText, Plus, Trash2, Package, Calculator, Info, Wrench } from "lucide-react";
+import type { Product, RepairDiagnostics, RepairOrder, RepairCenter, ServiceItem } from "@shared/schema";
 
 interface HourlyRateResponse {
   hourlyRateCents: number;
+}
+
+interface ServiceItemWithPrice extends ServiceItem {
+  effectivePriceCents: number;
+  effectiveLaborMinutes: number;
+  priceSource: 'base' | 'reseller' | 'repair_center';
 }
 
 interface QuoteFormDialogProps {
@@ -96,6 +102,15 @@ export function QuoteFormDialog({
     queryKey: ["/api/repair-centers", repairOrder?.repairCenterId],
     enabled: open && !!repairOrder?.repairCenterId,
     retry: false,
+  });
+
+  // Fetch service catalog items with resolved prices
+  const { data: serviceItems = [] } = useQuery<ServiceItemWithPrice[]>({
+    queryKey: ["/api/service-items", { 
+      repairCenterId: repairOrder?.repairCenterId,
+      resellerId: repairOrder?.resellerId 
+    }],
+    enabled: open,
   });
 
   const { 
@@ -263,7 +278,7 @@ export function QuoteFormDialog({
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between gap-2">
-                <CardTitle className="text-base">Elenco Ricambi</CardTitle>
+                <CardTitle className="text-base">Ricambi e Servizi</CardTitle>
                 <div className="flex gap-2">
                   <Button
                     type="button"
@@ -288,9 +303,9 @@ export function QuoteFormDialog({
                       }
                     }}
                   >
-                    <SelectTrigger className="w-[180px]" data-testid="select-product-from-inventory">
+                    <SelectTrigger className="w-[160px]" data-testid="select-product-from-inventory">
                       <Package className="h-4 w-4 mr-2" />
-                      <SelectValue placeholder="Da Magazzino" />
+                      <SelectValue placeholder="Magazzino" />
                     </SelectTrigger>
                     <SelectContent>
                       {products.length === 0 ? (
@@ -311,12 +326,56 @@ export function QuoteFormDialog({
                       )}
                     </SelectContent>
                   </Select>
+                  <Select
+                    onValueChange={(serviceId) => {
+                      const service = serviceItems.find(s => s.id === serviceId);
+                      if (service) {
+                        append({
+                          productId: "",
+                          name: `[Servizio] ${service.name}`,
+                          quantity: 1,
+                          unitPrice: service.effectivePriceCents / 100,
+                        });
+                      }
+                    }}
+                  >
+                    <SelectTrigger className="w-[160px]" data-testid="select-service-from-catalog">
+                      <Wrench className="h-4 w-4 mr-2" />
+                      <SelectValue placeholder="Catalogo" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {serviceItems.length === 0 ? (
+                        <div className="p-2 text-sm text-muted-foreground text-center">
+                          Nessun servizio disponibile
+                        </div>
+                      ) : (
+                        serviceItems.map((service) => (
+                          <SelectItem key={service.id} value={service.id}>
+                            <div className="flex flex-col">
+                              <span>{service.name}</span>
+                              <span className="text-xs text-muted-foreground">
+                                {service.code} - {formatCurrency(service.effectivePriceCents / 100)}
+                                {service.effectiveLaborMinutes > 0 && (
+                                  <span className="ml-1">({service.effectiveLaborMinutes} min)</span>
+                                )}
+                                {service.priceSource !== 'base' && (
+                                  <span className="ml-1 text-primary">
+                                    ({service.priceSource === 'reseller' ? 'Reseller' : 'Centro'})
+                                  </span>
+                                )}
+                              </span>
+                            </div>
+                          </SelectItem>
+                        ))
+                      )}
+                    </SelectContent>
+                  </Select>
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">
                 {fields.length === 0 ? (
                   <p className="text-sm text-muted-foreground text-center py-4">
-                    Nessun ricambio aggiunto. Seleziona dal magazzino o aggiungi manualmente.
+                    Nessun elemento aggiunto. Seleziona dal magazzino, catalogo servizi o aggiungi manualmente.
                   </p>
                 ) : (
                   fields.map((field, index) => (
