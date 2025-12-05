@@ -338,6 +338,8 @@ export const repairCenters = pgTable("repair_centers", {
   iban: text("iban"),
   codiceUnivoco: text("codice_univoco"),
   pec: text("pec"),
+  // Tariffa manodopera specifica per questo centro (in centesimi EUR)
+  hourlyRateCents: integer("hourly_rate_cents"),
 });
 
 // Product type enum
