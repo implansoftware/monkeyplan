@@ -3065,7 +3065,7 @@ export function registerRoutes(app: Express): Server {
         filters.customerId = req.user.id;
       } else if (req.user.role === 'reseller') {
         // Resellers see orders of their customers (customers who belong to this reseller)
-        const resellerCustomers = await storage.listUsers({ resellerId: req.user.id, role: 'customer' });
+        const resellerCustomers = await storage.listCustomers({ resellerId: req.user.id });
         const customerIds = resellerCustomers.map(c => c.id);
         if (customerIds.length === 0) {
           // No customers means no orders
