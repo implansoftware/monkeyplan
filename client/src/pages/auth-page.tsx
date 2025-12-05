@@ -113,10 +113,11 @@ export default function AuthPage() {
                 <CardContent>
                   <form onSubmit={handleLogin} className="space-y-4">
                     <div className="space-y-2">
-                      <Label htmlFor="login-username">Username</Label>
+                      <Label htmlFor="login-username">Username o Email</Label>
                       <Input
                         id="login-username"
                         data-testid="input-login-username"
+                        placeholder="Inserisci username o email"
                         value={loginData.username}
                         onChange={(e) => setLoginData({ ...loginData, username: e.target.value })}
                         required

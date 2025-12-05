@@ -42,22 +42,28 @@ export function setupAuth(app: Express) {
   app.use(passport.session());
 
   passport.use(
-    new LocalStrategy(async (username, password, done) => {
-      console.log('[AUTH] Login attempt:', { username, passwordLength: password?.length });
-      const user = await storage.getUserByUsername(username);
+    new LocalStrategy(async (usernameOrEmail, password, done) => {
+      console.log('[AUTH] Login attempt:', { usernameOrEmail, passwordLength: password?.length });
+      
+      // Try to find user by username first, then by email
+      let user = await storage.getUserByUsername(usernameOrEmail);
       if (!user) {
-        console.log('[AUTH] User not found:', username);
+        user = await storage.getUserByEmail(usernameOrEmail);
+      }
+      
+      if (!user) {
+        console.log('[AUTH] User not found:', usernameOrEmail);
         return done(null, false, { message: "Credenziali non valide" });
       }
       
       // Check if user is active (approved)
       if (!user.isActive) {
-        console.log('[AUTH] User not active (pending approval):', username);
+        console.log('[AUTH] User not active (pending approval):', usernameOrEmail);
         return done(null, false, { message: "Account in attesa di approvazione" });
       }
       
       const passwordMatch = await comparePasswords(password, user.password);
-      console.log('[AUTH] Password match:', passwordMatch, 'for user:', username);
+      console.log('[AUTH] Password match:', passwordMatch, 'for user:', usernameOrEmail);
       if (!passwordMatch) {
         return done(null, false, { message: "Credenziali non valide" });
       } else {
