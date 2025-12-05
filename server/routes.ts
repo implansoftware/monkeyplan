@@ -10292,14 +10292,13 @@ export function registerRoutes(app: Express): Server {
   // MAPBOX ADDRESS AUTOCOMPLETE
   // ==========================================
   
-  // GET /api/geocode/autocomplete - Proxy per Mapbox Geocoding API (address autocomplete)
+  // GET /api/geocode/autocomplete - Proxy per Mapbox Searchbox API (address autocomplete)
   app.get("/api/geocode/autocomplete", requireAuth, async (req, res) => {
     try {
       const query = req.query.q as string;
-      console.log("[Geocode] Query received:", query);
+      const sessionToken = req.query.session_token as string || crypto.randomUUID();
       
       if (!query || query.length < 3) {
-        console.log("[Geocode] Query too short or missing, returning empty");
         return res.json({ suggestions: [] });
       }
       
@@ -10308,13 +10307,11 @@ export function registerRoutes(app: Express): Server {
         console.error("[Geocode] MAPBOX_ACCESS_TOKEN not configured");
         return res.json({ suggestions: [] });
       }
-      console.log("[Geocode] Token available, calling Mapbox for:", query);
       
-      // Mapbox Geocoding API v6 - restrict to Italy for better results
-      const url = `https://api.mapbox.com/search/geocode/v6/forward?q=${encodeURIComponent(query)}&access_token=${mapboxToken}&autocomplete=true&limit=5&country=IT&types=address,place&language=it`;
+      // Mapbox Searchbox API v1 - designed for autocomplete
+      const url = `https://api.mapbox.com/search/searchbox/v1/suggest?q=${encodeURIComponent(query)}&access_token=${mapboxToken}&session_token=${sessionToken}&country=IT&language=it&limit=5&types=address,street,place,locality,neighborhood`;
       
       const response = await fetch(url);
-      console.log("[Geocode] Mapbox response status:", response.status);
       
       if (!response.ok) {
         const errorText = await response.text();
@@ -10323,48 +10320,51 @@ export function registerRoutes(app: Express): Server {
       }
       
       const data = await response.json();
-      console.log("[Geocode] Mapbox features count:", data.features?.length || 0);
       
-      // Parse Mapbox response and extract address components
-      const suggestions = (data.features || []).map((feature: any) => {
-        const props = feature.properties || {};
-        const context = props.context || {};
+      // Parse Mapbox Searchbox response
+      const suggestions = (data.suggestions || []).map((suggestion: any) => {
+        const context = suggestion.context || {};
         
-        // Extract address components from Mapbox response
-        let address = props.name || props.full_address || "";
+        // Extract address components
+        let address = suggestion.name || "";
         let city = "";
         let province = "";
         let postalCode = "";
-        let country = "IT";
         
-        // Mapbox v6 context structure: place, region, postcode, country
-        if (context.place) {
-          city = context.place.name || "";
-        }
-        if (context.region) {
-          // Italian region codes (e.g., "Lombardia") - we want province abbreviation
-          province = context.region.region_code || context.region.name?.substring(0, 2).toUpperCase() || "";
-        }
-        if (context.postcode) {
-          postalCode = context.postcode.name || "";
-        }
-        if (context.country) {
-          country = context.country.country_code?.toUpperCase() || "IT";
+        // Find city from context (place or locality)
+        if (context.place?.name) {
+          city = context.place.name;
+        } else if (context.locality?.name) {
+          city = context.locality.name;
         }
         
-        // For place type (city/town), use the name as city and clear address
-        if (props.feature_type === "place") {
-          city = props.name || "";
+        // Find province from region
+        if (context.region?.region_code) {
+          province = context.region.region_code;
+        } else if (context.region?.name) {
+          // Try to extract province code from name
+          province = context.region.name.substring(0, 2).toUpperCase();
+        }
+        
+        // Get postcode
+        if (context.postcode?.name) {
+          postalCode = context.postcode.name;
+        }
+        
+        // For place/locality types, use as city
+        if (suggestion.feature_type === "place" || suggestion.feature_type === "locality") {
+          city = suggestion.name || city;
           address = "";
         }
         
         return {
-          fullAddress: props.full_address || props.name || "",
+          mapboxId: suggestion.mapbox_id,
+          fullAddress: suggestion.full_address || suggestion.place_formatted || suggestion.name || "",
           address,
           city,
           province,
           postalCode,
-          country
+          country: "IT"
         };
       });
       
@@ -10372,6 +10372,61 @@ export function registerRoutes(app: Express): Server {
     } catch (error: any) {
       console.error("Geocode autocomplete error:", error.message);
       res.json({ suggestions: [] });
+    }
+  });
+  
+  // GET /api/geocode/retrieve/:mapboxId - Get full details for a selected suggestion
+  app.get("/api/geocode/retrieve/:mapboxId", requireAuth, async (req, res) => {
+    try {
+      const { mapboxId } = req.params;
+      const sessionToken = req.query.session_token as string || crypto.randomUUID();
+      
+      const mapboxToken = process.env.MAPBOX_ACCESS_TOKEN;
+      if (!mapboxToken) {
+        return res.status(500).json({ error: "Mapbox token not configured" });
+      }
+      
+      // Retrieve full details from Mapbox
+      const url = `https://api.mapbox.com/search/searchbox/v1/retrieve/${mapboxId}?access_token=${mapboxToken}&session_token=${sessionToken}`;
+      
+      const response = await fetch(url);
+      
+      if (!response.ok) {
+        return res.status(response.status).json({ error: "Failed to retrieve address details" });
+      }
+      
+      const data = await response.json();
+      const feature = data.features?.[0];
+      
+      if (!feature) {
+        return res.status(404).json({ error: "Address not found" });
+      }
+      
+      const props = feature.properties || {};
+      const context = props.context || {};
+      
+      // Extract full address details
+      let address = props.name || "";
+      let city = context.place?.name || context.locality?.name || "";
+      let province = context.region?.region_code || "";
+      let postalCode = context.postcode?.name || "";
+      
+      // For address type, combine street and house number
+      if (props.feature_type === "address" && props.address) {
+        address = props.address;
+      }
+      
+      res.json({
+        fullAddress: props.full_address || props.place_formatted || "",
+        address,
+        city,
+        province,
+        postalCode,
+        country: "IT"
+      });
+    } catch (error: any) {
+      console.error("Geocode retrieve error:", error.message);
+      res.status(500).json({ error: error.message });
     }
   });
 

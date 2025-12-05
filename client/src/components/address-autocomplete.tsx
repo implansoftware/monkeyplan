@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 
 interface AddressResult {
+  mapboxId?: string;
   fullAddress: string;
   address: string;
   city: string;
@@ -154,7 +155,7 @@ export function AddressAutocomplete({
         <div className="absolute z-50 w-full mt-1 bg-popover border rounded-md shadow-lg max-h-60 overflow-auto">
           {suggestions.map((suggestion, index) => (
             <div
-              key={index}
+              key={suggestion.mapboxId || index}
               onClick={() => handleSelectSuggestion(suggestion)}
               className={cn(
                 "flex items-start gap-2 px-3 py-2 cursor-pointer text-sm",
@@ -166,12 +167,14 @@ export function AddressAutocomplete({
             >
               <MapPin className="h-4 w-4 mt-0.5 flex-shrink-0 text-muted-foreground" />
               <div className="flex flex-col min-w-0">
-                <span className="font-medium truncate">{suggestion.address}</span>
-                <span className="text-xs text-muted-foreground truncate">
-                  {suggestion.city}
-                  {suggestion.province && ` (${suggestion.province})`}
-                  {suggestion.postalCode && `, ${suggestion.postalCode}`}
-                </span>
+                <span className="font-medium truncate">{suggestion.fullAddress || suggestion.address}</span>
+                {(suggestion.city || suggestion.province || suggestion.postalCode) && (
+                  <span className="text-xs text-muted-foreground truncate">
+                    {suggestion.city}
+                    {suggestion.province && ` (${suggestion.province})`}
+                    {suggestion.postalCode && `, ${suggestion.postalCode}`}
+                  </span>
+                )}
               </div>
             </div>
           ))}
