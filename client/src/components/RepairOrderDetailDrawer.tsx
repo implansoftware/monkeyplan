@@ -278,6 +278,10 @@ export function RepairOrderDetailDrawer({
     user.role === 'admin' || user.role === 'repair_center'
   ) : false;
 
+  const canViewWorkflow = user ? (
+    user.role === 'admin' || user.role === 'repair_center' || user.role === 'reseller'
+  ) : false;
+
   const startRepairMutation = useMutation({
     mutationFn: async () => {
       return await apiRequest("POST", `/api/repair-orders/${repairOrderId}/start-repair`);
@@ -443,12 +447,15 @@ export function RepairOrderDetailDrawer({
             </div>
 
             {/* Workflow Progress - Visual Timeline */}
-            {canManageWorkflow && (
+            {canViewWorkflow && (
               <Card className="border-2">
                 <CardHeader className="pb-2">
                   <CardTitle className="text-base flex items-center gap-2">
                     <Wrench className="h-4 w-4" />
                     Flusso di Lavoro
+                    {!canManageWorkflow && (
+                      <Badge variant="outline" className="ml-2 text-xs">Sola lettura</Badge>
+                    )}
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -535,7 +542,8 @@ export function RepairOrderDetailDrawer({
 
                   <Separator />
 
-                  {/* Next Action - The Main CTA */}
+                  {/* Next Action - The Main CTA - Only for admin/repair_center */}
+                  {canManageWorkflow ? (
                   <div className="space-y-3">
                     <div className="flex items-center gap-2">
                       <AlertCircle className="h-4 w-4 text-primary" />
@@ -790,6 +798,28 @@ export function RepairOrderDetailDrawer({
                       </div>
                     )}
                   </div>
+                  ) : (
+                    <div className="bg-muted/50 border border-muted rounded-lg p-4">
+                      <p className="text-sm text-muted-foreground">
+                        Stato attuale: <strong>{(() => {
+                          switch(repair.status) {
+                            case 'ingressato': return 'Ingressato - In attesa diagnosi';
+                            case 'in_diagnosi': return 'In Diagnosi';
+                            case 'preventivo_inviato': return 'Preventivo Inviato';
+                            case 'preventivo_accettato': return 'Preventivo Accettato';
+                            case 'preventivo_rifiutato': return 'Preventivo Rifiutato';
+                            case 'attesa_ricambi': return 'In Attesa Ricambi';
+                            case 'in_riparazione': return 'In Riparazione';
+                            case 'in_test': return 'In Test/Collaudo';
+                            case 'pronto_ritiro': return 'Pronto per Ritiro';
+                            case 'consegnato': return 'Consegnato';
+                            case 'annullato': return 'Annullato';
+                            default: return repair.status;
+                          }
+                        })()}</strong>
+                      </p>
+                    </div>
+                  )}
 
                   <Separator />
 
