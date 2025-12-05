@@ -62,10 +62,11 @@ The backend is an `Express.js` application with TypeScript, featuring a RESTful 
 *   **Service Catalog (Catalogo Interventi)**: Standardized repair service pricing system with customizable rates.
     *   **Master Catalog**: `service_items` table stores standard repair services with code, name, description, category, default price, and labor time.
     *   **Categories**: display, batteria, software, hardware, diagnostica, altro.
-    *   **Custom Pricing**: `service_item_prices` table enables custom prices per reseller or repair center.
-    *   **Price Resolution**: Hierarchy for effective price: repair center custom → reseller custom → base price.
-    *   **Admin Management**: Full CRUD interface at `/admin/service-catalog` for managing services and custom price lists.
-    *   **API Endpoints**: Admin endpoints for service management, public endpoints with effective pricing for quote creation.
+    *   **Custom Pricing**: `service_item_prices` table enables custom prices per reseller or repair center with XOR validation (exactly one of resellerId or repairCenterId).
+    *   **Price Resolution**: Hierarchy for effective price: repair center custom → reseller custom → base price. ON DELETE CASCADE ensures no orphaned price records.
+    *   **Admin Management**: Full CRUD interface at `/admin/service-catalog` for managing services and custom price lists with tabs for catalog and pricing.
+    *   **API Endpoints**: Admin endpoints for service management with Zod validation, public endpoints with effective pricing for quote creation.
+    *   **Quote Integration**: QuoteFormDialog includes "Catalogo" selector to add services from the catalog with resolved prices. Services are added as line items with [Servizio] prefix, labor minutes shown for transparency.
 *   **SIFAR Integration**: Direct integration with SIFAR supplier API for spare parts ordering by resellers.
     *   **Reseller Credentials**: Secure per-reseller API credential storage (`sifarCredentials` table) with environment selection (collaudo/produzione) and client key management.
     *   **Store Mapping**: `sifarStores` table links reseller accounts to SIFAR store codes (puntiVendita), enabling multi-location support.
