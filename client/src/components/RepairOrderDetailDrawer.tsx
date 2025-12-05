@@ -33,7 +33,7 @@ import {
   Wrench, Euro, FileText, Paperclip, Calendar, Package, ClipboardList,
   ClipboardCheck, PackageCheck, Play, CheckCircle, Stethoscope, Receipt,
   Download, User, ArrowRight, Circle, CheckCircle2, AlertCircle, AlertTriangle, Gift, Shield, SkipForward,
-  HardDrive, Building2, Clock, Truck, Loader2
+  HardDrive, Building2, Clock, Truck, Loader2, XCircle
 } from "lucide-react";
 import { format } from "date-fns";
 import { useAuth } from "@/hooks/use-auth";
@@ -624,8 +624,29 @@ export function RepairOrderDetailDrawer({
                     {repair.status === 'preventivo_emesso' && (
                       <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-4 space-y-3">
                         <p className="text-sm">
-                          Preventivo inviato al cliente. <strong>In attesa di risposta</strong>. Puoi modificare il preventivo se necessario.
+                          Preventivo inviato al cliente. <strong>Registra la risposta del cliente</strong> o modifica il preventivo.
                         </p>
+                        <div className="grid grid-cols-2 gap-2">
+                          <Button
+                            onClick={() => updateQuoteStatusMutation.mutate('accepted')}
+                            disabled={updateQuoteStatusMutation.isPending}
+                            className="gap-2"
+                            data-testid="button-quote-accept"
+                          >
+                            <CheckCircle className="h-4 w-4" />
+                            Accetta
+                          </Button>
+                          <Button
+                            variant="destructive"
+                            onClick={() => updateQuoteStatusMutation.mutate('rejected')}
+                            disabled={updateQuoteStatusMutation.isPending}
+                            className="gap-2"
+                            data-testid="button-quote-reject"
+                          >
+                            <XCircle className="h-4 w-4" />
+                            Rifiuta
+                          </Button>
+                        </div>
                         <Button
                           variant="outline"
                           onClick={() => setQuoteDialogOpen(true)}
