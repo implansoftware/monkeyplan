@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Search, MapPin, Phone, Mail, Pencil, Trash2, Building, Store } from "lucide-react";
+import { Plus, Search, MapPin, Phone, Mail, Pencil, Trash2, Building, Store, Clock } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -21,6 +21,7 @@ export default function AdminRepairCenters() {
   const [editingCenter, setEditingCenter] = useState<RepairCenter | null>(null);
   const [selectedResellerId, setSelectedResellerId] = useState<string>("");
   const [addressData, setAddressData] = useState({ address: "", city: "", cap: "", provincia: "" });
+  const [hourlyRateEuros, setHourlyRateEuros] = useState<string>("");
   const { toast } = useToast();
 
   const { data: centers = [], isLoading } = useQuery<RepairCenter[]>({
@@ -98,6 +99,13 @@ export default function AdminRepairCenters() {
       pec: (formData.get("pec") as string)?.trim() || null,
     };
     
+    // Tariffa manodopera - converti euro in centesimi
+    // Per modifica: mantieni valore esistente se non cambiato
+    // Per creazione: null se non specificato
+    const hourlyRateCentsValue = hourlyRateEuros 
+      ? Math.round(parseFloat(hourlyRateEuros) * 100)
+      : (editingCenter ? editingCenter.hourlyRateCents : null);
+    
     if (editingCenter) {
       const updates: Partial<RepairCenter> = {
         name: formData.get("name") as string,
@@ -108,6 +116,7 @@ export default function AdminRepairCenters() {
         phone: formData.get("phone") as string,
         email: formData.get("email") as string,
         resellerId: selectedResellerId || null,
+        hourlyRateCents: hourlyRateCentsValue,
         ...fiscalData,
       };
       updateCenterMutation.mutate({ id: editingCenter.id, data: updates });
@@ -122,6 +131,7 @@ export default function AdminRepairCenters() {
         email: formData.get("email") as string,
         resellerId: selectedResellerId || null,
         isActive: true,
+        hourlyRateCents: hourlyRateCentsValue,
         ...fiscalData,
       };
       createCenterMutation.mutate(data);
@@ -148,6 +158,7 @@ export default function AdminRepairCenters() {
             setEditingCenter(null);
             setSelectedResellerId("");
             setAddressData({ address: "", city: "", cap: "", provincia: "" });
+            setHourlyRateEuros("");
           }
         }}>
           <DialogTrigger asChild>
@@ -305,6 +316,35 @@ export default function AdminRepairCenters() {
                   </SelectContent>
                 </Select>
               </div>
+              
+              <div className="border-t pt-4 mt-4">
+                <h4 className="font-medium text-sm text-muted-foreground mb-3 flex items-center gap-2">
+                  <Clock className="h-4 w-4" />
+                  Tariffa Manodopera
+                </h4>
+                <div className="space-y-2">
+                  <Label htmlFor="hourlyRate">Tariffa Oraria (EUR)</Label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">€</span>
+                    <Input
+                      id="hourlyRate"
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      placeholder="35.00"
+                      value={hourlyRateEuros}
+                      onChange={(e) => setHourlyRateEuros(e.target.value)}
+                      className="pl-7"
+                      data-testid="input-hourly-rate"
+                    />
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Tariffa oraria per il calcolo del costo manodopera nei preventivi. 
+                    Se non specificata, verrà usata la tariffa globale del sistema.
+                  </p>
+                </div>
+              </div>
+              
               <Button type="submit" className="w-full" disabled={createCenterMutation.isPending || updateCenterMutation.isPending} data-testid="button-submit-center">
                 {editingCenter 
                   ? (updateCenterMutation.isPending ? "Aggiornamento..." : "Aggiorna Centro")
@@ -401,6 +441,7 @@ export default function AdminRepairCenters() {
                           onClick={() => {
                             setEditingCenter(center);
                             setSelectedResellerId(center.resellerId || "");
+                            setHourlyRateEuros(center.hourlyRateCents ? (center.hourlyRateCents / 100).toFixed(2) : "");
                             setDialogOpen(true);
                           }}
                           data-testid={`button-edit-${center.id}`}

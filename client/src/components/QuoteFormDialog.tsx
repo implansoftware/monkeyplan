@@ -35,7 +35,7 @@ import {
 } from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { FileText, Plus, Trash2, Package, Calculator, Info } from "lucide-react";
-import type { Product, RepairDiagnostics } from "@shared/schema";
+import type { Product, RepairDiagnostics, RepairOrder, RepairCenter } from "@shared/schema";
 
 interface HourlyRateResponse {
   hourlyRateCents: number;
@@ -84,6 +84,20 @@ export function QuoteFormDialog({
     enabled: open,
   });
 
+  // Fetch repair order to get the assigned repair center
+  const { data: repairOrder } = useQuery<RepairOrder>({
+    queryKey: ["/api/repair-orders", repairOrderId],
+    enabled: open && !!repairOrderId,
+    retry: false,
+  });
+
+  // Fetch repair center to get specific hourly rate
+  const { data: repairCenter } = useQuery<RepairCenter>({
+    queryKey: ["/api/repair-centers", repairOrder?.repairCenterId],
+    enabled: open && !!repairOrder?.repairCenterId,
+    retry: false,
+  });
+
   const { 
     data: diagnosis, 
     isError: isDiagnosisError,
@@ -94,8 +108,9 @@ export function QuoteFormDialog({
     retry: false,
   });
 
+  // Fetch global hourly rate as fallback
   const { 
-    data: hourlyRateData, 
+    data: globalHourlyRateData, 
     isError: isHourlyRateError,
     error: hourlyRateError
   } = useQuery<HourlyRateResponse>({
@@ -103,6 +118,10 @@ export function QuoteFormDialog({
     enabled: open,
     retry: false,
   });
+
+  // Effective hourly rate: repair center rate > global rate
+  const effectiveHourlyRateCents = repairCenter?.hourlyRateCents ?? globalHourlyRateData?.hourlyRateCents ?? 3500;
+  const hourlyRateSource = repairCenter?.hourlyRateCents ? `Centro: ${repairCenter.name}` : "Tariffa Globale";
 
   const getErrorStatus = (error: any): number | null => {
     if (!error?.message) return null;
@@ -147,8 +166,8 @@ export function QuoteFormDialog({
   }, [watchParts, watchLaborCost]);
 
   useEffect(() => {
-    if (open && diagnosis && hourlyRateData && diagnosis.estimatedRepairTime) {
-      const hourlyRate = hourlyRateData.hourlyRateCents / 100;
+    if (open && diagnosis && diagnosis.estimatedRepairTime && effectiveHourlyRateCents) {
+      const hourlyRate = effectiveHourlyRateCents / 100;
       const estimatedHours = diagnosis.estimatedRepairTime;
       const calculatedCost = hourlyRate * estimatedHours;
       
@@ -162,7 +181,7 @@ export function QuoteFormDialog({
     } else if (open) {
       setLaborCalculation(null);
     }
-  }, [open, diagnosis, hourlyRateData, form]);
+  }, [open, diagnosis, effectiveHourlyRateCents, form]);
 
   useEffect(() => {
     if (!open) {
@@ -391,7 +410,7 @@ export function QuoteFormDialog({
                       {formatCurrency(laborCalculation.hourlyRate)}/ora &times; {laborCalculation.estimatedHours} ore = {formatCurrency(laborCalculation.calculatedCost)}
                       <br />
                       <span className="text-xs text-muted-foreground">
-                        Basato sulla diagnosi e tariffa oraria configurata. Puoi modificare il valore se necessario.
+                        Tariffa: {hourlyRateSource}. Puoi modificare il valore se necessario.
                       </span>
                     </AlertDescription>
                   </Alert>

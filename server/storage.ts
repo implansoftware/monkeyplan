@@ -75,7 +75,7 @@ export interface IStorage {
   listRepairCenters(): Promise<RepairCenter[]>;
   getRepairCenter(id: string): Promise<RepairCenter | undefined>;
   createRepairCenter(center: InsertRepairCenter): Promise<RepairCenter>;
-  updateRepairCenter(id: string, updates: Partial<Pick<RepairCenter, 'name' | 'address' | 'city' | 'phone' | 'email' | 'resellerId' | 'isActive'>>): Promise<RepairCenter>;
+  updateRepairCenter(id: string, updates: Partial<Pick<RepairCenter, 'name' | 'address' | 'city' | 'phone' | 'email' | 'resellerId' | 'isActive' | 'hourlyRateCents' | 'cap' | 'provincia' | 'ragioneSociale' | 'partitaIva' | 'codiceFiscale' | 'iban' | 'codiceUnivoco' | 'pec'>>): Promise<RepairCenter>;
   deleteRepairCenter(id: string): Promise<void>;
   
   // Products
@@ -590,7 +590,7 @@ export class DatabaseStorage implements IStorage {
     return center;
   }
 
-  async updateRepairCenter(id: string, updates: Partial<Pick<RepairCenter, 'name' | 'address' | 'city' | 'phone' | 'email' | 'resellerId' | 'isActive'>>): Promise<RepairCenter> {
+  async updateRepairCenter(id: string, updates: Partial<Pick<RepairCenter, 'name' | 'address' | 'city' | 'phone' | 'email' | 'resellerId' | 'isActive' | 'hourlyRateCents' | 'cap' | 'provincia' | 'ragioneSociale' | 'partitaIva' | 'codiceFiscale' | 'iban' | 'codiceUnivoco' | 'pec'>>): Promise<RepairCenter> {
     const [center] = await db.update(repairCenters).set(updates).where(eq(repairCenters.id, id)).returning();
     return center;
   }

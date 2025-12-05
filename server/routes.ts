@@ -619,6 +619,19 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Get single repair center by ID (includes hourly rate for quote calculation)
+  app.get("/api/repair-centers/:id", requireAuth, async (req, res) => {
+    try {
+      const center = await storage.getRepairCenter(req.params.id);
+      if (!center) {
+        return res.status(404).send("Centro di riparazione non trovato");
+      }
+      res.json(center);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
   app.post("/api/admin/repair-centers", requireRole("admin"), async (req, res) => {
     try {
       const validatedData = insertRepairCenterSchema.parse(req.body);
@@ -632,7 +645,11 @@ export function registerRoutes(app: Express): Server {
 
   app.patch("/api/admin/repair-centers/:id", requireRole("admin"), async (req, res) => {
     try {
-      const { name, address, city, phone, email, resellerId, isActive } = req.body;
+      const { 
+        name, address, city, phone, email, resellerId, isActive,
+        hourlyRateCents, cap, provincia, ragioneSociale, partitaIva,
+        codiceFiscale, iban, codiceUnivoco, pec
+      } = req.body;
       const updates: any = {};
       if (name !== undefined) updates.name = name;
       if (address !== undefined) updates.address = address;
@@ -641,6 +658,15 @@ export function registerRoutes(app: Express): Server {
       if (email !== undefined) updates.email = email;
       if (resellerId !== undefined) updates.resellerId = resellerId;
       if (isActive !== undefined) updates.isActive = isActive;
+      if (hourlyRateCents !== undefined) updates.hourlyRateCents = hourlyRateCents;
+      if (cap !== undefined) updates.cap = cap;
+      if (provincia !== undefined) updates.provincia = provincia;
+      if (ragioneSociale !== undefined) updates.ragioneSociale = ragioneSociale;
+      if (partitaIva !== undefined) updates.partitaIva = partitaIva;
+      if (codiceFiscale !== undefined) updates.codiceFiscale = codiceFiscale;
+      if (iban !== undefined) updates.iban = iban;
+      if (codiceUnivoco !== undefined) updates.codiceUnivoco = codiceUnivoco;
+      if (pec !== undefined) updates.pec = pec;
       
       const center = await storage.updateRepairCenter(req.params.id, updates);
       setActivityEntity(res, { type: 'repair-centers', id: center.id });
