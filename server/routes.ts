@@ -5237,6 +5237,24 @@ export function registerRoutes(app: Express): Server {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
+      // RBAC: Admin can view all, repair center can view own, reseller can view their centers
+      if (req.user.role === 'admin') {
+        // Admin can view all
+      } else if (req.user.role === 'repair_center') {
+        if (req.user.repairCenterId !== req.params.id) {
+          return res.status(403).send("Access denied");
+        }
+      } else if (req.user.role === 'reseller') {
+        const center = await storage.getRepairCenter(req.params.id);
+        if (!center || center.resellerId !== req.user.id) {
+          return res.status(403).send("Access denied - this center does not belong to you");
+        }
+      } else if (req.user.role === 'customer') {
+        // Customers can view availability for booking purposes
+      } else {
+        return res.status(403).send("Access denied");
+      }
+      
       const availability = await storage.listRepairCenterAvailability(req.params.id);
       res.json(availability);
     } catch (error: any) {
@@ -5279,7 +5297,7 @@ export function registerRoutes(app: Express): Server {
           weekday: item.weekday,
           startTime: item.startTime || '09:00',
           endTime: item.endTime || '18:00',
-          slotDuration: item.slotDuration || 30,
+          slotDurationMinutes: item.slotDurationMinutes || item.slotDuration || 30,
           capacityPerSlot: item.capacityPerSlot || 1,
           isClosed: item.isClosed ?? false,
         });
@@ -5301,6 +5319,24 @@ export function registerRoutes(app: Express): Server {
   app.get("/api/repair-centers/:id/blackouts", requireAuth, async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
+      
+      // RBAC: Admin can view all, repair center can view own, reseller can view their centers
+      if (req.user.role === 'admin') {
+        // Admin can view all
+      } else if (req.user.role === 'repair_center') {
+        if (req.user.repairCenterId !== req.params.id) {
+          return res.status(403).send("Access denied");
+        }
+      } else if (req.user.role === 'reseller') {
+        const center = await storage.getRepairCenter(req.params.id);
+        if (!center || center.resellerId !== req.user.id) {
+          return res.status(403).send("Access denied - this center does not belong to you");
+        }
+      } else if (req.user.role === 'customer') {
+        // Customers can view blackouts for booking purposes
+      } else {
+        return res.status(403).send("Access denied");
+      }
       
       const { from, to } = req.query;
       const blackouts = await storage.listRepairCenterBlackouts(
@@ -5401,8 +5437,12 @@ export function registerRoutes(app: Express): Server {
       const availability = await storage.listRepairCenterAvailability(req.params.id);
       const dayAvailability = availability.find(a => a.weekday === weekday);
       
-      if (!dayAvailability || dayAvailability.isClosed) {
-        return res.json({ slots: [], isClosed: true });
+      if (!dayAvailability) {
+        return res.json({ slots: [], isClosed: true, reason: "Orari non configurati per questo centro" });
+      }
+      
+      if (dayAvailability.isClosed) {
+        return res.json({ slots: [], isClosed: true, reason: "Chiuso in questo giorno" });
       }
       
       // Check for blackouts on this date
@@ -5471,15 +5511,20 @@ export function registerRoutes(app: Express): Server {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
-      // Only admin or the repair center itself can view all appointments
+      // Admin, repair center itself, or reseller that owns the center can view appointments
       if (req.user.role === 'admin') {
         // Admin can view all
       } else if (req.user.role === 'repair_center') {
         if (req.user.repairCenterId !== req.params.id) {
           return res.status(403).send("Access denied");
         }
+      } else if (req.user.role === 'reseller') {
+        const center = await storage.getRepairCenter(req.params.id);
+        if (!center || center.resellerId !== req.user.id) {
+          return res.status(403).send("Access denied - this center does not belong to you");
+        }
       } else {
-        return res.status(403).send("Only admins and repair centers can view all appointments");
+        return res.status(403).send("Only admins, repair centers and resellers can view appointments");
       }
       
       const { from, to, status } = req.query;

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { RepairOrder } from "@shared/schema";
+import { RepairOrder, RepairCenter } from "@shared/schema";
+import { Building } from "lucide-react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -30,10 +31,16 @@ export default function ResellerRepairs() {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [slaFilter, setSlaFilter] = useState<string>("all");
+  const [repairCenterFilter, setRepairCenterFilter] = useState<string>("all");
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
   const [selectedRepairId, setSelectedRepairId] = useState<string | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [wizardOpen, setWizardOpen] = useState(false);
+
+  // Fetch repair centers for filter
+  const { data: repairCenters = [] } = useQuery<RepairCenter[]>({
+    queryKey: ["/api/reseller/repair-centers"],
+  });
 
   const { data: repairs = [], isLoading } = useQuery<RepairOrderWithSLA[]>({
     queryKey: ["/api/repair-orders", { slaSeverity: slaFilter }],
@@ -50,6 +57,7 @@ export default function ResellerRepairs() {
     const matchesSearch = repair.orderNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
       repair.deviceModel.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesStatus = statusFilter === "all" || repair.status === statusFilter;
+    const matchesRepairCenter = repairCenterFilter === "all" || repair.repairCenterId === repairCenterFilter;
     
     let matchesDate = true;
     if (dateRange?.from) {
@@ -60,7 +68,7 @@ export default function ResellerRepairs() {
       }
     }
     
-    return matchesSearch && matchesStatus && matchesDate;
+    return matchesSearch && matchesStatus && matchesRepairCenter && matchesDate;
   });
 
   const getStatusBadge = (status: string) => {
@@ -158,6 +166,27 @@ export default function ResellerRepairs() {
                     Urgente
                   </span>
                 </SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={repairCenterFilter} onValueChange={setRepairCenterFilter}>
+              <SelectTrigger className="w-full sm:w-52" data-testid="select-filter-repair-center">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">
+                  <span className="flex items-center gap-2">
+                    <Building className="h-3 w-3" />
+                    Tutti i centri
+                  </span>
+                </SelectItem>
+                {repairCenters.map((center) => (
+                  <SelectItem key={center.id} value={center.id}>
+                    <span className="flex items-center gap-2">
+                      <Building className="h-3 w-3" />
+                      {center.name}
+                    </span>
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
             <Popover>

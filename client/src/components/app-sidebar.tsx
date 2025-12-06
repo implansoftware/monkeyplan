@@ -81,6 +81,7 @@ const menuItems = {
     { title: "Clienti", url: "/reseller/customers", icon: Users, group: "Gestione" },
     { title: "Centri Riparazione", url: "/reseller/repair-centers", icon: Building, group: "Gestione" },
     { title: "Orari Centri", url: "/reseller/repair-center-schedules", icon: CalendarCheck, group: "Gestione" },
+    { title: "Appuntamenti", url: "/reseller/appointments", icon: CalendarCheck, group: "Gestione" },
     { title: "Lavorazioni", url: "/reseller/repairs", icon: Wrench, group: "Riparazioni" },
     { title: "Diagnosi", url: "/reseller/diagnostics", icon: Stethoscope, group: "Riparazioni" },
     { title: "Preventivi", url: "/reseller/quotes", icon: Receipt, group: "Riparazioni" },
