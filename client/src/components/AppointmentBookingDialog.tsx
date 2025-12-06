@@ -343,7 +343,7 @@ export function AppointmentBookingDialog({
               </div>
             ) : !slotsData?.slots.length ? (
               <div className="text-sm text-muted-foreground p-4 text-center border rounded-md">
-                Nessuno slot disponibile in questa data
+                {slotsData?.reason || "Nessuno slot disponibile in questa data"}
               </div>
             ) : (
               <div className="grid grid-cols-2 gap-2 max-h-[300px] overflow-y-auto pr-1">
