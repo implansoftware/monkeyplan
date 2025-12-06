@@ -1753,7 +1753,7 @@ export const utilityPracticeStateHistory = pgTable("utility_practice_state_histo
 // SERVICE CATALOG (CATALOGO INTERVENTI)
 // ==========================================
 
-// Service Items (Interventi - gestiti da Admin)
+// Service Items (Interventi - gestiti da Admin o Reseller)
 export const serviceItems = pgTable("service_items", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   code: text("code").notNull().unique(), // Codice intervento (es. "DISP-001")
@@ -1767,6 +1767,9 @@ export const serviceItems = pgTable("service_items", {
   // Prezzi e tempi default
   defaultPriceCents: integer("default_price_cents").notNull(), // Prezzo base in centesimi
   defaultLaborMinutes: integer("default_labor_minutes").notNull().default(60), // Tempo manodopera stimato in minuti
+  
+  // Creatore (null = admin/globale, altrimenti = rivenditore specifico)
+  createdBy: varchar("created_by").references(() => users.id, { onDelete: "cascade" }),
   
   // Stato
   isActive: boolean("is_active").notNull().default(true),
