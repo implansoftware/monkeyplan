@@ -785,7 +785,17 @@ export function RepairOrderDetailDrawer({
                         <div className="grid grid-cols-2 gap-2">
                           <Button
                             variant="outline"
-                            onClick={() => setAppointmentDialogOpen(true)}
+                            onClick={() => {
+                              if (!repair.repairCenterId) {
+                                toast({
+                                  title: "Centro riparazione non assegnato",
+                                  description: "Questo ordine non ha un centro riparazione assegnato. Contatta l'amministratore.",
+                                  variant: "destructive",
+                                });
+                                return;
+                              }
+                              setAppointmentDialogOpen(true);
+                            }}
                             className="gap-2"
                             data-testid="button-book-appointment"
                           >
