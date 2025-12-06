@@ -89,6 +89,7 @@ import RepairCenterRepairs from "@/pages/repair-center/repairs";
 import RepairCenterInventory from "@/pages/repair-center/inventory";
 import RepairCenterTickets from "@/pages/repair-center/tickets";
 import RepairCenterTicketDetail from "@/pages/repair-center/ticket-detail";
+import RepairCenterAppointments from "@/pages/repair-center/appointments";
 
 // Customer pages
 import CustomerDashboard from "@/pages/customer/dashboard";
@@ -172,6 +173,7 @@ function Router() {
       {/* Repair Center routes */}
       <ProtectedRoute path="/repair-center" component={RepairCenterDashboard} />
       <ProtectedRoute path="/repair-center/repairs" component={RepairCenterRepairs} />
+      <ProtectedRoute path="/repair-center/appointments" component={RepairCenterAppointments} />
       <ProtectedRoute path="/repair-center/inventory" component={RepairCenterInventory} />
       <ProtectedRoute path="/repair-center/tickets" component={RepairCenterTickets} />
       <ProtectedRoute path="/repair-center/tickets/:id" component={RepairCenterTicketDetail} />

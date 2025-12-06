@@ -25,6 +25,7 @@ import {
   FileCheck,
   Coins,
   PieChart,
+  CalendarCheck,
 } from "lucide-react";
 import {
   Sidebar,
@@ -104,6 +105,7 @@ const menuItems = {
   repair_center: [
     { title: "Dashboard", url: "/repair-center", icon: LayoutDashboard, group: "Principale" },
     { title: "Lavorazioni", url: "/repair-center/repairs", icon: Wrench, group: "Principale" },
+    { title: "Appuntamenti", url: "/repair-center/appointments", icon: CalendarCheck, group: "Principale" },
     { title: "Diagnosi", url: "/repair-center/diagnostics", icon: Stethoscope, group: "Principale" },
     { title: "Preventivi", url: "/repair-center/quotes", icon: Receipt, group: "Principale" },
     { title: "Magazzino", url: "/repair-center/inventory", icon: Package, group: "Magazzino" },

@@ -12,6 +12,9 @@ import {
   DiagnosticFinding, DamagedComponentType, EstimatedRepairTime,
   PartsOrder, InsertPartsOrder, RepairLog, InsertRepairLog,
   RepairTestChecklist, InsertRepairTestChecklist, RepairDelivery, InsertRepairDelivery,
+  RepairCenterAvailability, InsertRepairCenterAvailability,
+  RepairCenterBlackout, InsertRepairCenterBlackout,
+  DeliveryAppointment, InsertDeliveryAppointment,
   AdminSetting, InsertAdminSetting,
   Promotion, InsertPromotion, UnrepairableReason, InsertUnrepairableReason,
   ExternalLab, InsertExternalLab, DataRecoveryJob, InsertDataRecoveryJob, DataRecoveryEvent, InsertDataRecoveryEvent,
@@ -40,6 +43,7 @@ import {
   invoices, billingData, chatMessages, inventoryMovements, inventoryStock, activityLogs, analyticsCache,
   notifications, notificationPreferences, repairAttachments, repairAcceptance, repairDiagnostics,
   repairQuotes, partsOrders, repairLogs, repairTestChecklist, repairDelivery,
+  repairCenterAvailability, repairCenterBlackouts, deliveryAppointments,
   deviceTypes, deviceBrands, deviceModels, issueTypes, aestheticDefects, accessoryTypes,
   diagnosticFindings, damagedComponentTypes, estimatedRepairTimes, adminSettings,
   promotions, unrepairableReasons, externalLabs, dataRecoveryJobs, dataRecoveryEvents,
@@ -231,6 +235,20 @@ export interface IStorage {
   // Delivery (FASE 7)
   createDelivery(delivery: InsertRepairDelivery): Promise<RepairDelivery>;
   getDelivery(repairOrderId: string): Promise<RepairDelivery | undefined>;
+  
+  // Delivery Appointments
+  listRepairCenterAvailability(repairCenterId: string): Promise<RepairCenterAvailability[]>;
+  setRepairCenterAvailability(repairCenterId: string, availability: InsertRepairCenterAvailability[]): Promise<RepairCenterAvailability[]>;
+  listRepairCenterBlackouts(repairCenterId: string, fromDate?: string, toDate?: string): Promise<RepairCenterBlackout[]>;
+  createRepairCenterBlackout(blackout: InsertRepairCenterBlackout): Promise<RepairCenterBlackout>;
+  deleteRepairCenterBlackout(id: string): Promise<void>;
+  
+  listDeliveryAppointments(filters?: { repairCenterId?: string; resellerId?: string; customerId?: string; repairOrderId?: string; date?: string; status?: string }): Promise<DeliveryAppointment[]>;
+  getDeliveryAppointment(id: string): Promise<DeliveryAppointment | undefined>;
+  getDeliveryAppointmentByRepairOrder(repairOrderId: string): Promise<DeliveryAppointment | undefined>;
+  createDeliveryAppointment(appointment: InsertDeliveryAppointment): Promise<DeliveryAppointment>;
+  updateDeliveryAppointment(id: string, updates: Partial<Pick<DeliveryAppointment, 'date' | 'startTime' | 'endTime' | 'status' | 'notes' | 'confirmedBy' | 'confirmedAt' | 'cancelledBy' | 'cancelledAt' | 'cancelReason'>>): Promise<DeliveryAppointment>;
+  checkAppointmentConflict(repairCenterId: string, date: string, startTime: string, excludeId?: string): Promise<boolean>;
   
   // Admin Settings
   getAdminSetting(key: string): Promise<AdminSetting | undefined>;
@@ -2004,6 +2022,183 @@ export class DatabaseStorage implements IStorage {
       .from(repairDelivery)
       .where(eq(repairDelivery.repairOrderId, repairOrderId));
     return delivery || undefined;
+  }
+
+  // Delivery Appointments
+  async listRepairCenterAvailability(repairCenterId: string): Promise<RepairCenterAvailability[]> {
+    return await db.select()
+      .from(repairCenterAvailability)
+      .where(eq(repairCenterAvailability.repairCenterId, repairCenterId))
+      .orderBy(repairCenterAvailability.weekday);
+  }
+
+  async setRepairCenterAvailability(repairCenterId: string, availability: InsertRepairCenterAvailability[]): Promise<RepairCenterAvailability[]> {
+    await db.delete(repairCenterAvailability)
+      .where(eq(repairCenterAvailability.repairCenterId, repairCenterId));
+    
+    if (availability.length === 0) {
+      return [];
+    }
+    
+    const created = await db.insert(repairCenterAvailability)
+      .values(availability.map(a => ({ ...a, repairCenterId })))
+      .returning();
+    
+    return created;
+  }
+
+  async listRepairCenterBlackouts(repairCenterId: string, fromDate?: string, toDate?: string): Promise<RepairCenterBlackout[]> {
+    let conditions = [eq(repairCenterBlackouts.repairCenterId, repairCenterId)];
+    
+    if (fromDate) {
+      conditions.push(sql`${repairCenterBlackouts.date} >= ${fromDate}`);
+    }
+    if (toDate) {
+      conditions.push(sql`${repairCenterBlackouts.date} <= ${toDate}`);
+    }
+    
+    return await db.select()
+      .from(repairCenterBlackouts)
+      .where(and(...conditions))
+      .orderBy(repairCenterBlackouts.date);
+  }
+
+  async createRepairCenterBlackout(blackout: InsertRepairCenterBlackout): Promise<RepairCenterBlackout> {
+    const [created] = await db.insert(repairCenterBlackouts).values(blackout).returning();
+    return created;
+  }
+
+  async deleteRepairCenterBlackout(id: string): Promise<void> {
+    await db.delete(repairCenterBlackouts).where(eq(repairCenterBlackouts.id, id));
+  }
+
+  async listDeliveryAppointments(filters?: { repairCenterId?: string; resellerId?: string; customerId?: string; repairOrderId?: string; date?: string; status?: string }): Promise<DeliveryAppointment[]> {
+    let conditions: any[] = [];
+    
+    if (filters?.repairCenterId) {
+      conditions.push(eq(deliveryAppointments.repairCenterId, filters.repairCenterId));
+    }
+    if (filters?.resellerId) {
+      conditions.push(eq(deliveryAppointments.resellerId, filters.resellerId));
+    }
+    if (filters?.customerId) {
+      conditions.push(eq(deliveryAppointments.customerId, filters.customerId));
+    }
+    if (filters?.repairOrderId) {
+      conditions.push(eq(deliveryAppointments.repairOrderId, filters.repairOrderId));
+    }
+    if (filters?.date) {
+      conditions.push(eq(deliveryAppointments.date, filters.date));
+    }
+    if (filters?.status) {
+      conditions.push(eq(deliveryAppointments.status, filters.status as any));
+    }
+    
+    if (conditions.length === 0) {
+      return await db.select()
+        .from(deliveryAppointments)
+        .orderBy(desc(deliveryAppointments.date), deliveryAppointments.startTime);
+    }
+    
+    return await db.select()
+      .from(deliveryAppointments)
+      .where(and(...conditions))
+      .orderBy(desc(deliveryAppointments.date), deliveryAppointments.startTime);
+  }
+
+  async getDeliveryAppointment(id: string): Promise<DeliveryAppointment | undefined> {
+    const [appointment] = await db.select()
+      .from(deliveryAppointments)
+      .where(eq(deliveryAppointments.id, id));
+    return appointment || undefined;
+  }
+
+  async getDeliveryAppointmentByRepairOrder(repairOrderId: string): Promise<DeliveryAppointment | undefined> {
+    const [appointment] = await db.select()
+      .from(deliveryAppointments)
+      .where(and(
+        eq(deliveryAppointments.repairOrderId, repairOrderId),
+        not(eq(deliveryAppointments.status, 'cancelled' as any))
+      ));
+    return appointment || undefined;
+  }
+
+  async createDeliveryAppointment(appointment: InsertDeliveryAppointment): Promise<DeliveryAppointment> {
+    const [created] = await db.insert(deliveryAppointments).values(appointment).returning();
+    return created;
+  }
+
+  async updateDeliveryAppointment(id: string, updates: Partial<Pick<DeliveryAppointment, 'date' | 'startTime' | 'endTime' | 'status' | 'notes' | 'confirmedBy' | 'confirmedAt' | 'cancelledBy' | 'cancelledAt' | 'cancelReason'>>): Promise<DeliveryAppointment> {
+    const [updated] = await db.update(deliveryAppointments)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(deliveryAppointments.id, id))
+      .returning();
+    return updated;
+  }
+
+  async checkAppointmentConflict(repairCenterId: string, date: string, startTime: string, excludeId?: string): Promise<boolean> {
+    let conditions: any[] = [
+      eq(deliveryAppointments.repairCenterId, repairCenterId),
+      eq(deliveryAppointments.date, date),
+      eq(deliveryAppointments.startTime, startTime),
+      not(eq(deliveryAppointments.status, 'cancelled' as any))
+    ];
+    
+    if (excludeId) {
+      conditions.push(not(eq(deliveryAppointments.id, excludeId)));
+    }
+    
+    const existingAppointments = await db.select()
+      .from(deliveryAppointments)
+      .where(and(...conditions));
+    
+    // Get weekday from date to check capacity
+    const dateObj = new Date(date);
+    const weekday = dateObj.getDay();
+    
+    // Get availability for this weekday to check capacity
+    const [availability] = await db.select()
+      .from(repairCenterAvailability)
+      .where(and(
+        eq(repairCenterAvailability.repairCenterId, repairCenterId),
+        eq(repairCenterAvailability.weekday, weekday)
+      ));
+    
+    // If no availability set or closed, it's a conflict
+    if (!availability || availability.isClosed) {
+      return true;
+    }
+    
+    // Check if slot is within operating hours
+    if (startTime < availability.startTime || startTime >= availability.endTime) {
+      return true;
+    }
+    
+    // Check for blackouts on this date
+    const blackouts = await db.select()
+      .from(repairCenterBlackouts)
+      .where(and(
+        eq(repairCenterBlackouts.repairCenterId, repairCenterId),
+        eq(repairCenterBlackouts.date, date)
+      ));
+    
+    // Check for full-day blackout
+    const fullDayBlackout = blackouts.find(b => !b.startTime && !b.endTime);
+    if (fullDayBlackout) {
+      return true;
+    }
+    
+    // Check for time-range blackout covering this slot
+    const slotBlackout = blackouts.find(b => {
+      if (!b.startTime || !b.endTime) return false;
+      return startTime >= b.startTime && startTime < b.endTime;
+    });
+    if (slotBlackout) {
+      return true;
+    }
+    
+    // Return true if capacity is full
+    return existingAppointments.length >= availability.capacityPerSlot;
   }
 
   // Admin Settings

@@ -28,12 +28,13 @@ import { RepairLogDialog } from "@/components/RepairLogDialog";
 import { TestChecklistDialog } from "@/components/TestChecklistDialog";
 import { DeliveryDialog } from "@/components/DeliveryDialog";
 import { DataRecoveryDialog } from "@/components/DataRecoveryDialog";
+import { AppointmentBookingDialog } from "@/components/AppointmentBookingDialog";
 import { useToast } from "@/hooks/use-toast";
 import {
   Wrench, Euro, FileText, Paperclip, Calendar, Package, ClipboardList,
   ClipboardCheck, PackageCheck, Play, CheckCircle, Stethoscope, Receipt,
   Download, User, ArrowRight, Circle, CheckCircle2, AlertCircle, AlertTriangle, Gift, Shield, SkipForward,
-  HardDrive, Building2, Clock, Truck, Loader2, XCircle
+  HardDrive, Building2, Clock, Truck, Loader2, XCircle, CalendarCheck
 } from "lucide-react";
 import { format } from "date-fns";
 import { useAuth } from "@/hooks/use-auth";
@@ -131,6 +132,7 @@ export function RepairOrderDetailDrawer({
   const [skipQuoteDialogOpen, setSkipQuoteDialogOpen] = useState(false);
   const [skipQuoteReason, setSkipQuoteReason] = useState<'garanzia' | 'omaggio' | null>(null);
   const [dataRecoveryDialogOpen, setDataRecoveryDialogOpen] = useState(false);
+  const [appointmentDialogOpen, setAppointmentDialogOpen] = useState(false);
 
   const { data: repair, isLoading, error } = useQuery<RepairOrder>({
     queryKey: ["/api/repair-orders", repairOrderId],
@@ -778,17 +780,27 @@ export function RepairOrderDetailDrawer({
                     {repair.status === 'pronto_ritiro' && (
                       <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-4 space-y-3">
                         <p className="text-sm">
-                          Dispositivo pronto per il ritiro. Quando il cliente arriva, <strong>completa la consegna</strong>.
+                          Dispositivo pronto per il ritiro. <strong>Prenota un appuntamento</strong> o <strong>completa la consegna</strong> quando il cliente arriva.
                         </p>
-                        <Button
-                          onClick={() => setDeliveryDialogOpen(true)}
-                          className="w-full gap-2"
-                          size="lg"
-                          data-testid="button-delivery"
-                        >
-                          <PackageCheck className="h-5 w-5" />
-                          Completa Consegna
-                        </Button>
+                        <div className="grid grid-cols-2 gap-2">
+                          <Button
+                            variant="outline"
+                            onClick={() => setAppointmentDialogOpen(true)}
+                            className="gap-2"
+                            data-testid="button-book-appointment"
+                          >
+                            <CalendarCheck className="h-4 w-4" />
+                            Prenota Appuntamento
+                          </Button>
+                          <Button
+                            onClick={() => setDeliveryDialogOpen(true)}
+                            className="gap-2"
+                            data-testid="button-delivery"
+                          >
+                            <PackageCheck className="h-4 w-4" />
+                            Completa Consegna
+                          </Button>
+                        </div>
                       </div>
                     )}
 
@@ -1430,6 +1442,16 @@ export function RepairOrderDetailDrawer({
                     queryClient.invalidateQueries({ queryKey: ["/api/repair-orders", repairOrderId, "data-recovery"] });
                   }}
                 />
+                {repair.repairCenterId && (
+                  <AppointmentBookingDialog
+                    open={appointmentDialogOpen}
+                    onOpenChange={setAppointmentDialogOpen}
+                    repairOrderId={repairOrderId}
+                    repairCenterId={repair.repairCenterId}
+                    orderNumber={repair.orderNumber}
+                    onSuccess={() => queryClient.invalidateQueries({ queryKey: ["/api/repair-orders", repairOrderId] })}
+                  />
+                )}
                 
                 {/* Skip Quote Dialog */}
                 <Dialog open={skipQuoteDialogOpen} onOpenChange={setSkipQuoteDialogOpen}>
