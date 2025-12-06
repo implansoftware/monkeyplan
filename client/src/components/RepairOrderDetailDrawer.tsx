@@ -37,6 +37,7 @@ import {
   HardDrive, Building2, Clock, Truck, Loader2, XCircle, CalendarCheck
 } from "lucide-react";
 import { format } from "date-fns";
+import { it } from "date-fns/locale";
 import { useAuth } from "@/hooks/use-auth";
 import { computeSLASeverity } from "@/components/SLABadge";
 
@@ -106,6 +107,18 @@ type Customer = {
   address: string | null;
   fiscalCode: string | null;
   vatNumber: string | null;
+};
+
+type DeliveryAppointment = {
+  id: string;
+  repairOrderId: string;
+  repairCenterId: string;
+  date: string;
+  startTime: string;
+  endTime: string;
+  status: string;
+  notes: string | null;
+  createdAt: string;
 };
 
 interface RepairOrderDetailDrawerProps {
@@ -218,6 +231,22 @@ export function RepairOrderDetailDrawer({
     queryKey: ["/api/repair-orders", repairOrderId, "diagnostics"],
     queryFn: async () => {
       const response = await fetch(`/api/repair-orders/${repairOrderId}/diagnostics`, {
+        credentials: "include",
+      });
+      if (!response.ok) {
+        if (response.status === 404) return null;
+        return null;
+      }
+      return response.json();
+    },
+    enabled: !!repairOrderId && open,
+    retry: false,
+  });
+
+  const { data: appointment } = useQuery<DeliveryAppointment | null>({
+    queryKey: ["/api/repair-orders", repairOrderId, "appointment"],
+    queryFn: async () => {
+      const response = await fetch(`/api/repair-orders/${repairOrderId}/appointment`, {
         credentials: "include",
       });
       if (!response.ok) {
@@ -779,38 +808,85 @@ export function RepairOrderDetailDrawer({
                     {/* Status: pronto_ritiro - Ready for delivery */}
                     {repair.status === 'pronto_ritiro' && (
                       <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-4 space-y-3">
-                        <p className="text-sm">
-                          Dispositivo pronto per il ritiro. <strong>Prenota un appuntamento</strong> o <strong>completa la consegna</strong> quando il cliente arriva.
-                        </p>
-                        <div className="grid grid-cols-2 gap-2">
-                          <Button
-                            variant="outline"
-                            onClick={() => {
-                              if (!repair.repairCenterId) {
-                                toast({
-                                  title: "Centro riparazione non assegnato",
-                                  description: "Questo ordine non ha un centro riparazione assegnato. Contatta l'amministratore.",
-                                  variant: "destructive",
-                                });
-                                return;
-                              }
-                              setAppointmentDialogOpen(true);
-                            }}
-                            className="gap-2"
-                            data-testid="button-book-appointment"
-                          >
-                            <CalendarCheck className="h-4 w-4" />
-                            Prenota Appuntamento
-                          </Button>
-                          <Button
-                            onClick={() => setDeliveryDialogOpen(true)}
-                            className="gap-2"
-                            data-testid="button-delivery"
-                          >
-                            <PackageCheck className="h-4 w-4" />
-                            Completa Consegna
-                          </Button>
-                        </div>
+                        {appointment && appointment.status !== 'cancelled' ? (
+                          <>
+                            <div className="flex items-center gap-2 text-green-600 dark:text-green-400">
+                              <CalendarCheck className="h-4 w-4" />
+                              <span className="font-medium text-sm">Appuntamento Prenotato</span>
+                            </div>
+                            <div className="bg-white dark:bg-gray-800 rounded-md p-3 space-y-2">
+                              <div className="flex items-center gap-2 text-sm">
+                                <Calendar className="h-4 w-4 text-muted-foreground" />
+                                <span className="font-medium">
+                                  {format(new Date(appointment.date), "EEEE d MMMM yyyy", { locale: it })}
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-2 text-sm">
+                                <Clock className="h-4 w-4 text-muted-foreground" />
+                                <span>Ore {appointment.startTime} - {appointment.endTime}</span>
+                              </div>
+                              {appointment.notes && (
+                                <div className="text-xs text-muted-foreground mt-1">
+                                  Note: {appointment.notes}
+                                </div>
+                              )}
+                            </div>
+                            <div className="grid grid-cols-2 gap-2">
+                              <Button
+                                variant="outline"
+                                onClick={() => setAppointmentDialogOpen(true)}
+                                className="gap-2"
+                                data-testid="button-reschedule-appointment"
+                              >
+                                <CalendarCheck className="h-4 w-4" />
+                                Modifica
+                              </Button>
+                              <Button
+                                onClick={() => setDeliveryDialogOpen(true)}
+                                className="gap-2"
+                                data-testid="button-delivery"
+                              >
+                                <PackageCheck className="h-4 w-4" />
+                                Completa Consegna
+                              </Button>
+                            </div>
+                          </>
+                        ) : (
+                          <>
+                            <p className="text-sm">
+                              Dispositivo pronto per il ritiro. <strong>Prenota un appuntamento</strong> o <strong>completa la consegna</strong> quando il cliente arriva.
+                            </p>
+                            <div className="grid grid-cols-2 gap-2">
+                              <Button
+                                variant="outline"
+                                onClick={() => {
+                                  if (!repair.repairCenterId) {
+                                    toast({
+                                      title: "Centro riparazione non assegnato",
+                                      description: "Questo ordine non ha un centro riparazione assegnato. Contatta l'amministratore.",
+                                      variant: "destructive",
+                                    });
+                                    return;
+                                  }
+                                  setAppointmentDialogOpen(true);
+                                }}
+                                className="gap-2"
+                                data-testid="button-book-appointment"
+                              >
+                                <CalendarCheck className="h-4 w-4" />
+                                Prenota Appuntamento
+                              </Button>
+                              <Button
+                                onClick={() => setDeliveryDialogOpen(true)}
+                                className="gap-2"
+                                data-testid="button-delivery"
+                              >
+                                <PackageCheck className="h-4 w-4" />
+                                Completa Consegna
+                              </Button>
+                            </div>
+                          </>
+                        )}
                       </div>
                     )}
 
