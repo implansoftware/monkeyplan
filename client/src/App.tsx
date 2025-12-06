@@ -82,6 +82,7 @@ import ResellerSupplierOrders from "@/pages/reseller/supplier-orders";
 import ResellerSupplierReturns from "@/pages/reseller/supplier-returns";
 import ResellerPartsLoad from "@/pages/reseller/parts-load";
 import ResellerRepairCenters from "@/pages/reseller/repair-centers";
+import ResellerRepairCenterSchedules from "@/pages/reseller/repair-center-schedules";
 
 // Repair Center pages
 import RepairCenterDashboard from "@/pages/repair-center/dashboard";
@@ -145,6 +146,7 @@ function Router() {
       <ProtectedRoute path="/reseller/orders" component={ResellerOrders} />
       <ProtectedRoute path="/reseller/customers" component={ResellerCustomers} />
       <ProtectedRoute path="/reseller/repair-centers" component={ResellerRepairCenters} />
+      <ProtectedRoute path="/reseller/repair-center-schedules" component={ResellerRepairCenterSchedules} />
       <ProtectedRoute path="/reseller/new-repair" component={ResellerNewRepair} />
       <ProtectedRoute path="/reseller/repairs" component={ResellerRepairs} />
       <ProtectedRoute path="/reseller/diagnostics" component={DiagnosisList} />

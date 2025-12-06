@@ -5244,20 +5244,26 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  // POST /api/repair-centers/:id/availability - Set repair center weekly availability (admin/repair_center)
+  // POST /api/repair-centers/:id/availability - Set repair center weekly availability (admin/repair_center/reseller)
   app.post("/api/repair-centers/:id/availability", requireAuth, async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
-      // Only admin or the repair center itself can modify availability
+      // Admin, repair center itself, or owning reseller can modify availability
       if (req.user.role === 'admin') {
         // Admin can modify any center
       } else if (req.user.role === 'repair_center') {
         if (req.user.repairCenterId !== req.params.id) {
           return res.status(403).send("Access denied");
         }
+      } else if (req.user.role === 'reseller') {
+        // Reseller can manage centers that belong to them
+        const center = await storage.getRepairCenter(req.params.id);
+        if (!center || center.resellerId !== req.user.id) {
+          return res.status(403).send("Access denied - this center does not belong to you");
+        }
       } else {
-        return res.status(403).send("Only admins and repair centers can manage availability");
+        return res.status(403).send("Only admins, repair centers and resellers can manage availability");
       }
       
       const { availability } = req.body;
@@ -5319,8 +5325,14 @@ export function registerRoutes(app: Express): Server {
         if (req.user.repairCenterId !== req.params.id) {
           return res.status(403).send("Access denied");
         }
+      } else if (req.user.role === 'reseller') {
+        // Reseller can manage centers that belong to them
+        const center = await storage.getRepairCenter(req.params.id);
+        if (!center || center.resellerId !== req.user.id) {
+          return res.status(403).send("Access denied - this center does not belong to you");
+        }
       } else {
-        return res.status(403).send("Only admins and repair centers can manage blackouts");
+        return res.status(403).send("Only admins, repair centers and resellers can manage blackouts");
       }
       
       // Validate the blackout data
@@ -5354,8 +5366,14 @@ export function registerRoutes(app: Express): Server {
         if (req.user.repairCenterId !== req.params.id) {
           return res.status(403).send("Access denied");
         }
+      } else if (req.user.role === 'reseller') {
+        // Reseller can manage centers that belong to them
+        const center = await storage.getRepairCenter(req.params.id);
+        if (!center || center.resellerId !== req.user.id) {
+          return res.status(403).send("Access denied - this center does not belong to you");
+        }
       } else {
-        return res.status(403).send("Only admins and repair centers can manage blackouts");
+        return res.status(403).send("Only admins, repair centers and resellers can manage blackouts");
       }
       
       await storage.deleteRepairCenterBlackout(req.params.blackoutId);
