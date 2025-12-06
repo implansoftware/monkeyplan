@@ -4,10 +4,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { 
-  Wrench, Pencil, Euro, Clock, Search, Tag, Building2, X, Check
+  Wrench, Pencil, Euro, Clock, Search, Tag, Building2, X, Check, Plus, Trash2
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
@@ -91,12 +92,13 @@ interface ServiceCatalogResponse {
 
 export default function ResellerServiceCatalog() {
   const { toast } = useToast();
+  const [activeTab, setActiveTab] = useState("catalog");
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [selectedCenterId, setSelectedCenterId] = useState<string>("reseller");
   
   const [isPriceDialogOpen, setIsPriceDialogOpen] = useState(false);
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isDeletePriceDialogOpen, setIsDeletePriceDialogOpen] = useState(false);
   
   const [editingItem, setEditingItem] = useState<ServiceCatalogItem | null>(null);
   const [priceEuros, setPriceEuros] = useState<string>("");
@@ -104,8 +106,24 @@ export default function ResellerServiceCatalog() {
   
   const [priceToDelete, setPriceToDelete] = useState<{ item: ServiceCatalogItem; priceId: string } | null>(null);
 
+  const [isItemDialogOpen, setIsItemDialogOpen] = useState(false);
+  const [isDeleteItemDialogOpen, setIsDeleteItemDialogOpen] = useState(false);
+  const [editingServiceItem, setEditingServiceItem] = useState<ServiceItem | null>(null);
+  const [itemToDelete, setItemToDelete] = useState<ServiceItem | null>(null);
+  
+  const [itemCode, setItemCode] = useState("");
+  const [itemName, setItemName] = useState("");
+  const [itemDescription, setItemDescription] = useState("");
+  const [itemCategory, setItemCategory] = useState("");
+  const [itemPriceEuros, setItemPriceEuros] = useState("");
+  const [itemLaborMinutes, setItemLaborMinutes] = useState("60");
+
   const { data: catalogData, isLoading } = useQuery<ServiceCatalogResponse>({
     queryKey: ["/api/reseller/service-catalog"],
+  });
+
+  const { data: myItems, isLoading: isLoadingMyItems } = useQuery<ServiceItem[]>({
+    queryKey: ["/api/reseller/service-items"],
   });
 
   const savePriceMutation = useMutation({
@@ -135,8 +153,63 @@ export default function ResellerServiceCatalog() {
     onSuccess: () => {
       toast({ title: "Prezzo Eliminato", description: "Il prezzo personalizzato è stato eliminato" });
       queryClient.invalidateQueries({ queryKey: ["/api/reseller/service-catalog"] });
-      setIsDeleteDialogOpen(false);
+      setIsDeletePriceDialogOpen(false);
       setPriceToDelete(null);
+    },
+    onError: (error: Error) => {
+      toast({ title: "Errore", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const createItemMutation = useMutation({
+    mutationFn: async (data: {
+      code: string;
+      name: string;
+      description?: string;
+      category: string;
+      defaultPriceCents: number;
+      defaultLaborMinutes: number;
+    }) => {
+      return await apiRequest("POST", "/api/reseller/service-items", data);
+    },
+    onSuccess: () => {
+      toast({ title: "Intervento Creato", description: "Il nuovo intervento è stato aggiunto al catalogo" });
+      queryClient.invalidateQueries({ queryKey: ["/api/reseller/service-items"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/reseller/service-catalog"] });
+      setIsItemDialogOpen(false);
+      resetItemForm();
+    },
+    onError: (error: Error) => {
+      toast({ title: "Errore", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const updateItemMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: Partial<ServiceItem> }) => {
+      return await apiRequest("PATCH", `/api/reseller/service-items/${id}`, data);
+    },
+    onSuccess: () => {
+      toast({ title: "Intervento Aggiornato", description: "Le modifiche sono state salvate" });
+      queryClient.invalidateQueries({ queryKey: ["/api/reseller/service-items"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/reseller/service-catalog"] });
+      setIsItemDialogOpen(false);
+      resetItemForm();
+    },
+    onError: (error: Error) => {
+      toast({ title: "Errore", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const deleteItemMutation = useMutation({
+    mutationFn: async (id: string) => {
+      return await apiRequest("DELETE", `/api/reseller/service-items/${id}`);
+    },
+    onSuccess: () => {
+      toast({ title: "Intervento Eliminato", description: "L'intervento è stato rimosso dal catalogo" });
+      queryClient.invalidateQueries({ queryKey: ["/api/reseller/service-items"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/reseller/service-catalog"] });
+      setIsDeleteItemDialogOpen(false);
+      setItemToDelete(null);
     },
     onError: (error: Error) => {
       toast({ title: "Errore", description: error.message, variant: "destructive" });
@@ -147,6 +220,16 @@ export default function ResellerServiceCatalog() {
     setEditingItem(null);
     setPriceEuros("");
     setLaborMinutes("");
+  };
+
+  const resetItemForm = () => {
+    setEditingServiceItem(null);
+    setItemCode("");
+    setItemName("");
+    setItemDescription("");
+    setItemCategory("");
+    setItemPriceEuros("");
+    setItemLaborMinutes("60");
   };
 
   const openPriceDialog = (item: ServiceCatalogItem) => {
@@ -168,6 +251,21 @@ export default function ResellerServiceCatalog() {
     }
     
     setIsPriceDialogOpen(true);
+  };
+
+  const openItemDialog = (item?: ServiceItem) => {
+    if (item) {
+      setEditingServiceItem(item);
+      setItemCode(item.code);
+      setItemName(item.name);
+      setItemDescription(item.description || "");
+      setItemCategory(item.category);
+      setItemPriceEuros((item.defaultPriceCents / 100).toFixed(2));
+      setItemLaborMinutes(item.defaultLaborMinutes?.toString() || "60");
+    } else {
+      resetItemForm();
+    }
+    setIsItemDialogOpen(true);
   };
 
   const handleSavePrice = () => {
@@ -195,7 +293,45 @@ export default function ResellerServiceCatalog() {
     savePriceMutation.mutate(data);
   };
 
-  const openDeleteDialog = (item: ServiceCatalogItem) => {
+  const handleSaveItem = () => {
+    if (!itemCode || !itemName || !itemCategory || !itemPriceEuros) {
+      toast({ title: "Errore", description: "Compila tutti i campi obbligatori", variant: "destructive" });
+      return;
+    }
+
+    const priceCents = Math.round(parseFloat(itemPriceEuros) * 100);
+    if (isNaN(priceCents) || priceCents < 0) {
+      toast({ title: "Errore", description: "Prezzo non valido", variant: "destructive" });
+      return;
+    }
+
+    const laborMins = parseInt(itemLaborMinutes) || 60;
+
+    if (editingServiceItem) {
+      updateItemMutation.mutate({
+        id: editingServiceItem.id,
+        data: {
+          code: itemCode,
+          name: itemName,
+          description: itemDescription || null,
+          category: itemCategory,
+          defaultPriceCents: priceCents,
+          defaultLaborMinutes: laborMins,
+        },
+      });
+    } else {
+      createItemMutation.mutate({
+        code: itemCode,
+        name: itemName,
+        description: itemDescription || undefined,
+        category: itemCategory,
+        defaultPriceCents: priceCents,
+        defaultLaborMinutes: laborMins,
+      });
+    }
+  };
+
+  const openDeletePriceDialog = (item: ServiceCatalogItem) => {
     let priceId: string | null = null;
     if (selectedCenterId === "reseller") {
       priceId = item.resellerPrice?.id || null;
@@ -205,11 +341,19 @@ export default function ResellerServiceCatalog() {
     
     if (priceId) {
       setPriceToDelete({ item, priceId });
-      setIsDeleteDialogOpen(true);
+      setIsDeletePriceDialogOpen(true);
     }
   };
 
   const filteredItems = catalogData?.items.filter(item => {
+    const matchesSearch = searchQuery === "" || 
+      item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      item.code.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesCategory = categoryFilter === "all" || item.category === categoryFilter;
+    return matchesSearch && matchesCategory;
+  }) || [];
+
+  const filteredMyItems = myItems?.filter(item => {
     const matchesSearch = searchQuery === "" || 
       item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       item.code.toLowerCase().includes(searchQuery.toLowerCase());
@@ -265,174 +409,330 @@ export default function ResellerServiceCatalog() {
             Catalogo Interventi
           </h1>
           <p className="text-muted-foreground">
-            Gestisci i prezzi personalizzati per te e i tuoi centri di riparazione
+            Gestisci i prezzi e crea i tuoi interventi personalizzati
           </p>
         </div>
       </div>
 
-      <Card>
-        <CardHeader className="pb-4">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-              <Label className="text-sm font-medium">Visualizza prezzi per:</Label>
-              <Select
-                value={selectedCenterId}
-                onValueChange={setSelectedCenterId}
-              >
-                <SelectTrigger className="w-64" data-testid="select-price-context">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="reseller">
-                    <div className="flex items-center gap-2">
-                      <Tag className="h-4 w-4" />
-                      <span>Prezzi Rivenditore (miei)</span>
-                    </div>
-                  </SelectItem>
-                  {catalogData?.repairCenters.map(center => (
-                    <SelectItem key={center.id} value={center.id}>
-                      <div className="flex items-center gap-2">
-                        <Building2 className="h-4 w-4" />
-                        <span>{center.name}</span>
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-              <div className="relative">
-                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Cerca intervento..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-8 w-full sm:w-64"
-                  data-testid="input-search"
-                />
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList className="grid w-full max-w-md grid-cols-2">
+          <TabsTrigger value="catalog" data-testid="tab-catalog">
+            Catalogo Completo
+          </TabsTrigger>
+          <TabsTrigger value="my-items" data-testid="tab-my-items">
+            I Miei Interventi
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="catalog" className="mt-4">
+          <Card>
+            <CardHeader className="pb-4">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                  <Label className="text-sm font-medium">Visualizza prezzi per:</Label>
+                  <Select
+                    value={selectedCenterId}
+                    onValueChange={setSelectedCenterId}
+                  >
+                    <SelectTrigger className="w-64" data-testid="select-price-context">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="reseller">
+                        <div className="flex items-center gap-2">
+                          <Tag className="h-4 w-4" />
+                          <span>Prezzi Rivenditore (miei)</span>
+                        </div>
+                      </SelectItem>
+                      {catalogData?.repairCenters.map(center => (
+                        <SelectItem key={center.id} value={center.id}>
+                          <div className="flex items-center gap-2">
+                            <Building2 className="h-4 w-4" />
+                            <span>{center.name}</span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                  <div className="relative">
+                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Cerca intervento..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="pl-8 w-full sm:w-64"
+                      data-testid="input-search"
+                    />
+                  </div>
+                  <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                    <SelectTrigger className="w-40" data-testid="select-category-filter">
+                      <SelectValue placeholder="Categoria" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Tutte</SelectItem>
+                      {SERVICE_CATEGORIES.map(cat => (
+                        <SelectItem key={cat.value} value={cat.value}>
+                          {cat.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
-              <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-                <SelectTrigger className="w-40" data-testid="select-category-filter">
-                  <SelectValue placeholder="Categoria" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Tutte</SelectItem>
-                  {SERVICE_CATEGORIES.map(cat => (
-                    <SelectItem key={cat.value} value={cat.value}>
-                      {cat.label}
-                    </SelectItem>
+            </CardHeader>
+            <CardContent>
+              {filteredItems.length === 0 ? (
+                <div className="text-center py-12 text-muted-foreground">
+                  <Wrench className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <p>Nessun intervento trovato</p>
+                </div>
+              ) : (
+                <div className="rounded-md border overflow-hidden">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Codice</TableHead>
+                        <TableHead>Intervento</TableHead>
+                        <TableHead>Categoria</TableHead>
+                        <TableHead className="text-right">Prezzo Base</TableHead>
+                        <TableHead className="text-right">Prezzo Effettivo</TableHead>
+                        <TableHead className="text-center">Stato</TableHead>
+                        <TableHead className="text-right">Azioni</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredItems.map(item => {
+                        const effectivePrice = getEffectivePrice(item);
+                        const priceSource = getPriceSource(item);
+                        const isCustom = hasCustomPrice(item);
+                        
+                        return (
+                          <TableRow key={item.id} data-testid={`row-service-${item.id}`}>
+                            <TableCell className="font-mono text-sm">
+                              {item.code}
+                            </TableCell>
+                            <TableCell>
+                              <div>
+                                <span className="font-medium">{item.name}</span>
+                                {item.description && (
+                                  <p className="text-xs text-muted-foreground line-clamp-1">
+                                    {item.description}
+                                  </p>
+                                )}
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant="secondary" className={getCategoryColor(item.category)}>
+                                {getCategoryLabel(item.category)}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-right text-muted-foreground">
+                              {formatCurrency(item.defaultPriceCents)}
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <div className="flex items-center justify-end gap-2">
+                                <span className={isCustom ? "font-semibold text-primary" : ""}>
+                                  {formatCurrency(effectivePrice)}
+                                </span>
+                                {priceSource === "custom" && (
+                                  <Badge variant="default" className="text-xs">
+                                    Personalizzato
+                                  </Badge>
+                                )}
+                                {priceSource === "reseller" && selectedCenterId !== "reseller" && (
+                                  <Badge variant="secondary" className="text-xs">
+                                    Da Rivenditore
+                                  </Badge>
+                                )}
+                              </div>
+                            </TableCell>
+                            <TableCell className="text-center">
+                              {isCustom ? (
+                                <Check className="h-4 w-4 text-green-600 mx-auto" />
+                              ) : (
+                                <span className="text-muted-foreground text-xs">Base</span>
+                              )}
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <div className="flex items-center justify-end gap-1">
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  onClick={() => openPriceDialog(item)}
+                                  data-testid={`button-edit-price-${item.id}`}
+                                >
+                                  <Pencil className="h-4 w-4" />
+                                </Button>
+                                {isCustom && (
+                                  <Button
+                                    size="icon"
+                                    variant="ghost"
+                                    onClick={() => openDeletePriceDialog(item)}
+                                    className="text-destructive hover:text-destructive"
+                                    data-testid={`button-delete-price-${item.id}`}
+                                  >
+                                    <X className="h-4 w-4" />
+                                  </Button>
+                                )}
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="my-items" className="mt-4">
+          <Card>
+            <CardHeader className="pb-4">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <CardTitle>I Miei Interventi</CardTitle>
+                  <CardDescription>
+                    Interventi personalizzati creati da te
+                  </CardDescription>
+                </div>
+                <div className="flex gap-2">
+                  <div className="relative">
+                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Cerca..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="pl-8 w-full sm:w-48"
+                      data-testid="input-search-my-items"
+                    />
+                  </div>
+                  <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                    <SelectTrigger className="w-36" data-testid="select-category-filter-my-items">
+                      <SelectValue placeholder="Categoria" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Tutte</SelectItem>
+                      {SERVICE_CATEGORIES.map(cat => (
+                        <SelectItem key={cat.value} value={cat.value}>
+                          {cat.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Button onClick={() => openItemDialog()} data-testid="button-create-item">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Nuovo Intervento
+                  </Button>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {isLoadingMyItems ? (
+                <div className="space-y-4">
+                  {[1, 2, 3].map(i => (
+                    <Skeleton key={i} className="h-16 w-full" />
                   ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          {filteredItems.length === 0 ? (
-            <div className="text-center py-12 text-muted-foreground">
-              <Wrench className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p>Nessun intervento trovato</p>
-            </div>
-          ) : (
-            <div className="rounded-md border overflow-hidden">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Codice</TableHead>
-                    <TableHead>Intervento</TableHead>
-                    <TableHead>Categoria</TableHead>
-                    <TableHead className="text-right">Prezzo Base</TableHead>
-                    <TableHead className="text-right">Prezzo Effettivo</TableHead>
-                    <TableHead className="text-center">Stato</TableHead>
-                    <TableHead className="text-right">Azioni</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredItems.map(item => {
-                    const effectivePrice = getEffectivePrice(item);
-                    const priceSource = getPriceSource(item);
-                    const isCustom = hasCustomPrice(item);
-                    
-                    return (
-                      <TableRow key={item.id} data-testid={`row-service-${item.id}`}>
-                        <TableCell className="font-mono text-sm">
-                          {item.code}
-                        </TableCell>
-                        <TableCell>
-                          <div>
-                            <span className="font-medium">{item.name}</span>
-                            {item.description && (
-                              <p className="text-xs text-muted-foreground line-clamp-1">
-                                {item.description}
-                              </p>
-                            )}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant="secondary" className={getCategoryColor(item.category)}>
-                            {getCategoryLabel(item.category)}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-right text-muted-foreground">
-                          {formatCurrency(item.defaultPriceCents)}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex items-center justify-end gap-2">
-                            <span className={isCustom ? "font-semibold text-primary" : ""}>
-                              {formatCurrency(effectivePrice)}
-                            </span>
-                            {priceSource === "custom" && (
-                              <Badge variant="default" className="text-xs">
-                                Personalizzato
+                </div>
+              ) : filteredMyItems.length === 0 ? (
+                <div className="text-center py-12 text-muted-foreground">
+                  <Wrench className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <p className="mb-4">Non hai ancora creato interventi personalizzati</p>
+                  <Button onClick={() => openItemDialog()} data-testid="button-create-first-item">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Crea il Primo Intervento
+                  </Button>
+                </div>
+              ) : (
+                <div className="rounded-md border overflow-hidden">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Codice</TableHead>
+                        <TableHead>Intervento</TableHead>
+                        <TableHead>Categoria</TableHead>
+                        <TableHead className="text-right">Prezzo</TableHead>
+                        <TableHead className="text-right">Tempo (min)</TableHead>
+                        <TableHead className="text-center">Stato</TableHead>
+                        <TableHead className="text-right">Azioni</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredMyItems.map(item => (
+                        <TableRow key={item.id} data-testid={`row-my-item-${item.id}`}>
+                          <TableCell className="font-mono text-sm">
+                            {item.code}
+                          </TableCell>
+                          <TableCell>
+                            <div>
+                              <span className="font-medium">{item.name}</span>
+                              {item.description && (
+                                <p className="text-xs text-muted-foreground line-clamp-1">
+                                  {item.description}
+                                </p>
+                              )}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="secondary" className={getCategoryColor(item.category)}>
+                              {getCategoryLabel(item.category)}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-right font-medium">
+                            {formatCurrency(item.defaultPriceCents)}
+                          </TableCell>
+                          <TableCell className="text-right text-muted-foreground">
+                            {item.defaultLaborMinutes}
+                          </TableCell>
+                          <TableCell className="text-center">
+                            {item.isActive ? (
+                              <Badge variant="default" className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
+                                Attivo
+                              </Badge>
+                            ) : (
+                              <Badge variant="secondary">
+                                Inattivo
                               </Badge>
                             )}
-                            {priceSource === "reseller" && selectedCenterId !== "reseller" && (
-                              <Badge variant="secondary" className="text-xs">
-                                Da Rivenditore
-                              </Badge>
-                            )}
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-center">
-                          {isCustom ? (
-                            <Check className="h-4 w-4 text-green-600 mx-auto" />
-                          ) : (
-                            <span className="text-muted-foreground text-xs">Base</span>
-                          )}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex items-center justify-end gap-1">
-                            <Button
-                              size="icon"
-                              variant="ghost"
-                              onClick={() => openPriceDialog(item)}
-                              data-testid={`button-edit-price-${item.id}`}
-                            >
-                              <Pencil className="h-4 w-4" />
-                            </Button>
-                            {isCustom && (
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex items-center justify-end gap-1">
                               <Button
                                 size="icon"
                                 variant="ghost"
-                                onClick={() => openDeleteDialog(item)}
-                                className="text-destructive hover:text-destructive"
-                                data-testid={`button-delete-price-${item.id}`}
+                                onClick={() => openItemDialog(item)}
+                                data-testid={`button-edit-item-${item.id}`}
                               >
-                                <X className="h-4 w-4" />
+                                <Pencil className="h-4 w-4" />
                               </Button>
-                            )}
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                onClick={() => {
+                                  setItemToDelete(item);
+                                  setIsDeleteItemDialogOpen(true);
+                                }}
+                                className="text-destructive hover:text-destructive"
+                                data-testid={`button-delete-item-${item.id}`}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
 
       <Dialog open={isPriceDialogOpen} onOpenChange={setIsPriceDialogOpen}>
         <DialogContent>
@@ -518,7 +818,130 @@ export default function ResellerServiceCatalog() {
         </DialogContent>
       </Dialog>
 
-      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+      <Dialog open={isItemDialogOpen} onOpenChange={setIsItemDialogOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>
+              {editingServiceItem ? "Modifica Intervento" : "Nuovo Intervento"}
+            </DialogTitle>
+            <DialogDescription>
+              {editingServiceItem 
+                ? "Modifica i dettagli dell'intervento" 
+                : "Crea un nuovo intervento personalizzato per il tuo catalogo"}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="itemCode">Codice *</Label>
+                <Input
+                  id="itemCode"
+                  value={itemCode}
+                  onChange={(e) => setItemCode(e.target.value)}
+                  placeholder="es. DISP-001"
+                  data-testid="input-item-code"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="itemCategory">Categoria *</Label>
+                <Select value={itemCategory} onValueChange={setItemCategory}>
+                  <SelectTrigger data-testid="select-item-category">
+                    <SelectValue placeholder="Seleziona..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {SERVICE_CATEGORIES.map(cat => (
+                      <SelectItem key={cat.value} value={cat.value}>
+                        {cat.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="itemName">Nome Intervento *</Label>
+              <Input
+                id="itemName"
+                value={itemName}
+                onChange={(e) => setItemName(e.target.value)}
+                placeholder="es. Sostituzione Display"
+                data-testid="input-item-name"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="itemDescription">Descrizione (opzionale)</Label>
+              <Textarea
+                id="itemDescription"
+                value={itemDescription}
+                onChange={(e) => setItemDescription(e.target.value)}
+                placeholder="Descrizione dettagliata dell'intervento..."
+                rows={3}
+                data-testid="input-item-description"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="itemPrice">Prezzo (EUR) *</Label>
+                <div className="relative">
+                  <Euro className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    id="itemPrice"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={itemPriceEuros}
+                    onChange={(e) => setItemPriceEuros(e.target.value)}
+                    className="pl-9"
+                    placeholder="0.00"
+                    data-testid="input-item-price"
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="itemLabor">Tempo Manodopera (min)</Label>
+                <div className="relative">
+                  <Clock className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    id="itemLabor"
+                    type="number"
+                    min="0"
+                    value={itemLaborMinutes}
+                    onChange={(e) => setItemLaborMinutes(e.target.value)}
+                    className="pl-9"
+                    placeholder="60"
+                    data-testid="input-item-labor"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setIsItemDialogOpen(false)}
+              data-testid="button-cancel-item"
+            >
+              Annulla
+            </Button>
+            <Button
+              onClick={handleSaveItem}
+              disabled={createItemMutation.isPending || updateItemMutation.isPending}
+              data-testid="button-save-item"
+            >
+              {(createItemMutation.isPending || updateItemMutation.isPending) 
+                ? "Salvataggio..." 
+                : (editingServiceItem ? "Salva Modifiche" : "Crea Intervento")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <AlertDialog open={isDeletePriceDialogOpen} onOpenChange={setIsDeletePriceDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Elimina Prezzo Personalizzato</AlertDialogTitle>
@@ -528,15 +951,39 @@ export default function ResellerServiceCatalog() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel data-testid="button-cancel-delete">
+            <AlertDialogCancel data-testid="button-cancel-delete-price">
               Annulla
             </AlertDialogCancel>
             <AlertDialogAction
               onClick={() => priceToDelete && deletePriceMutation.mutate(priceToDelete.priceId)}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              data-testid="button-confirm-delete"
+              data-testid="button-confirm-delete-price"
             >
               {deletePriceMutation.isPending ? "Eliminazione..." : "Elimina"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={isDeleteItemDialogOpen} onOpenChange={setIsDeleteItemDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Elimina Intervento</AlertDialogTitle>
+            <AlertDialogDescription>
+              Sei sicuro di voler eliminare l'intervento "{itemToDelete?.name}"?
+              Questa azione non può essere annullata.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel data-testid="button-cancel-delete-item">
+              Annulla
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => itemToDelete && deleteItemMutation.mutate(itemToDelete.id)}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              data-testid="button-confirm-delete-item"
+            >
+              {deleteItemMutation.isPending ? "Eliminazione..." : "Elimina"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
