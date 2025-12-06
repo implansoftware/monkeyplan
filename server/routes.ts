@@ -534,6 +534,153 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // ==========================================
+  // RESELLER SERVICE CATALOG ENDPOINTS
+  // ==========================================
+
+  // Get service catalog with reseller's custom prices
+  app.get("/api/reseller/service-catalog", requireRole("reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const items = await storage.listServiceItems();
+      const activeItems = items.filter(item => item.isActive);
+      
+      // Get all custom prices for this reseller
+      const resellerPrices = await storage.listServiceItemPricesByReseller(req.user.id);
+      
+      // Get reseller's repair centers
+      const repairCenters = await storage.listRepairCenters();
+      const myRepairCenters = repairCenters.filter(rc => rc.resellerId === req.user!.id);
+      
+      // Get custom prices for each repair center
+      const centerPricesMap: { [centerId: string]: any[] } = {};
+      for (const center of myRepairCenters) {
+        centerPricesMap[center.id] = await storage.listServiceItemPricesByRepairCenter(center.id);
+      }
+      
+      const itemsWithPrices = activeItems.map(item => {
+        const resellerPrice = resellerPrices.find(p => p.serviceItemId === item.id);
+        const centerPrices: { [centerId: string]: any } = {};
+        
+        for (const center of myRepairCenters) {
+          const centerPrice = centerPricesMap[center.id]?.find(p => p.serviceItemId === item.id);
+          if (centerPrice) {
+            centerPrices[center.id] = centerPrice;
+          }
+        }
+        
+        return {
+          ...item,
+          resellerPrice: resellerPrice || null,
+          centerPrices,
+        };
+      });
+      
+      res.json({
+        items: itemsWithPrices,
+        repairCenters: myRepairCenters,
+      });
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // Create/Update reseller custom price
+  app.post("/api/reseller/service-item-prices", requireRole("reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const { serviceItemId, priceCents, laborMinutes, repairCenterId } = req.body;
+      
+      // If repairCenterId is provided, verify it belongs to this reseller
+      if (repairCenterId) {
+        const center = await storage.getRepairCenter(repairCenterId);
+        if (!center || center.resellerId !== req.user.id) {
+          return res.status(403).send("This repair center does not belong to you");
+        }
+      }
+      
+      // Check if price already exists
+      let existingPrice;
+      if (repairCenterId) {
+        const centerPrices = await storage.listServiceItemPricesByRepairCenter(repairCenterId);
+        existingPrice = centerPrices.find(p => p.serviceItemId === serviceItemId);
+      } else {
+        const resellerPrices = await storage.listServiceItemPricesByReseller(req.user.id);
+        existingPrice = resellerPrices.find(p => p.serviceItemId === serviceItemId);
+      }
+      
+      if (existingPrice) {
+        // Double-check ownership before update
+        if (repairCenterId) {
+          if (existingPrice.repairCenterId !== repairCenterId) {
+            return res.status(403).send("Price record does not match repair center");
+          }
+        } else {
+          if (existingPrice.resellerId !== req.user.id) {
+            return res.status(403).send("Price record does not belong to you");
+          }
+        }
+        
+        // Update existing
+        const updated = await storage.updateServiceItemPrice(existingPrice.id, {
+          priceCents,
+          laborMinutes: laborMinutes || null,
+        });
+        res.json(updated);
+      } else {
+        // Create new
+        const created = await storage.createServiceItemPrice({
+          serviceItemId,
+          resellerId: repairCenterId ? null : req.user.id,
+          repairCenterId: repairCenterId || null,
+          priceCents,
+          laborMinutes: laborMinutes || null,
+          isActive: true,
+        });
+        res.status(201).json(created);
+      }
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+
+  // Delete reseller custom price
+  app.delete("/api/reseller/service-item-prices/:id", requireRole("reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      // First, get the price record to check ownership
+      const priceToDelete = await storage.getServiceItemPrice(req.params.id);
+      if (!priceToDelete) {
+        return res.status(404).send("Price not found");
+      }
+      
+      // Check ownership based on whether it's a reseller or center price
+      if (priceToDelete.resellerId) {
+        // It's a reseller-level price - verify it belongs to this reseller
+        if (priceToDelete.resellerId !== req.user.id) {
+          return res.status(403).send("This price does not belong to you");
+        }
+      } else if (priceToDelete.repairCenterId) {
+        // It's a center-level price - verify the center belongs to this reseller
+        const center = await storage.getRepairCenter(priceToDelete.repairCenterId);
+        if (!center || center.resellerId !== req.user.id) {
+          return res.status(403).send("This price does not belong to your repair centers");
+        }
+      } else {
+        // Neither resellerId nor repairCenterId - shouldn't happen, but deny access
+        return res.status(403).send("Invalid price record");
+      }
+      
+      await storage.deleteServiceItemPrice(req.params.id);
+      res.sendStatus(204);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
   // SLA Thresholds - Get
   app.get("/api/admin/settings/sla-thresholds", requireRole("admin"), async (req, res) => {
     try {

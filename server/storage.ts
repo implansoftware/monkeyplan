@@ -472,6 +472,8 @@ export interface IStorage {
   
   // Service Item Prices (Listini Prezzi)
   listServiceItemPrices(serviceItemId: string): Promise<ServiceItemPrice[]>;
+  listServiceItemPricesByReseller(resellerId: string): Promise<ServiceItemPrice[]>;
+  listServiceItemPricesByRepairCenter(repairCenterId: string): Promise<ServiceItemPrice[]>;
   getServiceItemPricesForEntity(resellerId?: string, repairCenterId?: string): Promise<ServiceItemPrice[]>;
   getServiceItemPrice(id: string): Promise<ServiceItemPrice | undefined>;
   createServiceItemPrice(price: InsertServiceItemPrice): Promise<ServiceItemPrice>;
@@ -3955,6 +3957,18 @@ export class DatabaseStorage implements IStorage {
     return await db.select()
       .from(serviceItemPrices)
       .where(eq(serviceItemPrices.serviceItemId, serviceItemId));
+  }
+
+  async listServiceItemPricesByReseller(resellerId: string): Promise<ServiceItemPrice[]> {
+    return await db.select()
+      .from(serviceItemPrices)
+      .where(eq(serviceItemPrices.resellerId, resellerId));
+  }
+
+  async listServiceItemPricesByRepairCenter(repairCenterId: string): Promise<ServiceItemPrice[]> {
+    return await db.select()
+      .from(serviceItemPrices)
+      .where(eq(serviceItemPrices.repairCenterId, repairCenterId));
   }
 
   async getServiceItemPricesForEntity(resellerId?: string, repairCenterId?: string): Promise<ServiceItemPrice[]> {

@@ -84,6 +84,7 @@ const menuItems = {
     { title: "Lavorazioni", url: "/reseller/repairs", icon: Wrench, group: "Riparazioni" },
     { title: "Diagnosi", url: "/reseller/diagnostics", icon: Stethoscope, group: "Riparazioni" },
     { title: "Preventivi", url: "/reseller/quotes", icon: Receipt, group: "Riparazioni" },
+    { title: "Catalogo Interventi", url: "/reseller/service-catalog", icon: Wrench, group: "Riparazioni" },
     { title: "Magazzino", url: "/reseller/inventory", icon: Package, group: "Inventario" },
     { title: "Prodotti", url: "/reseller/products", icon: Package, group: "Inventario" },
     { title: "Fornitori", url: "/reseller/suppliers", icon: Truck, group: "Fornitori" },
