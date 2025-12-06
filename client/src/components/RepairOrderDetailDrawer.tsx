@@ -1203,7 +1203,7 @@ export function RepairOrderDetailDrawer({
                                 {parts.map((part: { name: string; quantity: number; unitPrice: number; price?: number }, idx: number) => (
                                   <div key={idx} className="flex justify-between items-center">
                                     <span>{part.name} x{part.quantity}</span>
-                                    <span className="font-medium">{formatCurrency(Number(part.price || part.unitPrice * part.quantity))}</span>
+                                    <span className="font-medium">{formatCurrency(Number(part.price || part.unitPrice * part.quantity), true)}</span>
                                   </div>
                                 ))}
                               </div>
@@ -1221,7 +1221,7 @@ export function RepairOrderDetailDrawer({
                       <div className="flex justify-between items-center">
                         <p className="text-sm text-muted-foreground">Manodopera</p>
                         <p className="text-sm font-medium" data-testid="text-labor-cost">
-                          {formatCurrency(Number(quote.laborCost))}
+                          {formatCurrency(Number(quote.laborCost), true)}
                         </p>
                       </div>
                     )}
@@ -1231,7 +1231,7 @@ export function RepairOrderDetailDrawer({
                     <div className="flex justify-between items-center">
                       <p className="text-sm font-medium">Totale</p>
                       <p className="text-lg font-bold text-primary" data-testid="text-quote-total">
-                        {formatCurrency(Number(quote.totalAmount))}
+                        {formatCurrency(Number(quote.totalAmount), true)}
                       </p>
                     </div>
                     
