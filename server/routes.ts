@@ -681,6 +681,116 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // ==========================================
+  // RESELLER SERVICE ITEMS (Interventi personalizzati)
+  // ==========================================
+
+  // List reseller's own service items
+  app.get("/api/reseller/service-items", requireRole("reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const allItems = await storage.listServiceItems();
+      // Filter only items created by this reseller
+      const myItems = allItems.filter(item => item.createdBy === req.user!.id);
+      
+      res.json(myItems);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // Create new service item for reseller
+  app.post("/api/reseller/service-items", requireRole("reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const { code, name, description, category, deviceTypeId, defaultPriceCents, defaultLaborMinutes } = req.body;
+      
+      if (!code || !name || !category || defaultPriceCents === undefined) {
+        return res.status(400).send("Code, name, category, and defaultPriceCents are required");
+      }
+      
+      const created = await storage.createServiceItem({
+        code,
+        name,
+        description: description || null,
+        category,
+        deviceTypeId: deviceTypeId || null,
+        defaultPriceCents,
+        defaultLaborMinutes: defaultLaborMinutes || 60,
+        createdBy: req.user.id,
+        isActive: true,
+      });
+      
+      res.status(201).json(created);
+    } catch (error: any) {
+      if (error.message?.includes("duplicate key") || error.message?.includes("unique constraint")) {
+        return res.status(400).send("Un intervento con questo codice esiste già");
+      }
+      res.status(500).send(error.message);
+    }
+  });
+
+  // Update reseller's service item
+  app.patch("/api/reseller/service-items/:id", requireRole("reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      // Get item and verify ownership
+      const item = await storage.getServiceItem(req.params.id);
+      if (!item) {
+        return res.status(404).send("Intervento non trovato");
+      }
+      
+      if (item.createdBy !== req.user.id) {
+        return res.status(403).send("Non puoi modificare questo intervento");
+      }
+      
+      const { code, name, description, category, deviceTypeId, defaultPriceCents, defaultLaborMinutes, isActive } = req.body;
+      
+      const updated = await storage.updateServiceItem(req.params.id, {
+        ...(code !== undefined && { code }),
+        ...(name !== undefined && { name }),
+        ...(description !== undefined && { description }),
+        ...(category !== undefined && { category }),
+        ...(deviceTypeId !== undefined && { deviceTypeId }),
+        ...(defaultPriceCents !== undefined && { defaultPriceCents }),
+        ...(defaultLaborMinutes !== undefined && { defaultLaborMinutes }),
+        ...(isActive !== undefined && { isActive }),
+      });
+      
+      res.json(updated);
+    } catch (error: any) {
+      if (error.message?.includes("duplicate key") || error.message?.includes("unique constraint")) {
+        return res.status(400).send("Un intervento con questo codice esiste già");
+      }
+      res.status(500).send(error.message);
+    }
+  });
+
+  // Delete reseller's service item
+  app.delete("/api/reseller/service-items/:id", requireRole("reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      // Get item and verify ownership
+      const item = await storage.getServiceItem(req.params.id);
+      if (!item) {
+        return res.status(404).send("Intervento non trovato");
+      }
+      
+      if (item.createdBy !== req.user.id) {
+        return res.status(403).send("Non puoi eliminare questo intervento");
+      }
+      
+      await storage.deleteServiceItem(req.params.id);
+      res.sendStatus(204);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
   // SLA Thresholds - Get
   app.get("/api/admin/settings/sla-thresholds", requireRole("admin"), async (req, res) => {
     try {
