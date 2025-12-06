@@ -142,13 +142,11 @@ export default function AdminServiceCatalog() {
   });
 
   const { data: resellers } = useQuery<User[]>({
-    queryKey: ["/api/users"],
-    select: (users) => users.filter(u => u.role === "reseller"),
+    queryKey: ["/api/admin/resellers"],
   });
 
-  const { data: repairCenters } = useQuery<User[]>({
-    queryKey: ["/api/users"],
-    select: (users) => users.filter(u => u.role === "repair_center"),
+  const { data: repairCenters } = useQuery<any[]>({
+    queryKey: ["/api/admin/repair-centers"],
   });
 
   const { data: itemPrices, isLoading: pricesLoading } = useQuery<ServiceItemPrice[]>({
@@ -319,7 +317,7 @@ export default function AdminServiceCatalog() {
     }
     if (price.repairCenterId) {
       const center = repairCenters?.find(r => r.id === price.repairCenterId);
-      return center?.ragioneSociale || center?.fullName || center?.username || "Centro sconosciuto";
+      return center?.ragioneSociale || center?.name || "Centro sconosciuto";
     }
     return "N/A";
   };
@@ -784,7 +782,7 @@ export default function AdminServiceCatalog() {
                   <SelectContent>
                     {repairCenters?.map(r => (
                       <SelectItem key={r.id} value={r.id}>
-                        {r.ragioneSociale || r.fullName || r.username}
+                        {r.ragioneSociale || r.name}
                       </SelectItem>
                     ))}
                   </SelectContent>
