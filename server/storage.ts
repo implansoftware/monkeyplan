@@ -55,7 +55,8 @@ import {
   utilityPracticeDocuments, utilityPracticeTasks, utilityPracticeNotes,
   utilityPracticeTimeline, utilityPracticeStateHistory,
   sifarCredentials, sifarStores,
-  serviceItems, serviceItemPrices, productPrices
+  serviceItems, serviceItemPrices, productPrices,
+  resellerStaffPermissions, ResellerStaffPermission, InsertResellerStaffPermission
 } from "@shared/schema";
 import { db, pool } from "./db";
 import { eq, and, or, desc, lt, sql, not, inArray } from "drizzle-orm";
@@ -495,6 +496,19 @@ export interface IStorage {
   
   // Get effective price for a service item (considers reseller/repair center customizations)
   getEffectiveServicePrice(serviceItemId: string, resellerId?: string, repairCenterId?: string): Promise<{ priceCents: number; laborMinutes: number; source: 'base' | 'reseller' | 'repair_center' }>;
+  
+  // Reseller Staff Team Management
+  listResellerStaff(resellerId: string): Promise<User[]>;
+  
+  // Reseller Staff Permissions
+  getStaffPermissions(userId: string): Promise<ResellerStaffPermission[]>;
+  getStaffPermissionForModule(userId: string, module: string): Promise<ResellerStaffPermission | undefined>;
+  createStaffPermission(permission: InsertResellerStaffPermission): Promise<ResellerStaffPermission>;
+  updateStaffPermission(id: string, updates: Partial<Pick<ResellerStaffPermission, 'canRead' | 'canCreate' | 'canUpdate' | 'canDelete'>>): Promise<ResellerStaffPermission>;
+  deleteStaffPermission(id: string): Promise<void>;
+  deleteStaffPermissionsByUser(userId: string): Promise<void>;
+  upsertStaffPermissions(userId: string, resellerId: string, permissions: { module: string; canRead: boolean; canCreate: boolean; canUpdate: boolean; canDelete: boolean }[]): Promise<ResellerStaffPermission[]>;
+  checkStaffPermission(userId: string, module: string, action: 'read' | 'create' | 'update' | 'delete'): Promise<boolean>;
   
   sessionStore: session.Store;
 }
@@ -4254,6 +4268,113 @@ export class DatabaseStorage implements IStorage {
       laborMinutes: item.defaultLaborMinutes,
       source: 'base'
     };
+  }
+
+  // Reseller Staff Team Management
+  async listResellerStaff(resellerId: string): Promise<User[]> {
+    return await db.select()
+      .from(users)
+      .where(and(
+        eq(users.resellerId, resellerId),
+        eq(users.role, 'reseller_staff')
+      ));
+  }
+
+  // Reseller Staff Permissions
+  async getStaffPermissions(userId: string): Promise<ResellerStaffPermission[]> {
+    return await db.select()
+      .from(resellerStaffPermissions)
+      .where(eq(resellerStaffPermissions.userId, userId));
+  }
+
+  async getStaffPermissionForModule(userId: string, module: string): Promise<ResellerStaffPermission | undefined> {
+    const [permission] = await db.select()
+      .from(resellerStaffPermissions)
+      .where(and(
+        eq(resellerStaffPermissions.userId, userId),
+        sql`${resellerStaffPermissions.module} = ${module}`
+      ))
+      .limit(1);
+    return permission;
+  }
+
+  async createStaffPermission(permission: InsertResellerStaffPermission): Promise<ResellerStaffPermission> {
+    const [created] = await db.insert(resellerStaffPermissions)
+      .values(permission)
+      .returning();
+    return created;
+  }
+
+  async updateStaffPermission(id: string, updates: Partial<Pick<ResellerStaffPermission, 'canRead' | 'canCreate' | 'canUpdate' | 'canDelete'>>): Promise<ResellerStaffPermission> {
+    const [updated] = await db.update(resellerStaffPermissions)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(resellerStaffPermissions.id, id))
+      .returning();
+    if (!updated) throw new Error("Staff permission not found");
+    return updated;
+  }
+
+  async deleteStaffPermission(id: string): Promise<void> {
+    await db.delete(resellerStaffPermissions)
+      .where(eq(resellerStaffPermissions.id, id));
+  }
+
+  async deleteStaffPermissionsByUser(userId: string): Promise<void> {
+    await db.delete(resellerStaffPermissions)
+      .where(eq(resellerStaffPermissions.userId, userId));
+  }
+
+  async upsertStaffPermissions(
+    userId: string, 
+    resellerId: string, 
+    permissions: { module: string; canRead: boolean; canCreate: boolean; canUpdate: boolean; canDelete: boolean }[]
+  ): Promise<ResellerStaffPermission[]> {
+    const results: ResellerStaffPermission[] = [];
+    
+    for (const perm of permissions) {
+      // Check if permission exists
+      const existing = await this.getStaffPermissionForModule(userId, perm.module);
+      
+      if (existing) {
+        // Update existing
+        const updated = await this.updateStaffPermission(existing.id, {
+          canRead: perm.canRead,
+          canCreate: perm.canCreate,
+          canUpdate: perm.canUpdate,
+          canDelete: perm.canDelete
+        });
+        results.push(updated);
+      } else {
+        // Create new
+        const created = await db.insert(resellerStaffPermissions)
+          .values({
+            userId,
+            resellerId,
+            module: perm.module as any,
+            canRead: perm.canRead,
+            canCreate: perm.canCreate,
+            canUpdate: perm.canUpdate,
+            canDelete: perm.canDelete
+          })
+          .returning();
+        results.push(created[0]);
+      }
+    }
+    
+    return results;
+  }
+
+  async checkStaffPermission(userId: string, module: string, action: 'read' | 'create' | 'update' | 'delete'): Promise<boolean> {
+    const permission = await this.getStaffPermissionForModule(userId, module);
+    if (!permission) return false;
+    
+    switch (action) {
+      case 'read': return permission.canRead;
+      case 'create': return permission.canCreate;
+      case 'update': return permission.canUpdate;
+      case 'delete': return permission.canDelete;
+      default: return false;
+    }
   }
 }
 
