@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { useQuery } from "@tanstack/react-query";
 import { ShoppingCart, Users, TrendingUp, Clock, FileText, Package, AlertTriangle, CheckCircle } from "lucide-react";
@@ -5,11 +6,16 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Link } from "wouter";
-import { Plus, Wrench, Ticket } from "lucide-react";
+import { 
+  Plus, Wrench, Ticket, UserPlus, Building2, CalendarPlus, PackageOpen, 
+  Truck, Receipt, FileCheck, ListChecks, Boxes
+} from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 import { RepairOrder, Invoice } from "@shared/schema";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
+import { CustomerWizardDialog } from "@/components/CustomerWizardDialog";
+import { AcceptanceWizardDialog } from "@/components/AcceptanceWizardDialog";
 
 type ResellerStats = {
   overview: {
@@ -29,6 +35,9 @@ type ResellerStats = {
 const COLORS = ['hsl(var(--primary))', 'hsl(var(--chart-2))', 'hsl(var(--chart-3))', 'hsl(var(--chart-4))'];
 
 export default function ResellerDashboard() {
+  const [customerDialogOpen, setCustomerDialogOpen] = useState(false);
+  const [acceptanceDialogOpen, setAcceptanceDialogOpen] = useState(false);
+
   const { data: stats, isLoading } = useQuery<ResellerStats>({
     queryKey: ["/api/stats"],
   });
@@ -320,34 +329,89 @@ export default function ResellerDashboard() {
       <Card>
         <CardHeader>
           <CardTitle>Azioni Rapide</CardTitle>
+          <CardDescription>Accesso veloce alle funzionalità principali</CardDescription>
         </CardHeader>
-        <CardContent className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <Link href="/reseller/new-repair">
-            <Button variant="outline" className="w-full h-auto flex-col gap-2 p-4 hover-elevate" data-testid="button-quick-new-repair">
-              <Wrench className="h-6 w-6" />
-              <span className="text-sm font-medium">Nuova Riparazione</span>
+        <CardContent className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+          <Button 
+            variant="outline" 
+            className="w-full h-auto flex-col gap-2 p-4 hover-elevate" 
+            onClick={() => setCustomerDialogOpen(true)}
+            data-testid="button-quick-new-customer"
+          >
+            <UserPlus className="h-5 w-5 text-blue-600" />
+            <span className="text-xs font-medium">Nuovo Cliente</span>
+          </Button>
+          <Link href="/reseller/repair-centers">
+            <Button variant="outline" className="w-full h-auto flex-col gap-2 p-4 hover-elevate" data-testid="button-quick-new-center">
+              <Building2 className="h-5 w-5 text-purple-600" />
+              <span className="text-xs font-medium">Nuovo Centro</span>
             </Button>
           </Link>
-          <Link href="/reseller/orders">
-            <Button variant="outline" className="w-full h-auto flex-col gap-2 p-4 hover-elevate" data-testid="button-quick-orders">
-              <ShoppingCart className="h-6 w-6" />
-              <span className="text-sm font-medium">I Miei Ordini</span>
+          <Link href="/reseller/appointments">
+            <Button variant="outline" className="w-full h-auto flex-col gap-2 p-4 hover-elevate" data-testid="button-quick-new-appointment">
+              <CalendarPlus className="h-5 w-5 text-green-600" />
+              <span className="text-xs font-medium">Nuovo Appuntamento</span>
             </Button>
           </Link>
-          <Link href="/reseller/customers">
-            <Button variant="outline" className="w-full h-auto flex-col gap-2 p-4 hover-elevate" data-testid="button-quick-customers">
-              <Users className="h-6 w-6" />
-              <span className="text-sm font-medium">Gestisci Clienti</span>
+          <Button 
+            variant="outline" 
+            className="w-full h-auto flex-col gap-2 p-4 hover-elevate" 
+            onClick={() => setAcceptanceDialogOpen(true)}
+            data-testid="button-quick-new-intake"
+          >
+            <PackageOpen className="h-5 w-5 text-orange-600" />
+            <span className="text-xs font-medium">Nuovo Ingresso</span>
+          </Button>
+          <Link href="/reseller/inventory">
+            <Button variant="outline" className="w-full h-auto flex-col gap-2 p-4 hover-elevate" data-testid="button-quick-warehouse">
+              <Boxes className="h-5 w-5 text-amber-600" />
+              <span className="text-xs font-medium">Magazzino</span>
             </Button>
           </Link>
-          <Link href="/reseller/tickets">
-            <Button variant="outline" className="w-full h-auto flex-col gap-2 p-4 hover-elevate" data-testid="button-quick-tickets">
-              <Ticket className="h-6 w-6" />
-              <span className="text-sm font-medium">Ticket Assistenza</span>
+          <Link href="/reseller/suppliers">
+            <Button variant="outline" className="w-full h-auto flex-col gap-2 p-4 hover-elevate" data-testid="button-quick-suppliers">
+              <Truck className="h-5 w-5 text-teal-600" />
+              <span className="text-xs font-medium">Fornitori</span>
+            </Button>
+          </Link>
+          <Link href="/reseller/invoices">
+            <Button variant="outline" className="w-full h-auto flex-col gap-2 p-4 hover-elevate" data-testid="button-quick-invoices">
+              <Receipt className="h-5 w-5 text-red-600" />
+              <span className="text-xs font-medium">Fatture</span>
+            </Button>
+          </Link>
+          <Link href="/reseller/utility/practices">
+            <Button variant="outline" className="w-full h-auto flex-col gap-2 p-4 hover-elevate" data-testid="button-quick-practices">
+              <FileCheck className="h-5 w-5 text-indigo-600" />
+              <span className="text-xs font-medium">Pratiche</span>
+            </Button>
+          </Link>
+          <Link href="/reseller/utility/practices?new=true">
+            <Button variant="outline" className="w-full h-auto flex-col gap-2 p-4 hover-elevate" data-testid="button-quick-new-practice">
+              <Plus className="h-5 w-5 text-indigo-600" />
+              <span className="text-xs font-medium">Nuova Pratica</span>
+            </Button>
+          </Link>
+          <Link href="/reseller/service-catalog">
+            <Button variant="outline" className="w-full h-auto flex-col gap-2 p-4 hover-elevate" data-testid="button-quick-service-catalog">
+              <ListChecks className="h-5 w-5 text-cyan-600" />
+              <span className="text-xs font-medium">Listino Servizi</span>
             </Button>
           </Link>
         </CardContent>
       </Card>
+
+      {/* Dialogs */}
+      <CustomerWizardDialog 
+        open={customerDialogOpen} 
+        onOpenChange={setCustomerDialogOpen}
+        onSuccess={() => setCustomerDialogOpen(false)}
+      />
+      <AcceptanceWizardDialog 
+        open={acceptanceDialogOpen} 
+        onOpenChange={setAcceptanceDialogOpen}
+        onSuccess={() => setAcceptanceDialogOpen(false)}
+      />
     </div>
   );
 }

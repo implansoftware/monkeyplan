@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { UtilityPractice, InsertUtilityPractice, UtilitySupplier, UtilityService, User, Product } from "@shared/schema";
 import { Button } from "@/components/ui/button";
@@ -16,7 +16,7 @@ import {
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Link } from "wouter";
+import { Link, useSearch } from "wouter";
 
 type PracticeStatus = "bozza" | "inviata" | "in_lavorazione" | "attesa_documenti" | "completata" | "rifiutata" | "annullata";
 
@@ -67,9 +67,18 @@ interface PracticeProductItem {
 }
 
 export default function ResellerUtilityPractices() {
+  const searchString = useSearch();
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [dialogOpen, setDialogOpen] = useState(false);
+  
+  useEffect(() => {
+    const params = new URLSearchParams(searchString);
+    if (params.get("new") === "true") {
+      setDialogOpen(true);
+      window.history.replaceState({}, "", window.location.pathname);
+    }
+  }, [searchString]);
   const [editingPractice, setEditingPractice] = useState<UtilityPractice | null>(null);
   const [selectedSupplierId, setSelectedSupplierId] = useState<string>("");
   const [selectedStatus, setSelectedStatus] = useState<PracticeStatus>("bozza");
