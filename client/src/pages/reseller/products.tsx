@@ -616,7 +616,7 @@ export default function ResellerProducts() {
                   <TabsTrigger value="inventory">Magazzino</TabsTrigger>
                 </TabsList>
 
-                <TabsContent value="info" className="space-y-4 mt-4">
+                <TabsContent value="info" className="space-y-4 mt-4 data-[state=inactive]:hidden" forceMount>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="name">Nome Prodotto *</Label>
@@ -684,7 +684,7 @@ export default function ResellerProducts() {
                   </div>
                 </TabsContent>
 
-                <TabsContent value="pricing" className="space-y-4 mt-4">
+                <TabsContent value="pricing" className="space-y-4 mt-4 data-[state=inactive]:hidden" forceMount>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="costPrice">Prezzo Acquisto (€)</Label>
@@ -729,7 +729,7 @@ export default function ResellerProducts() {
                   </div>
                 </TabsContent>
 
-                <TabsContent value="inventory" className="space-y-4 mt-4">
+                <TabsContent value="inventory" className="space-y-4 mt-4 data-[state=inactive]:hidden" forceMount>
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
                       <Label>Quantità Iniziali per Magazzino</Label>
