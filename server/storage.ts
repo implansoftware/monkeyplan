@@ -1,5 +1,5 @@
 import {
-  User, InsertUser, RepairCenter, InsertRepairCenter, Product, InsertProduct,
+  User, InsertUser, RepairCenter, InsertRepairCenter, Product, InsertProduct, ProductPrice, InsertProductPrice,
   RepairOrder, InsertRepairOrder, Ticket, InsertTicket, TicketMessage, InsertTicketMessage,
   Invoice, InsertInvoice, BillingData, InsertBillingData, ChatMessage, InsertChatMessage,
   InventoryMovement, InsertInventoryMovement, InventoryStock, ActivityLog, InsertActivityLog,
@@ -55,7 +55,7 @@ import {
   utilityPracticeDocuments, utilityPracticeTasks, utilityPracticeNotes,
   utilityPracticeTimeline, utilityPracticeStateHistory,
   sifarCredentials, sifarStores,
-  serviceItems, serviceItemPrices
+  serviceItems, serviceItemPrices, productPrices
 } from "@shared/schema";
 import { db, pool } from "./db";
 import { eq, and, or, desc, lt, sql, not, inArray } from "drizzle-orm";
@@ -89,6 +89,15 @@ export interface IStorage {
   getProduct(id: string): Promise<Product | undefined>;
   createProduct(product: InsertProduct): Promise<Product>;
   deleteProduct(id: string): Promise<void>;
+  listProductsByReseller(resellerId: string): Promise<Product[]>;
+  
+  // Product Prices (prezzi personalizzati per reseller - gestiti da admin)
+  listProductPrices(filters?: { productId?: string; resellerId?: string }): Promise<ProductPrice[]>;
+  getProductPrice(id: string): Promise<ProductPrice | undefined>;
+  getProductPriceForReseller(productId: string, resellerId: string): Promise<ProductPrice | undefined>;
+  createProductPrice(price: InsertProductPrice): Promise<ProductPrice>;
+  updateProductPrice(id: string, updates: Partial<Pick<ProductPrice, 'priceCents' | 'costPriceCents' | 'isActive'>>): Promise<ProductPrice>;
+  deleteProductPrice(id: string): Promise<void>;
   
   // Repair Orders
   listRepairOrders(filters?: { customerId?: string; resellerId?: string; repairCenterId?: string; status?: string }): Promise<RepairOrder[]>;
@@ -656,6 +665,61 @@ export class DatabaseStorage implements IStorage {
 
   async deleteProduct(id: string): Promise<void> {
     await db.delete(products).where(eq(products.id, id));
+  }
+
+  async listProductsByReseller(resellerId: string): Promise<Product[]> {
+    return await db.select().from(products)
+      .where(eq(products.createdBy, resellerId))
+      .orderBy(desc(products.createdAt));
+  }
+
+  // Product Prices (prezzi personalizzati per reseller - gestiti da admin)
+  async listProductPrices(filters?: { productId?: string; resellerId?: string }): Promise<ProductPrice[]> {
+    let query = db.select().from(productPrices);
+    
+    if (filters) {
+      const conditions = [];
+      if (filters.productId) conditions.push(eq(productPrices.productId, filters.productId));
+      if (filters.resellerId) conditions.push(eq(productPrices.resellerId, filters.resellerId));
+      
+      if (conditions.length > 0) {
+        query = query.where(and(...conditions)) as any;
+      }
+    }
+    
+    return await query.orderBy(desc(productPrices.createdAt));
+  }
+
+  async getProductPrice(id: string): Promise<ProductPrice | undefined> {
+    const [price] = await db.select().from(productPrices).where(eq(productPrices.id, id));
+    return price || undefined;
+  }
+
+  async getProductPriceForReseller(productId: string, resellerId: string): Promise<ProductPrice | undefined> {
+    const [price] = await db.select().from(productPrices)
+      .where(and(
+        eq(productPrices.productId, productId),
+        eq(productPrices.resellerId, resellerId),
+        eq(productPrices.isActive, true)
+      ));
+    return price || undefined;
+  }
+
+  async createProductPrice(insertPrice: InsertProductPrice): Promise<ProductPrice> {
+    const [price] = await db.insert(productPrices).values(insertPrice).returning();
+    return price;
+  }
+
+  async updateProductPrice(id: string, updates: Partial<Pick<ProductPrice, 'priceCents' | 'costPriceCents' | 'isActive'>>): Promise<ProductPrice> {
+    const [price] = await db.update(productPrices)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(productPrices.id, id))
+      .returning();
+    return price;
+  }
+
+  async deleteProductPrice(id: string): Promise<void> {
+    await db.delete(productPrices).where(eq(productPrices.id, id));
   }
 
   // Repair Orders
