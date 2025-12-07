@@ -6084,16 +6084,51 @@ export function registerRoutes(app: Express): Server {
       const appointments = await storage.listDeliveryAppointments(filters);
       
       // Filter by date range if provided
-      let result = appointments;
+      let filtered = appointments;
       if (from || to) {
-        result = appointments.filter(a => {
+        filtered = appointments.filter(a => {
           if (from && a.date < (from as string)) return false;
           if (to && a.date > (to as string)) return false;
           return true;
         });
       }
       
-      res.json(result);
+      // Enrich appointments with repair order and customer data
+      const enriched = await Promise.all(filtered.map(async (appointment) => {
+        let repairOrder = null;
+        let customer = null;
+        
+        if (appointment.repairOrderId) {
+          repairOrder = await storage.getRepairOrder(appointment.repairOrderId);
+        }
+        
+        if (appointment.customerId) {
+          customer = await storage.getUser(appointment.customerId);
+        } else if (repairOrder?.customerId) {
+          customer = await storage.getUser(repairOrder.customerId);
+        }
+        
+        return {
+          ...appointment,
+          repairOrder: repairOrder ? {
+            id: repairOrder.id,
+            orderNumber: repairOrder.orderNumber,
+            deviceType: repairOrder.deviceType,
+            brand: repairOrder.brand,
+            deviceModel: repairOrder.deviceModel,
+            issueDescription: repairOrder.issueDescription,
+            status: repairOrder.status,
+          } : null,
+          customer: customer ? {
+            id: customer.id,
+            fullName: customer.fullName,
+            phone: customer.phone,
+            email: customer.email,
+          } : null,
+        };
+      }));
+      
+      res.json(enriched);
     } catch (error: any) {
       res.status(400).send(error.message);
     }

@@ -29,7 +29,7 @@ import {
 } from "@/components/ui/select";
 import {
   CalendarCheck, Clock, Settings, Calendar as CalendarIcon,
-  CheckCircle, XCircle, Loader2, User as UserIcon, Wrench, Plus, Trash2, Building
+  CheckCircle, XCircle, Loader2, User, Wrench, Plus, Trash2, Building, Phone, Mail
 } from "lucide-react";
 import { format, startOfToday } from "date-fns";
 import { it } from "date-fns/locale";
@@ -51,6 +51,21 @@ type Appointment = {
   cancelledBy: string | null;
   cancelReason: string | null;
   createdAt: string;
+  repairOrder?: {
+    id: string;
+    orderNumber: string;
+    deviceType: string;
+    brand: string | null;
+    deviceModel: string | null;
+    issueDescription: string | null;
+    status: string;
+  } | null;
+  customer?: {
+    id: string;
+    fullName: string | null;
+    phone: string | null;
+    email: string | null;
+  } | null;
 };
 
 type Availability = {
@@ -402,10 +417,20 @@ export default function ResellerAppointments() {
                                 <div>
                                   <div className="font-medium flex items-center gap-2">
                                     <Wrench className="h-4 w-4" />
-                                    Ordine
+                                    {appointment.repairOrder?.orderNumber || "Ordine"}
                                   </div>
-                                  {appointment.notes && (
-                                    <p className="text-xs text-muted-foreground mt-0.5">{appointment.notes}</p>
+                                  {appointment.repairOrder?.deviceType && (
+                                    <p className="text-xs text-muted-foreground mt-0.5">
+                                      {appointment.repairOrder.deviceType}
+                                      {appointment.repairOrder.brand && ` - ${appointment.repairOrder.brand}`}
+                                      {appointment.repairOrder.deviceModel && ` ${appointment.repairOrder.deviceModel}`}
+                                    </p>
+                                  )}
+                                  {appointment.customer?.fullName && (
+                                    <p className="text-xs text-muted-foreground flex items-center gap-1">
+                                      <User className="h-3 w-3" />
+                                      {appointment.customer.fullName}
+                                    </p>
                                   )}
                                 </div>
                               </div>
@@ -683,6 +708,62 @@ export default function ResellerAppointments() {
           </DialogHeader>
           {selectedAppointment && (
             <div className="space-y-4">
+              {selectedAppointment.repairOrder && (
+                <div className="p-3 rounded-lg bg-muted/50 space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Wrench className="h-4 w-4 text-muted-foreground" />
+                    <span className="font-semibold">Ordine {selectedAppointment.repairOrder.orderNumber}</span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 text-sm">
+                    <div>
+                      <span className="text-muted-foreground">Dispositivo: </span>
+                      <span>{selectedAppointment.repairOrder.deviceType}</span>
+                    </div>
+                    {selectedAppointment.repairOrder.brand && (
+                      <div>
+                        <span className="text-muted-foreground">Marca: </span>
+                        <span>{selectedAppointment.repairOrder.brand}</span>
+                      </div>
+                    )}
+                    {selectedAppointment.repairOrder.deviceModel && (
+                      <div>
+                        <span className="text-muted-foreground">Modello: </span>
+                        <span>{selectedAppointment.repairOrder.deviceModel}</span>
+                      </div>
+                    )}
+                  </div>
+                  {selectedAppointment.repairOrder.issueDescription && (
+                    <div className="text-sm">
+                      <span className="text-muted-foreground">Problema: </span>
+                      <span>{selectedAppointment.repairOrder.issueDescription}</span>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {selectedAppointment.customer && (
+                <div className="p-3 rounded-lg bg-muted/50 space-y-1">
+                  <div className="flex items-center gap-2">
+                    <User className="h-4 w-4 text-muted-foreground" />
+                    <span className="font-semibold">{selectedAppointment.customer.fullName || "Cliente"}</span>
+                  </div>
+                  <div className="text-sm space-y-0.5">
+                    {selectedAppointment.customer.phone && (
+                      <div className="flex items-center gap-2">
+                        <Phone className="h-3 w-3 text-muted-foreground" />
+                        <span>{selectedAppointment.customer.phone}</span>
+                      </div>
+                    )}
+                    {selectedAppointment.customer.email && (
+                      <div className="flex items-center gap-2">
+                        <Mail className="h-3 w-3 text-muted-foreground" />
+                        <span>{selectedAppointment.customer.email}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label className="text-muted-foreground">Data</Label>
