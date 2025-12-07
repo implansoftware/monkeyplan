@@ -6961,17 +6961,17 @@ export function registerRoutes(app: Express): Server {
         status: 'scheduled'
       });
       
-      // Get availability for this day of week
-      const dayOfWeek = new Date(date).getDay();
+      // Get availability for this day of week (0=Sunday, 1=Monday, ..., 6=Saturday)
+      const weekday = new Date(date).getDay();
       const availability = await storage.listRepairCenterAvailability(repairCenterId);
-      const dayAvailability = availability.find(a => a.dayOfWeek === dayOfWeek);
+      const dayAvailability = availability.find(a => a.weekday === weekday);
       
-      if (!dayAvailability || !dayAvailability.isAvailable) {
-        return res.status(400).send("This repair center is not available on this day");
+      if (!dayAvailability || dayAvailability.isClosed) {
+        return res.status(400).send("Questo centro non è disponibile in questo giorno");
       }
       
       // Check max slots per time
-      const maxSlots = dayAvailability.maxAppointmentsPerSlot || 1;
+      const maxSlots = dayAvailability.capacityPerSlot || 1;
       const slotsAtTime = existingAppointments.filter(
         a => a.startTime === startTime && a.status !== 'cancelled'
       ).length;
