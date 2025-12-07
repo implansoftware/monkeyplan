@@ -184,6 +184,7 @@ export function AcceptanceWizardDialog({
   const [step, setStep] = useState<WizardStep>("device-info");
   const [selectedTypeId, setSelectedTypeId] = useState<string>("");
   const [selectedBrandId, setSelectedBrandId] = useState<string>("");
+  const [customModelInput, setCustomModelInput] = useState<string>("");
   const [selectedIssues, setSelectedIssues] = useState<string[]>([]);
   const [showOtherIssue, setShowOtherIssue] = useState(false);
   const [selectedDefects, setSelectedDefects] = useState<string[]>([]);
@@ -1220,36 +1221,68 @@ export function AcceptanceWizardDialog({
       <FormField
         control={form.control}
         name="deviceModel"
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel>Modello</FormLabel>
-            {selectedTypeId && filteredModels.length > 0 ? (
-              <Select onValueChange={field.onChange} value={field.value}>
+        render={({ field }) => {
+          const isCustomModel = customModelInput !== "" || field.value === "__other__";
+          const selectValue = isCustomModel ? "__other__" : field.value;
+          
+          return (
+            <FormItem>
+              <FormLabel>Modello</FormLabel>
+              {selectedTypeId && filteredModels.length > 0 ? (
+                <>
+                  <Select 
+                    onValueChange={(value) => {
+                      if (value === "__other__") {
+                        field.onChange("__other__");
+                      } else {
+                        setCustomModelInput("");
+                        field.onChange(value);
+                      }
+                    }} 
+                    value={selectValue}
+                  >
+                    <FormControl>
+                      <SelectTrigger data-testid="select-device-model">
+                        <SelectValue placeholder="Seleziona modello" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {filteredModels.map((model) => (
+                        <SelectItem key={model.id} value={model.modelName}>
+                          {selectedBrandId ? model.modelName : `${getBrandName(model.brandId)} - ${model.modelName}`}
+                        </SelectItem>
+                      ))}
+                      <SelectItem value="__other__">Altro (inserimento manuale)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  {isCustomModel && (
+                    <Input
+                      value={customModelInput}
+                      onChange={(e) => {
+                        const newValue = e.target.value;
+                        setCustomModelInput(newValue);
+                        field.onChange(newValue || "__other__");
+                      }}
+                      placeholder="Inserisci il nome del modello..."
+                      className="mt-2"
+                      data-testid="input-custom-device-model"
+                      autoFocus
+                    />
+                  )}
+                </>
+              ) : (
                 <FormControl>
-                  <SelectTrigger data-testid="select-device-model">
-                    <SelectValue placeholder="Seleziona modello" />
-                  </SelectTrigger>
+                  <Input {...field} placeholder="es. iPhone 13 Pro, Galaxy S21" data-testid="input-device-model" />
                 </FormControl>
-                <SelectContent>
-                  {filteredModels.map((model) => (
-                    <SelectItem key={model.id} value={model.modelName}>
-                      {selectedBrandId ? model.modelName : `${getBrandName(model.brandId)} - ${model.modelName}`}
-                    </SelectItem>
-                  ))}
-                  <SelectItem value="__other__">Altro (inserimento manuale)</SelectItem>
-                </SelectContent>
-              </Select>
-            ) : (
-              <FormControl>
-                <Input {...field} placeholder="es. iPhone 13 Pro, Galaxy S21" data-testid="input-device-model" />
-              </FormControl>
-            )}
-            <FormDescription>
-              {selectedTypeId && filteredModels.length === 0 && "Nessun modello disponibile, inserisci manualmente"}
-            </FormDescription>
-            <FormMessage />
-          </FormItem>
-        )}
+              )}
+              <FormDescription>
+                {selectedTypeId && filteredModels.length === 0 && "Nessun modello disponibile, inserisci manualmente"}
+                {isCustomModel && "Digita il nome del modello nel campo sopra"}
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          );
+        }}
       />
 
       <Separator />
