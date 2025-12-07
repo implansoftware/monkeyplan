@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { RepairCenter } from "@shared/schema";
+import { AppointmentCreateDialog } from "@/components/AppointmentCreateDialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -104,6 +105,7 @@ export default function ResellerAppointments() {
   const [newBlackout, setNewBlackout] = useState({ date: "", reason: "" });
   const [appointmentDetailOpen, setAppointmentDetailOpen] = useState(false);
   const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
 
   const { data: repairCenters = [], isLoading: loadingCenters } = useQuery<RepairCenter[]>({
     queryKey: ["/api/reseller/repair-centers"],
@@ -290,7 +292,17 @@ export default function ResellerAppointments() {
           <p className="text-muted-foreground">Gestisci gli appuntamenti dei tuoi centri riparazione</p>
         </div>
         
-        <Select value={selectedCenterId} onValueChange={setSelectedCenterId}>
+        <div className="flex items-center gap-3">
+          <Button 
+            onClick={() => setCreateDialogOpen(true)}
+            disabled={!selectedCenterId}
+            data-testid="button-new-appointment"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Nuovo Appuntamento
+          </Button>
+          
+          <Select value={selectedCenterId} onValueChange={setSelectedCenterId}>
           <SelectTrigger className="w-full sm:w-64" data-testid="select-repair-center">
             <Building className="h-4 w-4 mr-2" />
             <SelectValue placeholder="Seleziona centro" />
@@ -303,6 +315,7 @@ export default function ResellerAppointments() {
             ))}
           </SelectContent>
         </Select>
+        </div>
       </div>
 
       {selectedCenterId && (
@@ -746,6 +759,15 @@ export default function ResellerAppointments() {
           )}
         </DialogContent>
       </Dialog>
+
+      <AppointmentCreateDialog
+        open={createDialogOpen}
+        onOpenChange={setCreateDialogOpen}
+        repairCenterId={selectedCenterId}
+        onSuccess={() => {
+          queryClient.invalidateQueries({ queryKey: ["/api/repair-centers", selectedCenterId, "appointments"] });
+        }}
+      />
     </div>
   );
 }

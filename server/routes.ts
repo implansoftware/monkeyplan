@@ -2216,6 +2216,214 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // ============ RESELLER APPOINTMENTS ============
+
+  // POST /api/reseller/appointments - Create a new delivery appointment
+  app.post("/api/reseller/appointments", requireRole("reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      // Get repair centers associated with this reseller
+      const allCenters = await storage.listRepairCenters();
+      const resellerCenters = allCenters.filter(c => c.resellerId === req.user!.id);
+      const resellerCenterIds = resellerCenters.map(c => c.id);
+      
+      if (resellerCenterIds.length === 0) {
+        return res.status(400).send("Nessun centro di riparazione associato");
+      }
+      
+      // Validate request body
+      const parsed = insertDeliveryAppointmentSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).send(parsed.error.message);
+      }
+      
+      const { repairCenterId, repairOrderId, customerId, date, startTime, endTime, notes } = parsed.data;
+      
+      // Verify the repairCenterId belongs to this reseller
+      if (!resellerCenterIds.includes(repairCenterId)) {
+        return res.status(403).send("Centro di riparazione non autorizzato");
+      }
+      
+      // Verify reseller can manage this repair order
+      if (repairOrderId) {
+        const order = await storage.getRepairOrder(repairOrderId);
+        if (!order) {
+          return res.status(404).send("Ordine di riparazione non trovato");
+        }
+        const canManage = await canResellerManageOrder(req.user.id, order);
+        if (!canManage) {
+          return res.status(403).send("Non hai accesso a questo ordine di riparazione");
+        }
+      }
+      
+      // Helper to convert HH:MM to minutes
+      const timeToMinutes = (time: string): number => {
+        const [h, m] = time.split(':').map(Number);
+        return h * 60 + m;
+      };
+      
+      const reqStartMinutes = timeToMinutes(startTime);
+      const reqEndMinutes = timeToMinutes(endTime);
+      
+      // Check if there's a blackout on this date (any overlap blocks the slot)
+      const blackouts = await storage.listRepairCenterBlackouts(repairCenterId);
+      const isBlackout = blackouts.some(b => {
+        if (b.date !== date) return false;
+        // Full-day blackout
+        if (!b.startTime) return true;
+        // Partial blackout: check for any overlap using minutes
+        const blackoutStart = timeToMinutes(b.startTime);
+        const blackoutEnd = timeToMinutes(b.endTime!);
+        return reqStartMinutes < blackoutEnd && reqEndMinutes > blackoutStart;
+      });
+      if (isBlackout) {
+        return res.status(400).send("Il centro è chiuso in questa data/ora");
+      }
+      
+      // Check slot availability
+      const dateObj = new Date(date);
+      const weekday = dateObj.getDay();
+      const availabilities = await storage.listRepairCenterAvailability(repairCenterId);
+      const dayAvailability = availabilities.find(a => a.weekday === weekday);
+      
+      if (!dayAvailability || dayAvailability.isClosed) {
+        return res.status(400).send("Il centro è chiuso in questo giorno");
+      }
+      
+      const dayStartMinutes = timeToMinutes(dayAvailability.startTime);
+      const dayEndMinutes = timeToMinutes(dayAvailability.endTime);
+      
+      // Check if time is within availability
+      if (reqStartMinutes < dayStartMinutes || reqEndMinutes > dayEndMinutes) {
+        return res.status(400).send("L'orario selezionato è fuori dall'orario di apertura");
+      }
+      
+      // Validate slot alignment - ensure requested slot matches system-generated slots
+      const slotDuration = dayAvailability.slotDurationMinutes;
+      
+      // Check if start time is aligned to slot grid
+      if ((reqStartMinutes - dayStartMinutes) % slotDuration !== 0) {
+        return res.status(400).send("L'orario di inizio non è allineato con gli slot disponibili");
+      }
+      
+      // Check if slot duration matches
+      if (reqEndMinutes - reqStartMinutes !== slotDuration) {
+        return res.status(400).send("La durata dello slot non è corretta");
+      }
+      
+      // Check slot capacity - use canonical slot key (startTime) to count bookings
+      const existingAppointments = await storage.listDeliveryAppointments(repairCenterId);
+      const slotsAtTime = existingAppointments.filter(
+        a => a.date === date && a.startTime === startTime && a.status !== 'cancelled'
+      );
+      
+      if (slotsAtTime.length >= dayAvailability.capacityPerSlot) {
+        return res.status(400).send("Questo slot è già al completo");
+      }
+      
+      // Create the appointment
+      const appointment = await storage.createDeliveryAppointment({
+        repairOrderId,
+        repairCenterId,
+        resellerId: req.user.id,
+        customerId: customerId || null,
+        date,
+        startTime,
+        endTime,
+        notes: notes || null,
+        status: "scheduled",
+      });
+      
+      res.status(201).json(appointment);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // GET /api/reseller/appointments/available-slots - Get available slots for a date
+  app.get("/api/reseller/appointments/available-slots", requireRole("reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const { repairCenterId, date } = req.query as { repairCenterId: string; date: string };
+      
+      if (!repairCenterId || !date) {
+        return res.status(400).send("repairCenterId and date are required");
+      }
+      
+      // Verify the repairCenterId belongs to this reseller
+      const allCenters = await storage.listRepairCenters();
+      const resellerCenterIds = allCenters
+        .filter(c => c.resellerId === req.user!.id)
+        .map(c => c.id);
+      
+      if (!resellerCenterIds.includes(repairCenterId)) {
+        return res.status(403).send("Centro di riparazione non autorizzato");
+      }
+      
+      // Check if there's a blackout on this date
+      const blackouts = await storage.listRepairCenterBlackouts(repairCenterId);
+      const isFullDayBlackout = blackouts.some(b => b.date === date && !b.startTime);
+      if (isFullDayBlackout) {
+        return res.json({ closed: true, reason: "Centro chiuso", slots: [] });
+      }
+      
+      // Get day availability
+      const dateObj = new Date(date);
+      const weekday = dateObj.getDay();
+      const availabilities = await storage.listRepairCenterAvailability(repairCenterId);
+      const dayAvailability = availabilities.find(a => a.weekday === weekday);
+      
+      if (!dayAvailability || dayAvailability.isClosed) {
+        return res.json({ closed: true, reason: "Giorno di chiusura", slots: [] });
+      }
+      
+      // Generate all possible slots
+      const slots: { startTime: string; endTime: string; available: number; total: number }[] = [];
+      const [startHour, startMin] = dayAvailability.startTime.split(':').map(Number);
+      const [endHour, endMin] = dayAvailability.endTime.split(':').map(Number);
+      const slotDuration = dayAvailability.slotDurationMinutes;
+      const capacity = dayAvailability.capacityPerSlot;
+      
+      let currentMinutes = startHour * 60 + startMin;
+      const endMinutes = endHour * 60 + endMin;
+      
+      // Get existing appointments for this date
+      const existingAppointments = await storage.listDeliveryAppointments(repairCenterId);
+      const appointmentsOnDate = existingAppointments.filter(
+        a => a.date === date && a.status !== 'cancelled'
+      );
+      
+      while (currentMinutes + slotDuration <= endMinutes) {
+        const slotStartTime = `${String(Math.floor(currentMinutes / 60)).padStart(2, '0')}:${String(currentMinutes % 60).padStart(2, '0')}`;
+        const slotEndMinutes = currentMinutes + slotDuration;
+        const slotEndTime = `${String(Math.floor(slotEndMinutes / 60)).padStart(2, '0')}:${String(slotEndMinutes % 60).padStart(2, '0')}`;
+        
+        // Check if slot is during a partial blackout
+        const isBlocked = blackouts.some(b => 
+          b.date === date && b.startTime && b.startTime <= slotStartTime && b.endTime! >= slotEndTime
+        );
+        
+        if (!isBlocked) {
+          const bookedCount = appointmentsOnDate.filter(a => a.startTime === slotStartTime).length;
+          slots.push({
+            startTime: slotStartTime,
+            endTime: slotEndTime,
+            available: capacity - bookedCount,
+            total: capacity
+          });
+        }
+        
+        currentMinutes += slotDuration;
+      }
+      
+      res.json({ closed: false, slots });
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
   // ============ RESELLER PARTS LOAD (CARICO RICAMBI) ============
 
   // GET /api/reseller/parts-load - List parts load documents for reseller's repair centers
