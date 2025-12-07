@@ -4272,7 +4272,11 @@ export function registerRoutes(app: Express): Server {
       // Extract initial stock assignments from request body
       const { initialStock, ...productData } = req.body;
       
-      const validatedData = insertProductSchema.parse(productData);
+      // Admin products have createdBy = null (global products)
+      const validatedData = insertProductSchema.parse({
+        ...productData,
+        createdBy: null,
+      });
       const product = await storage.createProduct(validatedData);
       setActivityEntity(res, { type: 'product', id: product.id });
       
