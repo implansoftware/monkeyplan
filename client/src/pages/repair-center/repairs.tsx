@@ -6,13 +6,15 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, Wrench, Plus } from "lucide-react";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Search, Wrench, Plus, LayoutGrid, TableIcon } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
 import { RepairOrderDetailDrawer } from "@/components/RepairOrderDetailDrawer";
 import { AcceptanceWizardDialog } from "@/components/AcceptanceWizardDialog";
+import { RepairsKanbanBoard } from "@/components/RepairsKanbanBoard";
 
 type RepairOrder = {
   id: string;
@@ -37,6 +39,7 @@ export default function RepairCenterRepairs() {
   const [selectedRepairId, setSelectedRepairId] = useState<string | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [wizardOpen, setWizardOpen] = useState(false);
+  const [viewMode, setViewMode] = useState<"table" | "kanban">("table");
   const { toast } = useToast();
 
   const { data: repairs = [], isLoading } = useQuery<RepairOrder[]>({
@@ -98,11 +101,25 @@ export default function RepairCenterRepairs() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold mb-2">Lavorazioni Assegnate</h1>
-        <p className="text-muted-foreground">
-          Gestisci tutte le riparazioni assegnate al tuo centro
-        </p>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-semibold mb-2">Lavorazioni Assegnate</h1>
+          <p className="text-muted-foreground">
+            Gestisci tutte le riparazioni assegnate al tuo centro
+          </p>
+        </div>
+        <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as "table" | "kanban")}>
+          <TabsList>
+            <TabsTrigger value="table" className="gap-2" data-testid="toggle-table-view">
+              <TableIcon className="h-4 w-4" />
+              Tavolo
+            </TabsTrigger>
+            <TabsTrigger value="kanban" className="gap-2" data-testid="toggle-kanban-view">
+              <LayoutGrid className="h-4 w-4" />
+              Kanban
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
       </div>
 
       <Card>
@@ -160,7 +177,16 @@ export default function RepairCenterRepairs() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          {isLoading ? (
+          {viewMode === "kanban" ? (
+            <RepairsKanbanBoard
+              repairs={filteredRepairs as any}
+              isLoading={isLoading}
+              onCardClick={(repairId) => {
+                setSelectedRepairId(repairId);
+                setDrawerOpen(true);
+              }}
+            />
+          ) : isLoading ? (
             <div className="space-y-2">
               {[1, 2, 3].map((i) => (
                 <Skeleton key={i} className="h-16 w-full" />

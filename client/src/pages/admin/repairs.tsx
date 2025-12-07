@@ -9,7 +9,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { Search, Wrench, Download, CalendarIcon, Plus, Stethoscope, Receipt, ClipboardCheck, Package, Play, TestTube, Truck, Eye, Clock, AlertTriangle, AlertCircle } from "lucide-react";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Search, Wrench, Download, CalendarIcon, Plus, Stethoscope, Receipt, ClipboardCheck, Package, Play, TestTube, Truck, Eye, Clock, AlertTriangle, AlertCircle, LayoutGrid, TableIcon } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -19,6 +20,7 @@ import { it } from "date-fns/locale";
 import type { DateRange } from "react-day-picker";
 import { RepairOrderDetailDrawer } from "@/components/RepairOrderDetailDrawer";
 import { AcceptanceWizardDialog } from "@/components/AcceptanceWizardDialog";
+import { RepairsKanbanBoard } from "@/components/RepairsKanbanBoard";
 
 interface RepairOrderWithSLA extends RepairOrder {
   slaSeverity: "in_time" | "late" | "urgent" | null;
@@ -36,6 +38,7 @@ export default function AdminRepairs() {
   const [selectedRepairId, setSelectedRepairId] = useState<string | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [wizardOpen, setWizardOpen] = useState(false);
+  const [viewMode, setViewMode] = useState<"table" | "kanban">("table");
   const { toast } = useToast();
 
   const { data: repairs = [], isLoading } = useQuery<RepairOrderWithSLA[]>({
@@ -205,11 +208,25 @@ export default function AdminRepairs() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold mb-2">Lavorazioni</h1>
-        <p className="text-muted-foreground">
-          Monitora tutte le riparazioni in corso
-        </p>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-semibold mb-2">Lavorazioni</h1>
+          <p className="text-muted-foreground">
+            Monitora tutte le riparazioni in corso
+          </p>
+        </div>
+        <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as "table" | "kanban")}>
+          <TabsList>
+            <TabsTrigger value="table" className="gap-2" data-testid="toggle-table-view">
+              <TableIcon className="h-4 w-4" />
+              Tavolo
+            </TabsTrigger>
+            <TabsTrigger value="kanban" className="gap-2" data-testid="toggle-kanban-view">
+              <LayoutGrid className="h-4 w-4" />
+              Kanban
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
       </div>
 
       <Card>
@@ -319,7 +336,16 @@ export default function AdminRepairs() {
           </div>
         </CardHeader>
         <CardContent>
-          {isLoading ? (
+          {viewMode === "kanban" ? (
+            <RepairsKanbanBoard
+              repairs={filteredRepairs}
+              isLoading={isLoading}
+              onCardClick={(repairId) => {
+                setSelectedRepairId(repairId);
+                setDrawerOpen(true);
+              }}
+            />
+          ) : isLoading ? (
             <div className="space-y-3">
               <Skeleton className="h-16 w-full" />
               <Skeleton className="h-16 w-full" />
