@@ -2481,13 +2481,19 @@ export function registerRoutes(app: Express): Server {
       
       const { initialStock, ...productData } = req.body;
       
+      // Pulisci i valori null convertendoli in undefined per compatibilità con Zod
+      const cleanedProductData = Object.fromEntries(
+        Object.entries(productData).map(([key, value]) => [key, value === null ? undefined : value])
+      );
+      
       const validationResult = insertProductSchema.safeParse({
-        ...productData,
+        ...cleanedProductData,
         createdBy: req.user.id, // Imposta il creatore come il reseller corrente
       });
       
       if (!validationResult.success) {
-        return res.status(400).send(validationResult.error.errors.map(e => e.message).join(", "));
+        console.log("Reseller product validation error:", validationResult.error.errors);
+        return res.status(400).send(validationResult.error.errors.map(e => `${e.path.join(".")}: ${e.message}`).join(", "));
       }
       
       const product = await storage.createProduct(validationResult.data);
