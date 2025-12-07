@@ -44,6 +44,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { AddressAutocomplete } from "@/components/address-autocomplete";
 
 interface AcceptanceWizardDialogProps {
   open: boolean;
@@ -55,10 +56,10 @@ interface AcceptanceWizardDialogProps {
 type WizardStep = "device-info" | "acceptance-checks" | "review";
 
 const acceptanceWizardSchema = z.object({
-  customerId: z.string().min(1, "Customer is required"),
+  customerId: z.string().min(1, "Seleziona un cliente"),
   branchId: z.string().optional(),
-  repairCenterId: z.string().min(1, "Centro di riparazione richiesto"),
-  deviceType: z.string().min(1, "Device type required"),
+  repairCenterId: z.string().min(1, "Seleziona un centro di riparazione"),
+  deviceType: z.string().min(1, "Seleziona il tipo di dispositivo"),
   deviceModel: z.string().optional(),
   brand: z.string().optional(),
   issueDescription: z.string().min(1, "Seleziona almeno un problema"),
@@ -892,14 +893,23 @@ export function AcceptanceWizardDialog({
                   </div>
                 </div>
 
-                {/* Indirizzo */}
+                {/* Indirizzo con autocompletamento */}
                 <div className="space-y-1">
                   <Label htmlFor="new-customer-address">Indirizzo *</Label>
-                  <Input
+                  <AddressAutocomplete
                     id="new-customer-address"
-                    placeholder="Via Roma, 1"
+                    placeholder="Inizia a digitare l'indirizzo..."
                     value={newCustomerData.address}
-                    onChange={(e) => setNewCustomerData(prev => ({ ...prev, address: e.target.value }))}
+                    onChange={(value) => setNewCustomerData(prev => ({ ...prev, address: value }))}
+                    onAddressSelect={(result) => {
+                      setNewCustomerData(prev => ({
+                        ...prev,
+                        address: result.address,
+                        city: result.city || prev.city,
+                        zipCode: result.postalCode || prev.zipCode,
+                        country: result.country || prev.country || "IT",
+                      }));
+                    }}
                     data-testid="input-new-customer-address"
                   />
                 </div>
