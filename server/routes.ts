@@ -5053,6 +5053,7 @@ export function registerRoutes(app: Express): Server {
       if (req.body.category !== undefined) updates.category = req.body.category;
       if (req.body.productType !== undefined) updates.productType = req.body.productType;
       if (req.body.description !== undefined) updates.description = req.body.description;
+      if (req.body.deviceTypeId !== undefined) updates.deviceTypeId = req.body.deviceTypeId;
       if (req.body.brand !== undefined) updates.brand = req.body.brand;
       if (req.body.compatibleModels !== undefined) updates.compatibleModels = req.body.compatibleModels;
       if (req.body.color !== undefined) updates.color = req.body.color;

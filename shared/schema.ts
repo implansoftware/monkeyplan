@@ -414,6 +414,7 @@ export const products = pgTable("products", {
   description: text("description"),
   
   // Brand & Compatibility
+  deviceTypeId: varchar("device_type_id").references(() => deviceTypes.id), // Tipo dispositivo (Smartphone, Tablet, etc.)
   brand: text("brand"), // Apple, Samsung, Xiaomi, Huawei, etc.
   compatibleModels: text("compatible_models").array(), // ["iPhone 14", "iPhone 14 Pro"]
   color: text("color"), // Nero, Bianco, Blu, etc.

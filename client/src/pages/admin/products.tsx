@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Product, InsertProduct, RepairCenter, Supplier, ProductSupplier, InsertProductSupplier } from "@shared/schema";
+import { Product, InsertProduct, RepairCenter, Supplier, ProductSupplier, InsertProductSupplier, DeviceType } from "@shared/schema";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -14,7 +14,7 @@ import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { Plus, Search, Pencil, Trash2, Package, Warehouse, AlertTriangle, X, Building2, Star, StarOff, Users } from "lucide-react";
+import { Plus, Search, Pencil, Trash2, Package, Warehouse, AlertTriangle, X, Building2, Star, StarOff, Users, Smartphone } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -102,6 +102,10 @@ export default function AdminProducts() {
 
   const { data: suppliers = [] } = useQuery<Supplier[]>({
     queryKey: ["/api/suppliers"],
+  });
+
+  const { data: deviceTypes = [] } = useQuery<DeviceType[]>({
+    queryKey: ["/api/device-types"],
   });
 
   const createProductMutation = useMutation({
@@ -413,12 +417,14 @@ export default function AdminProducts() {
     const warrantyValue = formData.get("warrantyMonths") as string;
     const minStockValue = formData.get("minStock") as string;
     
+    const deviceTypeIdValue = formData.get("deviceTypeId") as string;
     const data: InsertProduct & { initialStock?: InitialStockEntry[] } = {
       name: formData.get("name") as string,
       sku: formData.get("sku") as string,
       category: formData.get("category") as string,
       productType: formData.get("productType") as any,
       description: formData.get("description") as string || undefined,
+      deviceTypeId: deviceTypeIdValue && deviceTypeIdValue !== "all" ? deviceTypeIdValue : undefined,
       brand: formData.get("brand") as string || undefined,
       compatibleModels: compatibleModels.length > 0 ? compatibleModels : undefined,
       color: formData.get("color") as string || undefined,
@@ -445,12 +451,14 @@ export default function AdminProducts() {
     const warrantyValue = formData.get("warrantyMonths") as string;
     const minStockValue = formData.get("minStock") as string;
     
+    const editDeviceTypeIdValue = formData.get("deviceTypeId") as string;
     const data: Partial<Product> = {
       name: (formData.get("name") as string) || editingProduct.name,
       sku: (formData.get("sku") as string) || editingProduct.sku,
       category: (formData.get("category") as string) || editingProduct.category,
       productType: (formData.get("productType") as any) || editingProduct.productType,
       description: (formData.get("description") as string) || editingProduct.description || undefined,
+      deviceTypeId: editDeviceTypeIdValue && editDeviceTypeIdValue !== "all" ? editDeviceTypeIdValue : null,
       brand: (formData.get("brand") as string) || editingProduct.brand || undefined,
       compatibleModels: editCompatibleModels.length > 0 ? editCompatibleModels : (editingProduct.compatibleModels || undefined),
       color: (formData.get("color") as string) || editingProduct.color || undefined,
@@ -642,6 +650,23 @@ export default function AdminProducts() {
                   </TabsContent>
 
                   <TabsContent value="compatibility" className="space-y-4 mt-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="deviceTypeId">Tipo Dispositivo</Label>
+                      <Select name="deviceTypeId">
+                        <SelectTrigger id="deviceTypeId" data-testid="select-device-type">
+                          <Smartphone className="h-4 w-4 mr-2" />
+                          <SelectValue placeholder="Tutti i dispositivi" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">Tutti i dispositivi</SelectItem>
+                          {deviceTypes.map(dt => (
+                            <SelectItem key={dt.id} value={dt.id}>{dt.name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <p className="text-xs text-muted-foreground">Categoria generale del dispositivo</p>
+                    </div>
+
                     <div className="space-y-2">
                       <Label htmlFor="brand">Marca</Label>
                       <Select name="brand">
@@ -1014,6 +1039,23 @@ export default function AdminProducts() {
                     </TabsContent>
 
                     <TabsContent value="compatibility" className="space-y-4 mt-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="edit-deviceTypeId">Tipo Dispositivo</Label>
+                        <Select name="deviceTypeId" defaultValue={editingProduct.deviceTypeId || "all"}>
+                          <SelectTrigger id="edit-deviceTypeId" data-testid="edit-select-device-type">
+                            <Smartphone className="h-4 w-4 mr-2" />
+                            <SelectValue placeholder="Tutti i dispositivi" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">Tutti i dispositivi</SelectItem>
+                            {deviceTypes.map(dt => (
+                              <SelectItem key={dt.id} value={dt.id}>{dt.name}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <p className="text-xs text-muted-foreground">Categoria generale del dispositivo</p>
+                      </div>
+
                       <div className="space-y-2">
                         <Label htmlFor="edit-brand">Marca</Label>
                         <Select name="brand" defaultValue={editingProduct.brand || undefined}>

@@ -48,7 +48,8 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Textarea } from "@/components/ui/textarea";
-import type { ServiceItem, ServiceItemPrice, User } from "@shared/schema";
+import type { ServiceItem, ServiceItemPrice, User, DeviceType } from "@shared/schema";
+import { Smartphone } from "lucide-react";
 
 const SERVICE_CATEGORIES = [
   { value: "display", label: "Display" },
@@ -87,6 +88,7 @@ interface ServiceItemFormData {
   code: string;
   description: string;
   category: string;
+  deviceTypeId: string | null;
   defaultPriceCents: number;
   defaultLaborMinutes: number;
   isActive: boolean;
@@ -97,6 +99,7 @@ const emptyFormData: ServiceItemFormData = {
   code: "",
   description: "",
   category: "altro",
+  deviceTypeId: null,
   defaultPriceCents: 0,
   defaultLaborMinutes: 30,
   isActive: true,
@@ -147,6 +150,10 @@ export default function AdminServiceCatalog() {
 
   const { data: repairCenters } = useQuery<any[]>({
     queryKey: ["/api/admin/repair-centers"],
+  });
+
+  const { data: deviceTypes = [] } = useQuery<DeviceType[]>({
+    queryKey: ["/api/device-types"],
   });
 
   const { data: itemPrices, isLoading: pricesLoading } = useQuery<ServiceItemPrice[]>({
@@ -246,6 +253,7 @@ export default function AdminServiceCatalog() {
       code: item.code,
       description: item.description || "",
       category: item.category,
+      deviceTypeId: item.deviceTypeId || null,
       defaultPriceCents: item.defaultPriceCents,
       defaultLaborMinutes: item.defaultLaborMinutes,
       isActive: item.isActive,
@@ -642,6 +650,26 @@ export default function AdminServiceCatalog() {
                   </SelectContent>
                 </Select>
               </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="deviceType">Tipo Dispositivo</Label>
+              <Select
+                value={itemFormData.deviceTypeId || "all"}
+                onValueChange={(value) => setItemFormData({ ...itemFormData, deviceTypeId: value === "all" ? null : value })}
+              >
+                <SelectTrigger data-testid="select-device-type">
+                  <Smartphone className="h-4 w-4 mr-2" />
+                  <SelectValue placeholder="Tutti i dispositivi" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tutti i dispositivi</SelectItem>
+                  {deviceTypes.map(dt => (
+                    <SelectItem key={dt.id} value={dt.id}>{dt.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">Lascia "Tutti" se l'intervento è generico</p>
             </div>
 
             <div className="space-y-2">
