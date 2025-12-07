@@ -144,6 +144,10 @@ export interface IStorage {
   getAllProductsWithStock(): Promise<Array<{ product: Product; stockByCenter: Array<{ repairCenterId: string; repairCenterName: string; quantity: number }>; totalStock: number }>>;
   updateProduct(id: string, updates: Partial<Omit<Product, 'id' | 'createdAt'>>): Promise<Product>;
   
+  // Reseller Inventory (for own products in own centers)
+  getResellerProductsWithStock(resellerId: string): Promise<Array<{ product: Product; stockByCenter: Array<{ repairCenterId: string; repairCenterName: string; quantity: number }>; totalStock: number }>>;
+  getResellerProductStockByCenter(productId: string, resellerId: string): Promise<Array<{ repairCenterId: string; repairCenterName: string; quantity: number }>>;
+  
   // Activity Logs
   createActivityLog(log: InsertActivityLog): Promise<ActivityLog>;
   listActivityLogs(filters?: { userId?: string; action?: string; entityType?: string; startDate?: Date; endDate?: Date; limit?: number }): Promise<ActivityLog[]>;
@@ -1182,6 +1186,124 @@ export class DatabaseStorage implements IStorage {
       .where(eq(products.id, id))
       .returning();
     return updated;
+  }
+
+  // Reseller Inventory - Get own products with stock in own centers
+  async getResellerProductsWithStock(resellerId: string): Promise<Array<{ 
+    product: Product; 
+    stockByCenter: Array<{ repairCenterId: string; repairCenterName: string; quantity: number }>;
+    totalStock: number;
+  }>> {
+    // Get reseller's own products (createdBy = resellerId)
+    const resellerProducts = await db.select()
+      .from(products)
+      .where(and(
+        eq(products.createdBy, resellerId),
+        eq(products.isActive, true)
+      ))
+      .orderBy(desc(products.createdAt));
+    
+    if (resellerProducts.length === 0) {
+      return [];
+    }
+    
+    // Get reseller's own repair centers
+    const resellerCenters = await db.select()
+      .from(repairCenters)
+      .where(eq(repairCenters.resellerId, resellerId));
+    
+    if (resellerCenters.length === 0) {
+      // No centers, return products with empty stock
+      return resellerProducts.map(product => ({
+        product,
+        stockByCenter: [],
+        totalStock: 0,
+      }));
+    }
+    
+    const centerIds = resellerCenters.map(c => c.id);
+    const productIds = resellerProducts.map(p => p.id);
+    
+    // Get stock only for reseller's products in reseller's centers
+    const stockData = await db.select({
+      productId: inventoryStock.productId,
+      repairCenterId: inventoryStock.repairCenterId,
+      repairCenterName: repairCenters.name,
+      quantity: inventoryStock.quantity,
+    })
+    .from(inventoryStock)
+    .innerJoin(repairCenters, eq(inventoryStock.repairCenterId, repairCenters.id))
+    .where(and(
+      inArray(inventoryStock.productId, productIds),
+      inArray(inventoryStock.repairCenterId, centerIds)
+    ));
+    
+    // Build stock map
+    const stockMap = new Map<string, Array<{ repairCenterId: string; repairCenterName: string; quantity: number }>>();
+    for (const stock of stockData) {
+      if (!stockMap.has(stock.productId)) {
+        stockMap.set(stock.productId, []);
+      }
+      stockMap.get(stock.productId)!.push({
+        repairCenterId: stock.repairCenterId,
+        repairCenterName: stock.repairCenterName,
+        quantity: stock.quantity,
+      });
+    }
+    
+    return resellerProducts.map(product => {
+      const stockByCenter = stockMap.get(product.id) || [];
+      const totalStock = stockByCenter.reduce((sum, s) => sum + s.quantity, 0);
+      return { product, stockByCenter, totalStock };
+    });
+  }
+
+  // Get stock for a specific reseller product in reseller's centers only
+  async getResellerProductStockByCenter(productId: string, resellerId: string): Promise<Array<{ repairCenterId: string; repairCenterName: string; quantity: number }>> {
+    // Verify product belongs to reseller
+    const [product] = await db.select()
+      .from(products)
+      .where(and(
+        eq(products.id, productId),
+        eq(products.createdBy, resellerId)
+      ));
+    
+    if (!product) {
+      return []; // Product not found or doesn't belong to reseller
+    }
+    
+    // Get reseller's centers with stock for this product
+    const resellerCenters = await db.select()
+      .from(repairCenters)
+      .where(eq(repairCenters.resellerId, resellerId));
+    
+    if (resellerCenters.length === 0) {
+      return [];
+    }
+    
+    const centerIds = resellerCenters.map(c => c.id);
+    
+    // Get existing stock
+    const stockData = await db.select({
+      repairCenterId: inventoryStock.repairCenterId,
+      repairCenterName: repairCenters.name,
+      quantity: inventoryStock.quantity,
+    })
+    .from(inventoryStock)
+    .innerJoin(repairCenters, eq(inventoryStock.repairCenterId, repairCenters.id))
+    .where(and(
+      eq(inventoryStock.productId, productId),
+      inArray(inventoryStock.repairCenterId, centerIds)
+    ));
+    
+    // Build result with all centers (even if 0 stock)
+    const stockMap = new Map(stockData.map(s => [s.repairCenterId, s]));
+    
+    return resellerCenters.map(center => ({
+      repairCenterId: center.id,
+      repairCenterName: center.name,
+      quantity: stockMap.get(center.id)?.quantity || 0,
+    }));
   }
 
   // Activity Logs
