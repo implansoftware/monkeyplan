@@ -8,6 +8,7 @@ import {
   RepairAcceptance, InsertRepairAcceptance, RepairDiagnostics, InsertRepairDiagnostics,
   RepairQuote, InsertRepairQuote,
   DeviceType, InsertDeviceType, DeviceBrand, InsertDeviceBrand, DeviceModel, InsertDeviceModel,
+  ResellerDeviceBrand, InsertResellerDeviceBrand, ResellerDeviceModel, InsertResellerDeviceModel,
   IssueType, InsertIssueType, AestheticDefect, InsertAestheticDefect, AccessoryType, InsertAccessoryType,
   DiagnosticFinding, DamagedComponentType, EstimatedRepairTime,
   PartsOrder, InsertPartsOrder, RepairLog, InsertRepairLog,
@@ -44,7 +45,7 @@ import {
   notifications, notificationPreferences, repairAttachments, repairAcceptance, repairDiagnostics,
   repairQuotes, partsOrders, repairLogs, repairTestChecklist, repairDelivery,
   repairCenterAvailability, repairCenterBlackouts, deliveryAppointments,
-  deviceTypes, deviceBrands, deviceModels, issueTypes, aestheticDefects, accessoryTypes,
+  deviceTypes, deviceBrands, deviceModels, resellerDeviceBrands, resellerDeviceModels, issueTypes, aestheticDefects, accessoryTypes,
   diagnosticFindings, damagedComponentTypes, estimatedRepairTimes, adminSettings,
   promotions, unrepairableReasons, externalLabs, dataRecoveryJobs, dataRecoveryEvents,
   suppliers, productSuppliers, supplierCatalogProducts, supplierSyncLogs, supplierOrders, supplierOrderItems, supplierReturns, supplierReturnItems, supplierCommunicationLogs,
@@ -207,6 +208,20 @@ export interface IStorage {
   createDeviceBrand(deviceBrand: InsertDeviceBrand): Promise<DeviceBrand>;
   updateDeviceBrand(id: string, updates: Partial<InsertDeviceBrand>): Promise<DeviceBrand>;
   deleteDeviceBrand(id: string): Promise<void>;
+  
+  // Reseller Custom Device Brands
+  listResellerDeviceBrands(resellerId: string, activeOnly?: boolean): Promise<ResellerDeviceBrand[]>;
+  getResellerDeviceBrand(id: string): Promise<ResellerDeviceBrand | undefined>;
+  createResellerDeviceBrand(brand: InsertResellerDeviceBrand): Promise<ResellerDeviceBrand>;
+  updateResellerDeviceBrand(id: string, updates: Partial<InsertResellerDeviceBrand>): Promise<ResellerDeviceBrand>;
+  deleteResellerDeviceBrand(id: string): Promise<void>;
+  
+  // Reseller Custom Device Models
+  listResellerDeviceModels(resellerId: string, brandId?: string, typeId?: string, activeOnly?: boolean): Promise<ResellerDeviceModel[]>;
+  getResellerDeviceModel(id: string): Promise<ResellerDeviceModel | undefined>;
+  createResellerDeviceModel(model: InsertResellerDeviceModel): Promise<ResellerDeviceModel>;
+  updateResellerDeviceModel(id: string, updates: Partial<InsertResellerDeviceModel>): Promise<ResellerDeviceModel>;
+  deleteResellerDeviceModel(id: string): Promise<void>;
   
   // Issue Types (Predefined problems per device type)
   listIssueTypes(deviceTypeId?: string, activeOnly?: boolean): Promise<IssueType[]>;
@@ -1939,6 +1954,89 @@ export class DatabaseStorage implements IStorage {
 
   async deleteDeviceBrand(id: string): Promise<void> {
     await db.delete(deviceBrands).where(eq(deviceBrands.id, id));
+  }
+
+  // Reseller Custom Device Brands
+  async listResellerDeviceBrands(resellerId: string, activeOnly: boolean = false): Promise<ResellerDeviceBrand[]> {
+    const conditions = [eq(resellerDeviceBrands.resellerId, resellerId)];
+    if (activeOnly) {
+      conditions.push(eq(resellerDeviceBrands.isActive, true));
+    }
+    return await db.select().from(resellerDeviceBrands)
+      .where(and(...conditions))
+      .orderBy(resellerDeviceBrands.name);
+  }
+
+  async getResellerDeviceBrand(id: string): Promise<ResellerDeviceBrand | undefined> {
+    const [brand] = await db.select().from(resellerDeviceBrands).where(eq(resellerDeviceBrands.id, id));
+    return brand || undefined;
+  }
+
+  async createResellerDeviceBrand(brand: InsertResellerDeviceBrand): Promise<ResellerDeviceBrand> {
+    const [created] = await db.insert(resellerDeviceBrands).values(brand).returning();
+    return created;
+  }
+
+  async updateResellerDeviceBrand(id: string, updates: Partial<InsertResellerDeviceBrand>): Promise<ResellerDeviceBrand> {
+    const [updated] = await db
+      .update(resellerDeviceBrands)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(resellerDeviceBrands.id, id))
+      .returning();
+    if (!updated) {
+      throw new Error("Reseller device brand not found");
+    }
+    return updated;
+  }
+
+  async deleteResellerDeviceBrand(id: string): Promise<void> {
+    await db.delete(resellerDeviceBrands).where(eq(resellerDeviceBrands.id, id));
+  }
+
+  // Reseller Custom Device Models
+  async listResellerDeviceModels(resellerId: string, brandId?: string, typeId?: string, activeOnly: boolean = false): Promise<ResellerDeviceModel[]> {
+    const conditions = [eq(resellerDeviceModels.resellerId, resellerId)];
+    if (brandId) {
+      conditions.push(or(
+        eq(resellerDeviceModels.brandId, brandId),
+        eq(resellerDeviceModels.resellerBrandId, brandId)
+      ) as any);
+    }
+    if (typeId) {
+      conditions.push(eq(resellerDeviceModels.typeId, typeId));
+    }
+    if (activeOnly) {
+      conditions.push(eq(resellerDeviceModels.isActive, true));
+    }
+    return await db.select().from(resellerDeviceModels)
+      .where(and(...conditions))
+      .orderBy(resellerDeviceModels.modelName);
+  }
+
+  async getResellerDeviceModel(id: string): Promise<ResellerDeviceModel | undefined> {
+    const [model] = await db.select().from(resellerDeviceModels).where(eq(resellerDeviceModels.id, id));
+    return model || undefined;
+  }
+
+  async createResellerDeviceModel(model: InsertResellerDeviceModel): Promise<ResellerDeviceModel> {
+    const [created] = await db.insert(resellerDeviceModels).values(model).returning();
+    return created;
+  }
+
+  async updateResellerDeviceModel(id: string, updates: Partial<InsertResellerDeviceModel>): Promise<ResellerDeviceModel> {
+    const [updated] = await db
+      .update(resellerDeviceModels)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(resellerDeviceModels.id, id))
+      .returning();
+    if (!updated) {
+      throw new Error("Reseller device model not found");
+    }
+    return updated;
+  }
+
+  async deleteResellerDeviceModel(id: string): Promise<void> {
+    await db.delete(resellerDeviceModels).where(eq(resellerDeviceModels.id, id));
   }
 
   // Issue Types (Predefined problems per device type)
