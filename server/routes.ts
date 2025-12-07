@@ -1970,8 +1970,10 @@ export function registerRoutes(app: Express): Server {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
+      const { initialStock, ...productData } = req.body;
+      
       const validationResult = insertProductSchema.safeParse({
-        ...req.body,
+        ...productData,
         createdBy: req.user.id, // Imposta il creatore come il reseller corrente
       });
       
@@ -1980,6 +1982,27 @@ export function registerRoutes(app: Express): Server {
       }
       
       const product = await storage.createProduct(validationResult.data);
+      
+      // Handle initial stock if provided
+      if (initialStock && Array.isArray(initialStock) && initialStock.length > 0) {
+        // Get reseller's centers to verify ownership
+        const resellerCenters = await storage.listRepairCenters({ resellerId: req.user.id });
+        const resellerCenterIds = new Set(resellerCenters.map(c => c.id));
+        
+        for (const stock of initialStock) {
+          if (stock.repairCenterId && stock.quantity > 0 && resellerCenterIds.has(stock.repairCenterId)) {
+            await storage.updateInventoryStock({
+              productId: product.id,
+              repairCenterId: stock.repairCenterId,
+              quantity: stock.quantity,
+              movementType: "adjustment",
+              notes: "Quantità iniziale alla creazione del prodotto",
+              createdBy: req.user.id,
+            });
+          }
+        }
+      }
+      
       res.status(201).json(product);
     } catch (error: any) {
       res.status(400).send(error.message);

@@ -10,7 +10,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Package, Search, Tag, Plus, Pencil, Trash2, User, Globe, Warehouse, Save, Loader2 } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Separator } from "@/components/ui/separator";
+import { Package, Search, Tag, Plus, Pencil, Trash2, User, Globe, Warehouse, Save, Loader2, X } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -85,6 +87,7 @@ export default function ResellerProducts() {
   const [stockValues, setStockValues] = useState<Record<string, number>>({});
   const [stockByCenters, setStockByCenters] = useState<StockByCenter[]>([]);
   const [loadingStock, setLoadingStock] = useState(false);
+  const [initialStock, setInitialStock] = useState<Array<{ repairCenterId: string; quantity: number }>>([]);
   const { toast } = useToast();
 
   const { data: products = [], isLoading } = useQuery<EnrichedProduct[]>({
@@ -93,6 +96,10 @@ export default function ResellerProducts() {
 
   const { data: productsWithStock = [] } = useQuery<ProductWithStock[]>({
     queryKey: ["/api/reseller/products/with-stock"],
+  });
+
+  const { data: repairCenters = [] } = useQuery<Array<{ id: string; name: string; isActive: boolean }>>({
+    queryKey: ["/api/reseller/repair-centers"],
   });
 
   const stockMap = new Map<string, { totalStock: number; stockByCenter: StockByCenter[] }>();
@@ -247,7 +254,23 @@ export default function ResellerProducts() {
     }
   };
 
-  const handleCreateSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const addInitialStock = (repairCenterId: string) => {
+    if (repairCenterId && !initialStock.find(s => s.repairCenterId === repairCenterId)) {
+      setInitialStock([...initialStock, { repairCenterId, quantity: 0 }]);
+    }
+  };
+
+  const updateInitialStock = (repairCenterId: string, quantity: number) => {
+    setInitialStock(initialStock.map(s => 
+      s.repairCenterId === repairCenterId ? { ...s, quantity } : s
+    ));
+  };
+
+  const removeInitialStock = (repairCenterId: string) => {
+    setInitialStock(initialStock.filter(s => s.repairCenterId !== repairCenterId));
+  };
+
+  const handleCreateSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
     
@@ -263,9 +286,11 @@ export default function ResellerProducts() {
       unitPrice: Math.round(parseFloat(formData.get("unitPrice") as string) * 100),
       costPrice: formData.get("costPrice") ? Math.round(parseFloat(formData.get("costPrice") as string) * 100) : null,
       warrantyMonths: formData.get("warrantyMonths") ? parseInt(formData.get("warrantyMonths") as string) : null,
+      initialStock: initialStock.filter(s => s.quantity > 0),
     };
     
     createProductMutation.mutate(data);
+    setInitialStock([]);
   };
 
   const handleEditSubmit = (e: React.FormEvent<HTMLFormElement>) => {
@@ -568,8 +593,11 @@ export default function ResellerProducts() {
       </div>
 
       {/* Dialog Nuovo Prodotto */}
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-lg">
+      <Dialog open={dialogOpen} onOpenChange={(open) => {
+        setDialogOpen(open);
+        if (!open) setInitialStock([]);
+      }}>
+        <DialogContent className="max-w-2xl max-h-[90vh]">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Plus className="h-5 w-5" />
@@ -579,87 +607,194 @@ export default function ResellerProducts() {
               Crea un nuovo prodotto personalizzato per il tuo catalogo
             </DialogDescription>
           </DialogHeader>
-          <ScrollArea className="max-h-[70vh]">
-            <form onSubmit={handleCreateSubmit} className="space-y-4 pr-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="name">Nome Prodotto *</Label>
-                  <Input id="name" name="name" required data-testid="input-create-name" />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="sku">SKU/Codice *</Label>
-                  <Input id="sku" name="sku" required data-testid="input-create-sku" />
-                </div>
-              </div>
-              
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="category">Categoria *</Label>
-                  <Select name="category" defaultValue="altro">
-                    <SelectTrigger data-testid="select-create-category">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {CATEGORIES.map(cat => (
-                        <SelectItem key={cat.value} value={cat.value}>{cat.label}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="brand">Marca</Label>
-                  <Select name="brand">
-                    <SelectTrigger data-testid="select-create-brand">
-                      <SelectValue placeholder="Seleziona marca" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {BRANDS.map(brand => (
-                        <SelectItem key={brand} value={brand}>{brand}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
+          <ScrollArea className="max-h-[70vh] pr-4">
+            <form onSubmit={handleCreateSubmit} className="space-y-6">
+              <Tabs defaultValue="info" className="w-full">
+                <TabsList className="grid w-full grid-cols-3">
+                  <TabsTrigger value="info">Info</TabsTrigger>
+                  <TabsTrigger value="pricing">Prezzi</TabsTrigger>
+                  <TabsTrigger value="inventory">Magazzino</TabsTrigger>
+                </TabsList>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="condition">Condizione *</Label>
-                  <Select name="condition" defaultValue="nuovo">
-                    <SelectTrigger data-testid="select-create-condition">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="nuovo">Nuovo</SelectItem>
-                      <SelectItem value="ricondizionato">Ricondizionato</SelectItem>
-                      <SelectItem value="usato">Usato</SelectItem>
-                      <SelectItem value="compatibile">Compatibile</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="warrantyMonths">Garanzia (mesi)</Label>
-                  <Input id="warrantyMonths" name="warrantyMonths" type="number" min="0" data-testid="input-create-warranty" />
-                </div>
-              </div>
+                <TabsContent value="info" className="space-y-4 mt-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="name">Nome Prodotto *</Label>
+                      <Input id="name" name="name" required data-testid="input-create-name" />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="sku">SKU/Codice *</Label>
+                      <Input id="sku" name="sku" required data-testid="input-create-sku" />
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="category">Categoria *</Label>
+                      <Select name="category" defaultValue="altro">
+                        <SelectTrigger data-testid="select-create-category">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {CATEGORIES.map(cat => (
+                            <SelectItem key={cat.value} value={cat.value}>{cat.label}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="brand">Marca</Label>
+                      <Select name="brand">
+                        <SelectTrigger data-testid="select-create-brand">
+                          <SelectValue placeholder="Seleziona marca" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {BRANDS.map(brand => (
+                            <SelectItem key={brand} value={brand}>{brand}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="unitPrice">Prezzo Vendita (EUR) *</Label>
-                  <Input id="unitPrice" name="unitPrice" type="number" step="0.01" min="0" required data-testid="input-create-price" />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="costPrice">Prezzo Costo (EUR)</Label>
-                  <Input id="costPrice" name="costPrice" type="number" step="0.01" min="0" data-testid="input-create-cost" />
-                </div>
-              </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="condition">Condizione *</Label>
+                      <Select name="condition" defaultValue="nuovo">
+                        <SelectTrigger data-testid="select-create-condition">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="nuovo">Nuovo</SelectItem>
+                          <SelectItem value="ricondizionato">Ricondizionato</SelectItem>
+                          <SelectItem value="usato">Usato</SelectItem>
+                          <SelectItem value="compatibile">Compatibile</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="color">Colore</Label>
+                      <Input id="color" name="color" placeholder="es. Nero, Bianco" data-testid="input-create-color" />
+                    </div>
+                  </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="description">Descrizione</Label>
-                <Textarea id="description" name="description" rows={3} data-testid="textarea-create-description" />
-              </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="description">Descrizione</Label>
+                    <Textarea id="description" name="description" rows={3} data-testid="textarea-create-description" />
+                  </div>
+                </TabsContent>
 
-              <div className="flex justify-end gap-2 pt-4">
-                <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
+                <TabsContent value="pricing" className="space-y-4 mt-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="costPrice">Prezzo Acquisto (€)</Label>
+                      <Input 
+                        id="costPrice" 
+                        name="costPrice" 
+                        type="number" 
+                        step="0.01" 
+                        min="0" 
+                        placeholder="0.00"
+                        data-testid="input-create-cost" 
+                      />
+                      <p className="text-xs text-muted-foreground">Costo dal fornitore</p>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="unitPrice">Prezzo Vendita (€) *</Label>
+                      <Input 
+                        id="unitPrice" 
+                        name="unitPrice" 
+                        type="number" 
+                        step="0.01" 
+                        min="0" 
+                        required 
+                        placeholder="0.00"
+                        data-testid="input-create-price" 
+                      />
+                      <p className="text-xs text-muted-foreground">Prezzo al cliente</p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="warrantyMonths">Garanzia (mesi)</Label>
+                    <Input 
+                      id="warrantyMonths" 
+                      name="warrantyMonths" 
+                      type="number" 
+                      min="0" 
+                      defaultValue="3"
+                      placeholder="3"
+                      data-testid="input-create-warranty" 
+                    />
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="inventory" className="space-y-4 mt-4">
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <Label>Quantità Iniziali per Magazzino</Label>
+                      <Select onValueChange={addInitialStock}>
+                        <SelectTrigger className="w-48" data-testid="select-add-stock-center">
+                          <SelectValue placeholder="Aggiungi centro..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {repairCenters
+                            .filter(rc => rc.isActive && !initialStock.find(s => s.repairCenterId === rc.id))
+                            .map(rc => (
+                              <SelectItem key={rc.id} value={rc.id}>{rc.name}</SelectItem>
+                            ))
+                          }
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    
+                    {initialStock.length === 0 ? (
+                      <div className="text-center py-6 text-muted-foreground">
+                        <Warehouse className="h-10 w-10 mx-auto mb-2 opacity-50" />
+                        <p className="text-sm">Nessuna quantità iniziale.</p>
+                        <p className="text-xs">Seleziona un centro riparazioni per aggiungere stock iniziale.</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        {initialStock.map(stock => {
+                          const center = repairCenters.find(rc => rc.id === stock.repairCenterId);
+                          return (
+                            <div key={stock.repairCenterId} className="flex items-center gap-3 p-3 border rounded-md">
+                              <Warehouse className="h-4 w-4 text-muted-foreground" />
+                              <span className="flex-1 font-medium">{center?.name || "Centro"}</span>
+                              <Input
+                                type="number"
+                                min="0"
+                                value={stock.quantity}
+                                onChange={(e) => updateInitialStock(stock.repairCenterId, parseInt(e.target.value) || 0)}
+                                className="w-24"
+                                data-testid={`input-initial-stock-${stock.repairCenterId}`}
+                              />
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => removeInitialStock(stock.repairCenterId)}
+                                data-testid={`button-remove-stock-${stock.repairCenterId}`}
+                              >
+                                <X className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                    <p className="text-xs text-muted-foreground">
+                      Puoi assegnare quantità iniziali ai magazzini dei tuoi centri riparazione
+                    </p>
+                  </div>
+                </TabsContent>
+              </Tabs>
+
+              <Separator />
+
+              <div className="flex justify-end gap-2">
+                <Button type="button" variant="outline" onClick={() => { setDialogOpen(false); setInitialStock([]); }}>
                   Annulla
                 </Button>
                 <Button type="submit" disabled={createProductMutation.isPending} data-testid="button-submit-create">
