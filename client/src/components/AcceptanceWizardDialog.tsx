@@ -212,6 +212,7 @@ export function AcceptanceWizardDialog({
     iban: "",
     username: "",
     password: "",
+    repairCenterId: "",
   });
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -233,6 +234,14 @@ export function AcceptanceWizardDialog({
       }));
     },
     enabled: user?.role === "admin" || user?.role === "repair_center" || user?.role === "reseller",
+  });
+
+  const { data: resellerRepairCenters = [] } = useQuery<Array<{
+    id: string;
+    name: string;
+  }>>({
+    queryKey: ["/api/reseller/repair-centers"],
+    enabled: user?.role === "reseller",
   });
 
   const { data: deviceTypes = [] } = useQuery<Array<{
@@ -540,7 +549,8 @@ export function AcceptanceWizardDialog({
           ...basePayload, 
           username: data.username,
           password: data.password,
-          isActive: true 
+          isActive: true,
+          repairCenterId: data.repairCenterId || undefined,
         };
       } else {
         endpoint = "/api/customers";
@@ -577,6 +587,7 @@ export function AcceptanceWizardDialog({
         iban: "",
         username: "",
         password: "",
+        repairCenterId: "",
       });
       toast({
         title: "Cliente creato",
@@ -1122,6 +1133,32 @@ export function AcceptanceWizardDialog({
                   </>
                 )}
 
+                {/* Centro di Riparazione (solo reseller) */}
+                {user?.role === "reseller" && resellerRepairCenters.length > 0 && (
+                  <>
+                    <Separator />
+                    <div className="space-y-1">
+                      <Label htmlFor="new-customer-repair-center">Centro di Riparazione</Label>
+                      <Select
+                        value={newCustomerData.repairCenterId}
+                        onValueChange={(value) => setNewCustomerData(prev => ({ ...prev, repairCenterId: value === "__none__" ? "" : value }))}
+                      >
+                        <SelectTrigger id="new-customer-repair-center" data-testid="select-new-customer-repair-center">
+                          <SelectValue placeholder="Nessun centro associato" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="__none__">Nessun centro associato</SelectItem>
+                          {resellerRepairCenters.map((center) => (
+                            <SelectItem key={center.id} value={center.id}>
+                              {center.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </>
+                )}
+
                 <div className="flex gap-2 pt-2">
                   <Button
                     type="button"
@@ -1145,6 +1182,7 @@ export function AcceptanceWizardDialog({
                         iban: "",
                         username: "",
                         password: "",
+                        repairCenterId: "",
                       });
                     }}
                     data-testid="button-cancel-new-customer"

@@ -1899,8 +1899,18 @@ export function registerRoutes(app: Express): Server {
         fullName: true,
         phone: true,
         isActive: true,
+      }).extend({
+        repairCenterId: z.string().optional(),
       });
       const validatedData = baseSchema.parse(req.body);
+
+      // If repairCenterId provided, verify it belongs to this reseller
+      if (validatedData.repairCenterId) {
+        const center = await storage.getRepairCenter(validatedData.repairCenterId);
+        if (!center || center.resellerId !== req.user.id) {
+          return res.status(403).send("Centro di riparazione non autorizzato");
+        }
+      }
 
       // Hash password before storing
       const hashedPassword = await hashPassword(validatedData.password);
@@ -1914,6 +1924,7 @@ export function registerRoutes(app: Express): Server {
         isActive: validatedData.isActive,
         role: "customer", // Force customer role
         resellerId: req.user.id, // Associate with the reseller
+        repairCenterId: validatedData.repairCenterId || null, // Associate with repair center if provided
       });
       setActivityEntity(res, { type: 'users', id: user.id });
       res.status(201).json(user);
