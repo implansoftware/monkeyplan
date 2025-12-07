@@ -5,7 +5,7 @@ import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
 // Enums
-export const userRoleEnum = pgEnum("user_role", ["admin", "reseller", "repair_center", "customer"]);
+export const userRoleEnum = pgEnum("user_role", ["admin", "reseller", "reseller_staff", "repair_center", "customer"]);
 export const resellerCategoryEnum = pgEnum("reseller_category", ["standard", "franchising", "gdo"]);
 export const customerTypeEnum = pgEnum("customer_type", ["private", "company"]);
 export const ticketStatusEnum = pgEnum("ticket_status", ["open", "in_progress", "closed"]);
@@ -299,6 +299,21 @@ export const utilityNoteVisibilityEnum = pgEnum("utility_note_visibility", [
   "customer",          // Visibile al cliente
 ]);
 
+// Staff Module Enum - Moduli accessibili dallo staff del rivenditore
+export const staffModuleEnum = pgEnum("staff_module", [
+  "repairs",           // Lavorazioni
+  "customers",         // Clienti
+  "products",          // Prodotti
+  "inventory",         // Inventario/Magazzino
+  "repair_centers",    // Centri riparazione
+  "services",          // Servizi/Interventi
+  "suppliers",         // Fornitori
+  "supplier_orders",   // Ordini fornitori
+  "appointments",      // Appuntamenti
+  "invoices",          // Fatture
+  "tickets",           // Ticket supporto
+]);
+
 // Users table with role-based access
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -326,6 +341,28 @@ export const users = pgTable("users", {
   pec: text("pec"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
+
+// Reseller Staff Permissions - Permessi granulari per modulo per utenti staff del rivenditore
+export const resellerStaffPermissions = pgTable("reseller_staff_permissions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }), // L'utente staff
+  resellerId: varchar("reseller_id").notNull().references(() => users.id, { onDelete: "cascade" }), // Il rivenditore proprietario
+  module: staffModuleEnum("module").notNull(), // Il modulo a cui si applica il permesso
+  canRead: boolean("can_read").notNull().default(false),
+  canCreate: boolean("can_create").notNull().default(false),
+  canUpdate: boolean("can_update").notNull().default(false),
+  canDelete: boolean("can_delete").notNull().default(false),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export const insertResellerStaffPermissionSchema = createInsertSchema(resellerStaffPermissions).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export type InsertResellerStaffPermission = z.infer<typeof insertResellerStaffPermissionSchema>;
+export type ResellerStaffPermission = typeof resellerStaffPermissions.$inferSelect;
 
 // Repair Centers
 export const repairCenters = pgTable("repair_centers", {
