@@ -85,6 +85,7 @@ import ResellerRepairCenters from "@/pages/reseller/repair-centers";
 import ResellerRepairCenterSchedules from "@/pages/reseller/repair-center-schedules";
 import ResellerAppointments from "@/pages/reseller/appointments";
 import ResellerServiceCatalog from "@/pages/reseller/service-catalog";
+import ResellerTeam from "@/pages/reseller/team";
 
 // Repair Center pages
 import RepairCenterDashboard from "@/pages/repair-center/dashboard";
@@ -175,6 +176,7 @@ function Router() {
       <ProtectedRoute path="/reseller/sifar/settings" component={ResellerSifarSettings} />
       <ProtectedRoute path="/reseller/sifar/catalog" component={ResellerSifarCatalog} />
       <ProtectedRoute path="/reseller/sifar/cart" component={ResellerSifarCart} />
+      <ProtectedRoute path="/reseller/team" component={ResellerTeam} />
       
       {/* Repair Center routes */}
       <ProtectedRoute path="/repair-center" component={RepairCenterDashboard} />

@@ -1,6 +1,7 @@
 import {
   LayoutDashboard,
   Users,
+  UsersRound,
   Wrench,
   Package,
   FileText,
@@ -79,6 +80,7 @@ const menuItems = {
   reseller: [
     { title: "Dashboard", url: "/reseller", icon: LayoutDashboard, group: "Principale" },
     { title: "Clienti", url: "/reseller/customers", icon: Users, group: "Gestione" },
+    { title: "Team", url: "/reseller/team", icon: UsersRound, group: "Gestione" },
     { title: "Centri Riparazione", url: "/reseller/repair-centers", icon: Building, group: "Gestione" },
     { title: "Appuntamenti", url: "/reseller/appointments", icon: CalendarCheck, group: "Gestione" },
     { title: "Lavorazioni", url: "/reseller/repairs", icon: Wrench, group: "Riparazioni" },
