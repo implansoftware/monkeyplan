@@ -256,11 +256,11 @@ export default function QuotesList() {
                     <div className="flex items-center gap-4 text-sm">
                       <span className="flex items-center gap-1 font-semibold">
                         <Euro className="h-4 w-4" />
-                        {quote.totalAmount ? Number(quote.totalAmount).toFixed(2) : "0.00"}
+                        {quote.totalAmount ? (Number(quote.totalAmount) / 100).toFixed(2) : "0.00"}
                       </span>
                       {quote.laborCost && (
                         <span className="text-muted-foreground">
-                          (Manodopera: €{Number(quote.laborCost).toFixed(2)})
+                          (Manodopera: €{(Number(quote.laborCost) / 100).toFixed(2)})
                         </span>
                       )}
                     </div>
@@ -270,7 +270,7 @@ export default function QuotesList() {
                     <div className="flex flex-wrap gap-1">
                       {quote.parts.slice(0, 3).map((part: any, idx: number) => (
                         <Badge key={idx} variant="secondary" className="text-xs">
-                          {part.name}: €{Number(part.price || 0).toFixed(2)}
+                          {part.name}: €{(Number(part.price || 0) / 100).toFixed(2)}
                         </Badge>
                       ))}
                       {quote.parts.length > 3 && (
