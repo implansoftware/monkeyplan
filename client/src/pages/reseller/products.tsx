@@ -8,13 +8,25 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Package, Search, Tag, Plus, Pencil, Trash2, User, Globe } from "lucide-react";
+import { Package, Search, Tag, Plus, Pencil, Trash2, User, Globe, Warehouse, Save, Loader2 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+
+type StockByCenter = {
+  repairCenterId: string;
+  repairCenterName: string;
+  quantity: number;
+};
+
+type ProductWithStock = {
+  product: EnrichedProduct;
+  stockByCenter: StockByCenter[];
+  totalStock: number;
+};
 
 type EnrichedProduct = {
   id: string;
@@ -68,10 +80,24 @@ export default function ResellerProducts() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<EnrichedProduct | null>(null);
+  const [stockDialogOpen, setStockDialogOpen] = useState(false);
+  const [stockProduct, setStockProduct] = useState<EnrichedProduct | null>(null);
+  const [stockValues, setStockValues] = useState<Record<string, number>>({});
+  const [stockByCenters, setStockByCenters] = useState<StockByCenter[]>([]);
+  const [loadingStock, setLoadingStock] = useState(false);
   const { toast } = useToast();
 
   const { data: products = [], isLoading } = useQuery<EnrichedProduct[]>({
     queryKey: ["/api/reseller/products"],
+  });
+
+  const { data: productsWithStock = [] } = useQuery<ProductWithStock[]>({
+    queryKey: ["/api/reseller/products/with-stock"],
+  });
+
+  const stockMap = new Map<string, { totalStock: number; stockByCenter: StockByCenter[] }>();
+  productsWithStock.forEach(item => {
+    stockMap.set(item.product.id, { totalStock: item.totalStock, stockByCenter: item.stockByCenter });
   });
 
   const createProductMutation = useMutation({
@@ -117,6 +143,73 @@ export default function ResellerProducts() {
       toast({ title: "Errore", description: error.message, variant: "destructive" });
     },
   });
+
+  const updateStockMutation = useMutation({
+    mutationFn: async ({ productId, repairCenterId, quantity, notes }: { productId: string; repairCenterId: string; quantity: number; notes?: string }) => {
+      const res = await apiRequest("POST", `/api/reseller/products/${productId}/stock`, { repairCenterId, quantity, notes });
+      return await res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/reseller/products/with-stock"] });
+      toast({ title: "Stock aggiornato con successo" });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Errore", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const openStockDialog = async (product: EnrichedProduct) => {
+    setStockProduct(product);
+    setLoadingStock(true);
+    setStockDialogOpen(true);
+    
+    try {
+      const res = await fetch(`/api/reseller/products/${product.id}/stock`, {
+        credentials: 'include'
+      });
+      if (res.ok) {
+        const data: StockByCenter[] = await res.json();
+        setStockByCenters(data);
+        const initialValues: Record<string, number> = {};
+        data.forEach(s => {
+          initialValues[s.repairCenterId] = s.quantity;
+        });
+        setStockValues(initialValues);
+      } else {
+        toast({ title: "Errore", description: "Impossibile caricare i dati stock", variant: "destructive" });
+        setStockByCenters([]);
+      }
+    } catch (error) {
+      toast({ title: "Errore", description: "Errore di rete", variant: "destructive" });
+      setStockByCenters([]);
+    } finally {
+      setLoadingStock(false);
+    }
+  };
+
+  const saveAllStockChanges = async () => {
+    if (!stockProduct) return;
+    if (stockByCenters.length === 0) return;
+
+    const promises = stockByCenters.map(s => {
+      const newQuantity = stockValues[s.repairCenterId] ?? s.quantity;
+      if (newQuantity !== s.quantity) {
+        return updateStockMutation.mutateAsync({
+          productId: stockProduct.id,
+          repairCenterId: s.repairCenterId,
+          quantity: newQuantity,
+        });
+      }
+      return Promise.resolve();
+    });
+
+    await Promise.all(promises);
+    queryClient.invalidateQueries({ queryKey: ["/api/reseller/products/with-stock"] });
+    setStockDialogOpen(false);
+    setStockProduct(null);
+    setStockValues({});
+    setStockByCenters([]);
+  };
 
   const categories = Array.from(new Set(products.map((p) => p.category))).filter(Boolean);
   const brands = Array.from(new Set(products.map((p) => p.brand))).filter(Boolean) as string[];
@@ -313,6 +406,7 @@ export default function ResellerProducts() {
                   <TableHead>Categoria</TableHead>
                   <TableHead>Condizione</TableHead>
                   <TableHead className="text-right">Prezzo</TableHead>
+                  <TableHead className="text-center">Stock</TableHead>
                   <TableHead>Garanzia</TableHead>
                   <TableHead className="text-right">Azioni</TableHead>
                 </TableRow>
@@ -371,6 +465,27 @@ export default function ResellerProducts() {
                           </div>
                         )}
                       </div>
+                    </TableCell>
+                    <TableCell className="text-center">
+                      {product.isOwn ? (
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="gap-1"
+                              onClick={() => openStockDialog(product)}
+                              data-testid={`button-stock-${product.id}`}
+                            >
+                              <Warehouse className="h-3 w-3" />
+                              <span className="font-medium">{stockMap.get(product.id)?.totalStock ?? 0}</span>
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>Gestisci stock nei tuoi centri</TooltipContent>
+                        </Tooltip>
+                      ) : (
+                        <span className="text-muted-foreground">-</span>
+                      )}
                     </TableCell>
                     <TableCell>
                       {product.warrantyMonths ? `${product.warrantyMonths} mesi` : "-"}
@@ -688,6 +803,102 @@ export default function ResellerProducts() {
                 </div>
               </form>
             </ScrollArea>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog Gestione Stock */}
+      <Dialog open={stockDialogOpen} onOpenChange={(open) => {
+        if (!open) {
+          setStockDialogOpen(false);
+          setStockProduct(null);
+          setStockValues({});
+          setStockByCenters([]);
+        }
+      }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Warehouse className="h-5 w-5" />
+              Gestione Stock
+            </DialogTitle>
+            <DialogDescription>
+              {stockProduct && (
+                <>Modifica le quantità di <strong>{stockProduct.name}</strong> nei tuoi centri di riparazione</>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          {stockProduct && (
+            <div className="space-y-4">
+              {loadingStock ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                  <span className="ml-2 text-muted-foreground">Caricamento...</span>
+                </div>
+              ) : stockByCenters.length === 0 ? (
+                <div className="text-center py-4 text-muted-foreground">
+                  <Warehouse className="h-10 w-10 mx-auto mb-2 opacity-50" />
+                  <p>Nessun centro di riparazione configurato.</p>
+                  <p className="text-sm">Crea prima un centro di riparazione dalla sezione dedicata.</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {stockByCenters.map(center => (
+                    <div key={center.repairCenterId} className="flex items-center justify-between gap-4 p-3 rounded-lg border">
+                      <div className="flex-1">
+                        <div className="font-medium">{center.repairCenterName}</div>
+                        <div className="text-xs text-muted-foreground">
+                          Attuale: {center.quantity} unità
+                        </div>
+                      </div>
+                      <div className="w-24">
+                        <Input
+                          type="number"
+                          min="0"
+                          value={stockValues[center.repairCenterId] ?? center.quantity}
+                          onChange={(e) => setStockValues({
+                            ...stockValues,
+                            [center.repairCenterId]: parseInt(e.target.value) || 0
+                          })}
+                          className="text-center"
+                          data-testid={`input-stock-${center.repairCenterId}`}
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <DialogFooter>
+                <Button 
+                  variant="outline" 
+                  onClick={() => {
+                    setStockDialogOpen(false);
+                    setStockProduct(null);
+                    setStockValues({});
+                    setStockByCenters([]);
+                  }}
+                >
+                  Annulla
+                </Button>
+                <Button 
+                  onClick={saveAllStockChanges}
+                  disabled={updateStockMutation.isPending || loadingStock || stockByCenters.length === 0}
+                  data-testid="button-save-stock"
+                >
+                  {updateStockMutation.isPending ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Salvataggio...
+                    </>
+                  ) : (
+                    <>
+                      <Save className="h-4 w-4 mr-2" />
+                      Salva Stock
+                    </>
+                  )}
+                </Button>
+              </DialogFooter>
+            </div>
           )}
         </DialogContent>
       </Dialog>
