@@ -46,7 +46,8 @@ import { ObjectStorageService, objectStorageClient, parseObjectPath } from "./ob
 import { canAccessObject, ObjectPermission } from "./objectAcl";
 import { calculateRepairPriority } from "./helpers/priorityCalculation";
 import { db } from "./db";
-import { sql } from "drizzle-orm";
+import { sql, eq } from "drizzle-orm";
+import { deliveryAppointments } from "@shared/schema";
 
 const scryptAsync = promisify(scrypt);
 
@@ -6859,6 +6860,22 @@ export function registerRoutes(app: Express): Server {
         return res.status(404).send("Appointment not found");
       }
       
+      // For acceptance appointments without a repair order
+      if (!appointment.repairOrderId) {
+        // RBAC for acceptance appointments
+        if (req.user.role === 'customer' && appointment.customerId !== req.user.id) {
+          return res.status(403).send("Access denied");
+        }
+        if (req.user.role === 'reseller' && appointment.resellerId !== req.user.id) {
+          return res.status(403).send("Access denied");
+        }
+        if (req.user.role === 'repair_center' && appointment.repairCenterId !== req.user.repairCenterId) {
+          return res.status(403).send("Access denied");
+        }
+        
+        return res.json(appointment);
+      }
+      
       const repairOrder = await storage.getRepairOrder(appointment.repairOrderId);
       if (!repairOrder) {
         return res.status(404).send("Repair order not found");
@@ -6879,6 +6896,218 @@ export function registerRoutes(app: Express): Server {
       }
       
       res.json(appointment);
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+
+  // ============ ACCEPTANCE APPOINTMENTS ============
+  
+  // POST /api/acceptance-appointments - Create an acceptance appointment (before repair order exists)
+  app.post("/api/acceptance-appointments", requireRole("reseller", "repair_center", "admin"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const { 
+        repairCenterId, 
+        date, 
+        startTime, 
+        endTime,
+        deviceType,
+        deviceBrand,
+        deviceModel,
+        issueDescription,
+        customerName,
+        customerPhone,
+        customerEmail,
+        notes 
+      } = req.body;
+      
+      // Validate required fields
+      if (!repairCenterId || !date || !startTime || !endTime) {
+        return res.status(400).send("Repair center, date, start time and end time are required");
+      }
+      
+      // Verify repair center exists
+      const repairCenter = await storage.getRepairCenter(repairCenterId);
+      if (!repairCenter) {
+        return res.status(404).send("Repair center not found");
+      }
+      
+      // RBAC: Check user can book appointments at this center
+      let resellerId: string | null = null;
+      let customerId: string | null = null;
+      
+      if (req.user.role === 'reseller') {
+        // Reseller can only book at their own centers
+        const resellerCenters = await storage.listRepairCentersForReseller(req.user.id);
+        const canBook = resellerCenters.some(c => c.id === repairCenterId);
+        if (!canBook) {
+          return res.status(403).send("You can only book appointments at your own repair centers");
+        }
+        resellerId = req.user.id;
+      } else if (req.user.role === 'repair_center') {
+        // Repair center can only book at their own center
+        if (repairCenterId !== req.user.repairCenterId) {
+          return res.status(403).send("You can only book appointments at your own repair center");
+        }
+      }
+      // Admin can book anywhere
+      
+      // Check for slot availability
+      const existingAppointments = await storage.listDeliveryAppointments({
+        repairCenterId,
+        date,
+        status: 'scheduled'
+      });
+      
+      // Get availability for this day of week
+      const dayOfWeek = new Date(date).getDay();
+      const availability = await storage.listRepairCenterAvailability(repairCenterId);
+      const dayAvailability = availability.find(a => a.dayOfWeek === dayOfWeek);
+      
+      if (!dayAvailability || !dayAvailability.isAvailable) {
+        return res.status(400).send("This repair center is not available on this day");
+      }
+      
+      // Check max slots per time
+      const maxSlots = dayAvailability.maxAppointmentsPerSlot || 1;
+      const slotsAtTime = existingAppointments.filter(
+        a => a.startTime === startTime && a.status !== 'cancelled'
+      ).length;
+      
+      if (slotsAtTime >= maxSlots) {
+        return res.status(400).send("No more appointment slots available at this time");
+      }
+      
+      // Create the acceptance appointment
+      const appointment = await storage.createDeliveryAppointment({
+        type: 'acceptance',
+        repairCenterId,
+        resellerId,
+        customerId,
+        date,
+        startTime,
+        endTime,
+        status: 'scheduled',
+        deviceType: deviceType || null,
+        deviceBrand: deviceBrand || null,
+        deviceModel: deviceModel || null,
+        issueDescription: issueDescription || null,
+        customerName: customerName || null,
+        customerPhone: customerPhone || null,
+        customerEmail: customerEmail || null,
+        notes: notes || null,
+      });
+      
+      res.status(201).json(appointment);
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+  
+  // GET /api/acceptance-appointments - List acceptance appointments
+  app.get("/api/acceptance-appointments", requireRole("reseller", "repair_center", "admin"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const filters: any = { type: 'acceptance' };
+      
+      if (req.user.role === 'reseller') {
+        filters.resellerId = req.user.id;
+      } else if (req.user.role === 'repair_center') {
+        filters.repairCenterId = req.user.repairCenterId;
+      } else if (req.user.role === 'admin') {
+        // Admin can filter by specific repair center or reseller
+        if (req.query.repairCenterId) {
+          filters.repairCenterId = req.query.repairCenterId as string;
+        }
+        if (req.query.resellerId) {
+          filters.resellerId = req.query.resellerId as string;
+        }
+      }
+      
+      if (req.query.date) {
+        filters.date = req.query.date as string;
+      }
+      if (req.query.status) {
+        filters.status = req.query.status as string;
+      }
+      
+      const appointments = await storage.listDeliveryAppointments(filters);
+      
+      // Enrich with repair center info
+      const enriched = await Promise.all(appointments.map(async (apt) => {
+        const repairCenter = await storage.getRepairCenter(apt.repairCenterId);
+        return {
+          ...apt,
+          repairCenter: repairCenter ? {
+            id: repairCenter.id,
+            name: repairCenter.name,
+            address: repairCenter.address,
+          } : null
+        };
+      }));
+      
+      res.json(enriched);
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+  
+  // PATCH /api/acceptance-appointments/:id/convert - Convert acceptance appointment to repair order
+  app.patch("/api/acceptance-appointments/:id/convert", requireRole("reseller", "repair_center", "admin"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const appointment = await storage.getDeliveryAppointment(req.params.id);
+      if (!appointment) {
+        return res.status(404).send("Appointment not found");
+      }
+      
+      if (appointment.type !== 'acceptance') {
+        return res.status(400).send("This is not an acceptance appointment");
+      }
+      
+      if (appointment.repairOrderId) {
+        return res.status(400).send("This appointment has already been converted to a repair order");
+      }
+      
+      // RBAC
+      if (req.user.role === 'reseller' && appointment.resellerId !== req.user.id) {
+        return res.status(403).send("Access denied");
+      }
+      if (req.user.role === 'repair_center' && appointment.repairCenterId !== req.user.repairCenterId) {
+        return res.status(403).send("Access denied");
+      }
+      
+      // The repairOrderId will be passed in the body after the repair order is created
+      const { repairOrderId } = req.body;
+      
+      if (!repairOrderId) {
+        return res.status(400).send("Repair order ID is required");
+      }
+      
+      // Verify repair order exists
+      const repairOrder = await storage.getRepairOrder(repairOrderId);
+      if (!repairOrder) {
+        return res.status(404).send("Repair order not found");
+      }
+      
+      // Update the appointment with the repair order ID and mark as completed
+      const updated = await storage.updateDeliveryAppointment(req.params.id, {
+        status: 'completed',
+      });
+      
+      // Note: We need to update repairOrderId directly
+      await db.update(deliveryAppointments)
+        .set({ repairOrderId })
+        .where(eq(deliveryAppointments.id, req.params.id));
+      
+      res.json({
+        ...updated,
+        repairOrderId,
+      });
     } catch (error: any) {
       res.status(400).send(error.message);
     }
