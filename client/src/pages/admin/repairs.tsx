@@ -309,22 +309,15 @@ export default function AdminRepairs() {
               </SelectContent>
             </Select>
             <Select value={repairCenterFilter} onValueChange={setRepairCenterFilter}>
-              <SelectTrigger className="w-full sm:w-52" data-testid="select-filter-repair-center">
-                <SelectValue />
+              <SelectTrigger className="w-full sm:w-44" data-testid="select-filter-repair-center">
+                <Building className="h-4 w-4 shrink-0" />
+                <SelectValue placeholder="Centro" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">
-                  <span className="flex items-center gap-2">
-                    <Building className="h-3 w-3" />
-                    Tutti i centri
-                  </span>
-                </SelectItem>
+                <SelectItem value="all">Tutti i centri</SelectItem>
                 {repairCenters.map((center) => (
                   <SelectItem key={center.id} value={center.id}>
-                    <span className="flex items-center gap-2">
-                      <Building className="h-3 w-3" />
-                      {center.name}
-                    </span>
+                    {center.name}
                   </SelectItem>
                 ))}
               </SelectContent>
