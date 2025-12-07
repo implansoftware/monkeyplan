@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Search, Wrench, CalendarIcon, Plus, Eye, Clock, AlertTriangle, AlertCircle, LayoutGrid, TableIcon } from "lucide-react";
+import { Search, Wrench, CalendarIcon, CalendarPlus, Plus, Eye, Clock, AlertTriangle, AlertCircle, LayoutGrid, TableIcon } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { queryClient } from "@/lib/queryClient";
@@ -20,6 +20,7 @@ import { it } from "date-fns/locale";
 import type { DateRange } from "react-day-picker";
 import { RepairOrderDetailDrawer } from "@/components/RepairOrderDetailDrawer";
 import { AcceptanceWizardDialog } from "@/components/AcceptanceWizardDialog";
+import { AcceptanceAppointmentDialog } from "@/components/AcceptanceAppointmentDialog";
 import { RepairsKanbanBoard } from "@/components/RepairsKanbanBoard";
 
 interface RepairOrderWithSLA extends RepairOrder {
@@ -38,6 +39,7 @@ export default function ResellerRepairs() {
   const [selectedRepairId, setSelectedRepairId] = useState<string | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [wizardOpen, setWizardOpen] = useState(false);
+  const [acceptanceAppointmentOpen, setAcceptanceAppointmentOpen] = useState(false);
   const [viewMode, setViewMode] = useState<"table" | "kanban">("table");
 
   // Fetch repair centers for filter
@@ -232,6 +234,14 @@ export default function ResellerRepairs() {
               </PopoverContent>
             </Popover>
             <Button
+              variant="outline"
+              onClick={() => setAcceptanceAppointmentOpen(true)}
+              data-testid="button-book-acceptance"
+            >
+              <CalendarPlus className="h-4 w-4 mr-2" />
+              Prenota Accettazione
+            </Button>
+            <Button
               onClick={() => setWizardOpen(true)}
               data-testid="button-new-acceptance"
             >
@@ -388,6 +398,14 @@ export default function ResellerRepairs() {
         onOpenChange={setWizardOpen}
         onSuccess={() => {
           queryClient.invalidateQueries({ queryKey: ["/api/repair-orders"] });
+        }}
+      />
+
+      <AcceptanceAppointmentDialog
+        open={acceptanceAppointmentOpen}
+        onOpenChange={setAcceptanceAppointmentOpen}
+        onSuccess={() => {
+          queryClient.invalidateQueries({ queryKey: ["/api/acceptance-appointments"] });
         }}
       />
     </div>

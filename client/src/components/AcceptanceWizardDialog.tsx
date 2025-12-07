@@ -360,7 +360,7 @@ export function AcceptanceWizardDialog({
       if (!res.ok) throw new Error("Failed to fetch acceptance appointments");
       return res.json();
     },
-    enabled: user?.role === "admin" || user?.role === "repair_center",
+    enabled: user?.role === "admin" || user?.role === "repair_center" || user?.role === "reseller",
   });
 
   const form = useForm<AcceptanceWizardData>({
