@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
@@ -11,6 +11,7 @@ import { Truck, Search, Mail, Phone, MapPin, Plus, Pencil, Trash2, Globe, User }
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
+import { AddressAutocomplete } from "@/components/address-autocomplete";
 
 type Supplier = {
   id: string;
@@ -36,11 +37,6 @@ type SupplierFormData = {
   name: string;
   email: string;
   phone: string;
-  whatsapp: string;
-  address: string;
-  city: string;
-  zipCode: string;
-  country: string;
   vatNumber: string;
   fiscalCode: string;
   deliveryDays: string;
@@ -50,11 +46,6 @@ const initialFormData: SupplierFormData = {
   name: "",
   email: "",
   phone: "",
-  whatsapp: "",
-  address: "",
-  city: "",
-  zipCode: "",
-  country: "IT",
   vatNumber: "",
   fiscalCode: "",
   deliveryDays: "3",
@@ -66,8 +57,23 @@ export default function ResellerSuppliers() {
   const [editingSupplier, setEditingSupplier] = useState<Supplier | null>(null);
   const [formData, setFormData] = useState<SupplierFormData>(initialFormData);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [selectedAddress, setSelectedAddress] = useState("");
+  const [selectedCity, setSelectedCity] = useState("");
+  const [selectedZipCode, setSelectedZipCode] = useState("");
   const { toast } = useToast();
   const queryClient = useQueryClient();
+
+  useEffect(() => {
+    if (editingSupplier) {
+      setSelectedAddress(editingSupplier.address || "");
+      setSelectedCity(editingSupplier.city || "");
+      setSelectedZipCode(editingSupplier.zipCode || "");
+    } else {
+      setSelectedAddress("");
+      setSelectedCity("");
+      setSelectedZipCode("");
+    }
+  }, [editingSupplier]);
 
   const { data: suppliers = [], isLoading } = useQuery<Supplier[]>({
     queryKey: ["/api/reseller/suppliers"],
@@ -79,11 +85,10 @@ export default function ResellerSuppliers() {
         name: data.name,
         email: data.email || null,
         phone: data.phone || null,
-        whatsapp: data.whatsapp || null,
-        address: data.address || null,
-        city: data.city || null,
-        zipCode: data.zipCode || null,
-        country: data.country || "IT",
+        address: selectedAddress || null,
+        city: selectedCity || null,
+        zipCode: selectedZipCode || null,
+        country: "IT",
         vatNumber: data.vatNumber || null,
         fiscalCode: data.fiscalCode || null,
         deliveryDays: data.deliveryDays ? parseInt(data.deliveryDays) : null,
@@ -105,11 +110,10 @@ export default function ResellerSuppliers() {
         name: data.name,
         email: data.email || null,
         phone: data.phone || null,
-        whatsapp: data.whatsapp || null,
-        address: data.address || null,
-        city: data.city || null,
-        zipCode: data.zipCode || null,
-        country: data.country || "IT",
+        address: selectedAddress || null,
+        city: selectedCity || null,
+        zipCode: selectedZipCode || null,
+        country: "IT",
         vatNumber: data.vatNumber || null,
         fiscalCode: data.fiscalCode || null,
         deliveryDays: data.deliveryDays ? parseInt(data.deliveryDays) : null,
@@ -143,11 +147,17 @@ export default function ResellerSuppliers() {
     setIsDialogOpen(false);
     setEditingSupplier(null);
     setFormData(initialFormData);
+    setSelectedAddress("");
+    setSelectedCity("");
+    setSelectedZipCode("");
   };
 
   const handleOpenCreate = () => {
     setEditingSupplier(null);
     setFormData(initialFormData);
+    setSelectedAddress("");
+    setSelectedCity("");
+    setSelectedZipCode("");
     setIsDialogOpen(true);
   };
 
@@ -157,11 +167,6 @@ export default function ResellerSuppliers() {
       name: supplier.name,
       email: supplier.email || "",
       phone: supplier.phone || "",
-      whatsapp: supplier.whatsapp || "",
-      address: supplier.address || "",
-      city: supplier.city || "",
-      zipCode: supplier.zipCode || "",
-      country: supplier.country || "IT",
       vatNumber: supplier.vatNumber || "",
       fiscalCode: supplier.fiscalCode || "",
       deliveryDays: supplier.deliveryDays?.toString() || "3",
@@ -371,7 +376,7 @@ export default function ResellerSuppliers() {
                 data-testid="input-supplier-email"
               />
             </div>
-            <div className="space-y-2">
+            <div className="col-span-2 space-y-2">
               <Label htmlFor="phone">Telefono</Label>
               <Input
                 id="phone"
@@ -381,23 +386,19 @@ export default function ResellerSuppliers() {
                 data-testid="input-supplier-phone"
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="whatsapp">WhatsApp</Label>
-              <Input
-                id="whatsapp"
-                value={formData.whatsapp}
-                onChange={(e) => setFormData({ ...formData, whatsapp: e.target.value })}
-                placeholder="+39 123 456 7890"
-                data-testid="input-supplier-whatsapp"
-              />
-            </div>
             <div className="col-span-2 space-y-2">
               <Label htmlFor="address">Indirizzo</Label>
-              <Input
+              <AddressAutocomplete
                 id="address"
-                value={formData.address}
-                onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                placeholder="Via Roma 123"
+                name="address"
+                value={selectedAddress}
+                onChange={setSelectedAddress}
+                onAddressSelect={(result) => {
+                  setSelectedAddress(result.address);
+                  setSelectedCity(result.city);
+                  setSelectedZipCode(result.postalCode);
+                }}
+                placeholder="Inizia a digitare l'indirizzo..."
                 data-testid="input-supplier-address"
               />
             </div>
@@ -405,8 +406,8 @@ export default function ResellerSuppliers() {
               <Label htmlFor="city">Città</Label>
               <Input
                 id="city"
-                value={formData.city}
-                onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                value={selectedCity}
+                onChange={(e) => setSelectedCity(e.target.value)}
                 placeholder="Milano"
                 data-testid="input-supplier-city"
               />
@@ -415,8 +416,8 @@ export default function ResellerSuppliers() {
               <Label htmlFor="zipCode">CAP</Label>
               <Input
                 id="zipCode"
-                value={formData.zipCode}
-                onChange={(e) => setFormData({ ...formData, zipCode: e.target.value })}
+                value={selectedZipCode}
+                onChange={(e) => setSelectedZipCode(e.target.value)}
                 placeholder="20100"
                 data-testid="input-supplier-zipcode"
               />
