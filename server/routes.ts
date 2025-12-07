@@ -107,6 +107,34 @@ function requireRole(...roles: string[]) {
   };
 }
 
+// Middleware to check module-level permissions for reseller_staff users
+// For reseller/admin/repair_center users, always allows access (full permissions)
+// For reseller_staff users, checks granular permissions in the database
+function requireModulePermission(module: string, action: 'read' | 'create' | 'update' | 'delete') {
+  return async (req: Request, res: Response, next: Function) => {
+    if (!req.isAuthenticated() || !req.user) {
+      return res.status(401).send("Non autorizzato");
+    }
+    
+    // Reseller, Admin, and Repair Center users have full access
+    if (['admin', 'reseller', 'repair_center'].includes(req.user.role)) {
+      return next();
+    }
+    
+    // For reseller_staff, check module permissions
+    if (req.user.role === 'reseller_staff') {
+      const hasPermission = await storage.checkStaffPermission(req.user.id, module, action);
+      if (!hasPermission) {
+        return res.status(403).send("Non hai i permessi per questa operazione");
+      }
+      return next();
+    }
+    
+    // Other roles don't have access to reseller routes
+    return res.status(403).send("Accesso negato");
+  };
+}
+
 // Helper to check if a reseller can manage a repair order
 // Returns true if the reseller owns the order directly OR owns the customer
 async function canResellerManageOrder(resellerId: string, order: any): Promise<boolean> {
