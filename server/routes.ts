@@ -2506,11 +2506,11 @@ export function registerRoutes(app: Express): Server {
         
         for (const stock of initialStock) {
           if (stock.repairCenterId && stock.quantity > 0 && resellerCenterIds.has(stock.repairCenterId)) {
-            await storage.updateInventoryStock({
+            await storage.createInventoryMovement({
               productId: product.id,
               repairCenterId: stock.repairCenterId,
               quantity: stock.quantity,
-              movementType: "adjustment",
+              movementType: "in",
               notes: "Quantità iniziale alla creazione del prodotto",
               createdBy: req.user.id,
             });
