@@ -2052,6 +2052,205 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // ========== RESELLER INVENTORY MANAGEMENT ==========
+  
+  // Reseller Products - Get all own products with stock in own centers
+  app.get("/api/reseller/products/with-stock", requireRole("reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const productsWithStock = await storage.getResellerProductsWithStock(req.user.id);
+      res.json(productsWithStock);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // Reseller Products - Get stock for a specific product in own centers
+  app.get("/api/reseller/products/:id/stock", requireRole("reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      // Verify product belongs to reseller
+      const product = await storage.getProduct(req.params.id);
+      if (!product) {
+        return res.status(404).send("Prodotto non trovato");
+      }
+      if (product.createdBy !== req.user.id) {
+        return res.status(403).send("Non puoi visualizzare lo stock di prodotti che non hai creato");
+      }
+      
+      const stockByCenter = await storage.getResellerProductStockByCenter(req.params.id, req.user.id);
+      res.json(stockByCenter);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // Reseller Products - Update stock for a product in a specific repair center
+  app.post("/api/reseller/products/:id/stock", requireRole("reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      // Verify product belongs to reseller
+      const product = await storage.getProduct(req.params.id);
+      if (!product) {
+        return res.status(404).send("Prodotto non trovato");
+      }
+      if (product.createdBy !== req.user.id) {
+        return res.status(403).send("Non puoi modificare lo stock di prodotti che non hai creato");
+      }
+      
+      const { repairCenterId, quantity, notes } = req.body;
+      
+      if (!repairCenterId) {
+        return res.status(400).send("repairCenterId è richiesto");
+      }
+      
+      if (typeof quantity !== 'number') {
+        return res.status(400).send("quantity deve essere un numero");
+      }
+      
+      // Verify repair center belongs to reseller
+      const repairCenter = await storage.getRepairCenter(repairCenterId);
+      if (!repairCenter) {
+        return res.status(404).send("Centro di riparazione non trovato");
+      }
+      if (repairCenter.resellerId !== req.user.id) {
+        return res.status(403).send("Non puoi modificare lo stock in centri che non ti appartengono");
+      }
+      
+      // Get current stock
+      const currentStock = await storage.getInventoryStock(req.params.id, repairCenterId);
+      const currentQuantity = currentStock?.quantity || 0;
+      const difference = quantity - currentQuantity;
+      
+      if (difference === 0) {
+        return res.json({ message: "Nessuna variazione nella quantità" });
+      }
+      
+      // Create inventory movement for the difference
+      const movement = await storage.createInventoryMovement({
+        productId: req.params.id,
+        repairCenterId,
+        movementType: difference > 0 ? 'in' : 'out',
+        quantity: Math.abs(difference),
+        notes: notes || `Rettifica manuale reseller: da ${currentQuantity} a ${quantity}`,
+        createdBy: req.user.id,
+      });
+      
+      // Get updated stock for all centers
+      const updatedStock = await storage.getResellerProductStockByCenter(req.params.id, req.user.id);
+      setActivityEntity(res, { type: 'inventory', id: movement.id });
+      
+      res.json(updatedStock);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // Reseller Inventory - Create movement for own products in own centers
+  app.post("/api/reseller/inventory/movements", requireRole("reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const { productId, repairCenterId, movementType, quantity, notes } = req.body;
+      
+      if (!productId || !repairCenterId || !movementType || typeof quantity !== 'number') {
+        return res.status(400).send("productId, repairCenterId, movementType e quantity sono richiesti");
+      }
+      
+      // Verify product belongs to reseller
+      const product = await storage.getProduct(productId);
+      if (!product) {
+        return res.status(404).send("Prodotto non trovato");
+      }
+      if (product.createdBy !== req.user.id) {
+        return res.status(403).send("Non puoi creare movimenti per prodotti che non hai creato");
+      }
+      
+      // Verify repair center belongs to reseller
+      const repairCenter = await storage.getRepairCenter(repairCenterId);
+      if (!repairCenter) {
+        return res.status(404).send("Centro di riparazione non trovato");
+      }
+      if (repairCenter.resellerId !== req.user.id) {
+        return res.status(403).send("Non puoi creare movimenti in centri che non ti appartengono");
+      }
+      
+      // Validate movement type
+      if (!['in', 'out', 'adjustment'].includes(movementType)) {
+        return res.status(400).send("movementType deve essere 'in', 'out' o 'adjustment'");
+      }
+      
+      const movement = await storage.createInventoryMovement({
+        productId,
+        repairCenterId,
+        movementType,
+        quantity,
+        notes: notes || '',
+        createdBy: req.user.id,
+      });
+      
+      setActivityEntity(res, { type: 'inventory_movement', id: movement.id });
+      res.status(201).json(movement);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // Reseller Inventory - Get inventory movements for own products
+  app.get("/api/reseller/inventory/movements", requireRole("reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      // Get reseller's repair centers
+      const allCenters = await storage.listRepairCenters();
+      const resellerCenters = allCenters.filter(c => c.resellerId === req.user!.id);
+      
+      if (resellerCenters.length === 0) {
+        return res.json([]);
+      }
+      
+      const centerIds = resellerCenters.map(c => c.id);
+      
+      // Get reseller's own products
+      const allProducts = await storage.listProducts();
+      const resellerProducts = allProducts.filter(p => p.createdBy === req.user!.id);
+      const productIds = resellerProducts.map(p => p.id);
+      
+      // Get all movements and filter by reseller's products and centers
+      const filters: { repairCenterId?: string; productId?: string } = {};
+      if (req.query.repairCenterId && typeof req.query.repairCenterId === 'string') {
+        if (centerIds.includes(req.query.repairCenterId)) {
+          filters.repairCenterId = req.query.repairCenterId;
+        } else {
+          return res.json([]); // Not authorized for this center
+        }
+      }
+      if (req.query.productId && typeof req.query.productId === 'string') {
+        if (productIds.includes(req.query.productId)) {
+          filters.productId = req.query.productId;
+        } else {
+          return res.json([]); // Not authorized for this product
+        }
+      }
+      
+      const movements = await storage.listInventoryMovements(filters);
+      
+      // Filter movements to only include reseller's products in reseller's centers
+      const filteredMovements = movements.filter(m => 
+        productIds.includes(m.productId) && centerIds.includes(m.repairCenterId)
+      );
+      
+      res.json(filteredMovements);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // ========== END RESELLER INVENTORY MANAGEMENT ==========
+
   // Reseller Repair Centers - list repair centers associated with this reseller
   app.get("/api/reseller/repair-centers", requireRole("reseller"), async (req, res) => {
     try {
