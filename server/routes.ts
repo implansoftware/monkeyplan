@@ -4229,20 +4229,8 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  // Get single product by ID (all roles can view)
-  app.get("/api/products/:id", requireAuth, async (req, res) => {
-    try {
-      const product = await storage.getProduct(req.params.id);
-      if (!product) {
-        return res.status(404).send("Product not found");
-      }
-      res.json(product);
-    } catch (error: any) {
-      res.status(500).send(error.message);
-    }
-  });
-  
   // Get products with stock by repair center (admin only)
+  // NOTE: This route MUST be defined BEFORE /api/products/:id to avoid "with-stock" being interpreted as an ID
   app.get("/api/products/with-stock", requireAuth, async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
@@ -4254,6 +4242,19 @@ export function registerRoutes(app: Express): Server {
       
       const productsWithStock = await storage.getAllProductsWithStock();
       res.json(productsWithStock);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // Get single product by ID (all roles can view)
+  app.get("/api/products/:id", requireAuth, async (req, res) => {
+    try {
+      const product = await storage.getProduct(req.params.id);
+      if (!product) {
+        return res.status(404).send("Product not found");
+      }
+      res.json(product);
     } catch (error: any) {
       res.status(500).send(error.message);
     }
