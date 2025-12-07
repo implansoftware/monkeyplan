@@ -1942,47 +1942,131 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  // Reseller Suppliers - view suppliers used by associated repair centers
+  // Reseller Suppliers - view global suppliers (admin) + own suppliers
   app.get("/api/reseller/suppliers", requireRole("reseller"), async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
-      // Get repair centers associated with this reseller
-      const allCenters = await storage.listRepairCenters();
-      const resellerCenterIds = allCenters
-        .filter(c => c.resellerId === req.user!.id)
-        .map(c => c.id);
+      // Get all active suppliers
+      const allSuppliers = await storage.listSuppliers(true); // Only active
       
-      if (resellerCenterIds.length === 0) {
-        return res.json([]);
-      }
-      
-      // Get all supplier orders for these centers to find which suppliers they use
-      const allSupplierOrders = await storage.listSupplierOrders();
-      const supplierIdsUsed = new Set(
-        allSupplierOrders
-          .filter(o => resellerCenterIds.includes(o.repairCenterId))
-          .map(o => o.supplierId)
+      // Filter: global suppliers (createdBy = null) OR reseller's own (createdBy = resellerId)
+      const visibleSuppliers = allSuppliers.filter(s => 
+        s.createdBy === null || s.createdBy === req.user!.id
       );
       
-      // Get all suppliers and filter to those used by reseller centers
-      const allSuppliers = await storage.listSuppliers(true); // Only active
-      const resellerSuppliers = allSuppliers
-        .filter(s => supplierIdsUsed.has(s.id))
-        .map(s => ({
-          id: s.id,
-          code: s.code,
-          name: s.name,
-          email: s.email,
-          phone: s.phone,
-          city: s.city,
-          deliveryDays: s.deliveryDays,
-          isActive: s.isActive,
-        }));
+      // Map with ownership indicator
+      const result = visibleSuppliers.map(s => ({
+        id: s.id,
+        code: s.code,
+        name: s.name,
+        email: s.email,
+        phone: s.phone,
+        whatsapp: s.whatsapp,
+        website: s.website,
+        address: s.address,
+        city: s.city,
+        zipCode: s.zipCode,
+        country: s.country,
+        vatNumber: s.vatNumber,
+        fiscalCode: s.fiscalCode,
+        communicationChannel: s.communicationChannel,
+        deliveryDays: s.deliveryDays,
+        minOrderAmount: s.minOrderAmount,
+        shippingCost: s.shippingCost,
+        freeShippingThreshold: s.freeShippingThreshold,
+        paymentTerms: s.paymentTerms,
+        isActive: s.isActive,
+        createdBy: s.createdBy,
+        isGlobal: s.createdBy === null, // Flag to indicate admin-created global supplier
+        isOwn: s.createdBy === req.user!.id, // Flag to indicate reseller-owned supplier
+        createdAt: s.createdAt,
+      }));
       
-      res.json(resellerSuppliers);
+      res.json(result);
     } catch (error: any) {
       res.status(500).send(error.message);
+    }
+  });
+
+  // Reseller Suppliers - create own supplier
+  app.post("/api/reseller/suppliers", requireRole("reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const validated = insertSupplierSchema.parse({
+        ...req.body,
+        createdBy: req.user.id, // Set ownership to reseller
+      });
+      
+      // Generate unique code for reseller supplier (prefix with R-)
+      const allSuppliers = await storage.listSuppliers();
+      const resellerSupplierCount = allSuppliers.filter(s => s.createdBy === req.user!.id).length;
+      const code = `R-${req.user.id.substring(0, 4).toUpperCase()}-${String(resellerSupplierCount + 1).padStart(3, '0')}`;
+      
+      // Check for duplicate code
+      const existing = await storage.getSupplierByCode(code);
+      if (existing) {
+        return res.status(400).send("Codice fornitore già esistente");
+      }
+      
+      const supplier = await storage.createSupplier({ ...validated, code });
+      setActivityEntity(res, { type: 'suppliers', id: supplier.id });
+      res.status(201).json(supplier);
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+
+  // Reseller Suppliers - update own supplier
+  app.patch("/api/reseller/suppliers/:id", requireRole("reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const existing = await storage.getSupplier(req.params.id);
+      if (!existing) {
+        return res.status(404).send("Fornitore non trovato");
+      }
+      
+      // Only allow editing own suppliers (not global or others' suppliers)
+      if (existing.createdBy === null) {
+        return res.status(403).send("I fornitori globali non possono essere modificati");
+      }
+      if (existing.createdBy !== req.user.id) {
+        return res.status(403).send("Non autorizzato a modificare questo fornitore");
+      }
+      
+      const supplier = await storage.updateSupplier(req.params.id, req.body);
+      setActivityEntity(res, { type: 'suppliers', id: supplier.id });
+      res.json(supplier);
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+
+  // Reseller Suppliers - delete own supplier
+  app.delete("/api/reseller/suppliers/:id", requireRole("reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const existing = await storage.getSupplier(req.params.id);
+      if (!existing) {
+        return res.status(404).send("Fornitore non trovato");
+      }
+      
+      // Only allow deleting own suppliers (not global or others' suppliers)
+      if (existing.createdBy === null) {
+        return res.status(403).send("I fornitori globali non possono essere eliminati");
+      }
+      if (existing.createdBy !== req.user.id) {
+        return res.status(403).send("Non autorizzato a eliminare questo fornitore");
+      }
+      
+      await storage.deleteSupplier(req.params.id);
+      setActivityEntity(res, { type: 'suppliers', id: req.params.id });
+      res.status(204).send();
+    } catch (error: any) {
+      res.status(400).send(error.message);
     }
   });
 
