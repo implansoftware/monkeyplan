@@ -27,6 +27,7 @@ import {
   Coins,
   PieChart,
   CalendarCheck,
+  Smartphone,
 } from "lucide-react";
 import {
   Sidebar,
@@ -105,6 +106,7 @@ const menuItems = {
     { title: "Compensi", url: "/reseller/utility/commissions", icon: Coins, group: "Utility" },
     { title: "Report Utility", url: "/reseller/utility/reports", icon: PieChart, group: "Utility" },
     { title: "Ticket", url: "/reseller/tickets", icon: Ticket, group: "Assistenza" },
+    { title: "Catalogo Dispositivi", url: "/reseller/device-catalog", icon: Smartphone, group: "Impostazioni" },
   ],
   repair_center: [
     { title: "Dashboard", url: "/repair-center", icon: LayoutDashboard, group: "Principale" },
