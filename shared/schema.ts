@@ -910,6 +910,9 @@ export const suppliers = pgTable("suppliers", {
   code: text("code").notNull().unique(), // Codice fornitore interno (es: "FORN001")
   name: text("name").notNull(), // Ragione sociale
   
+  // Ownership: null = admin/global, userId = reseller-owned
+  createdBy: varchar("created_by").references(() => users.id),
+  
   // Contatti
   email: text("email"),
   phone: text("phone"),
