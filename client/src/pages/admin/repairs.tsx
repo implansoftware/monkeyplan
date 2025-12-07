@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { RepairOrder } from "@shared/schema";
+import { RepairOrder, RepairCenter } from "@shared/schema";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Search, Wrench, Download, CalendarIcon, Plus, Stethoscope, Receipt, ClipboardCheck, Package, Play, TestTube, Truck, Eye, Clock, AlertTriangle, AlertCircle, LayoutGrid, TableIcon } from "lucide-react";
+import { Search, Wrench, Download, CalendarIcon, Plus, Stethoscope, Receipt, ClipboardCheck, Package, Play, TestTube, Truck, Eye, Clock, AlertTriangle, AlertCircle, LayoutGrid, TableIcon, Building } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -33,6 +33,7 @@ export default function AdminRepairs() {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [slaFilter, setSlaFilter] = useState<string>("all");
+  const [repairCenterFilter, setRepairCenterFilter] = useState<string>("all");
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
   const [isExporting, setIsExporting] = useState(false);
   const [selectedRepairId, setSelectedRepairId] = useState<string | null>(null);
@@ -40,6 +41,10 @@ export default function AdminRepairs() {
   const [wizardOpen, setWizardOpen] = useState(false);
   const [viewMode, setViewMode] = useState<"table" | "kanban">("table");
   const { toast } = useToast();
+
+  const { data: repairCenters = [] } = useQuery<RepairCenter[]>({
+    queryKey: ["/api/repair-centers"],
+  });
 
   const { data: repairs = [], isLoading } = useQuery<RepairOrderWithSLA[]>({
     queryKey: ["/api/repair-orders", { slaSeverity: slaFilter }],
@@ -106,7 +111,18 @@ export default function AdminRepairs() {
     const matchesSearch = repair.orderNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
       repair.deviceModel.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesStatus = statusFilter === "all" || repair.status === statusFilter;
-    return matchesSearch && matchesStatus;
+    const matchesRepairCenter = repairCenterFilter === "all" || repair.repairCenterId === repairCenterFilter;
+    
+    let matchesDate = true;
+    if (dateRange?.from) {
+      const repairDate = new Date(repair.createdAt);
+      matchesDate = repairDate >= dateRange.from;
+      if (dateRange.to) {
+        matchesDate = matchesDate && repairDate <= dateRange.to;
+      }
+    }
+    
+    return matchesSearch && matchesStatus && matchesRepairCenter && matchesDate;
   });
 
   const getStatusBadge = (status: string) => {
@@ -290,6 +306,27 @@ export default function AdminRepairs() {
                     Urgente
                   </span>
                 </SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={repairCenterFilter} onValueChange={setRepairCenterFilter}>
+              <SelectTrigger className="w-full sm:w-52" data-testid="select-filter-repair-center">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">
+                  <span className="flex items-center gap-2">
+                    <Building className="h-3 w-3" />
+                    Tutti i centri
+                  </span>
+                </SelectItem>
+                {repairCenters.map((center) => (
+                  <SelectItem key={center.id} value={center.id}>
+                    <span className="flex items-center gap-2">
+                      <Building className="h-3 w-3" />
+                      {center.name}
+                    </span>
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
             <Popover>
