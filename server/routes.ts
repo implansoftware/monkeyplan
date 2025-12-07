@@ -2148,6 +2148,238 @@ export function registerRoutes(app: Express): Server {
   // End of Reseller Staff Team Management
   // ============================================================================
 
+  // ============================================================================
+  // Reseller Custom Device Brands & Models Management
+  // ============================================================================
+
+  // List all custom brands for the reseller (includes global brands too for dropdown)
+  app.get("/api/reseller/device-brands", requireRole("reseller", "reseller_staff"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Non autorizzato");
+      
+      const resellerId = req.user.role === 'reseller' ? req.user.id : req.user.resellerId;
+      if (!resellerId) return res.status(400).send("Rivenditore non trovato");
+      
+      const includeGlobal = req.query.includeGlobal === 'true';
+      const activeOnly = req.query.activeOnly === 'true';
+      
+      // Get reseller custom brands
+      const customBrands = await storage.listResellerDeviceBrands(resellerId, activeOnly);
+      
+      if (includeGlobal) {
+        // Also get global brands and merge
+        const globalBrands = await storage.listDeviceBrands(activeOnly);
+        const mergedBrands = [
+          ...globalBrands.map(b => ({ ...b, isGlobal: true, isCustom: false })),
+          ...customBrands.map(b => ({ ...b, isGlobal: false, isCustom: true }))
+        ];
+        return res.json(mergedBrands);
+      }
+      
+      res.json(customBrands.map(b => ({ ...b, isGlobal: false, isCustom: true })));
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // Create a custom brand for the reseller
+  app.post("/api/reseller/device-brands", requireRole("reseller", "reseller_staff"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Non autorizzato");
+      
+      const resellerId = req.user.role === 'reseller' ? req.user.id : req.user.resellerId;
+      if (!resellerId) return res.status(400).send("Rivenditore non trovato");
+      
+      const { name, logoUrl } = req.body;
+      if (!name) return res.status(400).send("Nome brand obbligatorio");
+      
+      const brand = await storage.createResellerDeviceBrand({
+        resellerId,
+        name,
+        logoUrl: logoUrl || null,
+        isActive: true
+      });
+      
+      setActivityEntity(res, { type: 'reseller_device_brand', id: brand.id });
+      res.status(201).json({ ...brand, isGlobal: false, isCustom: true });
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+
+  // Update a custom brand
+  app.patch("/api/reseller/device-brands/:id", requireRole("reseller", "reseller_staff"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Non autorizzato");
+      
+      const resellerId = req.user.role === 'reseller' ? req.user.id : req.user.resellerId;
+      if (!resellerId) return res.status(400).send("Rivenditore non trovato");
+      
+      const brandId = req.params.id;
+      const existing = await storage.getResellerDeviceBrand(brandId);
+      
+      if (!existing || existing.resellerId !== resellerId) {
+        return res.status(404).send("Brand non trovato");
+      }
+      
+      const { name, logoUrl, isActive } = req.body;
+      const updated = await storage.updateResellerDeviceBrand(brandId, {
+        ...(name !== undefined && { name }),
+        ...(logoUrl !== undefined && { logoUrl }),
+        ...(isActive !== undefined && { isActive })
+      });
+      
+      setActivityEntity(res, { type: 'reseller_device_brand', id: brandId });
+      res.json({ ...updated, isGlobal: false, isCustom: true });
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+
+  // Delete a custom brand
+  app.delete("/api/reseller/device-brands/:id", requireRole("reseller", "reseller_staff"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Non autorizzato");
+      
+      const resellerId = req.user.role === 'reseller' ? req.user.id : req.user.resellerId;
+      if (!resellerId) return res.status(400).send("Rivenditore non trovato");
+      
+      const brandId = req.params.id;
+      const existing = await storage.getResellerDeviceBrand(brandId);
+      
+      if (!existing || existing.resellerId !== resellerId) {
+        return res.status(404).send("Brand non trovato");
+      }
+      
+      await storage.deleteResellerDeviceBrand(brandId);
+      setActivityEntity(res, { type: 'reseller_device_brand', id: brandId });
+      res.status(204).send();
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+
+  // List all custom models for the reseller (includes global models too for dropdown)
+  app.get("/api/reseller/device-models", requireRole("reseller", "reseller_staff"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Non autorizzato");
+      
+      const resellerId = req.user.role === 'reseller' ? req.user.id : req.user.resellerId;
+      if (!resellerId) return res.status(400).send("Rivenditore non trovato");
+      
+      const includeGlobal = req.query.includeGlobal === 'true';
+      const activeOnly = req.query.activeOnly === 'true';
+      const brandId = req.query.brandId as string | undefined;
+      const typeId = req.query.typeId as string | undefined;
+      
+      // Get reseller custom models
+      const customModels = await storage.listResellerDeviceModels(resellerId, brandId, typeId, activeOnly);
+      
+      if (includeGlobal) {
+        // Also get global models and merge
+        const globalModels = await storage.listDeviceModels({ brandId, typeId, activeOnly });
+        const mergedModels = [
+          ...globalModels.map(m => ({ ...m, isGlobal: true, isCustom: false })),
+          ...customModels.map(m => ({ ...m, isGlobal: false, isCustom: true }))
+        ];
+        return res.json(mergedModels);
+      }
+      
+      res.json(customModels.map(m => ({ ...m, isGlobal: false, isCustom: true })));
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // Create a custom model for the reseller
+  app.post("/api/reseller/device-models", requireRole("reseller", "reseller_staff"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Non autorizzato");
+      
+      const resellerId = req.user.role === 'reseller' ? req.user.id : req.user.resellerId;
+      if (!resellerId) return res.status(400).send("Rivenditore non trovato");
+      
+      const { modelName, brandId, resellerBrandId, brandName, typeId, photoUrl } = req.body;
+      if (!modelName) return res.status(400).send("Nome modello obbligatorio");
+      
+      const model = await storage.createResellerDeviceModel({
+        resellerId,
+        modelName,
+        brandId: brandId || null,
+        resellerBrandId: resellerBrandId || null,
+        brandName: brandName || null,
+        typeId: typeId || null,
+        photoUrl: photoUrl || null,
+        isActive: true
+      });
+      
+      setActivityEntity(res, { type: 'reseller_device_model', id: model.id });
+      res.status(201).json({ ...model, isGlobal: false, isCustom: true });
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+
+  // Update a custom model
+  app.patch("/api/reseller/device-models/:id", requireRole("reseller", "reseller_staff"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Non autorizzato");
+      
+      const resellerId = req.user.role === 'reseller' ? req.user.id : req.user.resellerId;
+      if (!resellerId) return res.status(400).send("Rivenditore non trovato");
+      
+      const modelId = req.params.id;
+      const existing = await storage.getResellerDeviceModel(modelId);
+      
+      if (!existing || existing.resellerId !== resellerId) {
+        return res.status(404).send("Modello non trovato");
+      }
+      
+      const { modelName, brandId, resellerBrandId, brandName, typeId, photoUrl, isActive } = req.body;
+      const updated = await storage.updateResellerDeviceModel(modelId, {
+        ...(modelName !== undefined && { modelName }),
+        ...(brandId !== undefined && { brandId }),
+        ...(resellerBrandId !== undefined && { resellerBrandId }),
+        ...(brandName !== undefined && { brandName }),
+        ...(typeId !== undefined && { typeId }),
+        ...(photoUrl !== undefined && { photoUrl }),
+        ...(isActive !== undefined && { isActive })
+      });
+      
+      setActivityEntity(res, { type: 'reseller_device_model', id: modelId });
+      res.json({ ...updated, isGlobal: false, isCustom: true });
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+
+  // Delete a custom model
+  app.delete("/api/reseller/device-models/:id", requireRole("reseller", "reseller_staff"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Non autorizzato");
+      
+      const resellerId = req.user.role === 'reseller' ? req.user.id : req.user.resellerId;
+      if (!resellerId) return res.status(400).send("Rivenditore non trovato");
+      
+      const modelId = req.params.id;
+      const existing = await storage.getResellerDeviceModel(modelId);
+      
+      if (!existing || existing.resellerId !== resellerId) {
+        return res.status(404).send("Modello non trovato");
+      }
+      
+      await storage.deleteResellerDeviceModel(modelId);
+      setActivityEntity(res, { type: 'reseller_device_model', id: modelId });
+      res.status(204).send();
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+
+  // ============================================================================
+  // End of Reseller Custom Device Brands & Models Management
+  // ============================================================================
+
   // Reseller Inventory - view inventory of associated repair centers (enriched with product and center details)
   app.get("/api/reseller/inventory", requireRole("reseller"), async (req, res) => {
     try {
