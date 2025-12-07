@@ -81,6 +81,12 @@ export const appointmentStatusEnum = pgEnum("appointment_status", [
   "no_show",           // Cliente non presentato
 ]);
 
+// Appointment Type Enum - Tipo appuntamento
+export const appointmentTypeEnum = pgEnum("appointment_type", [
+  "acceptance",        // Accettazione dispositivo (consegna per riparazione)
+  "delivery",          // Ritiro dispositivo riparato
+]);
+
 export const dataRecoveryEventTypeEnum = pgEnum("data_recovery_event_type", [
   "created",           // Job creato
   "assigned",          // Assegnato
@@ -777,10 +783,11 @@ export const repairCenterBlackouts = pgTable("repair_center_blackouts", {
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
-// Delivery Appointments (Appuntamenti per consegna dispositivi)
+// Delivery Appointments (Appuntamenti per consegna/accettazione dispositivi)
 export const deliveryAppointments = pgTable("delivery_appointments", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  repairOrderId: varchar("repair_order_id").notNull().references(() => repairOrders.id),
+  type: appointmentTypeEnum("type").notNull().default("delivery"), // Tipo: accettazione o ritiro
+  repairOrderId: varchar("repair_order_id").references(() => repairOrders.id), // Opzionale per accettazione
   repairCenterId: varchar("repair_center_id").notNull().references(() => repairCenters.id),
   resellerId: varchar("reseller_id").references(() => users.id), // Chi ha prenotato (reseller)
   customerId: varchar("customer_id").references(() => users.id), // Cliente finale
@@ -789,6 +796,16 @@ export const deliveryAppointments = pgTable("delivery_appointments", {
   endTime: text("end_time").notNull(), // "10:30" formato HH:mm
   status: appointmentStatusEnum("status").notNull().default("scheduled"),
   notes: text("notes"), // Note aggiuntive
+  
+  // Campi per appuntamenti di accettazione (pre-popolati, ordine creato al completamento)
+  deviceType: text("device_type"), // es: "Smartphone"
+  deviceBrand: text("device_brand"), // es: "Apple"
+  deviceModel: text("device_model"), // es: "iPhone 14 Pro"
+  issueDescription: text("issue_description"), // Problema dichiarato
+  customerName: text("customer_name"), // Nome cliente (se non registrato)
+  customerPhone: text("customer_phone"), // Telefono cliente
+  customerEmail: text("customer_email"), // Email cliente
+  
   confirmedBy: varchar("confirmed_by"), // ID utente che ha confermato
   confirmedAt: timestamp("confirmed_at"), // Data conferma
   cancelledBy: varchar("cancelled_by"), // ID utente che ha annullato
@@ -3052,6 +3069,9 @@ export type InsertDeliveryAppointment = z.infer<typeof insertDeliveryAppointment
 
 // Appointment Status Type
 export type AppointmentStatus = "scheduled" | "confirmed" | "completed" | "cancelled" | "no_show";
+
+// Appointment Type
+export type AppointmentType = "acceptance" | "delivery";
 
 // SLA State History Types
 export type RepairOrderStateHistory = typeof repairOrderStateHistory.$inferSelect;
