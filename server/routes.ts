@@ -1179,6 +1179,149 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Product Prices (prezzi personalizzati per reseller - gestiti da admin)
+  app.get("/api/admin/product-prices", requireRole("admin"), async (req, res) => {
+    try {
+      const { productId, resellerId } = req.query;
+      const filters: { productId?: string; resellerId?: string } = {};
+      if (productId) filters.productId = productId as string;
+      if (resellerId) filters.resellerId = resellerId as string;
+      
+      const prices = await storage.listProductPrices(filters);
+      res.json(prices);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  app.get("/api/admin/product-prices/:id", requireRole("admin"), async (req, res) => {
+    try {
+      const price = await storage.getProductPrice(req.params.id);
+      if (!price) {
+        return res.status(404).send("Prezzo non trovato");
+      }
+      res.json(price);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  app.post("/api/admin/product-prices", requireRole("admin"), async (req, res) => {
+    try {
+      const { productId, resellerId, priceCents, costPriceCents } = req.body;
+      
+      if (!productId || !resellerId || priceCents === undefined) {
+        return res.status(400).send("productId, resellerId e priceCents sono obbligatori");
+      }
+      
+      // Verifica che il prodotto esista
+      const product = await storage.getProduct(productId);
+      if (!product) {
+        return res.status(404).send("Prodotto non trovato");
+      }
+      
+      // Verifica che il reseller esista
+      const reseller = await storage.getUser(resellerId);
+      if (!reseller || reseller.role !== "reseller") {
+        return res.status(404).send("Rivenditore non trovato");
+      }
+      
+      // Verifica se esiste già un prezzo per questo prodotto/reseller
+      const existingPrice = await storage.getProductPriceForReseller(productId, resellerId);
+      if (existingPrice) {
+        // Aggiorna il prezzo esistente
+        const updated = await storage.updateProductPrice(existingPrice.id, {
+          priceCents,
+          costPriceCents,
+          isActive: true,
+        });
+        return res.json(updated);
+      }
+      
+      // Crea nuovo prezzo
+      const price = await storage.createProductPrice({
+        productId,
+        resellerId,
+        priceCents,
+        costPriceCents,
+      });
+      
+      res.status(201).json(price);
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+
+  app.patch("/api/admin/product-prices/:id", requireRole("admin"), async (req, res) => {
+    try {
+      const { priceCents, costPriceCents, isActive } = req.body;
+      
+      const existingPrice = await storage.getProductPrice(req.params.id);
+      if (!existingPrice) {
+        return res.status(404).send("Prezzo non trovato");
+      }
+      
+      const updates: { priceCents?: number; costPriceCents?: number; isActive?: boolean } = {};
+      if (priceCents !== undefined) updates.priceCents = priceCents;
+      if (costPriceCents !== undefined) updates.costPriceCents = costPriceCents;
+      if (isActive !== undefined) updates.isActive = isActive;
+      
+      const price = await storage.updateProductPrice(req.params.id, updates);
+      res.json(price);
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+
+  app.delete("/api/admin/product-prices/:id", requireRole("admin"), async (req, res) => {
+    try {
+      const existingPrice = await storage.getProductPrice(req.params.id);
+      if (!existingPrice) {
+        return res.status(404).send("Prezzo non trovato");
+      }
+      
+      await storage.deleteProductPrice(req.params.id);
+      res.sendStatus(204);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // Endpoint per ottenere tutti i reseller con i loro prezzi per un prodotto
+  app.get("/api/admin/products/:productId/reseller-prices", requireRole("admin"), async (req, res) => {
+    try {
+      const product = await storage.getProduct(req.params.productId);
+      if (!product) {
+        return res.status(404).send("Prodotto non trovato");
+      }
+      
+      // Ottieni tutti i reseller
+      const allUsers = await storage.listUsers();
+      const resellers = allUsers.filter(u => u.role === "reseller" && u.isActive);
+      
+      // Ottieni prezzi personalizzati per questo prodotto
+      const prices = await storage.listProductPrices({ productId: req.params.productId });
+      const priceMap = new Map(prices.map(p => [p.resellerId, p]));
+      
+      // Combina i dati
+      const result = resellers.map(reseller => ({
+        reseller: {
+          id: reseller.id,
+          username: reseller.username,
+          fullName: reseller.fullName,
+          email: reseller.email,
+        },
+        customPrice: priceMap.get(reseller.id) || null,
+        defaultPrice: product.unitPrice,
+        effectivePrice: priceMap.get(reseller.id)?.priceCents ?? product.unitPrice,
+      }));
+      
+      res.json(result);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
   // Repair Orders (Admin)
   app.get("/api/admin/repairs", requireRole("admin"), async (req, res) => {
     try {
@@ -1785,11 +1928,125 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  // Reseller Products - view all products
+  // Reseller Products - view product catalog with custom prices
   app.get("/api/reseller/products", requireRole("reseller"), async (req, res) => {
     try {
-      const productsList = await storage.listProducts();
-      res.json(productsList);
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      // Ottieni tutti i prodotti (globali admin + propri del reseller)
+      const allProducts = await storage.listProducts();
+      
+      // Filtra: prodotti globali (createdBy null) + prodotti propri
+      const visibleProducts = allProducts.filter(p => 
+        p.createdBy === null || p.createdBy === req.user!.id
+      );
+      
+      // Ottieni prezzi personalizzati per questo reseller
+      const customPrices = await storage.listProductPrices({ resellerId: req.user.id });
+      const priceMap = new Map(customPrices.map(cp => [cp.productId, cp]));
+      
+      // Arricchisci prodotti con prezzi effettivi
+      const enrichedProducts = visibleProducts.map(product => {
+        const customPrice = priceMap.get(product.id);
+        const isOwn = product.createdBy === req.user!.id;
+        
+        return {
+          ...product,
+          isOwn, // true = prodotto creato dal reseller
+          customPrice: customPrice || null,
+          effectivePrice: isOwn ? product.unitPrice : (customPrice?.priceCents ?? product.unitPrice),
+          effectiveCostPrice: isOwn ? product.costPrice : (customPrice?.costPriceCents ?? product.costPrice),
+        };
+      });
+      
+      res.json(enrichedProducts);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // Reseller Products - create own product
+  app.post("/api/reseller/products", requireRole("reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const validationResult = insertProductSchema.safeParse({
+        ...req.body,
+        createdBy: req.user.id, // Imposta il creatore come il reseller corrente
+      });
+      
+      if (!validationResult.success) {
+        return res.status(400).send(validationResult.error.errors.map(e => e.message).join(", "));
+      }
+      
+      const product = await storage.createProduct(validationResult.data);
+      res.status(201).json(product);
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+
+  // Reseller Products - update own product
+  app.patch("/api/reseller/products/:id", requireRole("reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const product = await storage.getProduct(req.params.id);
+      if (!product) {
+        return res.status(404).send("Prodotto non trovato");
+      }
+      
+      // Verifica che il prodotto appartenga al reseller
+      if (product.createdBy !== req.user.id) {
+        return res.status(403).send("Non puoi modificare prodotti che non hai creato");
+      }
+      
+      const { name, description, category, productType, brand, compatibleModels, color, 
+              costPrice, unitPrice, condition, warrantyMonths, supplier, supplierCode, 
+              minStock, location, isActive } = req.body;
+      
+      const updates: any = {};
+      if (name !== undefined) updates.name = name;
+      if (description !== undefined) updates.description = description;
+      if (category !== undefined) updates.category = category;
+      if (productType !== undefined) updates.productType = productType;
+      if (brand !== undefined) updates.brand = brand;
+      if (compatibleModels !== undefined) updates.compatibleModels = compatibleModels;
+      if (color !== undefined) updates.color = color;
+      if (costPrice !== undefined) updates.costPrice = costPrice;
+      if (unitPrice !== undefined) updates.unitPrice = unitPrice;
+      if (condition !== undefined) updates.condition = condition;
+      if (warrantyMonths !== undefined) updates.warrantyMonths = warrantyMonths;
+      if (supplier !== undefined) updates.supplier = supplier;
+      if (supplierCode !== undefined) updates.supplierCode = supplierCode;
+      if (minStock !== undefined) updates.minStock = minStock;
+      if (location !== undefined) updates.location = location;
+      if (isActive !== undefined) updates.isActive = isActive;
+      
+      const updated = await storage.updateProduct(req.params.id, updates);
+      res.json(updated);
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+
+  // Reseller Products - delete own product
+  app.delete("/api/reseller/products/:id", requireRole("reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const product = await storage.getProduct(req.params.id);
+      if (!product) {
+        return res.status(404).send("Prodotto non trovato");
+      }
+      
+      // Verifica che il prodotto appartenga al reseller
+      if (product.createdBy !== req.user.id) {
+        return res.status(403).send("Non puoi eliminare prodotti che non hai creato");
+      }
+      
+      await storage.deleteProduct(req.params.id);
+      res.sendStatus(204);
     } catch (error: any) {
       res.status(500).send(error.message);
     }

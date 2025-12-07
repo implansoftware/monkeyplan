@@ -14,7 +14,7 @@ import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { Plus, Search, Pencil, Trash2, Package, Warehouse, AlertTriangle, X, Building2, Star, StarOff } from "lucide-react";
+import { Plus, Search, Pencil, Trash2, Package, Warehouse, AlertTriangle, X, Building2, Star, StarOff, Users } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -81,6 +81,15 @@ export default function AdminProducts() {
   const [isLoadingSuppliers, setIsLoadingSuppliers] = useState(false);
   const [supplierDialogOpen, setSupplierDialogOpen] = useState(false);
   const [editingProductSupplier, setEditingProductSupplier] = useState<ProductSupplierWithDetails | null>(null);
+  const [resellerPricesDialogOpen, setResellerPricesDialogOpen] = useState(false);
+  const [selectedProductForPricing, setSelectedProductForPricing] = useState<Product | null>(null);
+  const [resellerPrices, setResellerPrices] = useState<Array<{
+    reseller: { id: string; username: string; fullName: string | null; email: string };
+    customPrice: { id: string; priceCents: number; costPriceCents: number | null } | null;
+    defaultPrice: number;
+    effectivePrice: number;
+  }>>([]);
+  const [isLoadingResellerPrices, setIsLoadingResellerPrices] = useState(false);
   const { toast } = useToast();
 
   const { data: productsWithStock = [], isLoading } = useQuery<ProductWithStock[]>({
@@ -155,6 +164,56 @@ export default function AdminProducts() {
       toast({ title: "Prodotto eliminato" });
     },
   });
+
+  const updateResellerPriceMutation = useMutation({
+    mutationFn: async (data: { productId: string; resellerId: string; priceCents: number; costPriceCents?: number }) => {
+      const res = await apiRequest("POST", "/api/admin/product-prices", data);
+      return await res.json();
+    },
+    onSuccess: () => {
+      if (selectedProductForPricing) {
+        loadResellerPrices(selectedProductForPricing.id);
+      }
+      toast({ title: "Prezzo aggiornato con successo" });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Errore", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const deleteResellerPriceMutation = useMutation({
+    mutationFn: async (priceId: string) => {
+      await apiRequest("DELETE", `/api/admin/product-prices/${priceId}`);
+    },
+    onSuccess: () => {
+      if (selectedProductForPricing) {
+        loadResellerPrices(selectedProductForPricing.id);
+      }
+      toast({ title: "Prezzo personalizzato rimosso" });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Errore", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const loadResellerPrices = async (productId: string) => {
+    setIsLoadingResellerPrices(true);
+    try {
+      const res = await apiRequest("GET", `/api/admin/products/${productId}/reseller-prices`);
+      const data = await res.json();
+      setResellerPrices(data);
+    } catch (error) {
+      toast({ title: "Errore nel caricamento prezzi reseller", variant: "destructive" });
+    } finally {
+      setIsLoadingResellerPrices(false);
+    }
+  };
+
+  const openResellerPricesDialog = async (product: Product) => {
+    setSelectedProductForPricing(product);
+    setResellerPricesDialogOpen(true);
+    await loadResellerPrices(product.id);
+  };
 
   const createProductSupplierMutation = useMutation({
     mutationFn: async (data: InsertProductSupplier) => {
@@ -1521,6 +1580,19 @@ export default function AdminProducts() {
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              onClick={() => openResellerPricesDialog(product)}
+                              data-testid={`button-reseller-prices-${product.id}`}
+                            >
+                              <Users className="h-4 w-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>Prezzi Reseller</TooltipContent>
+                        </Tooltip>
                         <Button 
                           variant="ghost" 
                           size="icon" 
@@ -1547,6 +1619,127 @@ export default function AdminProducts() {
           )}
         </CardContent>
       </Card>
+
+      {/* Dialog Prezzi Reseller */}
+      <Dialog open={resellerPricesDialogOpen} onOpenChange={setResellerPricesDialogOpen}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Users className="h-5 w-5" />
+              Prezzi Personalizzati per Reseller
+            </DialogTitle>
+            <DialogDescription>
+              {selectedProductForPricing && (
+                <span>
+                  Gestisci i prezzi personalizzati per <strong>{selectedProductForPricing.name}</strong>
+                  {" "}(Prezzo base: {formatCurrency(selectedProductForPricing.unitPrice)})
+                </span>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <ScrollArea className="max-h-[60vh]">
+            {isLoadingResellerPrices ? (
+              <div className="space-y-2">
+                {[1, 2, 3].map(i => <Skeleton key={i} className="h-16 w-full" />)}
+              </div>
+            ) : resellerPrices.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                Nessun rivenditore trovato
+              </div>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Rivenditore</TableHead>
+                    <TableHead className="text-right">Prezzo Base</TableHead>
+                    <TableHead className="text-right">Prezzo Personalizzato</TableHead>
+                    <TableHead className="text-right">Azioni</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {resellerPrices.map((rp) => (
+                    <TableRow key={rp.reseller.id}>
+                      <TableCell>
+                        <div>
+                          <div className="font-medium">{rp.reseller.fullName || rp.reseller.username}</div>
+                          <div className="text-xs text-muted-foreground">{rp.reseller.email}</div>
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-right font-mono">
+                        {formatCurrency(rp.defaultPrice)}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <form
+                          className="flex items-center gap-2 justify-end"
+                          onSubmit={(e) => {
+                            e.preventDefault();
+                            const formData = new FormData(e.currentTarget);
+                            const priceValue = formData.get(`price-${rp.reseller.id}`) as string;
+                            const priceInCents = Math.round(parseFloat(priceValue) * 100);
+                            
+                            if (!isNaN(priceInCents) && priceInCents > 0 && selectedProductForPricing) {
+                              updateResellerPriceMutation.mutate({
+                                productId: selectedProductForPricing.id,
+                                resellerId: rp.reseller.id,
+                                priceCents: priceInCents,
+                              });
+                            }
+                          }}
+                        >
+                          <div className="flex items-center gap-1">
+                            <span className="text-muted-foreground">€</span>
+                            <Input
+                              type="number"
+                              step="0.01"
+                              min="0"
+                              name={`price-${rp.reseller.id}`}
+                              defaultValue={rp.customPrice ? (rp.customPrice.priceCents / 100).toFixed(2) : ""}
+                              placeholder={(rp.defaultPrice / 100).toFixed(2)}
+                              className="w-24 text-right"
+                              data-testid={`input-price-${rp.reseller.id}`}
+                            />
+                          </div>
+                          <Button 
+                            type="submit" 
+                            size="sm"
+                            disabled={updateResellerPriceMutation.isPending}
+                            data-testid={`button-save-price-${rp.reseller.id}`}
+                          >
+                            Salva
+                          </Button>
+                        </form>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {rp.customPrice && (
+                          <div className="flex items-center gap-2 justify-end">
+                            <Badge variant="secondary" className="text-xs">
+                              Personalizzato
+                            </Badge>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => {
+                                if (confirm("Rimuovere il prezzo personalizzato? Verrà applicato il prezzo base.")) {
+                                  deleteResellerPriceMutation.mutate(rp.customPrice!.id);
+                                }
+                              }}
+                              disabled={deleteResellerPriceMutation.isPending}
+                              data-testid={`button-delete-price-${rp.reseller.id}`}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+          </ScrollArea>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
