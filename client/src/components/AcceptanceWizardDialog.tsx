@@ -193,8 +193,6 @@ export function AcceptanceWizardDialog({
   const [showOtherAccessory, setShowOtherAccessory] = useState(false);
   const [showNewCustomerForm, setShowNewCustomerForm] = useState(false);
   const [acceptancePhotos, setAcceptancePhotos] = useState<Array<{ file: File; preview: string }>>([]);
-  const [hasAppointment, setHasAppointment] = useState(false);
-  const [selectedAppointmentId, setSelectedAppointmentId] = useState<string>("");
   const [isUploadingPhotos, setIsUploadingPhotos] = useState(false);
   const [newCustomerData, setNewCustomerData] = useState({
     customerType: "private" as "private" | "company",
@@ -338,31 +336,6 @@ export function AcceptanceWizardDialog({
     enabled: user?.role === "admin" || user?.role === "repair_center" || user?.role === "reseller",
   });
 
-  const { data: acceptanceAppointments = [] } = useQuery<Array<{
-    id: string;
-    date: string;
-    startTime: string;
-    endTime: string;
-    customerName: string | null;
-    customerPhone: string | null;
-    deviceType: string | null;
-    deviceBrand: string | null;
-    deviceModel: string | null;
-    issueDescription: string | null;
-    repairCenterId: string;
-    status: string;
-  }>>({
-    queryKey: ["/api/acceptance-appointments"],
-    queryFn: async () => {
-      const res = await fetch("/api/acceptance-appointments?status=scheduled", {
-        credentials: "include",
-      });
-      if (!res.ok) throw new Error("Failed to fetch acceptance appointments");
-      return res.json();
-    },
-    enabled: user?.role === "admin" || user?.role === "repair_center" || user?.role === "reseller",
-  });
-
   const form = useForm<AcceptanceWizardData>({
     resolver: zodResolver(acceptanceWizardSchema),
     defaultValues: {
@@ -429,29 +402,13 @@ export function AcceptanceWizardDialog({
         uploadedCount = await uploadPhotosToOrder(data.order.id);
       }
       
-      // If this was created from an appointment, mark the appointment as completed
-      if (selectedAppointmentId) {
-        try {
-          await apiRequest("PATCH", `/api/appointments/${selectedAppointmentId}`, {
-            status: "completed",
-            repairOrderId: data.order.id,
-          });
-          queryClient.invalidateQueries({ queryKey: ["/api/acceptance-appointments"] });
-        } catch (e) {
-          console.error("Failed to update appointment status:", e);
-        }
-      }
-      
       queryClient.invalidateQueries({ queryKey: ["/api/repair-orders"] });
       const photoMessage = uploadedCount > 0 
         ? ` con ${uploadedCount} foto allegate`
         : "";
-      const appointmentMessage = selectedAppointmentId 
-        ? " (da appuntamento)"
-        : "";
       toast({
         title: "Riparazione ingressata",
-        description: `Ordine ${data.order.orderNumber} creato con successo${photoMessage}${appointmentMessage}`,
+        description: `Ordine ${data.order.orderNumber} creato con successo${photoMessage}`,
       });
       handleClose();
       if (onSuccess) onSuccess(data);
@@ -690,8 +647,6 @@ export function AcceptanceWizardDialog({
     setShowOtherDefect(false);
     setSelectedAccessories([]);
     setShowOtherAccessory(false);
-    setHasAppointment(false);
-    setSelectedAppointmentId("");
     // Cleanup photo previews
     acceptancePhotos.forEach(photo => URL.revokeObjectURL(photo.preview));
     setAcceptancePhotos([]);
@@ -773,65 +728,8 @@ export function AcceptanceWizardDialog({
     }
   };
 
-  const handleAppointmentSelect = (appointmentId: string) => {
-    setSelectedAppointmentId(appointmentId);
-    const appointment = acceptanceAppointments.find(a => a.id === appointmentId);
-    if (appointment) {
-      form.setValue("repairCenterId", appointment.repairCenterId);
-      if (appointment.deviceType) {
-        const deviceType = deviceTypes.find(dt => dt.name === appointment.deviceType);
-        if (deviceType) {
-          setSelectedTypeId(deviceType.id);
-          form.setValue("deviceType", deviceType.id);
-        }
-      }
-      if (appointment.issueDescription) {
-        form.setValue("notes", appointment.issueDescription);
-      }
-    }
-  };
-
   const renderDeviceInfoStep = () => (
     <div className="space-y-4">
-      {(user?.role === "admin" || user?.role === "repair_center") && acceptanceAppointments.length > 0 && (
-        <Card className="border-primary/20 bg-primary/5">
-          <CardContent className="pt-4 space-y-3">
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="hasAppointment"
-                checked={hasAppointment}
-                onCheckedChange={(checked) => {
-                  setHasAppointment(!!checked);
-                  if (!checked) {
-                    setSelectedAppointmentId("");
-                  }
-                }}
-                data-testid="checkbox-has-appointment"
-              />
-              <Label htmlFor="hasAppointment" className="text-sm font-medium cursor-pointer">
-                Cliente con appuntamento prenotato
-              </Label>
-            </div>
-            
-            {hasAppointment && (
-              <Select value={selectedAppointmentId} onValueChange={handleAppointmentSelect}>
-                <SelectTrigger data-testid="select-appointment">
-                  <SelectValue placeholder="Seleziona appuntamento" />
-                </SelectTrigger>
-                <SelectContent>
-                  {acceptanceAppointments.map((apt) => (
-                    <SelectItem key={apt.id} value={apt.id}>
-                      {apt.date} {apt.startTime} - {apt.customerName || "Cliente"} 
-                      {apt.deviceType && ` (${apt.deviceType})`}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            )}
-          </CardContent>
-        </Card>
-      )}
-
       {(user?.role === "admin" || user?.role === "repair_center" || user?.role === "reseller") && (
         <>
           {!showNewCustomerForm ? (

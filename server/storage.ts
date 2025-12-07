@@ -256,7 +256,7 @@ export interface IStorage {
   createRepairCenterBlackout(blackout: InsertRepairCenterBlackout): Promise<RepairCenterBlackout>;
   deleteRepairCenterBlackout(id: string): Promise<void>;
   
-  listDeliveryAppointments(filters?: { repairCenterId?: string; resellerId?: string; customerId?: string; repairOrderId?: string; date?: string; status?: string; type?: 'acceptance' | 'delivery' }): Promise<DeliveryAppointment[]>;
+  listDeliveryAppointments(filters?: { repairCenterId?: string; resellerId?: string; customerId?: string; repairOrderId?: string; date?: string; status?: string }): Promise<DeliveryAppointment[]>;
   getDeliveryAppointment(id: string): Promise<DeliveryAppointment | undefined>;
   getDeliveryAppointmentByRepairOrder(repairOrderId: string): Promise<DeliveryAppointment | undefined>;
   createDeliveryAppointment(appointment: InsertDeliveryAppointment): Promise<DeliveryAppointment>;
@@ -2260,7 +2260,7 @@ export class DatabaseStorage implements IStorage {
     await db.delete(repairCenterBlackouts).where(eq(repairCenterBlackouts.id, id));
   }
 
-  async listDeliveryAppointments(filters?: { repairCenterId?: string; resellerId?: string; customerId?: string; repairOrderId?: string; date?: string; status?: string; type?: 'acceptance' | 'delivery' }): Promise<DeliveryAppointment[]> {
+  async listDeliveryAppointments(filters?: { repairCenterId?: string; resellerId?: string; customerId?: string; repairOrderId?: string; date?: string; status?: string }): Promise<DeliveryAppointment[]> {
     let conditions: any[] = [];
     
     if (filters?.repairCenterId) {
@@ -2280,9 +2280,6 @@ export class DatabaseStorage implements IStorage {
     }
     if (filters?.status) {
       conditions.push(eq(deliveryAppointments.status, filters.status as any));
-    }
-    if (filters?.type) {
-      conditions.push(eq(deliveryAppointments.type, filters.type as any));
     }
     
     if (conditions.length === 0) {

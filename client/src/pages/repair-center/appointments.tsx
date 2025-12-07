@@ -33,7 +33,6 @@ import {
 } from "lucide-react";
 import { format, addDays, startOfWeek, isSameDay, startOfToday } from "date-fns";
 import { it } from "date-fns/locale";
-import { AcceptanceAppointmentDialog } from "@/components/AcceptanceAppointmentDialog";
 
 type Appointment = {
   id: string;
@@ -107,7 +106,6 @@ export default function RepairCenterAppointments() {
   const [newBlackout, setNewBlackout] = useState({ date: "", reason: "" });
   const [appointmentDetailOpen, setAppointmentDetailOpen] = useState(false);
   const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
-  const [acceptanceDialogOpen, setAcceptanceDialogOpen] = useState(false);
 
   const { data: appointments, isLoading: loadingAppointments } = useQuery<Appointment[]>({
     queryKey: ["/api/repair-centers", repairCenterId, "appointments"],
@@ -263,16 +261,9 @@ export default function RepairCenterAppointments() {
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Gestione Appuntamenti</h1>
-          <p className="text-muted-foreground">Gestisci gli appuntamenti di accettazione e consegna</p>
+          <h1 className="text-2xl font-bold">Appuntamenti Consegna</h1>
+          <p className="text-muted-foreground">Gestisci gli appuntamenti per il ritiro dei dispositivi</p>
         </div>
-        <Button
-          onClick={() => setAcceptanceDialogOpen(true)}
-          data-testid="button-new-acceptance-appointment"
-        >
-          <Plus className="mr-2 h-4 w-4" />
-          Prenota Accettazione
-        </Button>
       </div>
 
       <Tabs defaultValue="calendar">
@@ -715,15 +706,6 @@ export default function RepairCenterAppointments() {
           )}
         </DialogContent>
       </Dialog>
-
-      <AcceptanceAppointmentDialog
-        open={acceptanceDialogOpen}
-        onOpenChange={setAcceptanceDialogOpen}
-        onSuccess={() => {
-          queryClient.invalidateQueries({ queryKey: ["/api/repair-centers", repairCenterId, "appointments"] });
-          queryClient.invalidateQueries({ queryKey: ["/api/acceptance-appointments"] });
-        }}
-      />
     </div>
   );
 }
