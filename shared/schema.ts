@@ -397,7 +397,28 @@ export const products = pgTable("products", {
   minStock: integer("min_stock").default(5), // Soglia scorta minima per alert
   location: text("location"), // Posizione in magazzino (es. "Scaffale A3")
   
+  // Creatore (null = admin/globale, altrimenti = rivenditore specifico)
+  createdBy: varchar("created_by").references(() => users.id, { onDelete: "cascade" }),
+  
   // Metadata
+  isActive: boolean("is_active").notNull().default(true),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+// Product Prices (Prezzi personalizzati per rivenditori - impostati dall'admin)
+export const productPrices = pgTable("product_prices", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  productId: varchar("product_id").notNull().references(() => products.id, { onDelete: "cascade" }),
+  
+  // Rivenditore a cui si applica il prezzo (impostato dall'admin)
+  resellerId: varchar("reseller_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  
+  // Prezzi personalizzati
+  priceCents: integer("price_cents").notNull(), // Prezzo vendita personalizzato in centesimi
+  costPriceCents: integer("cost_price_cents"), // Prezzo costo personalizzato (opzionale)
+  
+  // Stato
   isActive: boolean("is_active").notNull().default(true),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
@@ -2303,6 +2324,12 @@ export const insertProductSchema = createInsertSchema(products).omit({
   updatedAt: true,
 });
 
+export const insertProductPriceSchema = createInsertSchema(productPrices).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 export const insertInventoryMovementSchema = createInsertSchema(inventoryMovements).omit({
   id: true,
   createdAt: true,
@@ -2906,6 +2933,9 @@ export type InsertRepairCenter = z.infer<typeof insertRepairCenterSchema>;
 
 export type Product = typeof products.$inferSelect;
 export type InsertProduct = z.infer<typeof insertProductSchema>;
+
+export type ProductPrice = typeof productPrices.$inferSelect;
+export type InsertProductPrice = z.infer<typeof insertProductPriceSchema>;
 
 export type InventoryMovement = typeof inventoryMovements.$inferSelect;
 export type InsertInventoryMovement = z.infer<typeof insertInventoryMovementSchema>;
