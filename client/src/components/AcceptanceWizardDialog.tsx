@@ -185,6 +185,7 @@ export function AcceptanceWizardDialog({
   const [selectedTypeId, setSelectedTypeId] = useState<string>("");
   const [selectedBrandId, setSelectedBrandId] = useState<string>("");
   const [customModelInput, setCustomModelInput] = useState<string>("");
+  const [saveForReuse, setSaveForReuse] = useState<boolean>(false);
   const [selectedIssues, setSelectedIssues] = useState<string[]>([]);
   const [showOtherIssue, setShowOtherIssue] = useState(false);
   const [selectedDefects, setSelectedDefects] = useState<string[]>([]);
@@ -289,11 +290,35 @@ export function AcceptanceWizardDialog({
     enabled: !!selectedTypeId,
   });
 
+  const isResellerOrStaff = ["reseller", "reseller_staff"].includes(user?.role as string);
+  
   const { data: allDeviceBrands = [] } = useQuery<Array<{
     id: string;
     name: string;
+    isCustom?: boolean;
   }>>({
-    queryKey: ["/api/device-brands"],
+    queryKey: isResellerOrStaff 
+      ? ["/api/reseller/device-brands", { includeGlobal: true }] 
+      : ["/api/device-brands"],
+    queryFn: async () => {
+      if (isResellerOrStaff) {
+        const res = await fetch("/api/reseller/device-brands?includeGlobal=true");
+        if (!res.ok) throw new Error("Failed to fetch brands");
+        return res.json();
+      } else {
+        const res = await fetch("/api/device-brands");
+        if (!res.ok) throw new Error("Failed to fetch brands");
+        return res.json();
+      }
+    },
+    select: (data: any[]) => {
+      if (!data) return [];
+      return data.map((b: any) => ({
+        id: b.id,
+        name: b.name,
+        isCustom: b.isCustom || false,
+      }));
+    },
   });
 
   const { data: deviceModels = [] } = useQuery<Array<{
@@ -301,13 +326,33 @@ export function AcceptanceWizardDialog({
     modelName: string;
     brandId: string;
     typeId: string;
+    isCustom?: boolean;
   }>>({
-    queryKey: ["/api/device-models", { typeId: selectedTypeId }],
+    queryKey: isResellerOrStaff
+      ? ["/api/reseller/device-models", { typeId: selectedTypeId, includeGlobal: true }]
+      : ["/api/device-models", { typeId: selectedTypeId }],
     queryFn: async () => {
-      const params = new URLSearchParams({ typeId: selectedTypeId });
-      const res = await fetch(`/api/device-models?${params}`);
-      if (!res.ok) throw new Error("Failed to fetch models");
-      return res.json();
+      if (isResellerOrStaff) {
+        const params = new URLSearchParams({ typeId: selectedTypeId, includeGlobal: "true" });
+        const res = await fetch(`/api/reseller/device-models?${params}`);
+        if (!res.ok) throw new Error("Failed to fetch models");
+        return res.json();
+      } else {
+        const params = new URLSearchParams({ typeId: selectedTypeId });
+        const res = await fetch(`/api/device-models?${params}`);
+        if (!res.ok) throw new Error("Failed to fetch models");
+        return res.json();
+      }
+    },
+    select: (data: any[]) => {
+      if (!data) return [];
+      return data.map((m: any) => ({
+        id: m.id,
+        modelName: m.modelName,
+        brandId: m.brandId,
+        typeId: m.typeId,
+        isCustom: m.isCustom || false,
+      }));
     },
     enabled: !!selectedTypeId,
   });
@@ -400,6 +445,37 @@ export function AcceptanceWizardDialog({
       let uploadedCount = 0;
       if (acceptancePhotos.length > 0) {
         uploadedCount = await uploadPhotosToOrder(data.order.id);
+      }
+      
+      // Save custom model for reuse if requested (only for resellers)
+      if (saveForReuse && customModelInput && selectedBrandId && selectedTypeId) {
+        try {
+          // Check if the selected brand is custom (reseller-owned) or global
+          const selectedBrandData = allDeviceBrands.find(b => b.id === selectedBrandId);
+          const isCustomBrand = selectedBrandData?.isCustom || false;
+          
+          // Use brand name from data, or fallback to form value
+          const brandName = selectedBrandData?.name || form.getValues("brand") || null;
+          await apiRequest("POST", "/api/reseller/device-models", {
+            modelName: customModelInput,
+            // Use resellerBrandId for custom brands, brandId for global brands
+            brandId: isCustomBrand ? null : selectedBrandId,
+            resellerBrandId: isCustomBrand ? selectedBrandId : null,
+            brandName: brandName,
+            typeId: selectedTypeId,
+          });
+          // Invalidate all device-models queries to refresh dropdowns
+          // Use partial matching to invalidate all related queries regardless of parameters
+          queryClient.invalidateQueries({ 
+            predicate: (query) => {
+              const key = query.queryKey[0];
+              if (typeof key !== "string") return false;
+              return key.includes("/api/reseller/device-models") || key.includes("/api/reseller/device-brands");
+            }
+          });
+        } catch (err) {
+          console.error("Failed to save custom model:", err);
+        }
       }
       
       queryClient.invalidateQueries({ queryKey: ["/api/repair-orders"] });
@@ -641,6 +717,8 @@ export function AcceptanceWizardDialog({
     setStep("device-info");
     setSelectedTypeId("");
     setSelectedBrandId("");
+    setCustomModelInput("");
+    setSaveForReuse(false);
     setSelectedIssues([]);
     setShowOtherIssue(false);
     setSelectedDefects([]);
@@ -1256,18 +1334,32 @@ export function AcceptanceWizardDialog({
                     </SelectContent>
                   </Select>
                   {isCustomModel && (
-                    <Input
-                      value={customModelInput}
-                      onChange={(e) => {
-                        const newValue = e.target.value;
-                        setCustomModelInput(newValue);
-                        field.onChange(newValue || "__other__");
-                      }}
-                      placeholder="Inserisci il nome del modello..."
-                      className="mt-2"
-                      data-testid="input-custom-device-model"
-                      autoFocus
-                    />
+                    <div className="space-y-2 mt-2">
+                      <Input
+                        value={customModelInput}
+                        onChange={(e) => {
+                          const newValue = e.target.value;
+                          setCustomModelInput(newValue);
+                          field.onChange(newValue || "__other__");
+                        }}
+                        placeholder="Inserisci il nome del modello..."
+                        data-testid="input-custom-device-model"
+                        autoFocus
+                      />
+                      {isResellerOrStaff && customModelInput && (
+                        <div className="flex items-center space-x-2">
+                          <Checkbox
+                            id="save-for-reuse"
+                            checked={saveForReuse}
+                            onCheckedChange={(checked) => setSaveForReuse(!!checked)}
+                            data-testid="checkbox-save-for-reuse"
+                          />
+                          <Label htmlFor="save-for-reuse" className="text-sm font-normal text-muted-foreground cursor-pointer">
+                            Salva per riutilizzo futuro
+                          </Label>
+                        </div>
+                      )}
+                    </div>
                   )}
                 </>
               ) : (

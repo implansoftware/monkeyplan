@@ -2280,12 +2280,24 @@ export function registerRoutes(app: Express): Server {
         const globalModels = await storage.listDeviceModels({ brandId, typeId, activeOnly });
         const mergedModels = [
           ...globalModels.map(m => ({ ...m, isGlobal: true, isCustom: false })),
-          ...customModels.map(m => ({ ...m, isGlobal: false, isCustom: true }))
+          // Normalize custom models: use resellerBrandId as brandId if brandId is null
+          ...customModels.map(m => ({ 
+            ...m, 
+            brandId: m.brandId || m.resellerBrandId, // Use resellerBrandId as fallback
+            isGlobal: false, 
+            isCustom: true 
+          }))
         ];
         return res.json(mergedModels);
       }
       
-      res.json(customModels.map(m => ({ ...m, isGlobal: false, isCustom: true })));
+      // Normalize custom models: use resellerBrandId as brandId if brandId is null
+      res.json(customModels.map(m => ({ 
+        ...m, 
+        brandId: m.brandId || m.resellerBrandId,
+        isGlobal: false, 
+        isCustom: true 
+      })));
     } catch (error: any) {
       res.status(500).send(error.message);
     }
