@@ -646,6 +646,32 @@ export const deviceModels = pgTable("device_models", {
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 
+// Reseller Custom Device Brands (Brand personalizzati per rivenditore)
+export const resellerDeviceBrands = pgTable("reseller_device_brands", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  resellerId: varchar("reseller_id").notNull().references(() => users.id),
+  name: text("name").notNull(), // Nome brand personalizzato
+  logoUrl: text("logo_url"), // URL logo (opzionale)
+  isActive: boolean("is_active").notNull().default(true),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+// Reseller Custom Device Models (Modelli personalizzati per rivenditore)
+export const resellerDeviceModels = pgTable("reseller_device_models", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  resellerId: varchar("reseller_id").notNull().references(() => users.id),
+  modelName: text("model_name").notNull(), // Nome modello personalizzato
+  brandId: varchar("brand_id").references(() => deviceBrands.id), // FK a brand globale (opzionale)
+  resellerBrandId: varchar("reseller_brand_id").references(() => resellerDeviceBrands.id), // FK a brand custom (opzionale)
+  brandName: text("brand_name"), // Nome brand testuale (per quando non c'è FK)
+  typeId: varchar("type_id").references(() => deviceTypes.id), // Tipo dispositivo
+  photoUrl: text("photo_url"), // URL foto (opzionale)
+  isActive: boolean("is_active").notNull().default(true),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
 // Repair Acceptance Data (Check di accettazione)
 export const repairAcceptance = pgTable("repair_acceptance", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -2207,6 +2233,35 @@ export const deviceModelsRelations = relations(deviceModels, ({ one }) => ({
   }),
 }));
 
+// Reseller Device Brands Relations
+export const resellerDeviceBrandsRelations = relations(resellerDeviceBrands, ({ one, many }) => ({
+  reseller: one(users, {
+    fields: [resellerDeviceBrands.resellerId],
+    references: [users.id],
+  }),
+  models: many(resellerDeviceModels),
+}));
+
+// Reseller Device Models Relations
+export const resellerDeviceModelsRelations = relations(resellerDeviceModels, ({ one }) => ({
+  reseller: one(users, {
+    fields: [resellerDeviceModels.resellerId],
+    references: [users.id],
+  }),
+  globalBrand: one(deviceBrands, {
+    fields: [resellerDeviceModels.brandId],
+    references: [deviceBrands.id],
+  }),
+  resellerBrand: one(resellerDeviceBrands, {
+    fields: [resellerDeviceModels.resellerBrandId],
+    references: [resellerDeviceBrands.id],
+  }),
+  type: one(deviceTypes, {
+    fields: [resellerDeviceModels.typeId],
+    references: [deviceTypes.id],
+  }),
+}));
+
 // Service Catalog Relations
 export const serviceItemsRelations = relations(serviceItems, ({ one, many }) => ({
   deviceType: one(deviceTypes, {
@@ -2445,6 +2500,18 @@ export const insertUnrepairableReasonSchema = createInsertSchema(unrepairableRea
 });
 
 export const insertDeviceModelSchema = createInsertSchema(deviceModels).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertResellerDeviceBrandSchema = createInsertSchema(resellerDeviceBrands).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertResellerDeviceModelSchema = createInsertSchema(resellerDeviceModels).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
@@ -3015,6 +3082,12 @@ export type InsertUnrepairableReason = z.infer<typeof insertUnrepairableReasonSc
 
 export type DeviceModel = typeof deviceModels.$inferSelect;
 export type InsertDeviceModel = z.infer<typeof insertDeviceModelSchema>;
+
+export type ResellerDeviceBrand = typeof resellerDeviceBrands.$inferSelect;
+export type InsertResellerDeviceBrand = z.infer<typeof insertResellerDeviceBrandSchema>;
+
+export type ResellerDeviceModel = typeof resellerDeviceModels.$inferSelect;
+export type InsertResellerDeviceModel = z.infer<typeof insertResellerDeviceModelSchema>;
 
 export type RepairAcceptance = typeof repairAcceptance.$inferSelect;
 export type InsertRepairAcceptance = z.infer<typeof insertRepairAcceptanceSchema>;
