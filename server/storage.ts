@@ -39,6 +39,7 @@ import {
   UtilityPracticeTimelineEvent, InsertUtilityPracticeTimelineEvent,
   UtilityPracticeStateHistoryEntry, InsertUtilityPracticeStateHistoryEntry,
   SifarCredential, InsertSifarCredential, SifarStore, InsertSifarStore,
+  FonedayCredential, InsertFonedayCredential, FonedayOrder, InsertFonedayOrder,
   ExternalIntegration, InsertExternalIntegration, externalIntegrations,
   ServiceItem, InsertServiceItem, ServiceItemPrice, InsertServiceItemPrice,
   users, repairCenters, products, repairOrders, tickets, ticketMessages,
@@ -57,6 +58,7 @@ import {
   utilityPracticeDocuments, utilityPracticeTasks, utilityPracticeNotes,
   utilityPracticeTimeline, utilityPracticeStateHistory,
   sifarCredentials, sifarStores,
+  fonedayCredentials, fonedayOrders,
   serviceItems, serviceItemPrices, productPrices,
   resellerStaffPermissions, ResellerStaffPermission, InsertResellerStaffPermission
 } from "@shared/schema";
@@ -501,6 +503,18 @@ export interface IStorage {
   createSifarStore(store: InsertSifarStore): Promise<SifarStore>;
   updateSifarStore(id: string, updates: Partial<InsertSifarStore>): Promise<SifarStore>;
   deleteSifarStore(id: string): Promise<void>;
+  
+  // Foneday Integration
+  getFonedayCredentialByReseller(resellerId: string): Promise<FonedayCredential | undefined>;
+  getFonedayCredential(id: string): Promise<FonedayCredential | undefined>;
+  createFonedayCredential(credential: InsertFonedayCredential): Promise<FonedayCredential>;
+  updateFonedayCredential(id: string, updates: Partial<InsertFonedayCredential>): Promise<FonedayCredential>;
+  deleteFonedayCredential(id: string): Promise<void>;
+  
+  listFonedayOrders(credentialId: string): Promise<FonedayOrder[]>;
+  getFonedayOrder(id: string): Promise<FonedayOrder | undefined>;
+  createFonedayOrder(order: InsertFonedayOrder): Promise<FonedayOrder>;
+  updateFonedayOrder(id: string, updates: Partial<InsertFonedayOrder>): Promise<FonedayOrder>;
   
   // Service Catalog (Catalogo Interventi)
   listServiceItems(): Promise<ServiceItem[]>;
@@ -4272,6 +4286,76 @@ export class DatabaseStorage implements IStorage {
   async deleteSifarStore(id: string): Promise<void> {
     await db.delete(sifarStores)
       .where(eq(sifarStores.id, id));
+  }
+
+  // ==========================================
+  // FONEDAY INTEGRATION
+  // ==========================================
+
+  async getFonedayCredentialByReseller(resellerId: string): Promise<FonedayCredential | undefined> {
+    const [credential] = await db.select()
+      .from(fonedayCredentials)
+      .where(eq(fonedayCredentials.resellerId, resellerId))
+      .limit(1);
+    return credential;
+  }
+
+  async getFonedayCredential(id: string): Promise<FonedayCredential | undefined> {
+    const [credential] = await db.select()
+      .from(fonedayCredentials)
+      .where(eq(fonedayCredentials.id, id))
+      .limit(1);
+    return credential;
+  }
+
+  async createFonedayCredential(credential: InsertFonedayCredential): Promise<FonedayCredential> {
+    const [created] = await db.insert(fonedayCredentials)
+      .values(credential)
+      .returning();
+    return created;
+  }
+
+  async updateFonedayCredential(id: string, updates: Partial<InsertFonedayCredential>): Promise<FonedayCredential> {
+    const [updated] = await db.update(fonedayCredentials)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(fonedayCredentials.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteFonedayCredential(id: string): Promise<void> {
+    await db.delete(fonedayCredentials)
+      .where(eq(fonedayCredentials.id, id));
+  }
+
+  async listFonedayOrders(credentialId: string): Promise<FonedayOrder[]> {
+    return await db.select()
+      .from(fonedayOrders)
+      .where(eq(fonedayOrders.credentialId, credentialId))
+      .orderBy(sql`${fonedayOrders.createdAt} DESC`);
+  }
+
+  async getFonedayOrder(id: string): Promise<FonedayOrder | undefined> {
+    const [order] = await db.select()
+      .from(fonedayOrders)
+      .where(eq(fonedayOrders.id, id))
+      .limit(1);
+    return order;
+  }
+
+  async createFonedayOrder(order: InsertFonedayOrder): Promise<FonedayOrder> {
+    const [created] = await db.insert(fonedayOrders)
+      .values(order)
+      .returning();
+    return created;
+  }
+
+  async updateFonedayOrder(id: string, updates: Partial<InsertFonedayOrder>): Promise<FonedayOrder> {
+    const [updated] = await db.update(fonedayOrders)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(fonedayOrders.id, id))
+      .returning();
+    return updated;
   }
 
   // ==========================================
