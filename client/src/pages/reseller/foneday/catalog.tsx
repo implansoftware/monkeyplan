@@ -30,7 +30,7 @@ type FonedayCategory = {
 };
 
 type FonedayProduct = {
-  id: number;
+  id: string | number;
   sku: string;
   name: string;
   brand: string;
@@ -43,6 +43,8 @@ type FonedayProduct = {
   image_url: string;
   description: string;
   warranty_months: number;
+  quality?: string;
+  model_codes?: string[];
 };
 
 type FonedayCart = {
@@ -73,7 +75,7 @@ export default function FonedayCatalogPage() {
   const [selectedCategory, setSelectedCategory] = useState<string>("");
   const [selectedBrand, setSelectedBrand] = useState<string>("");
   const [currentPage, setCurrentPage] = useState(1);
-  const [quantities, setQuantities] = useState<Record<number, number>>({});
+  const [quantities, setQuantities] = useState<Record<string | number, number>>({});
   const perPage = 20;
 
   const { data: credential, isLoading: loadingCredential } = useQuery<FonedayCredential | null>({
@@ -141,7 +143,7 @@ export default function FonedayCatalogPage() {
     }).format(price);
   };
 
-  const handleQuantityChange = (productId: number, delta: number) => {
+  const handleQuantityChange = (productId: string | number, delta: number) => {
     setQuantities((prev) => {
       const current = prev[productId] || 1;
       const newQty = Math.max(1, current + delta);
@@ -151,7 +153,8 @@ export default function FonedayCatalogPage() {
 
   const handleAddToCart = (product: FonedayProduct) => {
     const qty = quantities[product.id] || 1;
-    addToCartMutation.mutate({ productId: product.id, quantity: qty });
+    const productIdNum = typeof product.id === "string" ? parseInt(product.id, 10) || 0 : product.id;
+    addToCartMutation.mutate({ productId: productIdNum, quantity: qty });
     setQuantities((prev) => ({ ...prev, [product.id]: 1 }));
   };
 
@@ -325,9 +328,9 @@ export default function FonedayCatalogPage() {
             <div className="space-y-3">
               {productsData.products.map((product) => (
                 <div
-                  key={product.id}
+                  key={product.sku}
                   className="flex items-start gap-4 p-4 border rounded-md hover-elevate"
-                  data-testid={`product-item-${product.id}`}
+                  data-testid={`product-item-${product.sku}`}
                 >
                   <div className="h-20 w-20 bg-muted rounded-md flex items-center justify-center flex-shrink-0">
                     {product.image_url ? (
@@ -346,7 +349,10 @@ export default function FonedayCatalogPage() {
                         <h3 className="font-medium">{product.name}</h3>
                         <div className="text-sm text-muted-foreground space-y-1 mt-1">
                           <div>SKU: {product.sku}</div>
-                          <div>{product.brand} - {product.model}</div>
+                          {product.model && <div>{product.brand} - {product.model}</div>}
+                          {product.quality && (
+                            <Badge variant="outline" className="text-xs">{product.quality}</Badge>
+                          )}
                           {product.warranty_months > 0 && (
                             <div>Garanzia: {product.warranty_months} mesi</div>
                           )}
@@ -357,7 +363,7 @@ export default function FonedayCatalogPage() {
                         <div className="mt-1">
                           {product.stock > 0 ? (
                             <Badge variant="default" className="bg-green-600">
-                              Disponibile ({product.stock})
+                              Disponibile
                             </Badge>
                           ) : (
                             <Badge variant="secondary">Non disponibile</Badge>
