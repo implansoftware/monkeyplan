@@ -1142,6 +1142,44 @@ export const supplierSyncLogs = pgTable("supplier_sync_logs", {
 });
 
 // ==========================================
+// EXTERNAL INTEGRATIONS (Admin-managed)
+// ==========================================
+
+// External API integrations that admin can enable/disable for resellers
+export const externalIntegrations = pgTable("external_integrations", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  
+  // Identification
+  code: text("code").notNull().unique(), // es: "sifar", "foneday", "ifixit", "mobilax"
+  name: text("name").notNull(), // Nome visualizzato
+  description: text("description"), // Descrizione
+  logoUrl: text("logo_url"), // URL logo integrazione
+  
+  // Status
+  isActive: boolean("is_active").notNull().default(false), // Admin abilita/disabilita globalmente
+  
+  // Configuration template (JSON with required fields for reseller setup)
+  configFields: text("config_fields"), // JSON: [{key, label, type, required, placeholder}]
+  
+  // API defaults (used if reseller doesn't override)
+  defaultApiEndpoint: text("default_api_endpoint"), // URL base API
+  defaultAuthMethod: text("default_auth_method"), // bearer_token, api_key_header, etc.
+  
+  // Features supported
+  supportsCatalog: boolean("supports_catalog").default(false),
+  supportsOrdering: boolean("supports_ordering").default(false),
+  supportsCart: boolean("supports_cart").default(false),
+  
+  // Documentation
+  docsUrl: text("docs_url"), // Link documentazione API
+  
+  // Metadata
+  displayOrder: integer("display_order").default(0), // Ordine visualizzazione
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+// ==========================================
 // SIFAR INTEGRATION TABLES
 // ==========================================
 
@@ -2820,6 +2858,16 @@ export const insertSupplierCommunicationLogSchema = createInsertSchema(supplierC
   id: true,
   createdAt: true,
 });
+
+// External Integrations schema
+export const insertExternalIntegrationSchema = createInsertSchema(externalIntegrations).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertExternalIntegration = z.infer<typeof insertExternalIntegrationSchema>;
+export type ExternalIntegration = typeof externalIntegrations.$inferSelect;
 
 // SIFAR Integration schemas
 export const insertSifarCredentialSchema = createInsertSchema(sifarCredentials).omit({

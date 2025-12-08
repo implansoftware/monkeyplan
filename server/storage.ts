@@ -39,6 +39,7 @@ import {
   UtilityPracticeTimelineEvent, InsertUtilityPracticeTimelineEvent,
   UtilityPracticeStateHistoryEntry, InsertUtilityPracticeStateHistoryEntry,
   SifarCredential, InsertSifarCredential, SifarStore, InsertSifarStore,
+  ExternalIntegration, InsertExternalIntegration, externalIntegrations,
   ServiceItem, InsertServiceItem, ServiceItemPrice, InsertServiceItemPrice,
   users, repairCenters, products, repairOrders, tickets, ticketMessages,
   invoices, billingData, chatMessages, inventoryMovements, inventoryStock, activityLogs, analyticsCache,
@@ -478,6 +479,15 @@ export interface IStorage {
   // Utility Practice State History
   listUtilityPracticeStateHistory(practiceId: string): Promise<UtilityPracticeStateHistoryEntry[]>;
   createUtilityPracticeStateHistory(entry: InsertUtilityPracticeStateHistoryEntry): Promise<UtilityPracticeStateHistoryEntry>;
+  
+  // External Integrations (Admin-managed)
+  listExternalIntegrations(): Promise<ExternalIntegration[]>;
+  listActiveExternalIntegrations(): Promise<ExternalIntegration[]>;
+  getExternalIntegration(id: string): Promise<ExternalIntegration | undefined>;
+  getExternalIntegrationByCode(code: string): Promise<ExternalIntegration | undefined>;
+  createExternalIntegration(integration: InsertExternalIntegration): Promise<ExternalIntegration>;
+  updateExternalIntegration(id: string, updates: Partial<InsertExternalIntegration>): Promise<ExternalIntegration>;
+  deleteExternalIntegration(id: string): Promise<void>;
   
   // SIFAR Integration
   getSifarCredentialByReseller(resellerId: string): Promise<SifarCredential | undefined>;
@@ -4137,6 +4147,59 @@ export class DatabaseStorage implements IStorage {
       .values(entry)
       .returning();
     return created;
+  }
+
+  // ==========================================
+  // EXTERNAL INTEGRATIONS (Admin-managed)
+  // ==========================================
+
+  async listExternalIntegrations(): Promise<ExternalIntegration[]> {
+    return await db.select()
+      .from(externalIntegrations)
+      .orderBy(externalIntegrations.displayOrder);
+  }
+
+  async listActiveExternalIntegrations(): Promise<ExternalIntegration[]> {
+    return await db.select()
+      .from(externalIntegrations)
+      .where(eq(externalIntegrations.isActive, true))
+      .orderBy(externalIntegrations.displayOrder);
+  }
+
+  async getExternalIntegration(id: string): Promise<ExternalIntegration | undefined> {
+    const [integration] = await db.select()
+      .from(externalIntegrations)
+      .where(eq(externalIntegrations.id, id))
+      .limit(1);
+    return integration;
+  }
+
+  async getExternalIntegrationByCode(code: string): Promise<ExternalIntegration | undefined> {
+    const [integration] = await db.select()
+      .from(externalIntegrations)
+      .where(eq(externalIntegrations.code, code))
+      .limit(1);
+    return integration;
+  }
+
+  async createExternalIntegration(integration: InsertExternalIntegration): Promise<ExternalIntegration> {
+    const [created] = await db.insert(externalIntegrations)
+      .values(integration)
+      .returning();
+    return created;
+  }
+
+  async updateExternalIntegration(id: string, updates: Partial<InsertExternalIntegration>): Promise<ExternalIntegration> {
+    const [updated] = await db.update(externalIntegrations)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(externalIntegrations.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteExternalIntegration(id: string): Promise<void> {
+    await db.delete(externalIntegrations)
+      .where(eq(externalIntegrations.id, id));
   }
 
   // SIFAR Credentials

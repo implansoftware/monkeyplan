@@ -7,13 +7,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Truck, Search, Mail, Phone, MapPin, Plus, Pencil, Trash2, Globe, User, Settings, ShoppingCart, Package, ExternalLink, CheckCircle, AlertTriangle, Zap } from "lucide-react";
+import { Truck, Search, Mail, Phone, MapPin, Plus, Pencil, Trash2, Globe, User, Settings, ShoppingCart, Package, CheckCircle, AlertTriangle, Zap, Info } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { AddressAutocomplete } from "@/components/address-autocomplete";
 import { Link } from "wouter";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { ExternalIntegration } from "@shared/schema";
 
 type Supplier = {
   id: string;
@@ -104,6 +105,10 @@ export default function ResellerSuppliers() {
   const { data: sifarStores = [] } = useQuery<SifarStore[]>({
     queryKey: ["/api/sifar/stores"],
     enabled: !!sifarCredential?.hasClientKey,
+  });
+
+  const { data: externalIntegrations = [] } = useQuery<ExternalIntegration[]>({
+    queryKey: ["/api/external-integrations"],
   });
 
   const createMutation = useMutation({
@@ -258,91 +263,150 @@ export default function ResellerSuppliers() {
         </div>
       </div>
 
-      <Card className="border-2 border-primary/20 bg-gradient-to-r from-primary/5 to-transparent">
-        <CardHeader className="pb-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-primary/10 rounded-lg">
-                <Zap className="h-6 w-6 text-primary" />
-              </div>
-              <div>
-                <CardTitle className="flex items-center gap-2">
-                  SIFAR
-                  <Badge variant="secondary" className="gap-1">
-                    <Zap className="h-3 w-3" />
-                    Integrazione API
-                  </Badge>
-                </CardTitle>
-                <CardDescription>
-                  Ordina ricambi direttamente dal catalogo SIFAR
-                </CardDescription>
-              </div>
-            </div>
-            {sifarConfigured ? (
-              <Badge variant="default" className="gap-1" data-testid="badge-sifar-status">
-                <CheckCircle className="h-3 w-3" />
-                Configurato
-              </Badge>
-            ) : (
-              <Badge variant="outline" className="gap-1 text-orange-600 border-orange-300" data-testid="badge-sifar-status">
-                <AlertTriangle className="h-3 w-3" />
-                Da configurare
-              </Badge>
-            )}
+      {externalIntegrations.length > 0 && (
+        <div className="space-y-4">
+          <div className="flex items-center gap-2">
+            <Zap className="h-5 w-5 text-primary" />
+            <h2 className="text-lg font-semibold">Integrazioni API</h2>
+            <Badge variant="secondary">{externalIntegrations.length}</Badge>
           </div>
-        </CardHeader>
-        <CardContent>
-          {sifarConfigured ? (
-            <div className="space-y-4">
-              <div className="flex items-center gap-6 text-sm text-muted-foreground">
-                <div className="flex items-center gap-1">
-                  <Package className="h-4 w-4" />
-                  <span>Ambiente: <Badge variant="outline" className="ml-1" data-testid="text-sifar-environment">{sifarCredential?.environment}</Badge></span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <MapPin className="h-4 w-4" />
-                  <span data-testid="text-sifar-store-count">{sifarStoreCount} {sifarStoreCount === 1 ? 'punto vendita' : 'punti vendita'}</span>
-                </div>
-              </div>
-              <div className="flex items-center gap-2 flex-wrap">
-                <Link href="/reseller/sifar/catalog">
-                  <Button variant="default" size="sm" data-testid="button-sifar-catalog">
-                    <Package className="h-4 w-4 mr-2" />
-                    Catalogo Ricambi
-                  </Button>
-                </Link>
-                <Link href="/reseller/sifar/cart">
-                  <Button variant="outline" size="sm" data-testid="button-sifar-cart">
-                    <ShoppingCart className="h-4 w-4 mr-2" />
-                    Carrello
-                  </Button>
-                </Link>
-                <Link href="/reseller/sifar/settings">
-                  <Button variant="ghost" size="sm" data-testid="button-sifar-settings">
-                    <Settings className="h-4 w-4 mr-2" />
-                    Impostazioni
-                  </Button>
-                </Link>
-              </div>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              <Alert>
-                <AlertTriangle className="h-4 w-4" />
-                <AlertDescription>
-                  Configura le credenziali SIFAR per iniziare a ordinare ricambi direttamente dal catalogo.
-                </AlertDescription>
-              </Alert>
-              <Link href="/reseller/sifar/settings">
-                <Button data-testid="button-sifar-configure">
-                  <Settings className="h-4 w-4 mr-2" />
-                  Configura SIFAR
-                </Button>
-              </Link>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {externalIntegrations.map((integration) => {
+              const isSifar = integration.code === 'sifar';
+              const isConfigured = isSifar ? sifarConfigured : false;
+              
+              return (
+                <Card 
+                  key={integration.id} 
+                  className={`border-2 ${isConfigured ? 'border-primary/20 bg-gradient-to-r from-primary/5 to-transparent' : 'border-muted'}`}
+                  data-testid={`card-integration-${integration.code}`}
+                >
+                  <CardHeader className="pb-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        {integration.logoUrl ? (
+                          <img 
+                            src={integration.logoUrl} 
+                            alt={integration.name}
+                            className="h-10 w-10 rounded-lg object-contain bg-white p-1"
+                          />
+                        ) : (
+                          <div className="p-2 bg-primary/10 rounded-lg">
+                            <Zap className="h-6 w-6 text-primary" />
+                          </div>
+                        )}
+                        <div>
+                          <CardTitle className="flex items-center gap-2 text-base">
+                            {integration.name}
+                            <Badge variant="secondary" className="gap-1 text-xs">
+                              <Zap className="h-3 w-3" />
+                              API
+                            </Badge>
+                          </CardTitle>
+                          {integration.description && (
+                            <CardDescription className="text-sm">
+                              {integration.description}
+                            </CardDescription>
+                          )}
+                        </div>
+                      </div>
+                      {isSifar && (
+                        isConfigured ? (
+                          <Badge variant="default" className="gap-1" data-testid={`badge-${integration.code}-status`}>
+                            <CheckCircle className="h-3 w-3" />
+                            Configurato
+                          </Badge>
+                        ) : (
+                          <Badge variant="outline" className="gap-1 text-orange-600 border-orange-300" data-testid={`badge-${integration.code}-status`}>
+                            <AlertTriangle className="h-3 w-3" />
+                            Da configurare
+                          </Badge>
+                        )
+                      )}
+                      {!isSifar && (
+                        <Badge variant="outline" className="gap-1">
+                          <Info className="h-3 w-3" />
+                          Prossimamente
+                        </Badge>
+                      )}
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    {isSifar ? (
+                      isConfigured ? (
+                        <div className="space-y-4">
+                          <div className="flex items-center gap-6 text-sm text-muted-foreground">
+                            <div className="flex items-center gap-1">
+                              <Package className="h-4 w-4" />
+                              <span>Ambiente: <Badge variant="outline" className="ml-1" data-testid="text-sifar-environment">{sifarCredential?.environment}</Badge></span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <MapPin className="h-4 w-4" />
+                              <span data-testid="text-sifar-store-count">{sifarStoreCount} {sifarStoreCount === 1 ? 'punto vendita' : 'punti vendita'}</span>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <Link href="/reseller/sifar/catalog">
+                              <Button variant="default" size="sm" data-testid="button-sifar-catalog">
+                                <Package className="h-4 w-4 mr-2" />
+                                Catalogo Ricambi
+                              </Button>
+                            </Link>
+                            <Link href="/reseller/sifar/cart">
+                              <Button variant="outline" size="sm" data-testid="button-sifar-cart">
+                                <ShoppingCart className="h-4 w-4 mr-2" />
+                                Carrello
+                              </Button>
+                            </Link>
+                            <Link href="/reseller/sifar/settings">
+                              <Button variant="ghost" size="sm" data-testid="button-sifar-settings">
+                                <Settings className="h-4 w-4 mr-2" />
+                                Impostazioni
+                              </Button>
+                            </Link>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="space-y-4">
+                          <Alert>
+                            <AlertTriangle className="h-4 w-4" />
+                            <AlertDescription>
+                              Configura le credenziali SIFAR per iniziare a ordinare ricambi direttamente dal catalogo.
+                            </AlertDescription>
+                          </Alert>
+                          <Link href="/reseller/sifar/settings">
+                            <Button data-testid="button-sifar-configure">
+                              <Settings className="h-4 w-4 mr-2" />
+                              Configura SIFAR
+                            </Button>
+                          </Link>
+                        </div>
+                      )
+                    ) : (
+                      <div className="text-sm text-muted-foreground">
+                        <p>Questa integrazione sarà disponibile a breve.</p>
+                        {integration.supportsCatalog && (
+                          <div className="flex items-center gap-1 mt-2">
+                            <Package className="h-4 w-4" />
+                            <span>Supporta catalogo prodotti</span>
+                          </div>
+                        )}
+                        {integration.supportsOrdering && (
+                          <div className="flex items-center gap-1 mt-1">
+                            <ShoppingCart className="h-4 w-4" />
+                            <span>Supporta invio ordini</span>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       <Card>
         <CardHeader className="flex flex-row items-center justify-between gap-4 space-y-0 pb-4">

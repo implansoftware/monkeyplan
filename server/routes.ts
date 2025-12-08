@@ -11084,6 +11084,71 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // ============ EXTERNAL INTEGRATIONS (INTEGRAZIONI ESTERNE) ============
+
+  // GET /api/external-integrations - List all integrations (admins get all, resellers get active only)
+  app.get("/api/external-integrations", requireAuth, requireRole("admin", "reseller", "reseller_staff"), async (req, res) => {
+    try {
+      // Admin sees all, others see only active
+      if (req.user?.role === 'admin') {
+        const integrations = await storage.listExternalIntegrations();
+        res.json(integrations);
+      } else {
+        const integrations = await storage.listActiveExternalIntegrations();
+        res.json(integrations);
+      }
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // GET /api/external-integrations/:id - Get single integration
+  app.get("/api/external-integrations/:id", requireAuth, requireRole("admin", "reseller", "reseller_staff"), async (req, res) => {
+    try {
+      const integration = await storage.getExternalIntegration(req.params.id);
+      if (!integration) {
+        return res.status(404).send("Integrazione non trovata");
+      }
+      // Non-admin users can only see active integrations
+      if (req.user?.role !== 'admin' && !integration.isActive) {
+        return res.status(404).send("Integrazione non trovata");
+      }
+      res.json(integration);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // POST /api/external-integrations - Create integration (admin only)
+  app.post("/api/external-integrations", requireAuth, requireRole("admin"), async (req, res) => {
+    try {
+      const integration = await storage.createExternalIntegration(req.body);
+      res.status(201).json(integration);
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+
+  // PATCH /api/external-integrations/:id - Update integration (admin only)
+  app.patch("/api/external-integrations/:id", requireAuth, requireRole("admin"), async (req, res) => {
+    try {
+      const integration = await storage.updateExternalIntegration(req.params.id, req.body);
+      res.json(integration);
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+
+  // DELETE /api/external-integrations/:id - Delete integration (admin only)
+  app.delete("/api/external-integrations/:id", requireAuth, requireRole("admin"), async (req, res) => {
+    try {
+      await storage.deleteExternalIntegration(req.params.id);
+      res.status(204).send();
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+
   // ============ PARTS LOAD DOCUMENTS (CARICO RICAMBI) ============
 
   // GET /api/parts-load - List parts load documents
