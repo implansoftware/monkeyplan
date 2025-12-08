@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -92,16 +92,25 @@ export default function FonedayCatalogPage() {
     enabled: !!credential?.isActive,
   });
 
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchQuery);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
   const { data: productsData, isLoading: loadingProducts } = useQuery<{
     products: FonedayProduct[];
     total: number;
     page: number;
     per_page: number;
   }>({
-    queryKey: ["/api/foneday/catalog/products", searchQuery, selectedCategory, selectedBrand, currentPage],
+    queryKey: ["/api/foneday/catalog/products", debouncedSearch, selectedCategory, selectedBrand, currentPage],
     queryFn: async () => {
       const params = new URLSearchParams();
-      if (searchQuery) params.append("search", searchQuery);
+      if (debouncedSearch) params.append("search", debouncedSearch);
       if (selectedCategory) params.append("category_id", selectedCategory);
       if (selectedBrand) params.append("brand", selectedBrand);
       params.append("page", String(currentPage));
@@ -112,6 +121,8 @@ export default function FonedayCatalogPage() {
       return res.json();
     },
     enabled: !!credential?.isActive,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
   });
 
   const { data: cart, refetch: refetchCart } = useQuery<FonedayCart>({
@@ -326,9 +337,9 @@ export default function FonedayCatalogPage() {
             </div>
           ) : (
             <div className="space-y-3">
-              {productsData.products.map((product) => (
+              {productsData.products.map((product, index) => (
                 <div
-                  key={product.sku}
+                  key={`${product.sku}-${index}`}
                   className="flex items-start gap-4 p-4 border rounded-md hover-elevate"
                   data-testid={`product-item-${product.sku}`}
                 >

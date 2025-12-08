@@ -218,8 +218,6 @@ export class FonedayService {
     const result = await this.request<any>("/v1/products", "GET", undefined, queryParams);
 
     if (result.success && result.data) {
-      console.log("Foneday API Response structure:", JSON.stringify(result.data, null, 2).substring(0, 2000));
-      
       const rawProducts = result.data.products || result.data.data || result.data || [];
       const products = Array.isArray(rawProducts) ? rawProducts.map((p: any, index: number) => ({
         id: p.id || p.product_id || p.sku || index,
