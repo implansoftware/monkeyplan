@@ -1,6 +1,6 @@
 import { FonedayCredential } from "@shared/schema";
 
-const FONEDAY_BASE_URL = "https://api.foneday.eu";
+const FONEDAY_BASE_URL = "https://foneday.shop/api/v1";
 
 interface FonedayApiResponse<T> {
   success: boolean;
