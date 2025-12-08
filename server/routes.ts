@@ -56,6 +56,16 @@ async function hashPassword(password: string) {
   return `${buf.toString("hex")}.${salt}`;
 }
 
+// In-memory Foneday cart cache per reseller (Foneday API doesn't persist cart state)
+interface FonedayCartItem {
+  sku: string;
+  quantity: number;
+  title: string;
+  price: string;
+  note: string | null;
+}
+const fonedayCartCache = new Map<string, FonedayCartItem[]>();
+
 // Configure multer for file uploads (memory storage)
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -13343,7 +13353,7 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  // GET /api/foneday/cart - Get cart detail
+  // GET /api/foneday/cart - Get cart from local cache (Foneday API doesn't persist cart)
   app.get("/api/foneday/cart", requireAuth, requireRole("reseller"), async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
@@ -13353,22 +13363,20 @@ export function registerRoutes(app: Express): Server {
         return res.status(404).send("Credenziali Foneday non configurate");
       }
       
-      const { createFonedayService } = await import("./fonedayService");
-      const fonedayService = createFonedayService(credential);
-      
-      const cart = await fonedayService.getCart();
+      // Return cart from local cache
+      const cart = fonedayCartCache.get(req.user.id) || [];
       res.json({ cart });
     } catch (error: any) {
       res.status(400).send(error.message);
     }
   });
 
-  // POST /api/foneday/cart/add - Add items to cart
+  // POST /api/foneday/cart/add - Add items to cart (local cache + API sync)
   app.post("/api/foneday/cart/add", requireAuth, requireRole("reseller"), async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
-      const { sku, quantity, note } = req.body;
+      const { sku, quantity, note, productName, productPrice } = req.body;
       if (!sku || !quantity) {
         return res.status(400).send("SKU prodotto e quantità obbligatori");
       }
@@ -13378,17 +13386,41 @@ export function registerRoutes(app: Express): Server {
         return res.status(404).send("Credenziali Foneday non configurate");
       }
       
-      const { createFonedayService } = await import("./fonedayService");
-      const fonedayService = createFonedayService(credential);
+      // Update local cart cache
+      const currentCart = fonedayCartCache.get(req.user.id) || [];
+      const existingItem = currentCart.find(item => item.sku === sku);
       
-      const cart = await fonedayService.addToCart([{ sku, quantity: Number(quantity), note: note || null }]);
-      res.json({ cart });
+      if (existingItem) {
+        existingItem.quantity += Number(quantity);
+        if (note) existingItem.note = note;
+      } else {
+        currentCart.push({
+          sku,
+          quantity: Number(quantity),
+          title: productName || sku,
+          price: String(productPrice || "0"),
+          note: note || null,
+        });
+      }
+      
+      fonedayCartCache.set(req.user.id, currentCart);
+      
+      // Also sync with Foneday API (fire and forget - cart state is local)
+      try {
+        const { createFonedayService } = await import("./fonedayService");
+        const fonedayService = createFonedayService(credential);
+        await fonedayService.addToCart([{ sku, quantity: Number(quantity), note: note || null }]);
+      } catch (apiError) {
+        console.log("Foneday API cart sync error (non-blocking):", apiError);
+      }
+      
+      res.json({ cart: currentCart });
     } catch (error: any) {
       res.status(400).send(error.message);
     }
   });
 
-  // POST /api/foneday/cart/remove - Remove items from cart
+  // POST /api/foneday/cart/remove - Remove items from cart (local cache + API sync)
   app.post("/api/foneday/cart/remove", requireAuth, requireRole("reseller"), async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
@@ -13403,11 +13435,42 @@ export function registerRoutes(app: Express): Server {
         return res.status(404).send("Credenziali Foneday non configurate");
       }
       
-      const { createFonedayService } = await import("./fonedayService");
-      const fonedayService = createFonedayService(credential);
+      // Update local cart cache
+      const currentCart = fonedayCartCache.get(req.user.id) || [];
+      const existingItemIndex = currentCart.findIndex(item => item.sku === sku);
       
-      const cart = await fonedayService.removeFromCart([{ sku, quantity: Number(quantity) }]);
-      res.json({ cart });
+      if (existingItemIndex >= 0) {
+        const existingItem = currentCart[existingItemIndex];
+        existingItem.quantity -= Number(quantity);
+        if (existingItem.quantity <= 0) {
+          currentCart.splice(existingItemIndex, 1);
+        }
+      }
+      
+      fonedayCartCache.set(req.user.id, currentCart);
+      
+      // Also sync with Foneday API (fire and forget)
+      try {
+        const { createFonedayService } = await import("./fonedayService");
+        const fonedayService = createFonedayService(credential);
+        await fonedayService.removeFromCart([{ sku, quantity: Number(quantity) }]);
+      } catch (apiError) {
+        console.log("Foneday API cart sync error (non-blocking):", apiError);
+      }
+      
+      res.json({ cart: currentCart });
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+
+  // POST /api/foneday/cart/clear - Clear cart
+  app.post("/api/foneday/cart/clear", requireAuth, requireRole("reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      fonedayCartCache.set(req.user.id, []);
+      res.json({ cart: [] });
     } catch (error: any) {
       res.status(400).send(error.message);
     }

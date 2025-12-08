@@ -125,10 +125,12 @@ export default function FonedayCatalogPage() {
   });
 
   const addToCartMutation = useMutation({
-    mutationFn: async ({ sku, quantity }: { sku: string; quantity: number }) => {
+    mutationFn: async ({ sku, quantity, productName, productPrice }: { sku: string; quantity: number; productName: string; productPrice: number }) => {
       const res = await apiRequest("POST", "/api/foneday/cart/add", {
         sku,
         quantity,
+        productName,
+        productPrice,
       });
       return res.json();
     },
