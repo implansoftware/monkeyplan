@@ -74,6 +74,11 @@ import ResellerSifarSettings from "@/pages/reseller/sifar/settings";
 import ResellerSifarCatalog from "@/pages/reseller/sifar/catalog";
 import ResellerSifarCart from "@/pages/reseller/sifar/cart";
 
+// Reseller Foneday pages
+import ResellerFonedaySettings from "@/pages/reseller/foneday/settings";
+import ResellerFonedayCatalog from "@/pages/reseller/foneday/catalog";
+import ResellerFonedayCart from "@/pages/reseller/foneday/cart";
+
 // Reseller Repairs & Inventory
 import ResellerRepairs from "@/pages/reseller/repairs";
 import ResellerInventory from "@/pages/reseller/inventory";
@@ -179,6 +184,9 @@ function Router() {
       <ProtectedRoute path="/reseller/sifar/settings" component={ResellerSifarSettings} />
       <ProtectedRoute path="/reseller/sifar/catalog" component={ResellerSifarCatalog} />
       <ProtectedRoute path="/reseller/sifar/cart" component={ResellerSifarCart} />
+      <ProtectedRoute path="/reseller/foneday/settings" component={ResellerFonedaySettings} />
+      <ProtectedRoute path="/reseller/foneday/catalog" component={ResellerFonedayCatalog} />
+      <ProtectedRoute path="/reseller/foneday/cart" component={ResellerFonedayCart} />
       <ProtectedRoute path="/reseller/team" component={ResellerTeam} />
       <ProtectedRoute path="/reseller/device-catalog" component={ResellerDeviceCatalog} />
       
