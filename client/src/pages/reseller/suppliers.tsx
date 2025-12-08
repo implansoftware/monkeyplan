@@ -297,11 +297,11 @@ export default function ResellerSuppliers() {
               <div className="flex items-center gap-6 text-sm text-muted-foreground">
                 <div className="flex items-center gap-1">
                   <Package className="h-4 w-4" />
-                  <span>Ambiente: <Badge variant="outline" className="ml-1">{sifarCredential?.environment}</Badge></span>
+                  <span>Ambiente: <Badge variant="outline" className="ml-1" data-testid="text-sifar-environment">{sifarCredential?.environment}</Badge></span>
                 </div>
                 <div className="flex items-center gap-1">
                   <MapPin className="h-4 w-4" />
-                  <span>{sifarStoreCount} {sifarStoreCount === 1 ? 'punto vendita' : 'punti vendita'}</span>
+                  <span data-testid="text-sifar-store-count">{sifarStoreCount} {sifarStoreCount === 1 ? 'punto vendita' : 'punti vendita'}</span>
                 </div>
               </div>
               <div className="flex items-center gap-2 flex-wrap">
