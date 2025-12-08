@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -14,20 +13,6 @@ import {
   ChevronLeft, ChevronRight, Image
 } from "lucide-react";
 import { Link } from "wouter";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-
-type FonedayCategory = {
-  id: number;
-  name: string;
-  slug: string;
-  parent_id: number | null;
-};
 
 type FonedayProduct = {
   id: string | number;
@@ -67,8 +52,6 @@ type FonedayCredential = {
 export default function FonedayCatalogPage() {
   const { toast } = useToast();
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState<string>("");
-  const [selectedBrand, setSelectedBrand] = useState<string>("");
   const [currentPage, setCurrentPage] = useState(1);
   const [quantities, setQuantities] = useState<Record<string, number>>({});
   const [debouncedSearch, setDebouncedSearch] = useState("");
@@ -76,16 +59,6 @@ export default function FonedayCatalogPage() {
 
   const { data: credential, isLoading: loadingCredential } = useQuery<FonedayCredential | null>({
     queryKey: ["/api/foneday/credentials"],
-  });
-
-  const { data: categories = [] } = useQuery<FonedayCategory[]>({
-    queryKey: ["/api/foneday/catalog/categories"],
-    enabled: !!credential?.isActive,
-  });
-
-  const { data: brands = [] } = useQuery<string[]>({
-    queryKey: ["/api/foneday/catalog/brands"],
-    enabled: !!credential?.isActive,
   });
   
   useEffect(() => {
@@ -101,12 +74,10 @@ export default function FonedayCatalogPage() {
     page: number;
     per_page: number;
   }>({
-    queryKey: ["/api/foneday/catalog/products", debouncedSearch, selectedCategory, selectedBrand, currentPage],
+    queryKey: ["/api/foneday/catalog/products", debouncedSearch, currentPage],
     queryFn: async () => {
       const params = new URLSearchParams();
       if (debouncedSearch) params.append("search", debouncedSearch);
-      if (selectedCategory) params.append("category_id", selectedCategory);
-      if (selectedBrand) params.append("brand", selectedBrand);
       params.append("page", String(currentPage));
       params.append("per_page", String(perPage));
       
@@ -236,73 +207,22 @@ export default function FonedayCatalogPage() {
             Cerca Prodotti
           </CardTitle>
           <CardDescription>
-            Cerca per nome, SKU, o filtra per categoria e marca
+            Cerca per nome, SKU, modello o descrizione
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid gap-4 md:grid-cols-4">
-            <div className="md:col-span-2 space-y-2">
-              <Label>Ricerca</Label>
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Cerca per nome, SKU, modello..."
-                  value={searchQuery}
-                  onChange={(e) => {
-                    setSearchQuery(e.target.value);
-                    setCurrentPage(1);
-                  }}
-                  className="pl-10"
-                  data-testid="input-search"
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label>Categoria</Label>
-              <Select
-                value={selectedCategory}
-                onValueChange={(val) => {
-                  setSelectedCategory(val === "all" ? "" : val);
-                  setCurrentPage(1);
-                }}
-              >
-                <SelectTrigger data-testid="select-category">
-                  <SelectValue placeholder="Tutte le categorie" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Tutte le categorie</SelectItem>
-                  {categories.map((cat) => (
-                    <SelectItem key={cat.id} value={String(cat.id)}>
-                      {cat.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label>Marca</Label>
-              <Select
-                value={selectedBrand}
-                onValueChange={(val) => {
-                  setSelectedBrand(val === "all" ? "" : val);
-                  setCurrentPage(1);
-                }}
-              >
-                <SelectTrigger data-testid="select-brand">
-                  <SelectValue placeholder="Tutte le marche" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Tutte le marche</SelectItem>
-                  {brands.map((brand) => (
-                    <SelectItem key={brand} value={brand}>
-                      {brand}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+        <CardContent>
+          <div className="relative max-w-xl">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Cerca per nome, SKU, modello..."
+              value={searchQuery}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                setCurrentPage(1);
+              }}
+              className="pl-10"
+              data-testid="input-search"
+            />
           </div>
         </CardContent>
       </Card>
