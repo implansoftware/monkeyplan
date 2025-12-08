@@ -183,7 +183,7 @@ export class FonedayService {
 
   async testConnection(): Promise<{ success: boolean; message: string }> {
     try {
-      const result = await this.request<{ user: any }>("/v1/account");
+      const result = await this.request<{ products: any[] }>("/v1/products", "GET", undefined, { per_page: "1" });
       if (result.success) {
         return { success: true, message: "Connessione riuscita" };
       }
