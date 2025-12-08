@@ -10250,45 +10250,6 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  // POST /api/foneday/cart/add - Add items to Foneday cart
-  app.post("/api/foneday/cart/add", requireAuth, requireRole("admin", "repair_center"), async (req, res) => {
-    try {
-      const { articles } = req.body;
-      if (!articles || !Array.isArray(articles) || articles.length === 0) {
-        return res.status(400).send("Articoli mancanti o non validi");
-      }
-
-      const { fonedayApi } = await import('./services/foneday');
-      const result = await fonedayApi.addToCart({ articles });
-      res.json(result);
-    } catch (error: any) {
-      console.error("Foneday cart add error:", error);
-      res.status(500).json({ 
-        success: false, 
-        message: error.message || "Errore aggiunta articoli al carrello" 
-      });
-    }
-  });
-
-  // POST /api/foneday/cart/remove - Remove items from Foneday cart
-  app.post("/api/foneday/cart/remove", requireAuth, requireRole("admin", "repair_center"), async (req, res) => {
-    try {
-      const { articles } = req.body;
-      if (!articles || !Array.isArray(articles) || articles.length === 0) {
-        return res.status(400).send("Articoli mancanti o non validi");
-      }
-
-      const { fonedayApi } = await import('./services/foneday');
-      const result = await fonedayApi.removeFromCart({ articles });
-      res.json(result);
-    } catch (error: any) {
-      console.error("Foneday cart remove error:", error);
-      res.status(500).json({ 
-        success: false, 
-        message: error.message || "Errore rimozione articoli dal carrello" 
-      });
-    }
-  });
 
   // GET /api/foneday/invoices - Get Foneday invoices
   app.get("/api/foneday/invoices", requireAuth, requireRole("admin"), async (req, res) => {
