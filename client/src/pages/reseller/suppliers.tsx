@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -7,11 +7,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Truck, Search, Mail, Phone, MapPin, Plus, Pencil, Trash2, Globe, User } from "lucide-react";
+import { Truck, Search, Mail, Phone, MapPin, Plus, Pencil, Trash2, Globe, User, Settings, ShoppingCart, Package, ExternalLink, CheckCircle, AlertTriangle, Zap } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { AddressAutocomplete } from "@/components/address-autocomplete";
+import { Link } from "wouter";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 type Supplier = {
   id: string;
@@ -40,6 +42,22 @@ type SupplierFormData = {
   vatNumber: string;
   fiscalCode: string;
   deliveryDays: string;
+};
+
+type SifarCredential = {
+  id: string;
+  environment: string;
+  isActive: boolean;
+  lastSyncAt: string | null;
+  createdAt: string;
+  hasClientKey: boolean;
+};
+
+type SifarStore = {
+  id: string;
+  storeCode: string;
+  storeName: string | null;
+  isDefault: boolean;
 };
 
 const initialFormData: SupplierFormData = {
@@ -77,6 +95,15 @@ export default function ResellerSuppliers() {
 
   const { data: suppliers = [], isLoading } = useQuery<Supplier[]>({
     queryKey: ["/api/reseller/suppliers"],
+  });
+
+  const { data: sifarCredential } = useQuery<SifarCredential | null>({
+    queryKey: ["/api/sifar/credentials"],
+  });
+
+  const { data: sifarStores = [] } = useQuery<SifarStore[]>({
+    queryKey: ["/api/sifar/stores"],
+    enabled: !!sifarCredential?.hasClientKey,
   });
 
   const createMutation = useMutation({
@@ -198,10 +225,14 @@ export default function ResellerSuppliers() {
   const globalSuppliers = filteredSuppliers.filter(s => s.isGlobal);
   const ownSuppliers = filteredSuppliers.filter(s => s.isOwn);
 
+  const sifarConfigured = sifarCredential?.hasClientKey === true;
+  const sifarStoreCount = sifarStores.length;
+
   if (isLoading) {
     return (
       <div className="p-6 space-y-6">
         <Skeleton className="h-8 w-48" />
+        <Skeleton className="h-[200px] w-full" />
         <Skeleton className="h-[400px] w-full" />
       </div>
     );
@@ -226,6 +257,92 @@ export default function ResellerSuppliers() {
           </Button>
         </div>
       </div>
+
+      <Card className="border-2 border-primary/20 bg-gradient-to-r from-primary/5 to-transparent">
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-primary/10 rounded-lg">
+                <Zap className="h-6 w-6 text-primary" />
+              </div>
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  SIFAR
+                  <Badge variant="secondary" className="gap-1">
+                    <Zap className="h-3 w-3" />
+                    Integrazione API
+                  </Badge>
+                </CardTitle>
+                <CardDescription>
+                  Ordina ricambi direttamente dal catalogo SIFAR
+                </CardDescription>
+              </div>
+            </div>
+            {sifarConfigured ? (
+              <Badge variant="default" className="gap-1" data-testid="badge-sifar-status">
+                <CheckCircle className="h-3 w-3" />
+                Configurato
+              </Badge>
+            ) : (
+              <Badge variant="outline" className="gap-1 text-orange-600 border-orange-300" data-testid="badge-sifar-status">
+                <AlertTriangle className="h-3 w-3" />
+                Da configurare
+              </Badge>
+            )}
+          </div>
+        </CardHeader>
+        <CardContent>
+          {sifarConfigured ? (
+            <div className="space-y-4">
+              <div className="flex items-center gap-6 text-sm text-muted-foreground">
+                <div className="flex items-center gap-1">
+                  <Package className="h-4 w-4" />
+                  <span>Ambiente: <Badge variant="outline" className="ml-1">{sifarCredential?.environment}</Badge></span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <MapPin className="h-4 w-4" />
+                  <span>{sifarStoreCount} {sifarStoreCount === 1 ? 'punto vendita' : 'punti vendita'}</span>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <Link href="/reseller/sifar/catalog">
+                  <Button variant="default" size="sm" data-testid="button-sifar-catalog">
+                    <Package className="h-4 w-4 mr-2" />
+                    Catalogo Ricambi
+                  </Button>
+                </Link>
+                <Link href="/reseller/sifar/cart">
+                  <Button variant="outline" size="sm" data-testid="button-sifar-cart">
+                    <ShoppingCart className="h-4 w-4 mr-2" />
+                    Carrello
+                  </Button>
+                </Link>
+                <Link href="/reseller/sifar/settings">
+                  <Button variant="ghost" size="sm" data-testid="button-sifar-settings">
+                    <Settings className="h-4 w-4 mr-2" />
+                    Impostazioni
+                  </Button>
+                </Link>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <Alert>
+                <AlertTriangle className="h-4 w-4" />
+                <AlertDescription>
+                  Configura le credenziali SIFAR per iniziare a ordinare ricambi direttamente dal catalogo.
+                </AlertDescription>
+              </Alert>
+              <Link href="/reseller/sifar/settings">
+                <Button data-testid="button-sifar-configure">
+                  <Settings className="h-4 w-4 mr-2" />
+                  Configura SIFAR
+                </Button>
+              </Link>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader className="flex flex-row items-center justify-between gap-4 space-y-0 pb-4">
