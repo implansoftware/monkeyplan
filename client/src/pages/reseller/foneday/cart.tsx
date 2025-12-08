@@ -25,22 +25,15 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 
 type FonedayCartItem = {
-  id: number;
-  product_id: number;
-  product_sku: string;
-  product_name: string;
+  sku: string;
   quantity: number;
-  price: number;
-  subtotal: number;
-  stock: number;
+  title: string;
+  price: string;
+  note: string | null;
 };
 
-type FonedayCart = {
-  items: FonedayCartItem[];
-  subtotal: number;
-  tax: number;
-  total: number;
-  currency: string;
+type FonedayCartResponse = {
+  cart: FonedayCartItem[];
 };
 
 type FonedayCredential = {
@@ -90,7 +83,7 @@ export default function FonedayCartPage() {
     queryKey: ["/api/foneday/credentials"],
   });
 
-  const { data: cart, isLoading: loadingCart, refetch: refetchCart } = useQuery<FonedayCart>({
+  const { data: cartData, isLoading: loadingCart, refetch: refetchCart } = useQuery<FonedayCartResponse>({
     queryKey: ["/api/foneday/cart"],
     enabled: !!credential?.isActive,
   });
@@ -100,22 +93,11 @@ export default function FonedayCartPage() {
     enabled: !!credential?.isActive && showCheckout,
   });
 
-  const updateCartMutation = useMutation({
-    mutationFn: async ({ itemId, quantity }: { itemId: number; quantity: number }) => {
-      const res = await apiRequest("PUT", `/api/foneday/cart/items/${itemId}`, { quantity });
-      return res.json();
-    },
-    onSuccess: () => {
-      refetchCart();
-    },
-    onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
-    },
-  });
+  const cart = cartData?.cart || [];
 
   const removeFromCartMutation = useMutation({
-    mutationFn: async (itemId: number) => {
-      const res = await apiRequest("DELETE", `/api/foneday/cart/items/${itemId}`);
+    mutationFn: async ({ sku, quantity }: { sku: string; quantity: number }) => {
+      const res = await apiRequest("POST", "/api/foneday/cart/remove", { sku, quantity });
       return res.json();
     },
     onSuccess: () => {
@@ -127,13 +109,13 @@ export default function FonedayCartPage() {
     },
   });
 
-  const clearCartMutation = useMutation({
-    mutationFn: async () => {
-      return apiRequest("DELETE", "/api/foneday/cart");
+  const addToCartMutation = useMutation({
+    mutationFn: async ({ sku, quantity }: { sku: string; quantity: number }) => {
+      const res = await apiRequest("POST", "/api/foneday/cart/add", { sku, quantity });
+      return res.json();
     },
     onSuccess: () => {
       refetchCart();
-      toast({ title: "Carrello svuotato" });
     },
     onError: (error: Error) => {
       toast({ title: "Errore", description: error.message, variant: "destructive" });
@@ -165,21 +147,28 @@ export default function FonedayCartPage() {
     },
   });
 
-  const formatPrice = (price: number) => {
+  const formatPrice = (price: number | string) => {
+    const numPrice = typeof price === "string" ? parseFloat(price) : price;
     return new Intl.NumberFormat("it-IT", {
       style: "currency",
       currency: "EUR",
-    }).format(price);
+    }).format(numPrice);
   };
 
-  const handleQuantityChange = (item: FonedayCartItem, delta: number) => {
-    const newQty = item.quantity + delta;
-    if (newQty < 1) return;
-    if (newQty > item.stock) {
-      toast({ title: "Quantità non disponibile", variant: "destructive" });
-      return;
+  const handleQuantityIncrease = (item: FonedayCartItem) => {
+    addToCartMutation.mutate({ sku: item.sku, quantity: 1 });
+  };
+
+  const handleQuantityDecrease = (item: FonedayCartItem) => {
+    if (item.quantity <= 1) {
+      removeFromCartMutation.mutate({ sku: item.sku, quantity: 1 });
+    } else {
+      removeFromCartMutation.mutate({ sku: item.sku, quantity: 1 });
     }
-    updateCartMutation.mutate({ itemId: item.id, quantity: newQty });
+  };
+
+  const handleRemoveItem = (item: FonedayCartItem) => {
+    removeFromCartMutation.mutate({ sku: item.sku, quantity: item.quantity });
   };
 
   const isAddressValid = () => {
@@ -191,6 +180,13 @@ export default function FonedayCartPage() {
       address.phone.trim() &&
       address.email.trim()
     );
+  };
+
+  const calculateTotal = () => {
+    return cart.reduce((sum, item) => {
+      const price = parseFloat(item.price) || 0;
+      return sum + price;
+    }, 0);
   };
 
   if (loadingCredential) {
@@ -244,7 +240,7 @@ export default function FonedayCartPage() {
             <Skeleton key={i} className="h-24 w-full" />
           ))}
         </div>
-      ) : !cart || cart.items.length === 0 ? (
+      ) : cart.length === 0 ? (
         <Card>
           <CardContent className="py-12 text-center">
             <ShoppingCart className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
@@ -264,229 +260,77 @@ export default function FonedayCartPage() {
         <div className="grid gap-6 lg:grid-cols-3">
           <div className="lg:col-span-2 space-y-4">
             <Card>
-              <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle>Prodotti ({cart.items.length})</CardTitle>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => clearCartMutation.mutate()}
-                  disabled={clearCartMutation.isPending}
-                >
-                  {clearCartMutation.isPending ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Trash2 className="h-4 w-4" />
-                  )}
-                  <span className="ml-2">Svuota</span>
-                </Button>
+              <CardHeader className="flex flex-row items-center justify-between gap-2">
+                <CardTitle>Prodotti ({cart.length})</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                {cart.items.map((item) => (
+                {cart.map((item) => (
                   <div
-                    key={item.id}
+                    key={item.sku}
                     className="flex items-center justify-between p-4 border rounded-md"
-                    data-testid={`cart-item-${item.id}`}
+                    data-testid={`cart-item-${item.sku}`}
                   >
                     <div className="flex-1">
-                      <h3 className="font-medium">{item.product_name}</h3>
-                      <p className="text-sm text-muted-foreground">SKU: {item.product_sku}</p>
-                      <p className="text-sm font-medium mt-1">{formatPrice(item.price)} cad.</p>
+                      <h3 className="font-medium">{item.title}</h3>
+                      <p className="text-sm text-muted-foreground">SKU: {item.sku}</p>
+                      {item.note && (
+                        <p className="text-sm text-muted-foreground">Nota: {item.note}</p>
+                      )}
+                      <p className="text-sm font-medium mt-1">{formatPrice(item.price)}</p>
                     </div>
                     <div className="flex items-center gap-4">
                       <div className="flex items-center gap-2">
                         <Button
                           variant="outline"
                           size="icon"
-                          onClick={() => handleQuantityChange(item, -1)}
-                          disabled={item.quantity <= 1 || updateCartMutation.isPending}
+                          onClick={() => handleQuantityDecrease(item)}
+                          disabled={removeFromCartMutation.isPending}
+                          data-testid={`button-cart-minus-${item.sku}`}
                         >
                           <Minus className="h-4 w-4" />
                         </Button>
-                        <span className="w-12 text-center font-medium">{item.quantity}</span>
+                        <span className="w-8 text-center font-medium">{item.quantity}</span>
                         <Button
                           variant="outline"
                           size="icon"
-                          onClick={() => handleQuantityChange(item, 1)}
-                          disabled={item.quantity >= item.stock || updateCartMutation.isPending}
+                          onClick={() => handleQuantityIncrease(item)}
+                          disabled={addToCartMutation.isPending}
+                          data-testid={`button-cart-plus-${item.sku}`}
                         >
                           <Plus className="h-4 w-4" />
                         </Button>
                       </div>
-                      <div className="text-right min-w-[100px]">
-                        <p className="font-semibold">{formatPrice(item.subtotal)}</p>
-                      </div>
                       <Button
                         variant="ghost"
                         size="icon"
-                        onClick={() => removeFromCartMutation.mutate(item.id)}
+                        onClick={() => handleRemoveItem(item)}
                         disabled={removeFromCartMutation.isPending}
+                        data-testid={`button-cart-remove-${item.sku}`}
                       >
-                        <Trash2 className="h-4 w-4 text-destructive" />
+                        <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>
                   </div>
                 ))}
               </CardContent>
             </Card>
-
-            {showCheckout && (
-              <Card>
-                <CardHeader>
-                  <CardTitle>Indirizzo di Spedizione</CardTitle>
-                  <CardDescription>Inserisci i dati per la consegna</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid gap-4 md:grid-cols-2">
-                    <div className="space-y-2">
-                      <Label htmlFor="name">Nome e Cognome *</Label>
-                      <Input
-                        id="name"
-                        value={address.name}
-                        onChange={(e) => setAddress({ ...address, name: e.target.value })}
-                        data-testid="input-name"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="company">Azienda</Label>
-                      <Input
-                        id="company"
-                        value={address.company}
-                        onChange={(e) => setAddress({ ...address, company: e.target.value })}
-                        data-testid="input-company"
-                      />
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="address1">Indirizzo *</Label>
-                    <Input
-                      id="address1"
-                      value={address.address_line1}
-                      onChange={(e) => setAddress({ ...address, address_line1: e.target.value })}
-                      data-testid="input-address1"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="address2">Indirizzo 2</Label>
-                    <Input
-                      id="address2"
-                      value={address.address_line2}
-                      onChange={(e) => setAddress({ ...address, address_line2: e.target.value })}
-                      data-testid="input-address2"
-                    />
-                  </div>
-                  <div className="grid gap-4 md:grid-cols-3">
-                    <div className="space-y-2">
-                      <Label htmlFor="city">Città *</Label>
-                      <Input
-                        id="city"
-                        value={address.city}
-                        onChange={(e) => setAddress({ ...address, city: e.target.value })}
-                        data-testid="input-city"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="postal">CAP *</Label>
-                      <Input
-                        id="postal"
-                        value={address.postal_code}
-                        onChange={(e) => setAddress({ ...address, postal_code: e.target.value })}
-                        data-testid="input-postal"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="country">Paese</Label>
-                      <Select
-                        value={address.country_code}
-                        onValueChange={(val) => setAddress({ ...address, country_code: val })}
-                      >
-                        <SelectTrigger data-testid="select-country">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="IT">Italia</SelectItem>
-                          <SelectItem value="DE">Germania</SelectItem>
-                          <SelectItem value="FR">Francia</SelectItem>
-                          <SelectItem value="ES">Spagna</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                  <div className="grid gap-4 md:grid-cols-2">
-                    <div className="space-y-2">
-                      <Label htmlFor="phone">Telefono *</Label>
-                      <Input
-                        id="phone"
-                        type="tel"
-                        value={address.phone}
-                        onChange={(e) => setAddress({ ...address, phone: e.target.value })}
-                        data-testid="input-phone"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="email">Email *</Label>
-                      <Input
-                        id="email"
-                        type="email"
-                        value={address.email}
-                        onChange={(e) => setAddress({ ...address, email: e.target.value })}
-                        data-testid="input-email"
-                      />
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="notes">Note (opzionale)</Label>
-                    <Textarea
-                      id="notes"
-                      value={notes}
-                      onChange={(e) => setNotes(e.target.value)}
-                      placeholder="Istruzioni speciali per la consegna..."
-                      data-testid="input-notes"
-                    />
-                  </div>
-                </CardContent>
-              </Card>
-            )}
           </div>
 
           <div className="space-y-4">
             <Card>
               <CardHeader>
-                <CardTitle>Riepilogo Ordine</CardTitle>
+                <CardTitle>Riepilogo</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Subtotale</span>
-                    <span>{formatPrice(cart.subtotal)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">IVA</span>
-                    <span>{formatPrice(cart.tax)}</span>
-                  </div>
-                  <Separator />
-                  <div className="flex justify-between text-lg font-semibold">
-                    <span>Totale</span>
-                    <span>{formatPrice(cart.total)}</span>
-                  </div>
+                <div className="flex justify-between">
+                  <span>Subtotale</span>
+                  <span className="font-medium">{formatPrice(calculateTotal())}</span>
                 </div>
-
-                {showCheckout && (
-                  <div className="space-y-2">
-                    <Label>Metodo di Spedizione</Label>
-                    <Select value={selectedShipping} onValueChange={setSelectedShipping}>
-                      <SelectTrigger data-testid="select-shipping">
-                        <SelectValue placeholder="Seleziona spedizione" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {shippingMethods.map((method) => (
-                          <SelectItem key={method.id} value={method.id}>
-                            {method.name} - {formatPrice(method.price)} ({method.estimated_days})
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                )}
+                <Separator />
+                <div className="flex justify-between text-lg font-bold">
+                  <span>Totale</span>
+                  <span>{formatPrice(calculateTotal())}</span>
+                </div>
 
                 {!showCheckout ? (
                   <Button
@@ -495,47 +339,146 @@ export default function FonedayCartPage() {
                     data-testid="button-checkout"
                   >
                     <CreditCard className="h-4 w-4 mr-2" />
-                    Procedi all'Ordine
+                    Procedi al Checkout
                   </Button>
                 ) : (
-                  <div className="space-y-2">
-                    <Button
-                      className="w-full"
-                      onClick={() => submitOrderMutation.mutate()}
-                      disabled={
-                        submitOrderMutation.isPending ||
-                        !selectedShipping ||
-                        !isAddressValid()
-                      }
-                      data-testid="button-submit-order"
-                    >
-                      {submitOrderMutation.isPending ? (
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      ) : (
-                        <Send className="h-4 w-4 mr-2" />
-                      )}
-                      Invia Ordine
-                    </Button>
-                    <Button
-                      variant="outline"
-                      className="w-full"
-                      onClick={() => setShowCheckout(false)}
-                    >
-                      Annulla
-                    </Button>
+                  <div className="space-y-4">
+                    <Separator />
+                    <h3 className="font-medium">Indirizzo di Spedizione</h3>
+                    
+                    <div className="space-y-3">
+                      <div>
+                        <Label>Nome *</Label>
+                        <Input
+                          value={address.name}
+                          onChange={(e) => setAddress({ ...address, name: e.target.value })}
+                          placeholder="Nome completo"
+                          data-testid="input-shipping-name"
+                        />
+                      </div>
+                      <div>
+                        <Label>Azienda</Label>
+                        <Input
+                          value={address.company}
+                          onChange={(e) => setAddress({ ...address, company: e.target.value })}
+                          placeholder="Nome azienda (opzionale)"
+                          data-testid="input-shipping-company"
+                        />
+                      </div>
+                      <div>
+                        <Label>Indirizzo *</Label>
+                        <Input
+                          value={address.address_line1}
+                          onChange={(e) => setAddress({ ...address, address_line1: e.target.value })}
+                          placeholder="Via e numero civico"
+                          data-testid="input-shipping-address1"
+                        />
+                      </div>
+                      <div>
+                        <Label>Indirizzo 2</Label>
+                        <Input
+                          value={address.address_line2}
+                          onChange={(e) => setAddress({ ...address, address_line2: e.target.value })}
+                          placeholder="Appartamento, scala, etc."
+                          data-testid="input-shipping-address2"
+                        />
+                      </div>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <Label>Città *</Label>
+                          <Input
+                            value={address.city}
+                            onChange={(e) => setAddress({ ...address, city: e.target.value })}
+                            placeholder="Città"
+                            data-testid="input-shipping-city"
+                          />
+                        </div>
+                        <div>
+                          <Label>CAP *</Label>
+                          <Input
+                            value={address.postal_code}
+                            onChange={(e) => setAddress({ ...address, postal_code: e.target.value })}
+                            placeholder="CAP"
+                            data-testid="input-shipping-postal"
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <Label>Telefono *</Label>
+                        <Input
+                          value={address.phone}
+                          onChange={(e) => setAddress({ ...address, phone: e.target.value })}
+                          placeholder="+39 xxx xxx xxxx"
+                          data-testid="input-shipping-phone"
+                        />
+                      </div>
+                      <div>
+                        <Label>Email *</Label>
+                        <Input
+                          type="email"
+                          value={address.email}
+                          onChange={(e) => setAddress({ ...address, email: e.target.value })}
+                          placeholder="email@esempio.com"
+                          data-testid="input-shipping-email"
+                        />
+                      </div>
+                    </div>
+
+                    {shippingMethods.length > 0 && (
+                      <div>
+                        <Label>Metodo di Spedizione *</Label>
+                        <Select value={selectedShipping} onValueChange={setSelectedShipping}>
+                          <SelectTrigger data-testid="select-shipping-method">
+                            <SelectValue placeholder="Seleziona metodo" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {shippingMethods.map((method) => (
+                              <SelectItem key={method.id} value={method.id}>
+                                {method.name} - {formatPrice(method.price)} ({method.estimated_days})
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
+
+                    <div>
+                      <Label>Note</Label>
+                      <Textarea
+                        value={notes}
+                        onChange={(e) => setNotes(e.target.value)}
+                        placeholder="Note per l'ordine (opzionale)"
+                        data-testid="input-order-notes"
+                      />
+                    </div>
+
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        onClick={() => setShowCheckout(false)}
+                        className="flex-1"
+                        data-testid="button-cancel-checkout"
+                      >
+                        Annulla
+                      </Button>
+                      <Button
+                        onClick={() => submitOrderMutation.mutate()}
+                        disabled={!isAddressValid() || submitOrderMutation.isPending}
+                        className="flex-1"
+                        data-testid="button-submit-order"
+                      >
+                        {submitOrderMutation.isPending ? (
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        ) : (
+                          <Send className="h-4 w-4 mr-2" />
+                        )}
+                        Invia Ordine
+                      </Button>
+                    </div>
                   </div>
                 )}
               </CardContent>
             </Card>
-
-            {showCheckout && !isAddressValid() && (
-              <Alert>
-                <AlertTriangle className="h-4 w-4" />
-                <AlertDescription>
-                  Compila tutti i campi obbligatori (*) per procedere
-                </AlertDescription>
-              </Alert>
-            )}
           </div>
         </div>
       )}

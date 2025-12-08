@@ -13323,8 +13323,8 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  // GET /api/foneday/catalog/products/:id - Get Foneday product detail
-  app.get("/api/foneday/catalog/products/:id", requireAuth, requireRole("reseller"), async (req, res) => {
+  // GET /api/foneday/catalog/products/:sku - Get Foneday product detail
+  app.get("/api/foneday/catalog/products/:sku", requireAuth, requireRole("reseller"), async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
@@ -13336,7 +13336,7 @@ export function registerRoutes(app: Express): Server {
       const { createFonedayService } = await import("./fonedayService");
       const fonedayService = createFonedayService(credential);
       
-      const product = await fonedayService.getProduct(Number(req.params.id));
+      const product = await fonedayService.getProduct(req.params.sku);
       res.json(product);
     } catch (error: any) {
       res.status(400).send(error.message);
@@ -13357,20 +13357,20 @@ export function registerRoutes(app: Express): Server {
       const fonedayService = createFonedayService(credential);
       
       const cart = await fonedayService.getCart();
-      res.json(cart);
+      res.json({ cart });
     } catch (error: any) {
       res.status(400).send(error.message);
     }
   });
 
-  // POST /api/foneday/cart/add - Add item to cart
+  // POST /api/foneday/cart/add - Add items to cart
   app.post("/api/foneday/cart/add", requireAuth, requireRole("reseller"), async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
-      const { productId, quantity } = req.body;
-      if (!productId || !quantity) {
-        return res.status(400).send("ID prodotto e quantità obbligatori");
+      const { sku, quantity, note } = req.body;
+      if (!sku || !quantity) {
+        return res.status(400).send("SKU prodotto e quantità obbligatori");
       }
       
       const credential = await storage.getFonedayCredentialByReseller(req.user.id);
@@ -13381,22 +13381,21 @@ export function registerRoutes(app: Express): Server {
       const { createFonedayService } = await import("./fonedayService");
       const fonedayService = createFonedayService(credential);
       
-      await fonedayService.addToCart(Number(productId), Number(quantity));
-      const cart = await fonedayService.getCart();
-      res.json(cart);
+      const cart = await fonedayService.addToCart([{ sku, quantity: Number(quantity), note: note || null }]);
+      res.json({ cart });
     } catch (error: any) {
       res.status(400).send(error.message);
     }
   });
 
-  // PUT /api/foneday/cart/items/:id - Update cart item quantity
-  app.put("/api/foneday/cart/items/:id", requireAuth, requireRole("reseller"), async (req, res) => {
+  // POST /api/foneday/cart/remove - Remove items from cart
+  app.post("/api/foneday/cart/remove", requireAuth, requireRole("reseller"), async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
-      const { quantity } = req.body;
-      if (quantity === undefined) {
-        return res.status(400).send("Quantità obbligatoria");
+      const { sku, quantity } = req.body;
+      if (!sku || !quantity) {
+        return res.status(400).send("SKU prodotto e quantità obbligatori");
       }
       
       const credential = await storage.getFonedayCredentialByReseller(req.user.id);
@@ -13407,50 +13406,8 @@ export function registerRoutes(app: Express): Server {
       const { createFonedayService } = await import("./fonedayService");
       const fonedayService = createFonedayService(credential);
       
-      await fonedayService.updateCartItem(Number(req.params.id), Number(quantity));
-      const cart = await fonedayService.getCart();
-      res.json(cart);
-    } catch (error: any) {
-      res.status(400).send(error.message);
-    }
-  });
-
-  // DELETE /api/foneday/cart/items/:id - Remove item from cart
-  app.delete("/api/foneday/cart/items/:id", requireAuth, requireRole("reseller"), async (req, res) => {
-    try {
-      if (!req.user) return res.status(401).send("Unauthorized");
-      
-      const credential = await storage.getFonedayCredentialByReseller(req.user.id);
-      if (!credential) {
-        return res.status(404).send("Credenziali Foneday non configurate");
-      }
-      
-      const { createFonedayService } = await import("./fonedayService");
-      const fonedayService = createFonedayService(credential);
-      
-      await fonedayService.removeFromCart(Number(req.params.id));
-      const cart = await fonedayService.getCart();
-      res.json(cart);
-    } catch (error: any) {
-      res.status(400).send(error.message);
-    }
-  });
-
-  // DELETE /api/foneday/cart - Clear cart
-  app.delete("/api/foneday/cart", requireAuth, requireRole("reseller"), async (req, res) => {
-    try {
-      if (!req.user) return res.status(401).send("Unauthorized");
-      
-      const credential = await storage.getFonedayCredentialByReseller(req.user.id);
-      if (!credential) {
-        return res.status(404).send("Credenziali Foneday non configurate");
-      }
-      
-      const { createFonedayService } = await import("./fonedayService");
-      const fonedayService = createFonedayService(credential);
-      
-      await fonedayService.clearCart();
-      res.json({ success: true });
+      const cart = await fonedayService.removeFromCart([{ sku, quantity: Number(quantity) }]);
+      res.json({ cart });
     } catch (error: any) {
       res.status(400).send(error.message);
     }

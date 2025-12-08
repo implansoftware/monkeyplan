@@ -37,22 +37,11 @@ interface FonedayProductDetail extends FonedayProduct {
 }
 
 interface FonedayCartItem {
-  id: number;
-  product_id: number;
-  product_sku: string;
-  product_name: string;
+  sku: string;
   quantity: number;
-  price: number;
-  subtotal: number;
-  stock: number;
-}
-
-interface FonedayCart {
-  items: FonedayCartItem[];
-  subtotal: number;
-  tax: number;
-  total: number;
-  currency: string;
+  title: string;
+  price: string;
+  note: string | null;
 }
 
 interface FonedayShippingMethod {
@@ -248,9 +237,9 @@ export class FonedayService {
     throw new Error(result.message || "Errore nella ricerca prodotti");
   }
 
-  async getProduct(productId: number): Promise<FonedayProductDetail> {
+  async getProduct(sku: string): Promise<FonedayProductDetail> {
     const result = await this.request<{ product: FonedayProductDetail }>(
-      `/v1/products/${productId}`
+      `/v1/product/${sku}`
     );
     if (result.success && result.data?.product) {
       return result.data.product;
@@ -266,55 +255,36 @@ export class FonedayService {
     throw new Error(result.message || "Errore nel recupero marchi");
   }
 
-  async getCart(): Promise<FonedayCart> {
-    const result = await this.request<{ cart: FonedayCart }>("/v1/cart");
+  async getCart(): Promise<FonedayCartItem[]> {
+    const result = await this.request<{ cart: FonedayCartItem[] }>("/v1/shopping-cart");
     if (result.success && result.data) {
-      return result.data.cart || { items: [], subtotal: 0, tax: 0, total: 0, currency: "EUR" };
+      return result.data.cart || [];
     }
-    throw new Error(result.message || "Errore nel recupero carrello");
+    return [];
   }
 
-  async addToCart(productId: number, quantity: number): Promise<boolean> {
-    const result = await this.request(
-      "/v1/cart/items",
+  async addToCart(articles: { sku: string; quantity: number; note?: string | null }[]): Promise<FonedayCartItem[]> {
+    const result = await this.request<{ cart: FonedayCartItem[] }>(
+      "/v1/shopping-cart-add-items",
       "POST",
-      { product_id: productId, quantity }
+      { articles }
     );
-    if (!result.success) {
-      throw new Error(result.message || "Errore nell'aggiunta al carrello");
+    if (result.success && result.data) {
+      return result.data.cart || [];
     }
-    return true;
+    throw new Error(result.message || "Errore nell'aggiunta al carrello");
   }
 
-  async updateCartItem(itemId: number, quantity: number): Promise<boolean> {
-    const result = await this.request(
-      `/v1/cart/items/${itemId}`,
-      "PUT",
-      { quantity }
+  async removeFromCart(articles: { sku: string; quantity: number }[]): Promise<FonedayCartItem[]> {
+    const result = await this.request<{ cart: FonedayCartItem[] }>(
+      "/v1/shopping-cart-remove-items",
+      "POST",
+      { articles }
     );
-    if (!result.success) {
-      throw new Error(result.message || "Errore nell'aggiornamento carrello");
+    if (result.success && result.data) {
+      return result.data.cart || [];
     }
-    return true;
-  }
-
-  async removeFromCart(itemId: number): Promise<boolean> {
-    const result = await this.request(
-      `/v1/cart/items/${itemId}`,
-      "DELETE"
-    );
-    if (!result.success) {
-      throw new Error(result.message || "Errore nella rimozione dal carrello");
-    }
-    return true;
-  }
-
-  async clearCart(): Promise<boolean> {
-    const result = await this.request("/v1/cart", "DELETE");
-    if (!result.success) {
-      throw new Error(result.message || "Errore nello svuotamento carrello");
-    }
-    return true;
+    throw new Error(result.message || "Errore nella rimozione dal carrello");
   }
 
   async getShippingMethods(): Promise<FonedayShippingMethod[]> {

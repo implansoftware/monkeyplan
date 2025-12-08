@@ -47,21 +47,16 @@ type FonedayProduct = {
   model_codes?: string[];
 };
 
+type FonedayCartItem = {
+  sku: string;
+  quantity: number;
+  title: string;
+  price: string;
+  note: string | null;
+};
+
 type FonedayCart = {
-  items: Array<{
-    id: number;
-    product_id: number;
-    product_sku: string;
-    product_name: string;
-    quantity: number;
-    price: number;
-    subtotal: number;
-    stock: number;
-  }>;
-  subtotal: number;
-  tax: number;
-  total: number;
-  currency: string;
+  cart: FonedayCartItem[];
 };
 
 type FonedayCredential = {
@@ -75,7 +70,8 @@ export default function FonedayCatalogPage() {
   const [selectedCategory, setSelectedCategory] = useState<string>("");
   const [selectedBrand, setSelectedBrand] = useState<string>("");
   const [currentPage, setCurrentPage] = useState(1);
-  const [quantities, setQuantities] = useState<Record<string | number, number>>({});
+  const [quantities, setQuantities] = useState<Record<string, number>>({});
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const perPage = 20;
 
   const { data: credential, isLoading: loadingCredential } = useQuery<FonedayCredential | null>({
@@ -91,8 +87,6 @@ export default function FonedayCatalogPage() {
     queryKey: ["/api/foneday/catalog/brands"],
     enabled: !!credential?.isActive,
   });
-
-  const [debouncedSearch, setDebouncedSearch] = useState("");
   
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -131,9 +125,9 @@ export default function FonedayCatalogPage() {
   });
 
   const addToCartMutation = useMutation({
-    mutationFn: async ({ productId, quantity }: { productId: number; quantity: number }) => {
+    mutationFn: async ({ sku, quantity }: { sku: string; quantity: number }) => {
       const res = await apiRequest("POST", "/api/foneday/cart/add", {
-        productId,
+        sku,
         quantity,
       });
       return res.json();
@@ -147,26 +141,26 @@ export default function FonedayCatalogPage() {
     },
   });
 
-  const formatPrice = (price: number) => {
+  const formatPrice = (price: number | string) => {
+    const numPrice = typeof price === "string" ? parseFloat(price) : price;
     return new Intl.NumberFormat("it-IT", {
       style: "currency",
       currency: "EUR",
-    }).format(price);
+    }).format(numPrice);
   };
 
-  const handleQuantityChange = (productId: string | number, delta: number) => {
+  const handleQuantityChange = (sku: string, delta: number) => {
     setQuantities((prev) => {
-      const current = prev[productId] || 1;
+      const current = prev[sku] || 1;
       const newQty = Math.max(1, current + delta);
-      return { ...prev, [productId]: newQty };
+      return { ...prev, [sku]: newQty };
     });
   };
 
   const handleAddToCart = (product: FonedayProduct) => {
-    const qty = quantities[product.id] || 1;
-    const productIdNum = typeof product.id === "string" ? parseInt(product.id, 10) || 0 : product.id;
-    addToCartMutation.mutate({ productId: productIdNum, quantity: qty });
-    setQuantities((prev) => ({ ...prev, [product.id]: 1 }));
+    const qty = quantities[product.sku] || 1;
+    addToCartMutation.mutate({ sku: product.sku, quantity: qty });
+    setQuantities((prev) => ({ ...prev, [product.sku]: 1 }));
   };
 
   const totalPages = productsData ? Math.ceil(productsData.total / perPage) : 0;
@@ -213,9 +207,9 @@ export default function FonedayCatalogPage() {
             <Button variant="outline" data-testid="button-view-cart">
               <ShoppingCart className="h-4 w-4 mr-2" />
               Carrello
-              {cart && cart.items.length > 0 && (
+              {cart && cart.cart && cart.cart.length > 0 && (
                 <Badge variant="secondary" className="ml-2">
-                  {cart.items.reduce((sum, item) => sum + item.quantity, 0)}
+                  {cart.cart.reduce((sum: number, item: FonedayCartItem) => sum + item.quantity, 0)}
                 </Badge>
               )}
             </Button>
@@ -387,19 +381,19 @@ export default function FonedayCatalogPage() {
                         <Button
                           variant="outline"
                           size="icon"
-                          onClick={() => handleQuantityChange(product.id, -1)}
-                          data-testid={`button-minus-${product.id}`}
+                          onClick={() => handleQuantityChange(product.sku, -1)}
+                          data-testid={`button-minus-${product.sku}`}
                         >
                           <Minus className="h-4 w-4" />
                         </Button>
                         <span className="w-12 text-center font-medium">
-                          {quantities[product.id] || 1}
+                          {quantities[product.sku] || 1}
                         </span>
                         <Button
                           variant="outline"
                           size="icon"
-                          onClick={() => handleQuantityChange(product.id, 1)}
-                          data-testid={`button-plus-${product.id}`}
+                          onClick={() => handleQuantityChange(product.sku, 1)}
+                          data-testid={`button-plus-${product.sku}`}
                         >
                           <Plus className="h-4 w-4" />
                         </Button>
@@ -407,7 +401,7 @@ export default function FonedayCatalogPage() {
                           onClick={() => handleAddToCart(product)}
                           disabled={addToCartMutation.isPending}
                           className="ml-2"
-                          data-testid={`button-add-cart-${product.id}`}
+                          data-testid={`button-add-cart-${product.sku}`}
                         >
                           {addToCartMutation.isPending ? (
                             <Loader2 className="h-4 w-4 mr-2 animate-spin" />
