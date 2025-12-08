@@ -5,7 +5,8 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Package, Search, Building2 } from "lucide-react";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Package, Search, Building2, Globe, User } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 
 type Product = {
@@ -16,6 +17,7 @@ type Product = {
   description: string | null;
   unitPrice: number;
   createdAt: string;
+  isOwn?: boolean;
 };
 
 type RepairCenter = {
@@ -34,11 +36,13 @@ type InventoryWithDetails = {
   repairCenter: RepairCenter | null;
 };
 
+type OwnershipFilter = "all" | "global" | "own";
+
 export default function ResellerInventory() {
   const [searchQuery, setSearchQuery] = useState("");
   const [centerFilter, setCenterFilter] = useState<string>("all");
+  const [ownershipFilter, setOwnershipFilter] = useState<OwnershipFilter>("all");
 
-  // Inventory endpoint now returns enriched data with product and repairCenter details
   const { data: inventory = [], isLoading: inventoryLoading } = useQuery<InventoryWithDetails[]>({
     queryKey: ["/api/reseller/inventory"],
   });
@@ -53,7 +57,11 @@ export default function ResellerInventory() {
       item.product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       item.product.sku.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesCenter = centerFilter === "all" || item.repairCenterId === centerFilter;
-    return matchesSearch && matchesCenter;
+    const matchesOwnership = 
+      ownershipFilter === "all" ||
+      (ownershipFilter === "own" && item.product.isOwn === true) ||
+      (ownershipFilter === "global" && item.product.isOwn === false);
+    return matchesSearch && matchesCenter && matchesOwnership;
   });
 
   const getLowStockBadge = (quantity: number) => {
@@ -62,12 +70,32 @@ export default function ResellerInventory() {
     return null;
   };
 
+  const getOwnershipBadge = (isOwn: boolean | undefined) => {
+    if (isOwn === true) {
+      return (
+        <Badge variant="default" className="gap-1">
+          <User className="h-3 w-3" />
+          Mio
+        </Badge>
+      );
+    }
+    return (
+      <Badge variant="outline" className="gap-1">
+        <Globe className="h-3 w-3" />
+        Catalogo
+      </Badge>
+    );
+  };
+
   const formatCurrency = (cents: number) => {
     return new Intl.NumberFormat("it-IT", {
       style: "currency",
       currency: "EUR",
     }).format(cents / 100);
   };
+
+  const ownCount = inventory.filter(i => i.product?.isOwn === true).length;
+  const globalCount = inventory.filter(i => i.product?.isOwn === false).length;
 
   if (inventoryLoading) {
     return (
@@ -95,6 +123,22 @@ export default function ResellerInventory() {
           Visualizza l'inventario dei tuoi centri riparazione
         </p>
       </div>
+
+      <Tabs value={ownershipFilter} onValueChange={(v) => setOwnershipFilter(v as OwnershipFilter)}>
+        <TabsList data-testid="tabs-ownership-filter">
+          <TabsTrigger value="all" data-testid="tab-all">
+            Tutti ({inventory.length})
+          </TabsTrigger>
+          <TabsTrigger value="own" data-testid="tab-own" className="gap-1">
+            <User className="h-4 w-4" />
+            I Miei Prodotti ({ownCount})
+          </TabsTrigger>
+          <TabsTrigger value="global" data-testid="tab-global" className="gap-1">
+            <Globe className="h-4 w-4" />
+            Catalogo Globale ({globalCount})
+          </TabsTrigger>
+        </TabsList>
+      </Tabs>
 
       <div className="flex gap-4 flex-wrap">
         <div className="relative flex-1 min-w-[200px]">
@@ -137,7 +181,7 @@ export default function ResellerInventory() {
           <CardContent className="py-8 text-center">
             <Package className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
             <p className="text-muted-foreground">
-              {searchQuery || centerFilter !== "all"
+              {searchQuery || centerFilter !== "all" || ownershipFilter !== "all"
                 ? "Nessun prodotto trovato con i filtri applicati."
                 : "Nessun prodotto in magazzino."}
             </p>
@@ -148,7 +192,9 @@ export default function ResellerInventory() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Package className="h-5 w-5" />
-              Inventario ({filteredInventory.length} prodotti)
+              {ownershipFilter === "all" && `Inventario (${filteredInventory.length} prodotti)`}
+              {ownershipFilter === "own" && `I Miei Prodotti (${filteredInventory.length})`}
+              {ownershipFilter === "global" && `Catalogo Globale (${filteredInventory.length})`}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -156,6 +202,7 @@ export default function ResellerInventory() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Prodotto</TableHead>
+                  <TableHead>Tipo</TableHead>
                   <TableHead>SKU</TableHead>
                   <TableHead>Centro</TableHead>
                   <TableHead>Categoria</TableHead>
@@ -169,6 +216,9 @@ export default function ResellerInventory() {
                   <TableRow key={item.id} data-testid={`row-inventory-${item.id}`}>
                     <TableCell className="font-medium">
                       {item.product?.name || "N/D"}
+                    </TableCell>
+                    <TableCell>
+                      {getOwnershipBadge(item.product?.isOwn)}
                     </TableCell>
                     <TableCell className="font-mono text-sm">
                       {item.product?.sku || "N/D"}
@@ -197,7 +247,11 @@ export default function ResellerInventory() {
       <div className="grid gap-4 md:grid-cols-3">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Totale Prodotti</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              {ownershipFilter === "all" && "Totale Prodotti"}
+              {ownershipFilter === "own" && "I Miei Prodotti"}
+              {ownershipFilter === "global" && "Catalogo Globale"}
+            </CardTitle>
             <Package className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>

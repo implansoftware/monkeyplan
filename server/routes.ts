@@ -2425,11 +2425,18 @@ export function registerRoutes(app: Express): Server {
       const centersMap = new Map(resellerCenters.map(c => [c.id, { id: c.id, name: c.name, city: c.city }]));
       
       // Enrich inventory with product and repair center details
-      const enrichedInventory = inventory.map(item => ({
-        ...item,
-        product: productsMap.get(item.productId) || null,
-        repairCenter: centersMap.get(item.repairCenterId) || null,
-      }));
+      // Include isOwn flag to distinguish reseller's own products from global catalog
+      const enrichedInventory = inventory.map(item => {
+        const product = productsMap.get(item.productId);
+        return {
+          ...item,
+          product: product ? {
+            ...product,
+            isOwn: product.createdBy === req.user!.id,
+          } : null,
+          repairCenter: centersMap.get(item.repairCenterId) || null,
+        };
+      });
       
       res.json(enrichedInventory);
     } catch (error: any) {
