@@ -215,17 +215,34 @@ export class FonedayService {
     if (params.page) queryParams.page = String(params.page);
     if (params.per_page) queryParams.per_page = String(params.per_page);
 
-    const result = await this.request<{
-      products: FonedayProduct[];
-      meta: { total: number; page: number; per_page: number };
-    }>("/v1/products", "GET", undefined, queryParams);
+    const result = await this.request<any>("/v1/products", "GET", undefined, queryParams);
 
     if (result.success && result.data) {
+      console.log("Foneday API Response structure:", JSON.stringify(result.data, null, 2).substring(0, 2000));
+      
+      const rawProducts = result.data.products || result.data.data || result.data || [];
+      const products = Array.isArray(rawProducts) ? rawProducts.map((p: any) => ({
+        id: p.id || p.product_id,
+        sku: p.sku || p.article_number || p.code || "",
+        name: p.name || p.title || p.product_name || p.description || "",
+        brand: p.brand || p.manufacturer || "",
+        model: p.model || p.device || "",
+        category_id: p.category_id || 0,
+        category_name: p.category_name || p.category || "",
+        price: p.price || p.unit_price || 0,
+        stock: p.stock || p.quantity || p.availability || 0,
+        ean: p.ean || p.barcode || "",
+        image_url: p.image_url || p.image || p.picture || p.photo || "",
+        description: p.description || p.name || "",
+        warranty_months: p.warranty_months || p.warranty || 0,
+      })) : [];
+      
+      const meta = result.data.meta || result.data.pagination || {};
       return {
-        products: result.data.products || [],
-        total: result.data.meta?.total || 0,
-        page: result.data.meta?.page || 1,
-        per_page: result.data.meta?.per_page || 20,
+        products,
+        total: meta.total || meta.total_count || products.length,
+        page: meta.page || meta.current_page || 1,
+        per_page: meta.per_page || meta.limit || 20,
       };
     }
     throw new Error(result.message || "Errore nella ricerca prodotti");
