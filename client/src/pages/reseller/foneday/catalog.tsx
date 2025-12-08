@@ -161,7 +161,12 @@ export default function FonedayCatalogPage() {
 
   const handleAddToCart = (product: FonedayProduct) => {
     const qty = quantities[product.sku] || 1;
-    addToCartMutation.mutate({ sku: product.sku, quantity: qty });
+    addToCartMutation.mutate({ 
+      sku: product.sku, 
+      quantity: qty,
+      productName: product.name,
+      productPrice: typeof product.price === 'string' ? parseFloat(product.price) : product.price,
+    });
     setQuantities((prev) => ({ ...prev, [product.sku]: 1 }));
   };
 
