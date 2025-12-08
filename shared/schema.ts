@@ -1355,6 +1355,55 @@ export const sifarProductCompatibility = pgTable("sifar_product_compatibility", 
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
+// ============ FONEDAY INTEGRATION ============
+
+// Credenziali Foneday per reseller
+export const fonedayCredentials = pgTable("foneday_credentials", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  resellerId: varchar("reseller_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  
+  // Token API Foneday (Bearer token)
+  apiToken: text("api_token").notNull(),
+  
+  // Stato
+  isActive: boolean("is_active").notNull().default(true),
+  lastSyncAt: timestamp("last_sync_at"),
+  lastTestAt: timestamp("last_test_at"),
+  testStatus: text("test_status"), // "success" | "error"
+  testMessage: text("test_message"),
+  
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+// Ordini Foneday (tracciamento ordini inviati)
+export const fonedayOrders = pgTable("foneday_orders", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  credentialId: varchar("credential_id").notNull().references(() => fonedayCredentials.id, { onDelete: "cascade" }),
+  
+  // Dati ordine Foneday
+  fonedayOrderNumber: text("foneday_order_number").notNull(),
+  status: text("status").notNull(), // holding, shipped, etc.
+  shipmentMethod: text("shipment_method"),
+  trackingNumber: text("tracking_number"),
+  
+  // Importi
+  totalInclVat: integer("total_incl_vat").notNull(), // In centesimi
+  paid: boolean("paid").notNull().default(false),
+  invoiceNumber: text("invoice_number"),
+  
+  // Quantità
+  amountOfProducts: integer("amount_of_products").notNull().default(0),
+  totalProducts: integer("total_products").notNull().default(0),
+  
+  // Dati ordine completo (JSON)
+  orderData: text("order_data"),
+  
+  fonedayCreatedAt: timestamp("foneday_created_at"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
 // Supplier Orders (Ordini a Fornitori)
 export const supplierOrders = pgTable("supplier_orders", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -2909,6 +2958,19 @@ export const insertSifarProductCompatibilitySchema = createInsertSchema(sifarPro
   createdAt: true,
 });
 
+// Foneday schemas
+export const insertFonedayCredentialSchema = createInsertSchema(fonedayCredentials).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertFonedayOrderSchema = createInsertSchema(fonedayOrders).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 // Parts Load Documents schemas
 export const insertPartsLoadDocumentSchema = createInsertSchema(partsLoadDocuments).omit({
   id: true,
@@ -3286,6 +3348,13 @@ export type InsertSifarModel = z.infer<typeof insertSifarModelSchema>;
 
 export type SifarProductCompatibility = typeof sifarProductCompatibility.$inferSelect;
 export type InsertSifarProductCompatibility = z.infer<typeof insertSifarProductCompatibilitySchema>;
+
+// Foneday types
+export type FonedayCredential = typeof fonedayCredentials.$inferSelect;
+export type InsertFonedayCredential = z.infer<typeof insertFonedayCredentialSchema>;
+
+export type FonedayOrder = typeof fonedayOrders.$inferSelect;
+export type InsertFonedayOrder = z.infer<typeof insertFonedayOrderSchema>;
 
 // Parts Load types
 export type PartsLoadDocument = typeof partsLoadDocuments.$inferSelect;
