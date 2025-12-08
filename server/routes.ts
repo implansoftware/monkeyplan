@@ -11293,6 +11293,139 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // POST /api/parts-load/:id/bulk-items - Bulk import items from pasted text
+  app.post("/api/parts-load/:id/bulk-items", requireAuth, requireRole("admin", "repair_center"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const doc = await storage.getPartsLoadDocument(req.params.id);
+      if (!doc) {
+        return res.status(404).send("Documento di carico non trovato");
+      }
+      
+      if (req.user.role === 'repair_center' && doc.repairCenterId !== req.user.repairCenterId) {
+        return res.status(403).send("Accesso negato");
+      }
+      
+      if (doc.status !== 'draft') {
+        return res.status(400).send("Solo i documenti in bozza possono essere modificati");
+      }
+      
+      const { items, createProducts } = req.body;
+      
+      if (!Array.isArray(items) || items.length === 0) {
+        return res.status(400).send("Nessun articolo da importare");
+      }
+      
+      const results = {
+        imported: 0,
+        productsCreated: 0,
+        errors: [] as string[],
+      };
+      
+      // Load products and supplier once at the beginning for efficiency
+      let allProducts: any[] = [];
+      let supplierName: string | undefined;
+      
+      if (createProducts) {
+        allProducts = await storage.listProducts();
+        if (doc.supplierId) {
+          const supplier = await storage.getSupplier(doc.supplierId);
+          supplierName = supplier?.name;
+        }
+      }
+      
+      // Create a map for quick lookup
+      const productMap = new Map<string, string>();
+      for (const p of allProducts) {
+        productMap.set(p.sku.toLowerCase(), p.id);
+        if (p.supplierCode) {
+          productMap.set(p.supplierCode.toLowerCase(), p.id);
+        }
+      }
+      
+      for (const item of items) {
+        try {
+          // Validate and coerce item fields
+          const partCode = String(item.partCode || '').trim();
+          const description = String(item.description || '').trim();
+          const quantity = Math.max(1, parseInt(String(item.quantity)) || 1);
+          const unitPrice = Math.max(0, parseFloat(String(item.unitPrice)) || 0);
+          const category = String(item.category || 'ricambio').trim();
+          
+          if (!partCode || !description) {
+            results.errors.push(`Riga incompleta: ${partCode || 'codice mancante'}`);
+            continue;
+          }
+          
+          let productId: string | undefined;
+          
+          // Se createProducts è true, cerca/crea il prodotto
+          if (createProducts) {
+            // Check existing product from map
+            const existingProductId = productMap.get(partCode.toLowerCase());
+            
+            if (existingProductId) {
+              productId = existingProductId;
+            } else {
+              // Crea nuovo prodotto
+              const newProduct = await storage.createProduct({
+                name: description,
+                sku: partCode,
+                category: category,
+                productType: 'ricambio',
+                description: description,
+                unitPrice: Math.round(unitPrice * 100),
+                costPrice: Math.round(unitPrice * 100),
+                supplier: supplierName,
+                supplierCode: partCode,
+              });
+              productId = newProduct.id;
+              // Add to map for subsequent lookups
+              productMap.set(partCode.toLowerCase(), newProduct.id);
+              results.productsCreated++;
+            }
+          }
+          
+          // Crea la riga del carico
+          await storage.createPartsLoadItem({
+            partsLoadDocumentId: doc.id,
+            partCode,
+            description,
+            quantity,
+            unitPrice: Math.round(unitPrice * 100),
+            totalPrice: Math.round(unitPrice * 100 * quantity),
+            status: 'pending',
+            matchedProductId: productId,
+          });
+          
+          results.imported++;
+        } catch (err: any) {
+          results.errors.push(`Errore riga ${item.partCode}: ${err.message}`);
+        }
+      }
+      
+      // Aggiorna totali documento
+      const docItems = await storage.listPartsLoadItems(doc.id);
+      const totalItems = docItems.length;
+      const totalQuantity = docItems.reduce((sum, i) => sum + i.quantity, 0);
+      const totalAmount = docItems.reduce((sum, i) => sum + i.totalPrice, 0);
+      
+      await storage.updatePartsLoadDocument(doc.id, {
+        totalItems,
+        totalQuantity,
+        totalAmount,
+      });
+      
+      res.json({
+        message: `Importati ${results.imported} articoli`,
+        ...results,
+      });
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+
   // PATCH /api/parts-load-items/:id - Update parts load item
   app.patch("/api/parts-load-items/:id", requireAuth, requireRole("admin", "repair_center"), async (req, res) => {
     try {

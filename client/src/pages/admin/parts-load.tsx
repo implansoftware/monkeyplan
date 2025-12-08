@@ -79,7 +79,16 @@ import {
   Download,
   Play,
   ListChecks,
+  ClipboardPaste,
 } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+
+interface ParsedItem {
+  partCode: string;
+  description: string;
+  quantity: number;
+  unitPrice: number;
+}
 
 interface PartsLoadDocumentWithDetails extends PartsLoadDocument {
   supplierName?: string;
@@ -133,6 +142,10 @@ export default function PartsLoadPage() {
   const [itemDialogOpen, setItemDialogOpen] = useState(false);
   const [matchDialogOpen, setMatchDialogOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<PartsLoadItemWithDetails | null>(null);
+  const [pasteDialogOpen, setPasteDialogOpen] = useState(false);
+  const [pasteText, setPasteText] = useState("");
+  const [parsedItems, setParsedItems] = useState<ParsedItem[]>([]);
+  const [createProducts, setCreateProducts] = useState(true);
   
   const [newDocForm, setNewDocForm] = useState({
     documentType: "ddt",
@@ -280,6 +293,64 @@ export default function PartsLoadPage() {
       toast({ title: "Errore", description: error.message, variant: "destructive" });
     },
   });
+
+  const bulkImportMutation = useMutation({
+    mutationFn: async ({ docId, items, createProducts }: { docId: string; items: ParsedItem[]; createProducts: boolean }) => {
+      const res = await apiRequest("POST", `/api/parts-load/${docId}/bulk-items`, { items, createProducts });
+      return res.json();
+    },
+    onSuccess: (data: any) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/parts-load", selectedDoc?.id] });
+      queryClient.invalidateQueries({ queryKey: ["/api/parts-load"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/products"] });
+      setPasteDialogOpen(false);
+      setPasteText("");
+      setParsedItems([]);
+      toast({ 
+        title: "Importazione completata", 
+        description: `Importati: ${data.imported}, Prodotti creati: ${data.productsCreated}${data.errors?.length ? `, Errori: ${data.errors.length}` : ''}` 
+      });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Errore", description: error.message, variant: "destructive" });
+    },
+  });
+
+  function parseTextToItems(text: string): ParsedItem[] {
+    const lines = text.trim().split('\n').filter(line => line.trim());
+    const items: ParsedItem[] = [];
+    
+    for (const line of lines) {
+      const parts = line.split('\t');
+      if (parts.length < 2) continue;
+      
+      const partCode = parts[0]?.trim() || '';
+      const description = parts[1]?.trim() || '';
+      const quantity = parseInt(parts[2]?.trim()) || 1;
+      const unitPrice = parseFloat(parts[3]?.trim()?.replace(',', '.')) || 0;
+      
+      if (partCode && description) {
+        items.push({ partCode, description, quantity, unitPrice });
+      }
+    }
+    
+    return items;
+  }
+
+  function handlePasteTextChange(text: string) {
+    setPasteText(text);
+    const parsed = parseTextToItems(text);
+    setParsedItems(parsed);
+  }
+
+  function handleBulkImport() {
+    if (!selectedDoc || parsedItems.length === 0) return;
+    bulkImportMutation.mutate({ 
+      docId: selectedDoc.id, 
+      items: parsedItems, 
+      createProducts 
+    });
+  }
 
   function resetNewDocForm() {
     setNewDocForm({
@@ -666,6 +737,15 @@ export default function PartsLoadPage() {
                         Aggiungi
                       </Button>
                       <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={() => setPasteDialogOpen(true)}
+                        data-testid="button-paste-items"
+                      >
+                        <ClipboardPaste className="mr-2 h-4 w-4" />
+                        Incolla Testo
+                      </Button>
+                      <Button 
                         size="sm" 
                         onClick={() => processDocMutation.mutate(selectedDoc.id)}
                         disabled={processDocMutation.isPending || items.length === 0}
@@ -966,6 +1046,83 @@ export default function PartsLoadPage() {
               </div>
             </TabsContent>
           </Tabs>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={pasteDialogOpen} onOpenChange={(open) => { if (!open) { setPasteText(""); setParsedItems([]); } setPasteDialogOpen(open); }}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Incolla Articoli da Testo</DialogTitle>
+            <DialogDescription>
+              Incolla righe di testo con formato: Codice [TAB] Descrizione [TAB] Quantità [TAB] Prezzo
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Testo da importare</Label>
+              <Textarea
+                value={pasteText}
+                onChange={(e) => handlePasteTextChange(e.target.value)}
+                placeholder="Incolla qui le righe copiate da Excel o documento...&#10;Formato: Codice[TAB]Descrizione[TAB]Quantità[TAB]Prezzo&#10;&#10;Esempio:&#10;ABC123      Display iPhone 14       2       45,90&#10;XYZ789        Batteria Samsung S23    5       25,00"
+                className="min-h-[150px] font-mono text-sm"
+                data-testid="textarea-paste-items"
+              />
+            </div>
+            
+            <div className="flex items-center space-x-2">
+              <Checkbox 
+                id="createProducts" 
+                checked={createProducts} 
+                onCheckedChange={(checked) => setCreateProducts(checked === true)}
+                data-testid="checkbox-create-products"
+              />
+              <Label htmlFor="createProducts" className="text-sm font-normal">
+                Crea automaticamente i prodotti nel catalogo se non esistono
+              </Label>
+            </div>
+            
+            {parsedItems.length > 0 && (
+              <div className="space-y-2">
+                <Label>Anteprima ({parsedItems.length} articoli riconosciuti)</Label>
+                <div className="border rounded-lg overflow-hidden max-h-[200px] overflow-y-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Codice</TableHead>
+                        <TableHead>Descrizione</TableHead>
+                        <TableHead className="text-center">Qta</TableHead>
+                        <TableHead className="text-right">Prezzo</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {parsedItems.map((item, idx) => (
+                        <TableRow key={idx}>
+                          <TableCell className="font-mono text-sm">{item.partCode}</TableCell>
+                          <TableCell>{item.description}</TableCell>
+                          <TableCell className="text-center">{item.quantity}</TableCell>
+                          <TableCell className="text-right">{formatCurrency(item.unitPrice * 100)}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPasteDialogOpen(false)}>
+              Annulla
+            </Button>
+            <Button 
+              onClick={handleBulkImport} 
+              disabled={bulkImportMutation.isPending || parsedItems.length === 0}
+              data-testid="button-confirm-bulk-import"
+            >
+              {bulkImportMutation.isPending ? "Importazione..." : `Importa ${parsedItems.length} articoli`}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
