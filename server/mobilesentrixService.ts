@@ -1,0 +1,324 @@
+import { MobilesentrixCredential } from "@shared/schema";
+import crypto from "crypto";
+
+const MOBILESENTRIX_BASE_URL = "https://api.mobilesentrix.com";
+
+interface MobilesentrixApiResponse<T> {
+  success: boolean;
+  message?: string;
+  data?: T;
+}
+
+interface MobilesentrixProduct {
+  id: string;
+  sku: string;
+  name: string;
+  brand: string;
+  model: string;
+  category: string;
+  price: number;
+  stock: number;
+  image_url: string;
+  description: string;
+}
+
+interface MobilesentrixCategory {
+  id: string;
+  name: string;
+  parent_id: string | null;
+}
+
+interface MobilesentrixCartItem {
+  sku: string;
+  quantity: number;
+  price: number;
+}
+
+interface MobilesentrixOrderResponse {
+  order_id: string;
+  order_number: string;
+  status: string;
+  total: number;
+  created_at: string;
+}
+
+interface MobilesentrixAddress {
+  name: string;
+  company?: string;
+  address_line1: string;
+  address_line2?: string;
+  city: string;
+  state: string;
+  postal_code: string;
+  country: string;
+  phone: string;
+  email: string;
+}
+
+export class MobilesentrixService {
+  private credential: MobilesentrixCredential;
+  private baseUrl: string;
+
+  constructor(credential: MobilesentrixCredential) {
+    this.credential = credential;
+    this.baseUrl = MOBILESENTRIX_BASE_URL;
+  }
+
+  private generateOAuthSignature(
+    method: string,
+    url: string,
+    params: Record<string, string>,
+    consumerSecret: string
+  ): string {
+    const sortedParams = Object.keys(params)
+      .sort()
+      .map(key => `${encodeURIComponent(key)}=${encodeURIComponent(params[key])}`)
+      .join("&");
+
+    const signatureBaseString = [
+      method.toUpperCase(),
+      encodeURIComponent(url),
+      encodeURIComponent(sortedParams)
+    ].join("&");
+
+    const signingKey = `${encodeURIComponent(consumerSecret)}&`;
+
+    const hmac = crypto.createHmac("sha1", signingKey);
+    hmac.update(signatureBaseString);
+    return hmac.digest("base64");
+  }
+
+  private generateOAuthHeader(method: string, url: string): string {
+    const timestamp = Math.floor(Date.now() / 1000).toString();
+    const nonce = crypto.randomBytes(16).toString("hex");
+
+    const oauthParams: Record<string, string> = {
+      oauth_consumer_key: this.credential.consumerKey,
+      oauth_nonce: nonce,
+      oauth_signature_method: "HMAC-SHA1",
+      oauth_timestamp: timestamp,
+      oauth_version: "1.0"
+    };
+
+    const signature = this.generateOAuthSignature(
+      method,
+      url,
+      oauthParams,
+      this.credential.consumerSecret
+    );
+
+    oauthParams["oauth_signature"] = signature;
+
+    const authHeader = Object.keys(oauthParams)
+      .sort()
+      .map(key => `${encodeURIComponent(key)}="${encodeURIComponent(oauthParams[key])}"`)
+      .join(", ");
+
+    return `OAuth ${authHeader}`;
+  }
+
+  private async request<T>(
+    endpoint: string,
+    method: "GET" | "POST" | "PUT" | "DELETE" = "GET",
+    body?: Record<string, any>,
+    queryParams?: Record<string, string>
+  ): Promise<MobilesentrixApiResponse<T>> {
+    const url = new URL(`${this.baseUrl}${endpoint}`);
+    
+    if (queryParams) {
+      Object.entries(queryParams).forEach(([key, value]) => {
+        url.searchParams.append(key, value);
+      });
+    }
+
+    const authHeader = this.generateOAuthHeader(method, url.origin + url.pathname);
+
+    const headers: Record<string, string> = {
+      "Authorization": authHeader,
+      "Content-Type": "application/json",
+      "Accept": "application/json",
+    };
+
+    const options: RequestInit = {
+      method,
+      headers,
+    };
+
+    if (body && (method === "POST" || method === "PUT")) {
+      options.body = JSON.stringify(body);
+    }
+
+    try {
+      const response = await fetch(url.toString(), options);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        let errorMessage = `HTTP Error ${response.status}`;
+        try {
+          const errorJson = JSON.parse(errorText);
+          errorMessage = errorJson.message || errorJson.error || errorMessage;
+        } catch {
+          errorMessage = errorText || errorMessage;
+        }
+        return {
+          success: false,
+          message: errorMessage,
+        };
+      }
+
+      const json = await response.json();
+      return {
+        success: true,
+        data: json,
+      };
+    } catch (error: any) {
+      console.error("MobileSentrix API Error:", error);
+      return {
+        success: false,
+        message: error.message || "Errore di connessione",
+      };
+    }
+  }
+
+  async testConnection(): Promise<{ success: boolean; message: string }> {
+    try {
+      const result = await this.request<any>("/v1/account", "GET");
+      if (result.success) {
+        return { success: true, message: "Connessione riuscita" };
+      }
+      return { success: false, message: result.message || "Errore sconosciuto" };
+    } catch (error: any) {
+      return { success: false, message: error.message || "Errore di connessione" };
+    }
+  }
+
+  async getCategories(): Promise<MobilesentrixCategory[]> {
+    const result = await this.request<{ categories: MobilesentrixCategory[] }>("/v1/categories");
+    if (result.success && result.data) {
+      return result.data.categories || [];
+    }
+    throw new Error(result.message || "Errore nel recupero categorie");
+  }
+
+  async searchProducts(params: {
+    query?: string;
+    category_id?: string;
+    brand?: string;
+    page?: number;
+    per_page?: number;
+  }): Promise<{ products: MobilesentrixProduct[]; total: number; page: number; per_page: number }> {
+    const queryParams: Record<string, string> = {};
+    if (params.query) queryParams.search = params.query;
+    if (params.category_id) queryParams.category_id = params.category_id;
+    if (params.brand) queryParams.brand = params.brand;
+    if (params.page) queryParams.page = String(params.page);
+    if (params.per_page) queryParams.per_page = String(params.per_page);
+
+    const result = await this.request<any>("/v1/products", "GET", undefined, queryParams);
+
+    if (result.success && result.data) {
+      const rawProducts = result.data.products || result.data.data || result.data || [];
+      const products = Array.isArray(rawProducts) ? rawProducts.map((p: any) => ({
+        id: p.id || p.product_id || p.sku || "",
+        sku: p.sku || p.article_number || p.code || "",
+        name: p.name || p.title || p.product_name || "",
+        brand: p.brand || p.manufacturer || "",
+        model: p.model || p.device || "",
+        category: p.category || p.category_name || "",
+        price: parseFloat(p.price) || 0,
+        stock: parseInt(p.stock) || parseInt(p.quantity) || 0,
+        image_url: p.image_url || p.image || p.picture || "",
+        description: p.description || "",
+      })) : [];
+
+      return {
+        products,
+        total: result.data.total || result.data.totalCount || products.length,
+        page: result.data.page || params.page || 1,
+        per_page: result.data.per_page || params.per_page || 20,
+      };
+    }
+
+    throw new Error(result.message || "Errore nella ricerca prodotti");
+  }
+
+  async getProduct(productId: string): Promise<MobilesentrixProduct> {
+    const result = await this.request<MobilesentrixProduct>(`/v1/products/${productId}`);
+    if (result.success && result.data) {
+      return result.data;
+    }
+    throw new Error(result.message || "Prodotto non trovato");
+  }
+
+  async createOrder(items: MobilesentrixCartItem[], shippingAddress: MobilesentrixAddress, shippingMethod?: string): Promise<MobilesentrixOrderResponse> {
+    const body = {
+      items: items.map(item => ({
+        sku: item.sku,
+        quantity: item.quantity,
+      })),
+      shipping_address: shippingAddress,
+      shipping_method: shippingMethod,
+    };
+
+    const result = await this.request<MobilesentrixOrderResponse>("/v1/orders", "POST", body);
+    if (result.success && result.data) {
+      return result.data;
+    }
+    throw new Error(result.message || "Errore nella creazione ordine");
+  }
+
+  async getOrder(orderId: string): Promise<MobilesentrixOrderResponse> {
+    const result = await this.request<MobilesentrixOrderResponse>(`/v1/orders/${orderId}`);
+    if (result.success && result.data) {
+      return result.data;
+    }
+    throw new Error(result.message || "Ordine non trovato");
+  }
+
+  async listOrders(params?: { page?: number; per_page?: number }): Promise<{ orders: MobilesentrixOrderResponse[]; total: number }> {
+    const queryParams: Record<string, string> = {};
+    if (params?.page) queryParams.page = String(params.page);
+    if (params?.per_page) queryParams.per_page = String(params.per_page);
+
+    const result = await this.request<any>("/v1/orders", "GET", undefined, queryParams);
+    if (result.success && result.data) {
+      return {
+        orders: result.data.orders || result.data.data || [],
+        total: result.data.total || 0,
+      };
+    }
+    throw new Error(result.message || "Errore nel recupero ordini");
+  }
+
+  async getBrands(): Promise<string[]> {
+    const result = await this.request<{ brands: string[] }>("/v1/brands");
+    if (result.success && result.data) {
+      return result.data.brands || [];
+    }
+    throw new Error(result.message || "Errore nel recupero marchi");
+  }
+
+  async getAccountInfo(): Promise<{ name: string; email: string; balance?: number }> {
+    const result = await this.request<{ name: string; email: string; balance?: number }>("/v1/account");
+    if (result.success && result.data) {
+      return result.data;
+    }
+    throw new Error(result.message || "Errore nel recupero informazioni account");
+  }
+}
+
+let serviceCache: Map<string, { service: MobilesentrixService; timestamp: number }> = new Map();
+const CACHE_TTL = 5 * 60 * 1000;
+
+export function getMobilesentrixService(credential: MobilesentrixCredential): MobilesentrixService {
+  const cacheKey = credential.id;
+  const cached = serviceCache.get(cacheKey);
+  
+  if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+    return cached.service;
+  }
+  
+  const service = new MobilesentrixService(credential);
+  serviceCache.set(cacheKey, { service, timestamp: Date.now() });
+  return service;
+}
