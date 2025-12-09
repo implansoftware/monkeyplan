@@ -1413,6 +1413,55 @@ export const fonedayOrders = pgTable("foneday_orders", {
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 
+// ============ MOBILESENTRIX INTEGRATION ============
+
+// Credenziali MobileSentrix per reseller (OAuth 1.0 style)
+export const mobilesentrixCredentials = pgTable("mobilesentrix_credentials", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  resellerId: varchar("reseller_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  
+  // Consumer credentials (OAuth 1.0)
+  consumerName: text("consumer_name").notNull(),
+  consumerKey: text("consumer_key").notNull(),
+  consumerSecret: text("consumer_secret").notNull(),
+  
+  // Stato
+  isActive: boolean("is_active").notNull().default(true),
+  lastSyncAt: timestamp("last_sync_at"),
+  lastTestAt: timestamp("last_test_at"),
+  testStatus: text("test_status"), // "success" | "error"
+  testMessage: text("test_message"),
+  
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+// Ordini MobileSentrix (tracciamento ordini inviati)
+export const mobilesentrixOrders = pgTable("mobilesentrix_orders", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  credentialId: varchar("credential_id").notNull().references(() => mobilesentrixCredentials.id, { onDelete: "cascade" }),
+  
+  // Dati ordine MobileSentrix
+  mobilesentrixOrderId: text("mobilesentrix_order_id").notNull(),
+  orderNumber: text("order_number"),
+  status: text("status").notNull(), // pending, processing, shipped, completed, etc.
+  
+  // Importi
+  totalAmount: integer("total_amount").notNull(), // In centesimi
+  currency: text("currency").default("USD"),
+  
+  // Spedizione
+  shippingMethod: text("shipping_method"),
+  trackingNumber: text("tracking_number"),
+  
+  // Dati ordine completo (JSON)
+  orderData: text("order_data"),
+  
+  mobilesentrixCreatedAt: timestamp("mobilesentrix_created_at"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
 // Supplier Orders (Ordini a Fornitori)
 export const supplierOrders = pgTable("supplier_orders", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -2985,6 +3034,19 @@ export const insertFonedayOrderSchema = createInsertSchema(fonedayOrders).omit({
   updatedAt: true,
 });
 
+// MobileSentrix schemas
+export const insertMobilesentrixCredentialSchema = createInsertSchema(mobilesentrixCredentials).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertMobilesentrixOrderSchema = createInsertSchema(mobilesentrixOrders).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 // Parts Load Documents schemas
 export const insertPartsLoadDocumentSchema = createInsertSchema(partsLoadDocuments).omit({
   id: true,
@@ -3372,6 +3434,13 @@ export type InsertFonedayCredential = z.infer<typeof insertFonedayCredentialSche
 
 export type FonedayOrder = typeof fonedayOrders.$inferSelect;
 export type InsertFonedayOrder = z.infer<typeof insertFonedayOrderSchema>;
+
+// MobileSentrix types
+export type MobilesentrixCredential = typeof mobilesentrixCredentials.$inferSelect;
+export type InsertMobilesentrixCredential = z.infer<typeof insertMobilesentrixCredentialSchema>;
+
+export type MobilesentrixOrder = typeof mobilesentrixOrders.$inferSelect;
+export type InsertMobilesentrixOrder = z.infer<typeof insertMobilesentrixOrderSchema>;
 
 // Parts Load types
 export type PartsLoadDocument = typeof partsLoadDocuments.$inferSelect;
