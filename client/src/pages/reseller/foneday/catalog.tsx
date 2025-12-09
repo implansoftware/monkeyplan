@@ -84,7 +84,7 @@ export default function FonedayCatalogPage() {
     queryKey: ["/api/foneday/catalog/products", debouncedSearch, currentPage],
     queryFn: async () => {
       const params = new URLSearchParams();
-      if (debouncedSearch) params.append("search", debouncedSearch);
+      params.append("search", debouncedSearch);
       params.append("page", String(currentPage));
       params.append("per_page", String(perPage));
       
@@ -92,7 +92,7 @@ export default function FonedayCatalogPage() {
       if (!res.ok) throw new Error("Errore nel caricamento prodotti");
       return res.json();
     },
-    enabled: !!credential?.isActive,
+    enabled: !!credential?.isActive && debouncedSearch.length >= 2,
     staleTime: 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
   });
@@ -283,7 +283,7 @@ export default function FonedayCatalogPage() {
             </div>
           ) : accumulatedProducts.length === 0 ? (
             <div className="text-center py-12 text-muted-foreground">
-              {debouncedSearch ? "Nessun prodotto trovato. Prova a modificare la ricerca." : "Cerca un prodotto per iniziare."}
+              {debouncedSearch.length >= 2 ? "Nessun prodotto trovato. Prova a modificare la ricerca." : "Inserisci almeno 2 caratteri per cercare."}
             </div>
           ) : (
             <div className="space-y-3">
