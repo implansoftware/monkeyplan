@@ -9,8 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import {
-  Package, Search, ShoppingCart, Plus, Minus, Loader2, Settings, AlertTriangle,
-  ChevronLeft, ChevronRight, Image
+  Package, Search, ShoppingCart, Plus, Minus, Loader2, Settings, AlertTriangle, Image
 } from "lucide-react";
 import { Link } from "wouter";
 
@@ -55,6 +54,9 @@ export default function FonedayCatalogPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [quantities, setQuantities] = useState<Record<string, number>>({});
   const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [accumulatedProducts, setAccumulatedProducts] = useState<FonedayProduct[]>([]);
+  const [totalProducts, setTotalProducts] = useState(0);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
   const perPage = 20;
 
   const { data: credential, isLoading: loadingCredential } = useQuery<FonedayCredential | null>({
@@ -63,12 +65,17 @@ export default function FonedayCatalogPage() {
   
   useEffect(() => {
     const timer = setTimeout(() => {
+      if (searchQuery !== debouncedSearch) {
+        setAccumulatedProducts([]);
+        setCurrentPage(1);
+        setTotalProducts(0);
+      }
       setDebouncedSearch(searchQuery);
     }, 500);
     return () => clearTimeout(timer);
-  }, [searchQuery]);
+  }, [searchQuery, debouncedSearch]);
 
-  const { data: productsData, isLoading: loadingProducts } = useQuery<{
+  const { data: productsData, isLoading: loadingProducts, isFetching } = useQuery<{
     products: FonedayProduct[];
     total: number;
     page: number;
@@ -89,6 +96,29 @@ export default function FonedayCatalogPage() {
     staleTime: 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
   });
+
+  useEffect(() => {
+    if (productsData) {
+      setTotalProducts(productsData.total);
+      if (currentPage === 1) {
+        setAccumulatedProducts(productsData.products);
+      } else {
+        setAccumulatedProducts(prev => {
+          const existingSkus = new Set(prev.map(p => p.sku));
+          const newProducts = productsData.products.filter(p => !existingSkus.has(p.sku));
+          return [...prev, ...newProducts];
+        });
+      }
+      setIsLoadingMore(false);
+    }
+  }, [productsData, currentPage]);
+
+  const handleLoadMore = () => {
+    setIsLoadingMore(true);
+    setCurrentPage(prev => prev + 1);
+  };
+
+  const hasMoreProducts = accumulatedProducts.length < totalProducts;
 
   const { data: cart, refetch: refetchCart } = useQuery<FonedayCart>({
     queryKey: ["/api/foneday/cart"],
@@ -141,7 +171,6 @@ export default function FonedayCatalogPage() {
     setQuantities((prev) => ({ ...prev, [product.sku]: 1 }));
   };
 
-  const totalPages = productsData ? Math.ceil(productsData.total / perPage) : 0;
 
   if (loadingCredential) {
     return (
@@ -232,15 +261,15 @@ export default function FonedayCatalogPage() {
           <CardTitle className="flex items-center gap-2">
             <Package className="h-5 w-5" />
             Prodotti
-            {productsData && (
+            {totalProducts > 0 && (
               <span className="text-sm font-normal text-muted-foreground">
-                ({productsData.total} risultati)
+                ({accumulatedProducts.length} di {totalProducts})
               </span>
             )}
           </CardTitle>
         </CardHeader>
         <CardContent>
-          {loadingProducts ? (
+          {loadingProducts && currentPage === 1 ? (
             <div className="space-y-4">
               {[1, 2, 3, 4].map((i) => (
                 <div key={i} className="flex gap-4 p-4 border rounded-md">
@@ -252,13 +281,13 @@ export default function FonedayCatalogPage() {
                 </div>
               ))}
             </div>
-          ) : !productsData || productsData.products.length === 0 ? (
+          ) : accumulatedProducts.length === 0 ? (
             <div className="text-center py-12 text-muted-foreground">
-              Nessun prodotto trovato. Prova a modificare i filtri di ricerca.
+              {debouncedSearch ? "Nessun prodotto trovato. Prova a modificare la ricerca." : "Cerca un prodotto per iniziare."}
             </div>
           ) : (
             <div className="space-y-3">
-              {productsData.products.map((product, index) => (
+              {accumulatedProducts.map((product, index) => (
                 <div
                   key={`${product.sku}-${index}`}
                   className="flex items-start gap-4 p-4 border rounded-md hover-elevate"
@@ -342,30 +371,31 @@ export default function FonedayCatalogPage() {
                   </div>
                 </div>
               ))}
-            </div>
-          )}
 
-          {totalPages > 1 && (
-            <div className="flex items-center justify-center gap-4 mt-6">
-              <Button
-                variant="outline"
-                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                disabled={currentPage === 1}
-              >
-                <ChevronLeft className="h-4 w-4 mr-1" />
-                Precedente
-              </Button>
-              <span className="text-sm text-muted-foreground">
-                Pagina {currentPage} di {totalPages}
-              </span>
-              <Button
-                variant="outline"
-                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                disabled={currentPage === totalPages}
-              >
-                Successiva
-                <ChevronRight className="h-4 w-4 ml-1" />
-              </Button>
+              {hasMoreProducts && (
+                <div className="flex flex-col items-center gap-2 pt-6">
+                  <Button
+                    variant="outline"
+                    size="lg"
+                    onClick={handleLoadMore}
+                    disabled={isLoadingMore || isFetching}
+                    className="w-full max-w-xs"
+                    data-testid="button-load-more"
+                  >
+                    {isLoadingMore || isFetching ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Caricamento...
+                      </>
+                    ) : (
+                      <>
+                        <Plus className="h-4 w-4 mr-2" />
+                        Carica Altri ({totalProducts - accumulatedProducts.length} rimanenti)
+                      </>
+                    )}
+                  </Button>
+                </div>
+              )}
             </div>
           )}
         </CardContent>
