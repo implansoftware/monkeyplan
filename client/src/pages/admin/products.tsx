@@ -134,9 +134,19 @@ export default function AdminProducts() {
   });
 
   const createProductMutation = useMutation({
-    mutationFn: async (data: InsertProduct & { initialStock?: InitialStockEntry[] }) => {
-      const res = await apiRequest("POST", "/api/products", data);
-      return await res.json();
+    mutationFn: async (data: InsertProduct & { initialStock?: InitialStockEntry[]; deviceCompatibilities?: DeviceCompatibilityEntry[] }) => {
+      const { deviceCompatibilities: compatibilities, ...productData } = data;
+      const res = await apiRequest("POST", "/api/products", productData);
+      const product = await res.json();
+      
+      // Save device compatibilities if any
+      if (compatibilities && compatibilities.length > 0) {
+        await apiRequest("PUT", `/api/products/${product.id}/compatibilities`, { 
+          compatibilities 
+        });
+      }
+      
+      return product;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/products"] });
@@ -144,6 +154,7 @@ export default function AdminProducts() {
       setDialogOpen(false);
       setCompatibleModels([]);
       setInitialStock([]);
+      setDeviceCompatibilities([]);
       toast({ title: "Prodotto creato con successo" });
     },
     onError: (error: Error) => {
@@ -152,9 +163,18 @@ export default function AdminProducts() {
   });
 
   const updateProductMutation = useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: Partial<Product> }) => {
+    mutationFn: async ({ id, data, deviceCompatibilities: compatibilities }: { id: string; data: Partial<Product>; deviceCompatibilities?: DeviceCompatibilityEntry[] }) => {
       const res = await apiRequest("PATCH", `/api/products/${id}`, data);
-      return await res.json();
+      const product = await res.json();
+      
+      // Save device compatibilities (including empty array to clear them)
+      if (compatibilities !== undefined) {
+        await apiRequest("PUT", `/api/products/${id}/compatibilities`, { 
+          compatibilities 
+        });
+      }
+      
+      return product;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/products"] });
@@ -162,6 +182,7 @@ export default function AdminProducts() {
       setEditDialogOpen(false);
       setEditingProduct(null);
       setEditCompatibleModels([]);
+      setEditDeviceCompatibilities([]);
       toast({ title: "Prodotto aggiornato con successo" });
     },
     onError: (error: Error) => {
@@ -390,7 +411,7 @@ export default function AdminProducts() {
           deviceBrandId: brandId,
           deviceModelId: modelId,
           brandName: brand?.name,
-          modelName: model?.name
+          modelName: model?.modelName
         }]);
       }
     } else {
@@ -454,6 +475,7 @@ export default function AdminProducts() {
     setEditCompatibleModels(product.compatibleModels || []);
     setEditDialogOpen(true);
     setIsLoadingStock(true);
+    setExpandedBrands(new Set()); // Reset expanded brands when opening dialog
     
     try {
       const res = await apiRequest("GET", `/api/products/${product.id}/stock`);
@@ -543,7 +565,7 @@ export default function AdminProducts() {
     const minStockValue = formData.get("minStock") as string;
     
     const deviceTypeIdValue = formData.get("deviceTypeId") as string;
-    const data: InsertProduct & { initialStock?: InitialStockEntry[] } = {
+    const data: InsertProduct & { initialStock?: InitialStockEntry[]; deviceCompatibilities?: DeviceCompatibilityEntry[] } = {
       name: formData.get("name") as string,
       sku: formData.get("sku") as string,
       category: formData.get("category") as string,
@@ -562,6 +584,7 @@ export default function AdminProducts() {
       minStock: minStockValue ? parseInt(minStockValue) : undefined,
       location: formData.get("location") as string || undefined,
       initialStock: initialStock.filter(s => s.quantity > 0),
+      deviceCompatibilities: deviceCompatibilities.length > 0 ? deviceCompatibilities : undefined,
     };
     createProductMutation.mutate(data);
   };
@@ -597,7 +620,18 @@ export default function AdminProducts() {
       location: (formData.get("location") as string) || editingProduct.location || undefined,
       isActive: formData.has("isActive") ? formData.get("isActive") === "true" : editingProduct.isActive,
     };
-    updateProductMutation.mutate({ id: editingProduct.id, data });
+    
+    // Map editDeviceCompatibilities to simplified format for API
+    const deviceCompatibilitiesForApi: DeviceCompatibilityEntry[] = editDeviceCompatibilities.map(c => ({
+      deviceBrandId: c.deviceBrandId,
+      deviceModelId: c.deviceModelId || null
+    }));
+    
+    updateProductMutation.mutate({ 
+      id: editingProduct.id, 
+      data,
+      deviceCompatibilities: deviceCompatibilitiesForApi
+    });
   };
 
   const filteredProducts = productsWithStock.filter(({ product }) => {
@@ -903,7 +937,7 @@ export default function AdminProducts() {
                                               onCheckedChange={() => toggleModelCompatibility(brand.id, model.id, false)}
                                               data-testid={`checkbox-model-${model.id}`}
                                             />
-                                            <span className="text-sm">{model.name}</span>
+                                            <span className="text-sm">{model.modelName}</span>
                                           </div>
                                         );
                                       })}
@@ -922,7 +956,7 @@ export default function AdminProducts() {
                             const model = c.deviceModelId ? deviceModels.find(m => m.id === c.deviceModelId) : null;
                             return (
                               <Badge key={idx} variant="secondary">
-                                {brand?.name}{model ? ` - ${model.name}` : ' (tutti)'}
+                                {brand?.name}{model ? ` - ${model.modelName}` : ' (tutti)'}
                               </Badge>
                             );
                           })}
@@ -1322,33 +1356,10 @@ export default function AdminProducts() {
                       <Separator />
 
                       <div className="space-y-2">
-                        <div className="flex items-center justify-between">
-                          <Label>Compatibilità Dispositivi (strutturata)</Label>
-                          {editDeviceCompatibilities.length > 0 && (
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="sm"
-                              onClick={() => {
-                                if (editingProduct) {
-                                  saveDeviceCompatibilitiesMutation.mutate({
-                                    productId: editingProduct.id,
-                                    compatibilities: editDeviceCompatibilities.map(c => ({
-                                      deviceBrandId: c.deviceBrandId,
-                                      deviceModelId: c.deviceModelId
-                                    }))
-                                  });
-                                }
-                              }}
-                              disabled={saveDeviceCompatibilitiesMutation.isPending}
-                              data-testid="button-save-compatibilities"
-                            >
-                              {saveDeviceCompatibilitiesMutation.isPending ? "Salvando..." : "Salva compatibilità"}
-                            </Button>
-                          )}
-                        </div>
+                        <Label>Compatibilità Dispositivi (strutturata)</Label>
                         <p className="text-xs text-muted-foreground mb-2">
-                          Seleziona i brand e modelli di dispositivo con cui questo ricambio è compatibile
+                          Seleziona i brand e modelli di dispositivo con cui questo ricambio è compatibile.
+                          Le modifiche saranno salvate quando aggiorni il prodotto.
                         </p>
                         {isLoadingCompatibilities ? (
                           <div className="space-y-2">
@@ -1403,7 +1414,7 @@ export default function AdminProducts() {
                                                   onCheckedChange={() => toggleModelCompatibility(brand.id, model.id, true)}
                                                   data-testid={`edit-checkbox-model-${model.id}`}
                                                 />
-                                                <span className="text-sm">{model.name}</span>
+                                                <span className="text-sm">{model.modelName}</span>
                                               </div>
                                             );
                                           })}
