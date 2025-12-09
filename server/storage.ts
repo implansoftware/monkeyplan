@@ -154,7 +154,7 @@ export interface IStorage {
   createInventoryMovement(movement: InsertInventoryMovement): Promise<InventoryMovement>;
   listInventoryMovements(filters?: { repairCenterId?: string; productId?: string }): Promise<InventoryMovement[]>;
   getProductStockByCenter(productId: string): Promise<Array<{ repairCenterId: string; repairCenterName: string; quantity: number }>>;
-  getAllProductsWithStock(): Promise<Array<{ product: Product; stockByCenter: Array<{ repairCenterId: string; repairCenterName: string; quantity: number }>; totalStock: number }>>;
+  getAllProductsWithStock(): Promise<Array<{ product: Product; stockByCenter: Array<{ repairCenterId: string; repairCenterName: string; quantity: number }>; totalStock: number; compatibilities: Array<{ brandId: string; brandName: string; modelId: string | null; modelName: string | null }> }>>;
   updateProduct(id: string, updates: Partial<Omit<Product, 'id' | 'createdAt'>>): Promise<Product>;
   
   // Reseller Inventory (for own products in own centers)
@@ -1242,6 +1242,7 @@ export class DatabaseStorage implements IStorage {
     product: Product; 
     stockByCenter: Array<{ repairCenterId: string; repairCenterName: string; quantity: number }>;
     totalStock: number;
+    compatibilities: Array<{ brandId: string; brandName: string; modelId: string | null; modelName: string | null }>;
   }>> {
     const allProducts = await this.listProducts();
     const allStock = await db.select({
@@ -1252,6 +1253,32 @@ export class DatabaseStorage implements IStorage {
     })
     .from(inventoryStock)
     .innerJoin(repairCenters, eq(inventoryStock.repairCenterId, repairCenters.id));
+    
+    // Fetch all compatibilities with brand/model names
+    const allCompatibilities = await db.select({
+      productId: productDeviceCompatibilities.productId,
+      brandId: productDeviceCompatibilities.deviceBrandId,
+      brandName: deviceBrands.name,
+      modelId: productDeviceCompatibilities.deviceModelId,
+      modelName: deviceModels.modelName,
+    })
+    .from(productDeviceCompatibilities)
+    .innerJoin(deviceBrands, eq(productDeviceCompatibilities.deviceBrandId, deviceBrands.id))
+    .leftJoin(deviceModels, eq(productDeviceCompatibilities.deviceModelId, deviceModels.id));
+    
+    // Build compatibility map by productId
+    const compatibilityMap = new Map<string, Array<{ brandId: string; brandName: string; modelId: string | null; modelName: string | null }>>();
+    for (const compat of allCompatibilities) {
+      if (!compatibilityMap.has(compat.productId)) {
+        compatibilityMap.set(compat.productId, []);
+      }
+      compatibilityMap.get(compat.productId)!.push({
+        brandId: compat.brandId,
+        brandName: compat.brandName,
+        modelId: compat.modelId,
+        modelName: compat.modelName,
+      });
+    }
     
     // Aggregate stock by product and repair center (handles potential duplicates)
     const stockMap = new Map<string, Map<string, { repairCenterId: string; repairCenterName: string; quantity: number }>>();
@@ -1277,7 +1304,8 @@ export class DatabaseStorage implements IStorage {
       const centerMap = stockMap.get(product.id);
       const stockByCenter = centerMap ? Array.from(centerMap.values()) : [];
       const totalStock = stockByCenter.reduce((sum, s) => sum + s.quantity, 0);
-      return { product, stockByCenter, totalStock };
+      const compatibilities = compatibilityMap.get(product.id) || [];
+      return { product, stockByCenter, totalStock, compatibilities };
     });
   }
 
