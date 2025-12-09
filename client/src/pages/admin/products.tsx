@@ -30,6 +30,7 @@ interface ProductWithStock {
   product: Product;
   stockByCenter: Array<{ repairCenterId: string; repairCenterName: string; quantity: number }>;
   totalStock: number;
+  compatibilities: Array<{ brandId: string; brandName: string; modelId: string | null; modelName: string | null }>;
 }
 
 interface ProductSupplierWithDetails extends Omit<ProductSupplier, 'supplierName'> {
@@ -1903,11 +1904,12 @@ export default function AdminProducts() {
                       Giacenze
                     </div>
                   </TableHead>
+                  <TableHead>Compatibilità</TableHead>
                   <TableHead className="text-right">Azioni</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredProducts.map(({ product, stockByCenter, totalStock }) => (
+                {filteredProducts.map(({ product, stockByCenter, totalStock, compatibilities }) => (
                   <TableRow key={product.id} data-testid={`row-product-${product.id}`}>
                     <TableCell>
                       <div>
@@ -1957,6 +1959,57 @@ export default function AdminProducts() {
                         <Badge variant="outline" className="text-muted-foreground">
                           Nessuna giacenza
                         </Badge>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {compatibilities && compatibilities.length > 0 ? (
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <div className="cursor-help">
+                              <Badge variant="secondary" className="text-xs">
+                                {(() => {
+                                  const uniqueBrands = Array.from(new Set(compatibilities.map(c => c.brandName)));
+                                  const modelCount = compatibilities.filter(c => c.modelId).length;
+                                  if (uniqueBrands.length === 1 && modelCount === 0) {
+                                    return uniqueBrands[0];
+                                  } else if (uniqueBrands.length === 1) {
+                                    return `${uniqueBrands[0]} (${modelCount} modelli)`;
+                                  } else {
+                                    return `${uniqueBrands.length} brand`;
+                                  }
+                                })()}
+                              </Badge>
+                            </div>
+                          </TooltipTrigger>
+                          <TooltipContent className="max-w-xs">
+                            <div className="space-y-1">
+                              <div className="font-semibold mb-2">Dispositivi Compatibili:</div>
+                              {(() => {
+                                const brandMap = new Map<string, string[]>();
+                                compatibilities.forEach(c => {
+                                  if (!brandMap.has(c.brandName)) {
+                                    brandMap.set(c.brandName, []);
+                                  }
+                                  if (c.modelName) {
+                                    brandMap.get(c.brandName)!.push(c.modelName);
+                                  }
+                                });
+                                return Array.from(brandMap.entries()).map(([brandName, models]) => (
+                                  <div key={brandName} className="text-sm">
+                                    <span className="font-medium">{brandName}</span>
+                                    {models.length > 0 ? (
+                                      <span className="text-muted-foreground">: {models.join(", ")}</span>
+                                    ) : (
+                                      <span className="text-muted-foreground"> (tutti i modelli)</span>
+                                    )}
+                                  </div>
+                                ));
+                              })()}
+                            </div>
+                          </TooltipContent>
+                        </Tooltip>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">-</span>
                       )}
                     </TableCell>
                     <TableCell className="text-right">
