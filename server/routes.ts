@@ -66,6 +66,33 @@ interface FonedayCartItem {
 }
 const fonedayCartCache = new Map<string, FonedayCartItem[]>();
 
+// In-memory Foneday search cache (API is very slow ~10s per request)
+interface FonedayCacheEntry {
+  data: any;
+  timestamp: number;
+}
+const fonedaySearchCache = new Map<string, FonedayCacheEntry>();
+const FONEDAY_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
+function getFonedayCacheKey(resellerId: string, search: string, page: number, perPage: number): string {
+  return `${resellerId}:${search}:${page}:${perPage}`;
+}
+
+function getFonedayFromCache(key: string): any | null {
+  const entry = fonedaySearchCache.get(key);
+  if (entry && Date.now() - entry.timestamp < FONEDAY_CACHE_TTL) {
+    return entry.data;
+  }
+  if (entry) {
+    fonedaySearchCache.delete(key);
+  }
+  return null;
+}
+
+function setFonedayCache(key: string, data: any): void {
+  fonedaySearchCache.set(key, { data, timestamp: Date.now() });
+}
+
 // Configure multer for file uploads (memory storage)
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -13307,7 +13334,7 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  // GET /api/foneday/catalog/products - Search Foneday products
+  // GET /api/foneday/catalog/products - Search Foneday products (with caching)
   app.get("/api/foneday/catalog/products", requireAuth, requireRole("reseller"), async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
@@ -13317,16 +13344,31 @@ export function registerRoutes(app: Express): Server {
         return res.status(404).send("Credenziali Foneday non configurate");
       }
       
+      const search = (req.query.search as string) || "";
+      const page = req.query.page ? Number(req.query.page) : 1;
+      const perPage = req.query.per_page ? Number(req.query.per_page) : 20;
+      
+      // Check cache first
+      const cacheKey = getFonedayCacheKey(req.user.id, search, page, perPage);
+      const cachedData = getFonedayFromCache(cacheKey);
+      if (cachedData) {
+        return res.json(cachedData);
+      }
+      
       const { createFonedayService } = await import("./fonedayService");
       const fonedayService = createFonedayService(credential);
       
       const products = await fonedayService.searchProducts({
-        query: req.query.search as string,
+        query: search,
         category_id: req.query.category_id ? Number(req.query.category_id) : undefined,
         brand: req.query.brand as string,
-        page: req.query.page ? Number(req.query.page) : 1,
-        per_page: req.query.per_page ? Number(req.query.per_page) : 20,
+        page,
+        per_page: perPage,
       });
+      
+      // Cache the result
+      setFonedayCache(cacheKey, products);
+      
       res.json(products);
     } catch (error: any) {
       res.status(400).send(error.message);
