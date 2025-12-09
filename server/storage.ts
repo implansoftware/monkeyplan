@@ -40,6 +40,7 @@ import {
   UtilityPracticeStateHistoryEntry, InsertUtilityPracticeStateHistoryEntry,
   SifarCredential, InsertSifarCredential, SifarStore, InsertSifarStore,
   FonedayCredential, InsertFonedayCredential, FonedayOrder, InsertFonedayOrder,
+  MobilesentrixCredential, InsertMobilesentrixCredential, MobilesentrixOrder, InsertMobilesentrixOrder,
   ExternalIntegration, InsertExternalIntegration, externalIntegrations,
   ServiceItem, InsertServiceItem, ServiceItemPrice, InsertServiceItemPrice,
   ProductDeviceCompatibility, InsertProductDeviceCompatibility, productDeviceCompatibilities,
@@ -60,6 +61,7 @@ import {
   utilityPracticeTimeline, utilityPracticeStateHistory,
   sifarCredentials, sifarStores,
   fonedayCredentials, fonedayOrders,
+  mobilesentrixCredentials, mobilesentrixOrders,
   serviceItems, serviceItemPrices, productPrices,
   resellerStaffPermissions, ResellerStaffPermission, InsertResellerStaffPermission
 } from "@shared/schema";
@@ -523,6 +525,18 @@ export interface IStorage {
   getFonedayOrder(id: string): Promise<FonedayOrder | undefined>;
   createFonedayOrder(order: InsertFonedayOrder): Promise<FonedayOrder>;
   updateFonedayOrder(id: string, updates: Partial<InsertFonedayOrder>): Promise<FonedayOrder>;
+  
+  // MobileSentrix Integration
+  getMobilesentrixCredentialByReseller(resellerId: string): Promise<MobilesentrixCredential | undefined>;
+  getMobilesentrixCredential(id: string): Promise<MobilesentrixCredential | undefined>;
+  createMobilesentrixCredential(credential: InsertMobilesentrixCredential): Promise<MobilesentrixCredential>;
+  updateMobilesentrixCredential(id: string, updates: Partial<InsertMobilesentrixCredential>): Promise<MobilesentrixCredential>;
+  deleteMobilesentrixCredential(id: string): Promise<void>;
+  
+  listMobilesentrixOrders(credentialId: string): Promise<MobilesentrixOrder[]>;
+  getMobilesentrixOrder(id: string): Promise<MobilesentrixOrder | undefined>;
+  createMobilesentrixOrder(order: InsertMobilesentrixOrder): Promise<MobilesentrixOrder>;
+  updateMobilesentrixOrder(id: string, updates: Partial<InsertMobilesentrixOrder>): Promise<MobilesentrixOrder>;
   
   // Service Catalog (Catalogo Interventi)
   listServiceItems(): Promise<ServiceItem[]>;
@@ -4430,6 +4444,76 @@ export class DatabaseStorage implements IStorage {
     const [updated] = await db.update(fonedayOrders)
       .set({ ...updates, updatedAt: new Date() })
       .where(eq(fonedayOrders.id, id))
+      .returning();
+    return updated;
+  }
+
+  // ==========================================
+  // MOBILESENTRIX INTEGRATION
+  // ==========================================
+
+  async getMobilesentrixCredentialByReseller(resellerId: string): Promise<MobilesentrixCredential | undefined> {
+    const [credential] = await db.select()
+      .from(mobilesentrixCredentials)
+      .where(eq(mobilesentrixCredentials.resellerId, resellerId))
+      .limit(1);
+    return credential;
+  }
+
+  async getMobilesentrixCredential(id: string): Promise<MobilesentrixCredential | undefined> {
+    const [credential] = await db.select()
+      .from(mobilesentrixCredentials)
+      .where(eq(mobilesentrixCredentials.id, id))
+      .limit(1);
+    return credential;
+  }
+
+  async createMobilesentrixCredential(credential: InsertMobilesentrixCredential): Promise<MobilesentrixCredential> {
+    const [created] = await db.insert(mobilesentrixCredentials)
+      .values(credential)
+      .returning();
+    return created;
+  }
+
+  async updateMobilesentrixCredential(id: string, updates: Partial<InsertMobilesentrixCredential>): Promise<MobilesentrixCredential> {
+    const [updated] = await db.update(mobilesentrixCredentials)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(mobilesentrixCredentials.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteMobilesentrixCredential(id: string): Promise<void> {
+    await db.delete(mobilesentrixCredentials)
+      .where(eq(mobilesentrixCredentials.id, id));
+  }
+
+  async listMobilesentrixOrders(credentialId: string): Promise<MobilesentrixOrder[]> {
+    return await db.select()
+      .from(mobilesentrixOrders)
+      .where(eq(mobilesentrixOrders.credentialId, credentialId))
+      .orderBy(sql`${mobilesentrixOrders.createdAt} DESC`);
+  }
+
+  async getMobilesentrixOrder(id: string): Promise<MobilesentrixOrder | undefined> {
+    const [order] = await db.select()
+      .from(mobilesentrixOrders)
+      .where(eq(mobilesentrixOrders.id, id))
+      .limit(1);
+    return order;
+  }
+
+  async createMobilesentrixOrder(order: InsertMobilesentrixOrder): Promise<MobilesentrixOrder> {
+    const [created] = await db.insert(mobilesentrixOrders)
+      .values(order)
+      .returning();
+    return created;
+  }
+
+  async updateMobilesentrixOrder(id: string, updates: Partial<InsertMobilesentrixOrder>): Promise<MobilesentrixOrder> {
+    const [updated] = await db.update(mobilesentrixOrders)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(mobilesentrixOrders.id, id))
       .returning();
     return updated;
   }
