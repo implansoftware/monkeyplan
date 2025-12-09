@@ -84,9 +84,6 @@ export default function AdminProducts() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
-  const [compatibleModels, setCompatibleModels] = useState<string[]>([]);
-  const [editCompatibleModels, setEditCompatibleModels] = useState<string[]>([]);
-  const [newModel, setNewModel] = useState("");
   const [initialStock, setInitialStock] = useState<InitialStockEntry[]>([]);
   const [editStock, setEditStock] = useState<Array<{ repairCenterId: string; repairCenterName: string; quantity: number; originalQuantity: number }>>([]);
   const [isLoadingStock, setIsLoadingStock] = useState(false);
@@ -152,7 +149,6 @@ export default function AdminProducts() {
       queryClient.invalidateQueries({ queryKey: ["/api/products"] });
       queryClient.invalidateQueries({ queryKey: ["/api/products/with-stock"] });
       setDialogOpen(false);
-      setCompatibleModels([]);
       setInitialStock([]);
       setDeviceCompatibilities([]);
       toast({ title: "Prodotto creato con successo" });
@@ -181,7 +177,6 @@ export default function AdminProducts() {
       queryClient.invalidateQueries({ queryKey: ["/api/products/with-stock"] });
       setEditDialogOpen(false);
       setEditingProduct(null);
-      setEditCompatibleModels([]);
       setEditDeviceCompatibilities([]);
       toast({ title: "Prodotto aggiornato con successo" });
     },
@@ -432,27 +427,6 @@ export default function AdminProducts() {
     return deviceModels.filter(m => m.brandId === brandId);
   };
 
-  const addCompatibleModel = () => {
-    if (newModel.trim() && !compatibleModels.includes(newModel.trim())) {
-      setCompatibleModels([...compatibleModels, newModel.trim()]);
-      setNewModel("");
-    }
-  };
-
-  const removeCompatibleModel = (model: string) => {
-    setCompatibleModels(compatibleModels.filter(m => m !== model));
-  };
-
-  const addEditCompatibleModel = () => {
-    if (newModel.trim() && !editCompatibleModels.includes(newModel.trim())) {
-      setEditCompatibleModels([...editCompatibleModels, newModel.trim()]);
-      setNewModel("");
-    }
-  };
-
-  const removeEditCompatibleModel = (model: string) => {
-    setEditCompatibleModels(editCompatibleModels.filter(m => m !== model));
-  };
 
   const addInitialStock = (repairCenterId: string) => {
     if (!initialStock.find(s => s.repairCenterId === repairCenterId)) {
@@ -472,7 +446,6 @@ export default function AdminProducts() {
 
   const openEditDialog = async (product: Product) => {
     setEditingProduct(product);
-    setEditCompatibleModels(product.compatibleModels || []);
     setEditDialogOpen(true);
     setIsLoadingStock(true);
     setExpandedBrands(new Set()); // Reset expanded brands when opening dialog
@@ -573,7 +546,6 @@ export default function AdminProducts() {
       description: formData.get("description") as string || undefined,
       deviceTypeId: deviceTypeIdValue && deviceTypeIdValue !== "all" ? deviceTypeIdValue : undefined,
       brand: formData.get("brand") as string || undefined,
-      compatibleModels: compatibleModels.length > 0 ? compatibleModels : undefined,
       color: formData.get("color") as string || undefined,
       costPrice: costPriceValue ? Math.round(parseFloat(costPriceValue) * 100) : undefined,
       unitPrice: Math.round(parseFloat(formData.get("unitPrice") as string) * 100),
@@ -608,7 +580,6 @@ export default function AdminProducts() {
       description: (formData.get("description") as string) || editingProduct.description || undefined,
       deviceTypeId: editDeviceTypeIdValue && editDeviceTypeIdValue !== "all" ? editDeviceTypeIdValue : null,
       brand: (formData.get("brand") as string) || editingProduct.brand || undefined,
-      compatibleModels: editCompatibleModels.length > 0 ? editCompatibleModels : (editingProduct.compatibleModels || undefined),
       color: (formData.get("color") as string) || editingProduct.color || undefined,
       costPrice: costPriceValue ? Math.round(parseFloat(costPriceValue) * 100) : editingProduct.costPrice ?? undefined,
       unitPrice: (formData.get("unitPrice") as string) ? Math.round(parseFloat(formData.get("unitPrice") as string) * 100) : editingProduct.unitPrice,
@@ -685,7 +656,7 @@ export default function AdminProducts() {
         </div>
         <Dialog open={dialogOpen} onOpenChange={(open) => {
           setDialogOpen(open);
-          if (!open) setCompatibleModels([]);
+          if (!open) setDeviceCompatibilities([]);
         }}>
           <DialogTrigger asChild>
             <Button data-testid="button-new-product">
@@ -841,52 +812,7 @@ export default function AdminProducts() {
                     </div>
 
                     <div className="space-y-2">
-                      <Label>Modelli Compatibili</Label>
-                      <div className="flex gap-2">
-                        <Input
-                          value={newModel}
-                          onChange={(e) => setNewModel(e.target.value)}
-                          placeholder="es. iPhone 14 Pro Max"
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter') {
-                              e.preventDefault();
-                              addCompatibleModel();
-                            }
-                          }}
-                          data-testid="input-compatible-model"
-                        />
-                        <Button 
-                          type="button" 
-                          variant="outline" 
-                          onClick={addCompatibleModel}
-                          data-testid="button-add-model"
-                        >
-                          <Plus className="h-4 w-4" />
-                        </Button>
-                      </div>
-                      {compatibleModels.length > 0 && (
-                        <div className="flex flex-wrap gap-2 mt-2">
-                          {compatibleModels.map((model) => (
-                            <Badge 
-                              key={model} 
-                              variant="secondary"
-                              className="cursor-pointer"
-                              onClick={() => removeCompatibleModel(model)}
-                            >
-                              {model} <span className="ml-1">×</span>
-                            </Badge>
-                          ))}
-                        </div>
-                      )}
-                      <p className="text-xs text-muted-foreground">
-                        Aggiungi i modelli di dispositivi con cui questo ricambio è compatibile (testo libero)
-                      </p>
-                    </div>
-
-                    <Separator />
-
-                    <div className="space-y-2">
-                      <Label>Compatibilità Dispositivi (strutturata)</Label>
+                      <Label>Dispositivi Compatibili</Label>
                       <p className="text-xs text-muted-foreground mb-2">
                         Seleziona i brand e modelli di dispositivo con cui questo ricambio è compatibile
                       </p>
@@ -1137,8 +1063,7 @@ export default function AdminProducts() {
           setEditDialogOpen(open);
           if (!open) {
             setEditingProduct(null);
-            setEditCompatibleModels([]);
-            setNewModel("");
+            setEditDeviceCompatibilities([]);
             setEditStock([]);
             setProductSuppliers([]);
             setSupplierDialogOpen(false);
@@ -1311,52 +1236,7 @@ export default function AdminProducts() {
                       </div>
 
                       <div className="space-y-2">
-                        <Label>Modelli Compatibili</Label>
-                        <div className="flex gap-2">
-                          <Input
-                            value={newModel}
-                            onChange={(e) => setNewModel(e.target.value)}
-                            placeholder="es. iPhone 14 Pro Max"
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter') {
-                                e.preventDefault();
-                                addEditCompatibleModel();
-                              }
-                            }}
-                            data-testid="edit-input-compatible-model"
-                          />
-                          <Button 
-                            type="button" 
-                            variant="outline" 
-                            onClick={addEditCompatibleModel}
-                            data-testid="edit-button-add-model"
-                          >
-                            <Plus className="h-4 w-4" />
-                          </Button>
-                        </div>
-                        {editCompatibleModels.length > 0 && (
-                          <div className="flex flex-wrap gap-2 mt-2">
-                            {editCompatibleModels.map((model) => (
-                              <Badge 
-                                key={model} 
-                                variant="secondary"
-                                className="cursor-pointer"
-                                onClick={() => removeEditCompatibleModel(model)}
-                              >
-                                {model} <span className="ml-1">×</span>
-                              </Badge>
-                            ))}
-                          </div>
-                        )}
-                        <p className="text-xs text-muted-foreground">
-                          Modelli compatibili (testo libero)
-                        </p>
-                      </div>
-
-                      <Separator />
-
-                      <div className="space-y-2">
-                        <Label>Compatibilità Dispositivi (strutturata)</Label>
+                        <Label>Dispositivi Compatibili</Label>
                         <p className="text-xs text-muted-foreground mb-2">
                           Seleziona i brand e modelli di dispositivo con cui questo ricambio è compatibile.
                           Le modifiche saranno salvate quando aggiorni il prodotto.
