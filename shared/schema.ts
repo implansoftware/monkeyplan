@@ -673,6 +673,15 @@ export const resellerDeviceModels = pgTable("reseller_device_models", {
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 
+// Product Device Compatibilities (Many-to-Many: Products <-> Device Brand/Model)
+export const productDeviceCompatibilities = pgTable("product_device_compatibilities", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  productId: varchar("product_id").notNull().references(() => products.id, { onDelete: "cascade" }),
+  deviceBrandId: varchar("device_brand_id").notNull().references(() => deviceBrands.id),
+  deviceModelId: varchar("device_model_id").references(() => deviceModels.id), // Nullable: null = all models of brand
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
 // Repair Acceptance Data (Check di accettazione)
 export const repairAcceptance = pgTable("repair_acceptance", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -2605,6 +2614,11 @@ export const insertResellerDeviceModelSchema = createInsertSchema(resellerDevice
   updatedAt: true,
 });
 
+export const insertProductDeviceCompatibilitySchema = createInsertSchema(productDeviceCompatibilities).omit({
+  id: true,
+  createdAt: true,
+});
+
 export const insertRepairAcceptanceSchema = createInsertSchema(repairAcceptance).omit({
   id: true,
   acceptedAt: true,
@@ -3199,6 +3213,9 @@ export type InsertResellerDeviceBrand = z.infer<typeof insertResellerDeviceBrand
 
 export type ResellerDeviceModel = typeof resellerDeviceModels.$inferSelect;
 export type InsertResellerDeviceModel = z.infer<typeof insertResellerDeviceModelSchema>;
+
+export type ProductDeviceCompatibility = typeof productDeviceCompatibilities.$inferSelect;
+export type InsertProductDeviceCompatibility = z.infer<typeof insertProductDeviceCompatibilitySchema>;
 
 export type RepairAcceptance = typeof repairAcceptance.$inferSelect;
 export type InsertRepairAcceptance = z.infer<typeof insertRepairAcceptanceSchema>;
