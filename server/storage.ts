@@ -42,6 +42,7 @@ import {
   FonedayCredential, InsertFonedayCredential, FonedayOrder, InsertFonedayOrder,
   ExternalIntegration, InsertExternalIntegration, externalIntegrations,
   ServiceItem, InsertServiceItem, ServiceItemPrice, InsertServiceItemPrice,
+  ProductDeviceCompatibility, InsertProductDeviceCompatibility, productDeviceCompatibilities,
   users, repairCenters, products, repairOrders, tickets, ticketMessages,
   invoices, billingData, chatMessages, inventoryMovements, inventoryStock, activityLogs, analyticsCache,
   notifications, notificationPreferences, repairAttachments, repairAcceptance, repairDiagnostics,
@@ -95,6 +96,13 @@ export interface IStorage {
   createProduct(product: InsertProduct): Promise<Product>;
   deleteProduct(id: string): Promise<void>;
   listProductsByReseller(resellerId: string): Promise<Product[]>;
+  updateProduct(id: string, updates: Partial<InsertProduct>): Promise<Product>;
+  
+  // Product Device Compatibilities
+  listProductCompatibilities(productId: string): Promise<ProductDeviceCompatibility[]>;
+  addProductCompatibility(compatibility: InsertProductDeviceCompatibility): Promise<ProductDeviceCompatibility>;
+  removeProductCompatibility(id: string): Promise<void>;
+  setProductCompatibilities(productId: string, compatibilities: Omit<InsertProductDeviceCompatibility, 'productId'>[]): Promise<ProductDeviceCompatibility[]>;
   
   // Product Prices (prezzi personalizzati per reseller - gestiti da admin)
   listProductPrices(filters?: { productId?: string; resellerId?: string }): Promise<ProductPrice[]>;
@@ -728,6 +736,46 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(products)
       .where(eq(products.createdBy, resellerId))
       .orderBy(desc(products.createdAt));
+  }
+
+  async updateProduct(id: string, updates: Partial<InsertProduct>): Promise<Product> {
+    const [product] = await db.update(products)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(products.id, id))
+      .returning();
+    if (!product) {
+      throw new Error("Prodotto non trovato");
+    }
+    return product;
+  }
+
+  // Product Device Compatibilities
+  async listProductCompatibilities(productId: string): Promise<ProductDeviceCompatibility[]> {
+    return await db.select().from(productDeviceCompatibilities)
+      .where(eq(productDeviceCompatibilities.productId, productId));
+  }
+
+  async addProductCompatibility(compatibility: InsertProductDeviceCompatibility): Promise<ProductDeviceCompatibility> {
+    const [result] = await db.insert(productDeviceCompatibilities).values(compatibility).returning();
+    return result;
+  }
+
+  async removeProductCompatibility(id: string): Promise<void> {
+    await db.delete(productDeviceCompatibilities).where(eq(productDeviceCompatibilities.id, id));
+  }
+
+  async setProductCompatibilities(productId: string, compatibilities: Omit<InsertProductDeviceCompatibility, 'productId'>[]): Promise<ProductDeviceCompatibility[]> {
+    // Delete existing compatibilities for this product
+    await db.delete(productDeviceCompatibilities).where(eq(productDeviceCompatibilities.productId, productId));
+    
+    if (compatibilities.length === 0) {
+      return [];
+    }
+    
+    // Insert new compatibilities
+    const toInsert = compatibilities.map(c => ({ ...c, productId }));
+    const results = await db.insert(productDeviceCompatibilities).values(toInsert).returning();
+    return results;
   }
 
   // Product Prices (prezzi personalizzati per reseller - gestiti da admin)
