@@ -10439,6 +10439,79 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // ============ PRODUCT DEVICE COMPATIBILITIES ============
+
+  // GET /api/products/:id/compatibilities - List device compatibilities for a product
+  app.get("/api/products/:id/compatibilities", requireAuth, async (req, res) => {
+    try {
+      const compatibilities = await storage.listProductCompatibilities(req.params.id);
+      
+      // Enrich with brand and model names
+      const enriched = await Promise.all(compatibilities.map(async (c) => {
+        const brand = await storage.getDeviceBrand(c.deviceBrandId);
+        const model = c.deviceModelId ? await storage.getDeviceModel(c.deviceModelId) : null;
+        return {
+          ...c,
+          brandName: brand?.name,
+          modelName: model?.name
+        };
+      }));
+      
+      res.json(enriched);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // PUT /api/products/:id/compatibilities - Set all compatibilities for a product (replace)
+  app.put("/api/products/:id/compatibilities", requireAuth, requireRole("admin", "reseller"), async (req, res) => {
+    try {
+      const { compatibilities } = req.body as { 
+        compatibilities: { deviceBrandId: string; deviceModelId?: string | null }[] 
+      };
+      
+      if (!Array.isArray(compatibilities)) {
+        return res.status(400).send("Il campo 'compatibilities' deve essere un array");
+      }
+      
+      const result = await storage.setProductCompatibilities(req.params.id, compatibilities);
+      res.json(result);
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+
+  // POST /api/products/:id/compatibilities - Add a single compatibility
+  app.post("/api/products/:id/compatibilities", requireAuth, requireRole("admin", "reseller"), async (req, res) => {
+    try {
+      const { deviceBrandId, deviceModelId } = req.body;
+      
+      if (!deviceBrandId) {
+        return res.status(400).send("deviceBrandId è obbligatorio");
+      }
+      
+      const compatibility = await storage.addProductCompatibility({
+        productId: req.params.id,
+        deviceBrandId,
+        deviceModelId: deviceModelId || null
+      });
+      
+      res.status(201).json(compatibility);
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+
+  // DELETE /api/product-compatibilities/:id - Remove a single compatibility
+  app.delete("/api/product-compatibilities/:id", requireAuth, requireRole("admin", "reseller"), async (req, res) => {
+    try {
+      await storage.removeProductCompatibility(req.params.id);
+      res.status(204).send();
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+
   // ============ SUPPLIER ORDERS (Ordini a Fornitori) ============
 
   // GET /api/supplier-orders - List supplier orders
