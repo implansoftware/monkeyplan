@@ -104,6 +104,11 @@ export default function AdminProducts() {
   const [editDeviceCompatibilities, setEditDeviceCompatibilities] = useState<DeviceCompatibilityWithNames[]>([]);
   const [isLoadingCompatibilities, setIsLoadingCompatibilities] = useState(false);
   const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set());
+  const [newBrandDialogOpen, setNewBrandDialogOpen] = useState(false);
+  const [newModelDialogOpen, setNewModelDialogOpen] = useState(false);
+  const [newBrandName, setNewBrandName] = useState("");
+  const [newModelName, setNewModelName] = useState("");
+  const [newModelBrandId, setNewModelBrandId] = useState<string>("");
   const { toast } = useToast();
 
   const { data: productsWithStock = [], isLoading } = useQuery<ProductWithStock[]>({
@@ -353,6 +358,66 @@ export default function AdminProducts() {
       toast({ title: "Errore", description: error.message, variant: "destructive" });
     },
   });
+
+  const createBrandMutation = useMutation({
+    mutationFn: async (name: string) => {
+      const res = await apiRequest("POST", "/api/device-brands", { name });
+      return await res.json();
+    },
+    onSuccess: (newBrand: DeviceBrand) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/device-brands"] });
+      setNewBrandDialogOpen(false);
+      setNewBrandName("");
+      toast({ title: "Brand creato", description: `"${newBrand.name}" aggiunto con successo` });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Errore", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const createModelMutation = useMutation({
+    mutationFn: async ({ brandId, modelName }: { brandId: string; modelName: string }) => {
+      const res = await apiRequest("POST", "/api/device-models", { brandId, modelName });
+      return await res.json();
+    },
+    onSuccess: (newModel: DeviceModel) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/device-models"] });
+      setNewModelDialogOpen(false);
+      setNewModelName("");
+      setNewModelBrandId("");
+      // Auto-expand the brand to show the new model
+      if (newModel.brandId) {
+        setExpandedBrands(prev => {
+          const newSet = new Set(prev);
+          newSet.add(newModel.brandId!);
+          return newSet;
+        });
+      }
+      toast({ title: "Modello creato", description: `"${newModel.modelName}" aggiunto con successo` });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Errore", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const handleCreateBrand = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (newBrandName.trim()) {
+      createBrandMutation.mutate(newBrandName.trim());
+    }
+  };
+
+  const handleCreateModel = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (newModelName.trim() && newModelBrandId) {
+      createModelMutation.mutate({ brandId: newModelBrandId, modelName: newModelName.trim() });
+    }
+  };
+
+  const openNewModelDialog = (brandId: string) => {
+    setNewModelBrandId(brandId);
+    setNewModelDialogOpen(true);
+  };
 
   const toggleBrandExpansion = (brandId: string) => {
     const newExpanded = new Set(expandedBrands);
@@ -812,7 +877,31 @@ export default function AdminProducts() {
                     </div>
 
                     <div className="space-y-2">
-                      <Label>Dispositivi Compatibili</Label>
+                      <div className="flex items-center justify-between">
+                        <Label>Dispositivi Compatibili</Label>
+                        <div className="flex gap-1">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setNewBrandDialogOpen(true)}
+                            data-testid="button-new-brand"
+                          >
+                            <Plus className="h-3 w-3 mr-1" />
+                            Brand
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setNewModelDialogOpen(true)}
+                            data-testid="button-new-model"
+                          >
+                            <Plus className="h-3 w-3 mr-1" />
+                            Modello
+                          </Button>
+                        </div>
+                      </div>
                       <p className="text-xs text-muted-foreground mb-2">
                         Seleziona i brand e modelli di dispositivo con cui questo ricambio è compatibile
                       </p>
@@ -835,23 +924,29 @@ export default function AdminProducts() {
                                       onCheckedChange={() => toggleBrandCompatibility(brand.id, false)}
                                       data-testid={`checkbox-brand-${brand.id}`}
                                     />
-                                    {models.length > 0 ? (
-                                      <button
-                                        type="button"
-                                        onClick={() => toggleBrandExpansion(brand.id)}
-                                        className="flex items-center gap-1 flex-1 text-left"
-                                      >
-                                        <ChevronDown className={`h-4 w-4 transition-transform ${isExpanded ? 'rotate-0' : '-rotate-90'}`} />
-                                        <span className="font-medium">{brand.name}</span>
-                                        {hasBrandOnlyCompatibility && (
-                                          <Badge variant="outline" className="ml-2 text-xs">Tutti i modelli</Badge>
-                                        )}
-                                      </button>
-                                    ) : (
+                                    <button
+                                      type="button"
+                                      onClick={() => toggleBrandExpansion(brand.id)}
+                                      className="flex items-center gap-1 flex-1 text-left"
+                                    >
+                                      <ChevronDown className={`h-4 w-4 transition-transform ${isExpanded ? 'rotate-0' : '-rotate-90'}`} />
                                       <span className="font-medium">{brand.name}</span>
-                                    )}
+                                      {hasBrandOnlyCompatibility && (
+                                        <Badge variant="outline" className="ml-2 text-xs">Tutti i modelli</Badge>
+                                      )}
+                                    </button>
+                                    <Button
+                                      type="button"
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-6 w-6"
+                                      onClick={(e) => { e.stopPropagation(); openNewModelDialog(brand.id); }}
+                                      data-testid={`button-add-model-${brand.id}`}
+                                    >
+                                      <Plus className="h-3 w-3" />
+                                    </Button>
                                   </div>
-                                  {isExpanded && models.length > 0 && (
+                                  {isExpanded && (
                                     <div className="pl-8 pb-2 space-y-1">
                                       {models.map((model) => {
                                         const isModelSelected = deviceCompatibilities.some(c => c.deviceBrandId === brand.id && c.deviceModelId === model.id);
@@ -867,6 +962,9 @@ export default function AdminProducts() {
                                           </div>
                                         );
                                       })}
+                                      {models.length === 0 && (
+                                        <p className="text-xs text-muted-foreground italic">Nessun modello. Clicca + per aggiungerne uno.</p>
+                                      )}
                                     </div>
                                   )}
                                 </div>
@@ -1236,7 +1334,31 @@ export default function AdminProducts() {
                       </div>
 
                       <div className="space-y-2">
-                        <Label>Dispositivi Compatibili</Label>
+                        <div className="flex items-center justify-between">
+                          <Label>Dispositivi Compatibili</Label>
+                          <div className="flex gap-1">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setNewBrandDialogOpen(true)}
+                              data-testid="edit-button-new-brand"
+                            >
+                              <Plus className="h-3 w-3 mr-1" />
+                              Brand
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setNewModelDialogOpen(true)}
+                              data-testid="edit-button-new-model"
+                            >
+                              <Plus className="h-3 w-3 mr-1" />
+                              Modello
+                            </Button>
+                          </div>
+                        </div>
                         <p className="text-xs text-muted-foreground mb-2">
                           Seleziona i brand e modelli di dispositivo con cui questo ricambio è compatibile.
                           Le modifiche saranno salvate quando aggiorni il prodotto.
@@ -1266,23 +1388,29 @@ export default function AdminProducts() {
                                           onCheckedChange={() => toggleBrandCompatibility(brand.id, true)}
                                           data-testid={`edit-checkbox-brand-${brand.id}`}
                                         />
-                                        {models.length > 0 ? (
-                                          <button
-                                            type="button"
-                                            onClick={() => toggleBrandExpansion(brand.id)}
-                                            className="flex items-center gap-1 flex-1 text-left"
-                                          >
-                                            <ChevronDown className={`h-4 w-4 transition-transform ${isExpanded ? 'rotate-0' : '-rotate-90'}`} />
-                                            <span className="font-medium">{brand.name}</span>
-                                            {hasBrandOnlyCompatibility && (
-                                              <Badge variant="outline" className="ml-2 text-xs">Tutti i modelli</Badge>
-                                            )}
-                                          </button>
-                                        ) : (
+                                        <button
+                                          type="button"
+                                          onClick={() => toggleBrandExpansion(brand.id)}
+                                          className="flex items-center gap-1 flex-1 text-left"
+                                        >
+                                          <ChevronDown className={`h-4 w-4 transition-transform ${isExpanded ? 'rotate-0' : '-rotate-90'}`} />
                                           <span className="font-medium">{brand.name}</span>
-                                        )}
+                                          {hasBrandOnlyCompatibility && (
+                                            <Badge variant="outline" className="ml-2 text-xs">Tutti i modelli</Badge>
+                                          )}
+                                        </button>
+                                        <Button
+                                          type="button"
+                                          variant="ghost"
+                                          size="icon"
+                                          className="h-6 w-6"
+                                          onClick={(e) => { e.stopPropagation(); openNewModelDialog(brand.id); }}
+                                          data-testid={`edit-button-add-model-${brand.id}`}
+                                        >
+                                          <Plus className="h-3 w-3" />
+                                        </Button>
                                       </div>
-                                      {isExpanded && models.length > 0 && (
+                                      {isExpanded && (
                                         <div className="pl-8 pb-2 space-y-1">
                                           {models.map((model) => {
                                             const isModelSelected = editDeviceCompatibilities.some(c => c.deviceBrandId === brand.id && c.deviceModelId === model.id);
@@ -1298,6 +1426,9 @@ export default function AdminProducts() {
                                               </div>
                                             );
                                           })}
+                                          {models.length === 0 && (
+                                            <p className="text-xs text-muted-foreground italic">Nessun modello. Clicca + per aggiungerne uno.</p>
+                                          )}
                                         </div>
                                       )}
                                     </div>
@@ -1988,6 +2119,101 @@ export default function AdminProducts() {
               </Table>
             )}
           </ScrollArea>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog per creare nuovo Brand */}
+      <Dialog open={newBrandDialogOpen} onOpenChange={setNewBrandDialogOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Nuovo Brand Dispositivo</DialogTitle>
+            <DialogDescription>
+              Aggiungi un nuovo brand di dispositivo al catalogo
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleCreateBrand} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="newBrandName">Nome Brand *</Label>
+              <Input
+                id="newBrandName"
+                value={newBrandName}
+                onChange={(e) => setNewBrandName(e.target.value)}
+                placeholder="es. Apple, Samsung..."
+                required
+                data-testid="input-new-brand-name"
+              />
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={() => { setNewBrandDialogOpen(false); setNewBrandName(""); }}
+              >
+                Annulla
+              </Button>
+              <Button 
+                type="submit" 
+                disabled={createBrandMutation.isPending || !newBrandName.trim()}
+                data-testid="button-submit-new-brand"
+              >
+                {createBrandMutation.isPending ? "Creazione..." : "Crea Brand"}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog per creare nuovo Modello */}
+      <Dialog open={newModelDialogOpen} onOpenChange={setNewModelDialogOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Nuovo Modello Dispositivo</DialogTitle>
+            <DialogDescription>
+              Aggiungi un nuovo modello di dispositivo
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleCreateModel} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="newModelBrand">Brand *</Label>
+              <Select value={newModelBrandId} onValueChange={setNewModelBrandId}>
+                <SelectTrigger id="newModelBrand" data-testid="select-new-model-brand">
+                  <SelectValue placeholder="Seleziona brand" />
+                </SelectTrigger>
+                <SelectContent>
+                  {deviceBrands.map(brand => (
+                    <SelectItem key={brand.id} value={brand.id}>{brand.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="newModelName">Nome Modello *</Label>
+              <Input
+                id="newModelName"
+                value={newModelName}
+                onChange={(e) => setNewModelName(e.target.value)}
+                placeholder="es. iPhone 15 Pro, Galaxy S24..."
+                required
+                data-testid="input-new-model-name"
+              />
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={() => { setNewModelDialogOpen(false); setNewModelName(""); setNewModelBrandId(""); }}
+              >
+                Annulla
+              </Button>
+              <Button 
+                type="submit" 
+                disabled={createModelMutation.isPending || !newModelName.trim() || !newModelBrandId}
+                data-testid="button-submit-new-model"
+              >
+                {createModelMutation.isPending ? "Creazione..." : "Crea Modello"}
+              </Button>
+            </div>
+          </form>
         </DialogContent>
       </Dialog>
     </div>
