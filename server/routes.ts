@@ -575,12 +575,31 @@ export function registerRoutes(app: Express): Server {
   // ==========================================
   
   // Get available service items with effective prices for current user context
+  // Supports optional search and limit query params
   app.get("/api/service-items", requireAuth, async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
+      const search = req.query.search as string | undefined;
+      const limit = req.query.limit ? parseInt(req.query.limit as string) : undefined;
+      
       const items = await storage.listServiceItems();
-      const activeItems = items.filter(item => item.isActive);
+      let activeItems = items.filter(item => item.isActive);
+      
+      // Filter by search term if provided (case-insensitive on name, code, category)
+      if (search && search.trim()) {
+        const searchLower = search.toLowerCase().trim();
+        activeItems = activeItems.filter(item => 
+          item.name.toLowerCase().includes(searchLower) ||
+          item.code.toLowerCase().includes(searchLower) ||
+          (item.category && item.category.toLowerCase().includes(searchLower))
+        );
+      }
+      
+      // Apply limit if provided
+      if (limit && limit > 0) {
+        activeItems = activeItems.slice(0, limit);
+      }
       
       // Get effective prices based on user role
       const resellerId = req.user.role === 'reseller' ? req.user.id : 
@@ -5170,9 +5189,30 @@ export function registerRoutes(app: Express): Server {
   // ============ PRODUCTS ============
   
   // List all products (all roles can view)
+  // Supports optional search and limit query params
   app.get("/api/products", requireAuth, async (req, res) => {
     try {
-      const products = await storage.listProducts();
+      const search = req.query.search as string | undefined;
+      const limit = req.query.limit ? parseInt(req.query.limit as string) : undefined;
+      
+      let products = await storage.listProducts();
+      
+      // Filter by search term if provided (case-insensitive on name, sku, brand)
+      if (search && search.trim()) {
+        const searchLower = search.toLowerCase().trim();
+        products = products.filter(p => 
+          p.name.toLowerCase().includes(searchLower) ||
+          p.sku.toLowerCase().includes(searchLower) ||
+          (p.brand && p.brand.toLowerCase().includes(searchLower)) ||
+          (p.category && p.category.toLowerCase().includes(searchLower))
+        );
+      }
+      
+      // Apply limit if provided
+      if (limit && limit > 0) {
+        products = products.slice(0, limit);
+      }
+      
       res.json(products);
     } catch (error: any) {
       res.status(500).send(error.message);
