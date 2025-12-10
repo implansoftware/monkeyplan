@@ -29,6 +29,7 @@ interface RepairOrderWithSLA extends RepairOrder {
   slaEnteredAt: string | null;
   customerName: string | null;
   repairCenterName: string | null;
+  quoteTotalAmount: number | null;
 }
 
 export default function AdminRepairs() {
@@ -474,7 +475,7 @@ export default function AdminRepairs() {
                           setDrawerOpen(true);
                         }}
                       >
-                        {formatCurrency(repair.finalCost || repair.estimatedCost)}
+                        {formatCurrency(repair.quoteTotalAmount || repair.finalCost || repair.estimatedCost)}
                       </TableCell>
                       <TableCell
                         className="cursor-pointer"

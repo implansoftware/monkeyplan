@@ -4936,6 +4936,15 @@ export function registerRoutes(app: Express): Server {
         }
       }
       
+      // Fetch quotes for all orders to get totalAmount
+      const quotesMap = new Map<string, number>();
+      for (const order of orders) {
+        const quote = await storage.getRepairQuote(order.id);
+        if (quote && quote.totalAmount) {
+          quotesMap.set(order.id, quote.totalAmount);
+        }
+      }
+      
       const ordersWithSLA = await Promise.all(orders.map(async (order) => {
         const currentState = await storage.getCurrentRepairOrderState(order.id);
         const stateEnteredAt = currentState?.enteredAt || order.createdAt;
@@ -4945,10 +4954,14 @@ export function registerRoutes(app: Express): Server {
         const customerName = customer?.ragioneSociale || customer?.fullName || null;
         const repairCenterName = order.repairCenterId ? repairCentersMap.get(order.repairCenterId) || null : null;
         
+        // Get quote totalAmount if available
+        const quoteTotalAmount = quotesMap.get(order.id) || null;
+        
         return {
           ...order,
           customerName,
           repairCenterName,
+          quoteTotalAmount,
           slaSeverity: severity,
           slaMinutesInState: minutesInState,
           slaPhase: phase,
