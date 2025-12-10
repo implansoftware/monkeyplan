@@ -5119,6 +5119,13 @@ export function registerRoutes(app: Express): Server {
         orderData.resellerId = req.user.id;
       }
       
+      // Set repairCenterId if provided in body, or from user's associated repair center
+      if (req.body.repairCenterId) {
+        orderData.repairCenterId = req.body.repairCenterId;
+      } else if (req.user.role === 'repair_center' && req.user.repairCenterId) {
+        orderData.repairCenterId = req.user.repairCenterId;
+      }
+      
       // Create order with or without acceptance data
       if (hasAcceptance) {
         // Validate and prepare acceptance data
