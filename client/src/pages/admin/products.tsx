@@ -15,7 +15,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Plus, Search, Pencil, Trash2, Package, Warehouse, AlertTriangle, X, Building2, Star, StarOff, Users, Smartphone, Check, ChevronDown } from "lucide-react";
+import { Plus, Search, Pencil, Trash2, Package, Warehouse, AlertTriangle, X, Building2, Star, StarOff, Users, Smartphone, Check, ChevronDown, ImageIcon, Upload, Loader2 } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -246,6 +246,59 @@ export default function AdminProducts() {
       toast({ title: "Errore", description: error.message, variant: "destructive" });
     },
   });
+
+  const uploadImageMutation = useMutation({
+    mutationFn: async ({ productId, file }: { productId: string; file: File }) => {
+      const formData = new FormData();
+      formData.append("image", file);
+      const res = await fetch(`/api/admin/products/${productId}/image`, {
+        method: "POST",
+        body: formData,
+        credentials: "include",
+      });
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(text || "Errore upload immagine");
+      }
+      return await res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/products"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/products/with-stock"] });
+      toast({ title: "Immagine caricata con successo" });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Errore upload", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const deleteImageMutation = useMutation({
+    mutationFn: async (productId: string) => {
+      const res = await fetch(`/api/admin/products/${productId}/image`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(text || "Errore eliminazione immagine");
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/products"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/products/with-stock"] });
+      toast({ title: "Immagine eliminata" });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Errore", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const handleImageUpload = (productId: string, event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      uploadImageMutation.mutate({ productId, file });
+    }
+  };
 
   const loadResellerPrices = async (productId: string) => {
     setIsLoadingResellerPrices(true);
@@ -1192,6 +1245,70 @@ export default function AdminProducts() {
                     </TabsList>
 
                     <TabsContent value="info" className="space-y-4 mt-4">
+                      <div className="space-y-2">
+                        <Label>Immagine Prodotto</Label>
+                        <div className="flex items-start gap-4">
+                          <div className="w-24 h-24 rounded-md border bg-muted flex items-center justify-center overflow-hidden">
+                            {editingProduct.imageUrl ? (
+                              <img 
+                                src={editingProduct.imageUrl} 
+                                alt={editingProduct.name}
+                                className="w-full h-full object-cover"
+                                data-testid={`img-product-${editingProduct.id}`}
+                              />
+                            ) : (
+                              <ImageIcon className="h-8 w-8 text-muted-foreground" />
+                            )}
+                          </div>
+                          <div className="flex flex-col gap-2">
+                            <div>
+                              <input
+                                type="file"
+                                accept="image/*"
+                                id={`admin-image-upload-${editingProduct.id}`}
+                                className="hidden"
+                                onChange={(e) => handleImageUpload(editingProduct.id, e)}
+                                data-testid="input-upload-image"
+                              />
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => document.getElementById(`admin-image-upload-${editingProduct.id}`)?.click()}
+                                disabled={uploadImageMutation.isPending}
+                                data-testid="button-upload-image"
+                              >
+                                {uploadImageMutation.isPending ? (
+                                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                                ) : (
+                                  <Upload className="h-4 w-4 mr-2" />
+                                )}
+                                Carica Immagine
+                              </Button>
+                            </div>
+                            {editingProduct.imageUrl && (
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => deleteImageMutation.mutate(editingProduct.id)}
+                                disabled={deleteImageMutation.isPending}
+                                className="text-destructive hover:text-destructive"
+                                data-testid="button-delete-image"
+                              >
+                                {deleteImageMutation.isPending ? (
+                                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                                ) : (
+                                  <Trash2 className="h-4 w-4 mr-2" />
+                                )}
+                                Rimuovi
+                              </Button>
+                            )}
+                            <p className="text-xs text-muted-foreground">JPEG, PNG, WebP o GIF. Max 10MB</p>
+                          </div>
+                        </div>
+                      </div>
+                      <Separator />
                       <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
                           <Label htmlFor="edit-name">Nome Prodotto *</Label>
@@ -1893,6 +2010,7 @@ export default function AdminProducts() {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-12"></TableHead>
                   <TableHead>Prodotto</TableHead>
                   <TableHead>SKU</TableHead>
                   <TableHead>Categoria</TableHead>
@@ -1911,6 +2029,20 @@ export default function AdminProducts() {
               <TableBody>
                 {filteredProducts.map(({ product, stockByCenter, totalStock, compatibilities }) => (
                   <TableRow key={product.id} data-testid={`row-product-${product.id}`}>
+                    <TableCell>
+                      <div className="w-10 h-10 rounded border bg-muted flex items-center justify-center overflow-hidden">
+                        {product.imageUrl ? (
+                          <img 
+                            src={product.imageUrl} 
+                            alt={product.name}
+                            className="w-full h-full object-cover"
+                            data-testid={`img-product-thumb-${product.id}`}
+                          />
+                        ) : (
+                          <ImageIcon className="h-4 w-4 text-muted-foreground" />
+                        )}
+                      </div>
+                    </TableCell>
                     <TableCell>
                       <div>
                         <div className="font-medium">{product.name}</div>

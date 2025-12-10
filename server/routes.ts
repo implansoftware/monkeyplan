@@ -1244,6 +1244,70 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Admin Products - Upload product image
+  app.post("/api/admin/products/:id/image", requireRole("admin"), upload.single("image"), async (req, res) => {
+    try {
+      const product = await storage.getProduct(req.params.id);
+      if (!product) {
+        return res.status(404).send("Prodotto non trovato");
+      }
+      
+      if (!req.file) {
+        return res.status(400).send("Nessun file caricato");
+      }
+      
+      const allowedMimeTypes = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+      if (!allowedMimeTypes.includes(req.file.mimetype)) {
+        return res.status(400).send("Formato immagine non supportato. Usa JPEG, PNG, WebP o GIF.");
+      }
+      
+      const maxSize = 10 * 1024 * 1024;
+      if (req.file.size > maxSize) {
+        return res.status(400).send("Immagine troppo grande. Massimo 10MB.");
+      }
+      
+      const ext = req.file.originalname.split(".").pop() || "jpg";
+      const objectPath = `products/${req.params.id}/${Date.now()}.${ext}`;
+      
+      const privateObjectDir = objectStorage.getPrivateObjectDir();
+      const fullPath = `${privateObjectDir}/${objectPath}`;
+      const { bucketName, objectName } = parseObjectPath(fullPath);
+      const bucket = objectStorageClient.bucket(bucketName);
+      const file = bucket.file(objectName);
+      
+      await file.save(req.file.buffer, {
+        metadata: { contentType: req.file.mimetype }
+      });
+      
+      const imageUrl = `/objects/${objectPath}`;
+      
+      await storage.updateProduct(req.params.id, { imageUrl });
+      setActivityEntity(res, { type: 'products', id: req.params.id });
+      
+      res.json({ imageUrl });
+    } catch (error: any) {
+      console.error("Error uploading product image:", error);
+      res.status(500).send(error.message);
+    }
+  });
+
+  // Admin Products - Delete product image
+  app.delete("/api/admin/products/:id/image", requireRole("admin"), async (req, res) => {
+    try {
+      const product = await storage.getProduct(req.params.id);
+      if (!product) {
+        return res.status(404).send("Prodotto non trovato");
+      }
+      
+      await storage.updateProduct(req.params.id, { imageUrl: null });
+      setActivityEntity(res, { type: 'products', id: req.params.id });
+      
+      res.sendStatus(204);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
   // Product Prices (prezzi personalizzati per reseller - gestiti da admin)
   app.get("/api/admin/product-prices", requireRole("admin"), async (req, res) => {
     try {
