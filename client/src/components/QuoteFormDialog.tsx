@@ -26,25 +26,14 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { FileText, Plus, Trash2, Package, Calculator, Info, Wrench } from "lucide-react";
-import type { Product, RepairDiagnostics, RepairOrder, RepairCenter, ServiceItem } from "@shared/schema";
+import { FileText, Plus, Trash2, Package, Calculator, Info } from "lucide-react";
+import type { RepairDiagnostics, RepairOrder, RepairCenter } from "@shared/schema";
+import { SearchableProductCombobox } from "@/components/SearchableProductCombobox";
+import { SearchableServiceCombobox } from "@/components/SearchableServiceCombobox";
 
 interface HourlyRateResponse {
   hourlyRateCents: number;
-}
-
-interface ServiceItemWithPrice extends ServiceItem {
-  effectivePriceCents: number;
-  effectiveLaborMinutes: number;
-  priceSource: 'base' | 'reseller' | 'repair_center';
 }
 
 interface QuoteFormDialogProps {
@@ -86,11 +75,6 @@ export function QuoteFormDialog({
     calculatedCost: number;
   } | null>(null);
 
-  const { data: products = [] } = useQuery<Product[]>({
-    queryKey: ["/api/products"],
-    enabled: open,
-  });
-
   // Fetch repair order to get the assigned repair center
   const { data: repairOrder } = useQuery<RepairOrder>({
     queryKey: ["/api/repair-orders", repairOrderId],
@@ -103,22 +87,6 @@ export function QuoteFormDialog({
     queryKey: ["/api/repair-centers", repairOrder?.repairCenterId],
     enabled: open && !!repairOrder?.repairCenterId,
     retry: false,
-  });
-
-  // Fetch service catalog items with resolved prices
-  const serviceItemsQueryParams = new URLSearchParams();
-  if (repairOrder?.repairCenterId) serviceItemsQueryParams.set('repairCenterId', repairOrder.repairCenterId);
-  if (repairOrder?.resellerId) serviceItemsQueryParams.set('resellerId', repairOrder.resellerId);
-  const serviceItemsUrl = `/api/service-items${serviceItemsQueryParams.toString() ? '?' + serviceItemsQueryParams.toString() : ''}`;
-  
-  const { data: serviceItems = [] } = useQuery<ServiceItemWithPrice[]>({
-    queryKey: ["/api/service-items", repairOrder?.repairCenterId, repairOrder?.resellerId],
-    queryFn: async () => {
-      const res = await fetch(serviceItemsUrl, { credentials: 'include' });
-      if (!res.ok) throw new Error(`${res.status}: ${await res.text()}`);
-      return res.json();
-    },
-    enabled: open,
   });
 
   const { 
@@ -298,104 +266,29 @@ export function QuoteFormDialog({
                     <Plus className="h-4 w-4 mr-1" />
                     Manuale
                   </Button>
-                  <Select
-                    value=""
-                    onValueChange={(productId) => {
-                      const product = products.find(p => p.id === productId);
-                      if (product) {
-                        append({
-                          productId: product.id,
-                          name: product.name,
-                          quantity: 1,
-                          unitPrice: (product.unitPrice || 0) / 100,
-                          imageUrl: product.imageUrl || undefined,
-                        });
-                      }
+                  <SearchableProductCombobox
+                    onSelect={(product) => {
+                      append({
+                        productId: product.id,
+                        name: product.name,
+                        quantity: 1,
+                        unitPrice: (product.unitPrice || 0) / 100,
+                        imageUrl: product.imageUrl || undefined,
+                      });
                     }}
-                  >
-                    <SelectTrigger className="w-[140px]" data-testid="select-product-from-inventory">
-                      <Package className="h-4 w-4 mr-2 flex-shrink-0" />
-                      <span>Magazzino</span>
-                    </SelectTrigger>
-                    <SelectContent>
-                      {products.length === 0 ? (
-                        <div className="p-2 text-sm text-muted-foreground text-center">
-                          Nessun prodotto disponibile
-                        </div>
-                      ) : (
-                        products.filter(p => p.isActive).map((product) => (
-                          <SelectItem key={product.id} value={product.id}>
-                            <div className="flex items-center gap-2">
-                              <div className="w-8 h-8 flex-shrink-0 rounded border overflow-hidden">
-                                {product.imageUrl ? (
-                                  <img 
-                                    src={product.imageUrl} 
-                                    alt={product.name}
-                                    className="w-full h-full object-cover"
-                                  />
-                                ) : (
-                                  <div className="w-full h-full bg-muted flex items-center justify-center">
-                                    <Package className="h-3 w-3 text-muted-foreground" />
-                                  </div>
-                                )}
-                              </div>
-                              <div className="flex flex-col">
-                                <span>{product.name}</span>
-                                <span className="text-xs text-muted-foreground">
-                                  {product.sku} - {formatCurrency((product.unitPrice || 0) / 100)}
-                                </span>
-                              </div>
-                            </div>
-                          </SelectItem>
-                        ))
-                      )}
-                    </SelectContent>
-                  </Select>
-                  <Select
-                    value=""
-                    onValueChange={(serviceId) => {
-                      const service = serviceItems.find(s => s.id === serviceId);
-                      if (service) {
-                        append({
-                          productId: "",
-                          name: `[Servizio] ${service.name}`,
-                          quantity: 1,
-                          unitPrice: service.effectivePriceCents / 100,
-                        });
-                      }
+                  />
+                  <SearchableServiceCombobox
+                    onSelect={(service) => {
+                      append({
+                        productId: "",
+                        name: `[Servizio] ${service.name}`,
+                        quantity: 1,
+                        unitPrice: service.effectivePriceCents / 100,
+                      });
                     }}
-                  >
-                    <SelectTrigger className="w-[140px]" data-testid="select-service-from-catalog">
-                      <Wrench className="h-4 w-4 mr-2 flex-shrink-0" />
-                      <span>Catalogo</span>
-                    </SelectTrigger>
-                    <SelectContent>
-                      {serviceItems.length === 0 ? (
-                        <div className="p-2 text-sm text-muted-foreground text-center">
-                          Nessun servizio disponibile
-                        </div>
-                      ) : (
-                        serviceItems.map((service) => (
-                          <SelectItem key={service.id} value={service.id}>
-                            <div className="flex flex-col">
-                              <span>{service.name}</span>
-                              <span className="text-xs text-muted-foreground">
-                                {service.code} - {formatCurrency(service.effectivePriceCents / 100)}
-                                {service.effectiveLaborMinutes > 0 && (
-                                  <span className="ml-1">({service.effectiveLaborMinutes} min)</span>
-                                )}
-                                {service.priceSource !== 'base' && (
-                                  <span className="ml-1 text-primary">
-                                    ({service.priceSource === 'reseller' ? 'Reseller' : 'Centro'})
-                                  </span>
-                                )}
-                              </span>
-                            </div>
-                          </SelectItem>
-                        ))
-                      )}
-                    </SelectContent>
-                  </Select>
+                    repairCenterId={repairOrder?.repairCenterId || undefined}
+                    resellerId={repairOrder?.resellerId || undefined}
+                  />
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">
