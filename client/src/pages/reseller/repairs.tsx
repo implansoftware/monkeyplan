@@ -61,7 +61,8 @@ export default function ResellerRepairs() {
 
   const filteredRepairs = repairs.filter((repair) => {
     const matchesSearch = repair.orderNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      repair.deviceModel.toLowerCase().includes(searchQuery.toLowerCase());
+      repair.deviceModel.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (repair.customerName && repair.customerName.toLowerCase().includes(searchQuery.toLowerCase()));
     const matchesStatus = statusFilter === "all" || repair.status === statusFilter;
     const matchesRepairCenter = repairCenterFilter === "all" || repair.repairCenterId === repairCenterFilter;
     
