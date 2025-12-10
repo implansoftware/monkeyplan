@@ -27,6 +27,8 @@ interface RepairOrderWithSLA extends RepairOrder {
   slaMinutesInState: number;
   slaPhase: string | null;
   slaEnteredAt: string | null;
+  customerName: string | null;
+  repairCenterName: string | null;
 }
 
 export default function AdminRepairs() {
@@ -391,6 +393,8 @@ export default function AdminRepairs() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Ordine</TableHead>
+                  <TableHead>Cliente</TableHead>
+                  <TableHead>Centro</TableHead>
                   <TableHead>Dispositivo</TableHead>
                   <TableHead>Problema</TableHead>
                   <TableHead>Costo</TableHead>
@@ -419,6 +423,28 @@ export default function AdminRepairs() {
                         }}
                       >
                         {repair.orderNumber}
+                      </TableCell>
+                      <TableCell
+                        className="cursor-pointer max-w-[150px]"
+                        onClick={() => {
+                          setSelectedRepairId(repair.id);
+                          setDrawerOpen(true);
+                        }}
+                      >
+                        <span className="truncate block" title={repair.customerName || "—"}>
+                          {repair.customerName || "—"}
+                        </span>
+                      </TableCell>
+                      <TableCell
+                        className="cursor-pointer max-w-[150px]"
+                        onClick={() => {
+                          setSelectedRepairId(repair.id);
+                          setDrawerOpen(true);
+                        }}
+                      >
+                        <span className="truncate block" title={repair.repairCenterName || "—"}>
+                          {repair.repairCenterName || "—"}
+                        </span>
                       </TableCell>
                       <TableCell
                         className="cursor-pointer"

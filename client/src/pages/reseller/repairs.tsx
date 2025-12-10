@@ -27,6 +27,8 @@ interface RepairOrderWithSLA extends RepairOrder {
   slaMinutesInState: number;
   slaPhase: string | null;
   slaEnteredAt: string | null;
+  customerName: string | null;
+  repairCenterName: string | null;
 }
 
 export default function ResellerRepairs() {
@@ -266,6 +268,8 @@ export default function ResellerRepairs() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Ordine</TableHead>
+                  <TableHead>Cliente</TableHead>
+                  <TableHead>Centro</TableHead>
                   <TableHead>Dispositivo</TableHead>
                   <TableHead>Problema</TableHead>
                   <TableHead>Costo</TableHead>
@@ -288,6 +292,16 @@ export default function ResellerRepairs() {
                   >
                     <TableCell className="font-mono font-medium">
                       {repair.orderNumber}
+                    </TableCell>
+                    <TableCell className="max-w-[150px]">
+                      <span className="truncate block" title={repair.customerName || "—"}>
+                        {repair.customerName || "—"}
+                      </span>
+                    </TableCell>
+                    <TableCell className="max-w-[150px]">
+                      <span className="truncate block" title={repair.repairCenterName || "—"}>
+                        {repair.repairCenterName || "—"}
+                      </span>
                     </TableCell>
                     <TableCell>
                       <div>

@@ -4910,13 +4910,45 @@ export function registerRoutes(app: Express): Server {
       const slaConfig = await loadSLAConfig();
       const slaSeverityFilter = req.query.slaSeverity as string | undefined;
       
+      // Build maps for customer and repair center names
+      const customerIds = [...new Set(orders.map(o => o.customerId).filter(Boolean))];
+      const repairCenterIds = [...new Set(orders.map(o => o.repairCenterId).filter(Boolean))];
+      
+      const customersMap = new Map<string, { displayName: string | null; companyName: string | null }>();
+      const repairCentersMap = new Map<string, string>();
+      
+      // Fetch customers
+      for (const customerId of customerIds) {
+        const customer = await storage.getUser(customerId);
+        if (customer) {
+          customersMap.set(customerId, {
+            displayName: customer.displayName,
+            companyName: customer.companyName,
+          });
+        }
+      }
+      
+      // Fetch repair centers
+      for (const rcId of repairCenterIds) {
+        const rc = await storage.getRepairCenter(rcId);
+        if (rc) {
+          repairCentersMap.set(rcId, rc.name);
+        }
+      }
+      
       const ordersWithSLA = await Promise.all(orders.map(async (order) => {
         const currentState = await storage.getCurrentRepairOrderState(order.id);
         const stateEnteredAt = currentState?.enteredAt || order.createdAt;
         const { severity, minutesInState, phase } = computeSLASeverity(order.status, stateEnteredAt, slaConfig);
         
+        const customer = order.customerId ? customersMap.get(order.customerId) : null;
+        const customerName = customer?.companyName || customer?.displayName || null;
+        const repairCenterName = order.repairCenterId ? repairCentersMap.get(order.repairCenterId) || null : null;
+        
         return {
           ...order,
+          customerName,
+          repairCenterName,
           slaSeverity: severity,
           slaMinutesInState: minutesInState,
           slaPhase: phase,
