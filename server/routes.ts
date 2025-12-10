@@ -13772,11 +13772,12 @@ export function registerRoutes(app: Express): Server {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
-      const { consumerName, consumerKey, consumerSecret } = req.body;
+      const { consumerName, consumerKey, consumerSecret, environment } = req.body;
       if (!consumerName || !consumerKey || !consumerSecret) {
         return res.status(400).send("Consumer Name, Consumer Key e Consumer Secret sono obbligatori");
       }
 
+      const validEnvironment = environment === "staging" ? "staging" : "production";
       const existing = await storage.getMobilesentrixCredentialByReseller(req.user.id);
       
       if (existing) {
@@ -13784,6 +13785,7 @@ export function registerRoutes(app: Express): Server {
           consumerName,
           consumerKey,
           consumerSecret,
+          environment: validEnvironment,
         });
         res.json(updated);
       } else {
@@ -13792,6 +13794,7 @@ export function registerRoutes(app: Express): Server {
           consumerName,
           consumerKey,
           consumerSecret,
+          environment: validEnvironment,
           isActive: true,
         });
         res.json(created);

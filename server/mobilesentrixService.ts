@@ -1,9 +1,15 @@
 import { MobilesentrixCredential } from "@shared/schema";
 import crypto from "crypto";
 
-// MobileSentrix EU - Production: www.mobilesentrix.eu, Staging: preprod.mobilesentrix.eu
-// Uses Magento 2 REST API with OAuth 1.0 authentication
-const MOBILESENTRIX_BASE_URL = "https://www.mobilesentrix.eu/rest/V1";
+// MobileSentrix EU environments
+// Production: https://www.mobilesentrix.eu
+// Staging: https://preprod.mobilesentrix.eu
+function getMobilesentrixBaseUrl(environment: string): string {
+  if (environment === "staging") {
+    return "https://preprod.mobilesentrix.eu/rest/V1";
+  }
+  return "https://www.mobilesentrix.eu/rest/V1";
+}
 
 interface MobilesentrixApiResponse<T> {
   success: boolean;
@@ -63,7 +69,9 @@ export class MobilesentrixService {
 
   constructor(credential: MobilesentrixCredential) {
     this.credential = credential;
-    this.baseUrl = MOBILESENTRIX_BASE_URL;
+    // Use environment from credential, default to production
+    const environment = (credential as any).environment || "production";
+    this.baseUrl = getMobilesentrixBaseUrl(environment);
   }
 
   private generateOAuthSignature(

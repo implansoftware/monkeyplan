@@ -1425,6 +1425,9 @@ export const mobilesentrixCredentials = pgTable("mobilesentrix_credentials", {
   consumerKey: text("consumer_key").notNull(),
   consumerSecret: text("consumer_secret").notNull(),
   
+  // Environment: "production" (www.mobilesentrix.eu) | "staging" (preprod.mobilesentrix.eu)
+  environment: text("environment").notNull().default("production"),
+  
   // Stato
   isActive: boolean("is_active").notNull().default(true),
   lastSyncAt: timestamp("last_sync_at"),

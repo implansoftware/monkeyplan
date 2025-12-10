@@ -11,6 +11,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { Settings, Key, CheckCircle, XCircle, Loader2, TestTube, Trash2, Save, ExternalLink, Package } from "lucide-react";
 import { Link } from "wouter";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 type MobilesentrixCredential = {
   id: string;
@@ -18,6 +19,7 @@ type MobilesentrixCredential = {
   consumerName: string;
   consumerKey: string;
   consumerSecret: string;
+  environment: "production" | "staging";
   isActive: boolean;
   lastSyncAt: string | null;
   lastTestAt: string | null;
@@ -33,6 +35,7 @@ export default function MobilesentrixSettingsPage() {
   const [consumerName, setConsumerName] = useState("");
   const [consumerKey, setConsumerKey] = useState("");
   const [consumerSecret, setConsumerSecret] = useState("");
+  const [environment, setEnvironment] = useState<"production" | "staging">("production");
   const [showSecret, setShowSecret] = useState(false);
 
   const { data: credential, isLoading } = useQuery<MobilesentrixCredential | null>({
@@ -41,7 +44,7 @@ export default function MobilesentrixSettingsPage() {
 
   const saveMutation = useMutation({
     mutationFn: async () => {
-      return apiRequest("POST", "/api/mobilesentrix/credentials", { consumerName, consumerKey, consumerSecret });
+      return apiRequest("POST", "/api/mobilesentrix/credentials", { consumerName, consumerKey, consumerSecret, environment });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/mobilesentrix/credentials"] });
@@ -49,6 +52,7 @@ export default function MobilesentrixSettingsPage() {
       setConsumerName("");
       setConsumerKey("");
       setConsumerSecret("");
+      setEnvironment("production");
     },
     onError: (error: Error) => {
       toast({ title: "Errore", description: error.message, variant: "destructive" });
@@ -186,6 +190,17 @@ export default function MobilesentrixSettingsPage() {
                 </div>
               </div>
               <div className="space-y-2">
+                <Label>Ambiente</Label>
+                <div className="flex items-center gap-2">
+                  <Badge variant={credential.environment === "production" ? "default" : "outline"}>
+                    {credential.environment === "production" ? "Produzione" : "Staging"}
+                  </Badge>
+                  <span className="text-sm text-muted-foreground">
+                    {credential.environment === "production" ? "www.mobilesentrix.eu" : "preprod.mobilesentrix.eu"}
+                  </span>
+                </div>
+              </div>
+              <div className="space-y-2">
                 <Label>Ultimo Test</Label>
                 <div className="flex items-center gap-2">
                   {credential.testStatus === "success" ? (
@@ -283,10 +298,22 @@ export default function MobilesentrixSettingsPage() {
                 onChange={(e) => setConsumerSecret(e.target.value)}
                 data-testid="input-consumer-secret"
               />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="environment">Ambiente</Label>
+              <Select value={environment} onValueChange={(v) => setEnvironment(v as "production" | "staging")}>
+                <SelectTrigger data-testid="select-environment">
+                  <SelectValue placeholder="Seleziona ambiente" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="production">Produzione (www.mobilesentrix.eu)</SelectItem>
+                  <SelectItem value="staging">Staging (preprod.mobilesentrix.eu)</SelectItem>
+                </SelectContent>
+              </Select>
               <p className="text-sm text-muted-foreground">
                 Puoi ottenere le tue credenziali OAuth dal pannello MobileSentrix.{" "}
                 <a
-                  href="https://www.mobilesentrix.com"
+                  href="https://www.mobilesentrix.eu"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-primary hover:underline inline-flex items-center gap-1"
