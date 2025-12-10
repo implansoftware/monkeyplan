@@ -85,6 +85,7 @@ interface ExistingDiagnosis {
   requiresExternalParts?: boolean | null;
   diagnosisNotes?: string | null;
   photos?: string[] | null;
+  skipPhotos?: boolean | null;
   findingIds?: string[] | null;
   componentIds?: string[] | null;
   estimatedRepairTimeId?: string | null;
@@ -112,6 +113,7 @@ const diagnosisSchema = z.object({
   otherComponentDescription: z.string().optional(),
   estimatedRepairTimeId: z.string().min(1, "Seleziona un tempo stimato di riparazione"),
   requiresExternalParts: z.boolean().default(false),
+  skipPhotos: z.boolean().default(false),
   diagnosisNotes: z.string().optional(),
   diagnosisOutcome: z.enum(["riparabile", "non_conveniente", "irriparabile"]).default("riparabile"),
   unrepairableReasonId: z.string().optional(),
@@ -322,6 +324,7 @@ export function DiagnosisFormDialog({
       otherComponentDescription: "",
       estimatedRepairTimeId: existingDiagnosis?.estimatedRepairTimeId || "",
       requiresExternalParts: existingDiagnosis?.requiresExternalParts || false,
+      skipPhotos: existingDiagnosis?.skipPhotos || false,
       diagnosisNotes: existingDiagnosis?.diagnosisNotes || "",
       diagnosisOutcome: (existingDiagnosis?.diagnosisOutcome as "riparabile" | "non_conveniente" | "irriparabile") || "riparabile",
       unrepairableReasonId: existingDiagnosis?.unrepairableReasonId || "",
@@ -345,6 +348,7 @@ export function DiagnosisFormDialog({
         otherComponentDescription: "",
         estimatedRepairTimeId: existingDiagnosis.estimatedRepairTimeId || "",
         requiresExternalParts: existingDiagnosis.requiresExternalParts || false,
+        skipPhotos: existingDiagnosis.skipPhotos || false,
         diagnosisNotes: existingDiagnosis.diagnosisNotes || "",
         diagnosisOutcome: (existingDiagnosis.diagnosisOutcome as "riparabile" | "non_conveniente" | "irriparabile") || "riparabile",
         unrepairableReasonId: existingDiagnosis.unrepairableReasonId || "",
@@ -362,6 +366,7 @@ export function DiagnosisFormDialog({
         otherComponentDescription: "",
         estimatedRepairTimeId: "",
         requiresExternalParts: false,
+        skipPhotos: false,
         diagnosisNotes: "",
         diagnosisOutcome: "riparabile",
         unrepairableReasonId: "",
@@ -415,7 +420,8 @@ export function DiagnosisFormDialog({
       estimatedRepairTime: estimatedHours,
       requiresExternalParts: data.requiresExternalParts,
       diagnosisNotes: data.diagnosisNotes,
-      photos: uploadedPhotos,
+      photos: data.skipPhotos ? [] : uploadedPhotos,
+      skipPhotos: data.skipPhotos,
       findingIds: data.selectedFindingIds,
       componentIds: data.selectedComponentIds,
       estimatedRepairTimeId: data.estimatedRepairTimeId,
@@ -771,7 +777,7 @@ export function DiagnosisFormDialog({
                   )}
                 />
 
-                <div className="space-y-2">
+                <div className="space-y-3">
                   <div className="flex items-center gap-2">
                     <Camera className="h-4 w-4" />
                     <span className="text-sm font-medium">Foto Diagnosi</span>
@@ -779,11 +785,42 @@ export function DiagnosisFormDialog({
                   <p className="text-sm text-muted-foreground">
                     Carica foto del dispositivo e dei componenti danneggiati
                   </p>
-                  <DiagnosisPhotoUploader
-                    repairOrderId={repairOrderId}
-                    photos={uploadedPhotos}
-                    onPhotosChange={setUploadedPhotos}
+                  
+                  <FormField
+                    control={form.control}
+                    name="skipPhotos"
+                    render={({ field }) => (
+                      <FormItem 
+                        className="flex flex-row items-start space-x-3 space-y-0 cursor-pointer rounded-lg border p-3 bg-muted/30"
+                        onClick={() => {
+                          field.onChange(!field.value);
+                          if (!field.value) {
+                            setUploadedPhotos([]);
+                          }
+                        }}
+                      >
+                        <div className={`w-4 h-4 mt-0.5 rounded border-2 flex items-center justify-center flex-shrink-0 ${
+                          field.value ? 'bg-primary border-primary' : 'border-muted-foreground'
+                        }`}>
+                          {field.value && <span className="text-primary-foreground text-xs">✓</span>}
+                        </div>
+                        <div className="space-y-1 leading-none">
+                          <FormLabel className="cursor-pointer">Non voglio caricare foto della diagnosi</FormLabel>
+                          <FormDescription>
+                            Spunta se non vuoi allegare foto alla diagnosi
+                          </FormDescription>
+                        </div>
+                      </FormItem>
+                    )}
                   />
+                  
+                  {!form.watch("skipPhotos") && (
+                    <DiagnosisPhotoUploader
+                      repairOrderId={repairOrderId}
+                      photos={uploadedPhotos}
+                      onPhotosChange={setUploadedPhotos}
+                    />
+                  )}
                 </div>
               </CardContent>
             </Card>
