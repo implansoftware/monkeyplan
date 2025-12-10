@@ -1,7 +1,9 @@
 import { MobilesentrixCredential } from "@shared/schema";
 import crypto from "crypto";
 
-const MOBILESENTRIX_BASE_URL = "https://api.mobilesentrix.com";
+// MobileSentrix EU - Production: www.mobilesentrix.eu, Staging: preprod.mobilesentrix.eu
+// Uses Magento 2 REST API with OAuth 1.0 authentication
+const MOBILESENTRIX_BASE_URL = "https://www.mobilesentrix.eu/rest/V1";
 
 interface MobilesentrixApiResponse<T> {
   success: boolean;
@@ -225,7 +227,8 @@ export class MobilesentrixService {
 
   async testConnection(): Promise<{ success: boolean; message: string }> {
     try {
-      const result = await this.request<any>("/v1/account", "GET");
+      // Magento 2 REST API - test with store info endpoint
+      const result = await this.request<any>("/store/storeConfigs", "GET");
       if (result.success) {
         return { success: true, message: "Connessione riuscita" };
       }
@@ -236,9 +239,23 @@ export class MobilesentrixService {
   }
 
   async getCategories(): Promise<MobilesentrixCategory[]> {
-    const result = await this.request<{ categories: MobilesentrixCategory[] }>("/v1/categories");
+    // Magento 2 REST API - categories endpoint
+    const result = await this.request<any>("/categories");
     if (result.success && result.data) {
-      return result.data.categories || [];
+      const extractCategories = (cat: any): MobilesentrixCategory[] => {
+        const cats: MobilesentrixCategory[] = [{
+          id: String(cat.id),
+          name: cat.name,
+          parent_id: cat.parent_id ? String(cat.parent_id) : null
+        }];
+        if (cat.children_data) {
+          cat.children_data.forEach((child: any) => {
+            cats.push(...extractCategories(child));
+          });
+        }
+        return cats;
+      };
+      return extractCategories(result.data);
     }
     throw new Error(result.message || "Errore nel recupero categorie");
   }
@@ -250,35 +267,61 @@ export class MobilesentrixService {
     page?: number;
     per_page?: number;
   }): Promise<{ products: MobilesentrixProduct[]; total: number; page: number; per_page: number }> {
+    // Magento 2 REST API - uses searchCriteria format
     const queryParams: Record<string, string> = {};
-    if (params.query) queryParams.search = params.query;
-    if (params.category_id) queryParams.category_id = params.category_id;
-    if (params.brand) queryParams.brand = params.brand;
-    if (params.page) queryParams.page = String(params.page);
-    if (params.per_page) queryParams.per_page = String(params.per_page);
+    let filterIndex = 0;
+    
+    if (params.query) {
+      // Search by name using LIKE
+      queryParams[`searchCriteria[filterGroups][${filterIndex}][filters][0][field]`] = "name";
+      queryParams[`searchCriteria[filterGroups][${filterIndex}][filters][0][value]`] = `%${params.query}%`;
+      queryParams[`searchCriteria[filterGroups][${filterIndex}][filters][0][conditionType]`] = "like";
+      filterIndex++;
+    }
+    
+    if (params.category_id) {
+      queryParams[`searchCriteria[filterGroups][${filterIndex}][filters][0][field]`] = "category_id";
+      queryParams[`searchCriteria[filterGroups][${filterIndex}][filters][0][value]`] = params.category_id;
+      filterIndex++;
+    }
 
-    const result = await this.request<any>("/v1/products", "GET", undefined, queryParams);
+    const page = params.page || 1;
+    const perPage = params.per_page || 20;
+    queryParams["searchCriteria[currentPage]"] = String(page);
+    queryParams["searchCriteria[pageSize]"] = String(perPage);
+
+    const result = await this.request<any>("/products", "GET", undefined, queryParams);
 
     if (result.success && result.data) {
-      const rawProducts = result.data.products || result.data.data || result.data || [];
-      const products = Array.isArray(rawProducts) ? rawProducts.map((p: any) => ({
-        id: p.id || p.product_id || p.sku || "",
-        sku: p.sku || p.article_number || p.code || "",
-        name: p.name || p.title || p.product_name || "",
-        brand: p.brand || p.manufacturer || "",
-        model: p.model || p.device || "",
-        category: p.category || p.category_name || "",
-        price: parseFloat(p.price) || 0,
-        stock: parseInt(p.stock) || parseInt(p.quantity) || 0,
-        image_url: p.image_url || p.image || p.picture || "",
-        description: p.description || "",
-      })) : [];
+      const items = result.data.items || [];
+      const products = items.map((p: any) => {
+        // Extract custom attributes
+        const getAttr = (code: string) => {
+          const attr = p.custom_attributes?.find((a: any) => a.attribute_code === code);
+          return attr?.value || "";
+        };
+        
+        return {
+          id: String(p.id),
+          sku: p.sku || "",
+          name: p.name || "",
+          brand: getAttr("manufacturer") || getAttr("brand") || "",
+          model: getAttr("model") || "",
+          category: "",
+          price: p.price || 0,
+          stock: p.extension_attributes?.stock_item?.qty || 0,
+          image_url: p.media_gallery_entries?.[0]?.file 
+            ? `https://www.mobilesentrix.eu/media/catalog/product${p.media_gallery_entries[0].file}` 
+            : "",
+          description: getAttr("description") || getAttr("short_description") || "",
+        };
+      });
 
       return {
         products,
-        total: result.data.total || result.data.totalCount || products.length,
-        page: result.data.page || params.page || 1,
-        per_page: result.data.per_page || params.per_page || 20,
+        total: result.data.total_count || products.length,
+        page,
+        per_page: perPage,
       };
     }
 
@@ -286,65 +329,124 @@ export class MobilesentrixService {
   }
 
   async getProduct(productId: string): Promise<MobilesentrixProduct> {
-    const result = await this.request<MobilesentrixProduct>(`/v1/products/${productId}`);
+    // Magento 2 REST API - get product by SKU
+    const result = await this.request<any>(`/products/${encodeURIComponent(productId)}`);
     if (result.success && result.data) {
-      return result.data;
+      const p = result.data;
+      const getAttr = (code: string) => {
+        const attr = p.custom_attributes?.find((a: any) => a.attribute_code === code);
+        return attr?.value || "";
+      };
+      
+      return {
+        id: String(p.id),
+        sku: p.sku || "",
+        name: p.name || "",
+        brand: getAttr("manufacturer") || getAttr("brand") || "",
+        model: getAttr("model") || "",
+        category: "",
+        price: p.price || 0,
+        stock: p.extension_attributes?.stock_item?.qty || 0,
+        image_url: p.media_gallery_entries?.[0]?.file 
+          ? `https://www.mobilesentrix.eu/media/catalog/product${p.media_gallery_entries[0].file}` 
+          : "",
+        description: getAttr("description") || getAttr("short_description") || "",
+      };
     }
     throw new Error(result.message || "Prodotto non trovato");
   }
 
   async createOrder(items: MobilesentrixCartItem[], shippingAddress: MobilesentrixAddress, shippingMethod?: string): Promise<MobilesentrixOrderResponse> {
-    const body = {
-      items: items.map(item => ({
-        sku: item.sku,
-        quantity: item.quantity,
-      })),
-      shipping_address: shippingAddress,
-      shipping_method: shippingMethod,
-    };
-
-    const result = await this.request<MobilesentrixOrderResponse>("/v1/orders", "POST", body);
-    if (result.success && result.data) {
-      return result.data;
+    // First create a cart
+    const cartResult = await this.request<string>("/carts/mine", "POST");
+    if (!cartResult.success) {
+      throw new Error("Errore nella creazione del carrello");
     }
-    throw new Error(result.message || "Errore nella creazione ordine");
+    const cartId = cartResult.data;
+
+    // Add items to cart
+    for (const item of items) {
+      await this.request<any>(`/carts/mine/items`, "POST", {
+        cartItem: {
+          sku: item.sku,
+          qty: item.quantity,
+          quote_id: cartId
+        }
+      });
+    }
+
+    // Set shipping address and create order
+    const orderResult = await this.request<any>("/carts/mine/order", "PUT", {
+      paymentMethod: { method: "checkmo" }
+    });
+
+    if (orderResult.success && orderResult.data) {
+      return {
+        order_id: String(orderResult.data),
+        order_number: String(orderResult.data),
+        status: "pending",
+        total: items.reduce((sum, i) => sum + (i.price * i.quantity), 0),
+        created_at: new Date().toISOString()
+      };
+    }
+    throw new Error(orderResult.message || "Errore nella creazione ordine");
   }
 
   async getOrder(orderId: string): Promise<MobilesentrixOrderResponse> {
-    const result = await this.request<MobilesentrixOrderResponse>(`/v1/orders/${orderId}`);
+    const result = await this.request<any>(`/orders/${orderId}`);
     if (result.success && result.data) {
-      return result.data;
+      return {
+        order_id: String(result.data.entity_id),
+        order_number: result.data.increment_id,
+        status: result.data.status,
+        total: result.data.grand_total,
+        created_at: result.data.created_at
+      };
     }
     throw new Error(result.message || "Ordine non trovato");
   }
 
   async listOrders(params?: { page?: number; per_page?: number }): Promise<{ orders: MobilesentrixOrderResponse[]; total: number }> {
     const queryParams: Record<string, string> = {};
-    if (params?.page) queryParams.page = String(params.page);
-    if (params?.per_page) queryParams.per_page = String(params.per_page);
+    const page = params?.page || 1;
+    const perPage = params?.per_page || 20;
+    queryParams["searchCriteria[currentPage]"] = String(page);
+    queryParams["searchCriteria[pageSize]"] = String(perPage);
 
-    const result = await this.request<any>("/v1/orders", "GET", undefined, queryParams);
+    const result = await this.request<any>("/orders", "GET", undefined, queryParams);
     if (result.success && result.data) {
+      const orders = (result.data.items || []).map((o: any) => ({
+        order_id: String(o.entity_id),
+        order_number: o.increment_id,
+        status: o.status,
+        total: o.grand_total,
+        created_at: o.created_at
+      }));
       return {
-        orders: result.data.orders || result.data.data || [],
-        total: result.data.total || 0,
+        orders,
+        total: result.data.total_count || orders.length,
       };
     }
     throw new Error(result.message || "Errore nel recupero ordini");
   }
 
   async getBrands(): Promise<string[]> {
-    const result = await this.request<{ brands: string[] }>("/v1/brands");
-    if (result.success && result.data) {
-      return result.data.brands || [];
+    // Magento 2 - get manufacturer attribute options
+    const result = await this.request<any>("/products/attributes/manufacturer");
+    if (result.success && result.data?.options) {
+      return result.data.options.filter((o: any) => o.value).map((o: any) => o.label);
     }
-    throw new Error(result.message || "Errore nel recupero marchi");
+    return [];
   }
 
   async getAccountInfo(): Promise<{ name: string; email: string; balance?: number }> {
-    const result = await this.request<{ name: string; email: string; balance?: number }>("/v1/account");
+    const result = await this.request<any>("/customers/me");
     if (result.success && result.data) {
-      return result.data;
+      return {
+        name: `${result.data.firstname || ""} ${result.data.lastname || ""}`.trim(),
+        email: result.data.email || "",
+        balance: result.data.extension_attributes?.reward_balance || undefined
+      };
     }
     throw new Error(result.message || "Errore nel recupero informazioni account");
   }
