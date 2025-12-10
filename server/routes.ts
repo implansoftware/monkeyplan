@@ -5169,9 +5169,9 @@ export function registerRoutes(app: Express): Server {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
-      // Only admin and repair_center can update orders
-      if (req.user.role !== 'admin' && req.user.role !== 'repair_center') {
-        return res.status(403).send("Only admins and repair centers can update orders");
+      // Only admin, repair_center, and reseller can update orders
+      if (req.user.role !== 'admin' && req.user.role !== 'repair_center' && req.user.role !== 'reseller') {
+        return res.status(403).send("Only admins, repair centers, and resellers can update orders");
       }
       
       const order = await storage.getRepairOrder(req.params.id);
@@ -5191,6 +5191,30 @@ export function registerRoutes(app: Express): Server {
           if (req.body.repairCenterId) {
             const repairCenter = await storage.getRepairCenter(req.body.repairCenterId);
             if (!repairCenter) return res.status(400).send("Invalid repair center ID");
+          }
+          updates.repairCenterId = req.body.repairCenterId;
+        }
+      } else if (req.user.role === 'reseller') {
+        // Reseller can update orders of their customers
+        // Check if the order's customer belongs to this reseller
+        if (!order.customerId) {
+          return res.status(403).send("Order has no customer");
+        }
+        const customer = await storage.getUser(order.customerId);
+        if (!customer || customer.resellerId !== req.user.id) {
+          return res.status(403).send("Order does not belong to your customers");
+        }
+        
+        // Resellers can update: repairCenterId, notes, priority
+        if (req.body.notes !== undefined) updates.notes = req.body.notes;
+        if (req.body.repairCenterId !== undefined) {
+          if (req.body.repairCenterId) {
+            // Validate repair center exists and belongs to reseller
+            const repairCenter = await storage.getRepairCenter(req.body.repairCenterId);
+            if (!repairCenter) return res.status(400).send("Invalid repair center ID");
+            if (repairCenter.resellerId !== req.user.id) {
+              return res.status(403).send("Repair center does not belong to you");
+            }
           }
           updates.repairCenterId = req.body.repairCenterId;
         }
