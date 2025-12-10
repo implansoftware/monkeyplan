@@ -102,6 +102,8 @@ const menuItems = {
     { title: "Catalogo Foneday", url: "/reseller/foneday/catalog", icon: Package, group: "Foneday EU" },
     { title: "Carrello Foneday", url: "/reseller/foneday/cart", icon: ShoppingCart, group: "Foneday EU" },
     { title: "Config. Foneday", url: "/reseller/foneday/settings", icon: Settings, group: "Foneday EU" },
+    { title: "Catalogo MobileSentrix", url: "/reseller/mobilesentrix/catalog", icon: Package, group: "MobileSentrix" },
+    { title: "Config. MobileSentrix", url: "/reseller/mobilesentrix/settings", icon: Settings, group: "MobileSentrix" },
     { title: "Fatture", url: "/reseller/invoices", icon: FileText, group: "Fatturazione" },
     { title: "Report", url: "/reseller/reports", icon: BarChart3, group: "Fatturazione" },
     { title: "Utility", url: "/reseller/utility", icon: Zap, group: "Utility" },

@@ -79,6 +79,10 @@ import ResellerFonedaySettings from "@/pages/reseller/foneday/settings";
 import ResellerFonedayCatalog from "@/pages/reseller/foneday/catalog";
 import ResellerFonedayCart from "@/pages/reseller/foneday/cart";
 
+// Reseller MobileSentrix pages
+import ResellerMobilesentrixSettings from "@/pages/reseller/mobilesentrix/settings";
+import ResellerMobilesentrixCatalog from "@/pages/reseller/mobilesentrix/catalog";
+
 // Reseller Repairs & Inventory
 import ResellerRepairs from "@/pages/reseller/repairs";
 import ResellerInventory from "@/pages/reseller/inventory";
@@ -187,6 +191,8 @@ function Router() {
       <ProtectedRoute path="/reseller/foneday/settings" component={ResellerFonedaySettings} />
       <ProtectedRoute path="/reseller/foneday/catalog" component={ResellerFonedayCatalog} />
       <ProtectedRoute path="/reseller/foneday/cart" component={ResellerFonedayCart} />
+      <ProtectedRoute path="/reseller/mobilesentrix/settings" component={ResellerMobilesentrixSettings} />
+      <ProtectedRoute path="/reseller/mobilesentrix/catalog" component={ResellerMobilesentrixCatalog} />
       <ProtectedRoute path="/reseller/team" component={ResellerTeam} />
       <ProtectedRoute path="/reseller/device-catalog" component={ResellerDeviceCatalog} />
       

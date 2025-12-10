@@ -88,7 +88,12 @@ export class MobilesentrixService {
     return hmac.digest("base64");
   }
 
-  private generateOAuthHeader(method: string, url: string): string {
+  private generateOAuthHeader(
+    method: string, 
+    baseUrl: string, 
+    queryParams?: Record<string, string>,
+    bodyParams?: Record<string, any>
+  ): string {
     const timestamp = Math.floor(Date.now() / 1000).toString();
     const nonce = crypto.randomBytes(16).toString("hex");
 
@@ -100,10 +105,43 @@ export class MobilesentrixService {
       oauth_version: "1.0"
     };
 
+    const allParams: Record<string, string> = { ...oauthParams };
+    
+    if (queryParams) {
+      Object.entries(queryParams).forEach(([key, value]) => {
+        allParams[key] = value;
+      });
+    }
+    
+    if (bodyParams && typeof bodyParams === 'object') {
+      const flattenBody = (obj: any, prefix = ''): Record<string, string> => {
+        const result: Record<string, string> = {};
+        for (const key of Object.keys(obj)) {
+          const value = obj[key];
+          const fullKey = prefix ? `${prefix}[${key}]` : key;
+          if (Array.isArray(value)) {
+            value.forEach((item, index) => {
+              if (typeof item === 'object' && item !== null) {
+                Object.assign(result, flattenBody(item, `${fullKey}[${index}]`));
+              } else {
+                result[`${fullKey}[${index}]`] = String(item);
+              }
+            });
+          } else if (typeof value === 'object' && value !== null) {
+            Object.assign(result, flattenBody(value, fullKey));
+          } else if (value !== undefined && value !== null) {
+            result[fullKey] = String(value);
+          }
+        }
+        return result;
+      };
+      Object.assign(allParams, flattenBody(bodyParams));
+    }
+
     const signature = this.generateOAuthSignature(
       method,
-      url,
-      oauthParams,
+      baseUrl,
+      allParams,
       this.credential.consumerSecret
     );
 
@@ -131,7 +169,12 @@ export class MobilesentrixService {
       });
     }
 
-    const authHeader = this.generateOAuthHeader(method, url.origin + url.pathname);
+    const authHeader = this.generateOAuthHeader(
+      method, 
+      url.origin + url.pathname, 
+      queryParams,
+      body
+    );
 
     const headers: Record<string, string> = {
       "Authorization": authHeader,

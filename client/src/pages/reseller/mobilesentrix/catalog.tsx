@@ -56,7 +56,7 @@ export default function MobilesentrixCatalogPage() {
     return () => clearTimeout(timer);
   }, [searchQuery, debouncedSearch]);
 
-  const { data: productsData, isLoading: loadingProducts, isFetching } = useQuery<{
+  const { data: productsData, isLoading: loadingProducts, isFetching, error: productsError } = useQuery<{
     products: MobilesentrixProduct[];
     total: number;
     page: number;
@@ -70,12 +70,16 @@ export default function MobilesentrixCatalogPage() {
       params.append("per_page", String(perPage));
       
       const res = await fetch(`/api/mobilesentrix/catalog/products?${params}`);
-      if (!res.ok) throw new Error("Errore nel caricamento prodotti");
+      if (!res.ok) {
+        const errorText = await res.text();
+        throw new Error(errorText || `Errore ${res.status} nel caricamento prodotti`);
+      }
       return res.json();
     },
     enabled: !!credential?.isActive && debouncedSearch.length >= 2,
     staleTime: 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
+    retry: false,
   });
 
   useEffect(() => {
@@ -182,13 +186,22 @@ export default function MobilesentrixCatalogPage() {
         </CardContent>
       </Card>
 
-      {debouncedSearch.length >= 2 && (
+      {productsError && debouncedSearch.length >= 2 && (
+        <Alert variant="destructive">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertDescription>
+            Errore durante il caricamento dei prodotti: {productsError.message}
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {debouncedSearch.length >= 2 && !productsError && (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <p className="text-sm text-muted-foreground">
               {totalProducts > 0 
                 ? `Mostrando ${accumulatedProducts.length} di ${totalProducts} prodotti`
-                : loadingProducts ? "Ricerca in corso..." : "Nessun prodotto trovato"}
+                : loadingProducts ? "Ricerca in corso..." : "Nessun prodotto trovato per la ricerca"}
             </p>
           </div>
 
