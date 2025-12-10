@@ -121,6 +121,12 @@ type DeliveryAppointment = {
   createdAt: string;
 };
 
+type RepairCenter = {
+  id: string;
+  name: string;
+  resellerId: string | null;
+};
+
 interface RepairOrderDetailDrawerProps {
   repairOrderId: string | null;
   open: boolean;
@@ -257,6 +263,27 @@ export function RepairOrderDetailDrawer({
     },
     enabled: !!repairOrderId && open,
     retry: false,
+  });
+
+  // Repair Centers query (for resellers and admins to change assignment)
+  const { data: repairCenters = [] } = useQuery<RepairCenter[]>({
+    queryKey: user?.role === 'reseller' ? ["/api/reseller/repair-centers"] : ["/api/repair-centers"],
+    enabled: open && (user?.role === 'reseller' || user?.role === 'admin'),
+  });
+
+  // Mutation to update repair center
+  const updateRepairCenterMutation = useMutation({
+    mutationFn: async (repairCenterId: string | null) => {
+      return await apiRequest("PATCH", `/api/repair-orders/${repairOrderId}`, { repairCenterId });
+    },
+    onSuccess: () => {
+      toast({ title: "Centro di riparazione aggiornato" });
+      queryClient.invalidateQueries({ queryKey: ["/api/repair-orders"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/repair-orders", repairOrderId] });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Errore", description: error.message, variant: "destructive" });
+    },
   });
 
   // Data Recovery Job query
@@ -1093,6 +1120,47 @@ export function RepairOrderDetailDrawer({
                             <p className="text-sm font-mono" data-testid="text-customer-vat">{customer.vatNumber}</p>
                           </div>
                         )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+                <Separator />
+              </>
+            )}
+
+            {/* Repair Center Assignment (for resellers and admins) */}
+            {(user?.role === 'reseller' || user?.role === 'admin') && (
+              <>
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2 font-medium">
+                    <Building2 className="h-4 w-4" />
+                    Centro di Riparazione
+                  </div>
+                  <div className="grid gap-3">
+                    <Select
+                      value={repair.repairCenterId || "unassigned"}
+                      onValueChange={(value) => {
+                        const newCenterId = value === "unassigned" ? null : value;
+                        updateRepairCenterMutation.mutate(newCenterId);
+                      }}
+                      disabled={updateRepairCenterMutation.isPending}
+                    >
+                      <SelectTrigger className="w-full" data-testid="select-repair-center">
+                        <SelectValue placeholder="Seleziona centro..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="unassigned">Non assegnato</SelectItem>
+                        {repairCenters.map((rc) => (
+                          <SelectItem key={rc.id} value={rc.id}>
+                            {rc.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {updateRepairCenterMutation.isPending && (
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <Loader2 className="h-3 w-3 animate-spin" />
+                        Aggiornamento in corso...
                       </div>
                     )}
                   </div>
