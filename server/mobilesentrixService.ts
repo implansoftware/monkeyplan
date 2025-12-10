@@ -202,16 +202,28 @@ export class MobilesentrixService {
     }
 
     try {
+      console.log(`MobileSentrix Request: ${method} ${url.toString()}`);
       const response = await fetch(url.toString(), options);
       
+      const contentType = response.headers.get("content-type") || "";
+      const responseText = await response.text();
+      
+      // Check if response is HTML (indicates auth failure or invalid endpoint)
+      if (contentType.includes("text/html") || responseText.trim().startsWith("<!DOCTYPE") || responseText.trim().startsWith("<html")) {
+        console.log(`MobileSentrix returned HTML instead of JSON. Status: ${response.status}`);
+        return {
+          success: false,
+          message: `L'API MobileSentrix ha restituito una pagina HTML invece di dati JSON. Questo può indicare: credenziali OAuth non valide, endpoint API non accessibile, o l'API non è disponibile per integrazioni dirette. Contatta MobileSentrix per verificare l'accesso API. (Status: ${response.status})`,
+        };
+      }
+      
       if (!response.ok) {
-        const errorText = await response.text();
         let errorMessage = `HTTP Error ${response.status}`;
         try {
-          const errorJson = JSON.parse(errorText);
+          const errorJson = JSON.parse(responseText);
           errorMessage = errorJson.message || errorJson.error || errorMessage;
         } catch {
-          errorMessage = errorText || errorMessage;
+          errorMessage = responseText.substring(0, 200) || errorMessage;
         }
         return {
           success: false,
@@ -219,11 +231,18 @@ export class MobilesentrixService {
         };
       }
 
-      const json = await response.json();
-      return {
-        success: true,
-        data: json,
-      };
+      try {
+        const json = JSON.parse(responseText);
+        return {
+          success: true,
+          data: json,
+        };
+      } catch {
+        return {
+          success: false,
+          message: "Risposta API non valida (non JSON)",
+        };
+      }
     } catch (error: any) {
       console.error("MobileSentrix API Error:", error);
       return {
