@@ -609,7 +609,7 @@ export function DiagnosisFormDialog({
                   control={form.control}
                   name="otherFindingDescription"
                   render={({ field }) => {
-                    const findingIds = form.getValues("selectedFindingIds") || [];
+                    const findingIds = form.watch("selectedFindingIds") || [];
                     const hasOther = findingIds.some(id => id.includes("-other"));
                     if (!hasOther) return <></>;
                     return (
@@ -694,7 +694,7 @@ export function DiagnosisFormDialog({
                   control={form.control}
                   name="otherComponentDescription"
                   render={({ field }) => {
-                    const componentIds = form.getValues("selectedComponentIds") || [];
+                    const componentIds = form.watch("selectedComponentIds") || [];
                     const hasOther = componentIds.some(id => id.includes("-other"));
                     if (!hasOther) return <></>;
                     return (
