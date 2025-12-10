@@ -12,8 +12,8 @@ import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
-import { RepairOrderDetailDrawer } from "@/components/RepairOrderDetailDrawer";
 import { AcceptanceWizardDialog } from "@/components/AcceptanceWizardDialog";
+import { useLocation } from "wouter";
 import { RepairsKanbanBoard } from "@/components/RepairsKanbanBoard";
 
 type RepairOrder = {
@@ -36,8 +36,7 @@ type RepairOrder = {
 export default function RepairCenterRepairs() {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
-  const [selectedRepairId, setSelectedRepairId] = useState<string | null>(null);
-  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [, setLocation] = useLocation();
   const [wizardOpen, setWizardOpen] = useState(false);
   const [viewMode, setViewMode] = useState<"table" | "kanban">("table");
   const { toast } = useToast();
@@ -182,8 +181,7 @@ export default function RepairCenterRepairs() {
               repairs={filteredRepairs as any}
               isLoading={isLoading}
               onCardClick={(repairId) => {
-                setSelectedRepairId(repairId);
-                setDrawerOpen(true);
+                setLocation(`/repair-center/repairs/${repairId}`);
               }}
             />
           ) : isLoading ? (
@@ -217,8 +215,7 @@ export default function RepairCenterRepairs() {
                     data-testid={`row-repair-${repair.id}`}
                     className="cursor-pointer hover-elevate"
                     onClick={() => {
-                      setSelectedRepairId(repair.id);
-                      setDrawerOpen(true);
+                      setLocation(`/repair-center/repairs/${repair.id}`);
                     }}
                   >
                     <TableCell className="font-medium" data-testid={`text-order-${repair.orderNumber}`}>
@@ -262,12 +259,6 @@ export default function RepairCenterRepairs() {
           )}
         </CardContent>
       </Card>
-
-      <RepairOrderDetailDrawer
-        repairOrderId={selectedRepairId}
-        open={drawerOpen}
-        onClose={() => setDrawerOpen(false)}
-      />
 
       <AcceptanceWizardDialog
         open={wizardOpen}

@@ -18,8 +18,8 @@ import { queryClient } from "@/lib/queryClient";
 import { formatDistanceToNow, format } from "date-fns";
 import { it } from "date-fns/locale";
 import type { DateRange } from "react-day-picker";
-import { RepairOrderDetailDrawer } from "@/components/RepairOrderDetailDrawer";
 import { AcceptanceWizardDialog } from "@/components/AcceptanceWizardDialog";
+import { useLocation } from "wouter";
 import { RepairsKanbanBoard } from "@/components/RepairsKanbanBoard";
 
 interface RepairOrderWithSLA extends RepairOrder {
@@ -38,8 +38,7 @@ export default function ResellerRepairs() {
   const [slaFilter, setSlaFilter] = useState<string>("all");
   const [repairCenterFilter, setRepairCenterFilter] = useState<string>("all");
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
-  const [selectedRepairId, setSelectedRepairId] = useState<string | null>(null);
-  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [, setLocation] = useLocation();
   const [wizardOpen, setWizardOpen] = useState(false);
   const [viewMode, setViewMode] = useState<"table" | "kanban">("table");
 
@@ -250,8 +249,7 @@ export default function ResellerRepairs() {
               repairs={filteredRepairs}
               isLoading={isLoading}
               onCardClick={(repairId) => {
-                setSelectedRepairId(repairId);
-                setDrawerOpen(true);
+                setLocation(`/reseller/repairs/${repairId}`);
               }}
             />
           ) : isLoading ? (
@@ -288,8 +286,7 @@ export default function ResellerRepairs() {
                     data-testid={`row-repair-${repair.id}`}
                     className="hover-elevate cursor-pointer"
                     onClick={() => {
-                      setSelectedRepairId(repair.id);
-                      setDrawerOpen(true);
+                      setLocation(`/reseller/repairs/${repair.id}`);
                     }}
                   >
                     <TableCell className="font-mono font-medium">
@@ -371,8 +368,7 @@ export default function ResellerRepairs() {
                               className="h-8 w-8"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                setSelectedRepairId(repair.id);
-                                setDrawerOpen(true);
+                                setLocation(`/reseller/repairs/${repair.id}`);
                               }}
                               data-testid={`button-view-repair-${repair.id}`}
                             >
@@ -392,12 +388,6 @@ export default function ResellerRepairs() {
           )}
         </CardContent>
       </Card>
-
-      <RepairOrderDetailDrawer
-        repairOrderId={selectedRepairId}
-        open={drawerOpen}
-        onClose={() => setDrawerOpen(false)}
-      />
 
       <AcceptanceWizardDialog
         open={wizardOpen}

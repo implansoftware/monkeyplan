@@ -18,8 +18,8 @@ import { useToast } from "@/hooks/use-toast";
 import { formatDistanceToNow, format } from "date-fns";
 import { it } from "date-fns/locale";
 import type { DateRange } from "react-day-picker";
-import { RepairOrderDetailDrawer } from "@/components/RepairOrderDetailDrawer";
 import { AcceptanceWizardDialog } from "@/components/AcceptanceWizardDialog";
+import { useLocation } from "wouter";
 import { RepairsKanbanBoard } from "@/components/RepairsKanbanBoard";
 
 interface RepairOrderWithSLA extends RepairOrder {
@@ -39,9 +39,8 @@ export default function AdminRepairs() {
   const [repairCenterFilter, setRepairCenterFilter] = useState<string>("all");
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
   const [isExporting, setIsExporting] = useState(false);
-  const [selectedRepairId, setSelectedRepairId] = useState<string | null>(null);
-  const [drawerOpen, setDrawerOpen] = useState(false);
   const [wizardOpen, setWizardOpen] = useState(false);
+  const [, setLocation] = useLocation();
   const [viewMode, setViewMode] = useState<"table" | "kanban">("table");
   const { toast } = useToast();
 
@@ -222,8 +221,7 @@ export default function AdminRepairs() {
   };
 
   const openRepairDetail = (repairId: string) => {
-    setSelectedRepairId(repairId);
-    setDrawerOpen(true);
+    setLocation(`/admin/repairs/${repairId}`);
   };
 
   return (
@@ -375,8 +373,7 @@ export default function AdminRepairs() {
               repairs={filteredRepairs}
               isLoading={isLoading}
               onCardClick={(repairId) => {
-                setSelectedRepairId(repairId);
-                setDrawerOpen(true);
+                openRepairDetail(repairId);
               }}
             />
           ) : isLoading ? (
@@ -420,8 +417,7 @@ export default function AdminRepairs() {
                       <TableCell 
                         className="font-mono font-medium cursor-pointer"
                         onClick={() => {
-                          setSelectedRepairId(repair.id);
-                          setDrawerOpen(true);
+                          openRepairDetail(repair.id);
                         }}
                       >
                         {repair.orderNumber}
@@ -429,8 +425,7 @@ export default function AdminRepairs() {
                       <TableCell
                         className="cursor-pointer max-w-[150px]"
                         onClick={() => {
-                          setSelectedRepairId(repair.id);
-                          setDrawerOpen(true);
+                          openRepairDetail(repair.id);
                         }}
                       >
                         <span className="truncate block" title={repair.customerName || "—"}>
@@ -440,8 +435,7 @@ export default function AdminRepairs() {
                       <TableCell
                         className="cursor-pointer max-w-[150px]"
                         onClick={() => {
-                          setSelectedRepairId(repair.id);
-                          setDrawerOpen(true);
+                          openRepairDetail(repair.id);
                         }}
                       >
                         <span className="truncate block" title={repair.repairCenterName || "—"}>
@@ -451,8 +445,7 @@ export default function AdminRepairs() {
                       <TableCell
                         className="cursor-pointer"
                         onClick={() => {
-                          setSelectedRepairId(repair.id);
-                          setDrawerOpen(true);
+                          openRepairDetail(repair.id);
                         }}
                       >
                         <div>
@@ -463,8 +456,7 @@ export default function AdminRepairs() {
                       <TableCell 
                         className="max-w-xs truncate cursor-pointer"
                         onClick={() => {
-                          setSelectedRepairId(repair.id);
-                          setDrawerOpen(true);
+                          openRepairDetail(repair.id);
                         }}
                       >
                         {repair.issueDescription}
@@ -472,8 +464,7 @@ export default function AdminRepairs() {
                       <TableCell
                         className="cursor-pointer"
                         onClick={() => {
-                          setSelectedRepairId(repair.id);
-                          setDrawerOpen(true);
+                          openRepairDetail(repair.id);
                         }}
                       >
                         {formatCurrency(repair.quoteTotalAmount || repair.finalCost || repair.estimatedCost)}
@@ -481,8 +472,7 @@ export default function AdminRepairs() {
                       <TableCell
                         className="cursor-pointer"
                         onClick={() => {
-                          setSelectedRepairId(repair.id);
-                          setDrawerOpen(true);
+                          openRepairDetail(repair.id);
                         }}
                       >
                         {getStatusBadge(repair.status)}
@@ -490,8 +480,7 @@ export default function AdminRepairs() {
                       <TableCell
                         className="cursor-pointer"
                         onClick={() => {
-                          setSelectedRepairId(repair.id);
-                          setDrawerOpen(true);
+                          openRepairDetail(repair.id);
                         }}
                       >
                         {repair.slaSeverity && (
@@ -534,8 +523,7 @@ export default function AdminRepairs() {
                       <TableCell 
                         className="text-sm text-muted-foreground cursor-pointer"
                         onClick={() => {
-                          setSelectedRepairId(repair.id);
-                          setDrawerOpen(true);
+                          openRepairDetail(repair.id);
                         }}
                       >
                         {formatDistanceToNow(new Date(repair.createdAt), { addSuffix: true, locale: it })}
@@ -573,12 +561,6 @@ export default function AdminRepairs() {
           )}
         </CardContent>
       </Card>
-
-      <RepairOrderDetailDrawer
-        repairOrderId={selectedRepairId}
-        open={drawerOpen}
-        onClose={() => setDrawerOpen(false)}
-      />
 
       <AcceptanceWizardDialog
         open={wizardOpen}
