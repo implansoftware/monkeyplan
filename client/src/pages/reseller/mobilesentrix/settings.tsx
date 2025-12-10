@@ -1,0 +1,339 @@
+import { useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useToast } from "@/hooks/use-toast";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
+import { Settings, Key, CheckCircle, XCircle, Loader2, TestTube, Trash2, Save, ExternalLink, Package } from "lucide-react";
+import { Link } from "wouter";
+
+type MobilesentrixCredential = {
+  id: string;
+  resellerId: string;
+  consumerName: string;
+  consumerKey: string;
+  consumerSecret: string;
+  isActive: boolean;
+  lastSyncAt: string | null;
+  lastTestAt: string | null;
+  testStatus: string | null;
+  testMessage: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export default function MobilesentrixSettingsPage() {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [consumerName, setConsumerName] = useState("");
+  const [consumerKey, setConsumerKey] = useState("");
+  const [consumerSecret, setConsumerSecret] = useState("");
+  const [showSecret, setShowSecret] = useState(false);
+
+  const { data: credential, isLoading } = useQuery<MobilesentrixCredential | null>({
+    queryKey: ["/api/mobilesentrix/credentials"],
+  });
+
+  const saveMutation = useMutation({
+    mutationFn: async () => {
+      return apiRequest("POST", "/api/mobilesentrix/credentials", { consumerName, consumerKey, consumerSecret });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/mobilesentrix/credentials"] });
+      toast({ title: "Salvato", description: "Credenziali MobileSentrix salvate con successo" });
+      setConsumerName("");
+      setConsumerKey("");
+      setConsumerSecret("");
+    },
+    onError: (error: Error) => {
+      toast({ title: "Errore", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const testMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest("POST", "/api/mobilesentrix/test-connection");
+      return res.json();
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/mobilesentrix/credentials"] });
+      if (data.success) {
+        toast({ title: "Connessione riuscita", description: data.message });
+      } else {
+        toast({ title: "Connessione fallita", description: data.message, variant: "destructive" });
+      }
+    },
+    onError: (error: Error) => {
+      toast({ title: "Errore", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async () => {
+      return apiRequest("DELETE", "/api/mobilesentrix/credentials");
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/mobilesentrix/credentials"] });
+      toast({ title: "Eliminato", description: "Credenziali MobileSentrix eliminate" });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Errore", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const handleSave = () => {
+    if (!consumerName.trim() || !consumerKey.trim() || !consumerSecret.trim()) {
+      toast({ title: "Errore", description: "Compila tutti i campi obbligatori", variant: "destructive" });
+      return;
+    }
+    saveMutation.mutate();
+  };
+
+  const formatDate = (date: string | null) => {
+    if (!date) return "Mai";
+    return new Date(date).toLocaleString("it-IT");
+  };
+
+  if (isLoading) {
+    return (
+      <div className="p-6 space-y-6">
+        <Skeleton className="h-10 w-64" />
+        <Skeleton className="h-64 w-full" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="p-6 space-y-6">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <Settings className="h-8 w-8" />
+          <div>
+            <h1 className="text-2xl font-bold">Impostazioni MobileSentrix</h1>
+            <p className="text-muted-foreground">Configura la connessione con il tuo account MobileSentrix</p>
+          </div>
+        </div>
+        {credential && (
+          <Link href="/reseller/mobilesentrix/catalog">
+            <Button data-testid="button-go-catalog">
+              <Package className="h-4 w-4 mr-2" />
+              Vai al Catalogo
+            </Button>
+          </Link>
+        )}
+      </div>
+
+      {credential ? (
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  <Key className="h-5 w-5" />
+                  Credenziali Configurate
+                </CardTitle>
+                <CardDescription>Le tue credenziali MobileSentrix sono salvate</CardDescription>
+              </div>
+              <Badge variant={credential.isActive ? "default" : "secondary"}>
+                {credential.isActive ? "Attivo" : "Disattivato"}
+              </Badge>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="space-y-2">
+                <Label>Consumer Name</Label>
+                <Input
+                  type="text"
+                  value={credential.consumerName}
+                  readOnly
+                  className="font-mono text-sm"
+                  data-testid="input-consumer-name-display"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Consumer Key</Label>
+                <Input
+                  type="text"
+                  value={credential.consumerKey}
+                  readOnly
+                  className="font-mono text-sm"
+                  data-testid="input-consumer-key-display"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Consumer Secret</Label>
+                <div className="flex items-center gap-2">
+                  <Input
+                    type={showSecret ? "text" : "password"}
+                    value={credential.consumerSecret}
+                    readOnly
+                    className="font-mono text-sm"
+                    data-testid="input-consumer-secret-display"
+                  />
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowSecret(!showSecret)}
+                  >
+                    {showSecret ? "Nascondi" : "Mostra"}
+                  </Button>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label>Ultimo Test</Label>
+                <div className="flex items-center gap-2">
+                  {credential.testStatus === "success" ? (
+                    <CheckCircle className="h-4 w-4 text-green-500" />
+                  ) : credential.testStatus === "failed" ? (
+                    <XCircle className="h-4 w-4 text-red-500" />
+                  ) : null}
+                  <span className="text-sm text-muted-foreground">
+                    {formatDate(credential.lastTestAt)}
+                  </span>
+                </div>
+                {credential.testMessage && (
+                  <p className="text-sm text-muted-foreground">{credential.testMessage}</p>
+                )}
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 pt-4 border-t">
+              <Button
+                variant="outline"
+                onClick={() => testMutation.mutate()}
+                disabled={testMutation.isPending}
+                data-testid="button-test-connection"
+              >
+                {testMutation.isPending ? (
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                ) : (
+                  <TestTube className="h-4 w-4 mr-2" />
+                )}
+                Test Connessione
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={() => deleteMutation.mutate()}
+                disabled={deleteMutation.isPending}
+                data-testid="button-delete-credentials"
+              >
+                {deleteMutation.isPending ? (
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                ) : (
+                  <Trash2 className="h-4 w-4 mr-2" />
+                )}
+                Elimina Credenziali
+              </Button>
+            </div>
+
+            <Alert>
+              <AlertDescription>
+                Per aggiornare le credenziali, eliminale prima e poi inseriscine di nuove.
+              </AlertDescription>
+            </Alert>
+          </CardContent>
+        </Card>
+      ) : (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Key className="h-5 w-5" />
+              Configura MobileSentrix
+            </CardTitle>
+            <CardDescription>
+              Inserisci le tue credenziali OAuth MobileSentrix per accedere al catalogo ricambi
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="consumerName">Consumer Name</Label>
+              <Input
+                id="consumerName"
+                type="text"
+                placeholder="Il nome del tuo consumer"
+                value={consumerName}
+                onChange={(e) => setConsumerName(e.target.value)}
+                data-testid="input-consumer-name"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="consumerKey">Consumer Key</Label>
+              <Input
+                id="consumerKey"
+                type="text"
+                placeholder="La tua Consumer Key"
+                value={consumerKey}
+                onChange={(e) => setConsumerKey(e.target.value)}
+                data-testid="input-consumer-key"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="consumerSecret">Consumer Secret</Label>
+              <Input
+                id="consumerSecret"
+                type="password"
+                placeholder="Il tuo Consumer Secret"
+                value={consumerSecret}
+                onChange={(e) => setConsumerSecret(e.target.value)}
+                data-testid="input-consumer-secret"
+              />
+              <p className="text-sm text-muted-foreground">
+                Puoi ottenere le tue credenziali OAuth dal pannello MobileSentrix.{" "}
+                <a
+                  href="https://www.mobilesentrix.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-primary hover:underline inline-flex items-center gap-1"
+                >
+                  Vai a MobileSentrix <ExternalLink className="h-3 w-3" />
+                </a>
+              </p>
+            </div>
+
+            <Button
+              onClick={handleSave}
+              disabled={saveMutation.isPending || !consumerName.trim() || !consumerKey.trim() || !consumerSecret.trim()}
+              data-testid="button-save-credentials"
+            >
+              {saveMutation.isPending ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <Save className="h-4 w-4 mr-2" />
+              )}
+              Salva Credenziali
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Informazioni su MobileSentrix</CardTitle>
+          <CardDescription>Come funziona l'integrazione MobileSentrix</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3 text-sm text-muted-foreground">
+          <p>
+            MobileSentrix è un fornitore premium di ricambi per smartphone e tablet.
+            L'integrazione ti permette di:
+          </p>
+          <ul className="list-disc list-inside space-y-1 ml-2">
+            <li>Consultare il catalogo prodotti con prezzi e disponibilità in tempo reale</li>
+            <li>Ricercare prodotti per marca, modello e categoria</li>
+            <li>Visualizzare dettagli prodotto e specifiche tecniche</li>
+            <li>Effettuare ordini direttamente dalla piattaforma</li>
+          </ul>
+          <p className="pt-2">
+            Per utilizzare l'integrazione, devi prima creare un account business su MobileSentrix e
+            ottenere le tue credenziali OAuth (Consumer Key e Consumer Secret) dal pannello di controllo.
+          </p>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
