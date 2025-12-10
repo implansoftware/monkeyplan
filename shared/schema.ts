@@ -438,6 +438,9 @@ export const products = pgTable("products", {
   // Creatore (null = admin/globale, altrimenti = rivenditore specifico)
   createdBy: varchar("created_by").references(() => users.id, { onDelete: "cascade" }),
   
+  // Immagine prodotto
+  imageUrl: text("image_url"),
+  
   // Metadata
   isActive: boolean("is_active").notNull().default(true),
   createdAt: timestamp("created_at").notNull().defaultNow(),
