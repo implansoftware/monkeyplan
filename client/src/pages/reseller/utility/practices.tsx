@@ -17,6 +17,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Link, useSearch } from "wouter";
+import { UtilityPracticeWizard } from "@/components/UtilityPracticeWizard";
 
 type PracticeStatus = "bozza" | "inviata" | "in_lavorazione" | "attesa_documenti" | "completata" | "rifiutata" | "annullata";
 
@@ -71,11 +72,12 @@ export default function ResellerUtilityPractices() {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [wizardOpen, setWizardOpen] = useState(false);
   
   useEffect(() => {
     const params = new URLSearchParams(searchString);
     if (params.get("new") === "true") {
-      setDialogOpen(true);
+      setWizardOpen(true);
       window.history.replaceState({}, "", window.location.pathname);
     }
   }, [searchString]);
@@ -542,6 +544,10 @@ export default function ResellerUtilityPractices() {
   };
 
   const handleNewPractice = () => {
+    setWizardOpen(true);
+  };
+
+  const handleNewPracticeLegacy = () => {
     setEditingPractice(null);
     setSelectedItemType("service");
     setSelectedSupplierId("");
@@ -1503,6 +1509,14 @@ export default function ResellerUtilityPractices() {
           </div>
         </DialogContent>
       </Dialog>
+
+      <UtilityPracticeWizard
+        open={wizardOpen}
+        onOpenChange={setWizardOpen}
+        onSuccess={() => {
+          queryClient.invalidateQueries({ queryKey: ["/api/utility/practices"] });
+        }}
+      />
     </div>
   );
 }
