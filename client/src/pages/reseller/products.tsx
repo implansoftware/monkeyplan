@@ -181,9 +181,12 @@ export default function ResellerProducts() {
       }
       return await res.json();
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["/api/reseller/products"] });
       queryClient.invalidateQueries({ queryKey: ["/api/reseller/products/with-stock"] });
+      if (editingProduct && data.imageUrl) {
+        setEditingProduct({ ...editingProduct, imageUrl: data.imageUrl });
+      }
       toast({ title: "Immagine caricata con successo" });
     },
     onError: (error: Error) => {
@@ -205,6 +208,9 @@ export default function ResellerProducts() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/reseller/products"] });
       queryClient.invalidateQueries({ queryKey: ["/api/reseller/products/with-stock"] });
+      if (editingProduct) {
+        setEditingProduct({ ...editingProduct, imageUrl: null });
+      }
       toast({ title: "Immagine eliminata" });
     },
     onError: (error: Error) => {

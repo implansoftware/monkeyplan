@@ -262,9 +262,12 @@ export default function AdminProducts() {
       }
       return await res.json();
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["/api/products"] });
       queryClient.invalidateQueries({ queryKey: ["/api/products/with-stock"] });
+      if (editingProduct && data.imageUrl) {
+        setEditingProduct({ ...editingProduct, imageUrl: data.imageUrl });
+      }
       toast({ title: "Immagine caricata con successo" });
     },
     onError: (error: Error) => {
@@ -286,6 +289,9 @@ export default function AdminProducts() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/products"] });
       queryClient.invalidateQueries({ queryKey: ["/api/products/with-stock"] });
+      if (editingProduct) {
+        setEditingProduct({ ...editingProduct, imageUrl: null });
+      }
       toast({ title: "Immagine eliminata" });
     },
     onError: (error: Error) => {
