@@ -59,6 +59,7 @@ const partSchema = z.object({
   name: z.string().min(1, "Nome ricambio obbligatorio"),
   quantity: z.coerce.number().min(1, "La quantità deve essere almeno 1"),
   unitPrice: z.coerce.number().min(0, "Il prezzo deve essere positivo"),
+  imageUrl: z.string().optional(),
 });
 
 const quoteSchema = z.object({
@@ -307,6 +308,7 @@ export function QuoteFormDialog({
                           name: product.name,
                           quantity: 1,
                           unitPrice: (product.unitPrice || 0) / 100,
+                          imageUrl: product.imageUrl || undefined,
                         });
                       }
                     }}
@@ -323,11 +325,26 @@ export function QuoteFormDialog({
                       ) : (
                         products.filter(p => p.isActive).map((product) => (
                           <SelectItem key={product.id} value={product.id}>
-                            <div className="flex flex-col">
-                              <span>{product.name}</span>
-                              <span className="text-xs text-muted-foreground">
-                                {product.sku} - {formatCurrency((product.unitPrice || 0) / 100)}
-                              </span>
+                            <div className="flex items-center gap-2">
+                              <div className="w-8 h-8 flex-shrink-0 rounded border overflow-hidden">
+                                {product.imageUrl ? (
+                                  <img 
+                                    src={product.imageUrl} 
+                                    alt={product.name}
+                                    className="w-full h-full object-cover"
+                                  />
+                                ) : (
+                                  <div className="w-full h-full bg-muted flex items-center justify-center">
+                                    <Package className="h-3 w-3 text-muted-foreground" />
+                                  </div>
+                                )}
+                              </div>
+                              <div className="flex flex-col">
+                                <span>{product.name}</span>
+                                <span className="text-xs text-muted-foreground">
+                                  {product.sku} - {formatCurrency((product.unitPrice || 0) / 100)}
+                                </span>
+                              </div>
                             </div>
                           </SelectItem>
                         ))
@@ -392,6 +409,20 @@ export function QuoteFormDialog({
                       key={field.id}
                       className="flex gap-3 items-end"
                     >
+                      {/* Product Thumbnail */}
+                      <div className={`w-10 h-10 flex-shrink-0 rounded border overflow-hidden ${index === 0 ? 'mt-6' : ''}`}>
+                        {field.imageUrl ? (
+                          <img 
+                            src={field.imageUrl} 
+                            alt={field.name}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full bg-muted flex items-center justify-center">
+                            <Package className="h-4 w-4 text-muted-foreground" />
+                          </div>
+                        )}
+                      </div>
                       <FormField
                         control={form.control}
                         name={`parts.${index}.name`}
