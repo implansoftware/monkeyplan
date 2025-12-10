@@ -13753,6 +13753,200 @@ export function registerRoutes(app: Express): Server {
   });
 
   // ==========================================
+  // MOBILESENTRIX INTEGRATION (RESELLER)
+  // ==========================================
+
+  // GET /api/mobilesentrix/credentials - Get reseller's MobileSentrix credentials
+  app.get("/api/mobilesentrix/credentials", requireAuth, requireRole("reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      const credential = await storage.getMobilesentrixCredentialByReseller(req.user.id);
+      res.json(credential || null);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // POST /api/mobilesentrix/credentials - Create/update MobileSentrix credentials
+  app.post("/api/mobilesentrix/credentials", requireAuth, requireRole("reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const { consumerName, consumerKey, consumerSecret } = req.body;
+      if (!consumerName || !consumerKey || !consumerSecret) {
+        return res.status(400).send("Consumer Name, Consumer Key e Consumer Secret sono obbligatori");
+      }
+
+      const existing = await storage.getMobilesentrixCredentialByReseller(req.user.id);
+      
+      if (existing) {
+        const updated = await storage.updateMobilesentrixCredential(existing.id, {
+          consumerName,
+          consumerKey,
+          consumerSecret,
+        });
+        res.json(updated);
+      } else {
+        const created = await storage.createMobilesentrixCredential({
+          resellerId: req.user.id,
+          consumerName,
+          consumerKey,
+          consumerSecret,
+          isActive: true,
+        });
+        res.json(created);
+      }
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // DELETE /api/mobilesentrix/credentials - Delete MobileSentrix credentials
+  app.delete("/api/mobilesentrix/credentials", requireAuth, requireRole("reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const credential = await storage.getMobilesentrixCredentialByReseller(req.user.id);
+      if (credential) {
+        await storage.deleteMobilesentrixCredential(credential.id);
+      }
+      res.json({ success: true });
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // POST /api/mobilesentrix/test-connection - Test MobileSentrix connection
+  app.post("/api/mobilesentrix/test-connection", requireAuth, requireRole("reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const credential = await storage.getMobilesentrixCredentialByReseller(req.user.id);
+      if (!credential) {
+        return res.status(404).send("Credenziali MobileSentrix non configurate");
+      }
+
+      const { getMobilesentrixService } = await import("./mobilesentrixService");
+      const mobilesentrixService = getMobilesentrixService(credential);
+      
+      const result = await mobilesentrixService.testConnection();
+      
+      await storage.updateMobilesentrixCredential(credential.id, {
+        lastTestAt: new Date(),
+        testStatus: result.success ? "success" : "failed",
+        testMessage: result.message,
+      });
+      
+      res.json(result);
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+
+  // GET /api/mobilesentrix/catalog/categories - Get MobileSentrix categories
+  app.get("/api/mobilesentrix/catalog/categories", requireAuth, requireRole("reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const credential = await storage.getMobilesentrixCredentialByReseller(req.user.id);
+      if (!credential) {
+        return res.status(404).send("Credenziali MobileSentrix non configurate");
+      }
+
+      const { getMobilesentrixService } = await import("./mobilesentrixService");
+      const mobilesentrixService = getMobilesentrixService(credential);
+      const categories = await mobilesentrixService.getCategories();
+      res.json(categories);
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+
+  // GET /api/mobilesentrix/catalog/brands - Get MobileSentrix brands
+  app.get("/api/mobilesentrix/catalog/brands", requireAuth, requireRole("reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const credential = await storage.getMobilesentrixCredentialByReseller(req.user.id);
+      if (!credential) {
+        return res.status(404).send("Credenziali MobileSentrix non configurate");
+      }
+
+      const { getMobilesentrixService } = await import("./mobilesentrixService");
+      const mobilesentrixService = getMobilesentrixService(credential);
+      const brands = await mobilesentrixService.getBrands();
+      res.json(brands);
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+
+  // GET /api/mobilesentrix/catalog/products - Search MobileSentrix products
+  app.get("/api/mobilesentrix/catalog/products", requireAuth, requireRole("reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const credential = await storage.getMobilesentrixCredentialByReseller(req.user.id);
+      if (!credential) {
+        return res.status(404).send("Credenziali MobileSentrix non configurate");
+      }
+
+      const { getMobilesentrixService } = await import("./mobilesentrixService");
+      const mobilesentrixService = getMobilesentrixService(credential);
+      
+      const params: any = {};
+      if (req.query.search) params.query = String(req.query.search);
+      if (req.query.category_id) params.category_id = String(req.query.category_id);
+      if (req.query.brand) params.brand = String(req.query.brand);
+      if (req.query.page) params.page = Number(req.query.page);
+      if (req.query.per_page) params.per_page = Number(req.query.per_page);
+      
+      const result = await mobilesentrixService.searchProducts(params);
+      res.json(result);
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+
+  // GET /api/mobilesentrix/catalog/products/:id - Get MobileSentrix product detail
+  app.get("/api/mobilesentrix/catalog/products/:id", requireAuth, requireRole("reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const credential = await storage.getMobilesentrixCredentialByReseller(req.user.id);
+      if (!credential) {
+        return res.status(404).send("Credenziali MobileSentrix non configurate");
+      }
+
+      const { getMobilesentrixService } = await import("./mobilesentrixService");
+      const mobilesentrixService = getMobilesentrixService(credential);
+      const product = await mobilesentrixService.getProduct(req.params.id);
+      res.json(product);
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+
+  // GET /api/mobilesentrix/account - Get account info
+  app.get("/api/mobilesentrix/account", requireAuth, requireRole("reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const credential = await storage.getMobilesentrixCredentialByReseller(req.user.id);
+      if (!credential) {
+        return res.status(404).send("Credenziali MobileSentrix non configurate");
+      }
+
+      const { getMobilesentrixService } = await import("./mobilesentrixService");
+      const mobilesentrixService = getMobilesentrixService(credential);
+      const accountInfo = await mobilesentrixService.getAccountInfo();
+      res.json(accountInfo);
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+
+  // ==========================================
   // MAPBOX ADDRESS AUTOCOMPLETE
   // ==========================================
   
