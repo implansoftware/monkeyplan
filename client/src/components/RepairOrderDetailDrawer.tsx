@@ -266,8 +266,11 @@ export function RepairOrderDetailDrawer({
   });
 
   // Repair Centers query (for resellers and admins to change assignment)
+  const repairCentersEndpoint = user?.role === 'reseller' 
+    ? "/api/reseller/repair-centers" 
+    : "/api/admin/repair-centers";
   const { data: repairCenters = [] } = useQuery<RepairCenter[]>({
-    queryKey: user?.role === 'reseller' ? ["/api/reseller/repair-centers"] : ["/api/repair-centers"],
+    queryKey: [repairCentersEndpoint],
     enabled: open && (user?.role === 'reseller' || user?.role === 'admin'),
   });
 
