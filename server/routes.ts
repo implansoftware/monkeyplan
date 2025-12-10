@@ -376,6 +376,37 @@ export function registerRoutes(app: Express): Server {
   // Apply automatic logging middleware to all routes
   app.use(autoLogMiddleware);
 
+  // Serve product images and other objects from private storage
+  app.get("/objects/*", async (req, res) => {
+    try {
+      const objectPath = req.params[0];
+      if (!objectPath) {
+        return res.status(400).send("Missing object path");
+      }
+      
+      const privateObjectDir = objectStorage.getPrivateObjectDir();
+      const fullPath = `${privateObjectDir}/${objectPath}`;
+      const { bucketName, objectName } = parseObjectPath(fullPath);
+      const bucket = objectStorageClient.bucket(bucketName);
+      const file = bucket.file(objectName);
+      
+      const [exists] = await file.exists();
+      if (!exists) {
+        return res.status(404).send("File not found");
+      }
+      
+      const [metadata] = await file.getMetadata();
+      res.setHeader("Content-Type", metadata.contentType || "application/octet-stream");
+      res.setHeader("Cache-Control", "public, max-age=86400");
+      
+      const [fileContents] = await file.download();
+      res.send(fileContents);
+    } catch (error: any) {
+      console.error("Error serving object:", error);
+      res.status(500).send("Error retrieving file");
+    }
+  });
+
   // ============ ADMIN ROUTES ============
   
   // Admin Settings - Hourly Rate
