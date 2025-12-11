@@ -3183,12 +3183,14 @@ export const createTicketMessageSchema = z.object({
 const baseCustomerSchema = z.object({
   email: z.string().email(),
   phone: z.string().min(1).trim(),
-  address: z.string().min(1).trim(),
-  city: z.string().min(1).trim(),
-  zipCode: z.string().min(1).trim(),
+  address: z.string().optional(),
+  city: z.string().optional(),
+  zipCode: z.string().optional(),
   country: z.string().default("IT"),
   googlePlaceId: z.string().optional(),
   iban: z.string().optional(),
+  skipAddress: z.boolean().optional().default(false),
+  skipIban: z.boolean().optional().default(false),
 });
 
 export const privateCustomerSchema = baseCustomerSchema.extend({
@@ -3214,6 +3216,31 @@ export const customerWizardSchema = z.discriminatedUnion("customerType", [
   privateCustomerSchema,
   companyCustomerSchemaBase,
 ]).superRefine((data, ctx) => {
+  // Validazione per clienti privati: indirizzo obbligatorio se non skippato
+  if (data.customerType === "private" && !data.skipAddress) {
+    if (!data.address || data.address.trim().length === 0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Indirizzo è obbligatorio",
+        path: ["address"],
+      });
+    }
+    if (!data.city || data.city.trim().length === 0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Città è obbligatoria",
+        path: ["city"],
+      });
+    }
+    if (!data.zipCode || data.zipCode.trim().length === 0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "CAP è obbligatorio",
+        path: ["zipCode"],
+      });
+    }
+  }
+  // Validazione per aziende: PEC o Codice Univoco obbligatorio
   if (data.customerType === "company") {
     if (!data.pec && !data.codiceUnivoco) {
       ctx.addIssue({

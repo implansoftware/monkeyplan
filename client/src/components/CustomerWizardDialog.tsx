@@ -38,6 +38,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Separator } from "@/components/ui/separator";
 import { Building2, User, CheckCircle2, ChevronRight, ChevronLeft } from "lucide-react";
 import { AddressAutocomplete } from "@/components/address-autocomplete";
+import { Checkbox } from "@/components/ui/checkbox";
 
 interface CustomerWizardDialogProps {
   open: boolean;
@@ -75,8 +76,13 @@ export function CustomerWizardDialog({ open, onOpenChange, onSuccess }: Customer
       city: "",
       zipCode: "",
       country: "IT",
+      skipAddress: false,
+      skipIban: false,
     },
   });
+
+  const skipAddress = form.watch("skipAddress");
+  const skipIban = form.watch("skipIban");
 
   const createCustomerMutation = useMutation({
     mutationFn: async (data: InsertCustomerWizard) => {
@@ -319,102 +325,162 @@ export function CustomerWizardDialog({ open, onOpenChange, onSuccess }: Customer
 
           <Separator />
 
-          <FormField
-            control={form.control as any}
-            name="address"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Indirizzo *</FormLabel>
-                <FormControl>
-                  <AddressAutocomplete
-                    id="address"
-                    value={field.value}
-                    onChange={field.onChange}
-                    onAddressSelect={(result) => {
-                      field.onChange(result.address);
-                      form.setValue("city", result.city);
-                      form.setValue("zipCode", result.postalCode);
-                    }}
-                    placeholder="Inizia a digitare l'indirizzo..."
-                    data-testid="input-address"
-                  />
-                </FormControl>
-                <FormDescription>Inizia a digitare per vedere i suggerimenti</FormDescription>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <div className="grid grid-cols-3 gap-4">
+          {/* Checkbox per saltare l'indirizzo (solo per privati) */}
+          {customerType === "private" && (
             <FormField
               control={form.control as any}
-              name="city"
+              name="skipAddress"
               render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Città *</FormLabel>
+                <FormItem className="flex flex-row items-start space-x-3 space-y-0">
                   <FormControl>
-                    <Input {...field} placeholder="Città" data-testid="input-city" />
+                    <Checkbox
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                      data-testid="checkbox-skip-address"
+                    />
                   </FormControl>
-                  <FormMessage />
+                  <div className="space-y-1 leading-none">
+                    <FormLabel className="text-sm font-normal">
+                      Non voglio inserire l'indirizzo
+                    </FormLabel>
+                    <FormDescription>
+                      Potrai aggiungerlo in seguito
+                    </FormDescription>
+                  </div>
                 </FormItem>
               )}
             />
+          )}
 
-            <FormField
-              control={form.control as any}
-              name="zipCode"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>CAP *</FormLabel>
-                  <FormControl>
-                    <Input {...field} placeholder="CAP" data-testid="input-zip-code" />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control as any}
-              name="country"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Paese</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+          {!skipAddress && (
+            <>
+              <FormField
+                control={form.control as any}
+                name="address"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Indirizzo {customerType === "private" ? "*" : ""}</FormLabel>
                     <FormControl>
-                      <SelectTrigger data-testid="select-country">
-                        <SelectValue />
-                      </SelectTrigger>
+                      <AddressAutocomplete
+                        id="address"
+                        value={field.value}
+                        onChange={field.onChange}
+                        onAddressSelect={(result) => {
+                          field.onChange(result.address);
+                          form.setValue("city", result.city);
+                          form.setValue("zipCode", result.postalCode);
+                        }}
+                        placeholder="Inizia a digitare l'indirizzo..."
+                        data-testid="input-address"
+                      />
                     </FormControl>
-                    <SelectContent>
-                      <SelectItem value="IT">Italia</SelectItem>
-                      <SelectItem value="FR">Francia</SelectItem>
-                      <SelectItem value="DE">Germania</SelectItem>
-                      <SelectItem value="ES">Spagna</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
+                    <FormDescription>Inizia a digitare per vedere i suggerimenti</FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <div className="grid grid-cols-3 gap-4">
+                <FormField
+                  control={form.control as any}
+                  name="city"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Città {customerType === "private" ? "*" : ""}</FormLabel>
+                      <FormControl>
+                        <Input {...field} placeholder="Città" data-testid="input-city" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control as any}
+                  name="zipCode"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>CAP {customerType === "private" ? "*" : ""}</FormLabel>
+                      <FormControl>
+                        <Input {...field} placeholder="CAP" data-testid="input-zip-code" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control as any}
+                  name="country"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Paese</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger data-testid="select-country">
+                            <SelectValue />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="IT">Italia</SelectItem>
+                          <SelectItem value="FR">Francia</SelectItem>
+                          <SelectItem value="DE">Germania</SelectItem>
+                          <SelectItem value="ES">Spagna</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </>
+          )}
 
           <Separator />
 
-          <FormField
-            control={form.control as any}
-            name="iban"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>IBAN</FormLabel>
-                <FormControl>
-                  <Input {...field} value={field.value || ""} data-testid="input-iban" />
-                </FormControl>
-                <FormDescription>Opzionale - per addebito diretto</FormDescription>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+          {/* Checkbox per saltare l'IBAN (solo per privati) */}
+          {customerType === "private" && (
+            <FormField
+              control={form.control as any}
+              name="skipIban"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                  <FormControl>
+                    <Checkbox
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                      data-testid="checkbox-skip-iban"
+                    />
+                  </FormControl>
+                  <div className="space-y-1 leading-none">
+                    <FormLabel className="text-sm font-normal">
+                      Non voglio inserire l'IBAN
+                    </FormLabel>
+                    <FormDescription>
+                      Potrai aggiungerlo in seguito
+                    </FormDescription>
+                  </div>
+                </FormItem>
+              )}
+            />
+          )}
+
+          {!skipIban && (
+            <FormField
+              control={form.control as any}
+              name="iban"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>IBAN</FormLabel>
+                  <FormControl>
+                    <Input {...field} value={field.value || ""} data-testid="input-iban" />
+                  </FormControl>
+                  <FormDescription>Opzionale - per addebito diretto</FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          )}
 
           {/* Selezione rivenditore solo per admin */}
           {isAdmin && resellers.length > 0 && (
@@ -525,17 +591,27 @@ export function CustomerWizardDialog({ open, onOpenChange, onSuccess }: Customer
 
             <div>
               <h4 className="font-medium mb-2">Indirizzo</h4>
-              <p className="text-sm" data-testid="text-review-address">
-                {values.address}, {values.zipCode} {values.city}, {values.country}
-              </p>
+              {values.skipAddress ? (
+                <p className="text-sm text-muted-foreground italic" data-testid="text-review-address">
+                  Non inserito
+                </p>
+              ) : (
+                <p className="text-sm" data-testid="text-review-address">
+                  {values.address}, {values.zipCode} {values.city}, {values.country}
+                </p>
+              )}
             </div>
 
-            {values.iban && (
-              <div>
-                <h4 className="font-medium mb-2">IBAN</h4>
+            <div>
+              <h4 className="font-medium mb-2">IBAN</h4>
+              {values.skipIban || !values.iban ? (
+                <p className="text-sm text-muted-foreground italic" data-testid="text-review-iban">
+                  Non inserito
+                </p>
+              ) : (
                 <p className="text-sm" data-testid="text-review-iban">{values.iban}</p>
-              </div>
-            )}
+              )}
+            </div>
 
             {isAdmin && selectedResellerId && (
               <div>
