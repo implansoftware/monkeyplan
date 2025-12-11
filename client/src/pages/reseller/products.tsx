@@ -13,7 +13,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Package, Search, Tag, Plus, Pencil, Trash2, User, Globe, Warehouse, Save, Loader2, X, ImageIcon, Upload, Smartphone, ChevronDown } from "lucide-react";
+import { Package, Search, Tag, Plus, Pencil, Trash2, User, Globe, Warehouse, Save, Loader2, X, ImageIcon, Upload, Smartphone, ChevronDown, ChevronRight } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -913,10 +913,11 @@ export default function ResellerProducts() {
           <ScrollArea className="max-h-[70vh] pr-4">
             <form onSubmit={handleCreateSubmit} className="space-y-6">
               <Tabs defaultValue="info" className="w-full">
-                <TabsList className="grid w-full grid-cols-3">
+                <TabsList className="grid w-full grid-cols-4">
                   <TabsTrigger value="info">Info</TabsTrigger>
                   <TabsTrigger value="pricing">Prezzi</TabsTrigger>
                   <TabsTrigger value="inventory">Magazzino</TabsTrigger>
+                  <TabsTrigger value="compatibility">Compatibilità</TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="info" className="space-y-4 mt-4 data-[state=inactive]:hidden" forceMount>
@@ -1092,12 +1093,101 @@ export default function ResellerProducts() {
                     </p>
                   </div>
                 </TabsContent>
+
+                <TabsContent value="compatibility" className="space-y-4 mt-4 data-[state=inactive]:hidden" forceMount>
+                  <div className="space-y-3">
+                    <Label>Dispositivi Compatibili</Label>
+                    <p className="text-sm text-muted-foreground">
+                      Seleziona i brand e modelli di dispositivi con cui questo prodotto è compatibile
+                    </p>
+                    
+                    {deviceCompatibilities.length > 0 && (
+                      <div className="flex flex-wrap gap-2 p-3 bg-muted rounded-md">
+                        {deviceCompatibilities.map((c, idx) => {
+                          const brand = deviceBrands.find(b => b.id === c.deviceBrandId);
+                          const model = c.deviceModelId ? deviceModels.find(m => m.id === c.deviceModelId) : null;
+                          return (
+                            <Badge key={idx} variant="secondary" className="gap-1">
+                              <Smartphone className="h-3 w-3" />
+                              {brand?.name}{model ? ` - ${model.modelName}` : " (Tutti)"}
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                className="h-4 w-4 ml-1"
+                                onClick={() => {
+                                  setDeviceCompatibilities(deviceCompatibilities.filter((_, i) => i !== idx));
+                                }}
+                              >
+                                <X className="h-3 w-3" />
+                              </Button>
+                            </Badge>
+                          );
+                        })}
+                      </div>
+                    )}
+                    
+                    <div className="border rounded-md max-h-64 overflow-y-auto">
+                      {deviceBrands.map(brand => {
+                        const models = getModelsForBrand(brand.id);
+                        const isExpanded = expandedBrands.has(brand.id);
+                        const hasBrandCompat = deviceCompatibilities.some(c => c.deviceBrandId === brand.id);
+                        const hasAllModels = deviceCompatibilities.some(c => c.deviceBrandId === brand.id && !c.deviceModelId);
+                        
+                        return (
+                          <div key={brand.id} className="border-b last:border-b-0">
+                            <div className="flex items-center gap-2 p-2 hover:bg-muted/50">
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                className="h-6 w-6"
+                                onClick={() => toggleBrandExpansion(brand.id)}
+                              >
+                                {isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                              </Button>
+                              <Checkbox
+                                checked={hasAllModels}
+                                onCheckedChange={() => toggleBrandCompatibility(brand.id, false)}
+                                data-testid={`checkbox-create-brand-${brand.id}`}
+                              />
+                              <span className="font-medium flex-1">{brand.name}</span>
+                              {hasBrandCompat && (
+                                <Badge variant="outline" className="text-xs">
+                                  {hasAllModels ? "Tutti" : deviceCompatibilities.filter(c => c.deviceBrandId === brand.id).length}
+                                </Badge>
+                              )}
+                            </div>
+                            {isExpanded && models.length > 0 && (
+                              <div className="pl-10 pb-2 space-y-1">
+                                {models.map(model => {
+                                  const isChecked = deviceCompatibilities.some(c => c.deviceBrandId === brand.id && c.deviceModelId === model.id);
+                                  return (
+                                    <div key={model.id} className="flex items-center gap-2 py-1">
+                                      <Checkbox
+                                        checked={isChecked || hasAllModels}
+                                        disabled={hasAllModels}
+                                        onCheckedChange={() => toggleModelCompatibility(brand.id, model.id, false)}
+                                        data-testid={`checkbox-create-model-${model.id}`}
+                                      />
+                                      <span className="text-sm">{model.modelName}</span>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </TabsContent>
               </Tabs>
 
               <Separator />
 
               <div className="flex justify-end gap-2">
-                <Button type="button" variant="outline" onClick={() => { setDialogOpen(false); setInitialStock([]); }}>
+                <Button type="button" variant="outline" onClick={() => { setDialogOpen(false); setInitialStock([]); setDeviceCompatibilities([]); }}>
                   Annulla
                 </Button>
                 <Button type="submit" disabled={createProductMutation.isPending} data-testid="button-submit-create">
@@ -1131,10 +1221,11 @@ export default function ResellerProducts() {
             <ScrollArea className="max-h-[70vh] pr-4">
               <form onSubmit={handleEditSubmit} className="space-y-6">
                 <Tabs defaultValue="info" className="w-full">
-                  <TabsList className="grid w-full grid-cols-3">
+                  <TabsList className="grid w-full grid-cols-4">
                     <TabsTrigger value="info">Info</TabsTrigger>
                     <TabsTrigger value="pricing">Prezzi</TabsTrigger>
                     <TabsTrigger value="inventory">Magazzino</TabsTrigger>
+                    <TabsTrigger value="compatibility">Compatibilità</TabsTrigger>
                   </TabsList>
 
                   <TabsContent value="info" className="space-y-4 mt-4 data-[state=inactive]:hidden" forceMount>
@@ -1446,6 +1537,101 @@ export default function ResellerProducts() {
                       </div>
                     )}
                   </TabsContent>
+
+                  <TabsContent value="compatibility" className="space-y-4 mt-4 data-[state=inactive]:hidden" forceMount>
+                    {isLoadingCompatibilities ? (
+                      <div className="flex items-center justify-center py-8">
+                        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                        <span className="ml-2 text-muted-foreground">Caricamento compatibilità...</span>
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        <Label>Dispositivi Compatibili</Label>
+                        <p className="text-sm text-muted-foreground">
+                          Seleziona i brand e modelli di dispositivi con cui questo prodotto è compatibile
+                        </p>
+                        
+                        {editDeviceCompatibilities.length > 0 && (
+                          <div className="flex flex-wrap gap-2 p-3 bg-muted rounded-md">
+                            {editDeviceCompatibilities.map((c, idx) => (
+                              <Badge key={c.id || idx} variant="secondary" className="gap-1">
+                                <Smartphone className="h-3 w-3" />
+                                {c.brandName || deviceBrands.find(b => b.id === c.deviceBrandId)?.name}
+                                {c.modelName || (c.deviceModelId ? deviceModels.find(m => m.id === c.deviceModelId)?.modelName : null) 
+                                  ? ` - ${c.modelName || deviceModels.find(m => m.id === c.deviceModelId)?.modelName}` 
+                                  : " (Tutti)"}
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-4 w-4 ml-1"
+                                  onClick={() => {
+                                    setEditDeviceCompatibilities(editDeviceCompatibilities.filter((_, i) => i !== idx));
+                                  }}
+                                >
+                                  <X className="h-3 w-3" />
+                                </Button>
+                              </Badge>
+                            ))}
+                          </div>
+                        )}
+                        
+                        <div className="border rounded-md max-h-64 overflow-y-auto">
+                          {deviceBrands.map(brand => {
+                            const models = getModelsForBrand(brand.id);
+                            const isExpanded = expandedBrands.has(brand.id);
+                            const hasBrandCompat = editDeviceCompatibilities.some(c => c.deviceBrandId === brand.id);
+                            const hasAllModels = editDeviceCompatibilities.some(c => c.deviceBrandId === brand.id && !c.deviceModelId);
+                            
+                            return (
+                              <div key={brand.id} className="border-b last:border-b-0">
+                                <div className="flex items-center gap-2 p-2 hover:bg-muted/50">
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-6 w-6"
+                                    onClick={() => toggleBrandExpansion(brand.id)}
+                                  >
+                                    {isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                                  </Button>
+                                  <Checkbox
+                                    checked={hasAllModels}
+                                    onCheckedChange={() => toggleBrandCompatibility(brand.id, true)}
+                                    data-testid={`checkbox-edit-brand-${brand.id}`}
+                                  />
+                                  <span className="font-medium flex-1">{brand.name}</span>
+                                  {hasBrandCompat && (
+                                    <Badge variant="outline" className="text-xs">
+                                      {hasAllModels ? "Tutti" : editDeviceCompatibilities.filter(c => c.deviceBrandId === brand.id).length}
+                                    </Badge>
+                                  )}
+                                </div>
+                                {isExpanded && models.length > 0 && (
+                                  <div className="pl-10 pb-2 space-y-1">
+                                    {models.map(model => {
+                                      const isChecked = editDeviceCompatibilities.some(c => c.deviceBrandId === brand.id && c.deviceModelId === model.id);
+                                      return (
+                                        <div key={model.id} className="flex items-center gap-2 py-1">
+                                          <Checkbox
+                                            checked={isChecked || hasAllModels}
+                                            disabled={hasAllModels}
+                                            onCheckedChange={() => toggleModelCompatibility(brand.id, model.id, true)}
+                                            data-testid={`checkbox-edit-model-${model.id}`}
+                                          />
+                                          <span className="text-sm">{model.modelName}</span>
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+                  </TabsContent>
                 </Tabs>
 
                 <Separator />
@@ -1458,6 +1644,7 @@ export default function ResellerProducts() {
                       setEditDialogOpen(false); 
                       setEditingProduct(null); 
                       setEditStock([]); 
+                      setEditDeviceCompatibilities([]);
                     }}
                   >
                     Annulla
