@@ -12,11 +12,24 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
-import { Package, Search, Tag, Plus, Pencil, Trash2, User, Globe, Warehouse, Save, Loader2, X, ImageIcon, Upload } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Package, Search, Tag, Plus, Pencil, Trash2, User, Globe, Warehouse, Save, Loader2, X, ImageIcon, Upload, Smartphone, ChevronDown } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { DeviceBrand, DeviceModel } from "@shared/schema";
+
+interface DeviceCompatibilityEntry {
+  deviceBrandId: string;
+  deviceModelId?: string | null;
+}
+
+interface DeviceCompatibilityWithNames extends DeviceCompatibilityEntry {
+  id: string;
+  brandName?: string;
+  modelName?: string | null;
+}
 
 type StockByCenter = {
   repairCenterId: string;
@@ -91,6 +104,10 @@ export default function ResellerProducts() {
   const [stockByCenters, setStockByCenters] = useState<StockByCenter[]>([]);
   const [loadingStock, setLoadingStock] = useState(false);
   const [initialStock, setInitialStock] = useState<Array<{ repairCenterId: string; quantity: number }>>([]);
+  const [deviceCompatibilities, setDeviceCompatibilities] = useState<DeviceCompatibilityEntry[]>([]);
+  const [editDeviceCompatibilities, setEditDeviceCompatibilities] = useState<DeviceCompatibilityWithNames[]>([]);
+  const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set());
+  const [isLoadingCompatibilities, setIsLoadingCompatibilities] = useState(false);
   const { toast } = useToast();
 
   const { data: products = [], isLoading } = useQuery<EnrichedProduct[]>({
@@ -105,19 +122,38 @@ export default function ResellerProducts() {
     queryKey: ["/api/reseller/repair-centers"],
   });
 
+  const { data: deviceBrands = [] } = useQuery<DeviceBrand[]>({
+    queryKey: ["/api/device-brands"],
+  });
+
+  const { data: deviceModels = [] } = useQuery<DeviceModel[]>({
+    queryKey: ["/api/device-models"],
+  });
+
   const stockMap = new Map<string, { totalStock: number; stockByCenter: StockByCenter[] }>();
   productsWithStock.forEach(item => {
     stockMap.set(item.product.id, { totalStock: item.totalStock, stockByCenter: item.stockByCenter });
   });
 
   const createProductMutation = useMutation({
-    mutationFn: async (data: any) => {
-      const res = await apiRequest("POST", "/api/reseller/products", data);
-      return await res.json();
+    mutationFn: async (data: any & { deviceCompatibilities?: DeviceCompatibilityEntry[] }) => {
+      const { deviceCompatibilities: compatibilities, ...productData } = data;
+      const res = await apiRequest("POST", "/api/reseller/products", productData);
+      const product = await res.json();
+      
+      // Save device compatibilities if any
+      if (compatibilities && compatibilities.length > 0) {
+        await apiRequest("PUT", `/api/products/${product.id}/compatibilities`, { 
+          compatibilities 
+        });
+      }
+      
+      return product;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/reseller/products"] });
       setDialogOpen(false);
+      setDeviceCompatibilities([]);
       toast({ title: "Prodotto creato con successo" });
     },
     onError: (error: Error) => {
@@ -126,12 +162,22 @@ export default function ResellerProducts() {
   });
 
   const updateProductMutation = useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: any }) => {
+    mutationFn: async ({ id, data, deviceCompatibilities: compatibilities }: { id: string; data: any; deviceCompatibilities?: DeviceCompatibilityEntry[] }) => {
       const res = await apiRequest("PATCH", `/api/reseller/products/${id}`, data);
-      return await res.json();
+      const product = await res.json();
+      
+      // Save device compatibilities (including empty array to clear them)
+      if (compatibilities !== undefined) {
+        await apiRequest("PUT", `/api/products/${id}/compatibilities`, { 
+          compatibilities 
+        });
+      }
+      
+      return product;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/reseller/products"] });
+      setEditDeviceCompatibilities([]);
       toast({ title: "Prodotto aggiornato con successo" });
     },
     onError: (error: Error) => {
@@ -222,6 +268,103 @@ export default function ResellerProducts() {
     const file = event.target.files?.[0];
     if (file) {
       uploadImageMutation.mutate({ productId, file });
+    }
+  };
+
+  // Device compatibility helper functions
+  const getModelsForBrand = (brandId: string) => {
+    return deviceModels.filter(m => m.brandId === brandId);
+  };
+
+  const toggleBrandExpansion = (brandId: string) => {
+    const newExpanded = new Set(expandedBrands);
+    if (newExpanded.has(brandId)) {
+      newExpanded.delete(brandId);
+    } else {
+      newExpanded.add(brandId);
+    }
+    setExpandedBrands(newExpanded);
+  };
+
+  const toggleBrandCompatibility = (brandId: string, isEdit: boolean) => {
+    if (isEdit) {
+      const hasAnyFromBrand = editDeviceCompatibilities.some(c => c.deviceBrandId === brandId);
+      if (hasAnyFromBrand) {
+        setEditDeviceCompatibilities(editDeviceCompatibilities.filter(c => c.deviceBrandId !== brandId));
+      } else {
+        const brand = deviceBrands.find(b => b.id === brandId);
+        setEditDeviceCompatibilities([...editDeviceCompatibilities, {
+          id: `temp-${Date.now()}`,
+          deviceBrandId: brandId,
+          deviceModelId: null,
+          brandName: brand?.name,
+          modelName: null
+        }]);
+      }
+    } else {
+      const hasAnyFromBrand = deviceCompatibilities.some(c => c.deviceBrandId === brandId);
+      if (hasAnyFromBrand) {
+        setDeviceCompatibilities(deviceCompatibilities.filter(c => c.deviceBrandId !== brandId));
+      } else {
+        setDeviceCompatibilities([...deviceCompatibilities, { deviceBrandId: brandId, deviceModelId: null }]);
+      }
+    }
+  };
+
+  const toggleModelCompatibility = (brandId: string, modelId: string, isEdit: boolean) => {
+    if (isEdit) {
+      const exists = editDeviceCompatibilities.some(c => c.deviceBrandId === brandId && c.deviceModelId === modelId);
+      if (exists) {
+        setEditDeviceCompatibilities(editDeviceCompatibilities.filter(c => !(c.deviceBrandId === brandId && c.deviceModelId === modelId)));
+      } else {
+        const brandOnly = editDeviceCompatibilities.find(c => c.deviceBrandId === brandId && !c.deviceModelId);
+        if (brandOnly) {
+          setEditDeviceCompatibilities(editDeviceCompatibilities.filter(c => !(c.deviceBrandId === brandId && !c.deviceModelId)));
+        }
+        const brand = deviceBrands.find(b => b.id === brandId);
+        const model = deviceModels.find(m => m.id === modelId);
+        setEditDeviceCompatibilities([...editDeviceCompatibilities.filter(c => !(c.deviceBrandId === brandId && !c.deviceModelId)), {
+          id: `temp-${Date.now()}`,
+          deviceBrandId: brandId,
+          deviceModelId: modelId,
+          brandName: brand?.name,
+          modelName: model?.modelName
+        }]);
+      }
+    } else {
+      const exists = deviceCompatibilities.some(c => c.deviceBrandId === brandId && c.deviceModelId === modelId);
+      if (exists) {
+        setDeviceCompatibilities(deviceCompatibilities.filter(c => !(c.deviceBrandId === brandId && c.deviceModelId === modelId)));
+      } else {
+        const brandOnly = deviceCompatibilities.find(c => c.deviceBrandId === brandId && !c.deviceModelId);
+        if (brandOnly) {
+          setDeviceCompatibilities(deviceCompatibilities.filter(c => !(c.deviceBrandId === brandId && !c.deviceModelId)));
+        }
+        setDeviceCompatibilities([...deviceCompatibilities.filter(c => !(c.deviceBrandId === brandId && !c.deviceModelId)), { deviceBrandId: brandId, deviceModelId: modelId }]);
+      }
+    }
+  };
+
+  const loadDeviceCompatibilities = async (productId: string) => {
+    setIsLoadingCompatibilities(true);
+    try {
+      const res = await fetch(`/api/products/${productId}/compatibilities`, { credentials: 'include' });
+      if (res.ok) {
+        const data = await res.json();
+        setEditDeviceCompatibilities(data.map((c: any) => ({
+          id: c.id,
+          deviceBrandId: c.deviceBrandId,
+          deviceModelId: c.deviceModelId,
+          brandName: c.brandName,
+          modelName: c.modelName
+        })));
+      } else {
+        setEditDeviceCompatibilities([]);
+      }
+    } catch {
+      setEditDeviceCompatibilities([]);
+    } finally {
+      setIsLoadingCompatibilities(false);
     }
   };
 
@@ -334,6 +477,7 @@ export default function ResellerProducts() {
     setEditingProduct(product);
     setEditDialogOpen(true);
     setLoadingEditStock(true);
+    setExpandedBrands(new Set());
     
     try {
       const res = await fetch(`/api/reseller/products/${product.id}/stock`, {
@@ -354,6 +498,9 @@ export default function ResellerProducts() {
     } finally {
       setLoadingEditStock(false);
     }
+    
+    // Load device compatibilities
+    loadDeviceCompatibilities(product.id);
   };
 
   const addEditStock = (repairCenterId: string) => {
@@ -391,6 +538,7 @@ export default function ResellerProducts() {
       costPrice: formData.get("costPrice") ? Math.round(parseFloat(formData.get("costPrice") as string) * 100) : null,
       warrantyMonths: formData.get("warrantyMonths") ? parseInt(formData.get("warrantyMonths") as string) : null,
       initialStock: initialStock.filter(s => s.quantity > 0),
+      deviceCompatibilities: deviceCompatibilities.length > 0 ? deviceCompatibilities : undefined,
     };
     
     createProductMutation.mutate(data);
@@ -423,8 +571,18 @@ export default function ResellerProducts() {
       location: formData.get("location") as string || null,
     };
     
+    // Map editDeviceCompatibilities to simplified format for API
+    const deviceCompatibilitiesForApi: DeviceCompatibilityEntry[] = editDeviceCompatibilities.map(c => ({
+      deviceBrandId: c.deviceBrandId,
+      deviceModelId: c.deviceModelId || null
+    }));
+    
     try {
-      await updateProductMutation.mutateAsync({ id: productId, data });
+      await updateProductMutation.mutateAsync({ 
+        id: productId, 
+        data,
+        deviceCompatibilities: deviceCompatibilitiesForApi
+      });
       
       // Update stock for each center that changed (using captured productId)
       const stockPromises = currentEditStock
