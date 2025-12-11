@@ -76,13 +76,13 @@ export function CustomerWizardDialog({ open, onOpenChange, onSuccess }: Customer
       city: "",
       zipCode: "",
       country: "IT",
-      skipAddress: false,
-      skipIban: false,
+      showAddress: false,
+      showIban: false,
     },
   });
 
-  const skipAddress = form.watch("skipAddress");
-  const skipIban = form.watch("skipIban");
+  const showAddress = form.watch("showAddress");
+  const showIban = form.watch("showIban");
 
   const createCustomerMutation = useMutation({
     mutationFn: async (data: InsertCustomerWizard) => {
@@ -329,22 +329,22 @@ export function CustomerWizardDialog({ open, onOpenChange, onSuccess }: Customer
           {customerType === "private" && (
             <FormField
               control={form.control as any}
-              name="skipAddress"
+              name="showAddress"
               render={({ field }) => (
                 <FormItem className="flex flex-row items-start space-x-3 space-y-0">
                   <FormControl>
                     <Checkbox
                       checked={field.value}
                       onCheckedChange={field.onChange}
-                      data-testid="checkbox-skip-address"
+                      data-testid="checkbox-show-address"
                     />
                   </FormControl>
                   <div className="space-y-1 leading-none">
                     <FormLabel className="text-sm font-normal">
-                      Non voglio inserire l'indirizzo
+                      Voglio inserire l'indirizzo
                     </FormLabel>
                     <FormDescription>
-                      Potrai aggiungerlo in seguito
+                      Spunta per inserire l'indirizzo ora
                     </FormDescription>
                   </div>
                 </FormItem>
@@ -352,7 +352,7 @@ export function CustomerWizardDialog({ open, onOpenChange, onSuccess }: Customer
             />
           )}
 
-          {!skipAddress && (
+          {showAddress && (
             <>
               <FormField
                 control={form.control as any}
@@ -442,22 +442,22 @@ export function CustomerWizardDialog({ open, onOpenChange, onSuccess }: Customer
           {customerType === "private" && (
             <FormField
               control={form.control as any}
-              name="skipIban"
+              name="showIban"
               render={({ field }) => (
                 <FormItem className="flex flex-row items-start space-x-3 space-y-0">
                   <FormControl>
                     <Checkbox
                       checked={field.value}
                       onCheckedChange={field.onChange}
-                      data-testid="checkbox-skip-iban"
+                      data-testid="checkbox-show-iban"
                     />
                   </FormControl>
                   <div className="space-y-1 leading-none">
                     <FormLabel className="text-sm font-normal">
-                      Non voglio inserire l'IBAN
+                      Voglio inserire l'IBAN
                     </FormLabel>
                     <FormDescription>
-                      Potrai aggiungerlo in seguito
+                      Spunta per inserire l'IBAN ora
                     </FormDescription>
                   </div>
                 </FormItem>
@@ -465,7 +465,7 @@ export function CustomerWizardDialog({ open, onOpenChange, onSuccess }: Customer
             />
           )}
 
-          {!skipIban && (
+          {showIban && (
             <FormField
               control={form.control as any}
               name="iban"
@@ -591,7 +591,7 @@ export function CustomerWizardDialog({ open, onOpenChange, onSuccess }: Customer
 
             <div>
               <h4 className="font-medium mb-2">Indirizzo</h4>
-              {values.skipAddress ? (
+              {!values.showAddress ? (
                 <p className="text-sm text-muted-foreground italic" data-testid="text-review-address">
                   Non inserito
                 </p>
@@ -604,7 +604,7 @@ export function CustomerWizardDialog({ open, onOpenChange, onSuccess }: Customer
 
             <div>
               <h4 className="font-medium mb-2">IBAN</h4>
-              {values.skipIban || !values.iban ? (
+              {!values.showIban || !values.iban ? (
                 <p className="text-sm text-muted-foreground italic" data-testid="text-review-iban">
                   Non inserito
                 </p>

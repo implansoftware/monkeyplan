@@ -3189,8 +3189,8 @@ const baseCustomerSchema = z.object({
   country: z.string().default("IT"),
   googlePlaceId: z.string().optional(),
   iban: z.string().optional(),
-  skipAddress: z.boolean().optional().default(false),
-  skipIban: z.boolean().optional().default(false),
+  showAddress: z.boolean().optional().default(false),
+  showIban: z.boolean().optional().default(false),
 });
 
 export const privateCustomerSchema = baseCustomerSchema.extend({
@@ -3216,8 +3216,8 @@ export const customerWizardSchema = z.discriminatedUnion("customerType", [
   privateCustomerSchema,
   companyCustomerSchemaBase,
 ]).superRefine((data, ctx) => {
-  // Validazione per clienti privati: indirizzo obbligatorio se non skippato
-  if (data.customerType === "private" && !data.skipAddress) {
+  // Validazione per clienti privati: indirizzo obbligatorio se showAddress è true
+  if (data.customerType === "private" && data.showAddress) {
     if (!data.address || data.address.trim().length === 0) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
