@@ -70,6 +70,13 @@ type EnrichedProduct = {
   imageUrl: string | null;
 };
 
+type ProductCompatibility = {
+  brandId: string;
+  brandName: string;
+  modelId: string | null;
+  modelName: string | null;
+};
+
 const CATEGORIES = [
   { value: "display", label: "Display/Schermo" },
   { value: "batteria", label: "Batteria" },
@@ -110,6 +117,7 @@ export default function ResellerProducts() {
   const [isLoadingCompatibilities, setIsLoadingCompatibilities] = useState(false);
   const [deviceSearchQuery, setDeviceSearchQuery] = useState("");
   const [editDeviceSearchQuery, setEditDeviceSearchQuery] = useState("");
+  const [productCompatibilitiesMap, setProductCompatibilitiesMap] = useState<Map<string, ProductCompatibility[]>>(new Map());
   const { toast } = useToast();
 
   const { data: products = [], isLoading } = useQuery<EnrichedProduct[]>({
@@ -136,6 +144,43 @@ export default function ResellerProducts() {
   productsWithStock.forEach(item => {
     stockMap.set(item.product.id, { totalStock: item.totalStock, stockByCenter: item.stockByCenter });
   });
+
+  // Load compatibilities for all products
+  useEffect(() => {
+    const loadAllCompatibilities = async () => {
+      if (products.length === 0) return;
+      
+      const newMap = new Map<string, ProductCompatibility[]>();
+      
+      // Fetch compatibilities for each product in parallel
+      const promises = products.map(async (product) => {
+        try {
+          const res = await fetch(`/api/products/${product.id}/compatibilities`, { credentials: 'include' });
+          if (res.ok) {
+            const data = await res.json();
+            return { id: product.id, compatibilities: data };
+          }
+        } catch {
+          // Ignore errors
+        }
+        return { id: product.id, compatibilities: [] };
+      });
+      
+      const results = await Promise.all(promises);
+      results.forEach(({ id, compatibilities }) => {
+        newMap.set(id, compatibilities.map((c: any) => ({
+          brandId: c.deviceBrandId || c.brandId,
+          brandName: c.brandName,
+          modelId: c.deviceModelId || c.modelId,
+          modelName: c.modelName
+        })));
+      });
+      
+      setProductCompatibilitiesMap(newMap);
+    };
+    
+    loadAllCompatibilities();
+  }, [products]);
 
   const createProductMutation = useMutation({
     mutationFn: async (data: any & { deviceCompatibilities?: DeviceCompatibilityEntry[] }) => {
@@ -747,7 +792,7 @@ export default function ResellerProducts() {
                   <TableHead>Condizione</TableHead>
                   <TableHead className="text-right">Prezzo</TableHead>
                   <TableHead className="text-center">Stock</TableHead>
-                  <TableHead>Garanzia</TableHead>
+                  <TableHead>Compatibilità</TableHead>
                   <TableHead className="text-right">Azioni</TableHead>
                 </TableRow>
               </TableHeader>
@@ -842,7 +887,50 @@ export default function ResellerProducts() {
                       )}
                     </TableCell>
                     <TableCell>
-                      {product.warrantyMonths ? `${product.warrantyMonths} mesi` : "-"}
+                      {(() => {
+                        const compatibilities = productCompatibilitiesMap.get(product.id) || [];
+                        if (compatibilities.length === 0) return <span className="text-muted-foreground">-</span>;
+                        
+                        // Group by brand
+                        const brandMap = new Map<string, { brandName: string; models: string[] }>();
+                        compatibilities.forEach(c => {
+                          if (!brandMap.has(c.brandId)) {
+                            brandMap.set(c.brandId, { brandName: c.brandName, models: [] });
+                          }
+                          if (c.modelName) {
+                            brandMap.get(c.brandId)!.models.push(c.modelName);
+                          }
+                        });
+                        
+                        const brands = Array.from(brandMap.values());
+                        const brandNames = brands.map(b => b.brandName);
+                        
+                        return (
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Badge variant="outline" className="gap-1 cursor-help">
+                                <Smartphone className="h-3 w-3" />
+                                {brands.length === 1 ? brandNames[0] : `${brands.length} marchi`}
+                              </Badge>
+                            </TooltipTrigger>
+                            <TooltipContent className="max-w-xs">
+                              <div className="space-y-1">
+                                {brands.map((brand, idx) => (
+                                  <div key={idx} className="text-xs">
+                                    <span className="font-medium">{brand.brandName}</span>
+                                    {brand.models.length > 0 && (
+                                      <span className="text-muted-foreground">: {brand.models.join(", ")}</span>
+                                    )}
+                                    {brand.models.length === 0 && (
+                                      <span className="text-muted-foreground"> (tutti i modelli)</span>
+                                    )}
+                                  </div>
+                                ))}
+                              </div>
+                            </TooltipContent>
+                          </Tooltip>
+                        );
+                      })()}
                     </TableCell>
                     <TableCell className="text-right">
                       {product.isOwn && (
