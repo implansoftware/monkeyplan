@@ -30,6 +30,7 @@ import { TestChecklistDialog } from "@/components/TestChecklistDialog";
 import { DeliveryDialog } from "@/components/DeliveryDialog";
 import { DataRecoveryDialog } from "@/components/DataRecoveryDialog";
 import { AppointmentBookingDialog } from "@/components/AppointmentBookingDialog";
+import { PatternLock } from "@/components/PatternLock";
 import { useToast } from "@/hooks/use-toast";
 import {
   Wrench, Euro, FileText, Paperclip, Calendar, Package, ClipboardList,
@@ -1015,6 +1016,83 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
                     ))}
                   </SelectContent>
                 </Select>
+              </CardContent>
+            </Card>
+          )}
+
+          {acceptance && (
+            <Card data-testid="card-acceptance">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <ClipboardCheck className="h-4 w-4" />
+                  Dati Accettazione
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {acceptance.declaredDefects && acceptance.declaredDefects.length > 0 && (
+                  <div>
+                    <span className="text-sm text-muted-foreground">Guasti Dichiarati</span>
+                    <div className="flex flex-wrap gap-1 mt-1">
+                      {acceptance.declaredDefects.map((defect, idx) => (
+                        <Badge key={idx} variant="secondary" className="text-xs">
+                          {defect}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {acceptance.aestheticCondition && (
+                  <div>
+                    <span className="text-sm text-muted-foreground">Condizione Estetica</span>
+                    <p className="font-medium">{acceptance.aestheticCondition}</p>
+                  </div>
+                )}
+                {acceptance.aestheticNotes && (
+                  <div>
+                    <span className="text-sm text-muted-foreground">Note Estetiche</span>
+                    <p className="text-sm text-muted-foreground whitespace-pre-wrap">{acceptance.aestheticNotes}</p>
+                  </div>
+                )}
+                {acceptance.accessories && acceptance.accessories.length > 0 && (
+                  <div>
+                    <span className="text-sm text-muted-foreground">Accessori Inclusi</span>
+                    <div className="flex flex-wrap gap-1 mt-1">
+                      {acceptance.accessories.map((acc, idx) => (
+                        <Badge key={idx} variant="outline" className="text-xs">
+                          {acc}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {acceptance.hasLockCode && (
+                  <div className="space-y-2 pt-2 border-t">
+                    <span className="text-sm text-muted-foreground font-medium">Codici di Sblocco</span>
+                    {acceptance.lockCode && (
+                      <div>
+                        <span className="text-xs text-muted-foreground">PIN/Password:</span>
+                        <p className="font-mono text-sm" data-testid="text-lock-code">{acceptance.lockCode}</p>
+                      </div>
+                    )}
+                    {acceptance.lockPattern && (
+                      <div>
+                        <span className="text-xs text-muted-foreground">Sequenza Pattern:</span>
+                        <div className="mt-1">
+                          <PatternLock value={acceptance.lockPattern} readOnly />
+                        </div>
+                      </div>
+                    )}
+                    {!acceptance.lockCode && !acceptance.lockPattern && (
+                      <p className="text-sm text-muted-foreground italic">
+                        Cliente ha indicato presenza codice ma non fornito
+                      </p>
+                    )}
+                  </div>
+                )}
+                <div className="pt-2 border-t">
+                  <span className="text-sm text-muted-foreground">Data Accettazione</span>
+                  <p className="font-medium">{format(new Date(acceptance.acceptedAt), "dd/MM/yyyy HH:mm", { locale: it })}</p>
+                </div>
               </CardContent>
             </Card>
           )}

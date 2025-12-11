@@ -1173,12 +1173,6 @@ export function RepairOrderDetailDrawer({
               </>
             )}
 
-            {/* Debug: Show acceptance status */}
-            <div className="p-2 bg-yellow-100 dark:bg-yellow-900 rounded text-xs">
-              <p>Debug: acceptance = {acceptance ? "presente" : "null/undefined"}</p>
-              {acceptance && <p>hasLockCode: {String(acceptance.hasLockCode)}, lockPattern: {acceptance.lockPattern || "vuoto"}</p>}
-            </div>
-            
             {/* Acceptance Info */}
             {acceptance && (
               <>
