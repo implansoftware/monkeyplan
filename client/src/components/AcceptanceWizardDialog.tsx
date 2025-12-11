@@ -45,6 +45,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { AddressAutocomplete } from "@/components/address-autocomplete";
+import { PatternLock } from "@/components/PatternLock";
 
 interface AcceptanceWizardDialogProps {
   open: boolean;
@@ -2033,14 +2034,17 @@ export function AcceptanceWizardDialog({
             name="acceptance.lockPattern"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Sequenza sblocco</FormLabel>
+                <FormLabel>Sequenza sblocco (stile Android)</FormLabel>
                 <FormControl>
-                  <Input 
-                    {...field} 
-                    placeholder="Descrizione sequenza (es. L invertita)"
-                    data-testid="input-lock-pattern"
+                  <PatternLock
+                    value={field.value || ""}
+                    onChange={field.onChange}
+                    minNodes={4}
                   />
                 </FormControl>
+                <FormDescription>
+                  Disegna la sequenza collegando i punti (minimo 4)
+                </FormDescription>
                 <FormMessage />
               </FormItem>
             )}

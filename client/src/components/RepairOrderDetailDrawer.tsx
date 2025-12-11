@@ -40,6 +40,7 @@ import { format } from "date-fns";
 import { it } from "date-fns/locale";
 import { useAuth } from "@/hooks/use-auth";
 import { computeSLASeverity } from "@/components/SLABadge";
+import { PatternLock } from "@/components/PatternLock";
 
 type RepairQuote = {
   id: string;
@@ -1229,8 +1230,12 @@ export function RepairOrderDetailDrawer({
                     )}
                     {acceptance.hasLockCode && acceptance.lockPattern && (
                       <div>
-                        <p className="text-sm text-muted-foreground">Pattern Sblocco</p>
-                        <p className="text-sm font-mono" data-testid="text-lock-pattern">{acceptance.lockPattern}</p>
+                        <p className="text-sm text-muted-foreground mb-2">Pattern Sblocco</p>
+                        <PatternLock 
+                          value={acceptance.lockPattern} 
+                          readOnly 
+                        />
+                        <p className="sr-only" data-testid="text-lock-pattern">{acceptance.lockPattern}</p>
                       </div>
                     )}
                     {/* Acceptance Date */}
