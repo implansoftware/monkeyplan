@@ -33,7 +33,7 @@ import {
   ExternalLink,
 } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { useState } from "react";
+import { useState, Fragment } from "react";
 import {
   Sidebar,
   SidebarContent,
@@ -215,93 +215,95 @@ export function AppSidebar() {
 
       <SidebarContent>
         {Object.entries(groupedItems).map(([group, groupItems]) => (
-          <SidebarGroup key={group}>
-            <SidebarGroupLabel>{group}</SidebarGroupLabel>
-            <SidebarGroupContent>
-              <SidebarMenu>
-                {groupItems.map((item) => {
-                  const isActive = location === item.url;
-                  return (
-                    <SidebarMenuItem key={item.title}>
-                      <SidebarMenuButton asChild isActive={isActive}>
-                        <Link 
-                          href={item.url} 
-                          onClick={handleLinkClick}
-                          data-testid={`link-${item.title.toLowerCase().replace(/\s+/g, "-")}`}
-                        >
-                          <item.icon className="h-4 w-4" />
-                          <span>{item.title}</span>
-                        </Link>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  );
-                })}
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
-        ))}
-
-        {/* Sezione Fornitori Esterni - solo per reseller */}
-        {isReseller && (
-          <SidebarGroup>
-            <SidebarGroupLabel className="flex items-center gap-2">
-              <ExternalLink className="h-3 w-3" />
-              Fornitori Esterni
-            </SidebarGroupLabel>
-            <SidebarGroupContent>
-              <SidebarMenu>
-                {externalSuppliers.map((supplier) => {
-                  const isSupplierActive = location.startsWith(supplier.basePath);
-                  const isOpen = openSuppliers[supplier.key] ?? isSupplierActive;
-                  
-                  return (
-                    <Collapsible 
-                      key={supplier.key} 
-                      open={isOpen}
-                      onOpenChange={() => toggleSupplier(supplier.key)}
-                    >
-                      <SidebarMenuItem>
-                        <CollapsibleTrigger asChild>
-                          <SidebarMenuButton 
-                            className="w-full justify-between"
-                            data-testid={`button-supplier-${supplier.key}`}
+          <Fragment key={group}>
+            <SidebarGroup>
+              <SidebarGroupLabel>{group}</SidebarGroupLabel>
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  {groupItems.map((item) => {
+                    const isActive = location === item.url;
+                    return (
+                      <SidebarMenuItem key={item.title}>
+                        <SidebarMenuButton asChild isActive={isActive}>
+                          <Link 
+                            href={item.url} 
+                            onClick={handleLinkClick}
+                            data-testid={`link-${item.title.toLowerCase().replace(/\s+/g, "-")}`}
                           >
-                            <span className="font-medium">{supplier.label}</span>
-                            <ChevronDown 
-                              className={`h-4 w-4 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`} 
-                            />
-                          </SidebarMenuButton>
-                        </CollapsibleTrigger>
-                        <CollapsibleContent>
-                          <SidebarMenu className="ml-4 mt-1 border-l border-sidebar-border pl-2">
-                            {supplier.routes.map((route) => {
-                              const fullUrl = supplier.basePath + route.path;
-                              const isRouteActive = location === fullUrl;
-                              return (
-                                <SidebarMenuItem key={route.path}>
-                                  <SidebarMenuButton asChild isActive={isRouteActive}>
-                                    <Link 
-                                      href={fullUrl}
-                                      onClick={handleLinkClick}
-                                      data-testid={`link-${supplier.key}-${route.title.toLowerCase()}`}
-                                    >
-                                      <route.icon className="h-4 w-4" />
-                                      <span>{route.title}</span>
-                                    </Link>
-                                  </SidebarMenuButton>
-                                </SidebarMenuItem>
-                              );
-                            })}
-                          </SidebarMenu>
-                        </CollapsibleContent>
+                            <item.icon className="h-4 w-4" />
+                            <span>{item.title}</span>
+                          </Link>
+                        </SidebarMenuButton>
                       </SidebarMenuItem>
-                    </Collapsible>
-                  );
-                })}
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
-        )}
+                    );
+                  })}
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
+
+            {/* Inserisci Fornitori Esterni subito dopo la sezione Fornitori */}
+            {group === "Fornitori" && isReseller && (
+              <SidebarGroup key="fornitori-esterni">
+                <SidebarGroupLabel className="flex items-center gap-2">
+                  <ExternalLink className="h-3 w-3" />
+                  Fornitori Esterni
+                </SidebarGroupLabel>
+                <SidebarGroupContent>
+                  <SidebarMenu>
+                    {externalSuppliers.map((supplier) => {
+                      const isSupplierActive = location.startsWith(supplier.basePath);
+                      const isOpen = openSuppliers[supplier.key] ?? isSupplierActive;
+                      
+                      return (
+                        <Collapsible 
+                          key={supplier.key} 
+                          open={isOpen}
+                          onOpenChange={() => toggleSupplier(supplier.key)}
+                        >
+                          <SidebarMenuItem>
+                            <CollapsibleTrigger asChild>
+                              <SidebarMenuButton 
+                                className="w-full justify-between"
+                                data-testid={`button-supplier-${supplier.key}`}
+                              >
+                                <span className="font-medium">{supplier.label}</span>
+                                <ChevronDown 
+                                  className={`h-4 w-4 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`} 
+                                />
+                              </SidebarMenuButton>
+                            </CollapsibleTrigger>
+                            <CollapsibleContent>
+                              <SidebarMenu className="ml-4 mt-1 border-l border-sidebar-border pl-2">
+                                {supplier.routes.map((route) => {
+                                  const fullUrl = supplier.basePath + route.path;
+                                  const isRouteActive = location === fullUrl;
+                                  return (
+                                    <SidebarMenuItem key={route.path}>
+                                      <SidebarMenuButton asChild isActive={isRouteActive}>
+                                        <Link 
+                                          href={fullUrl}
+                                          onClick={handleLinkClick}
+                                          data-testid={`link-${supplier.key}-${route.title.toLowerCase()}`}
+                                        >
+                                          <route.icon className="h-4 w-4" />
+                                          <span>{route.title}</span>
+                                        </Link>
+                                      </SidebarMenuButton>
+                                    </SidebarMenuItem>
+                                  );
+                                })}
+                              </SidebarMenu>
+                            </CollapsibleContent>
+                          </SidebarMenuItem>
+                        </Collapsible>
+                      );
+                    })}
+                  </SidebarMenu>
+                </SidebarGroupContent>
+              </SidebarGroup>
+            )}
+          </Fragment>
+        ))}
       </SidebarContent>
 
       <SidebarFooter className="p-4 border-t border-sidebar-border">
