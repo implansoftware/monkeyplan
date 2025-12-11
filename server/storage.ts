@@ -66,7 +66,7 @@ import {
   resellerStaffPermissions, ResellerStaffPermission, InsertResellerStaffPermission
 } from "@shared/schema";
 import { db, pool } from "./db";
-import { eq, and, or, desc, lt, sql, not, inArray } from "drizzle-orm";
+import { eq, and, or, desc, lt, sql, not, inArray, isNull } from "drizzle-orm";
 import session from "express-session";
 import connectPg from "connect-pg-simple";
 

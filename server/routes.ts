@@ -12026,7 +12026,14 @@ export function registerRoutes(app: Express): Server {
   // GET /api/utility/suppliers - List utility suppliers
   app.get("/api/utility/suppliers", requireAuth, requireRole("admin", "reseller"), async (req, res) => {
     try {
-      const suppliers = await storage.listUtilitySuppliers();
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      let filters: { resellerId?: string } = {};
+      if (req.user.role === 'reseller') {
+        filters.resellerId = req.user.id;
+      }
+      
+      const suppliers = await storage.listUtilitySuppliers(filters);
       res.json(suppliers);
     } catch (error: any) {
       res.status(500).send(error.message);
@@ -12036,20 +12043,37 @@ export function registerRoutes(app: Express): Server {
   // GET /api/utility/suppliers/:id - Get utility supplier
   app.get("/api/utility/suppliers/:id", requireAuth, requireRole("admin", "reseller"), async (req, res) => {
     try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
       const supplier = await storage.getUtilitySupplier(req.params.id);
       if (!supplier) {
         return res.status(404).send("Fornitore utility non trovato");
       }
+      
+      // Reseller può vedere solo i propri fornitori o quelli globali
+      if (req.user.role === 'reseller' && supplier.resellerId && supplier.resellerId !== req.user.id) {
+        return res.status(403).send("Accesso non autorizzato a questo fornitore");
+      }
+      
       res.json(supplier);
     } catch (error: any) {
       res.status(500).send(error.message);
     }
   });
 
-  // POST /api/utility/suppliers - Create utility supplier
-  app.post("/api/utility/suppliers", requireAuth, requireRole("admin"), async (req, res) => {
+  // POST /api/utility/suppliers - Create utility supplier (Admin o Reseller)
+  app.post("/api/utility/suppliers", requireAuth, requireRole("admin", "reseller"), async (req, res) => {
     try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
       const validated = insertUtilitySupplierSchema.parse(req.body);
+      
+      // Se reseller, assegna automaticamente il resellerId
+      if (req.user.role === 'reseller') {
+        (validated as any).resellerId = req.user.id;
+      }
+      // Admin può creare fornitori globali (resellerId = null) o assegnati
+      
       const supplier = await storage.createUtilitySupplier(validated);
       res.status(201).json(supplier);
     } catch (error: any) {
@@ -12058,8 +12082,24 @@ export function registerRoutes(app: Express): Server {
   });
 
   // PATCH /api/utility/suppliers/:id - Update utility supplier
-  app.patch("/api/utility/suppliers/:id", requireAuth, requireRole("admin"), async (req, res) => {
+  app.patch("/api/utility/suppliers/:id", requireAuth, requireRole("admin", "reseller"), async (req, res) => {
     try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const existingSupplier = await storage.getUtilitySupplier(req.params.id);
+      if (!existingSupplier) {
+        return res.status(404).send("Fornitore utility non trovato");
+      }
+      
+      // Reseller può modificare solo i propri fornitori (non quelli globali)
+      if (req.user.role === 'reseller') {
+        if (!existingSupplier.resellerId || existingSupplier.resellerId !== req.user.id) {
+          return res.status(403).send("Non puoi modificare fornitori globali o di altri reseller");
+        }
+        // Impedisce al reseller di cambiare il resellerId
+        delete req.body.resellerId;
+      }
+      
       const supplier = await storage.updateUtilitySupplier(req.params.id, req.body);
       res.json(supplier);
     } catch (error: any) {
@@ -12068,8 +12108,22 @@ export function registerRoutes(app: Express): Server {
   });
 
   // DELETE /api/utility/suppliers/:id - Delete utility supplier
-  app.delete("/api/utility/suppliers/:id", requireAuth, requireRole("admin"), async (req, res) => {
+  app.delete("/api/utility/suppliers/:id", requireAuth, requireRole("admin", "reseller"), async (req, res) => {
     try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const existingSupplier = await storage.getUtilitySupplier(req.params.id);
+      if (!existingSupplier) {
+        return res.status(404).send("Fornitore utility non trovato");
+      }
+      
+      // Reseller può eliminare solo i propri fornitori (non quelli globali)
+      if (req.user.role === 'reseller') {
+        if (!existingSupplier.resellerId || existingSupplier.resellerId !== req.user.id) {
+          return res.status(403).send("Non puoi eliminare fornitori globali o di altri reseller");
+        }
+      }
+      
       await storage.deleteUtilitySupplier(req.params.id);
       res.status(204).send();
     } catch (error: any) {
