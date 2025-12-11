@@ -889,39 +889,48 @@ export default function ResellerProducts() {
                     <TableCell>
                       {(() => {
                         const compatibilities = productCompatibilitiesMap.get(product.id) || [];
-                        if (compatibilities.length === 0) return <span className="text-muted-foreground">-</span>;
+                        if (compatibilities.length === 0) return <span className="text-xs text-muted-foreground">-</span>;
                         
                         // Group by brand
-                        const brandMap = new Map<string, { brandName: string; models: string[] }>();
+                        const brandMap = new Map<string, string[]>();
                         compatibilities.forEach(c => {
-                          if (!brandMap.has(c.brandId)) {
-                            brandMap.set(c.brandId, { brandName: c.brandName, models: [] });
+                          if (!brandMap.has(c.brandName)) {
+                            brandMap.set(c.brandName, []);
                           }
                           if (c.modelName) {
-                            brandMap.get(c.brandId)!.models.push(c.modelName);
+                            brandMap.get(c.brandName)!.push(c.modelName);
                           }
                         });
                         
-                        const brands = Array.from(brandMap.values());
-                        const brandNames = brands.map(b => b.brandName);
+                        const uniqueBrands = Array.from(brandMap.keys());
+                        const modelCount = compatibilities.filter(c => c.modelId).length;
                         
                         return (
                           <Tooltip>
                             <TooltipTrigger asChild>
-                              <Badge variant="outline" className="gap-1 cursor-help">
-                                <Smartphone className="h-3 w-3" />
-                                {brands.length === 1 ? brandNames[0] : `${brands.length} marchi`}
-                              </Badge>
+                              <div className="cursor-help">
+                                <Badge variant="secondary" className="text-xs">
+                                  {(() => {
+                                    if (uniqueBrands.length === 1 && modelCount === 0) {
+                                      return uniqueBrands[0];
+                                    } else if (uniqueBrands.length === 1) {
+                                      return `${uniqueBrands[0]} (${modelCount} modelli)`;
+                                    } else {
+                                      return `${uniqueBrands.length} brand`;
+                                    }
+                                  })()}
+                                </Badge>
+                              </div>
                             </TooltipTrigger>
                             <TooltipContent className="max-w-xs">
                               <div className="space-y-1">
-                                {brands.map((brand, idx) => (
-                                  <div key={idx} className="text-xs">
-                                    <span className="font-medium">{brand.brandName}</span>
-                                    {brand.models.length > 0 && (
-                                      <span className="text-muted-foreground">: {brand.models.join(", ")}</span>
-                                    )}
-                                    {brand.models.length === 0 && (
+                                <div className="font-semibold mb-2">Dispositivi Compatibili:</div>
+                                {Array.from(brandMap.entries()).map(([brandName, models]) => (
+                                  <div key={brandName} className="text-sm">
+                                    <span className="font-medium">{brandName}</span>
+                                    {models.length > 0 ? (
+                                      <span className="text-muted-foreground">: {models.join(", ")}</span>
+                                    ) : (
                                       <span className="text-muted-foreground"> (tutti i modelli)</span>
                                     )}
                                   </div>
