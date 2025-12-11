@@ -430,7 +430,7 @@ export interface IStorage {
   getBranchByCode(parentCustomerId: string, branchCode: string): Promise<CustomerBranch | undefined>;
   
   // Utility Suppliers
-  listUtilitySuppliers(): Promise<UtilitySupplier[]>;
+  listUtilitySuppliers(filters?: { resellerId?: string }): Promise<UtilitySupplier[]>;
   getUtilitySupplier(id: string): Promise<UtilitySupplier | undefined>;
   createUtilitySupplier(supplier: InsertUtilitySupplier): Promise<UtilitySupplier>;
   updateUtilitySupplier(id: string, updates: Partial<InsertUtilitySupplier>): Promise<UtilitySupplier>;
@@ -3808,7 +3808,18 @@ export class DatabaseStorage implements IStorage {
   // ==========================================
 
   // Utility Suppliers
-  async listUtilitySuppliers(): Promise<UtilitySupplier[]> {
+  async listUtilitySuppliers(filters?: { resellerId?: string }): Promise<UtilitySupplier[]> {
+    if (filters?.resellerId) {
+      // Reseller vede: i propri fornitori + quelli globali (resellerId = NULL)
+      return await db.select()
+        .from(utilitySuppliers)
+        .where(or(
+          eq(utilitySuppliers.resellerId, filters.resellerId),
+          isNull(utilitySuppliers.resellerId)
+        ))
+        .orderBy(utilitySuppliers.name);
+    }
+    // Admin vede tutti
     return await db.select()
       .from(utilitySuppliers)
       .orderBy(utilitySuppliers.name);

@@ -1730,6 +1730,9 @@ export const utilitySuppliers = pgTable("utility_suppliers", {
   code: text("code").notNull().unique(), // Codice fornitore interno (es: "UTL-TIM")
   name: text("name").notNull(), // Nome fornitore (es: "TIM Business")
   
+  // Ownership: NULL = fornitore globale (admin), UUID = fornitore del reseller
+  resellerId: varchar("reseller_id").references(() => users.id),
+  
   // Categoria principale servita
   category: utilityCategoryEnum("category").notNull(),
   
