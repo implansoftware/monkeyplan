@@ -29,7 +29,11 @@ import {
   CalendarCheck,
   Smartphone,
   Plug,
+  ChevronDown,
+  ExternalLink,
 } from "lucide-react";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { useState } from "react";
 import {
   Sidebar,
   SidebarContent,
@@ -87,8 +91,6 @@ const menuItems = {
     { title: "Centri Riparazione", url: "/reseller/repair-centers", icon: Building, group: "Gestione" },
     { title: "Appuntamenti", url: "/reseller/appointments", icon: CalendarCheck, group: "Gestione" },
     { title: "Lavorazioni", url: "/reseller/repairs", icon: Wrench, group: "Riparazioni" },
-    // { title: "Diagnosi", url: "/reseller/diagnostics", icon: Stethoscope, group: "Riparazioni" },
-    // { title: "Preventivi", url: "/reseller/quotes", icon: Receipt, group: "Riparazioni" },
     { title: "Catalogo Interventi", url: "/reseller/service-catalog", icon: Wrench, group: "Riparazioni" },
     { title: "Magazzino", url: "/reseller/inventory", icon: Package, group: "Inventario" },
     { title: "Prodotti", url: "/reseller/products", icon: Package, group: "Inventario" },
@@ -96,14 +98,6 @@ const menuItems = {
     { title: "Ordini Ricambi", url: "/reseller/supplier-orders", icon: ShoppingCart, group: "Fornitori" },
     { title: "Resi Fornitori", url: "/reseller/supplier-returns", icon: RotateCcw, group: "Fornitori" },
     { title: "Carico Ricambi", url: "/reseller/parts-load", icon: ClipboardList, group: "Fornitori" },
-    { title: "Catalogo Ricambi", url: "/reseller/sifar/catalog", icon: Package, group: "SIFAR" },
-    { title: "Carrello SIFAR", url: "/reseller/sifar/cart", icon: ShoppingCart, group: "SIFAR" },
-    { title: "Config. SIFAR", url: "/reseller/sifar/settings", icon: Settings, group: "SIFAR" },
-    { title: "Catalogo Foneday", url: "/reseller/foneday/catalog", icon: Package, group: "Foneday EU" },
-    { title: "Carrello Foneday", url: "/reseller/foneday/cart", icon: ShoppingCart, group: "Foneday EU" },
-    { title: "Config. Foneday", url: "/reseller/foneday/settings", icon: Settings, group: "Foneday EU" },
-    { title: "Catalogo MobileSentrix", url: "/reseller/mobilesentrix/catalog", icon: Package, group: "MobileSentrix" },
-    { title: "Config. MobileSentrix", url: "/reseller/mobilesentrix/settings", icon: Settings, group: "MobileSentrix" },
     { title: "Fatture", url: "/reseller/invoices", icon: FileText, group: "Fatturazione" },
     { title: "Report", url: "/reseller/reports", icon: BarChart3, group: "Fatturazione" },
     { title: "Utility", url: "/reseller/utility", icon: Zap, group: "Utility" },
@@ -131,10 +125,44 @@ const menuItems = {
   ],
 };
 
+// Fornitori esterni configurabili - separati per una UI più pulita
+const externalSuppliers = [
+  {
+    key: "sifar",
+    label: "SIFAR",
+    basePath: "/reseller/sifar",
+    routes: [
+      { title: "Catalogo", path: "/catalog", icon: Package },
+      { title: "Carrello", path: "/cart", icon: ShoppingCart },
+      { title: "Configurazione", path: "/settings", icon: Settings },
+    ],
+  },
+  {
+    key: "foneday",
+    label: "Foneday EU",
+    basePath: "/reseller/foneday",
+    routes: [
+      { title: "Catalogo", path: "/catalog", icon: Package },
+      { title: "Carrello", path: "/cart", icon: ShoppingCart },
+      { title: "Configurazione", path: "/settings", icon: Settings },
+    ],
+  },
+  {
+    key: "mobilesentrix",
+    label: "MobileSentrix",
+    basePath: "/reseller/mobilesentrix",
+    routes: [
+      { title: "Catalogo", path: "/catalog", icon: Package },
+      { title: "Configurazione", path: "/settings", icon: Settings },
+    ],
+  },
+];
+
 export function AppSidebar() {
   const { user, logoutMutation } = useAuth();
   const [location] = useLocation();
   const { setOpenMobile, isMobile } = useSidebar();
+  const [openSuppliers, setOpenSuppliers] = useState<Record<string, boolean>>({});
 
   const handleLinkClick = () => {
     if (isMobile) {
@@ -142,9 +170,14 @@ export function AppSidebar() {
     }
   };
 
+  const toggleSupplier = (key: string) => {
+    setOpenSuppliers(prev => ({ ...prev, [key]: !prev[key] }));
+  };
+
   if (!user) return null;
 
   const items = menuItems[user.role as keyof typeof menuItems] || [];
+  const isReseller = user.role === "reseller";
   
   // Raggruppa items per gruppo
   const groupedItems = items.reduce((acc, item) => {
@@ -207,6 +240,68 @@ export function AppSidebar() {
             </SidebarGroupContent>
           </SidebarGroup>
         ))}
+
+        {/* Sezione Fornitori Esterni - solo per reseller */}
+        {isReseller && (
+          <SidebarGroup>
+            <SidebarGroupLabel className="flex items-center gap-2">
+              <ExternalLink className="h-3 w-3" />
+              Fornitori Esterni
+            </SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {externalSuppliers.map((supplier) => {
+                  const isSupplierActive = location.startsWith(supplier.basePath);
+                  const isOpen = openSuppliers[supplier.key] ?? isSupplierActive;
+                  
+                  return (
+                    <Collapsible 
+                      key={supplier.key} 
+                      open={isOpen}
+                      onOpenChange={() => toggleSupplier(supplier.key)}
+                    >
+                      <SidebarMenuItem>
+                        <CollapsibleTrigger asChild>
+                          <SidebarMenuButton 
+                            className="w-full justify-between"
+                            data-testid={`button-supplier-${supplier.key}`}
+                          >
+                            <span className="font-medium">{supplier.label}</span>
+                            <ChevronDown 
+                              className={`h-4 w-4 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`} 
+                            />
+                          </SidebarMenuButton>
+                        </CollapsibleTrigger>
+                        <CollapsibleContent>
+                          <SidebarMenu className="ml-4 mt-1 border-l border-sidebar-border pl-2">
+                            {supplier.routes.map((route) => {
+                              const fullUrl = supplier.basePath + route.path;
+                              const isRouteActive = location === fullUrl;
+                              return (
+                                <SidebarMenuItem key={route.path}>
+                                  <SidebarMenuButton asChild isActive={isRouteActive}>
+                                    <Link 
+                                      href={fullUrl}
+                                      onClick={handleLinkClick}
+                                      data-testid={`link-${supplier.key}-${route.title.toLowerCase()}`}
+                                    >
+                                      <route.icon className="h-4 w-4" />
+                                      <span>{route.title}</span>
+                                    </Link>
+                                  </SidebarMenuButton>
+                                </SidebarMenuItem>
+                              );
+                            })}
+                          </SidebarMenu>
+                        </CollapsibleContent>
+                      </SidebarMenuItem>
+                    </Collapsible>
+                  );
+                })}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
       </SidebarContent>
 
       <SidebarFooter className="p-4 border-t border-sidebar-border">
