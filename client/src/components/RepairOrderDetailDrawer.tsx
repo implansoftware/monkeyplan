@@ -1221,21 +1221,31 @@ export function RepairOrderDetailDrawer({
                         </div>
                       </div>
                     )}
-                    {/* Lock Code */}
-                    {acceptance.hasLockCode && acceptance.lockCode && (
-                      <div>
-                        <p className="text-sm text-muted-foreground">Codice Sblocco</p>
-                        <p className="text-sm font-mono" data-testid="text-lock-code">{acceptance.lockCode}</p>
-                      </div>
-                    )}
-                    {acceptance.hasLockCode && acceptance.lockPattern && (
-                      <div>
-                        <p className="text-sm text-muted-foreground mb-2">Pattern Sblocco</p>
-                        <PatternLock 
-                          value={acceptance.lockPattern} 
-                          readOnly 
-                        />
-                        <p className="sr-only" data-testid="text-lock-pattern">{acceptance.lockPattern}</p>
+                    {/* Lock Code Section */}
+                    {acceptance.hasLockCode && (
+                      <div className="space-y-2">
+                        <p className="text-sm text-muted-foreground font-medium">Codici di Sblocco</p>
+                        {acceptance.lockCode && (
+                          <div>
+                            <p className="text-xs text-muted-foreground">PIN/Password:</p>
+                            <p className="text-sm font-mono" data-testid="text-lock-code">{acceptance.lockCode}</p>
+                          </div>
+                        )}
+                        {acceptance.lockPattern && (
+                          <div>
+                            <p className="text-xs text-muted-foreground mb-1">Sequenza Pattern:</p>
+                            <PatternLock 
+                              value={acceptance.lockPattern} 
+                              readOnly 
+                            />
+                            <p className="sr-only" data-testid="text-lock-pattern">{acceptance.lockPattern}</p>
+                          </div>
+                        )}
+                        {!acceptance.lockCode && !acceptance.lockPattern && (
+                          <p className="text-sm text-muted-foreground italic">
+                            Cliente ha indicato presenza codice ma non fornito
+                          </p>
+                        )}
                       </div>
                     )}
                     {/* Acceptance Date */}
