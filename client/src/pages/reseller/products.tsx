@@ -108,6 +108,8 @@ export default function ResellerProducts() {
   const [editDeviceCompatibilities, setEditDeviceCompatibilities] = useState<DeviceCompatibilityWithNames[]>([]);
   const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set());
   const [isLoadingCompatibilities, setIsLoadingCompatibilities] = useState(false);
+  const [deviceSearchQuery, setDeviceSearchQuery] = useState("");
+  const [editDeviceSearchQuery, setEditDeviceSearchQuery] = useState("");
   const { toast } = useToast();
 
   const { data: products = [], isLoading } = useQuery<EnrichedProduct[]>({
@@ -274,6 +276,26 @@ export default function ResellerProducts() {
   // Device compatibility helper functions
   const getModelsForBrand = (brandId: string) => {
     return deviceModels.filter(m => m.brandId === brandId);
+  };
+
+  const getFilteredBrands = (searchTerm: string) => {
+    if (!searchTerm.trim()) return deviceBrands;
+    const lowerSearch = searchTerm.toLowerCase();
+    return deviceBrands.filter(brand => {
+      const brandMatch = brand.name.toLowerCase().includes(lowerSearch);
+      const models = getModelsForBrand(brand.id);
+      const modelMatch = models.some(m => m.modelName.toLowerCase().includes(lowerSearch));
+      return brandMatch || modelMatch;
+    });
+  };
+
+  const getFilteredModelsForBrand = (brandId: string, searchTerm: string) => {
+    const models = getModelsForBrand(brandId);
+    if (!searchTerm.trim()) return models;
+    const lowerSearch = searchTerm.toLowerCase();
+    const brand = deviceBrands.find(b => b.id === brandId);
+    if (brand?.name.toLowerCase().includes(lowerSearch)) return models;
+    return models.filter(m => m.modelName.toLowerCase().includes(lowerSearch));
   };
 
   const toggleBrandExpansion = (brandId: string) => {
@@ -478,6 +500,7 @@ export default function ResellerProducts() {
     setEditDialogOpen(true);
     setLoadingEditStock(true);
     setExpandedBrands(new Set());
+    setEditDeviceSearchQuery("");
     
     try {
       const res = await fetch(`/api/reseller/products/${product.id}/stock`, {
@@ -1127,9 +1150,20 @@ export default function ResellerProducts() {
                       </div>
                     )}
                     
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        placeholder="Cerca brand o modello..."
+                        value={deviceSearchQuery}
+                        onChange={(e) => setDeviceSearchQuery(e.target.value)}
+                        className="pl-9"
+                        data-testid="input-search-devices"
+                      />
+                    </div>
+                    
                     <div className="border rounded-md max-h-64 overflow-y-auto">
-                      {deviceBrands.map(brand => {
-                        const models = getModelsForBrand(brand.id);
+                      {getFilteredBrands(deviceSearchQuery).map(brand => {
+                        const models = getFilteredModelsForBrand(brand.id, deviceSearchQuery);
                         const isExpanded = expandedBrands.has(brand.id);
                         const hasBrandCompat = deviceCompatibilities.some(c => c.deviceBrandId === brand.id);
                         const hasAllModels = deviceCompatibilities.some(c => c.deviceBrandId === brand.id && !c.deviceModelId);
@@ -1187,7 +1221,7 @@ export default function ResellerProducts() {
               <Separator />
 
               <div className="flex justify-end gap-2">
-                <Button type="button" variant="outline" onClick={() => { setDialogOpen(false); setInitialStock([]); setDeviceCompatibilities([]); }}>
+                <Button type="button" variant="outline" onClick={() => { setDialogOpen(false); setInitialStock([]); setDeviceCompatibilities([]); setDeviceSearchQuery(""); }}>
                   Annulla
                 </Button>
                 <Button type="submit" disabled={createProductMutation.isPending} data-testid="button-submit-create">
@@ -1576,9 +1610,20 @@ export default function ResellerProducts() {
                           </div>
                         )}
                         
+                        <div className="relative">
+                          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                          <Input
+                            placeholder="Cerca brand o modello..."
+                            value={editDeviceSearchQuery}
+                            onChange={(e) => setEditDeviceSearchQuery(e.target.value)}
+                            className="pl-9"
+                            data-testid="input-search-edit-devices"
+                          />
+                        </div>
+                        
                         <div className="border rounded-md max-h-64 overflow-y-auto">
-                          {deviceBrands.map(brand => {
-                            const models = getModelsForBrand(brand.id);
+                          {getFilteredBrands(editDeviceSearchQuery).map(brand => {
+                            const models = getFilteredModelsForBrand(brand.id, editDeviceSearchQuery);
                             const isExpanded = expandedBrands.has(brand.id);
                             const hasBrandCompat = editDeviceCompatibilities.some(c => c.deviceBrandId === brand.id);
                             const hasAllModels = editDeviceCompatibilities.some(c => c.deviceBrandId === brand.id && !c.deviceModelId);
@@ -1645,6 +1690,7 @@ export default function ResellerProducts() {
                       setEditingProduct(null); 
                       setEditStock([]); 
                       setEditDeviceCompatibilities([]);
+                      setEditDeviceSearchQuery("");
                     }}
                   >
                     Annulla
