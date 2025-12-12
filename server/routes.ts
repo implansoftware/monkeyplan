@@ -2470,7 +2470,8 @@ export function registerRoutes(app: Express): Server {
     try {
       if (!req.user) return res.status(401).send("Non autorizzato");
       
-      const resellerId = req.user.role === 'reseller' ? req.user.id : req.user.resellerId;
+      const context = getEffectiveContext(req);
+      const resellerId = context.resellerId;
       if (!resellerId) return res.status(400).send("Rivenditore non trovato");
       
       const includeGlobal = req.query.includeGlobal === 'true';
@@ -2577,7 +2578,8 @@ export function registerRoutes(app: Express): Server {
     try {
       if (!req.user) return res.status(401).send("Non autorizzato");
       
-      const resellerId = req.user.role === 'reseller' ? req.user.id : req.user.resellerId;
+      const context = getEffectiveContext(req);
+      const resellerId = context.resellerId;
       if (!resellerId) return res.status(400).send("Rivenditore non trovato");
       
       const includeGlobal = req.query.includeGlobal === 'true';
@@ -2765,22 +2767,25 @@ export function registerRoutes(app: Express): Server {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
+      const context = getEffectiveContext(req);
+      if (!context.resellerId) return res.status(400).send("Rivenditore non trovato");
+      
       // Ottieni tutti i prodotti (globali admin + propri del reseller)
       const allProducts = await storage.listProducts();
       
       // Filtra: prodotti globali (createdBy null) + prodotti propri
       const visibleProducts = allProducts.filter(p => 
-        p.createdBy === null || p.createdBy === req.user!.id
+        p.createdBy === null || p.createdBy === context.resellerId
       );
       
       // Ottieni prezzi personalizzati per questo reseller
-      const customPrices = await storage.listProductPrices({ resellerId: req.user.id });
+      const customPrices = await storage.listProductPrices({ resellerId: context.resellerId });
       const priceMap = new Map(customPrices.map(cp => [cp.productId, cp]));
       
       // Arricchisci prodotti con prezzi effettivi
       const enrichedProducts = visibleProducts.map(product => {
         const customPrice = priceMap.get(product.id);
-        const isOwn = product.createdBy === req.user!.id;
+        const isOwn = product.createdBy === context.resellerId;
         
         return {
           ...product,
@@ -2994,7 +2999,10 @@ export function registerRoutes(app: Express): Server {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
-      const productsWithStock = await storage.getResellerProductsWithStock(req.user.id);
+      const context = getEffectiveContext(req);
+      if (!context.resellerId) return res.status(400).send("Rivenditore non trovato");
+      
+      const productsWithStock = await storage.getResellerProductsWithStock(context.resellerId);
       res.json(productsWithStock);
     } catch (error: any) {
       res.status(500).send(error.message);

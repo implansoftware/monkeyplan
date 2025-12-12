@@ -49,7 +49,12 @@ export function ContextSwitcher() {
         return typeof key === 'string' && (
           key.startsWith('/api/repair-orders') ||
           key.startsWith('/api/customers') ||
-          key.startsWith('/api/repair-centers')
+          key.startsWith('/api/repair-centers') ||
+          key.startsWith('/api/reseller/products') ||
+          key.startsWith('/api/reseller/device-brands') ||
+          key.startsWith('/api/reseller/device-models') ||
+          key.startsWith('/api/reseller/team') ||
+          key.startsWith('/api/reseller/inventory')
         );
       }
     });
