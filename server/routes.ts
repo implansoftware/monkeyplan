@@ -3136,9 +3136,17 @@ export function registerRoutes(app: Express): Server {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
+      // Use effective context (may be viewing specific repair center)
+      const context = getEffectiveContext(req);
+      
       // Get reseller's repair centers
       const allCenters = await storage.listRepairCenters();
-      const resellerCenters = allCenters.filter(c => c.resellerId === req.user!.id);
+      let resellerCenters = allCenters.filter(c => c.resellerId === context.resellerId);
+      
+      // If viewing specific repair center, filter to just that center
+      if (context.repairCenterId) {
+        resellerCenters = resellerCenters.filter(c => c.id === context.repairCenterId);
+      }
       
       if (resellerCenters.length === 0) {
         return res.json([]);
@@ -3148,7 +3156,7 @@ export function registerRoutes(app: Express): Server {
       
       // Get reseller's own products
       const allProducts = await storage.listProducts();
-      const resellerProducts = allProducts.filter(p => p.createdBy === req.user!.id);
+      const resellerProducts = allProducts.filter(p => p.createdBy === context.resellerId);
       const productIds = resellerProducts.map(p => p.id);
       
       // Get all movements and filter by reseller's products and centers
@@ -3517,6 +3525,9 @@ export function registerRoutes(app: Express): Server {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
+      // Use effective context (may be viewing specific repair center)
+      const context = getEffectiveContext(req);
+      
       const order = await storage.getSupplierOrder(req.params.id);
       if (!order) {
         return res.status(404).send("Ordine non trovato");
@@ -3524,9 +3535,14 @@ export function registerRoutes(app: Express): Server {
       
       // Verify reseller has access to this order's repair center
       const allCenters = await storage.listRepairCenters();
-      const resellerCenterIds = allCenters
-        .filter(c => c.resellerId === req.user!.id)
-        .map(c => c.id);
+      let resellerCenters = allCenters.filter(c => c.resellerId === context.resellerId);
+      
+      // If viewing specific repair center, only allow access to that center's data
+      if (context.repairCenterId) {
+        resellerCenters = resellerCenters.filter(c => c.id === context.repairCenterId);
+      }
+      
+      const resellerCenterIds = resellerCenters.map(c => c.id);
       
       if (!resellerCenterIds.includes(order.repairCenterId)) {
         return res.status(403).send("Accesso negato");
@@ -3599,6 +3615,9 @@ export function registerRoutes(app: Express): Server {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
+      // Use effective context (may be viewing specific repair center)
+      const context = getEffectiveContext(req);
+      
       const ret = await storage.getSupplierReturn(req.params.id);
       if (!ret) {
         return res.status(404).send("Reso non trovato");
@@ -3606,9 +3625,14 @@ export function registerRoutes(app: Express): Server {
       
       // Verify reseller has access to this return's repair center
       const allCenters = await storage.listRepairCenters();
-      const resellerCenterIds = allCenters
-        .filter(c => c.resellerId === req.user!.id)
-        .map(c => c.id);
+      let resellerCenters = allCenters.filter(c => c.resellerId === context.resellerId);
+      
+      // If viewing specific repair center, only allow access to that center's data
+      if (context.repairCenterId) {
+        resellerCenters = resellerCenters.filter(c => c.id === context.repairCenterId);
+      }
+      
+      const resellerCenterIds = resellerCenters.map(c => c.id);
       
       if (!resellerCenterIds.includes(ret.repairCenterId)) {
         return res.status(403).send("Accesso negato");
@@ -3891,6 +3915,9 @@ export function registerRoutes(app: Express): Server {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
+      // Use effective context (may be viewing specific repair center)
+      const context = getEffectiveContext(req);
+      
       const doc = await storage.getPartsLoadDocument(req.params.id);
       if (!doc) {
         return res.status(404).send("Documento non trovato");
@@ -3898,9 +3925,14 @@ export function registerRoutes(app: Express): Server {
       
       // Verify reseller has access to this document's repair center
       const allCenters = await storage.listRepairCenters();
-      const resellerCenterIds = allCenters
-        .filter(c => c.resellerId === req.user!.id)
-        .map(c => c.id);
+      let resellerCenters = allCenters.filter(c => c.resellerId === context.resellerId);
+      
+      // If viewing specific repair center, only allow access to that center's data
+      if (context.repairCenterId) {
+        resellerCenters = resellerCenters.filter(c => c.id === context.repairCenterId);
+      }
+      
+      const resellerCenterIds = resellerCenters.map(c => c.id);
       
       if (!resellerCenterIds.includes(doc.repairCenterId)) {
         return res.status(403).send("Accesso negato");
