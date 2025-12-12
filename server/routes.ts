@@ -1931,6 +1931,18 @@ export function registerRoutes(app: Express): Server {
 
   // ============ RESELLER ROUTES ============
 
+  // Helper to get effective reseller/repair center ID based on context switching
+  function getEffectiveContext(req: Request): { resellerId: string; repairCenterId?: string; isActingAs: boolean } {
+    const actingAs = (req.session as any).actingAs;
+    if (actingAs && actingAs.type === 'reseller') {
+      return { resellerId: actingAs.id, isActingAs: true };
+    }
+    if (actingAs && actingAs.type === 'repair_center') {
+      return { resellerId: req.user!.id, repairCenterId: actingAs.id, isActingAs: true };
+    }
+    return { resellerId: req.user!.id, isActingAs: false };
+  }
+
   // Context Switching for Parent Resellers (Franchising/GDO)
   // Get available entities to switch context to
   app.get("/api/reseller/context-options", requireRole("reseller"), async (req, res) => {
@@ -2047,13 +2059,25 @@ export function registerRoutes(app: Express): Server {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
 
-      const repairs = await storage.listRepairOrders({ resellerId: req.user.id });
-      const customers = await storage.listUsers(); // Filter by reseller's customers in production
+      // Use effective context (may be acting as sub-reseller or viewing repair center)
+      const context = getEffectiveContext(req);
+      
+      let repairs;
+      let customers;
+      
+      if (context.repairCenterId) {
+        // Viewing specific repair center
+        repairs = await storage.listRepairOrders({ repairCenterId: context.repairCenterId });
+        customers = [];
+      } else {
+        repairs = await storage.listRepairOrders({ resellerId: context.resellerId });
+        customers = await storage.listCustomers({ resellerId: context.resellerId });
+      }
 
       const stats = {
         totalOrders: repairs.length,
         activeRepairs: repairs.filter(r => r.status === "in_progress" || r.status === "pending").length,
-        totalCustomers: customers.filter(c => c.role === "customer").length,
+        totalCustomers: customers.length,
         pendingRepairs: repairs.filter(r => r.status === "pending").length,
       };
 
@@ -2067,12 +2091,22 @@ export function registerRoutes(app: Express): Server {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
+      // Use effective context (may be acting as sub-reseller or viewing repair center)
+      const context = getEffectiveContext(req);
+      
+      // If acting as repair center, filter by that center only
+      if (context.repairCenterId) {
+        const repairs = await storage.listRepairOrders({ repairCenterId: context.repairCenterId });
+        repairs.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+        return res.json(repairs);
+      }
+      
       // Get repairs where resellerId matches OR customer belongs to this reseller
-      const customers = await storage.listCustomers({ resellerId: req.user.id });
+      const customers = await storage.listCustomers({ resellerId: context.resellerId });
       const customerIds = customers.map(c => c.id);
       
       // Get repairs by resellerId OR by customerIds
-      const repairsByReseller = await storage.listRepairOrders({ resellerId: req.user.id });
+      const repairsByReseller = await storage.listRepairOrders({ resellerId: context.resellerId });
       const repairsByCustomers = customerIds.length > 0 
         ? await storage.listRepairOrders({ customerIds })
         : [];
@@ -2140,10 +2174,18 @@ export function registerRoutes(app: Express): Server {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
+      // Use effective context (may be acting as sub-reseller)
+      const context = getEffectiveContext(req);
+      
+      // If viewing repair center only, customers aren't relevant
+      if (context.repairCenterId) {
+        return res.json([]);
+      }
+      
       const allUsers = await storage.listUsers();
-      // Filter customers that belong to this reseller
+      // Filter customers that belong to this reseller (or acting-as reseller)
       const customers = allUsers.filter(user => 
-        user.role === "customer" && user.resellerId === req.user!.id
+        user.role === "customer" && user.resellerId === context.resellerId
       );
       res.json(customers);
     } catch (error: any) {
