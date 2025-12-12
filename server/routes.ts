@@ -2241,7 +2241,10 @@ export function registerRoutes(app: Express): Server {
     try {
       if (!req.user) return res.status(401).send("Non autorizzato");
       
-      const staff = await storage.listResellerStaff(req.user.id);
+      // Use context switching - team belongs to reseller, not repair center
+      const context = getEffectiveContext(req);
+      // Note: When acting as repair center, still show the reseller's team (not center-specific)
+      const staff = await storage.listResellerStaff(context.resellerId);
       
       // Get permissions for each staff member
       const staffWithPermissions = await Promise.all(
@@ -8975,8 +8978,15 @@ export function registerRoutes(app: Express): Server {
           customers = await storage.listCustomers(resellerFilter ? { resellerId: resellerFilter } : undefined);
           break;
         case 'reseller':
-          // Reseller sees only their customers
-          customers = await storage.listCustomers({ resellerId: req.user.id });
+          // Use context switching to determine effective reseller/repair center
+          const context = getEffectiveContext(req);
+          if (context.repairCenterId) {
+            // Acting as a specific repair center - show customers from that center's orders
+            customers = await storage.listCustomers({ repairCenterId: context.repairCenterId });
+          } else {
+            // Acting as reseller (own or sub-reseller) - show their customers
+            customers = await storage.listCustomers({ resellerId: context.resellerId });
+          }
           break;
         case 'repair_center':
           // Repair center sees customers from their repair orders
