@@ -5915,8 +5915,9 @@ export function registerRoutes(app: Express): Server {
         // Customer sees only own invoices
         invoices = await storage.listInvoices({ customerId: req.user.id });
       } else if (req.user.role === 'reseller') {
-        // Reseller sees invoices for their customers (via repair orders they created)
-        invoices = await storage.listInvoices({ resellerId: req.user.id });
+        // Reseller sees invoices for their customers (respecting context switch)
+        const context = getEffectiveContext(req);
+        invoices = await storage.listInvoices({ resellerId: context.resellerId });
       } else {
         // Repair Center: no access to invoices
         return res.status(403).send("Access denied");
@@ -9498,8 +9499,15 @@ export function registerRoutes(app: Express): Server {
         stats.lowStockProducts = lowStockProducts;
         
       } else if (req.user.role === 'reseller') {
-        // Reseller sees own orders and customers stats
-        const ownOrders = await storage.listRepairOrders({ resellerId: req.user.id });
+        // Reseller sees own orders and customers stats (respecting context switch)
+        const context = getEffectiveContext(req);
+        
+        let ownOrders;
+        if (context.repairCenterId) {
+          ownOrders = await storage.listRepairOrders({ repairCenterId: context.repairCenterId });
+        } else {
+          ownOrders = await storage.listRepairOrders({ resellerId: context.resellerId });
+        }
         
         const repairsByStatus = {
           pending: ownOrders.filter(r => r.status === 'pending').length,

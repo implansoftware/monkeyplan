@@ -43,6 +43,8 @@ export function ContextSwitcher() {
   const invalidateAllContextDependentQueries = () => {
     queryClient.invalidateQueries({ queryKey: ['/api/reseller/context'] });
     queryClient.invalidateQueries({ queryKey: ['/api/reseller'] });
+    queryClient.invalidateQueries({ queryKey: ['/api/stats'] });
+    queryClient.invalidateQueries({ queryKey: ['/api/invoices'] });
     queryClient.invalidateQueries({ 
       predicate: (query) => {
         const key = query.queryKey[0];
