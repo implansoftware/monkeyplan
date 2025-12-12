@@ -1931,6 +1931,118 @@ export function registerRoutes(app: Express): Server {
 
   // ============ RESELLER ROUTES ============
 
+  // Context Switching for Parent Resellers (Franchising/GDO)
+  // Get available entities to switch context to
+  app.get("/api/reseller/context-options", requireRole("reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      // Only franchising/gdo resellers can switch context
+      if (req.user.resellerCategory !== 'franchising' && req.user.resellerCategory !== 'gdo') {
+        return res.json({ childResellers: [], repairCenters: [] });
+      }
+      
+      // Get child resellers (sub-resellers with parentResellerId = current user)
+      const childResellers = await storage.getChildResellers(req.user.id);
+      
+      // Get repair centers owned by this reseller
+      const repairCenters = await storage.getRepairCentersForReseller(req.user.id);
+      
+      res.json({
+        childResellers: childResellers.map(r => ({
+          id: r.id,
+          name: r.fullName,
+          email: r.email,
+          username: r.username,
+        })),
+        repairCenters: repairCenters.map(rc => ({
+          id: rc.id,
+          name: rc.name,
+          city: rc.city,
+        })),
+      });
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // Set active context (switch to view sub-reseller or repair center data)
+  app.post("/api/reseller/context", requireRole("reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      // Only franchising/gdo resellers can switch context
+      if (req.user.resellerCategory !== 'franchising' && req.user.resellerCategory !== 'gdo') {
+        return res.status(403).send("Solo i rivenditori franchising/GDO possono cambiare contesto");
+      }
+      
+      const { type, id } = req.body;
+      
+      if (!type || !id) {
+        return res.status(400).send("type e id sono obbligatori");
+      }
+      
+      if (type !== 'reseller' && type !== 'repair_center') {
+        return res.status(400).send("type deve essere 'reseller' o 'repair_center'");
+      }
+      
+      // Validate ownership
+      if (type === 'reseller') {
+        const childResellers = await storage.getChildResellers(req.user.id);
+        const child = childResellers.find(r => r.id === id);
+        if (!child) {
+          return res.status(403).send("Non hai accesso a questo rivenditore");
+        }
+        (req.session as any).actingAs = { type: 'reseller', id, name: child.fullName };
+      } else {
+        const repairCenters = await storage.getRepairCentersForReseller(req.user.id);
+        const center = repairCenters.find(rc => rc.id === id);
+        if (!center) {
+          return res.status(403).send("Non hai accesso a questo centro di riparazione");
+        }
+        (req.session as any).actingAs = { type: 'repair_center', id, name: center.name };
+      }
+      
+      res.json({ 
+        success: true, 
+        actingAs: (req.session as any).actingAs 
+      });
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // Clear active context (return to main reseller view)
+  app.delete("/api/reseller/context", requireRole("reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      // Only franchising/gdo resellers can switch context
+      if (req.user.resellerCategory !== 'franchising' && req.user.resellerCategory !== 'gdo') {
+        return res.status(403).send("Solo i rivenditori franchising/GDO possono cambiare contesto");
+      }
+      
+      delete (req.session as any).actingAs;
+      
+      res.json({ success: true, actingAs: null });
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // Get current context status
+  app.get("/api/reseller/context", requireRole("reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const actingAs = (req.session as any).actingAs || null;
+      
+      res.json({ actingAs });
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
   app.get("/api/reseller/stats", requireRole("reseller"), async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");

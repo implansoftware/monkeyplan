@@ -51,6 +51,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Link, useLocation } from "wouter";
+import { ContextSwitcher } from "@/components/ContextSwitcher";
 
 // Menu items per ruolo
 const menuItems = {
@@ -212,6 +213,12 @@ export function AppSidebar() {
           </div>
         </div>
       </SidebarHeader>
+
+      {isReseller && (
+        <div className="py-3 border-b border-sidebar-border">
+          <ContextSwitcher />
+        </div>
+      )}
 
       <SidebarContent>
         {Object.entries(groupedItems).map(([group, groupItems]) => (

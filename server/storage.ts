@@ -85,6 +85,10 @@ export interface IStorage {
   deleteUser(id: string): Promise<void>;
   createCustomerWithBilling(userData: InsertUser, billingInfo: InsertBillingData): Promise<{ user: User; billing: BillingData }>;
   
+  // Context Switching (for parent resellers managing sub-resellers/repair centers)
+  getChildResellers(parentResellerId: string): Promise<User[]>;
+  getRepairCentersForReseller(resellerId: string): Promise<RepairCenter[]>;
+  
   // Repair Centers
   listRepairCenters(): Promise<RepairCenter[]>;
   getRepairCenter(id: string): Promise<RepairCenter | undefined>;
@@ -701,6 +705,34 @@ export class DatabaseStorage implements IStorage {
 
   async deleteUser(id: string): Promise<void> {
     await db.delete(users).where(eq(users.id, id));
+  }
+
+  // Context Switching
+  async getChildResellers(parentResellerId: string): Promise<User[]> {
+    return await db
+      .select()
+      .from(users)
+      .where(
+        and(
+          eq(users.role, 'reseller'),
+          eq(users.parentResellerId, parentResellerId),
+          eq(users.isActive, true)
+        )
+      )
+      .orderBy(users.fullName);
+  }
+
+  async getRepairCentersForReseller(resellerId: string): Promise<RepairCenter[]> {
+    return await db
+      .select()
+      .from(repairCenters)
+      .where(
+        and(
+          eq(repairCenters.resellerId, resellerId),
+          eq(repairCenters.isActive, true)
+        )
+      )
+      .orderBy(repairCenters.name);
   }
 
   // Repair Centers
