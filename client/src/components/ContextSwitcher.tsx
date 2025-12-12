@@ -40,24 +40,33 @@ export function ContextSwitcher() {
     queryKey: ['/api/reseller/context'],
   });
 
+  const invalidateAllContextDependentQueries = () => {
+    queryClient.invalidateQueries({ queryKey: ['/api/reseller/context'] });
+    queryClient.invalidateQueries({ queryKey: ['/api/reseller'] });
+    queryClient.invalidateQueries({ 
+      predicate: (query) => {
+        const key = query.queryKey[0];
+        return typeof key === 'string' && (
+          key.startsWith('/api/repair-orders') ||
+          key.startsWith('/api/customers') ||
+          key.startsWith('/api/repair-centers')
+        );
+      }
+    });
+  };
+
   const setContextMutation = useMutation({
     mutationFn: async ({ type, id }: { type: string; id: string }) => {
       return apiRequest('POST', '/api/reseller/context', { type, id });
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/reseller/context'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/reseller'] });
-    },
+    onSuccess: invalidateAllContextDependentQueries,
   });
 
   const clearContextMutation = useMutation({
     mutationFn: async () => {
       return apiRequest('DELETE', '/api/reseller/context');
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/reseller/context'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/reseller'] });
-    },
+    onSuccess: invalidateAllContextDependentQueries,
   });
 
   const hasOptions = options && (options.childResellers.length > 0 || options.repairCenters.length > 0);

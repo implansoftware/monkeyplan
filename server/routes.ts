@@ -5111,14 +5111,17 @@ export function registerRoutes(app: Express): Server {
         // Customers see only their own orders
         filters.customerId = req.user.id;
       } else if (req.user.role === 'reseller') {
-        // Resellers see orders of their customers (customers who belong to this reseller)
-        const resellerCustomers = await storage.listCustomers({ resellerId: req.user.id });
-        const customerIds = resellerCustomers.map(c => c.id);
-        if (customerIds.length === 0) {
-          // No customers means no orders
-          return res.json([]);
+        // Use context switching to determine effective reseller/repair center
+        const context = getEffectiveContext(req);
+        
+        if (context.repairCenterId) {
+          // Acting as a specific repair center - filter by that center only
+          filters.repairCenterId = context.repairCenterId;
+        } else {
+          // Acting as reseller (own or sub-reseller) - filter by resellerId
+          // This will return orders where resellerId matches OR orders of customers belonging to this reseller
+          filters.resellerId = context.resellerId;
         }
-        filters.customerIds = customerIds;
       } else if (req.user.role === 'repair_center') {
         // Repair centers see only orders explicitly assigned to their center
         if (!req.user.repairCenterId) {

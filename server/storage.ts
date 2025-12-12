@@ -883,7 +883,29 @@ export class DatabaseStorage implements IStorage {
       if (filters.customerIds && filters.customerIds.length > 0) {
         conditions.push(inArray(repairOrders.customerId, filters.customerIds));
       }
-      if (filters.resellerId) conditions.push(eq(repairOrders.resellerId, filters.resellerId));
+      if (filters.resellerId) {
+        // For reseller filtering, we need to match orders where:
+        // 1. The order's resellerId matches directly, OR
+        // 2. The order's customer belongs to this reseller
+        const resellerCustomers = await db.select({ id: users.id })
+          .from(users)
+          .where(and(
+            eq(users.resellerId, filters.resellerId),
+            eq(users.role, 'customer')
+          ));
+        const resellerCustomerIds = resellerCustomers.map(c => c.id);
+        
+        if (resellerCustomerIds.length > 0) {
+          // Orders with matching resellerId OR orders belonging to reseller's customers
+          conditions.push(or(
+            eq(repairOrders.resellerId, filters.resellerId),
+            inArray(repairOrders.customerId, resellerCustomerIds)
+          ));
+        } else {
+          // No customers, just match by resellerId
+          conditions.push(eq(repairOrders.resellerId, filters.resellerId));
+        }
+      }
       if (filters.repairCenterId) conditions.push(eq(repairOrders.repairCenterId, filters.repairCenterId));
       if (filters.status) conditions.push(eq(repairOrders.status, filters.status as any));
       
