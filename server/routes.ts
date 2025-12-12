@@ -2707,16 +2707,24 @@ export function registerRoutes(app: Express): Server {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
+      // Use effective context (may be viewing specific repair center)
+      const context = getEffectiveContext(req);
+      
       // Get all repair centers associated with this reseller
       const allCenters = await storage.listRepairCenters();
-      const resellerCenters = allCenters.filter(c => c.resellerId === req.user!.id);
+      let resellerCenters = allCenters.filter(c => c.resellerId === context.resellerId);
+      
+      // If viewing specific repair center, filter to just that center
+      if (context.repairCenterId) {
+        resellerCenters = resellerCenters.filter(c => c.id === context.repairCenterId);
+      }
       
       if (resellerCenters.length === 0) {
         return res.json([]);
       }
       
       // Get inventory and products
-      const inventory = await storage.listInventoryStockByReseller(req.user.id);
+      const inventory = await storage.listInventoryStockByReseller(context.resellerId);
       const productsList = await storage.listProducts();
       
       // Create lookup maps
@@ -2725,17 +2733,23 @@ export function registerRoutes(app: Express): Server {
       
       // Enrich inventory with product and repair center details
       // Include isOwn flag to distinguish reseller's own products from global catalog
-      const enrichedInventory = inventory.map(item => {
+      // Filter by repair center if context specifies one
+      let enrichedInventory = inventory.map(item => {
         const product = productsMap.get(item.productId);
         return {
           ...item,
           product: product ? {
             ...product,
-            isOwn: product.createdBy === req.user!.id,
+            isOwn: product.createdBy === context.resellerId,
           } : null,
           repairCenter: centersMap.get(item.repairCenterId) || null,
         };
       });
+      
+      // Filter to specific repair center if selected
+      if (context.repairCenterId) {
+        enrichedInventory = enrichedInventory.filter(item => item.repairCenterId === context.repairCenterId);
+      }
       
       res.json(enrichedInventory);
     } catch (error: any) {
@@ -3173,9 +3187,19 @@ export function registerRoutes(app: Express): Server {
   app.get("/api/reseller/repair-centers", requireRole("reseller"), async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
+      
+      // Use effective context (may be viewing specific repair center)
+      const context = getEffectiveContext(req);
+      
       const allCenters = await storage.listRepairCenters();
       // Return all fields for management, filter by resellerId
-      const resellerCenters = allCenters.filter(c => c.resellerId === req.user!.id);
+      let resellerCenters = allCenters.filter(c => c.resellerId === context.resellerId);
+      
+      // If viewing specific repair center, filter to just that center
+      if (context.repairCenterId) {
+        resellerCenters = resellerCenters.filter(c => c.id === context.repairCenterId);
+      }
+      
       res.json(resellerCenters);
     } catch (error: any) {
       res.status(500).send(error.message);
@@ -3449,9 +3473,18 @@ export function registerRoutes(app: Express): Server {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
+      // Use effective context (may be viewing specific repair center)
+      const context = getEffectiveContext(req);
+      
       // Get repair centers associated with this reseller
       const allCenters = await storage.listRepairCenters();
-      const resellerCenters = allCenters.filter(c => c.resellerId === req.user!.id);
+      let resellerCenters = allCenters.filter(c => c.resellerId === context.resellerId);
+      
+      // If viewing specific repair center, filter to just that center
+      if (context.repairCenterId) {
+        resellerCenters = resellerCenters.filter(c => c.id === context.repairCenterId);
+      }
+      
       const resellerCenterIds = resellerCenters.map(c => c.id);
       
       if (resellerCenterIds.length === 0) {
@@ -3522,9 +3555,18 @@ export function registerRoutes(app: Express): Server {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
+      // Use effective context (may be viewing specific repair center)
+      const context = getEffectiveContext(req);
+      
       // Get repair centers associated with this reseller
       const allCenters = await storage.listRepairCenters();
-      const resellerCenters = allCenters.filter(c => c.resellerId === req.user!.id);
+      let resellerCenters = allCenters.filter(c => c.resellerId === context.resellerId);
+      
+      // If viewing specific repair center, filter to just that center
+      if (context.repairCenterId) {
+        resellerCenters = resellerCenters.filter(c => c.id === context.repairCenterId);
+      }
+      
       const resellerCenterIds = resellerCenters.map(c => c.id);
       
       if (resellerCenterIds.length === 0) {
@@ -3805,9 +3847,18 @@ export function registerRoutes(app: Express): Server {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
+      // Use effective context (may be viewing specific repair center)
+      const context = getEffectiveContext(req);
+      
       // Get repair centers associated with this reseller
       const allCenters = await storage.listRepairCenters();
-      const resellerCenters = allCenters.filter(c => c.resellerId === req.user!.id);
+      let resellerCenters = allCenters.filter(c => c.resellerId === context.resellerId);
+      
+      // If viewing specific repair center, filter to just that center
+      if (context.repairCenterId) {
+        resellerCenters = resellerCenters.filter(c => c.id === context.repairCenterId);
+      }
+      
       const resellerCenterIds = resellerCenters.map(c => c.id);
       
       if (resellerCenterIds.length === 0) {
