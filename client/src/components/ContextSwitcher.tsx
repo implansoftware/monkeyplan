@@ -85,8 +85,8 @@ export function ContextSwitcher() {
     : 'all';
 
   return (
-    <div className="flex flex-col gap-2 px-2" data-testid="context-switcher">
-      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+    <div className="flex flex-col gap-1.5 px-3" data-testid="context-switcher">
+      <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground font-medium uppercase tracking-wide">
         <Users className="h-3 w-3" />
         <span>Visualizza come</span>
       </div>
@@ -96,7 +96,7 @@ export function ContextSwitcher() {
         disabled={setContextMutation.isPending || clearContextMutation.isPending}
       >
         <SelectTrigger 
-          className="w-full h-9"
+          className="w-full h-8 text-sm"
           data-testid="select-context-trigger"
         >
           <SelectValue placeholder="Seleziona contesto" />
@@ -157,13 +157,13 @@ export function ContextSwitcher() {
       </Select>
       
       {context?.actingAs && (
-        <div className="text-xs text-amber-600 dark:text-amber-400 flex items-center gap-1">
+        <div className="text-[11px] text-amber-600 dark:text-amber-400 flex items-center gap-1.5 mt-1">
           {context.actingAs.type === 'reseller' ? (
-            <Store className="h-3 w-3" />
+            <Store className="h-3 w-3 flex-shrink-0" />
           ) : (
-            <Building className="h-3 w-3" />
+            <Building className="h-3 w-3 flex-shrink-0" />
           )}
-          <span>Stai visualizzando: {context.actingAs.name}</span>
+          <span className="truncate">Visualizzando: {context.actingAs.name}</span>
         </div>
       )}
     </div>
