@@ -1949,16 +1949,14 @@ export function registerRoutes(app: Express): Server {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
-      // Only franchising/gdo resellers can switch context
-      if (req.user.resellerCategory !== 'franchising' && req.user.resellerCategory !== 'gdo') {
-        return res.json({ childResellers: [], repairCenters: [] });
-      }
-      
-      // Get child resellers (sub-resellers with parentResellerId = current user)
-      const childResellers = await storage.getChildResellers(req.user.id);
-      
-      // Get repair centers owned by this reseller
+      // Get repair centers owned by this reseller (all resellers can view their centers)
       const repairCenters = await storage.getRepairCentersForReseller(req.user.id);
+      
+      // Only franchising/gdo resellers can see child resellers
+      let childResellers: any[] = [];
+      if (req.user.resellerCategory === 'franchising' || req.user.resellerCategory === 'gdo') {
+        childResellers = await storage.getChildResellers(req.user.id);
+      }
       
       res.json({
         childResellers: childResellers.map(r => ({
@@ -1983,11 +1981,6 @@ export function registerRoutes(app: Express): Server {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
-      // Only franchising/gdo resellers can switch context
-      if (req.user.resellerCategory !== 'franchising' && req.user.resellerCategory !== 'gdo') {
-        return res.status(403).send("Solo i rivenditori franchising/GDO possono cambiare contesto");
-      }
-      
       const { type, id } = req.body;
       
       if (!type || !id) {
@@ -2000,6 +1993,10 @@ export function registerRoutes(app: Express): Server {
       
       // Validate ownership
       if (type === 'reseller') {
+        // Only franchising/gdo resellers can switch to sub-resellers
+        if (req.user.resellerCategory !== 'franchising' && req.user.resellerCategory !== 'gdo') {
+          return res.status(403).send("Solo i rivenditori franchising/GDO possono visualizzare sub-rivenditori");
+        }
         const childResellers = await storage.getChildResellers(req.user.id);
         const child = childResellers.find(r => r.id === id);
         if (!child) {
@@ -2007,6 +2004,7 @@ export function registerRoutes(app: Express): Server {
         }
         (req.session as any).actingAs = { type: 'reseller', id, name: child.fullName };
       } else {
+        // All resellers can view their repair centers
         const repairCenters = await storage.getRepairCentersForReseller(req.user.id);
         const center = repairCenters.find(rc => rc.id === id);
         if (!center) {
@@ -2029,11 +2027,7 @@ export function registerRoutes(app: Express): Server {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
-      // Only franchising/gdo resellers can switch context
-      if (req.user.resellerCategory !== 'franchising' && req.user.resellerCategory !== 'gdo') {
-        return res.status(403).send("Solo i rivenditori franchising/GDO possono cambiare contesto");
-      }
-      
+      // All resellers can clear context
       delete (req.session as any).actingAs;
       
       res.json({ success: true, actingAs: null });
