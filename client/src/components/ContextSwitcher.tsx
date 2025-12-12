@@ -8,7 +8,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Building, Store, Users } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
 
 interface ContextOption {
   id: string;
@@ -103,8 +102,8 @@ export function ContextSwitcher() {
         </SelectTrigger>
         <SelectContent>
           <SelectItem value="all" data-testid="select-context-all">
-            <div className="flex items-center gap-2">
-              <Store className="h-4 w-4" />
+            <div className="flex items-center gap-2 whitespace-nowrap">
+              <Store className="h-4 w-4 flex-shrink-0" />
               <span>Tutti i miei dati</span>
             </div>
           </SelectItem>
@@ -120,9 +119,9 @@ export function ContextSwitcher() {
                   value={`reseller:${reseller.id}`}
                   data-testid={`select-context-reseller-${reseller.id}`}
                 >
-                  <div className="flex items-center gap-2">
-                    <Store className="h-4 w-4" />
-                    <span>{reseller.name}</span>
+                  <div className="flex items-center gap-2 whitespace-nowrap">
+                    <Store className="h-4 w-4 flex-shrink-0" />
+                    <span className="truncate">{reseller.name}</span>
                   </div>
                 </SelectItem>
               ))}
@@ -140,14 +139,9 @@ export function ContextSwitcher() {
                   value={`repair_center:${center.id}`}
                   data-testid={`select-context-center-${center.id}`}
                 >
-                  <div className="flex items-center gap-2">
-                    <Building className="h-4 w-4" />
-                    <span>{center.name}</span>
-                    {center.city && (
-                      <Badge variant="outline" className="text-xs">
-                        {center.city}
-                      </Badge>
-                    )}
+                  <div className="flex items-center gap-2 whitespace-nowrap">
+                    <Building className="h-4 w-4 flex-shrink-0" />
+                    <span className="truncate">{center.name}</span>
                   </div>
                 </SelectItem>
               ))}
