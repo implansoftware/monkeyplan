@@ -45,6 +45,7 @@ export function ContextSwitcher() {
     queryClient.invalidateQueries({ queryKey: ['/api/reseller'] });
     queryClient.invalidateQueries({ queryKey: ['/api/stats'] });
     queryClient.invalidateQueries({ queryKey: ['/api/invoices'] });
+    queryClient.invalidateQueries({ queryKey: ['/api/reseller/customers'] });
     queryClient.invalidateQueries({ 
       predicate: (query) => {
         const key = query.queryKey[0];
@@ -56,7 +57,8 @@ export function ContextSwitcher() {
           key.startsWith('/api/reseller/device-brands') ||
           key.startsWith('/api/reseller/device-models') ||
           key.startsWith('/api/reseller/team') ||
-          key.startsWith('/api/reseller/inventory')
+          key.startsWith('/api/reseller/inventory') ||
+          key.startsWith('/api/reseller/customers')
         );
       }
     });
