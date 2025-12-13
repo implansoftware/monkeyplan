@@ -1,6 +1,7 @@
 import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { WebSocketServer, WebSocket } from "ws";
+import { z } from "zod";
 import { storage } from "./storage";
 import { setupAuth, hashPassword } from "./auth";
 import { scrypt, randomBytes, randomUUID } from "crypto";
