@@ -40,6 +40,11 @@ const PERMISSION_ACTIONS = [
   { id: "canDelete", label: "Eliminazione", icon: Trash2 },
 ];
 
+interface RepairCenter {
+  id: string;
+  name: string;
+}
+
 interface StaffMember {
   id: string;
   username: string;
@@ -49,6 +54,7 @@ interface StaffMember {
   isActive: boolean;
   createdAt: string;
   permissions: StaffPermission[];
+  assignedRepairCenters?: RepairCenter[];
 }
 
 interface StaffPermission {
@@ -80,6 +86,7 @@ export default function ResellerTeam() {
   const [selectedMember, setSelectedMember] = useState<StaffMember | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [localPermissions, setLocalPermissions] = useState<Record<string, Record<string, boolean>>>({});
+  const [localRepairCenterIds, setLocalRepairCenterIds] = useState<string[]>([]);
   const { toast } = useToast();
 
   const form = useForm<StaffFormValues>({
@@ -97,8 +104,12 @@ export default function ResellerTeam() {
     queryKey: ["/api/reseller/team"],
   });
 
+  const { data: repairCenters = [] } = useQuery<RepairCenter[]>({
+    queryKey: ["/api/reseller/repair-centers"],
+  });
+
   const createMutation = useMutation({
-    mutationFn: async (data: { user: StaffFormValues; permissions: any[] }) => {
+    mutationFn: async (data: { user: StaffFormValues; permissions: any[]; repairCenterIds?: string[] }) => {
       return apiRequest("POST", "/api/reseller/team", data);
     },
     onSuccess: () => {
@@ -106,6 +117,7 @@ export default function ResellerTeam() {
       setDialogOpen(false);
       form.reset();
       setLocalPermissions({});
+      setLocalRepairCenterIds([]);
       toast({
         title: "Membro staff creato",
         description: "Il nuovo membro del team è stato aggiunto con successo.",
@@ -121,7 +133,7 @@ export default function ResellerTeam() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: { user?: Partial<StaffFormValues>; permissions?: any[] } }) => {
+    mutationFn: async ({ id, data }: { id: string; data: { user?: Partial<StaffFormValues>; permissions?: any[]; repairCenterIds?: string[] } }) => {
       return apiRequest("PATCH", `/api/reseller/team/${id}`, data);
     },
     onSuccess: () => {
@@ -132,6 +144,7 @@ export default function ResellerTeam() {
       setIsEditing(false);
       form.reset();
       setLocalPermissions({});
+      setLocalRepairCenterIds([]);
       toast({
         title: "Aggiornato",
         description: "Le modifiche sono state salvate con successo.",
@@ -185,6 +198,7 @@ export default function ResellerTeam() {
       password: "",
     });
     setLocalPermissions({});
+    setLocalRepairCenterIds([]);
     setDialogOpen(true);
   };
 
@@ -198,6 +212,7 @@ export default function ResellerTeam() {
       phone: member.phone || "",
       password: "",
     });
+    setLocalRepairCenterIds(member.assignedRepairCenters?.map(rc => rc.id) || []);
     setDialogOpen(true);
   };
 
@@ -231,11 +246,12 @@ export default function ResellerTeam() {
         email: values.email,
         phone: values.phone,
       };
-      updateMutation.mutate({ id: selectedMember.id, data: { user: userData } });
+      updateMutation.mutate({ id: selectedMember.id, data: { user: userData, repairCenterIds: localRepairCenterIds } });
     } else {
       createMutation.mutate({
         user: values,
         permissions: permissionsArray,
+        repairCenterIds: localRepairCenterIds,
       });
     }
   };
@@ -355,6 +371,7 @@ export default function ResellerTeam() {
                   <TableHead>Username</TableHead>
                   <TableHead>Stato</TableHead>
                   <TableHead>Permessi</TableHead>
+                  <TableHead>Centri Assegnati</TableHead>
                   <TableHead>Data Creazione</TableHead>
                   <TableHead>Azioni</TableHead>
                 </TableRow>
@@ -378,6 +395,19 @@ export default function ResellerTeam() {
                       <Badge variant="secondary" data-testid={`badge-permissions-${member.id}`}>
                         {getPermissionCount(member)} permessi
                       </Badge>
+                    </TableCell>
+                    <TableCell>
+                      {member.assignedRepairCenters && member.assignedRepairCenters.length > 0 ? (
+                        <div className="flex flex-wrap gap-1">
+                          {member.assignedRepairCenters.map((rc) => (
+                            <Badge key={rc.id} variant="outline" data-testid={`badge-center-${member.id}-${rc.id}`}>
+                              {rc.name}
+                            </Badge>
+                          ))}
+                        </div>
+                      ) : (
+                        <span className="text-muted-foreground text-sm">-</span>
+                      )}
                     </TableCell>
                     <TableCell>{format(new Date(member.createdAt), "dd/MM/yyyy")}</TableCell>
                     <TableCell>
@@ -512,6 +542,41 @@ export default function ResellerTeam() {
                   )}
                 />
               </div>
+
+              {repairCenters.length > 0 && (
+                <div className="space-y-3">
+                  <Label className="text-base font-medium">Centri di Riparazione Assegnati</Label>
+                  <p className="text-sm text-muted-foreground">
+                    Seleziona i centri a cui questo collaboratore avrà accesso
+                  </p>
+                  <div className="border rounded-lg p-4 max-h-40 overflow-y-auto">
+                    <div className="space-y-2">
+                      {repairCenters.map((center) => (
+                        <div key={center.id} className="flex items-center space-x-2">
+                          <Checkbox
+                            id={`center-${center.id}`}
+                            checked={localRepairCenterIds.includes(center.id)}
+                            onCheckedChange={(checked) => {
+                              if (checked) {
+                                setLocalRepairCenterIds([...localRepairCenterIds, center.id]);
+                              } else {
+                                setLocalRepairCenterIds(localRepairCenterIds.filter(id => id !== center.id));
+                              }
+                            }}
+                            data-testid={`checkbox-center-${center.id}`}
+                          />
+                          <label
+                            htmlFor={`center-${center.id}`}
+                            className="text-sm font-medium leading-none cursor-pointer"
+                          >
+                            {center.name}
+                          </label>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {!isEditing && (
                 <div className="space-y-3">
