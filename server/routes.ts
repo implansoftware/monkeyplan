@@ -8301,23 +8301,24 @@ export function registerRoutes(app: Express): Server {
       doc.text(`Data Ingresso: ${ingressDate.toLocaleDateString('it-IT')}`, 60, boxY + 30);
       doc.text(`Ora: ${ingressDate.toLocaleTimeString('it-IT')}`, 300, boxY + 30);
       doc.y = boxY + 50;
+      doc.x = 50; // Reset x position after box
       doc.moveDown();
       
       // Customer info
-      doc.fontSize(12).font('Helvetica-Bold').text('DATI CLIENTE');
+      doc.fontSize(12).font('Helvetica-Bold').text('DATI CLIENTE', { align: 'left' });
       doc.fontSize(10).font('Helvetica');
       if (customer) {
-        doc.text(`Nome: ${customer.fullName || customer.username || ''}`);
-        if (customer.email) doc.text(`Email: ${customer.email}`);
-        if (customer.phone) doc.text(`Telefono: ${customer.phone}`);
-        if (customer.address) doc.text(`Indirizzo: ${customer.address}`);
+        doc.text(`Nome: ${customer.fullName || customer.username || ''}`, { align: 'left' });
+        if (customer.email) doc.text(`Email: ${customer.email}`, { align: 'left' });
+        if (customer.phone) doc.text(`Telefono: ${customer.phone}`, { align: 'left' });
+        if (customer.address) doc.text(`Indirizzo: ${customer.address}`, { align: 'left' });
       }
       doc.moveDown();
       
       // Device info
-      doc.fontSize(12).font('Helvetica-Bold').text('DATI DISPOSITIVO');
+      doc.fontSize(12).font('Helvetica-Bold').text('DATI DISPOSITIVO', { align: 'left' });
       doc.fontSize(10).font('Helvetica');
-      doc.text(`Tipo Dispositivo: ${deviceTypeName || 'N/A'}`);
+      doc.text(`Tipo Dispositivo: ${deviceTypeName || 'N/A'}`, { align: 'left' });
       doc.text(`Marca: ${brandName || 'N/A'}`);
       doc.text(`Modello: ${modelName || 'N/A'}`);
       
@@ -8528,38 +8529,39 @@ export function registerRoutes(app: Express): Server {
       doc.text(`Data Diagnosi: ${diagnosisDate.toLocaleDateString('it-IT')}`, 60, boxY + 30);
       doc.text(`Ora: ${diagnosisDate.toLocaleTimeString('it-IT')}`, 300, boxY + 30);
       doc.y = boxY + 50;
+      doc.x = 50; // Reset x position after box
       doc.moveDown();
       
       // Customer info
-      doc.fontSize(12).font('Helvetica-Bold').text('DATI CLIENTE');
+      doc.fontSize(12).font('Helvetica-Bold').text('DATI CLIENTE', { align: 'left' });
       doc.fontSize(10).font('Helvetica');
       if (customer) {
-        doc.text(`Nome: ${customer.fullName || customer.username || ''}`);
-        if (customer.email) doc.text(`Email: ${customer.email}`);
-        if (customer.phone) doc.text(`Telefono: ${customer.phone}`);
+        doc.text(`Nome: ${customer.fullName || customer.username || ''}`, { align: 'left' });
+        if (customer.email) doc.text(`Email: ${customer.email}`, { align: 'left' });
+        if (customer.phone) doc.text(`Telefono: ${customer.phone}`, { align: 'left' });
       }
       doc.moveDown();
       
       // Device info
-      doc.fontSize(12).font('Helvetica-Bold').text('DISPOSITIVO');
+      doc.fontSize(12).font('Helvetica-Bold').text('DISPOSITIVO', { align: 'left' });
       doc.fontSize(10).font('Helvetica');
-      doc.text(`Tipo: ${deviceTypeName || 'N/A'}`);
-      doc.text(`Marca: ${brandName || 'N/A'}`);
-      doc.text(`Modello: ${modelName || 'N/A'}`);
-      if (repairOrder.imei) doc.text(`IMEI: ${repairOrder.imei}`);
-      if (repairOrder.serialNumber) doc.text(`Seriale: ${repairOrder.serialNumber}`);
+      doc.text(`Tipo: ${deviceTypeName || 'N/A'}`, { align: 'left' });
+      doc.text(`Marca: ${brandName || 'N/A'}`, { align: 'left' });
+      doc.text(`Modello: ${modelName || 'N/A'}`, { align: 'left' });
+      if (repairOrder.imei) doc.text(`IMEI: ${repairOrder.imei}`, { align: 'left' });
+      if (repairOrder.serialNumber) doc.text(`Seriale: ${repairOrder.serialNumber}`, { align: 'left' });
       doc.moveDown();
       
       // Original problem
-      doc.fontSize(12).font('Helvetica-Bold').text('PROBLEMA ORIGINALE');
+      doc.fontSize(12).font('Helvetica-Bold').text('PROBLEMA ORIGINALE', { align: 'left' });
       doc.fontSize(10).font('Helvetica');
-      doc.text(repairOrder.issueDescription || 'N/A');
+      doc.text(repairOrder.issueDescription || 'N/A', { align: 'left' });
       doc.moveDown();
       
       // Technical Diagnosis
-      doc.fontSize(12).font('Helvetica-Bold').text('DIAGNOSI TECNICA');
+      doc.fontSize(12).font('Helvetica-Bold').text('DIAGNOSI TECNICA', { align: 'left' });
       doc.fontSize(10).font('Helvetica');
-      doc.text(diagnostics.technicalDiagnosis || 'N/A');
+      doc.text(diagnostics.technicalDiagnosis || 'N/A', { align: 'left' });
       doc.moveDown();
       
       // Damaged components
@@ -8748,14 +8750,15 @@ export function registerRoutes(app: Express): Server {
       doc.text(`Stato: ${statusLabels[quote.status] || quote.status}`, 350, boxY + 15);
       
       doc.y = boxY + 60;
+      doc.x = 50; // Reset x position after box
       doc.moveDown();
       
       // Customer info
-      doc.fontSize(12).font('Helvetica-Bold').text('DATI CLIENTE');
+      doc.fontSize(12).font('Helvetica-Bold').text('DATI CLIENTE', { align: 'left' });
       doc.fontSize(10).font('Helvetica');
       if (customer) {
-        doc.text(`Nome: ${customer.fullName || customer.username || ''}`);
-        if (customer.email) doc.text(`Email: ${customer.email}`);
+        doc.text(`Nome: ${customer.fullName || customer.username || ''}`, { align: 'left' });
+        if (customer.email) doc.text(`Email: ${customer.email}`, { align: 'left' });
         if (customer.phone) doc.text(`Telefono: ${customer.phone}`);
       }
       doc.moveDown();
