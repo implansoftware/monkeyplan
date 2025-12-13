@@ -911,7 +911,7 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => window.open(`/api/repair-orders/${repairOrderId}/acceptance-pdf`, '_blank')}
+                    onClick={() => window.open(`/api/repair-orders/${repairOrderId}/intake-document`, '_blank')}
                     disabled={!acceptance}
                     data-testid="button-download-acceptance"
                   >
@@ -921,7 +921,7 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => window.open(`/api/repair-orders/${repairOrderId}/diagnosis-pdf`, '_blank')}
+                    onClick={() => window.open(`/api/repair-orders/${repairOrderId}/diagnosis-document`, '_blank')}
                     disabled={!diagnosis}
                     data-testid="button-download-diagnosis"
                   >
@@ -931,7 +931,7 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => window.open(`/api/repair-orders/${repairOrderId}/quote-pdf`, '_blank')}
+                    onClick={() => window.open(`/api/repair-orders/${repairOrderId}/quote-document`, '_blank')}
                     disabled={!quote}
                     data-testid="button-download-quote"
                   >
