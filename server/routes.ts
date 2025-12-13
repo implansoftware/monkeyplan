@@ -2169,19 +2169,21 @@ export function registerRoutes(app: Express): Server {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
-      // Use effective context (may be acting as sub-reseller)
+      // Use effective context (may be acting as sub-reseller or repair center)
       const context = getEffectiveContext(req);
-      
-      // If viewing repair center only, customers aren't relevant
-      if (context.repairCenterId) {
-        return res.json([]);
-      }
       
       const allUsers = await storage.listUsers();
       // Filter customers that belong to this reseller (or acting-as reseller)
-      const customers = allUsers.filter(user => 
+      let customers = allUsers.filter(user => 
         user.role === "customer" && user.resellerId === context.resellerId
       );
+      
+      // If viewing as repair center, further filter to only customers assigned to that center
+      if (context.repairCenterId) {
+        const customerIdsForCenter = await storage.listCustomerIdsForRepairCenter(context.repairCenterId);
+        const customerIdSet = new Set(customerIdsForCenter);
+        customers = customers.filter(customer => customerIdSet.has(customer.id));
+      }
       
       // Enrich customers with their assigned repair centers
       const customersWithRepairCenters = await Promise.all(

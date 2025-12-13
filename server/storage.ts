@@ -771,6 +771,14 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
+  async listCustomerIdsForRepairCenter(repairCenterId: string): Promise<string[]> {
+    const results = await db
+      .select({ customerId: customerRepairCenters.customerId })
+      .from(customerRepairCenters)
+      .where(eq(customerRepairCenters.repairCenterId, repairCenterId));
+    return results.map(r => r.customerId);
+  }
+
   // Repair Centers
   async listRepairCenters(): Promise<RepairCenter[]> {
     return await db.select().from(repairCenters).orderBy(desc(repairCenters.createdAt));
