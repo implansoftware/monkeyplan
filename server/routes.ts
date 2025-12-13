@@ -2337,14 +2337,16 @@ export function registerRoutes(app: Express): Server {
       // Note: When acting as repair center, still show the reseller's team (not center-specific)
       const staff = await storage.listResellerStaff(context.resellerId);
       
-      // Get permissions for each staff member
+      // Get permissions and assigned repair centers for each staff member
       const staffWithPermissions = await Promise.all(
         staff.map(async (member) => {
           const permissions = await storage.getStaffPermissions(member.id);
+          const assignedRepairCenters = await storage.listRepairCentersForStaff(member.id);
           return {
             ...member,
             password: undefined, // Never send password
-            permissions
+            permissions,
+            assignedRepairCenters
           };
         })
       );
@@ -2360,7 +2362,7 @@ export function registerRoutes(app: Express): Server {
     try {
       if (!req.user) return res.status(401).send("Non autorizzato");
       
-      const { user: userData, permissions } = req.body;
+      const { user: userData, permissions, repairCenterIds } = req.body;
       
       if (!userData || !userData.username || !userData.email || !userData.password || !userData.fullName) {
         return res.status(400).send("Dati utente incompleti");
@@ -2386,14 +2388,21 @@ export function registerRoutes(app: Express): Server {
         await storage.upsertStaffPermissions(newUser.id, req.user.id, permissions);
       }
 
-      // Get created permissions
+      // Assign repair centers if provided
+      if (repairCenterIds && Array.isArray(repairCenterIds)) {
+        await storage.setStaffRepairCenters(newUser.id, repairCenterIds);
+      }
+
+      // Get created permissions and assigned repair centers
       const createdPermissions = await storage.getStaffPermissions(newUser.id);
+      const assignedRepairCenters = await storage.listRepairCentersForStaff(newUser.id);
 
       setActivityEntity(res, { type: 'users', id: newUser.id });
       res.status(201).json({
         ...newUser,
         password: undefined,
-        permissions: createdPermissions
+        permissions: createdPermissions,
+        assignedRepairCenters
       });
     } catch (error: any) {
       console.error("Error creating staff member:", error);
@@ -2407,7 +2416,7 @@ export function registerRoutes(app: Express): Server {
       if (!req.user) return res.status(401).send("Non autorizzato");
       
       const staffId = req.params.id;
-      const { user: userData, permissions } = req.body;
+      const { user: userData, permissions, repairCenterIds } = req.body;
       
       // Verify the staff member belongs to this reseller
       const staffMember = await storage.getUser(staffId);
@@ -2433,15 +2442,22 @@ export function registerRoutes(app: Express): Server {
         await storage.upsertStaffPermissions(staffId, req.user.id, permissions);
       }
 
-      // Get updated staff member with permissions
+      // Update repair center assignments if provided
+      if (repairCenterIds !== undefined && Array.isArray(repairCenterIds)) {
+        await storage.setStaffRepairCenters(staffId, repairCenterIds);
+      }
+
+      // Get updated staff member with permissions and repair centers
       const updatedMember = await storage.getUser(staffId);
       const updatedPermissions = await storage.getStaffPermissions(staffId);
+      const assignedRepairCenters = await storage.listRepairCentersForStaff(staffId);
 
       setActivityEntity(res, { type: 'users', id: staffId });
       res.json({
         ...updatedMember,
         password: undefined,
-        permissions: updatedPermissions
+        permissions: updatedPermissions,
+        assignedRepairCenters
       });
     } catch (error: any) {
       console.error("Error updating staff member:", error);

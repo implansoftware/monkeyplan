@@ -64,7 +64,8 @@ import {
   mobilesentrixCredentials, mobilesentrixOrders,
   serviceItems, serviceItemPrices, productPrices,
   resellerStaffPermissions, ResellerStaffPermission, InsertResellerStaffPermission,
-  customerRepairCenters, CustomerRepairCenter, InsertCustomerRepairCenter
+  customerRepairCenters, CustomerRepairCenter, InsertCustomerRepairCenter,
+  staffRepairCenters, StaffRepairCenter, InsertStaffRepairCenter
 } from "@shared/schema";
 import { db, pool } from "./db";
 import { eq, and, or, desc, lt, sql, not, inArray, isNull } from "drizzle-orm";
@@ -93,6 +94,10 @@ export interface IStorage {
   // Customer-RepairCenter Many-to-Many
   listRepairCentersForCustomer(customerId: string): Promise<RepairCenter[]>;
   setCustomerRepairCenters(customerId: string, repairCenterIds: string[]): Promise<void>;
+  
+  // Staff-RepairCenter Many-to-Many
+  listRepairCentersForStaff(staffId: string): Promise<RepairCenter[]>;
+  setStaffRepairCenters(staffId: string, repairCenterIds: string[]): Promise<void>;
   
   // Repair Centers
   listRepairCenters(): Promise<RepairCenter[]>;
@@ -777,6 +782,37 @@ export class DatabaseStorage implements IStorage {
       .from(customerRepairCenters)
       .where(eq(customerRepairCenters.repairCenterId, repairCenterId));
     return results.map(r => r.customerId);
+  }
+
+  // Staff-RepairCenter Many-to-Many
+  async listRepairCentersForStaff(staffId: string): Promise<RepairCenter[]> {
+    const results = await db
+      .select({
+        repairCenter: repairCenters,
+      })
+      .from(staffRepairCenters)
+      .innerJoin(repairCenters, eq(staffRepairCenters.repairCenterId, repairCenters.id))
+      .where(eq(staffRepairCenters.staffId, staffId));
+    return results.map(r => r.repairCenter);
+  }
+
+  async setStaffRepairCenters(staffId: string, repairCenterIds: string[]): Promise<void> {
+    // De-duplicate and filter empty values
+    const filteredIds = repairCenterIds.filter(id => id && id.trim());
+    const uniqueRepairCenterIds = Array.from(new Set(filteredIds));
+    
+    // Delete existing associations
+    await db.delete(staffRepairCenters).where(eq(staffRepairCenters.staffId, staffId));
+    
+    // Insert new associations
+    if (uniqueRepairCenterIds.length > 0) {
+      await db.insert(staffRepairCenters).values(
+        uniqueRepairCenterIds.map(repairCenterId => ({
+          staffId,
+          repairCenterId,
+        }))
+      );
+    }
   }
 
   // Repair Centers

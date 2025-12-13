@@ -406,6 +406,24 @@ export const insertCustomerRepairCenterSchema = createInsertSchema(customerRepai
 export type InsertCustomerRepairCenter = z.infer<typeof insertCustomerRepairCenterSchema>;
 export type CustomerRepairCenter = typeof customerRepairCenters.$inferSelect;
 
+// Staff-RepairCenter many-to-many relationship
+// Staff members (reseller_staff) can be assigned to specific repair centers
+export const staffRepairCenters = pgTable("staff_repair_centers", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  staffId: varchar("staff_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+  repairCenterId: varchar("repair_center_id").notNull().references(() => repairCenters.id, { onDelete: 'cascade' }),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+}, (table) => [
+  unique().on(table.staffId, table.repairCenterId),
+]);
+
+export const insertStaffRepairCenterSchema = createInsertSchema(staffRepairCenters).omit({
+  id: true,
+  createdAt: true,
+});
+export type InsertStaffRepairCenter = z.infer<typeof insertStaffRepairCenterSchema>;
+export type StaffRepairCenter = typeof staffRepairCenters.$inferSelect;
+
 // Product type enum
 export const productTypeEnum = pgEnum("product_type", [
   "ricambio",      // Spare part
