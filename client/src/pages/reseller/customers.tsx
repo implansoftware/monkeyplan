@@ -1,20 +1,22 @@
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Users, Plus, Search, Mail, Building2, Wrench } from "lucide-react";
-import { queryClient } from "@/lib/queryClient";
+import { Switch } from "@/components/ui/switch";
+import { Users, Plus, Search, Mail, Building2, Wrench, Pencil, X, Check } from "lucide-react";
+import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
 import { User, RepairOrder, RepairCenter } from "@shared/schema";
 import { CustomerBranchManager } from "@/components/CustomerBranchManager";
 import { CustomerWizardDialog } from "@/components/CustomerWizardDialog";
+import { useToast } from "@/hooks/use-toast";
 
 type CustomerWithRepairCenters = User & {
   assignedRepairCenters?: RepairCenter[];
@@ -24,6 +26,15 @@ export default function ResellerCustomers() {
   const [searchQuery, setSearchQuery] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState<CustomerWithRepairCenters | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editForm, setEditForm] = useState({
+    fullName: "",
+    email: "",
+    phone: "",
+    isActive: true,
+    repairCenterIds: [] as string[],
+  });
+  const { toast } = useToast();
 
   const { data: allUsers = [], isLoading } = useQuery<CustomerWithRepairCenters[]>({
     queryKey: ["/api/reseller/customers"],
@@ -33,11 +44,63 @@ export default function ResellerCustomers() {
     queryKey: ["/api/repair-orders"],
   });
 
+  const { data: repairCenters = [] } = useQuery<RepairCenter[]>({
+    queryKey: ["/api/reseller/repair-centers"],
+  });
+
+  const updateCustomerMutation = useMutation({
+    mutationFn: async (data: { id: string; updates: typeof editForm }) => {
+      return await apiRequest("PATCH", `/api/reseller/customers/${data.id}`, data.updates);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/reseller/customers"] });
+      toast({ title: "Cliente aggiornato con successo" });
+      setIsEditing(false);
+      setSelectedCustomer(null);
+    },
+    onError: (error: any) => {
+      toast({ title: "Errore", description: error.message, variant: "destructive" });
+    },
+  });
+
   const customers = allUsers.filter(user => user.role === "customer");
 
   const handleCustomerCreated = () => {
     queryClient.invalidateQueries({ queryKey: ["/api/reseller/customers"] });
     setDialogOpen(false);
+  };
+
+  const startEditing = (customer: CustomerWithRepairCenters) => {
+    setEditForm({
+      fullName: customer.fullName,
+      email: customer.email,
+      phone: customer.phone || "",
+      isActive: customer.isActive,
+      repairCenterIds: customer.assignedRepairCenters?.map(rc => rc.id) || [],
+    });
+    setIsEditing(true);
+  };
+
+  const cancelEditing = () => {
+    setIsEditing(false);
+  };
+
+  const saveEditing = () => {
+    if (selectedCustomer) {
+      updateCustomerMutation.mutate({
+        id: selectedCustomer.id,
+        updates: editForm,
+      });
+    }
+  };
+
+  const toggleRepairCenter = (centerId: string) => {
+    setEditForm(prev => ({
+      ...prev,
+      repairCenterIds: prev.repairCenterIds.includes(centerId)
+        ? prev.repairCenterIds.filter(id => id !== centerId)
+        : [...prev.repairCenterIds, centerId],
+    }));
   };
 
   const filteredCustomers = customers.filter((customer) =>
@@ -198,68 +261,160 @@ export default function ResellerCustomers() {
       </Card>
 
       {selectedCustomer && (
-        <Dialog open={!!selectedCustomer} onOpenChange={() => setSelectedCustomer(null)}>
+        <Dialog open={!!selectedCustomer} onOpenChange={() => { setSelectedCustomer(null); setIsEditing(false); }}>
           <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>Dettagli Cliente: {selectedCustomer.fullName}</DialogTitle>
+              <div className="flex items-center justify-between gap-4">
+                <DialogTitle>Dettagli Cliente: {selectedCustomer.fullName}</DialogTitle>
+                {!isEditing && (
+                  <Button variant="outline" size="sm" onClick={() => startEditing(selectedCustomer)} data-testid="button-edit-customer">
+                    <Pencil className="h-4 w-4 mr-1" />
+                    Modifica
+                  </Button>
+                )}
+              </div>
             </DialogHeader>
-            <Tabs defaultValue="info" className="w-full">
-              <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="info" data-testid="tab-customer-info">
-                  <Users className="h-4 w-4 mr-1" />
-                  Informazioni
-                </TabsTrigger>
-                <TabsTrigger value="branches" data-testid="tab-customer-branches">
-                  <Building2 className="h-4 w-4 mr-1" />
-                  Filiali
-                </TabsTrigger>
-                <TabsTrigger value="repairs" data-testid="tab-customer-repairs">
-                  Riparazioni
-                </TabsTrigger>
-              </TabsList>
-              
-              <TabsContent value="info" className="space-y-4 mt-4">
+            
+            {isEditing ? (
+              <div className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label>Email</Label>
-                    <p className="text-sm text-muted-foreground">{selectedCustomer.email}</p>
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-fullName">Nome Completo</Label>
+                    <Input
+                      id="edit-fullName"
+                      value={editForm.fullName}
+                      onChange={(e) => setEditForm(prev => ({ ...prev, fullName: e.target.value }))}
+                      data-testid="input-edit-fullName"
+                    />
                   </div>
-                  <div>
-                    <Label>Username</Label>
-                    <p className="text-sm text-muted-foreground">{selectedCustomer.username}</p>
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-email">Email</Label>
+                    <Input
+                      id="edit-email"
+                      type="email"
+                      value={editForm.email}
+                      onChange={(e) => setEditForm(prev => ({ ...prev, email: e.target.value }))}
+                      data-testid="input-edit-email"
+                    />
                   </div>
-                  <div>
-                    <Label>Data Registrazione</Label>
-                    <p className="text-sm text-muted-foreground">
-                      {format(new Date(selectedCustomer.createdAt), "dd/MM/yyyy HH:mm")}
-                    </p>
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-phone">Telefono</Label>
+                    <Input
+                      id="edit-phone"
+                      value={editForm.phone}
+                      onChange={(e) => setEditForm(prev => ({ ...prev, phone: e.target.value }))}
+                      data-testid="input-edit-phone"
+                    />
                   </div>
-                  <div>
+                  <div className="space-y-2">
                     <Label>Stato</Label>
-                    <p className="text-sm text-muted-foreground">
-                      {selectedCustomer.isActive ? "Attivo" : "Disattivato"}
-                    </p>
+                    <div className="flex items-center gap-2 pt-2">
+                      <Switch
+                        checked={editForm.isActive}
+                        onCheckedChange={(checked) => setEditForm(prev => ({ ...prev, isActive: checked }))}
+                        data-testid="switch-edit-isActive"
+                      />
+                      <span className="text-sm">{editForm.isActive ? "Attivo" : "Disattivato"}</span>
+                    </div>
                   </div>
                 </div>
+                
                 <div className="pt-4 border-t">
-                  <Label className="flex items-center gap-2 mb-2">
+                  <Label className="flex items-center gap-2 mb-3">
                     <Wrench className="h-4 w-4" />
                     Centri Riparazione Assegnati
                   </Label>
-                  {selectedCustomer.assignedRepairCenters && selectedCustomer.assignedRepairCenters.length > 0 ? (
-                    <div className="flex flex-wrap gap-2">
-                      {selectedCustomer.assignedRepairCenters.map((rc) => (
-                        <Badge key={rc.id} variant="secondary" data-testid={`badge-detail-repair-center-${rc.id}`}>
-                          <Wrench className="h-3 w-3 mr-1" />
+                  <div className="flex flex-wrap gap-2">
+                    {repairCenters.map((rc) => {
+                      const isSelected = editForm.repairCenterIds.includes(rc.id);
+                      return (
+                        <Badge
+                          key={rc.id}
+                          variant={isSelected ? "default" : "outline"}
+                          className="cursor-pointer"
+                          onClick={() => toggleRepairCenter(rc.id)}
+                          data-testid={`badge-edit-repair-center-${rc.id}`}
+                        >
+                          {isSelected && <Check className="h-3 w-3 mr-1" />}
                           {rc.name}
                         </Badge>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-sm text-muted-foreground">Nessun centro di riparazione assegnato</p>
-                  )}
+                      );
+                    })}
+                    {repairCenters.length === 0 && (
+                      <p className="text-sm text-muted-foreground">Nessun centro di riparazione disponibile</p>
+                    )}
+                  </div>
                 </div>
-              </TabsContent>
+                
+                <DialogFooter className="gap-2">
+                  <Button variant="outline" onClick={cancelEditing} data-testid="button-cancel-edit">
+                    <X className="h-4 w-4 mr-1" />
+                    Annulla
+                  </Button>
+                  <Button onClick={saveEditing} disabled={updateCustomerMutation.isPending} data-testid="button-save-edit">
+                    <Check className="h-4 w-4 mr-1" />
+                    {updateCustomerMutation.isPending ? "Salvataggio..." : "Salva"}
+                  </Button>
+                </DialogFooter>
+              </div>
+            ) : (
+              <Tabs defaultValue="info" className="w-full">
+                <TabsList className="grid w-full grid-cols-3">
+                  <TabsTrigger value="info" data-testid="tab-customer-info">
+                    <Users className="h-4 w-4 mr-1" />
+                    Informazioni
+                  </TabsTrigger>
+                  <TabsTrigger value="branches" data-testid="tab-customer-branches">
+                    <Building2 className="h-4 w-4 mr-1" />
+                    Filiali
+                  </TabsTrigger>
+                  <TabsTrigger value="repairs" data-testid="tab-customer-repairs">
+                    Riparazioni
+                  </TabsTrigger>
+                </TabsList>
+                
+                <TabsContent value="info" className="space-y-4 mt-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label>Email</Label>
+                      <p className="text-sm text-muted-foreground">{selectedCustomer.email}</p>
+                    </div>
+                    <div>
+                      <Label>Username</Label>
+                      <p className="text-sm text-muted-foreground">{selectedCustomer.username}</p>
+                    </div>
+                    <div>
+                      <Label>Data Registrazione</Label>
+                      <p className="text-sm text-muted-foreground">
+                        {format(new Date(selectedCustomer.createdAt), "dd/MM/yyyy HH:mm")}
+                      </p>
+                    </div>
+                    <div>
+                      <Label>Stato</Label>
+                      <p className="text-sm text-muted-foreground">
+                        {selectedCustomer.isActive ? "Attivo" : "Disattivato"}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="pt-4 border-t">
+                    <Label className="flex items-center gap-2 mb-2">
+                      <Wrench className="h-4 w-4" />
+                      Centri Riparazione Assegnati
+                    </Label>
+                    {selectedCustomer.assignedRepairCenters && selectedCustomer.assignedRepairCenters.length > 0 ? (
+                      <div className="flex flex-wrap gap-2">
+                        {selectedCustomer.assignedRepairCenters.map((rc) => (
+                          <Badge key={rc.id} variant="secondary" data-testid={`badge-detail-repair-center-${rc.id}`}>
+                            <Wrench className="h-3 w-3 mr-1" />
+                            {rc.name}
+                          </Badge>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-sm text-muted-foreground">Nessun centro di riparazione assegnato</p>
+                    )}
+                  </div>
+                </TabsContent>
 
               <TabsContent value="branches" className="mt-4">
                 <CustomerBranchManager 
@@ -296,7 +451,8 @@ export default function ResellerCustomers() {
                   </Table>
                 )}
               </TabsContent>
-            </Tabs>
+              </Tabs>
+            )}
           </DialogContent>
         </Dialog>
       )}

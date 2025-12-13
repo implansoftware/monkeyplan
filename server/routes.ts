@@ -2254,6 +2254,72 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Update an existing customer
+  app.patch("/api/reseller/customers/:id", requireRole("reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const customerId = req.params.id;
+      
+      // Verify customer exists and belongs to this reseller
+      const existingCustomer = await storage.getUser(customerId);
+      if (!existingCustomer || existingCustomer.role !== "customer" || existingCustomer.resellerId !== req.user.id) {
+        return res.status(404).send("Cliente non trovato");
+      }
+      
+      const updateSchema = z.object({
+        email: z.string().email().optional(),
+        fullName: z.string().min(1).optional(),
+        phone: z.string().optional().nullable(),
+        isActive: z.boolean().optional(),
+        repairCenterIds: z.array(z.string()).optional(),
+      });
+      
+      const validatedData = updateSchema.parse(req.body);
+      
+      // Validate repair centers belong to this reseller
+      const repairCenterIds = validatedData.repairCenterIds;
+      if (repairCenterIds && repairCenterIds.length > 0) {
+        for (const centerId of repairCenterIds) {
+          const center = await storage.getRepairCenter(centerId);
+          if (!center || center.resellerId !== req.user.id) {
+            return res.status(403).send("Centro di riparazione non autorizzato");
+          }
+        }
+      }
+      
+      // Update user fields
+      const updates: any = {};
+      if (validatedData.email !== undefined) updates.email = validatedData.email;
+      if (validatedData.fullName !== undefined) updates.fullName = validatedData.fullName;
+      if (validatedData.phone !== undefined) updates.phone = validatedData.phone;
+      if (validatedData.isActive !== undefined) updates.isActive = validatedData.isActive;
+      
+      // Also update repairCenterId for backward compatibility
+      if (repairCenterIds !== undefined) {
+        updates.repairCenterId = repairCenterIds[0] || null;
+      }
+      
+      let updatedUser = existingCustomer;
+      if (Object.keys(updates).length > 0) {
+        updatedUser = await storage.updateUser(customerId, updates);
+      }
+      
+      // Update repair center associations
+      if (repairCenterIds !== undefined) {
+        await storage.setCustomerRepairCenters(customerId, repairCenterIds);
+      }
+      
+      // Return updated customer with repair centers
+      const assignedRepairCenters = await storage.listRepairCentersForCustomer(customerId);
+      
+      setActivityEntity(res, { type: 'users', id: customerId });
+      res.json({ ...updatedUser, assignedRepairCenters });
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+
   // ============================================================================
   // Reseller Staff Team Management
   // ============================================================================
