@@ -906,36 +906,33 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
               )}
 
               <div className="mt-4 pt-4 border-t">
-                <p className="text-xs text-muted-foreground mb-2">DOCUMENTI</p>
-                <div className="flex flex-wrap gap-2">
+                <p className="text-xs text-muted-foreground mb-3">DOCUMENTI</p>
+                <div className="flex flex-wrap gap-3">
                   <Button
-                    variant="ghost"
-                    size="sm"
+                    variant="outline"
                     onClick={() => window.open(`/api/repair-orders/${repairOrderId}/intake-document`, '_blank')}
                     disabled={!acceptance}
                     data-testid="button-download-acceptance"
                   >
-                    <Download className="mr-1 h-3 w-3" />
+                    <Download className="mr-2 h-4 w-4" />
                     Accettazione
                   </Button>
                   <Button
-                    variant="ghost"
-                    size="sm"
+                    variant="outline"
                     onClick={() => window.open(`/api/repair-orders/${repairOrderId}/diagnosis-document`, '_blank')}
                     disabled={!diagnosis}
                     data-testid="button-download-diagnosis"
                   >
-                    <Download className="mr-1 h-3 w-3" />
+                    <Download className="mr-2 h-4 w-4" />
                     Diagnosi
                   </Button>
                   <Button
-                    variant="ghost"
-                    size="sm"
+                    variant="outline"
                     onClick={() => window.open(`/api/repair-orders/${repairOrderId}/quote-document`, '_blank')}
                     disabled={!quote}
                     data-testid="button-download-quote"
                   >
-                    <Download className="mr-1 h-3 w-3" />
+                    <Download className="mr-2 h-4 w-4" />
                     Preventivo
                   </Button>
                 </div>
