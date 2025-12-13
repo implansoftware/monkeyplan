@@ -52,8 +52,8 @@ export default function ResellerCustomers() {
     mutationFn: async (data: { id: string; updates: typeof editForm }) => {
       return await apiRequest("PATCH", `/api/reseller/customers/${data.id}`, data.updates);
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/reseller/customers"] });
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["/api/reseller/customers"] });
       toast({ title: "Cliente aggiornato con successo" });
       setIsEditing(false);
       setSelectedCustomer(null);
