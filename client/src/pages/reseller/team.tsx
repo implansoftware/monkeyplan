@@ -206,11 +206,11 @@ export default function ResellerTeam() {
     setIsEditing(true);
     setSelectedMember(member);
     form.reset({
-      username: member.username,
+      username: member.username || "placeholder",
       email: member.email,
       fullName: member.fullName,
       phone: member.phone || "",
-      password: "",
+      password: "placeholder",
     });
     setLocalRepairCenterIds(member.assignedRepairCenters?.map(rc => rc.id) || []);
     setDialogOpen(true);
