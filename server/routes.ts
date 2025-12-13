@@ -2181,7 +2181,19 @@ export function registerRoutes(app: Express): Server {
       const customers = allUsers.filter(user => 
         user.role === "customer" && user.resellerId === context.resellerId
       );
-      res.json(customers);
+      
+      // Enrich customers with their assigned repair centers
+      const customersWithRepairCenters = await Promise.all(
+        customers.map(async (customer) => {
+          const repairCenters = await storage.listRepairCentersForCustomer(customer.id);
+          return {
+            ...customer,
+            assignedRepairCenters: repairCenters,
+          };
+        })
+      );
+      
+      res.json(customersWithRepairCenters);
     } catch (error: any) {
       res.status(500).send(error.message);
     }
@@ -2200,14 +2212,18 @@ export function registerRoutes(app: Express): Server {
         isActive: true,
       }).extend({
         repairCenterId: z.string().optional(),
+        repairCenterIds: z.array(z.string()).optional(),
       });
       const validatedData = baseSchema.parse(req.body);
 
-      // If repairCenterId provided, verify it belongs to this reseller
-      if (validatedData.repairCenterId) {
-        const center = await storage.getRepairCenter(validatedData.repairCenterId);
-        if (!center || center.resellerId !== req.user.id) {
-          return res.status(403).send("Centro di riparazione non autorizzato");
+      // Validate repair centers belong to this reseller
+      const repairCenterIds = validatedData.repairCenterIds || (validatedData.repairCenterId ? [validatedData.repairCenterId] : []);
+      if (repairCenterIds.length > 0) {
+        for (const centerId of repairCenterIds) {
+          const center = await storage.getRepairCenter(centerId);
+          if (!center || center.resellerId !== req.user.id) {
+            return res.status(403).send("Centro di riparazione non autorizzato");
+          }
         }
       }
 
@@ -2223,8 +2239,14 @@ export function registerRoutes(app: Express): Server {
         isActive: validatedData.isActive,
         role: "customer", // Force customer role
         resellerId: req.user.id, // Associate with the reseller
-        repairCenterId: validatedData.repairCenterId || null, // Associate with repair center if provided
+        repairCenterId: repairCenterIds[0] || null, // Keep first one for backward compatibility
       });
+      
+      // Set all repair center associations
+      if (repairCenterIds.length > 0) {
+        await storage.setCustomerRepairCenters(user.id, repairCenterIds);
+      }
+      
       setActivityEntity(res, { type: 'users', id: user.id });
       res.status(201).json(user);
     } catch (error: any) {
@@ -9175,6 +9197,21 @@ export function registerRoutes(app: Express): Server {
       
       // Create customer with billing data in transaction
       const result = await storage.createCustomerWithBilling(userData, billingInfo);
+      
+      // Handle repair center associations if provided
+      const repairCenterIds = req.body.repairCenterIds as string[] | undefined;
+      if (repairCenterIds && repairCenterIds.length > 0) {
+        // Validate repair centers belong to reseller (if reseller is creating)
+        if (assignedResellerId && req.user.role !== 'admin') {
+          for (const centerId of repairCenterIds) {
+            const center = await storage.getRepairCenter(centerId);
+            if (!center || center.resellerId !== assignedResellerId) {
+              throw new Error("Centro di riparazione non autorizzato");
+            }
+          }
+        }
+        await storage.setCustomerRepairCenters(result.user.id, repairCenterIds);
+      }
       
       // Log activity
       await logActivity(

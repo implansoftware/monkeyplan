@@ -63,7 +63,8 @@ import {
   fonedayCredentials, fonedayOrders,
   mobilesentrixCredentials, mobilesentrixOrders,
   serviceItems, serviceItemPrices, productPrices,
-  resellerStaffPermissions, ResellerStaffPermission, InsertResellerStaffPermission
+  resellerStaffPermissions, ResellerStaffPermission, InsertResellerStaffPermission,
+  customerRepairCenters, CustomerRepairCenter, InsertCustomerRepairCenter
 } from "@shared/schema";
 import { db, pool } from "./db";
 import { eq, and, or, desc, lt, sql, not, inArray, isNull } from "drizzle-orm";
@@ -88,6 +89,10 @@ export interface IStorage {
   // Context Switching (for parent resellers managing sub-resellers/repair centers)
   getChildResellers(parentResellerId: string): Promise<User[]>;
   getRepairCentersForReseller(resellerId: string): Promise<RepairCenter[]>;
+  
+  // Customer-RepairCenter Many-to-Many
+  listRepairCentersForCustomer(customerId: string): Promise<RepairCenter[]>;
+  setCustomerRepairCenters(customerId: string, repairCenterIds: string[]): Promise<void>;
   
   // Repair Centers
   listRepairCenters(): Promise<RepairCenter[]>;
@@ -735,6 +740,37 @@ export class DatabaseStorage implements IStorage {
       .orderBy(repairCenters.name);
   }
 
+  // Customer-RepairCenter Many-to-Many
+  async listRepairCentersForCustomer(customerId: string): Promise<RepairCenter[]> {
+    const results = await db
+      .select({
+        repairCenter: repairCenters,
+      })
+      .from(customerRepairCenters)
+      .innerJoin(repairCenters, eq(customerRepairCenters.repairCenterId, repairCenters.id))
+      .where(eq(customerRepairCenters.customerId, customerId));
+    return results.map(r => r.repairCenter);
+  }
+
+  async setCustomerRepairCenters(customerId: string, repairCenterIds: string[]): Promise<void> {
+    // De-duplicate and filter empty values
+    const filteredIds = repairCenterIds.filter(id => id && id.trim());
+    const uniqueRepairCenterIds = Array.from(new Set(filteredIds));
+    
+    // Delete existing associations
+    await db.delete(customerRepairCenters).where(eq(customerRepairCenters.customerId, customerId));
+    
+    // Insert new associations
+    if (uniqueRepairCenterIds.length > 0) {
+      await db.insert(customerRepairCenters).values(
+        uniqueRepairCenterIds.map(repairCenterId => ({
+          customerId,
+          repairCenterId,
+        }))
+      );
+    }
+  }
+
   // Repair Centers
   async listRepairCenters(): Promise<RepairCenter[]> {
     return await db.select().from(repairCenters).orderBy(desc(repairCenters.createdAt));
@@ -1130,7 +1166,7 @@ export class DatabaseStorage implements IStorage {
       const resellerRepairs = await db.select({ customerId: repairOrders.customerId })
         .from(repairOrders)
         .where(eq(repairOrders.resellerId, filters.resellerId));
-      const customerIds = [...new Set(resellerRepairs.map(r => r.customerId).filter(Boolean))] as string[];
+      const customerIds = Array.from(new Set(resellerRepairs.map(r => r.customerId).filter(Boolean))) as string[];
       if (customerIds.length === 0) {
         return []; // No customers found for this reseller
       }
@@ -1375,14 +1411,6 @@ export class DatabaseStorage implements IStorage {
       const compatibilities = compatibilityMap.get(product.id) || [];
       return { product, stockByCenter, totalStock, compatibilities };
     });
-  }
-
-  async updateProduct(id: string, updates: Partial<Omit<Product, 'id' | 'createdAt'>>): Promise<Product> {
-    const [updated] = await db.update(products)
-      .set({ ...updates, updatedAt: new Date() })
-      .where(eq(products.id, id))
-      .returning();
-    return updated;
   }
 
   // Reseller Inventory - Get own products with stock in own centers
@@ -3036,7 +3064,6 @@ export class DatabaseStorage implements IStorage {
     const [updated] = await db.update(supplierCatalogProducts)
       .set({
         linkedProductId,
-        linkedAt: new Date(),
         updatedAt: new Date(),
       })
       .where(eq(supplierCatalogProducts.id, catalogProductId))

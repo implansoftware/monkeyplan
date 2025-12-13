@@ -3,7 +3,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
-import { customerWizardSchema, type User as UserType } from "@shared/schema";
+import { customerWizardSchema, type User as UserType, type RepairCenter } from "@shared/schema";
 import type { z } from "zod";
 import { useAuth } from "@/hooks/use-auth";
 
@@ -36,7 +36,7 @@ import {
 } from "@/components/ui/select";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { Building2, User, CheckCircle2, ChevronRight, ChevronLeft } from "lucide-react";
+import { Building2, User, CheckCircle2, ChevronRight, ChevronLeft, X } from "lucide-react";
 import { AddressAutocomplete } from "@/components/address-autocomplete";
 import { Checkbox } from "@/components/ui/checkbox";
 
@@ -53,6 +53,7 @@ export function CustomerWizardDialog({ open, onOpenChange, onSuccess }: Customer
   const [customerType, setCustomerType] = useState<"private" | "company">("private");
   const [createdCustomer, setCreatedCustomer] = useState<any>(null);
   const [selectedResellerId, setSelectedResellerId] = useState<string | null>(null);
+  const [selectedRepairCenterIds, setSelectedRepairCenterIds] = useState<string[]>([]);
   
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -63,6 +64,14 @@ export function CustomerWizardDialog({ open, onOpenChange, onSuccess }: Customer
   const { data: resellers = [] } = useQuery<UserType[]>({
     queryKey: ["/api/admin/resellers"],
     enabled: isAdmin,
+  });
+  
+  // Carica i centri di riparazione per reseller/repair_center
+  const isReseller = user?.role === "reseller";
+  const isRepairCenter = user?.role === "repair_center";
+  const { data: repairCenters = [] } = useQuery<RepairCenter[]>({
+    queryKey: ["/api/reseller/repair-centers"],
+    enabled: isReseller || isRepairCenter,
   });
 
   const form = useForm<InsertCustomerWizard>({
@@ -86,10 +95,14 @@ export function CustomerWizardDialog({ open, onOpenChange, onSuccess }: Customer
 
   const createCustomerMutation = useMutation({
     mutationFn: async (data: InsertCustomerWizard) => {
-      // Se admin, includi il resellerId selezionato
-      const payload = isAdmin && selectedResellerId 
-        ? { ...data, resellerId: selectedResellerId }
-        : data;
+      // Build payload with optional resellerId and repairCenterIds
+      let payload: any = { ...data };
+      if (isAdmin && selectedResellerId) {
+        payload.resellerId = selectedResellerId;
+      }
+      if (selectedRepairCenterIds.length > 0) {
+        payload.repairCenterIds = selectedRepairCenterIds;
+      }
       const response = await apiRequest("POST", "/api/customers", payload);
       const result = await response.json() as {
         customer: {
@@ -145,6 +158,7 @@ export function CustomerWizardDialog({ open, onOpenChange, onSuccess }: Customer
     setCustomerType("private");
     setCreatedCustomer(null);
     setSelectedResellerId(null);
+    setSelectedRepairCenterIds([]);
     onOpenChange(false);
   };
 
@@ -512,6 +526,67 @@ export function CustomerWizardDialog({ open, onOpenChange, onSuccess }: Customer
               </FormItem>
             </>
           )}
+
+          {/* Selezione centri di riparazione per reseller/repair_center */}
+          {(isReseller || isRepairCenter) && repairCenters.length > 0 && (
+            <>
+              <Separator />
+              <FormItem>
+                <FormLabel>Centri di Riparazione Associati</FormLabel>
+                <div className="space-y-2">
+                  <Select 
+                    onValueChange={(value) => {
+                      if (value && !selectedRepairCenterIds.includes(value)) {
+                        setSelectedRepairCenterIds([...selectedRepairCenterIds, value]);
+                      }
+                    }}
+                    value=""
+                  >
+                    <FormControl>
+                      <SelectTrigger data-testid="select-repair-centers">
+                        <SelectValue placeholder="Aggiungi centro di riparazione..." />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {repairCenters
+                        .filter(rc => !selectedRepairCenterIds.includes(rc.id))
+                        .map((center) => (
+                          <SelectItem key={center.id} value={center.id}>
+                            {center.name} - {center.city}
+                          </SelectItem>
+                        ))}
+                    </SelectContent>
+                  </Select>
+                  {selectedRepairCenterIds.length > 0 && (
+                    <div className="flex flex-wrap gap-2 pt-2">
+                      {selectedRepairCenterIds.map(id => {
+                        const center = repairCenters.find(rc => rc.id === id);
+                        return center ? (
+                          <div
+                            key={id}
+                            className="inline-flex items-center gap-1 rounded-md bg-secondary px-2 py-1 text-sm"
+                          >
+                            <span>{center.name}</span>
+                            <button
+                              type="button"
+                              onClick={() => setSelectedRepairCenterIds(selectedRepairCenterIds.filter(rcId => rcId !== id))}
+                              className="hover-elevate rounded-full p-0.5"
+                              data-testid={`button-remove-repair-center-${id}`}
+                            >
+                              <X className="h-3 w-3" />
+                            </button>
+                          </div>
+                        ) : null;
+                      })}
+                    </div>
+                  )}
+                </div>
+                <FormDescription>
+                  Seleziona i centri di riparazione che possono gestire questo cliente
+                </FormDescription>
+              </FormItem>
+            </>
+          )}
         </div>
 
         <div className="flex justify-between pt-4">
@@ -619,6 +694,22 @@ export function CustomerWizardDialog({ open, onOpenChange, onSuccess }: Customer
                 <p className="text-sm" data-testid="text-review-reseller">
                   {resellers.find(r => r.id === selectedResellerId)?.fullName || "N/D"}
                 </p>
+              </div>
+            )}
+
+            {selectedRepairCenterIds.length > 0 && (
+              <div>
+                <h4 className="font-medium mb-2">Centri di Riparazione Associati</h4>
+                <div className="flex flex-wrap gap-1" data-testid="text-review-repair-centers">
+                  {selectedRepairCenterIds.map(id => {
+                    const center = repairCenters.find(rc => rc.id === id);
+                    return center ? (
+                      <span key={id} className="text-sm bg-secondary px-2 py-0.5 rounded-md">
+                        {center.name}
+                      </span>
+                    ) : null;
+                  })}
+                </div>
               </div>
             )}
           </CardContent>

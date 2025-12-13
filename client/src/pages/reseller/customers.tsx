@@ -8,20 +8,24 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Users, Plus, Search, Mail, Building2 } from "lucide-react";
+import { Users, Plus, Search, Mail, Building2, Wrench } from "lucide-react";
 import { queryClient } from "@/lib/queryClient";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
-import { User, RepairOrder } from "@shared/schema";
+import { User, RepairOrder, RepairCenter } from "@shared/schema";
 import { CustomerBranchManager } from "@/components/CustomerBranchManager";
 import { CustomerWizardDialog } from "@/components/CustomerWizardDialog";
+
+type CustomerWithRepairCenters = User & {
+  assignedRepairCenters?: RepairCenter[];
+};
 
 export default function ResellerCustomers() {
   const [searchQuery, setSearchQuery] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [selectedCustomer, setSelectedCustomer] = useState<User | null>(null);
+  const [selectedCustomer, setSelectedCustomer] = useState<CustomerWithRepairCenters | null>(null);
 
-  const { data: allUsers = [], isLoading } = useQuery<User[]>({
+  const { data: allUsers = [], isLoading } = useQuery<CustomerWithRepairCenters[]>({
     queryKey: ["/api/reseller/customers"],
   });
 
@@ -123,7 +127,7 @@ export default function ResellerCustomers() {
                   <TableHead>Email</TableHead>
                   <TableHead>Username</TableHead>
                   <TableHead>Stato</TableHead>
-                  <TableHead>Data Registrazione</TableHead>
+                  <TableHead>Centri Riparazione</TableHead>
                   <TableHead>Riparazioni</TableHead>
                   <TableHead>Azioni</TableHead>
                 </TableRow>
@@ -150,7 +154,25 @@ export default function ResellerCustomers() {
                           <Badge variant="destructive">Disattivato</Badge>
                         )}
                       </TableCell>
-                      <TableCell>{format(new Date(customer.createdAt), "dd/MM/yyyy")}</TableCell>
+                      <TableCell>
+                        {customer.assignedRepairCenters && customer.assignedRepairCenters.length > 0 ? (
+                          <div className="flex flex-wrap gap-1">
+                            {customer.assignedRepairCenters.slice(0, 2).map((rc) => (
+                              <Badge key={rc.id} variant="secondary" className="text-xs" data-testid={`badge-repair-center-${rc.id}`}>
+                                <Wrench className="h-3 w-3 mr-1" />
+                                {rc.name}
+                              </Badge>
+                            ))}
+                            {customer.assignedRepairCenters.length > 2 && (
+                              <Badge variant="outline" className="text-xs">
+                                +{customer.assignedRepairCenters.length - 2}
+                              </Badge>
+                            )}
+                          </div>
+                        ) : (
+                          <span className="text-muted-foreground text-sm">Nessuno</span>
+                        )}
+                      </TableCell>
                       <TableCell>
                         <Badge data-testid={`badge-repairs-${customer.id}`}>
                           {customerRepairs.length} riparazioni
@@ -218,6 +240,24 @@ export default function ResellerCustomers() {
                       {selectedCustomer.isActive ? "Attivo" : "Disattivato"}
                     </p>
                   </div>
+                </div>
+                <div className="pt-4 border-t">
+                  <Label className="flex items-center gap-2 mb-2">
+                    <Wrench className="h-4 w-4" />
+                    Centri Riparazione Assegnati
+                  </Label>
+                  {selectedCustomer.assignedRepairCenters && selectedCustomer.assignedRepairCenters.length > 0 ? (
+                    <div className="flex flex-wrap gap-2">
+                      {selectedCustomer.assignedRepairCenters.map((rc) => (
+                        <Badge key={rc.id} variant="secondary" data-testid={`badge-detail-repair-center-${rc.id}`}>
+                          <Wrench className="h-3 w-3 mr-1" />
+                          {rc.name}
+                        </Badge>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">Nessun centro di riparazione assegnato</p>
+                  )}
                 </div>
               </TabsContent>
 

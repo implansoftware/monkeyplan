@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, integer, real, timestamp, boolean, pgEnum, jsonb } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, integer, real, timestamp, boolean, pgEnum, jsonb, unique } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
@@ -387,6 +387,24 @@ export const repairCenters = pgTable("repair_centers", {
   // Tariffa manodopera specifica per questo centro (in centesimi EUR)
   hourlyRateCents: integer("hourly_rate_cents"),
 });
+
+// Customer-RepairCenter many-to-many relationship
+// Customers can belong to multiple repair centers
+export const customerRepairCenters = pgTable("customer_repair_centers", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  customerId: varchar("customer_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+  repairCenterId: varchar("repair_center_id").notNull().references(() => repairCenters.id, { onDelete: 'cascade' }),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+}, (table) => [
+  unique().on(table.customerId, table.repairCenterId),
+]);
+
+export const insertCustomerRepairCenterSchema = createInsertSchema(customerRepairCenters).omit({
+  id: true,
+  createdAt: true,
+});
+export type InsertCustomerRepairCenter = z.infer<typeof insertCustomerRepairCenterSchema>;
+export type CustomerRepairCenter = typeof customerRepairCenters.$inferSelect;
 
 // Product type enum
 export const productTypeEnum = pgEnum("product_type", [
