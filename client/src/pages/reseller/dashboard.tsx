@@ -135,12 +135,6 @@ export default function ResellerDashboard() {
             Panoramica delle tue attività e ordini
           </p>
         </div>
-        <Link href="/reseller/new-repair">
-          <Button data-testid="button-new-repair">
-            <Plus className="h-4 w-4 mr-2" />
-            Nuova Riparazione
-          </Button>
-        </Link>
       </div>
 
       {/* KPI Cards */}
