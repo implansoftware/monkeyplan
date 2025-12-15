@@ -588,6 +588,8 @@ export const repairOrders = pgTable("repair_orders", {
   ingressatoAt: timestamp("ingressato_at"), // Data ingresso in laboratorio
   quoteBypassReason: quoteBypassReasonEnum("quote_bypass_reason"), // Motivo bypass preventivo (garanzia/omaggio)
   quoteBypassedAt: timestamp("quote_bypassed_at"), // Data bypass preventivo
+  skipDiagnosis: boolean("skip_diagnosis").notNull().default(false), // Flag: diagnosi saltata
+  skipDiagnosisReason: text("skip_diagnosis_reason"), // Motivo salto diagnosi
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
