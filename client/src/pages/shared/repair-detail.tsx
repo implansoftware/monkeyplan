@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -81,6 +82,8 @@ type RepairOrder = {
   ingressatoAt: string | null;
   quoteBypassReason: 'garanzia' | 'omaggio' | null;
   quoteBypassedAt: string | null;
+  skipDiagnosis: boolean;
+  skipDiagnosisReason: string | null;
   createdAt: string;
   updatedAt: string;
 };
@@ -152,6 +155,8 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
   const [deliveryDialogOpen, setDeliveryDialogOpen] = useState(false);
   const [skipQuoteDialogOpen, setSkipQuoteDialogOpen] = useState(false);
   const [skipQuoteReason, setSkipQuoteReason] = useState<'garanzia' | 'omaggio' | null>(null);
+  const [skipDiagnosisDialogOpen, setSkipDiagnosisDialogOpen] = useState(false);
+  const [skipDiagnosisReason, setSkipDiagnosisReason] = useState("");
   const [dataRecoveryDialogOpen, setDataRecoveryDialogOpen] = useState(false);
   const [appointmentDialogOpen, setAppointmentDialogOpen] = useState(false);
 
@@ -379,6 +384,38 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
       queryClient.invalidateQueries({ queryKey: ["/api/repair-orders", repairOrderId] });
       setSkipQuoteDialogOpen(false);
       setSkipQuoteReason(null);
+    },
+    onError: (error: Error) => {
+      toast({ title: "Errore", description: error.message, variant: "destructive" });
+    },
+  });
+
+  // Determine the correct API endpoint based on user role
+  const getSkipDiagnosisEndpoint = () => {
+    switch (user?.role) {
+      case 'admin':
+      case 'admin_staff':
+        return `/api/admin/repairs/${repairOrderId}/skip-diagnosis`;
+      case 'reseller':
+      case 'reseller_staff':
+        return `/api/reseller/repairs/${repairOrderId}/skip-diagnosis`;
+      case 'repair_center':
+        return `/api/repair-center/repairs/${repairOrderId}/skip-diagnosis`;
+      default:
+        return `/api/admin/repairs/${repairOrderId}/skip-diagnosis`;
+    }
+  };
+
+  const skipDiagnosisMutation = useMutation({
+    mutationFn: async (reason?: string) => {
+      return await apiRequest("POST", getSkipDiagnosisEndpoint(), { reason });
+    },
+    onSuccess: () => {
+      toast({ title: "Diagnosi saltata", description: "Si procede direttamente al preventivo" });
+      queryClient.invalidateQueries({ queryKey: ["/api/repair-orders"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/repair-orders", repairOrderId] });
+      setSkipDiagnosisDialogOpen(false);
+      setSkipDiagnosisReason("");
     },
     onError: (error: Error) => {
       toast({ title: "Errore", description: error.message, variant: "destructive" });
@@ -644,14 +681,25 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
                       <p className="text-sm">
                         Il dispositivo è stato <strong>ingressato</strong>. Inizia la <strong>diagnosi tecnica</strong>.
                       </p>
-                      <Button
-                        onClick={() => setDiagnosisDialogOpen(true)}
-                        className="w-full"
-                        data-testid="button-start-diagnosis"
-                      >
-                        <Stethoscope className="mr-2 h-4 w-4" />
-                        Inizia Diagnosi
-                      </Button>
+                      <div className="flex gap-2">
+                        <Button
+                          onClick={() => setDiagnosisDialogOpen(true)}
+                          className="flex-1"
+                          data-testid="button-start-diagnosis"
+                        >
+                          <Stethoscope className="mr-2 h-4 w-4" />
+                          Inizia Diagnosi
+                        </Button>
+                        <Button
+                          variant="outline"
+                          onClick={() => setSkipDiagnosisDialogOpen(true)}
+                          className="flex-1"
+                          data-testid="button-skip-diagnosis"
+                        >
+                          <SkipForward className="mr-2 h-4 w-4" />
+                          Salta Diagnosi
+                        </Button>
+                      </div>
                     </div>
                   )}
 
@@ -1304,6 +1352,51 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
           orderNumber={repair.orderNumber}
         />
       )}
+
+      <Dialog open={skipDiagnosisDialogOpen} onOpenChange={setSkipDiagnosisDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Salta Diagnosi</DialogTitle>
+            <DialogDescription>
+              Conferma per saltare la diagnosi tecnica e procedere direttamente al preventivo.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Motivo (opzionale)</label>
+              <Input
+                placeholder="Es: Problema già noto, cliente abituale..."
+                value={skipDiagnosisReason}
+                onChange={(e) => setSkipDiagnosisReason(e.target.value)}
+                data-testid="input-skip-diagnosis-reason"
+              />
+            </div>
+            <div className="flex items-center gap-2 p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg">
+              <AlertTriangle className="h-4 w-4 text-amber-500 flex-shrink-0" />
+              <p className="text-sm text-amber-600 dark:text-amber-400">
+                Saltando la diagnosi, il preventivo verrà creato senza dati diagnostici.
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setSkipDiagnosisDialogOpen(false)}>
+              Annulla
+            </Button>
+            <Button
+              onClick={() => skipDiagnosisMutation.mutate(skipDiagnosisReason || undefined)}
+              disabled={skipDiagnosisMutation.isPending}
+              data-testid="button-confirm-skip-diagnosis"
+            >
+              {skipDiagnosisMutation.isPending ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <SkipForward className="mr-2 h-4 w-4" />
+              )}
+              Conferma e Salta
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={skipQuoteDialogOpen} onOpenChange={setSkipQuoteDialogOpen}>
         <DialogContent>

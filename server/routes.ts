@@ -1778,7 +1778,7 @@ export function registerRoutes(app: Express): Server {
   });
 
   // Skip diagnosis for admin - go directly from ingressato to preventivo_emesso
-  app.post("/api/admin/repairs/:id/skip-diagnosis", requireRole("admin"), async (req, res) => {
+  app.post("/api/admin/repairs/:id/skip-diagnosis", requireRole("admin", "admin_staff"), async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
@@ -2458,7 +2458,7 @@ export function registerRoutes(app: Express): Server {
   });
 
   // Skip diagnosis for reseller - go directly from ingressato to preventivo_emesso
-  app.post("/api/reseller/repairs/:id/skip-diagnosis", requireRole("reseller"), async (req, res) => {
+  app.post("/api/reseller/repairs/:id/skip-diagnosis", requireRole("reseller", "reseller_staff"), async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
