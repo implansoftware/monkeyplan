@@ -1777,6 +1777,49 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Skip diagnosis for admin - go directly from ingressato to preventivo_emesso
+  app.post("/api/admin/repairs/:id/skip-diagnosis", requireRole("admin"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const { reason } = z.object({ reason: z.string().optional() }).parse(req.body);
+      
+      const repair = await storage.getRepairOrder(req.params.id);
+      if (!repair) return res.status(404).send("Ordine di riparazione non trovato");
+      
+      // Can only skip diagnosis from ingressato state
+      if (repair.status !== 'ingressato') {
+        return res.status(400).send("La diagnosi può essere saltata solo dallo stato 'ingressato'");
+      }
+      
+      // Update repair order with skip flag and move to preventivo_emesso
+      const updated = await storage.updateRepairOrder(req.params.id, {
+        skipDiagnosis: true,
+        skipDiagnosisReason: reason || null,
+        status: 'preventivo_emesso' as any,
+      });
+      
+      // Log the state transition
+      await storage.createRepairOrderStateHistory({
+        repairOrderId: req.params.id,
+        fromStatus: 'ingressato',
+        toStatus: 'preventivo_emesso',
+        changedBy: req.user.id,
+        notes: reason ? `Diagnosi saltata: ${reason}` : 'Diagnosi saltata',
+      });
+      
+      setActivityEntity(res, { type: 'repairs', id: req.params.id });
+      
+      await storage.invalidateCache('overview_%');
+      await storage.invalidateCache('centers_%');
+      
+      res.json(updated);
+    } catch (error: any) {
+      console.error("Error skipping diagnosis:", error);
+      res.status(400).send(error.message);
+    }
+  });
+
   // Tickets (Admin)
   app.get("/api/admin/tickets", requireRole("admin"), async (req, res) => {
     try {
@@ -2410,6 +2453,54 @@ export function registerRoutes(app: Express): Server {
       
       res.status(201).json(repair);
     } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+
+  // Skip diagnosis for reseller - go directly from ingressato to preventivo_emesso
+  app.post("/api/reseller/repairs/:id/skip-diagnosis", requireRole("reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const { reason } = z.object({ reason: z.string().optional() }).parse(req.body);
+      
+      const repair = await storage.getRepairOrder(req.params.id);
+      if (!repair) return res.status(404).send("Ordine di riparazione non trovato");
+      
+      // Verify reseller owns this repair
+      if (repair.resellerId !== req.user.id) {
+        return res.status(403).send("Non puoi modificare riparazioni di altri rivenditori");
+      }
+      
+      // Can only skip diagnosis from ingressato state
+      if (repair.status !== 'ingressato') {
+        return res.status(400).send("La diagnosi può essere saltata solo dallo stato 'ingressato'");
+      }
+      
+      // Update repair order with skip flag and move to preventivo_emesso
+      const updated = await storage.updateRepairOrder(req.params.id, {
+        skipDiagnosis: true,
+        skipDiagnosisReason: reason || null,
+        status: 'preventivo_emesso' as any,
+      });
+      
+      // Log the state transition
+      await storage.createRepairOrderStateHistory({
+        repairOrderId: req.params.id,
+        fromStatus: 'ingressato',
+        toStatus: 'preventivo_emesso',
+        changedBy: req.user.id,
+        notes: reason ? `Diagnosi saltata: ${reason}` : 'Diagnosi saltata',
+      });
+      
+      setActivityEntity(res, { type: 'repairs', id: req.params.id });
+      
+      await storage.invalidateCache('overview_%');
+      await storage.invalidateCache('centers_%');
+      
+      res.json(updated);
+    } catch (error: any) {
+      console.error("Error skipping diagnosis:", error);
       res.status(400).send(error.message);
     }
   });
@@ -4641,6 +4732,57 @@ export function registerRoutes(app: Express): Server {
       
       res.json(updated);
     } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+
+  // Skip diagnosis - go directly from ingressato to preventivo_emesso
+  const skipDiagnosisSchema = z.object({
+    reason: z.string().optional(),
+  });
+
+  app.post("/api/repair-center/repairs/:id/skip-diagnosis", requireRole("repair_center"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const { reason } = skipDiagnosisSchema.parse(req.body);
+      
+      const repair = await storage.getRepairOrder(req.params.id);
+      if (!repair) return res.status(404).send("Ordine di riparazione non trovato");
+      
+      if (repair.repairCenterId !== req.user.repairCenterId) {
+        return res.status(403).send("Non puoi modificare riparazioni di altri centri");
+      }
+      
+      // Can only skip diagnosis from ingressato state
+      if (repair.status !== 'ingressato') {
+        return res.status(400).send("La diagnosi può essere saltata solo dallo stato 'ingressato'");
+      }
+      
+      // Update repair order with skip flag and move to preventivo_emesso
+      const updated = await storage.updateRepairOrder(req.params.id, {
+        skipDiagnosis: true,
+        skipDiagnosisReason: reason || null,
+        status: 'preventivo_emesso' as any,
+      });
+      
+      // Log the state transition
+      await storage.createRepairOrderStateHistory({
+        repairOrderId: req.params.id,
+        fromStatus: 'ingressato',
+        toStatus: 'preventivo_emesso',
+        changedBy: req.user.id,
+        notes: reason ? `Diagnosi saltata: ${reason}` : 'Diagnosi saltata',
+      });
+      
+      setActivityEntity(res, { type: 'repairs', id: req.params.id });
+      
+      await storage.invalidateCache('overview_%');
+      await storage.invalidateCache('centers_%');
+      
+      res.json(updated);
+    } catch (error: any) {
+      console.error("Error skipping diagnosis:", error);
       res.status(400).send(error.message);
     }
   });
