@@ -82,6 +82,7 @@ const menuItems = {
     { title: "Fatture", url: "/admin/invoices", icon: FileText, group: "Fatturazione" },
     { title: "Activity Logs", url: "/admin/activity-logs", icon: Shield, group: "Sistema" },
     { title: "Impostazioni", url: "/admin/settings", icon: Settings, group: "Sistema" },
+    { title: "Team Admin", url: "/admin/team", icon: UsersRound, group: "Sistema" },
     { title: "Ticket", url: "/admin/tickets", icon: Ticket, group: "Assistenza" },
     { title: "Live Chat", url: "/admin/chat", icon: MessageSquare, group: "Assistenza" },
   ],

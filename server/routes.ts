@@ -1154,6 +1154,255 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Admin Team (Collaboratori Admin)
+  // List all admin staff members
+  app.get("/api/admin/team", requireRole("admin"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Non autorizzato");
+      
+      const staff = await storage.listAdminStaff();
+      
+      // Get permissions for each staff member
+      const staffWithPermissions = await Promise.all(
+        staff.map(async (member) => {
+          const permissions = await storage.getAdminStaffPermissions(member.id);
+          return {
+            ...member,
+            password: undefined,
+            permissions
+          };
+        })
+      );
+      
+      res.json(staffWithPermissions);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // Create a new admin staff member
+  const adminStaffUserSchema = z.object({
+    username: z.string().min(3, "Username deve essere almeno 3 caratteri"),
+    email: z.string().email("Email non valida"),
+    fullName: z.string().min(2, "Nome completo richiesto"),
+    phone: z.string().nullable().optional(),
+    password: z.string().min(6, "Password deve essere almeno 6 caratteri"),
+  });
+
+  const VALID_ADMIN_MODULES = ["users", "resellers", "repair_centers", "repairs", "products", "inventory", "suppliers", "supplier_orders", "invoices", "tickets", "utility", "reports", "settings", "service_catalog"] as const;
+
+  const adminStaffPermissionSchema = z.object({
+    module: z.enum(VALID_ADMIN_MODULES),
+    canRead: z.boolean().default(false),
+    canCreate: z.boolean().default(false),
+    canUpdate: z.boolean().default(false),
+    canDelete: z.boolean().default(false),
+  });
+
+  const createAdminStaffSchema = z.object({
+    user: adminStaffUserSchema,
+    permissions: z.array(adminStaffPermissionSchema).optional(),
+  });
+
+  app.post("/api/admin/team", requireRole("admin"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Non autorizzato");
+      
+      // Validate request body
+      const parsed = createAdminStaffSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).send(parsed.error.errors[0]?.message || "Dati non validi");
+      }
+
+      const { user: userData, permissions } = parsed.data;
+
+      // Hash password
+      const hashedPassword = await hashPassword(userData.password);
+
+      // Create user with role admin_staff
+      const newUser = await storage.createUser({
+        username: userData.username,
+        password: hashedPassword,
+        email: userData.email,
+        fullName: userData.fullName,
+        phone: userData.phone || null,
+        role: "admin_staff",
+        isActive: true
+      });
+
+      // Create permissions if provided
+      if (permissions && permissions.length > 0) {
+        await storage.upsertAdminStaffPermissions(newUser.id, req.user.id, permissions);
+      }
+
+      // Return created staff with permissions
+      const staffPermissions = await storage.getAdminStaffPermissions(newUser.id);
+      
+      setActivityEntity(res, { type: 'users', id: newUser.id });
+      res.status(201).json({
+        ...newUser,
+        password: undefined,
+        permissions: staffPermissions
+      });
+    } catch (error: any) {
+      console.error("Error creating admin staff:", error);
+      res.status(400).send(error.message);
+    }
+  });
+
+  // Update an admin staff member
+  const updateAdminStaffUserSchema = z.object({
+    fullName: z.string().min(2).optional(),
+    email: z.string().email().optional(),
+    phone: z.string().nullable().optional(),
+    isActive: z.boolean().optional(),
+  });
+
+  const updateAdminStaffSchema = z.object({
+    user: updateAdminStaffUserSchema.optional(),
+    permissions: z.array(adminStaffPermissionSchema).optional(),
+  });
+
+  app.patch("/api/admin/team/:id", requireRole("admin"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Non autorizzato");
+      
+      const staffId = req.params.id;
+      
+      // Validate request body
+      const parsed = updateAdminStaffSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).send(parsed.error.errors[0]?.message || "Dati non validi");
+      }
+
+      const { user: userData, permissions } = parsed.data;
+      
+      // Verify the staff member is admin_staff
+      const staffMember = await storage.getUser(staffId);
+      if (!staffMember || staffMember.role !== 'admin_staff') {
+        return res.status(404).send("Membro staff non trovato");
+      }
+
+      // Update user data if provided
+      if (userData) {
+        const updates: Partial<{ fullName: string; email: string; phone: string | null; isActive: boolean }> = {};
+        if (userData.fullName) updates.fullName = userData.fullName;
+        if (userData.email) updates.email = userData.email;
+        if (userData.phone !== undefined) updates.phone = userData.phone;
+        if (typeof userData.isActive === 'boolean') updates.isActive = userData.isActive;
+        
+        if (Object.keys(updates).length > 0) {
+          await storage.updateUser(staffId, updates);
+        }
+      }
+
+      // Update permissions if provided
+      if (permissions && permissions.length > 0) {
+        await storage.upsertAdminStaffPermissions(staffId, req.user.id, permissions);
+      }
+
+      // Return updated staff with permissions
+      const updatedStaff = await storage.getUser(staffId);
+      const staffPermissions = await storage.getAdminStaffPermissions(staffId);
+      
+      setActivityEntity(res, { type: 'users', id: staffId });
+      res.json({
+        ...updatedStaff,
+        password: undefined,
+        permissions: staffPermissions
+      });
+    } catch (error: any) {
+      console.error("Error updating admin staff:", error);
+      res.status(400).send(error.message);
+    }
+  });
+
+  // Delete an admin staff member
+  app.delete("/api/admin/team/:id", requireRole("admin"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Non autorizzato");
+      
+      const staffId = req.params.id;
+      
+      // Verify the staff member is admin_staff
+      const staffMember = await storage.getUser(staffId);
+      if (!staffMember || staffMember.role !== 'admin_staff') {
+        return res.status(404).send("Membro staff non trovato");
+      }
+
+      // Delete permissions first
+      await storage.deleteAdminStaffPermissionsByUser(staffId);
+      
+      // Delete user
+      await storage.deleteUser(staffId);
+
+      setActivityEntity(res, { type: 'users', id: staffId });
+      res.status(200).send("Membro staff eliminato");
+    } catch (error: any) {
+      console.error("Error deleting admin staff:", error);
+      res.status(400).send(error.message);
+    }
+  });
+
+  // Get permissions for a specific admin staff member
+  app.get("/api/admin/team/:id/permissions", requireRole("admin"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Non autorizzato");
+      
+      const staffId = req.params.id;
+      
+      // Verify the staff member is admin_staff
+      const staffMember = await storage.getUser(staffId);
+      if (!staffMember || staffMember.role !== 'admin_staff') {
+        return res.status(404).send("Membro staff non trovato");
+      }
+
+      const permissions = await storage.getAdminStaffPermissions(staffId);
+      res.json(permissions);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // Update permissions for a specific admin staff member (bulk update)
+  const updateAdminStaffPermissionsSchema = z.object({
+    permissions: z.array(adminStaffPermissionSchema),
+  });
+
+  app.put("/api/admin/team/:id/permissions", requireRole("admin"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Non autorizzato");
+      
+      const staffId = req.params.id;
+      
+      // Validate request body
+      const parsed = updateAdminStaffPermissionsSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).send(parsed.error.errors[0]?.message || "Permessi non validi");
+      }
+
+      const { permissions } = parsed.data;
+
+      // Verify the staff member is admin_staff
+      const staffMember = await storage.getUser(staffId);
+      if (!staffMember || staffMember.role !== 'admin_staff') {
+        return res.status(404).send("Membro staff non trovato");
+      }
+
+      const updatedPermissions = await storage.upsertAdminStaffPermissions(
+        staffId, 
+        req.user.id, 
+        permissions
+      );
+      
+      setActivityEntity(res, { type: 'users', id: staffId });
+      res.json(updatedPermissions);
+    } catch (error: any) {
+      console.error("Error updating admin staff permissions:", error);
+      res.status(400).send(error.message);
+    }
+  });
+
   // Repair Centers
   app.get("/api/admin/repair-centers", requireRole("admin"), async (req, res) => {
     try {

@@ -39,6 +39,7 @@ import AdminPartsLoad from "@/pages/admin/parts-load";
 import AdminExternalIntegrations from "@/pages/admin/external-integrations";
 import AdminCustomers from "@/pages/admin/customers";
 import AdminRepairDetail from "@/pages/admin/repair-detail";
+import AdminTeam from "@/pages/admin/team";
 import DiagnosisList from "@/pages/DiagnosisList";
 import QuotesList from "@/pages/QuotesList";
 
@@ -159,6 +160,7 @@ function Router() {
       <ProtectedRoute path="/admin/utility/reports" component={AdminUtilityReports} />
       <ProtectedRoute path="/admin/settings" component={AdminSettings} />
       <ProtectedRoute path="/admin/service-catalog" component={AdminServiceCatalog} />
+      <ProtectedRoute path="/admin/team" component={AdminTeam} />
       
       {/* Reseller routes */}
       <ProtectedRoute path="/reseller" component={ResellerDashboard} />

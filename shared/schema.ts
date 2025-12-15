@@ -5,7 +5,7 @@ import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
 // Enums
-export const userRoleEnum = pgEnum("user_role", ["admin", "reseller", "reseller_staff", "repair_center", "customer"]);
+export const userRoleEnum = pgEnum("user_role", ["admin", "admin_staff", "reseller", "reseller_staff", "repair_center", "customer"]);
 export const resellerCategoryEnum = pgEnum("reseller_category", ["standard", "franchising", "gdo"]);
 export const customerTypeEnum = pgEnum("customer_type", ["private", "company"]);
 export const ticketStatusEnum = pgEnum("ticket_status", ["open", "in_progress", "closed"]);
@@ -314,6 +314,24 @@ export const staffModuleEnum = pgEnum("staff_module", [
   "tickets",           // Ticket supporto
 ]);
 
+// Admin Module Enum - Moduli accessibili dallo staff admin
+export const adminModuleEnum = pgEnum("admin_module", [
+  "users",             // Gestione utenti
+  "resellers",         // Gestione rivenditori
+  "repair_centers",    // Centri riparazione
+  "repairs",           // Lavorazioni
+  "products",          // Prodotti
+  "inventory",         // Magazzino
+  "suppliers",         // Fornitori
+  "supplier_orders",   // Ordini fornitori
+  "invoices",          // Fatture
+  "tickets",           // Ticket supporto
+  "utility",           // Pratiche utility
+  "reports",           // Report/Analytics
+  "settings",          // Impostazioni sistema
+  "service_catalog",   // Catalogo interventi
+]);
+
 // Users table with role-based access
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -363,6 +381,28 @@ export const insertResellerStaffPermissionSchema = createInsertSchema(resellerSt
 });
 export type InsertResellerStaffPermission = z.infer<typeof insertResellerStaffPermissionSchema>;
 export type ResellerStaffPermission = typeof resellerStaffPermissions.$inferSelect;
+
+// Admin Staff Permissions - Permessi granulari per modulo per utenti staff dell'admin
+export const adminStaffPermissions = pgTable("admin_staff_permissions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }), // L'utente admin_staff
+  adminId: varchar("admin_id").notNull().references(() => users.id, { onDelete: "cascade" }), // L'admin che ha creato lo staff
+  module: adminModuleEnum("module").notNull(), // Il modulo a cui si applica il permesso
+  canRead: boolean("can_read").notNull().default(false),
+  canCreate: boolean("can_create").notNull().default(false),
+  canUpdate: boolean("can_update").notNull().default(false),
+  canDelete: boolean("can_delete").notNull().default(false),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export const insertAdminStaffPermissionSchema = createInsertSchema(adminStaffPermissions).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export type InsertAdminStaffPermission = z.infer<typeof insertAdminStaffPermissionSchema>;
+export type AdminStaffPermission = typeof adminStaffPermissions.$inferSelect;
 
 // Repair Centers
 export const repairCenters = pgTable("repair_centers", {

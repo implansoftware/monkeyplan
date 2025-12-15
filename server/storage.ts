@@ -64,6 +64,7 @@ import {
   mobilesentrixCredentials, mobilesentrixOrders,
   serviceItems, serviceItemPrices, productPrices,
   resellerStaffPermissions, ResellerStaffPermission, InsertResellerStaffPermission,
+  adminStaffPermissions, AdminStaffPermission, InsertAdminStaffPermission,
   customerRepairCenters, CustomerRepairCenter, InsertCustomerRepairCenter,
   staffRepairCenters, StaffRepairCenter, InsertStaffRepairCenter
 } from "@shared/schema";
@@ -4907,6 +4908,107 @@ export class DatabaseStorage implements IStorage {
 
   async checkStaffPermission(userId: string, module: string, action: 'read' | 'create' | 'update' | 'delete'): Promise<boolean> {
     const permission = await this.getStaffPermissionForModule(userId, module);
+    if (!permission) return false;
+    
+    switch (action) {
+      case 'read': return permission.canRead;
+      case 'create': return permission.canCreate;
+      case 'update': return permission.canUpdate;
+      case 'delete': return permission.canDelete;
+      default: return false;
+    }
+  }
+
+  // Admin Staff Team Management
+  async listAdminStaff(): Promise<User[]> {
+    return await db.select()
+      .from(users)
+      .where(eq(users.role, 'admin_staff'));
+  }
+
+  // Admin Staff Permissions
+  async getAdminStaffPermissions(userId: string): Promise<AdminStaffPermission[]> {
+    return await db.select()
+      .from(adminStaffPermissions)
+      .where(eq(adminStaffPermissions.userId, userId));
+  }
+
+  async getAdminStaffPermissionForModule(userId: string, module: string): Promise<AdminStaffPermission | undefined> {
+    const [permission] = await db.select()
+      .from(adminStaffPermissions)
+      .where(and(
+        eq(adminStaffPermissions.userId, userId),
+        sql`${adminStaffPermissions.module} = ${module}`
+      ))
+      .limit(1);
+    return permission;
+  }
+
+  async createAdminStaffPermission(permission: InsertAdminStaffPermission): Promise<AdminStaffPermission> {
+    const [created] = await db.insert(adminStaffPermissions)
+      .values(permission)
+      .returning();
+    return created;
+  }
+
+  async updateAdminStaffPermission(id: string, updates: Partial<Pick<AdminStaffPermission, 'canRead' | 'canCreate' | 'canUpdate' | 'canDelete'>>): Promise<AdminStaffPermission> {
+    const [updated] = await db.update(adminStaffPermissions)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(adminStaffPermissions.id, id))
+      .returning();
+    if (!updated) throw new Error("Admin staff permission not found");
+    return updated;
+  }
+
+  async deleteAdminStaffPermission(id: string): Promise<void> {
+    await db.delete(adminStaffPermissions)
+      .where(eq(adminStaffPermissions.id, id));
+  }
+
+  async deleteAdminStaffPermissionsByUser(userId: string): Promise<void> {
+    await db.delete(adminStaffPermissions)
+      .where(eq(adminStaffPermissions.userId, userId));
+  }
+
+  async upsertAdminStaffPermissions(
+    userId: string, 
+    adminId: string, 
+    permissions: { module: string; canRead: boolean; canCreate: boolean; canUpdate: boolean; canDelete: boolean }[]
+  ): Promise<AdminStaffPermission[]> {
+    const results: AdminStaffPermission[] = [];
+    
+    for (const perm of permissions) {
+      const existing = await this.getAdminStaffPermissionForModule(userId, perm.module);
+      
+      if (existing) {
+        const updated = await this.updateAdminStaffPermission(existing.id, {
+          canRead: perm.canRead,
+          canCreate: perm.canCreate,
+          canUpdate: perm.canUpdate,
+          canDelete: perm.canDelete
+        });
+        results.push(updated);
+      } else {
+        const created = await db.insert(adminStaffPermissions)
+          .values({
+            userId,
+            adminId,
+            module: perm.module as any,
+            canRead: perm.canRead,
+            canCreate: perm.canCreate,
+            canUpdate: perm.canUpdate,
+            canDelete: perm.canDelete
+          })
+          .returning();
+        results.push(created[0]);
+      }
+    }
+    
+    return results;
+  }
+
+  async checkAdminStaffPermission(userId: string, module: string, action: 'read' | 'create' | 'update' | 'delete'): Promise<boolean> {
+    const permission = await this.getAdminStaffPermissionForModule(userId, module);
     if (!permission) return false;
     
     switch (action) {
