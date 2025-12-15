@@ -408,6 +408,20 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
 
   const skipDiagnosisMutation = useMutation({
     mutationFn: async (reason?: string) => {
+      // Refetch current repair state to ensure we have fresh data
+      const freshResponse = await fetch(`/api/repair-orders/${repairOrderId}`, {
+        credentials: "include",
+      });
+      if (!freshResponse.ok) {
+        throw new Error("Errore nel verificare lo stato attuale");
+      }
+      const freshRepair = await freshResponse.json();
+      
+      // Verify status is still 'ingressato' before proceeding
+      if (freshRepair.status !== 'ingressato') {
+        throw new Error(`Lo stato è cambiato a '${freshRepair.status}'. Aggiorna la pagina.`);
+      }
+      
       return await apiRequest("POST", getSkipDiagnosisEndpoint(), { reason });
     },
     onSuccess: () => {
@@ -419,6 +433,9 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
     },
     onError: (error: Error) => {
       toast({ title: "Errore", description: error.message, variant: "destructive" });
+      // Invalidate to refresh the UI with current state
+      queryClient.invalidateQueries({ queryKey: ["/api/repair-orders", repairOrderId] });
+      setSkipDiagnosisDialogOpen(false);
     },
   });
 
