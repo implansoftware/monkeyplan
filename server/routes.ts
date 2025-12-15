@@ -1792,18 +1792,18 @@ export function registerRoutes(app: Express): Server {
         return res.status(400).send("La diagnosi può essere saltata solo dallo stato 'ingressato'");
       }
       
-      // Update repair order with skip flag and move to preventivo_emesso
+      // Update repair order with skip flag and move to in_diagnosi (to allow quote creation)
       const updated = await storage.updateRepairOrder(req.params.id, {
         skipDiagnosis: true,
         skipDiagnosisReason: reason || null,
-        status: 'preventivo_emesso' as any,
+        status: 'in_diagnosi' as any,
       });
       
       // Log the state transition
       await storage.createRepairOrderStateHistory({
         repairOrderId: req.params.id,
         fromStatus: 'ingressato',
-        toStatus: 'preventivo_emesso',
+        toStatus: 'in_diagnosi',
         changedBy: req.user.id,
         notes: reason ? `Diagnosi saltata: ${reason}` : 'Diagnosi saltata',
       });
@@ -2477,18 +2477,18 @@ export function registerRoutes(app: Express): Server {
         return res.status(400).send("La diagnosi può essere saltata solo dallo stato 'ingressato'");
       }
       
-      // Update repair order with skip flag and move to preventivo_emesso
+      // Update repair order with skip flag and move to in_diagnosi (to allow quote creation)
       const updated = await storage.updateRepairOrder(req.params.id, {
         skipDiagnosis: true,
         skipDiagnosisReason: reason || null,
-        status: 'preventivo_emesso' as any,
+        status: 'in_diagnosi' as any,
       });
       
       // Log the state transition
       await storage.createRepairOrderStateHistory({
         repairOrderId: req.params.id,
         fromStatus: 'ingressato',
-        toStatus: 'preventivo_emesso',
+        toStatus: 'in_diagnosi',
         changedBy: req.user.id,
         notes: reason ? `Diagnosi saltata: ${reason}` : 'Diagnosi saltata',
       });
@@ -4759,18 +4759,18 @@ export function registerRoutes(app: Express): Server {
         return res.status(400).send("La diagnosi può essere saltata solo dallo stato 'ingressato'");
       }
       
-      // Update repair order with skip flag and move to preventivo_emesso
+      // Update repair order with skip flag and move to in_diagnosi (to allow quote creation)
       const updated = await storage.updateRepairOrder(req.params.id, {
         skipDiagnosis: true,
         skipDiagnosisReason: reason || null,
-        status: 'preventivo_emesso' as any,
+        status: 'in_diagnosi' as any,
       });
       
       // Log the state transition
       await storage.createRepairOrderStateHistory({
         repairOrderId: req.params.id,
         fromStatus: 'ingressato',
-        toStatus: 'preventivo_emesso',
+        toStatus: 'in_diagnosi',
         changedBy: req.user.id,
         notes: reason ? `Diagnosi saltata: ${reason}` : 'Diagnosi saltata',
       });

@@ -722,7 +722,17 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
 
                   {repair.status === 'in_diagnosi' && (
                     <div className="bg-muted/50 rounded-lg p-4 space-y-3">
-                      {diagnosis ? (
+                      {repair.skipDiagnosis ? (
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2 text-sm text-amber-600 dark:text-amber-400">
+                            <SkipForward className="h-4 w-4" />
+                            <span>Diagnosi saltata{repair.skipDiagnosisReason ? `: ${repair.skipDiagnosisReason}` : ''}</span>
+                          </div>
+                          <p className="text-sm">
+                            <strong>Crea il preventivo</strong> per il cliente.
+                          </p>
+                        </div>
+                      ) : diagnosis ? (
                         <p className="text-sm">
                           <strong>Diagnosi completata!</strong> Ora <strong>crea il preventivo</strong> per il cliente.
                         </p>
