@@ -742,15 +742,17 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
                         </p>
                       )}
                       <div className="flex gap-2">
-                        <Button
-                          variant="outline"
-                          onClick={() => setDiagnosisDialogOpen(true)}
-                          className="flex-1"
-                          data-testid="button-edit-diagnosis"
-                        >
-                          <Stethoscope className="mr-2 h-4 w-4" />
-                          {diagnosis ? 'Modifica Diagnosi' : 'Completa Diagnosi'}
-                        </Button>
+                        {!repair.skipDiagnosis && (
+                          <Button
+                            variant="outline"
+                            onClick={() => setDiagnosisDialogOpen(true)}
+                            className="flex-1"
+                            data-testid="button-edit-diagnosis"
+                          >
+                            <Stethoscope className="mr-2 h-4 w-4" />
+                            {diagnosis ? 'Modifica Diagnosi' : 'Completa Diagnosi'}
+                          </Button>
+                        )}
                         <Button
                           onClick={() => setQuoteDialogOpen(true)}
                           className="flex-1"
