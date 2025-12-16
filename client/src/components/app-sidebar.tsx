@@ -289,6 +289,33 @@ export function AppSidebar() {
           const isOpen = isGroupOpen(group);
           const hasActiveItem = groupItems.some(item => location === item.url || location.startsWith(item.url + "/"));
           
+          // Dashboard group: render items directly without collapsible
+          if (group === "Dashboard" || group === "Principale") {
+            return (
+              <SidebarGroup key={group} className="py-1">
+                <SidebarMenu>
+                  {groupItems.map((item) => {
+                    const isActive = location === item.url || location.startsWith(item.url + "/");
+                    return (
+                      <SidebarMenuItem key={item.title}>
+                        <SidebarMenuButton asChild isActive={isActive} className="px-4 py-2.5">
+                          <Link 
+                            href={item.url} 
+                            onClick={handleLinkClick}
+                            data-testid={`link-${item.title.toLowerCase().replace(/\s+/g, "-")}`}
+                          >
+                            <item.icon className="h-4 w-4" />
+                            <span className="font-medium">{item.title}</span>
+                          </Link>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                    );
+                  })}
+                </SidebarMenu>
+              </SidebarGroup>
+            );
+          }
+          
           return (
             <SidebarGroup key={group} className="py-0">
               <Collapsible open={isOpen} onOpenChange={(open) => setGroupOpen(group, open)}>
