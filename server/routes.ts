@@ -2876,6 +2876,47 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Delete a customer (only if no active repairs)
+  app.delete("/api/reseller/customers/:id", requireRole("reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const customerId = req.params.id;
+      
+      // Verify customer exists and belongs to this reseller
+      const existingCustomer = await storage.getUser(customerId);
+      if (!existingCustomer || existingCustomer.role !== "customer" || existingCustomer.resellerId !== req.user.id) {
+        return res.status(404).send("Cliente non trovato");
+      }
+      
+      // Check for active repairs (only allow delete if all repairs are in terminal states)
+      // Terminal statuses from schema: consegnato (delivered), cancelled (annullato)
+      const allRepairs = await storage.listRepairOrders();
+      const customerRepairs = allRepairs.filter(r => r.customerId === customerId);
+      const terminalStatuses = ["consegnato", "cancelled"];
+      const activeRepairs = customerRepairs.filter(r => !terminalStatuses.includes(r.status));
+      
+      if (activeRepairs.length > 0) {
+        return res.status(409).json({
+          error: "ACTIVE_REPAIRS",
+          message: `Impossibile eliminare il cliente: ha ${activeRepairs.length} riparazion${activeRepairs.length === 1 ? 'e' : 'i'} in corso. Completa o annulla le riparazioni prima di eliminare il cliente.`,
+          activeRepairsCount: activeRepairs.length
+        });
+      }
+      
+      // Remove customer repair center associations first
+      await storage.setCustomerRepairCenters(customerId, []);
+      
+      // Delete the customer
+      await storage.deleteUser(customerId);
+      
+      setActivityEntity(res, { type: 'users', id: customerId });
+      res.json({ success: true, message: "Cliente eliminato con successo" });
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
   // ============================================================================
   // Reseller Staff Team Management
   // ============================================================================

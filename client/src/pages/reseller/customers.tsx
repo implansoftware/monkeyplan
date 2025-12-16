@@ -6,10 +6,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
-import { Users, Plus, Search, Mail, Building2, Wrench, Pencil, X, Check } from "lucide-react";
+import { Users, Plus, Search, Mail, Building2, Wrench, Pencil, X, Check, Trash2 } from "lucide-react";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
@@ -27,6 +28,8 @@ export default function ResellerCustomers() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState<CustomerWithRepairCenters | null>(null);
   const [isEditing, setIsEditing] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [customerToDelete, setCustomerToDelete] = useState<CustomerWithRepairCenters | null>(null);
   const [editForm, setEditForm] = useState({
     fullName: "",
     email: "",
@@ -62,6 +65,53 @@ export default function ResellerCustomers() {
       toast({ title: "Errore", description: error.message, variant: "destructive" });
     },
   });
+
+  const deleteCustomerMutation = useMutation({
+    mutationFn: async (customerId: string) => {
+      const response = await apiRequest("DELETE", `/api/reseller/customers/${customerId}`);
+      return response;
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["/api/reseller/customers"] });
+      toast({ title: "Cliente eliminato con successo" });
+      setDeleteDialogOpen(false);
+      setCustomerToDelete(null);
+    },
+    onError: async (error: any) => {
+      const errorMsg = error.message || "";
+      // Error format is "409: {json}" - extract JSON part after status code
+      const jsonMatch = errorMsg.match(/^\d+:\s*(.+)$/);
+      if (jsonMatch) {
+        try {
+          const errorData = JSON.parse(jsonMatch[1]);
+          if (errorData.error === "ACTIVE_REPAIRS") {
+            toast({ 
+              title: "Impossibile eliminare il cliente", 
+              description: errorData.message,
+              variant: "destructive" 
+            });
+            // Keep dialog open so user can see what happened
+            return;
+          }
+        } catch {
+          // Not JSON, continue to generic error
+        }
+      }
+      toast({ title: "Errore", description: errorMsg, variant: "destructive" });
+      // Keep dialog open on all errors so user can retry or dismiss
+    },
+  });
+
+  const handleDeleteClick = (customer: CustomerWithRepairCenters) => {
+    setCustomerToDelete(customer);
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = () => {
+    if (customerToDelete) {
+      deleteCustomerMutation.mutate(customerToDelete.id);
+    }
+  };
 
   const customers = allUsers.filter(user => user.role === "customer");
 
@@ -242,14 +292,25 @@ export default function ResellerCustomers() {
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setSelectedCustomer(customer)}
-                          data-testid={`button-view-${customer.id}`}
-                        >
-                          Dettagli
-                        </Button>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setSelectedCustomer(customer)}
+                            data-testid={`button-view-${customer.id}`}
+                          >
+                            Dettagli
+                          </Button>
+                          <Button
+                            variant="destructive"
+                            size="icon"
+                            onClick={() => handleDeleteClick(customer)}
+                            title="Elimina cliente"
+                            data-testid={`button-delete-${customer.id}`}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   );
@@ -456,6 +517,32 @@ export default function ResellerCustomers() {
           </DialogContent>
         </Dialog>
       )}
+
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Conferma Eliminazione</AlertDialogTitle>
+            <AlertDialogDescription>
+              Sei sicuro di voler eliminare il cliente <strong>{customerToDelete?.fullName}</strong>?
+              <br /><br />
+              Questa azione non può essere annullata. Tutti i dati del cliente verranno eliminati permanentemente.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setCustomerToDelete(null)}>
+              Annulla
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              disabled={deleteCustomerMutation.isPending}
+              data-testid="button-confirm-delete"
+            >
+              {deleteCustomerMutation.isPending ? "Eliminazione..." : "Elimina"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
