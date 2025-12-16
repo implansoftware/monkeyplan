@@ -7251,9 +7251,9 @@ export function registerRoutes(app: Express): Server {
         return res.status(400).send("Il preventivo può essere saltato solo dallo stato 'in_diagnosi'");
       }
       
-      // Check that diagnosis exists
+      // Check that diagnosis exists OR was skipped
       const diagnosis = await storage.getRepairDiagnostics(req.params.id);
-      if (!diagnosis) {
+      if (!diagnosis && !repairOrder.skipDiagnosis) {
         return res.status(400).send("La diagnosi deve essere completata prima di saltare il preventivo");
       }
       
@@ -7264,7 +7264,8 @@ export function registerRoutes(app: Express): Server {
       }
       
       // Update repair order - skip to attesa_ricambi or in_riparazione based on diagnosis
-      const nextStatus = diagnosis.requiresExternalParts ? 'attesa_ricambi' : 'in_riparazione';
+      // If diagnosis was skipped, default to in_riparazione
+      const nextStatus = diagnosis?.requiresExternalParts ? 'attesa_ricambi' : 'in_riparazione';
       
       await storage.updateRepairOrder(req.params.id, {
         status: nextStatus as any,
