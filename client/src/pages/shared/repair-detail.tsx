@@ -890,7 +890,16 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
                       <p className="text-sm">
                         <strong>Riparazione in corso.</strong> Registra le attività e passa al collaudo.
                       </p>
-                      <div className="flex gap-2">
+                      <div className="flex gap-2 flex-wrap">
+                        <Button
+                          variant="outline"
+                          onClick={() => setPartsDialogOpen(true)}
+                          className="flex-1"
+                          data-testid="button-order-parts-repair"
+                        >
+                          <Package className="mr-2 h-4 w-4" />
+                          Ordina Ricambi
+                        </Button>
                         <Button
                           variant="outline"
                           onClick={() => setLogsDialogOpen(true)}
