@@ -1317,7 +1317,7 @@ export function registerRoutes(app: Express): Server {
         return res.status(404).send("Rivenditore non trovato");
       }
       
-      const repairCenters = await storage.listResellerRepairCenters(resellerId);
+      const repairCenters = await storage.getRepairCentersForReseller(resellerId);
       res.json(repairCenters);
     } catch (error: any) {
       res.status(500).send(error.message);
