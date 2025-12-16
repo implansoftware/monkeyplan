@@ -33,7 +33,7 @@ import {
   ExternalLink,
 } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { useState, Fragment, useEffect } from "react";
+import { useState, Fragment } from "react";
 import {
   Sidebar,
   SidebarContent,
@@ -231,18 +231,6 @@ export function AppSidebar() {
 
   const activeGroup = findActiveGroup();
 
-  useEffect(() => {
-    if (activeGroup && openGroups[activeGroup] === undefined) {
-      setOpenGroups(prev => ({ ...prev, [activeGroup]: true }));
-    }
-    if (isReseller) {
-      for (const supplier of integratedSuppliers) {
-        if (location.startsWith(supplier.basePath) && openSuppliers[supplier.key] === undefined) {
-          setOpenSuppliers(prev => ({ ...prev, [supplier.key]: true }));
-        }
-      }
-    }
-  }, [location, activeGroup, isReseller]);
 
   const handleLinkClick = () => {
     if (isMobile) {
@@ -268,8 +256,7 @@ export function AppSidebar() {
   };
 
   const isGroupOpen = (group: string) => {
-    if (openGroups[group] !== undefined) return openGroups[group];
-    return group === activeGroup;
+    return openGroups[group] === true;
   };
 
   if (!user) return null;
