@@ -426,7 +426,7 @@ export default function AdminTeam() {
       </Card>
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
           <DialogHeader>
             <DialogTitle>
               {isEditing ? "Modifica Collaboratore" : "Nuovo Collaboratore Admin"}
@@ -439,7 +439,8 @@ export default function AdminTeam() {
           </DialogHeader>
 
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+            <form onSubmit={form.handleSubmit(handleSubmit)} className="flex flex-col flex-1 overflow-hidden">
+              <div className="flex-1 overflow-y-auto space-y-4 pr-2">
               <div className="grid grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
@@ -546,8 +547,9 @@ export default function AdminTeam() {
                   </div>
                 </div>
               )}
+              </div>
 
-              <DialogFooter>
+              <DialogFooter className="pt-4 border-t mt-4">
                 <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
                   Annulla
                 </Button>
