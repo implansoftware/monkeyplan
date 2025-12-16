@@ -754,14 +754,14 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
                         <Button
                           onClick={() => setQuoteDialogOpen(true)}
                           className="flex-1"
-                          disabled={!diagnosis}
+                          disabled={!diagnosis && !repair.skipDiagnosis}
                           data-testid="button-create-quote"
                         >
                           <Receipt className="mr-2 h-4 w-4" />
                           Crea Preventivo
                         </Button>
                       </div>
-                      {diagnosis && (
+                      {(diagnosis || repair.skipDiagnosis) && (
                         <div className="pt-2 border-t">
                           <Button
                             variant="ghost"
