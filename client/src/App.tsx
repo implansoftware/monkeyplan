@@ -42,6 +42,8 @@ import AdminExternalIntegrations from "@/pages/admin/external-integrations";
 import AdminCustomers from "@/pages/admin/customers";
 import AdminRepairDetail from "@/pages/admin/repair-detail";
 import AdminTeam from "@/pages/admin/team";
+import AdminSmartphoneCatalog from "@/pages/admin/smartphone-catalog";
+import AdminAccessoryCatalog from "@/pages/admin/accessory-catalog";
 import DiagnosisList from "@/pages/DiagnosisList";
 import QuotesList from "@/pages/QuotesList";
 
@@ -166,6 +168,8 @@ function Router() {
       <ProtectedRoute path="/admin/utility/reports" component={AdminUtilityReports} />
       <ProtectedRoute path="/admin/settings" component={AdminSettings} />
       <ProtectedRoute path="/admin/service-catalog" component={AdminServiceCatalog} />
+      <ProtectedRoute path="/admin/smartphone-catalog" component={AdminSmartphoneCatalog} />
+      <ProtectedRoute path="/admin/accessory-catalog" component={AdminAccessoryCatalog} />
       <ProtectedRoute path="/admin/team" component={AdminTeam} />
       
       {/* Reseller routes */}
