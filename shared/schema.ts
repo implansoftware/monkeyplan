@@ -480,6 +480,52 @@ export const productConditionEnum = pgEnum("product_condition", [
   "compatibile",     // Compatible (third-party)
 ]);
 
+// ==========================================
+// SMARTPHONE & ACCESSORIES CATALOG ENUMS
+// ==========================================
+
+// Smartphone storage capacity
+export const smartphoneStorageEnum = pgEnum("smartphone_storage", [
+  "16GB",
+  "32GB",
+  "64GB",
+  "128GB",
+  "256GB",
+  "512GB",
+  "1TB",
+  "2TB",
+]);
+
+// Smartphone grade (for refurbished/used)
+export const smartphoneGradeEnum = pgEnum("smartphone_grade", [
+  "A+",    // Come nuovo, nessun segno
+  "A",     // Ottimo, micro-segni invisibili
+  "B",     // Buono, leggeri segni visibili
+  "C",     // Discreto, segni evidenti
+  "D",     // Danneggiato esteticamente
+]);
+
+// Network lock status
+export const networkLockEnum = pgEnum("network_lock", [
+  "unlocked",       // Sbloccato
+  "locked",         // Bloccato operatore
+  "icloud_locked",  // Bloccato iCloud
+]);
+
+// Accessory type
+export const accessoryTypeEnum = pgEnum("accessory_type", [
+  "cover",           // Cover/Custodie
+  "pellicola",       // Pellicole protettive
+  "caricatore",      // Caricatori
+  "cavo",            // Cavi
+  "powerbank",       // Power bank
+  "auricolari",      // Auricolari/Cuffie
+  "supporto",        // Supporti auto/desk
+  "adattatore",      // Adattatori
+  "memoria",         // SD Card/Memory
+  "altro",           // Altro
+]);
+
 // Products (Inventory items - Electronics parts)
 export const products = pgTable("products", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -537,6 +583,63 @@ export const productPrices = pgTable("product_prices", {
   
   // Stato
   isActive: boolean("is_active").notNull().default(true),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+// ==========================================
+// SMARTPHONE SPECS (1:1 con products di tipo dispositivo)
+// ==========================================
+export const smartphoneSpecs = pgTable("smartphone_specs", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  productId: varchar("product_id").notNull().references(() => products.id, { onDelete: "cascade" }).unique(),
+  
+  // Specifiche tecniche
+  storage: smartphoneStorageEnum("storage").notNull(),
+  ram: text("ram"), // es. "8GB"
+  screenSize: text("screen_size"), // es. "6.1 pollici"
+  batteryHealth: integer("battery_health"), // Percentuale salute batteria (0-100)
+  
+  // Condizione e grading
+  grade: smartphoneGradeEnum("grade"),
+  networkLock: networkLockEnum("network_lock").notNull().default("unlocked"),
+  
+  // Identificativi
+  imei: text("imei"),
+  imei2: text("imei2"), // Secondo IMEI per dual SIM
+  serialNumber: text("serial_number"),
+  
+  // Info aggiuntive
+  originalBox: boolean("original_box").notNull().default(false), // Ha scatola originale
+  accessories: text("accessories").array(), // Accessori inclusi
+  notes: text("notes"),
+  
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+// ==========================================
+// ACCESSORY SPECS (1:1 con products di tipo accessorio)
+// ==========================================
+export const accessorySpecs = pgTable("accessory_specs", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  productId: varchar("product_id").notNull().references(() => products.id, { onDelete: "cascade" }).unique(),
+  
+  // Tipo accessorio
+  accessoryType: accessoryTypeEnum("accessory_type").notNull(),
+  
+  // Compatibilità
+  isUniversal: boolean("is_universal").notNull().default(false), // Compatibile con tutti i dispositivi
+  compatibleBrands: text("compatible_brands").array(), // ["Apple", "Samsung"]
+  compatibleModels: text("compatible_models").array(), // ["iPhone 15", "iPhone 14"]
+  
+  // Specifiche
+  material: text("material"), // es. "Silicone", "Vetro temperato"
+  color: text("color"),
+  
+  // Info aggiuntive
+  notes: text("notes"),
+  
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
@@ -2656,6 +2759,18 @@ export const insertProductPriceSchema = createInsertSchema(productPrices).omit({
   updatedAt: true,
 });
 
+export const insertSmartphoneSpecsSchema = createInsertSchema(smartphoneSpecs).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertAccessorySpecsSchema = createInsertSchema(accessorySpecs).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 export const insertInventoryMovementSchema = createInsertSchema(inventoryMovements).omit({
   id: true,
   createdAt: true,
@@ -3342,6 +3457,12 @@ export type InsertProduct = z.infer<typeof insertProductSchema>;
 
 export type ProductPrice = typeof productPrices.$inferSelect;
 export type InsertProductPrice = z.infer<typeof insertProductPriceSchema>;
+
+export type SmartphoneSpecs = typeof smartphoneSpecs.$inferSelect;
+export type InsertSmartphoneSpecs = z.infer<typeof insertSmartphoneSpecsSchema>;
+
+export type AccessorySpecs = typeof accessorySpecs.$inferSelect;
+export type InsertAccessorySpecs = z.infer<typeof insertAccessorySpecsSchema>;
 
 export type InventoryMovement = typeof inventoryMovements.$inferSelect;
 export type InsertInventoryMovement = z.infer<typeof insertInventoryMovementSchema>;
