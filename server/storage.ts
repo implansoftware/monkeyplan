@@ -66,7 +66,9 @@ import {
   resellerStaffPermissions, ResellerStaffPermission, InsertResellerStaffPermission,
   adminStaffPermissions, AdminStaffPermission, InsertAdminStaffPermission,
   customerRepairCenters, CustomerRepairCenter, InsertCustomerRepairCenter,
-  staffRepairCenters, StaffRepairCenter, InsertStaffRepairCenter
+  staffRepairCenters, StaffRepairCenter, InsertStaffRepairCenter,
+  smartphoneSpecs, SmartphoneSpecs, InsertSmartphoneSpecs,
+  accessorySpecs, AccessorySpecs, InsertAccessorySpecs
 } from "@shared/schema";
 import { db, pool } from "./db";
 import { eq, and, or, desc, lt, sql, not, inArray, isNull } from "drizzle-orm";
@@ -128,6 +130,20 @@ export interface IStorage {
   createProductPrice(price: InsertProductPrice): Promise<ProductPrice>;
   updateProductPrice(id: string, updates: Partial<Pick<ProductPrice, 'priceCents' | 'costPriceCents' | 'isActive'>>): Promise<ProductPrice>;
   deleteProductPrice(id: string): Promise<void>;
+  
+  // Smartphone Specs (for products of type "dispositivo")
+  getSmartphoneSpecs(productId: string): Promise<SmartphoneSpecs | undefined>;
+  createSmartphoneSpecs(specs: InsertSmartphoneSpecs): Promise<SmartphoneSpecs>;
+  updateSmartphoneSpecs(productId: string, updates: Partial<InsertSmartphoneSpecs>): Promise<SmartphoneSpecs>;
+  deleteSmartphoneSpecs(productId: string): Promise<void>;
+  listSmartphones(filters?: { resellerId?: string; brand?: string; condition?: string }): Promise<Array<Product & { specs: SmartphoneSpecs | null }>>;
+  
+  // Accessory Specs (for products of type "accessorio")
+  getAccessorySpecs(productId: string): Promise<AccessorySpecs | undefined>;
+  createAccessorySpecs(specs: InsertAccessorySpecs): Promise<AccessorySpecs>;
+  updateAccessorySpecs(productId: string, updates: Partial<InsertAccessorySpecs>): Promise<AccessorySpecs>;
+  deleteAccessorySpecs(productId: string): Promise<void>;
+  listAccessories(filters?: { resellerId?: string; accessoryType?: string }): Promise<Array<Product & { specs: AccessorySpecs | null }>>;
   
   // Repair Orders
   listRepairOrders(filters?: { customerId?: string; resellerId?: string; repairCenterId?: string; status?: string }): Promise<RepairOrder[]>;
@@ -952,6 +968,104 @@ export class DatabaseStorage implements IStorage {
 
   async deleteProductPrice(id: string): Promise<void> {
     await db.delete(productPrices).where(eq(productPrices.id, id));
+  }
+
+  // Smartphone Specs
+  async getSmartphoneSpecs(productId: string): Promise<SmartphoneSpecs | undefined> {
+    const [specs] = await db.select().from(smartphoneSpecs).where(eq(smartphoneSpecs.productId, productId));
+    return specs || undefined;
+  }
+
+  async createSmartphoneSpecs(specs: InsertSmartphoneSpecs): Promise<SmartphoneSpecs> {
+    const [result] = await db.insert(smartphoneSpecs).values(specs).returning();
+    return result;
+  }
+
+  async updateSmartphoneSpecs(productId: string, updates: Partial<InsertSmartphoneSpecs>): Promise<SmartphoneSpecs> {
+    const [result] = await db.update(smartphoneSpecs)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(smartphoneSpecs.productId, productId))
+      .returning();
+    return result;
+  }
+
+  async deleteSmartphoneSpecs(productId: string): Promise<void> {
+    await db.delete(smartphoneSpecs).where(eq(smartphoneSpecs.productId, productId));
+  }
+
+  async listSmartphones(filters?: { resellerId?: string; brand?: string; condition?: string }): Promise<Array<Product & { specs: SmartphoneSpecs | null }>> {
+    let query = db.select().from(products)
+      .leftJoin(smartphoneSpecs, eq(products.id, smartphoneSpecs.productId))
+      .where(eq(products.productType, 'dispositivo'));
+    
+    const conditions = [eq(products.productType, 'dispositivo' as any)];
+    if (filters?.resellerId) {
+      conditions.push(eq(products.createdBy, filters.resellerId));
+    }
+    if (filters?.brand) {
+      conditions.push(eq(products.brand, filters.brand));
+    }
+    if (filters?.condition) {
+      conditions.push(eq(products.condition, filters.condition as any));
+    }
+    
+    const results = await db.select()
+      .from(products)
+      .leftJoin(smartphoneSpecs, eq(products.id, smartphoneSpecs.productId))
+      .where(and(...conditions))
+      .orderBy(desc(products.createdAt));
+    
+    return results.map(r => ({
+      ...r.products,
+      specs: r.smartphone_specs || null
+    }));
+  }
+
+  // Accessory Specs
+  async getAccessorySpecs(productId: string): Promise<AccessorySpecs | undefined> {
+    const [specs] = await db.select().from(accessorySpecs).where(eq(accessorySpecs.productId, productId));
+    return specs || undefined;
+  }
+
+  async createAccessorySpecs(specs: InsertAccessorySpecs): Promise<AccessorySpecs> {
+    const [result] = await db.insert(accessorySpecs).values(specs).returning();
+    return result;
+  }
+
+  async updateAccessorySpecs(productId: string, updates: Partial<InsertAccessorySpecs>): Promise<AccessorySpecs> {
+    const [result] = await db.update(accessorySpecs)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(accessorySpecs.productId, productId))
+      .returning();
+    return result;
+  }
+
+  async deleteAccessorySpecs(productId: string): Promise<void> {
+    await db.delete(accessorySpecs).where(eq(accessorySpecs.productId, productId));
+  }
+
+  async listAccessories(filters?: { resellerId?: string; accessoryType?: string }): Promise<Array<Product & { specs: AccessorySpecs | null }>> {
+    const conditions = [eq(products.productType, 'accessorio' as any)];
+    if (filters?.resellerId) {
+      conditions.push(eq(products.createdBy, filters.resellerId));
+    }
+    
+    const results = await db.select()
+      .from(products)
+      .leftJoin(accessorySpecs, eq(products.id, accessorySpecs.productId))
+      .where(and(...conditions))
+      .orderBy(desc(products.createdAt));
+    
+    // Filter by accessory type in memory if needed (since it's on the joined table)
+    let filtered = results;
+    if (filters?.accessoryType) {
+      filtered = results.filter(r => r.accessory_specs?.accessoryType === filters.accessoryType);
+    }
+    
+    return filtered.map(r => ({
+      ...r.products,
+      specs: r.accessory_specs || null
+    }));
   }
 
   // Repair Orders
