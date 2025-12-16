@@ -1113,6 +1113,217 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // ============================================
+  // Admin Reseller Team Management
+  // ============================================
+
+  // List all staff members for a specific reseller
+  app.get("/api/admin/resellers/:resellerId/team", requireRole("admin"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Non autorizzato");
+      
+      const { resellerId } = req.params;
+      
+      // Verify reseller exists
+      const reseller = await storage.getUser(resellerId);
+      if (!reseller || reseller.role !== 'reseller') {
+        return res.status(404).send("Rivenditore non trovato");
+      }
+      
+      const staff = await storage.listResellerStaff(resellerId);
+      
+      // Get permissions and assigned repair centers for each staff member
+      const staffWithPermissions = await Promise.all(
+        staff.map(async (member) => {
+          const permissions = await storage.getStaffPermissions(member.id);
+          const assignedRepairCenters = await storage.listRepairCentersForStaff(member.id);
+          return {
+            ...member,
+            password: undefined,
+            permissions,
+            assignedRepairCenters
+          };
+        })
+      );
+      
+      res.json(staffWithPermissions);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // Create a new staff member for a specific reseller
+  app.post("/api/admin/resellers/:resellerId/team", requireRole("admin"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Non autorizzato");
+      
+      const { resellerId } = req.params;
+      const { user: userData, permissions, repairCenterIds } = req.body;
+      
+      // Verify reseller exists
+      const reseller = await storage.getUser(resellerId);
+      if (!reseller || reseller.role !== 'reseller') {
+        return res.status(404).send("Rivenditore non trovato");
+      }
+      
+      if (!userData || !userData.username || !userData.email || !userData.password || !userData.fullName) {
+        return res.status(400).send("Dati utente incompleti");
+      }
+
+      // Hash password
+      const hashedPassword = await hashPassword(userData.password);
+
+      // Create user with role reseller_staff
+      const newUser = await storage.createUser({
+        username: userData.username,
+        password: hashedPassword,
+        email: userData.email,
+        fullName: userData.fullName,
+        phone: userData.phone || null,
+        role: "reseller_staff",
+        resellerId: resellerId,
+        isActive: true
+      });
+
+      // Create permissions if provided
+      if (permissions && Array.isArray(permissions)) {
+        await storage.upsertStaffPermissions(newUser.id, resellerId, permissions);
+      }
+
+      // Assign repair centers if provided
+      if (repairCenterIds && Array.isArray(repairCenterIds)) {
+        await storage.setStaffRepairCenters(newUser.id, repairCenterIds);
+      }
+
+      // Get created staff with permissions
+      const createdPermissions = await storage.getStaffPermissions(newUser.id);
+      const assignedRepairCenters = await storage.listRepairCentersForStaff(newUser.id);
+
+      setActivityEntity(res, { type: 'users', id: newUser.id });
+      res.status(201).json({
+        ...newUser,
+        password: undefined,
+        permissions: createdPermissions,
+        assignedRepairCenters
+      });
+    } catch (error: any) {
+      console.error("Error creating reseller staff by admin:", error);
+      res.status(400).send(error.message);
+    }
+  });
+
+  // Update a staff member for a specific reseller
+  app.patch("/api/admin/resellers/:resellerId/team/:staffId", requireRole("admin"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Non autorizzato");
+      
+      const { resellerId, staffId } = req.params;
+      const { user: userData, permissions, repairCenterIds } = req.body;
+      
+      // Verify reseller exists
+      const reseller = await storage.getUser(resellerId);
+      if (!reseller || reseller.role !== 'reseller') {
+        return res.status(404).send("Rivenditore non trovato");
+      }
+      
+      // Verify the staff member belongs to this reseller
+      const staffMember = await storage.getUser(staffId);
+      if (!staffMember || staffMember.resellerId !== resellerId || staffMember.role !== 'reseller_staff') {
+        return res.status(404).send("Membro staff non trovato");
+      }
+
+      // Update user data if provided
+      if (userData) {
+        const updates: any = {};
+        if (userData.fullName) updates.fullName = userData.fullName;
+        if (userData.email) updates.email = userData.email;
+        if (userData.phone !== undefined) updates.phone = userData.phone;
+        if (typeof userData.isActive === 'boolean') updates.isActive = userData.isActive;
+        
+        if (Object.keys(updates).length > 0) {
+          await storage.updateUser(staffId, updates);
+        }
+      }
+
+      // Update permissions if provided
+      if (permissions && Array.isArray(permissions)) {
+        await storage.upsertStaffPermissions(staffId, resellerId, permissions);
+      }
+
+      // Update repair center assignments if provided
+      if (repairCenterIds && Array.isArray(repairCenterIds)) {
+        await storage.setStaffRepairCenters(staffId, repairCenterIds);
+      }
+
+      // Return updated staff member
+      const updatedMember = await storage.getUser(staffId);
+      const updatedPermissions = await storage.getStaffPermissions(staffId);
+      const assignedRepairCenters = await storage.listRepairCentersForStaff(staffId);
+
+      setActivityEntity(res, { type: 'users', id: staffId });
+      res.json({
+        ...updatedMember,
+        password: undefined,
+        permissions: updatedPermissions,
+        assignedRepairCenters
+      });
+    } catch (error: any) {
+      console.error("Error updating reseller staff by admin:", error);
+      res.status(400).send(error.message);
+    }
+  });
+
+  // Delete a staff member from a specific reseller's team
+  app.delete("/api/admin/resellers/:resellerId/team/:staffId", requireRole("admin"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Non autorizzato");
+      
+      const { resellerId, staffId } = req.params;
+      
+      // Verify reseller exists
+      const reseller = await storage.getUser(resellerId);
+      if (!reseller || reseller.role !== 'reseller') {
+        return res.status(404).send("Rivenditore non trovato");
+      }
+      
+      // Verify the staff member belongs to this reseller
+      const staffMember = await storage.getUser(staffId);
+      if (!staffMember || staffMember.resellerId !== resellerId || staffMember.role !== 'reseller_staff') {
+        return res.status(404).send("Membro staff non trovato");
+      }
+
+      // Delete permissions first
+      await storage.deleteStaffPermissionsByUser(staffId);
+      
+      // Delete user
+      await storage.deleteUser(staffId);
+
+      setActivityEntity(res, { type: 'users', id: staffId });
+      res.status(200).send("Membro staff eliminato");
+    } catch (error: any) {
+      console.error("Error deleting reseller staff by admin:", error);
+      res.status(400).send(error.message);
+    }
+  });
+
+  // Get repair centers for a specific reseller (for admin team management)
+  app.get("/api/admin/resellers/:resellerId/repair-centers", requireRole("admin"), async (req, res) => {
+    try {
+      const { resellerId } = req.params;
+      
+      // Verify reseller exists
+      const reseller = await storage.getUser(resellerId);
+      if (!reseller || reseller.role !== 'reseller') {
+        return res.status(404).send("Rivenditore non trovato");
+      }
+      
+      const repairCenters = await storage.listResellerRepairCenters(resellerId);
+      res.json(repairCenters);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
   app.post("/api/admin/users", requireRole("admin"), async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
