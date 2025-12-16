@@ -1358,9 +1358,38 @@ export function registerRoutes(app: Express): Server {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
-      await storage.deleteUser(req.params.id);
+      const userId = req.params.id;
+      const user = await storage.getUser(userId);
       
-      setActivityEntity(res, { type: 'users', id: req.params.id });
+      if (!user) {
+        return res.status(404).send("Utente non trovato");
+      }
+      
+      // If user is a customer, check for active repairs
+      if (user.role === "customer") {
+        const allRepairs = await storage.listRepairOrders();
+        const customerRepairs = allRepairs.filter(r => r.customerId === userId);
+        const terminalStatuses = ["consegnato", "cancelled"];
+        const activeRepairs = customerRepairs.filter(r => !terminalStatuses.includes(r.status));
+        
+        if (activeRepairs.length > 0) {
+          return res.status(409).json({
+            error: "ACTIVE_REPAIRS",
+            message: `Impossibile eliminare: il cliente ha ${activeRepairs.length} riparazione/i attiva/e`,
+            activeRepairsCount: activeRepairs.length
+          });
+        }
+        
+        // Remove customer from repair center associations
+        const customerRepairCenters = await storage.listCustomerRepairCenters(userId);
+        for (const crc of customerRepairCenters) {
+          await storage.removeCustomerFromRepairCenter(crc.id);
+        }
+      }
+      
+      await storage.deleteUser(userId);
+      
+      setActivityEntity(res, { type: 'users', id: userId });
       res.sendStatus(204);
     } catch (error: any) {
       res.status(500).send(error.message);
