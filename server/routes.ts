@@ -6740,6 +6740,239 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // ============ SMARTPHONES (Dispositivi) ============
+  
+  // List smartphones with specs (reseller sees own, admin sees all)
+  app.get("/api/smartphones", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const filters: { resellerId?: string; brand?: string; condition?: string } = {};
+      
+      if (req.user.role === 'reseller' || req.user.role === 'reseller_collaborator') {
+        const effectiveResellerId = req.user.role === 'reseller_collaborator' ? req.user.resellerId : req.user.id;
+        if (effectiveResellerId) filters.resellerId = effectiveResellerId;
+      } else if (req.user.role !== 'admin') {
+        return res.status(403).send("Access denied");
+      }
+      
+      if (req.query.brand) filters.brand = req.query.brand as string;
+      if (req.query.condition) filters.condition = req.query.condition as string;
+      
+      const smartphones = await storage.listSmartphones(filters);
+      res.json(smartphones);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+  
+  // Get smartphone specs for a product
+  app.get("/api/smartphones/:productId/specs", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const specs = await storage.getSmartphoneSpecs(req.params.productId);
+      if (!specs) return res.status(404).send("Smartphone specs not found");
+      
+      res.json(specs);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+  
+  // Create smartphone with specs (reseller or admin)
+  app.post("/api/smartphones", requireAuth, requireRole("admin", "reseller", "reseller_collaborator"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const { product, specs } = req.body;
+      
+      if (!product || !specs) {
+        return res.status(400).send("Product and specs are required");
+      }
+      
+      // Set product type to 'dispositivo'
+      product.productType = 'dispositivo';
+      product.createdBy = req.user.role === 'reseller_collaborator' ? req.user.resellerId : req.user.id;
+      
+      // Create product first
+      const createdProduct = await storage.createProduct(product);
+      
+      // Create specs linked to product
+      specs.productId = createdProduct.id;
+      const createdSpecs = await storage.createSmartphoneSpecs(specs);
+      
+      res.json({ ...createdProduct, specs: createdSpecs });
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+  
+  // Update smartphone specs
+  app.patch("/api/smartphones/:productId/specs", requireAuth, requireRole("admin", "reseller", "reseller_collaborator"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const product = await storage.getProduct(req.params.productId);
+      if (!product) return res.status(404).send("Product not found");
+      
+      // Check ownership for reseller
+      if (req.user.role === 'reseller' && product.createdBy !== req.user.id) {
+        return res.status(403).send("Access denied");
+      }
+      if (req.user.role === 'reseller_collaborator' && product.createdBy !== req.user.resellerId) {
+        return res.status(403).send("Access denied");
+      }
+      
+      const updatedSpecs = await storage.updateSmartphoneSpecs(req.params.productId, req.body);
+      res.json(updatedSpecs);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+  
+  // Delete smartphone (deletes product and specs)
+  app.delete("/api/smartphones/:productId", requireAuth, requireRole("admin", "reseller", "reseller_collaborator"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const product = await storage.getProduct(req.params.productId);
+      if (!product) return res.status(404).send("Product not found");
+      
+      // Check ownership for reseller
+      if (req.user.role === 'reseller' && product.createdBy !== req.user.id) {
+        return res.status(403).send("Access denied");
+      }
+      if (req.user.role === 'reseller_collaborator' && product.createdBy !== req.user.resellerId) {
+        return res.status(403).send("Access denied");
+      }
+      
+      // Delete specs first, then product
+      await storage.deleteSmartphoneSpecs(req.params.productId);
+      await storage.deleteProduct(req.params.productId);
+      
+      res.json({ success: true });
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // ============ ACCESSORIES (Accessori) ============
+  
+  // List accessories with specs
+  app.get("/api/accessories", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const filters: { resellerId?: string; accessoryType?: string } = {};
+      
+      if (req.user.role === 'reseller' || req.user.role === 'reseller_collaborator') {
+        const effectiveResellerId = req.user.role === 'reseller_collaborator' ? req.user.resellerId : req.user.id;
+        if (effectiveResellerId) filters.resellerId = effectiveResellerId;
+      } else if (req.user.role !== 'admin') {
+        return res.status(403).send("Access denied");
+      }
+      
+      if (req.query.accessoryType) filters.accessoryType = req.query.accessoryType as string;
+      
+      const accessories = await storage.listAccessories(filters);
+      res.json(accessories);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+  
+  // Get accessory specs for a product
+  app.get("/api/accessories/:productId/specs", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const specs = await storage.getAccessorySpecs(req.params.productId);
+      if (!specs) return res.status(404).send("Accessory specs not found");
+      
+      res.json(specs);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+  
+  // Create accessory with specs
+  app.post("/api/accessories", requireAuth, requireRole("admin", "reseller", "reseller_collaborator"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const { product, specs } = req.body;
+      
+      if (!product || !specs) {
+        return res.status(400).send("Product and specs are required");
+      }
+      
+      // Set product type to 'accessorio'
+      product.productType = 'accessorio';
+      product.createdBy = req.user.role === 'reseller_collaborator' ? req.user.resellerId : req.user.id;
+      
+      // Create product first
+      const createdProduct = await storage.createProduct(product);
+      
+      // Create specs linked to product
+      specs.productId = createdProduct.id;
+      const createdSpecs = await storage.createAccessorySpecs(specs);
+      
+      res.json({ ...createdProduct, specs: createdSpecs });
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+  
+  // Update accessory specs
+  app.patch("/api/accessories/:productId/specs", requireAuth, requireRole("admin", "reseller", "reseller_collaborator"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const product = await storage.getProduct(req.params.productId);
+      if (!product) return res.status(404).send("Product not found");
+      
+      // Check ownership for reseller
+      if (req.user.role === 'reseller' && product.createdBy !== req.user.id) {
+        return res.status(403).send("Access denied");
+      }
+      if (req.user.role === 'reseller_collaborator' && product.createdBy !== req.user.resellerId) {
+        return res.status(403).send("Access denied");
+      }
+      
+      const updatedSpecs = await storage.updateAccessorySpecs(req.params.productId, req.body);
+      res.json(updatedSpecs);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+  
+  // Delete accessory (deletes product and specs)
+  app.delete("/api/accessories/:productId", requireAuth, requireRole("admin", "reseller", "reseller_collaborator"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const product = await storage.getProduct(req.params.productId);
+      if (!product) return res.status(404).send("Product not found");
+      
+      // Check ownership for reseller
+      if (req.user.role === 'reseller' && product.createdBy !== req.user.id) {
+        return res.status(403).send("Access denied");
+      }
+      if (req.user.role === 'reseller_collaborator' && product.createdBy !== req.user.resellerId) {
+        return res.status(403).send("Access denied");
+      }
+      
+      // Delete specs first, then product
+      await storage.deleteAccessorySpecs(req.params.productId);
+      await storage.deleteProduct(req.params.productId);
+      
+      res.json({ success: true });
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
   // ============ INVENTORY ============
   
   // List inventory stock with role-based filtering
