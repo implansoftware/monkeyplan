@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { RepairOrder, RepairCenter } from "@shared/schema";
-import { Building } from "lucide-react";
+import { Building, Download } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -41,6 +42,8 @@ export default function ResellerRepairs() {
   const [, setLocation] = useLocation();
   const [wizardOpen, setWizardOpen] = useState(false);
   const [viewMode, setViewMode] = useState<"table" | "kanban">("table");
+  const [isExporting, setIsExporting] = useState(false);
+  const { toast } = useToast();
 
   // Fetch repair centers for filter
   const { data: repairCenters = [] } = useQuery<RepairCenter[]>({
@@ -89,7 +92,7 @@ export default function ResellerRepairs() {
       case "in_test": return <Badge>In Test</Badge>;
       case "pronto_ritiro": return <Badge>Pronto Ritiro</Badge>;
       case "consegnato": return <Badge variant="outline">Consegnato</Badge>;
-      case "annullato": return <Badge variant="destructive">Annullato</Badge>;
+      case "cancelled": return <Badge variant="destructive">Annullato</Badge>;
       default: return <Badge variant="outline">{status}</Badge>;
     }
   };
@@ -100,6 +103,45 @@ export default function ResellerRepairs() {
       style: "currency",
       currency: "EUR",
     }).format(cents / 100);
+  };
+
+  const handleExport = async () => {
+    try {
+      setIsExporting(true);
+      const params = new URLSearchParams();
+      if (statusFilter !== "all") params.append("status", statusFilter);
+      if (dateRange?.from) params.append("startDate", format(dateRange.from, "yyyy-MM-dd"));
+      if (dateRange?.to) params.append("endDate", format(dateRange.to, "yyyy-MM-dd"));
+      
+      const response = await fetch(`/api/reseller/export/repairs?${params.toString()}`, {
+        credentials: "include",
+      });
+      
+      if (!response.ok) throw new Error("Export failed");
+      
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `riparazioni_${new Date().toISOString().split('T')[0]}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      
+      toast({
+        title: "Export completato",
+        description: "Il file Excel è stato scaricato con successo",
+      });
+    } catch (error) {
+      toast({
+        title: "Errore",
+        description: "Impossibile esportare i dati",
+        variant: "destructive",
+      });
+    } finally {
+      setIsExporting(false);
+    }
   };
 
   return (
@@ -154,7 +196,7 @@ export default function ResellerRepairs() {
                 <SelectItem value="in_test">In Test</SelectItem>
                 <SelectItem value="pronto_ritiro">Pronto Ritiro</SelectItem>
                 <SelectItem value="consegnato">Consegnato</SelectItem>
-                <SelectItem value="annullato">Annullato</SelectItem>
+                <SelectItem value="cancelled">Annullato</SelectItem>
               </SelectContent>
             </Select>
             <Select value={slaFilter} onValueChange={setSlaFilter}>
@@ -240,6 +282,15 @@ export default function ResellerRepairs() {
             >
               <Plus className="h-4 w-4 mr-2" />
               Nuovo ingresso
+            </Button>
+            <Button
+              onClick={handleExport}
+              disabled={isExporting || repairs.length === 0}
+              variant="outline"
+              data-testid="button-export-repairs"
+            >
+              <Download className="h-4 w-4 mr-2" />
+              {isExporting ? "Esportazione..." : "Esporta Excel"}
             </Button>
           </div>
         </CardHeader>

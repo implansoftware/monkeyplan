@@ -79,13 +79,12 @@ export default function RepairCenterRepairs() {
       case "in_test": return <Badge data-testid={`badge-status-in_test`}>In Test</Badge>;
       case "pronto_ritiro": return <Badge data-testid={`badge-status-pronto_ritiro`}>Pronto Ritiro</Badge>;
       case "consegnato": return <Badge variant="outline" data-testid={`badge-status-consegnato`}>Consegnato</Badge>;
-      case "annullato": return <Badge variant="destructive" data-testid={`badge-status-annullato`}>Annullato</Badge>;
+      case "cancelled": return <Badge variant="destructive" data-testid={`badge-status-cancelled`}>Annullato</Badge>;
       // Legacy stati
       case "pending": return <Badge variant="secondary" data-testid={`badge-status-pending`}>In attesa</Badge>;
       case "in_progress": return <Badge data-testid={`badge-status-in_progress`}>In lavorazione</Badge>;
       case "completed": return <Badge variant="outline" data-testid={`badge-status-completed`}>Completata</Badge>;
       case "delivered": return <Badge variant="outline" data-testid={`badge-status-delivered`}>Consegnata</Badge>;
-      case "cancelled": return <Badge variant="destructive" data-testid={`badge-status-cancelled`}>Annullata</Badge>;
       default: return <Badge variant="outline">{status}</Badge>;
     }
   };
@@ -161,7 +160,7 @@ export default function RepairCenterRepairs() {
                 <SelectItem value="in_test">In Test</SelectItem>
                 <SelectItem value="pronto_ritiro">Pronto Ritiro</SelectItem>
                 <SelectItem value="consegnato">Consegnato</SelectItem>
-                <SelectItem value="annullato">Annullato</SelectItem>
+                <SelectItem value="cancelled">Annullato</SelectItem>
               </SelectContent>
             </Select>
           </div>

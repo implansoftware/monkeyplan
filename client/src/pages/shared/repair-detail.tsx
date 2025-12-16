@@ -451,13 +451,12 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
       case "in_test": return <Badge data-testid={`status-${status}`}>In Test</Badge>;
       case "pronto_ritiro": return <Badge data-testid={`status-${status}`}>Pronto Ritiro</Badge>;
       case "consegnato": return <Badge variant="outline" data-testid={`status-${status}`}>Consegnato</Badge>;
-      case "annullato": return <Badge variant="destructive" data-testid={`status-${status}`}>Annullato</Badge>;
+      case "cancelled": return <Badge variant="destructive" data-testid={`status-${status}`}>Annullato</Badge>;
       case "pending": return <Badge variant="secondary" data-testid={`status-${status}`}>In attesa</Badge>;
       case "in_progress": return <Badge data-testid={`status-${status}`}>In lavorazione</Badge>;
       case "waiting_parts": return <Badge variant="outline" data-testid={`status-${status}`}>In attesa pezzi</Badge>;
       case "completed": return <Badge variant="outline" data-testid={`status-${status}`}>Completata</Badge>;
       case "delivered": return <Badge variant="outline" data-testid={`status-${status}`}>Consegnata</Badge>;
-      case "cancelled": return <Badge variant="destructive" data-testid={`status-${status}`}>Annullata</Badge>;
       default: return <Badge variant="outline" data-testid={`status-${status}`}>{status}</Badge>;
     }
   };

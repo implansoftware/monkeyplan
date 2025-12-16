@@ -2814,6 +2814,96 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Export Repairs (Reseller) - Only their own repairs
+  app.get("/api/reseller/export/repairs", requireRole("reseller", "reseller_staff"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const { startDate, endDate, status } = req.query;
+      const context = getEffectiveContext(req);
+      
+      // Get all repair orders for this reseller
+      const allRepairs = await storage.listRepairOrders();
+      
+      // Filter by reseller context
+      let repairs = allRepairs.filter(r => r.resellerId === context.resellerId);
+      
+      // If viewing as repair center, filter further
+      if (context.repairCenterId) {
+        repairs = repairs.filter(r => r.repairCenterId === context.repairCenterId);
+      }
+      
+      // Apply date and status filters
+      repairs = repairs.filter(rep => {
+        if (startDate && new Date(rep.createdAt) < new Date(startDate as string)) return false;
+        if (endDate && new Date(rep.createdAt) > new Date(endDate as string)) return false;
+        if (status && rep.status !== status) return false;
+        return true;
+      });
+      
+      // Get customer and repair center names
+      const users = await storage.listUsers();
+      const repairCenters = await storage.getRepairCentersForReseller(context.resellerId);
+      const userMap = new Map(users.map(u => [u.id, u.fullName]));
+      const centerMap = new Map(repairCenters.map(c => [c.id, c.name]));
+      
+      // Create workbook
+      const workbook = new ExcelJS.Workbook();
+      workbook.creator = 'MonkeyPlan Reseller';
+      workbook.created = new Date();
+      
+      const data = repairs.map(rep => ({
+        'Numero Ordine': rep.orderNumber,
+        'Cliente': rep.customerId ? userMap.get(rep.customerId) || rep.customerId : '-',
+        'Centro Riparazione': rep.repairCenterId ? centerMap.get(rep.repairCenterId) || rep.repairCenterId : '-',
+        'Tipo Dispositivo': rep.deviceType,
+        'Modello': rep.deviceModel,
+        'Problema': rep.issueDescription,
+        'Stato': rep.status,
+        'Costo Stimato': rep.estimatedCost ? (rep.estimatedCost / 100).toFixed(2) : '-',
+        'Costo Finale': rep.finalCost ? (rep.finalCost / 100).toFixed(2) : '-',
+        'Creato Il': new Date(rep.createdAt).toLocaleString('it-IT'),
+        'Aggiornato Il': new Date(rep.updatedAt).toLocaleString('it-IT'),
+      }));
+      
+      const worksheet = workbook.addWorksheet('Riparazioni');
+      
+      if (data.length > 0) {
+        const headers = Object.keys(data[0]);
+        worksheet.addRow(headers);
+        
+        worksheet.getRow(1).font = { bold: true };
+        worksheet.getRow(1).fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'FFE0E0E0' }
+        };
+        
+        data.forEach(row => {
+          worksheet.addRow(Object.values(row));
+        });
+        
+        worksheet.columns.forEach(column => {
+          let maxLength = 0;
+          column.eachCell?.({ includeEmpty: true }, (cell) => {
+            const length = cell.value ? cell.value.toString().length : 10;
+            if (length > maxLength) maxLength = length;
+          });
+          column.width = Math.min(maxLength + 2, 50);
+        });
+      }
+      
+      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+      res.setHeader('Content-Disposition', `attachment; filename=riparazioni_${new Date().toISOString().split('T')[0]}.xlsx`);
+      
+      const buffer = await workbook.xlsx.writeBuffer();
+      res.send(buffer);
+    } catch (error: any) {
+      console.error("Error exporting reseller repairs:", error);
+      res.status(500).send(error.message);
+    }
+  });
+
   // Skip diagnosis for reseller - go directly from ingressato to preventivo_emesso
   app.post("/api/reseller/repairs/:id/skip-diagnosis", requireRole("reseller", "reseller_staff"), async (req, res) => {
     try {

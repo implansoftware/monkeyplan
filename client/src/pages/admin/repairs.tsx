@@ -140,14 +140,13 @@ export default function AdminRepairs() {
       case "in_test": return <Badge>In Test</Badge>;
       case "pronto_ritiro": return <Badge>Pronto Ritiro</Badge>;
       case "consegnato": return <Badge variant="outline">Consegnato</Badge>;
-      case "annullato": return <Badge variant="destructive">Annullato</Badge>;
+      case "cancelled": return <Badge variant="destructive">Annullato</Badge>;
       // Legacy stati
       case "pending": return <Badge variant="secondary">In attesa</Badge>;
       case "in_progress": return <Badge>In lavorazione</Badge>;
       case "waiting_parts": return <Badge variant="outline">In attesa pezzi</Badge>;
       case "completed": return <Badge>Completata</Badge>;
       case "delivered": return <Badge variant="outline">Consegnata</Badge>;
-      case "cancelled": return <Badge variant="destructive">Annullata</Badge>;
       default: return <Badge variant="outline">{status}</Badge>;
     }
   };
@@ -276,7 +275,7 @@ export default function AdminRepairs() {
                 <SelectItem value="in_test">In Test</SelectItem>
                 <SelectItem value="pronto_ritiro">Pronto Ritiro</SelectItem>
                 <SelectItem value="consegnato">Consegnato</SelectItem>
-                <SelectItem value="annullato">Annullato</SelectItem>
+                <SelectItem value="cancelled">Annullato</SelectItem>
               </SelectContent>
             </Select>
             <Select value={slaFilter} onValueChange={setSlaFilter}>

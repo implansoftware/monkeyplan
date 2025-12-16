@@ -400,14 +400,13 @@ export function RepairOrderDetailDrawer({
       case "in_test": return <Badge data-testid={`status-${status}`}>In Test</Badge>;
       case "pronto_ritiro": return <Badge data-testid={`status-${status}`}>Pronto Ritiro</Badge>;
       case "consegnato": return <Badge variant="outline" data-testid={`status-${status}`}>Consegnato</Badge>;
-      case "annullato": return <Badge variant="destructive" data-testid={`status-${status}`}>Annullato</Badge>;
+      case "cancelled": return <Badge variant="destructive" data-testid={`status-${status}`}>Annullato</Badge>;
       // Legacy stati
       case "pending": return <Badge variant="secondary" data-testid={`status-${status}`}>In attesa</Badge>;
       case "in_progress": return <Badge data-testid={`status-${status}`}>In lavorazione</Badge>;
       case "waiting_parts": return <Badge variant="outline" data-testid={`status-${status}`}>In attesa pezzi</Badge>;
       case "completed": return <Badge variant="outline" data-testid={`status-${status}`}>Completata</Badge>;
       case "delivered": return <Badge variant="outline" data-testid={`status-${status}`}>Consegnata</Badge>;
-      case "cancelled": return <Badge variant="destructive" data-testid={`status-${status}`}>Annullata</Badge>;
       default: return <Badge variant="outline" data-testid={`status-${status}`}>{status}</Badge>;
     }
   };
@@ -449,7 +448,7 @@ export function RepairOrderDetailDrawer({
               </div>
               
               {/* SLA Indicator */}
-              {!['consegnato', 'annullato', 'cancelled'].includes(repair.status) && (() => {
+              {!['consegnato', 'cancelled'].includes(repair.status) && (() => {
                 const statusEnteredAt = slaState?.stateEnteredAt || repair.createdAt;
                 const { severity, minutesInState, phase } = computeSLASeverity(repair.status, statusEnteredAt);
                 
@@ -939,8 +938,8 @@ export function RepairOrderDetailDrawer({
                       </div>
                     )}
 
-                    {/* Status: annullato - Cancelled */}
-                    {repair.status === 'annullato' && (
+                    {/* Status: cancelled - Cancelled */}
+                    {repair.status === 'cancelled' && (
                       <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-4">
                         <p className="text-sm text-red-600 dark:text-red-400 font-medium">
                           Ordine annullato.
