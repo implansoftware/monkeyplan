@@ -18,6 +18,7 @@ import { TicketNotificationsProvider } from "@/contexts/TicketNotificationsConte
 import AdminDashboard from "@/pages/admin/dashboard";
 import AdminUsers from "@/pages/admin/users";
 import AdminResellers from "@/pages/admin/resellers";
+import AdminResellerTeam from "@/pages/admin/reseller-team";
 import AdminRepairCenters from "@/pages/admin/repair-centers";
 import AdminTickets from "@/pages/admin/tickets";
 import AdminTicketDetail from "@/pages/admin/ticket-detail";
@@ -130,6 +131,7 @@ function Router() {
       <ProtectedRoute path="/" component={AdminDashboard} />
       <ProtectedRoute path="/admin/users" component={AdminUsers} />
       <ProtectedRoute path="/admin/customers" component={AdminCustomers} />
+      <ProtectedRoute path="/admin/resellers/:resellerId/team" component={AdminResellerTeam} />
       <ProtectedRoute path="/admin/resellers" component={AdminResellers} />
       <ProtectedRoute path="/admin/repair-centers" component={AdminRepairCenters} />
       <ProtectedRoute path="/admin/repairs/:id" component={AdminRepairDetail} />

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { User, InsertUser } from "@shared/schema";
 import { Button } from "@/components/ui/button";
@@ -9,7 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Search, Pencil, Store, Users, Power } from "lucide-react";
+import { Plus, Search, Pencil, Store, Users, UsersRound } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -477,19 +478,32 @@ export default function AdminResellers() {
                       </div>
                     </TableCell>
                     <TableCell className="text-right">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => {
-                          setEditingReseller(reseller);
-                          setSelectedCategory(reseller.resellerCategory || "standard");
-                          setSelectedParentResellerId(reseller.parentResellerId || "");
-                          setDialogOpen(true);
-                        }}
-                        data-testid={`button-edit-${reseller.id}`}
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
+                      <div className="flex items-center justify-end gap-1">
+                        <Link href={`/admin/resellers/${reseller.id}/team`}>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            title="Gestisci team"
+                            data-testid={`button-team-${reseller.id}`}
+                          >
+                            <UsersRound className="h-4 w-4" />
+                          </Button>
+                        </Link>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => {
+                            setEditingReseller(reseller);
+                            setSelectedCategory(reseller.resellerCategory || "standard");
+                            setSelectedParentResellerId(reseller.parentResellerId || "");
+                            setDialogOpen(true);
+                          }}
+                          title="Modifica rivenditore"
+                          data-testid={`button-edit-${reseller.id}`}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
