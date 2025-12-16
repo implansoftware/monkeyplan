@@ -203,24 +203,8 @@ export function AppSidebar() {
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
   const [openSuppliers, setOpenSuppliers] = useState<Record<string, boolean>>({});
 
-  const handleLinkClick = () => {
-    if (isMobile) {
-      setOpenMobile(false);
-    }
-  };
-
-  const setGroupOpen = (group: string, isOpen: boolean) => {
-    setOpenGroups(prev => ({ ...prev, [group]: isOpen }));
-  };
-
-  const setSupplierOpen = (key: string, isOpen: boolean) => {
-    setOpenSuppliers(prev => ({ ...prev, [key]: isOpen }));
-  };
-
-  if (!user) return null;
-
-  const items = menuItems[user.role as keyof typeof menuItems] || [];
-  const isReseller = user.role === "reseller";
+  const items = user ? (menuItems[user.role as keyof typeof menuItems] || []) : [];
+  const isReseller = user?.role === "reseller";
   
   const groupedItems = items.reduce((acc, item) => {
     if (!acc[item.group]) {
@@ -261,6 +245,20 @@ export function AppSidebar() {
     }
   }, [location, activeGroup, isReseller]);
 
+  const handleLinkClick = () => {
+    if (isMobile) {
+      setOpenMobile(false);
+    }
+  };
+
+  const setGroupOpen = (group: string, isOpen: boolean) => {
+    setOpenGroups(prev => ({ ...prev, [group]: isOpen }));
+  };
+
+  const setSupplierOpen = (key: string, isOpen: boolean) => {
+    setOpenSuppliers(prev => ({ ...prev, [key]: isOpen }));
+  };
+
   const getInitials = (name: string) => {
     return name
       .split(" ")
@@ -274,6 +272,8 @@ export function AppSidebar() {
     if (openGroups[group] !== undefined) return openGroups[group];
     return group === activeGroup;
   };
+
+  if (!user) return null;
 
   return (
     <Sidebar>
