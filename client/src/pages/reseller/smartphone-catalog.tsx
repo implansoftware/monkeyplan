@@ -97,8 +97,7 @@ export default function SmartphoneCatalog() {
 
   const updateMutation = useMutation({
     mutationFn: async ({ productId, data }: { productId: string; data: any }) => {
-      await apiRequest("PATCH", `/api/products/${productId}`, data.product);
-      await apiRequest("PATCH", `/api/smartphones/${productId}/specs`, data.specs);
+      await apiRequest("PATCH", `/api/smartphones/${productId}`, { product: data.product, specs: data.specs });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/smartphones"] });

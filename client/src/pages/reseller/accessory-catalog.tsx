@@ -91,8 +91,7 @@ export default function AccessoryCatalog() {
 
   const updateMutation = useMutation({
     mutationFn: async ({ productId, data }: { productId: string; data: any }) => {
-      await apiRequest("PATCH", `/api/products/${productId}`, data.product);
-      await apiRequest("PATCH", `/api/accessories/${productId}/specs`, data.specs);
+      await apiRequest("PATCH", `/api/accessories/${productId}`, { product: data.product, specs: data.specs });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/accessories"] });
