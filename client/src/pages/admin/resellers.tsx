@@ -10,7 +10,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Search, Pencil, Store, Users, UsersRound } from "lucide-react";
+import { Plus, Search, Pencil, Store, Users, UsersRound, Trash2 } from "lucide-react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Switch } from "@/components/ui/switch";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -24,6 +25,8 @@ export default function AdminResellers() {
   const [selectedCategory, setSelectedCategory] = useState<string>("standard");
   const [selectedParentResellerId, setSelectedParentResellerId] = useState<string>("");
   const [addressData, setAddressData] = useState({ indirizzo: "", citta: "", cap: "", provincia: "" });
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [resellerToDelete, setResellerToDelete] = useState<Omit<User, 'password'> | null>(null);
   const { toast } = useToast();
 
   type ResellerWithCount = Omit<User, 'password'> & { customerCount: number };
@@ -82,6 +85,50 @@ export default function AdminResellers() {
       toast({ title: "Errore", description: error.message, variant: "destructive" });
     },
   });
+
+  const deleteResellerMutation = useMutation({
+    mutationFn: async (id: string) => {
+      await apiRequest("DELETE", `/api/admin/resellers/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/resellers"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/users"] });
+      toast({ title: "Rivenditore eliminato con successo" });
+      setDeleteDialogOpen(false);
+      setResellerToDelete(null);
+    },
+    onError: async (error: any) => {
+      const errorMsg = error.message || "";
+      const jsonMatch = errorMsg.match(/^\d+:\s*(.+)$/);
+      if (jsonMatch) {
+        try {
+          const errorData = JSON.parse(jsonMatch[1]);
+          if (["ACTIVE_REPAIRS", "UNPAID_INVOICES", "OPEN_TICKETS", "HAS_CUSTOMERS", "HAS_REPAIR_CENTERS"].includes(errorData.error)) {
+            toast({ 
+              title: "Impossibile eliminare il rivenditore", 
+              description: errorData.message,
+              variant: "destructive" 
+            });
+            return;
+          }
+        } catch {
+          // Not JSON
+        }
+      }
+      toast({ title: "Errore", description: errorMsg, variant: "destructive" });
+    },
+  });
+
+  const handleDeleteClick = (reseller: Omit<User, 'password'>) => {
+    setResellerToDelete(reseller);
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = () => {
+    if (resellerToDelete) {
+      deleteResellerMutation.mutate(resellerToDelete.id);
+    }
+  };
 
   // Rivenditori padre (franchising/gdo) per il dropdown
   const parentResellers = resellers.filter(r => 
@@ -503,6 +550,15 @@ export default function AdminResellers() {
                         >
                           <Pencil className="h-4 w-4" />
                         </Button>
+                        <Button
+                          variant="destructive"
+                          size="icon"
+                          onClick={() => handleDeleteClick(reseller)}
+                          title="Elimina rivenditore"
+                          data-testid={`button-delete-${reseller.id}`}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
                       </div>
                     </TableCell>
                   </TableRow>
@@ -512,6 +568,41 @@ export default function AdminResellers() {
           )}
         </CardContent>
       </Card>
+
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent data-testid="dialog-delete-reseller">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Eliminare il rivenditore?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Stai per eliminare definitivamente il rivenditore <strong>{resellerToDelete?.fullName}</strong>.
+              <br /><br />
+              Per poter eliminare un rivenditore, assicurati che:
+              <ul className="list-disc list-inside mt-2 text-sm">
+                <li>Non ci siano riparazioni attive</li>
+                <li>Non ci siano fatture non pagate</li>
+                <li>Non ci siano ticket aperti</li>
+                <li>Non ci siano clienti associati</li>
+                <li>Non ci siano centri riparazione</li>
+              </ul>
+              <br />
+              Verranno eliminati automaticamente: collaboratori e credenziali API.
+              <br />
+              Questa azione non può essere annullata.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel data-testid="button-cancel-delete">Annulla</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDelete}
+              disabled={deleteResellerMutation.isPending}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              data-testid="button-confirm-delete"
+            >
+              {deleteResellerMutation.isPending ? "Eliminazione..." : "Elimina"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

@@ -1115,6 +1115,121 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Delete a reseller (only if no active repairs, unpaid invoices, open tickets, customers, or repair centers)
+  app.delete("/api/admin/resellers/:id", requireRole("admin"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Non autorizzato");
+      
+      const resellerId = req.params.id;
+      const reseller = await storage.getUser(resellerId);
+      
+      if (!reseller || reseller.role !== "reseller") {
+        return res.status(404).send("Rivenditore non trovato");
+      }
+      
+      // Get all users related to this reseller
+      const allUsers = await storage.listUsers();
+      const resellerCustomers = allUsers.filter(u => u.role === "customer" && u.resellerId === resellerId);
+      const resellerStaff = allUsers.filter(u => u.role === "reseller_staff" && u.resellerId === resellerId);
+      const allUserIds = [resellerId, ...resellerCustomers.map(c => c.id), ...resellerStaff.map(s => s.id)];
+      
+      // Check for any repairs (active or completed) tied to this reseller
+      const allRepairs = await storage.listRepairOrders();
+      const terminalStatuses = ["consegnato", "cancelled"];
+      const activeRepairs = allRepairs.filter(r => 
+        (r.resellerId === resellerId || allUserIds.includes(r.customerId || "")) && 
+        !terminalStatuses.includes(r.status)
+      );
+      
+      if (activeRepairs.length > 0) {
+        return res.status(409).json({
+          error: "ACTIVE_REPAIRS",
+          message: `Impossibile eliminare: il rivenditore ha ${activeRepairs.length} riparazione/i attiva/e`,
+          count: activeRepairs.length
+        });
+      }
+      
+      // Check for unpaid invoices across reseller and all customers
+      const allInvoices = await storage.listInvoices({});
+      const unpaidInvoices = allInvoices.filter(i => 
+        allUserIds.includes(i.customerId || "") && 
+        i.paymentStatus !== "paid" && i.paymentStatus !== "cancelled"
+      );
+      
+      if (unpaidInvoices.length > 0) {
+        return res.status(409).json({
+          error: "UNPAID_INVOICES",
+          message: `Impossibile eliminare: ci sono ${unpaidInvoices.length} fattura/e non pagata/e`,
+          count: unpaidInvoices.length
+        });
+      }
+      
+      // Check for open tickets by reseller, staff, or customers
+      const allTickets = await storage.listTickets();
+      const openTickets = allTickets.filter(t => 
+        allUserIds.includes(t.createdBy || "") && t.status !== "closed"
+      );
+      
+      if (openTickets.length > 0) {
+        return res.status(409).json({
+          error: "OPEN_TICKETS",
+          message: `Impossibile eliminare: ci sono ${openTickets.length} ticket aperti`,
+          count: openTickets.length
+        });
+      }
+      
+      // Check for customers - must be deleted individually first
+      if (resellerCustomers.length > 0) {
+        return res.status(409).json({
+          error: "HAS_CUSTOMERS",
+          message: `Impossibile eliminare: il rivenditore ha ancora ${resellerCustomers.length} cliente/i. Eliminali prima singolarmente.`,
+          count: resellerCustomers.length
+        });
+      }
+      
+      // Check for repair centers
+      const repairCenters = await storage.getRepairCentersForReseller(resellerId);
+      if (repairCenters.length > 0) {
+        return res.status(409).json({
+          error: "HAS_REPAIR_CENTERS",
+          message: `Impossibile eliminare: il rivenditore ha ancora ${repairCenters.length} centro/i riparazione. Eliminali prima.`,
+          count: repairCenters.length
+        });
+      }
+      
+      // CASCADE DELETIONS (only staff and credentials at this point)
+      
+      // 1. Delete staff permissions and staff members
+      for (const staff of resellerStaff) {
+        await storage.deleteStaffPermissions(staff.id);
+        const staffRepairCenters = await storage.listRepairCentersForStaff(staff.id);
+        for (const rc of staffRepairCenters) {
+          await storage.removeStaffFromRepairCenter(staff.id, rc.id);
+        }
+        await storage.deleteUser(staff.id);
+      }
+      
+      // 2. Delete API credentials
+      const sifarCred = await storage.getSifarCredentialByReseller(resellerId);
+      if (sifarCred) await storage.deleteSifarCredential(sifarCred.id);
+      
+      const fonedayCred = await storage.getFonedayCredentialByReseller(resellerId);
+      if (fonedayCred) await storage.deleteFonedayCredential(fonedayCred.id);
+      
+      const mobilesentrixCred = await storage.getMobilesentrixCredentialByReseller(resellerId);
+      if (mobilesentrixCred) await storage.deleteMobilesentrixCredential(mobilesentrixCred.id);
+      
+      // 3. Finally delete the reseller
+      await storage.deleteUser(resellerId);
+      
+      setActivityEntity(res, { type: 'users', id: resellerId });
+      res.sendStatus(204);
+    } catch (error: any) {
+      console.error("Error deleting reseller:", error);
+      res.status(500).send(error.message);
+    }
+  });
+
   // ============================================
   // Admin Reseller Team Management
   // ============================================
