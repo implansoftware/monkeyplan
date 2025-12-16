@@ -11,10 +11,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Smartphone, Search, Plus, Pencil, Trash2, Battery, HardDrive, Wifi, Loader2 } from "lucide-react";
+import { Smartphone, Search, Plus, Pencil, Trash2, Battery, HardDrive, Wifi, Loader2, ImagePlus, X, Image } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { useRef } from "react";
 import type { SmartphoneSpecs, Product } from "@shared/schema";
 
 type SmartphoneWithSpecs = Product & {
@@ -50,6 +51,10 @@ export default function SmartphoneCatalog() {
   const [editingSmartphone, setEditingSmartphone] = useState<SmartphoneWithSpecs | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [smartphoneToDelete, setSmartphoneToDelete] = useState<SmartphoneWithSpecs | null>(null);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
   const [formData, setFormData] = useState({
@@ -126,7 +131,62 @@ export default function SmartphoneCatalog() {
     },
   });
 
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (!["image/jpeg", "image/png", "image/webp", "image/gif"].includes(file.type)) {
+        toast({ title: "Errore", description: "Formato non supportato. Usa JPEG, PNG, WebP o GIF.", variant: "destructive" });
+        return;
+      }
+      if (file.size > 10 * 1024 * 1024) {
+        toast({ title: "Errore", description: "Immagine troppo grande. Max 10MB.", variant: "destructive" });
+        return;
+      }
+      setImageFile(file);
+      setImagePreview(URL.createObjectURL(file));
+    }
+  };
+
+  const uploadImage = async (productId: string) => {
+    if (!imageFile) return;
+    setUploadingImage(true);
+    try {
+      const formDataUpload = new FormData();
+      formDataUpload.append("image", imageFile);
+      const response = await fetch(`/api/reseller/products/${productId}/image`, {
+        method: "POST",
+        body: formDataUpload,
+        credentials: "include",
+      });
+      if (!response.ok) throw new Error(await response.text());
+      queryClient.invalidateQueries({ queryKey: ["/api/smartphones"] });
+      toast({ title: "Immagine caricata", description: "L'immagine è stata salvata." });
+    } catch (error: any) {
+      toast({ title: "Errore upload", description: error.message, variant: "destructive" });
+    } finally {
+      setUploadingImage(false);
+      setImageFile(null);
+      setImagePreview(null);
+    }
+  };
+
+  const deleteImage = async (productId: string) => {
+    try {
+      const response = await fetch(`/api/reseller/products/${productId}/image`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+      if (!response.ok) throw new Error(await response.text());
+      queryClient.invalidateQueries({ queryKey: ["/api/smartphones"] });
+      toast({ title: "Immagine rimossa" });
+    } catch (error: any) {
+      toast({ title: "Errore", description: error.message, variant: "destructive" });
+    }
+  };
+
   const resetForm = () => {
+    setImageFile(null);
+    setImagePreview(null);
     setFormData({
       name: "",
       sku: "",
@@ -154,6 +214,8 @@ export default function SmartphoneCatalog() {
 
   const openEditDialog = (smartphone: SmartphoneWithSpecs) => {
     setEditingSmartphone(smartphone);
+    setImageFile(null);
+    setImagePreview(smartphone.imageUrl || null);
     setFormData({
       name: smartphone.name,
       sku: smartphone.sku,
@@ -320,6 +382,7 @@ export default function SmartphoneCatalog() {
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead className="w-16">Foto</TableHead>
                     <TableHead>Dispositivo</TableHead>
                     <TableHead>Storage</TableHead>
                     <TableHead>Grado</TableHead>
@@ -332,6 +395,19 @@ export default function SmartphoneCatalog() {
                 <TableBody>
                   {filteredSmartphones.map((smartphone) => (
                     <TableRow key={smartphone.id} data-testid={`row-smartphone-${smartphone.id}`}>
+                      <TableCell>
+                        {smartphone.imageUrl ? (
+                          <img
+                            src={smartphone.imageUrl}
+                            alt={smartphone.name}
+                            className="h-12 w-12 object-cover rounded-md"
+                          />
+                        ) : (
+                          <div className="h-12 w-12 bg-muted rounded-md flex items-center justify-center">
+                            <Image className="h-5 w-5 text-muted-foreground" />
+                          </div>
+                        )}
+                      </TableCell>
                       <TableCell>
                         <div>
                           <div className="font-medium">{smartphone.name}</div>
@@ -641,6 +717,91 @@ export default function SmartphoneCatalog() {
                 data-testid="textarea-smartphone-notes"
               />
             </div>
+
+            {editingSmartphone && (
+              <div className="space-y-2">
+                <Label>Immagine prodotto</Label>
+                <div className="flex items-start gap-4">
+                  {(imagePreview || editingSmartphone.imageUrl) && !imageFile ? (
+                    <div className="relative">
+                      <img
+                        src={imagePreview || editingSmartphone.imageUrl || ""}
+                        alt="Preview"
+                        className="h-24 w-24 object-cover rounded-lg border"
+                      />
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        size="icon"
+                        className="absolute -top-2 -right-2 h-6 w-6"
+                        onClick={() => deleteImage(editingSmartphone.id)}
+                        data-testid="button-delete-image"
+                      >
+                        <X className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  ) : imagePreview && imageFile ? (
+                    <div className="relative">
+                      <img
+                        src={imagePreview}
+                        alt="Preview"
+                        className="h-24 w-24 object-cover rounded-lg border"
+                      />
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        size="icon"
+                        className="absolute -top-2 -right-2 h-6 w-6"
+                        onClick={() => { setImageFile(null); setImagePreview(editingSmartphone.imageUrl || null); }}
+                        data-testid="button-cancel-image"
+                      >
+                        <X className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  ) : (
+                    <div
+                      className="h-24 w-24 border-2 border-dashed rounded-lg flex items-center justify-center cursor-pointer hover:border-primary transition-colors"
+                      onClick={() => fileInputRef.current?.click()}
+                    >
+                      <ImagePlus className="h-8 w-8 text-muted-foreground" />
+                    </div>
+                  )}
+                  <div className="flex-1 space-y-2">
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp,image/gif"
+                      className="hidden"
+                      onChange={handleImageSelect}
+                      data-testid="input-image-file"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => fileInputRef.current?.click()}
+                      data-testid="button-select-image"
+                    >
+                      <ImagePlus className="mr-2 h-4 w-4" />
+                      Seleziona immagine
+                    </Button>
+                    {imageFile && (
+                      <Button
+                        type="button"
+                        size="sm"
+                        onClick={() => uploadImage(editingSmartphone.id)}
+                        disabled={uploadingImage}
+                        data-testid="button-upload-image"
+                      >
+                        {uploadingImage && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        Carica immagine
+                      </Button>
+                    )}
+                    <p className="text-xs text-muted-foreground">JPEG, PNG, WebP o GIF. Max 10MB.</p>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
           <DialogFooter>

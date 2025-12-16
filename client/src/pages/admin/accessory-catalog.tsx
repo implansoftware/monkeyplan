@@ -11,10 +11,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Checkbox } from "@/components/ui/checkbox";
-import { ShoppingBag, Search, Plus, Pencil, Trash2, Loader2, Tag, Store } from "lucide-react";
+import { ShoppingBag, Search, Plus, Pencil, Trash2, Loader2, Tag, Store, ImagePlus, X, Image } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { useRef } from "react";
 import type { AccessorySpecs, Product } from "@shared/schema";
 
 type AccessoryWithSpecs = Product & {
@@ -49,6 +50,10 @@ export default function AdminAccessoryCatalog() {
   const [editingAccessory, setEditingAccessory] = useState<AccessoryWithSpecs | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [accessoryToDelete, setAccessoryToDelete] = useState<AccessoryWithSpecs | null>(null);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
   const [formData, setFormData] = useState({
@@ -119,7 +124,62 @@ export default function AdminAccessoryCatalog() {
     },
   });
 
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (!["image/jpeg", "image/png", "image/webp", "image/gif"].includes(file.type)) {
+        toast({ title: "Errore", description: "Formato non supportato. Usa JPEG, PNG, WebP o GIF.", variant: "destructive" });
+        return;
+      }
+      if (file.size > 10 * 1024 * 1024) {
+        toast({ title: "Errore", description: "Immagine troppo grande. Max 10MB.", variant: "destructive" });
+        return;
+      }
+      setImageFile(file);
+      setImagePreview(URL.createObjectURL(file));
+    }
+  };
+
+  const uploadImage = async (productId: string) => {
+    if (!imageFile) return;
+    setUploadingImage(true);
+    try {
+      const formDataUpload = new FormData();
+      formDataUpload.append("image", imageFile);
+      const response = await fetch(`/api/admin/products/${productId}/image`, {
+        method: "POST",
+        body: formDataUpload,
+        credentials: "include",
+      });
+      if (!response.ok) throw new Error(await response.text());
+      queryClient.invalidateQueries({ queryKey: ["/api/accessories"] });
+      toast({ title: "Immagine caricata", description: "L'immagine è stata salvata." });
+    } catch (error: any) {
+      toast({ title: "Errore upload", description: error.message, variant: "destructive" });
+    } finally {
+      setUploadingImage(false);
+      setImageFile(null);
+      setImagePreview(null);
+    }
+  };
+
+  const deleteImage = async (productId: string) => {
+    try {
+      const response = await fetch(`/api/admin/products/${productId}/image`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+      if (!response.ok) throw new Error(await response.text());
+      queryClient.invalidateQueries({ queryKey: ["/api/accessories"] });
+      toast({ title: "Immagine rimossa" });
+    } catch (error: any) {
+      toast({ title: "Errore", description: error.message, variant: "destructive" });
+    }
+  };
+
   const resetForm = () => {
+    setImageFile(null);
+    setImagePreview(null);
     setFormData({
       name: "",
       sku: "",
@@ -266,6 +326,7 @@ export default function AdminAccessoryCatalog() {
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead>Foto</TableHead>
                     <TableHead>Prodotto</TableHead>
                     <TableHead>Rivenditore</TableHead>
                     <TableHead>Tipo</TableHead>
@@ -278,6 +339,20 @@ export default function AdminAccessoryCatalog() {
                 <TableBody>
                   {filteredAccessories.map((accessory) => (
                     <TableRow key={accessory.id} data-testid={`row-accessory-${accessory.id}`}>
+                      <TableCell>
+                        {accessory.imageUrl ? (
+                          <img
+                            src={accessory.imageUrl}
+                            alt={accessory.name}
+                            className="w-12 h-12 object-cover rounded"
+                            data-testid={`img-accessory-${accessory.id}`}
+                          />
+                        ) : (
+                          <div className="w-12 h-12 bg-muted rounded flex items-center justify-center">
+                            <Image className="h-5 w-5 text-muted-foreground" />
+                          </div>
+                        )}
+                      </TableCell>
                       <TableCell>
                         <div>
                           <div className="font-medium">{accessory.name}</div>
@@ -532,6 +607,82 @@ export default function AdminAccessoryCatalog() {
                 data-testid="textarea-accessory-notes"
               />
             </div>
+
+            {editingAccessory && (
+              <div className="space-y-2">
+                <Label>Immagine prodotto</Label>
+                <div className="flex items-start gap-4">
+                  <div className="flex-shrink-0">
+                    {imagePreview ? (
+                      <div className="relative">
+                        <img src={imagePreview} alt="Preview" className="w-24 h-24 object-cover rounded" />
+                        <Button
+                          type="button"
+                          variant="destructive"
+                          size="icon"
+                          className="absolute -top-2 -right-2 h-6 w-6"
+                          onClick={() => { setImageFile(null); setImagePreview(null); }}
+                          data-testid="button-clear-preview"
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    ) : editingAccessory.imageUrl ? (
+                      <div className="relative">
+                        <img src={editingAccessory.imageUrl} alt={editingAccessory.name} className="w-24 h-24 object-cover rounded" />
+                        <Button
+                          type="button"
+                          variant="destructive"
+                          size="icon"
+                          className="absolute -top-2 -right-2 h-6 w-6"
+                          onClick={() => deleteImage(editingAccessory.id)}
+                          data-testid="button-delete-image"
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="w-24 h-24 bg-muted rounded flex items-center justify-center">
+                        <Image className="h-8 w-8 text-muted-foreground" />
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp,image/gif"
+                      className="hidden"
+                      onChange={handleImageSelect}
+                      data-testid="input-image-file"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => fileInputRef.current?.click()}
+                      data-testid="button-select-image"
+                    >
+                      <ImagePlus className="mr-2 h-4 w-4" />
+                      Seleziona immagine
+                    </Button>
+                    {imageFile && (
+                      <Button
+                        type="button"
+                        size="sm"
+                        onClick={() => uploadImage(editingAccessory.id)}
+                        disabled={uploadingImage}
+                        data-testid="button-upload-image"
+                      >
+                        {uploadingImage && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        Carica immagine
+                      </Button>
+                    )}
+                    <p className="text-xs text-muted-foreground">JPEG, PNG, WebP o GIF. Max 10MB.</p>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
           <DialogFooter>
