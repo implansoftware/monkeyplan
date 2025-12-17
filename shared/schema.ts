@@ -1549,6 +1549,153 @@ export const sifarProductCompatibility = pgTable("sifar_product_compatibility", 
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
+// ==========================================
+// TROVAUSATI INTEGRATION TABLES
+// ==========================================
+
+// Tipo API TrovaUsati (resellers o stores)
+export const trovausatiApiTypeEnum = pgEnum("trovausati_api_type", [
+  "resellers",   // API per rivenditori (marketplace)
+  "stores",      // API per GDS (valutazioni, coupon, scatole)
+]);
+
+// Credenziali TrovaUsati per Reseller
+export const trovausatiCredentials = pgTable("trovausati_credentials", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  resellerId: varchar("reseller_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  
+  // Tipo di API
+  apiType: trovausatiApiTypeEnum("api_type").notNull().default("resellers"),
+  
+  // Credenziali TrovaUsati
+  apiKey: text("api_key").notNull(), // X-Authorization header
+  marketplaceId: text("marketplace_id"), // ID del marketplace (per API resellers)
+  
+  // Stato
+  isActive: boolean("is_active").notNull().default(true),
+  lastTestAt: timestamp("last_test_at"),
+  lastTestResult: text("last_test_result"),
+  
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+// Negozi TrovaUsati (per API stores/GDS)
+export const trovausatiShops = pgTable("trovausati_shops", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  credentialId: varchar("credential_id").notNull().references(() => trovausatiCredentials.id, { onDelete: "cascade" }),
+  
+  // Dati TrovaUsati
+  shopId: text("shop_id").notNull(), // X-Shop-Id header
+  shopName: text("shop_name").notNull(),
+  
+  // Mappatura interna
+  branchId: varchar("branch_id").references(() => customerBranches.id, { onDelete: "set null" }),
+  repairCenterId: varchar("repair_center_id").references(() => repairCenters.id, { onDelete: "set null" }),
+  
+  isActive: boolean("is_active").notNull().default(true),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+// Stato ordini TrovaUsati
+export const trovausatiOrderStatusEnum = pgEnum("trovausati_order_status", [
+  "pending",      // In attesa
+  "confirmed",    // Confermato
+  "shipped",      // Spedito
+  "delivered",    // Consegnato
+  "cancelled",    // Annullato
+]);
+
+// Ordini TrovaUsati (marketplace)
+export const trovausatiOrders = pgTable("trovausati_orders", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  credentialId: varchar("credential_id").notNull().references(() => trovausatiCredentials.id, { onDelete: "cascade" }),
+  
+  // Dati ordine TrovaUsati
+  externalOrderId: text("external_order_id").notNull(), // ID ordine su TrovaUsati
+  reference: text("reference"), // Riferimento testuale
+  status: trovausatiOrderStatusEnum("status").notNull().default("pending"),
+  
+  // Totali
+  totalProducts: integer("total_products").notNull().default(0),
+  totalCents: integer("total_cents").notNull().default(0),
+  
+  // Spedizione
+  carrierCode: text("carrier_code"),
+  trackingCode: text("tracking_code"),
+  shippingPdfUrl: text("shipping_pdf_url"),
+  
+  // Indirizzo
+  addressData: text("address_data"), // JSON
+  
+  // Cache dati prodotti
+  productsData: text("products_data"), // JSON array dei prodotti
+  
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+// Stato coupon TrovaUsati
+export const trovausatiCouponStatusEnum = pgEnum("trovausati_coupon_status", [
+  "issued",     // Emesso
+  "used",       // Usato
+  "cancelled",  // Annullato
+  "expired",    // Scaduto
+]);
+
+// Coupon TrovaUsati (GDS)
+export const trovausatiCoupons = pgTable("trovausati_coupons", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  credentialId: varchar("credential_id").notNull().references(() => trovausatiCredentials.id, { onDelete: "cascade" }),
+  shopId: varchar("shop_id").references(() => trovausatiShops.id, { onDelete: "set null" }),
+  
+  // Dati coupon TrovaUsati
+  couponCode: text("coupon_code").notNull(),
+  barcode: text("barcode"),
+  valueCents: integer("value_cents").notNull(),
+  status: trovausatiCouponStatusEnum("status").notNull().default("issued"),
+  
+  // Dispositivo valutato
+  brand: text("brand"),
+  model: text("model"),
+  imeiOrSn: text("imei_or_sn"),
+  
+  // Consumo
+  consumedAt: timestamp("consumed_at"),
+  consumedShopId: text("consumed_shop_id"),
+  
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+// Modelli dispositivi TrovaUsati (cache valutazioni)
+export const trovausatiModels = pgTable("trovausati_models", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  credentialId: varchar("credential_id").notNull().references(() => trovausatiCredentials.id, { onDelete: "cascade" }),
+  
+  // Dati modello TrovaUsati
+  externalId: integer("external_id").notNull(),
+  brand: text("brand").notNull(),
+  model: text("model").notNull(),
+  modelBase: text("model_base"),
+  variant: text("variant"),
+  deviceType: text("device_type"), // Smartphone, Tablet, etc.
+  label: text("label"),
+  imageUrl: text("image_url"),
+  
+  // Prezzi valutazione (in centesimi)
+  priceNeverUsed: integer("price_never_used"),
+  priceGreat: integer("price_great"),
+  priceGood: integer("price_good"),
+  priceAverage: integer("price_average"),
+  priceShop: integer("price_shop"),
+  pricePublic: integer("price_public"),
+  
+  lastSyncAt: timestamp("last_sync_at"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
 // ============ FONEDAY INTEGRATION ============
 
 // Credenziali Foneday per reseller
@@ -3224,6 +3371,36 @@ export const insertSifarProductCompatibilitySchema = createInsertSchema(sifarPro
   createdAt: true,
 });
 
+// TrovaUsati schemas
+export const insertTrovausatiCredentialSchema = createInsertSchema(trovausatiCredentials).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertTrovausatiShopSchema = createInsertSchema(trovausatiShops).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertTrovausatiOrderSchema = createInsertSchema(trovausatiOrders).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertTrovausatiCouponSchema = createInsertSchema(trovausatiCoupons).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertTrovausatiModelSchema = createInsertSchema(trovausatiModels).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 // Foneday schemas
 export const insertFonedayCredentialSchema = createInsertSchema(fonedayCredentials).omit({
   id: true,
@@ -3663,6 +3840,22 @@ export type InsertSifarModel = z.infer<typeof insertSifarModelSchema>;
 
 export type SifarProductCompatibility = typeof sifarProductCompatibility.$inferSelect;
 export type InsertSifarProductCompatibility = z.infer<typeof insertSifarProductCompatibilitySchema>;
+
+// TrovaUsati types
+export type TrovausatiCredential = typeof trovausatiCredentials.$inferSelect;
+export type InsertTrovausatiCredential = z.infer<typeof insertTrovausatiCredentialSchema>;
+
+export type TrovausatiShop = typeof trovausatiShops.$inferSelect;
+export type InsertTrovausatiShop = z.infer<typeof insertTrovausatiShopSchema>;
+
+export type TrovausatiOrder = typeof trovausatiOrders.$inferSelect;
+export type InsertTrovausatiOrder = z.infer<typeof insertTrovausatiOrderSchema>;
+
+export type TrovausatiCoupon = typeof trovausatiCoupons.$inferSelect;
+export type InsertTrovausatiCoupon = z.infer<typeof insertTrovausatiCouponSchema>;
+
+export type TrovausatiModel = typeof trovausatiModels.$inferSelect;
+export type InsertTrovausatiModel = z.infer<typeof insertTrovausatiModelSchema>;
 
 // Foneday types
 export type FonedayCredential = typeof fonedayCredentials.$inferSelect;

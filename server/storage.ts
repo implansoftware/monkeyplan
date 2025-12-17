@@ -39,6 +39,8 @@ import {
   UtilityPracticeTimelineEvent, InsertUtilityPracticeTimelineEvent,
   UtilityPracticeStateHistoryEntry, InsertUtilityPracticeStateHistoryEntry,
   SifarCredential, InsertSifarCredential, SifarStore, InsertSifarStore,
+  TrovausatiCredential, InsertTrovausatiCredential, TrovausatiShop, InsertTrovausatiShop,
+  TrovausatiOrder, InsertTrovausatiOrder, trovausatiCredentials, trovausatiShops, trovausatiOrders,
   FonedayCredential, InsertFonedayCredential, FonedayOrder, InsertFonedayOrder,
   MobilesentrixCredential, InsertMobilesentrixCredential, MobilesentrixOrder, InsertMobilesentrixOrder,
   ExternalIntegration, InsertExternalIntegration, externalIntegrations,
@@ -545,6 +547,24 @@ export interface IStorage {
   createSifarStore(store: InsertSifarStore): Promise<SifarStore>;
   updateSifarStore(id: string, updates: Partial<InsertSifarStore>): Promise<SifarStore>;
   deleteSifarStore(id: string): Promise<void>;
+  
+  // TrovaUsati Integration
+  getTrovausatiCredentialByReseller(resellerId: string): Promise<TrovausatiCredential | undefined>;
+  getTrovausatiCredential(id: string): Promise<TrovausatiCredential | undefined>;
+  createTrovausatiCredential(credential: InsertTrovausatiCredential): Promise<TrovausatiCredential>;
+  updateTrovausatiCredential(id: string, updates: Partial<InsertTrovausatiCredential>): Promise<TrovausatiCredential>;
+  deleteTrovausatiCredential(id: string): Promise<void>;
+  
+  listTrovausatiShops(credentialId: string): Promise<TrovausatiShop[]>;
+  getTrovausatiShop(id: string): Promise<TrovausatiShop | undefined>;
+  createTrovausatiShop(shop: InsertTrovausatiShop): Promise<TrovausatiShop>;
+  updateTrovausatiShop(id: string, updates: Partial<InsertTrovausatiShop>): Promise<TrovausatiShop>;
+  deleteTrovausatiShop(id: string): Promise<void>;
+  
+  listTrovausatiOrders(credentialId: string): Promise<TrovausatiOrder[]>;
+  getTrovausatiOrder(id: string): Promise<TrovausatiOrder | undefined>;
+  createTrovausatiOrder(order: InsertTrovausatiOrder): Promise<TrovausatiOrder>;
+  updateTrovausatiOrder(id: string, updates: Partial<InsertTrovausatiOrder>): Promise<TrovausatiOrder>;
   
   // Foneday Integration
   getFonedayCredentialByReseller(resellerId: string): Promise<FonedayCredential | undefined>;
@@ -4757,6 +4777,110 @@ export class DatabaseStorage implements IStorage {
   async deleteSifarStore(id: string): Promise<void> {
     await db.delete(sifarStores)
       .where(eq(sifarStores.id, id));
+  }
+
+  // ==========================================
+  // TROVAUSATI INTEGRATION
+  // ==========================================
+
+  async getTrovausatiCredentialByReseller(resellerId: string): Promise<TrovausatiCredential | undefined> {
+    const [credential] = await db.select()
+      .from(trovausatiCredentials)
+      .where(eq(trovausatiCredentials.resellerId, resellerId))
+      .limit(1);
+    return credential;
+  }
+
+  async getTrovausatiCredential(id: string): Promise<TrovausatiCredential | undefined> {
+    const [credential] = await db.select()
+      .from(trovausatiCredentials)
+      .where(eq(trovausatiCredentials.id, id))
+      .limit(1);
+    return credential;
+  }
+
+  async createTrovausatiCredential(credential: InsertTrovausatiCredential): Promise<TrovausatiCredential> {
+    const [created] = await db.insert(trovausatiCredentials)
+      .values(credential)
+      .returning();
+    return created;
+  }
+
+  async updateTrovausatiCredential(id: string, updates: Partial<InsertTrovausatiCredential>): Promise<TrovausatiCredential> {
+    const [updated] = await db.update(trovausatiCredentials)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(trovausatiCredentials.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteTrovausatiCredential(id: string): Promise<void> {
+    await db.delete(trovausatiCredentials)
+      .where(eq(trovausatiCredentials.id, id));
+  }
+
+  async listTrovausatiShops(credentialId: string): Promise<TrovausatiShop[]> {
+    return await db.select()
+      .from(trovausatiShops)
+      .where(eq(trovausatiShops.credentialId, credentialId));
+  }
+
+  async getTrovausatiShop(id: string): Promise<TrovausatiShop | undefined> {
+    const [shop] = await db.select()
+      .from(trovausatiShops)
+      .where(eq(trovausatiShops.id, id))
+      .limit(1);
+    return shop;
+  }
+
+  async createTrovausatiShop(shop: InsertTrovausatiShop): Promise<TrovausatiShop> {
+    const [created] = await db.insert(trovausatiShops)
+      .values(shop)
+      .returning();
+    return created;
+  }
+
+  async updateTrovausatiShop(id: string, updates: Partial<InsertTrovausatiShop>): Promise<TrovausatiShop> {
+    const [updated] = await db.update(trovausatiShops)
+      .set(updates)
+      .where(eq(trovausatiShops.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteTrovausatiShop(id: string): Promise<void> {
+    await db.delete(trovausatiShops)
+      .where(eq(trovausatiShops.id, id));
+  }
+
+  async listTrovausatiOrders(credentialId: string): Promise<TrovausatiOrder[]> {
+    return await db.select()
+      .from(trovausatiOrders)
+      .where(eq(trovausatiOrders.credentialId, credentialId))
+      .orderBy(desc(trovausatiOrders.createdAt));
+  }
+
+  async getTrovausatiOrder(id: string): Promise<TrovausatiOrder | undefined> {
+    const [order] = await db.select()
+      .from(trovausatiOrders)
+      .where(eq(trovausatiOrders.id, id))
+      .limit(1);
+    return order;
+  }
+
+  async createTrovausatiOrder(order: InsertTrovausatiOrder): Promise<TrovausatiOrder> {
+    const [created] = await db.insert(trovausatiOrders)
+      .values(order)
+      .returning();
+    return created;
+  }
+
+  async updateTrovausatiOrder(id: string, updates: Partial<InsertTrovausatiOrder>): Promise<TrovausatiOrder> {
+    const [updated] = await db.update(trovausatiOrders)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(trovausatiOrders.id, id))
+      .returning();
+    return updated;
   }
 
   // ==========================================
