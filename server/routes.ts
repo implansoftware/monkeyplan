@@ -998,6 +998,61 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Suggested Accessories for Repair (when status is pronto_ritiro)
+  app.get("/api/repairs/:id/suggested-accessories", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const repair = await storage.getRepairOrder(req.params.id);
+      if (!repair) {
+        return res.status(404).send("Repair order not found");
+      }
+      
+      // Only suggest accessories when repair is ready for pickup
+      if (repair.status !== "pronto_ritiro") {
+        return res.json([]);
+      }
+      
+      // Get device brand from model if we have deviceModelId
+      let deviceBrandId: string | undefined;
+      if (repair.deviceModelId) {
+        const model = await storage.getDeviceModel(repair.deviceModelId);
+        deviceBrandId = model?.brandId || undefined;
+      }
+      
+      // Get compatible accessories
+      const accessories = await storage.listAccessoriesCompatibleWithDevice(
+        repair.deviceModelId || null,
+        deviceBrandId
+      );
+      
+      // Enrich with device compatibility info
+      const enrichedAccessories = await Promise.all(accessories.map(async (accessory) => {
+        const compatibilities = await storage.listProductCompatibilities(accessory.id);
+        
+        // Get brand/model names for each compatibility
+        const enrichedCompatibilities = await Promise.all(compatibilities.map(async (c) => {
+          const brand = await storage.getDeviceBrand(c.deviceBrandId);
+          const model = c.deviceModelId ? await storage.getDeviceModel(c.deviceModelId) : null;
+          return {
+            ...c,
+            brandName: brand?.name,
+            modelName: model?.modelName || "Tutti i modelli"
+          };
+        }));
+        
+        return {
+          ...accessory,
+          deviceCompatibilities: enrichedCompatibilities
+        };
+      }));
+      
+      res.json(enrichedAccessories);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
   // Supplier Return State History - List
   app.get("/api/supplier-returns/:id/state-history", requireAuth, async (req, res) => {
     try {

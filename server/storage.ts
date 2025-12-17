@@ -144,6 +144,7 @@ export interface IStorage {
   updateAccessorySpecs(productId: string, updates: Partial<InsertAccessorySpecs>): Promise<AccessorySpecs>;
   deleteAccessorySpecs(productId: string): Promise<void>;
   listAccessories(filters?: { resellerId?: string; accessoryType?: string }): Promise<Array<Product & { specs: AccessorySpecs | null }>>;
+  listAccessoriesCompatibleWithDevice(deviceModelId: string | null, deviceBrandId?: string): Promise<Array<Product & { specs: AccessorySpecs | null }>>;
   
   // Repair Orders
   listRepairOrders(filters?: { customerId?: string; resellerId?: string; repairCenterId?: string; status?: string }): Promise<RepairOrder[]>;
@@ -1140,6 +1141,58 @@ export class DatabaseStorage implements IStorage {
     }
     
     return filtered.map(r => ({
+      ...r.products,
+      specs: r.accessory_specs || null
+    }));
+  }
+
+  async listAccessoriesCompatibleWithDevice(deviceModelId: string | null, deviceBrandId?: string): Promise<Array<Product & { specs: AccessorySpecs | null }>> {
+    // Build conditions for device compatibility matching
+    const conditions: any[] = [];
+    
+    if (deviceModelId) {
+      // Match accessories compatible with specific model OR all models of the brand
+      conditions.push(
+        or(
+          eq(productDeviceCompatibilities.deviceModelId, deviceModelId),
+          and(
+            deviceBrandId ? eq(productDeviceCompatibilities.deviceBrandId, deviceBrandId) : undefined,
+            isNull(productDeviceCompatibilities.deviceModelId)
+          )
+        )
+      );
+    } else if (deviceBrandId) {
+      // Match accessories compatible with brand (all models)
+      conditions.push(eq(productDeviceCompatibilities.deviceBrandId, deviceBrandId));
+    }
+    
+    if (conditions.length === 0) {
+      return [];
+    }
+    
+    // Query products with accessory specs that have matching device compatibility
+    const compatibleProductIds = await db.selectDistinct({ productId: productDeviceCompatibilities.productId })
+      .from(productDeviceCompatibilities)
+      .where(and(...conditions));
+    
+    if (compatibleProductIds.length === 0) {
+      return [];
+    }
+    
+    const productIdList = compatibleProductIds.map(p => p.productId);
+    
+    // Fetch accessories with their specs
+    const results = await db.select()
+      .from(products)
+      .leftJoin(accessorySpecs, eq(products.id, accessorySpecs.productId))
+      .where(and(
+        inArray(products.id, productIdList),
+        eq(products.productType, 'accessorio' as any),
+        eq(products.isActive, true)
+      ))
+      .orderBy(desc(products.createdAt));
+    
+    return results.map(r => ({
       ...r.products,
       specs: r.accessory_specs || null
     }));
