@@ -16,11 +16,18 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useRef } from "react";
-import type { AccessorySpecs, Product } from "@shared/schema";
+import type { AccessorySpecs, Product, DeviceModel, DeviceBrand } from "@shared/schema";
 
 type AccessoryWithSpecs = Product & {
   specs: AccessorySpecs | null;
   reseller?: { id: string; username: string; fullName: string | null } | null;
+  deviceCompatibilities?: Array<{
+    id: string;
+    deviceBrandId: string;
+    deviceModelId: string | null;
+    deviceModel?: { id: string; modelName: string } | null;
+    deviceBrand?: { id: string; name: string } | null;
+  }>;
 };
 
 const ACCESSORY_TYPES = [
@@ -42,6 +49,17 @@ const CONDITION_OPTIONS = [
 ];
 
 const BRANDS = ["Apple", "Samsung", "Xiaomi", "Huawei", "Anker", "Belkin", "Spigen", "OtterBox", "Universale", "Altro"];
+
+const COLOR_OPTIONS = [
+  "Nero", "Bianco", "Argento", "Grigio", "Oro", "Oro Rosa", "Blu", "Blu Notte", 
+  "Verde", "Rosso", "Giallo", "Arancione", "Rosa", "Viola", "Marrone", 
+  "Trasparente", "Multicolore", "Altro"
+];
+
+const MATERIAL_OPTIONS = [
+  "Silicone", "TPU", "Plastica", "Policarbonato", "Pelle", "Pelle sintetica",
+  "Vetro temperato", "Metallo", "Alluminio", "Tessuto", "Legno", "Carbonio", "Altro"
+];
 
 export default function AdminAccessoryCatalog() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -70,20 +88,28 @@ export default function AdminAccessoryCatalog() {
     isUniversal: false,
     compatibleBrands: [] as string[],
     compatibleModels: "",
+    compatibleDeviceModelIds: [] as string[],
     material: "",
     notes: "",
   });
+  const [modelSearchQuery, setModelSearchQuery] = useState("");
 
   const { data: accessories = [], isLoading } = useQuery<AccessoryWithSpecs[]>({
     queryKey: ["/api/accessories"],
   });
 
+  // Fetch device models for compatibility selection
+  const { data: deviceModels = [] } = useQuery<Array<DeviceModel & { brand?: DeviceBrand | null }>>({
+    queryKey: ["/api/device-models"],
+  });
+
   const createMutation = useMutation({
-    mutationFn: async (data: { product: any; specs: any; imageFile?: File | null }) => {
+    mutationFn: async (data: { product: any; specs: any; imageFile?: File | null; compatibleDeviceModelIds?: string[] }) => {
       if (data.imageFile) {
         const formDataUpload = new FormData();
         formDataUpload.append("product", JSON.stringify(data.product));
         formDataUpload.append("specs", JSON.stringify(data.specs));
+        formDataUpload.append("compatibleDeviceModelIds", JSON.stringify(data.compatibleDeviceModelIds || []));
         formDataUpload.append("image", data.imageFile);
         const response = await fetch("/api/accessories", {
           method: "POST",
@@ -93,7 +119,11 @@ export default function AdminAccessoryCatalog() {
         if (!response.ok) throw new Error(await response.text());
         return response.json();
       } else {
-        return apiRequest("POST", "/api/accessories", { product: data.product, specs: data.specs });
+        return apiRequest("POST", "/api/accessories", { 
+          product: data.product, 
+          specs: data.specs,
+          compatibleDeviceModelIds: data.compatibleDeviceModelIds || []
+        });
       }
     },
     onSuccess: () => {
@@ -109,7 +139,11 @@ export default function AdminAccessoryCatalog() {
 
   const updateMutation = useMutation({
     mutationFn: async ({ productId, data }: { productId: string; data: any }) => {
-      await apiRequest("PATCH", `/api/accessories/${productId}`, { product: data.product, specs: data.specs });
+      await apiRequest("PATCH", `/api/accessories/${productId}`, { 
+        product: data.product, 
+        specs: data.specs,
+        compatibleDeviceModelIds: data.compatibleDeviceModelIds || []
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/accessories"] });
@@ -194,6 +228,7 @@ export default function AdminAccessoryCatalog() {
   const resetForm = () => {
     setImageFile(null);
     setImagePreview(null);
+    setModelSearchQuery("");
     setFormData({
       name: "",
       sku: "",
@@ -208,6 +243,7 @@ export default function AdminAccessoryCatalog() {
       isUniversal: false,
       compatibleBrands: [],
       compatibleModels: "",
+      compatibleDeviceModelIds: [],
       material: "",
       notes: "",
     });
@@ -215,6 +251,11 @@ export default function AdminAccessoryCatalog() {
 
   const openEditDialog = (accessory: AccessoryWithSpecs) => {
     setEditingAccessory(accessory);
+    setModelSearchQuery("");
+    // Extract device model IDs from deviceCompatibilities
+    const existingModelIds = accessory.deviceCompatibilities
+      ?.filter(dc => dc.deviceModelId)
+      .map(dc => dc.deviceModelId as string) || [];
     setFormData({
       name: accessory.name,
       sku: accessory.sku,
@@ -229,6 +270,7 @@ export default function AdminAccessoryCatalog() {
       isUniversal: accessory.specs?.isUniversal || false,
       compatibleBrands: accessory.specs?.compatibleBrands || [],
       compatibleModels: accessory.specs?.compatibleModels?.join(", ") || "",
+      compatibleDeviceModelIds: existingModelIds,
       material: accessory.specs?.material || "",
       notes: accessory.specs?.notes || "",
     });
@@ -259,10 +301,13 @@ export default function AdminAccessoryCatalog() {
       notes: formData.notes || null,
     };
 
+    // Include device model IDs for compatibility
+    const compatibleDeviceModelIds = formData.isUniversal ? [] : formData.compatibleDeviceModelIds;
+
     if (editingAccessory) {
-      updateMutation.mutate({ productId: editingAccessory.id, data: { product, specs } });
+      updateMutation.mutate({ productId: editingAccessory.id, data: { product, specs, compatibleDeviceModelIds } });
     } else {
-      createMutation.mutate({ product, specs, imageFile });
+      createMutation.mutate({ product, specs, imageFile, compatibleDeviceModelIds });
     }
   };
 
@@ -515,23 +560,29 @@ export default function AdminAccessoryCatalog() {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="color">Colore</Label>
-                <Input
-                  id="color"
-                  value={formData.color}
-                  onChange={(e) => setFormData({ ...formData, color: e.target.value })}
-                  placeholder="es. Nero"
-                  data-testid="input-accessory-color"
-                />
+                <Select value={formData.color} onValueChange={(v) => setFormData({ ...formData, color: v })}>
+                  <SelectTrigger data-testid="select-accessory-color">
+                    <SelectValue placeholder="Seleziona colore" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {COLOR_OPTIONS.map((c) => (
+                      <SelectItem key={c} value={c}>{c}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="material">Materiale</Label>
-                <Input
-                  id="material"
-                  value={formData.material}
-                  onChange={(e) => setFormData({ ...formData, material: e.target.value })}
-                  placeholder="es. Silicone, TPU"
-                  data-testid="input-accessory-material"
-                />
+                <Select value={formData.material} onValueChange={(v) => setFormData({ ...formData, material: v })}>
+                  <SelectTrigger data-testid="select-accessory-material">
+                    <SelectValue placeholder="Seleziona materiale" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {MATERIAL_OPTIONS.map((m) => (
+                      <SelectItem key={m} value={m}>{m}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
 
@@ -547,15 +598,82 @@ export default function AdminAccessoryCatalog() {
 
             {!formData.isUniversal && (
               <div className="space-y-2">
-                <Label htmlFor="compatibleModels">Modelli compatibili</Label>
-                <Input
-                  id="compatibleModels"
-                  value={formData.compatibleModels}
-                  onChange={(e) => setFormData({ ...formData, compatibleModels: e.target.value })}
-                  placeholder="es. iPhone 14, iPhone 14 Pro, iPhone 14 Pro Max"
-                  data-testid="input-compatible-models"
-                />
-                <p className="text-xs text-muted-foreground">Separa i modelli con virgole</p>
+                <Label>Modelli compatibili</Label>
+                <div className="space-y-2">
+                  <Input
+                    value={modelSearchQuery}
+                    onChange={(e) => setModelSearchQuery(e.target.value)}
+                    placeholder="Cerca modello (es. iPhone 14, Galaxy S24...)"
+                    data-testid="input-search-device-models"
+                  />
+                  {modelSearchQuery.length >= 2 && (
+                    <ScrollArea className="h-32 border rounded-md p-2">
+                      {deviceModels
+                        .filter(m => 
+                          m.modelName.toLowerCase().includes(modelSearchQuery.toLowerCase()) ||
+                          (m.brand && m.brand.toLowerCase().includes(modelSearchQuery.toLowerCase()))
+                        )
+                        .slice(0, 20)
+                        .map(model => (
+                          <div
+                            key={model.id}
+                            className={`flex items-center justify-between p-2 rounded cursor-pointer hover-elevate ${
+                              formData.compatibleDeviceModelIds.includes(model.id) ? "bg-primary/10" : ""
+                            }`}
+                            onClick={() => {
+                              if (formData.compatibleDeviceModelIds.includes(model.id)) {
+                                setFormData({
+                                  ...formData,
+                                  compatibleDeviceModelIds: formData.compatibleDeviceModelIds.filter(id => id !== model.id)
+                                });
+                              } else {
+                                setFormData({
+                                  ...formData,
+                                  compatibleDeviceModelIds: [...formData.compatibleDeviceModelIds, model.id]
+                                });
+                              }
+                            }}
+                            data-testid={`option-device-model-${model.id}`}
+                          >
+                            <span className="text-sm">{model.brand || ""} {model.modelName}</span>
+                            {formData.compatibleDeviceModelIds.includes(model.id) && (
+                              <Badge variant="secondary" className="text-xs">Selezionato</Badge>
+                            )}
+                          </div>
+                        ))}
+                      {deviceModels.filter(m => 
+                        m.modelName.toLowerCase().includes(modelSearchQuery.toLowerCase()) ||
+                        (m.brand && m.brand.toLowerCase().includes(modelSearchQuery.toLowerCase()))
+                      ).length === 0 && (
+                        <p className="text-sm text-muted-foreground p-2">Nessun modello trovato</p>
+                      )}
+                    </ScrollArea>
+                  )}
+                  {formData.compatibleDeviceModelIds.length > 0 && (
+                    <div className="flex flex-wrap gap-1 mt-2">
+                      {formData.compatibleDeviceModelIds.map(modelId => {
+                        const model = deviceModels.find(m => m.id === modelId);
+                        return model ? (
+                          <Badge 
+                            key={modelId} 
+                            variant="secondary" 
+                            className="cursor-pointer"
+                            onClick={() => setFormData({
+                              ...formData,
+                              compatibleDeviceModelIds: formData.compatibleDeviceModelIds.filter(id => id !== modelId)
+                            })}
+                          >
+                            {model.brand || ""} {model.modelName}
+                            <X className="h-3 w-3 ml-1" />
+                          </Badge>
+                        ) : null;
+                      })}
+                    </div>
+                  )}
+                  <p className="text-xs text-muted-foreground">
+                    Digita almeno 2 caratteri per cercare, clicca per selezionare/deselezionare
+                  </p>
+                </div>
               </div>
             )}
 
