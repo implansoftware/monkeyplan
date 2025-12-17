@@ -6846,6 +6846,44 @@ export function registerRoutes(app: Express): Server {
     }
   });
   
+  // Update smartphone (product and specs together)
+  app.patch("/api/smartphones/:productId", requireAuth, requireRole("admin", "reseller", "reseller_collaborator"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const product = await storage.getProduct(req.params.productId);
+      if (!product) return res.status(404).send("Product not found");
+      
+      // Check ownership for reseller
+      if (req.user.role === 'reseller' && product.createdBy !== req.user.id) {
+        return res.status(403).send("Access denied");
+      }
+      if (req.user.role === 'reseller_collaborator' && product.createdBy !== req.user.resellerId) {
+        return res.status(403).send("Access denied");
+      }
+      
+      const { product: productData, specs: specsData } = req.body;
+      
+      // Update product if provided
+      if (productData) {
+        await storage.updateProduct(req.params.productId, productData);
+      }
+      
+      // Update specs if provided
+      if (specsData) {
+        await storage.updateSmartphoneSpecs(req.params.productId, specsData);
+      }
+      
+      // Return updated data
+      const updatedProduct = await storage.getProduct(req.params.productId);
+      const updatedSpecs = await storage.getSmartphoneSpecs(req.params.productId);
+      
+      res.json({ ...updatedProduct, specs: updatedSpecs });
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+  
   // Update smartphone specs
   app.patch("/api/smartphones/:productId/specs", requireAuth, requireRole("admin", "reseller", "reseller_collaborator"), async (req, res) => {
     try {
