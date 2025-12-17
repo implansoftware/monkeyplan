@@ -136,9 +136,10 @@ import ShopCatalog from "@/pages/shop/catalog";
 import ShopCart from "@/pages/shop/cart";
 import ShopCheckout from "@/pages/shop/checkout";
 
-// Reseller sales orders and shipments
+// Reseller sales orders, shipments and payments
 import ResellerSalesOrders from "@/pages/reseller/sales-orders";
 import ResellerShipments from "@/pages/reseller/shipments";
+import ResellerPayments from "@/pages/reseller/payments";
 
 function Router() {
   return (
@@ -238,6 +239,7 @@ function Router() {
       <ProtectedRoute path="/reseller/sales-orders" component={ResellerSalesOrders} />
       <ProtectedRoute path="/reseller/shipments/:id" component={ResellerShipments} />
       <ProtectedRoute path="/reseller/shipments" component={ResellerShipments} />
+      <ProtectedRoute path="/reseller/payments" component={ResellerPayments} />
       
       {/* Repair Center routes */}
       <ProtectedRoute path="/repair-center" component={RepairCenterDashboard} />

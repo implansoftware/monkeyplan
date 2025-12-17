@@ -56,7 +56,7 @@ export default function ResellerShipments() {
   const { toast } = useToast();
   
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState<string>("");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showTrackingDialog, setShowTrackingDialog] = useState(false);
   const [selectedShipment, setSelectedShipment] = useState<SalesOrderShipment | null>(null);
@@ -78,7 +78,7 @@ export default function ResellerShipments() {
     queryKey: ['/api/shipments', { status: statusFilter }],
     queryFn: async () => {
       const params = new URLSearchParams();
-      if (statusFilter) params.set('status', statusFilter);
+      if (statusFilter && statusFilter !== "all") params.set('status', statusFilter);
       const res = await fetch(`/api/shipments?${params}`, { credentials: 'include' });
       if (!res.ok) throw new Error('Errore nel caricamento spedizioni');
       return res.json();
@@ -145,7 +145,7 @@ export default function ResellerShipments() {
         return false;
       }
     }
-    if (statusFilter && shipment.status !== statusFilter) {
+    if (statusFilter && statusFilter !== "all" && shipment.status !== statusFilter) {
       return false;
     }
     return true;
@@ -207,7 +207,7 @@ export default function ResellerShipments() {
             <SelectValue placeholder="Tutti gli stati" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">Tutti gli stati</SelectItem>
+            <SelectItem value="all">Tutti gli stati</SelectItem>
             {Object.entries(statusLabels).map(([value, label]) => (
               <SelectItem key={value} value={value}>{label}</SelectItem>
             ))}

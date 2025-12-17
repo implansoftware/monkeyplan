@@ -60,7 +60,7 @@ export default function ResellerSalesOrders() {
   const { toast } = useToast();
   
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState<string>("");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
   const [selectedOrder, setSelectedOrder] = useState<SalesOrder | null>(null);
   const [showStatusDialog, setShowStatusDialog] = useState(false);
   const [newStatus, setNewStatus] = useState("");
@@ -70,7 +70,7 @@ export default function ResellerSalesOrders() {
     queryKey: ['/api/sales-orders', { status: statusFilter }],
     queryFn: async () => {
       const params = new URLSearchParams();
-      if (statusFilter) params.set('status', statusFilter);
+      if (statusFilter && statusFilter !== "all") params.set('status', statusFilter);
       const res = await fetch(`/api/sales-orders?${params}`, { credentials: 'include' });
       if (!res.ok) throw new Error('Errore nel caricamento ordini');
       return res.json();
@@ -115,7 +115,7 @@ export default function ResellerSalesOrders() {
         return false;
       }
     }
-    if (statusFilter && order.status !== statusFilter) {
+    if (statusFilter && statusFilter !== "all" && order.status !== statusFilter) {
       return false;
     }
     return true;
@@ -183,7 +183,7 @@ export default function ResellerSalesOrders() {
             <SelectValue placeholder="Tutti gli stati" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">Tutti gli stati</SelectItem>
+            <SelectItem value="all">Tutti gli stati</SelectItem>
             {Object.entries(statusLabels).map(([value, label]) => (
               <SelectItem key={value} value={value}>{label}</SelectItem>
             ))}
