@@ -37,7 +37,7 @@ import {
   Wrench, Euro, FileText, Paperclip, Calendar, Package, ClipboardList,
   ClipboardCheck, PackageCheck, Play, CheckCircle, Stethoscope, Receipt,
   Download, User, ArrowRight, Circle, CheckCircle2, AlertCircle, AlertTriangle, Gift, Shield, SkipForward,
-  HardDrive, Building2, Clock, Truck, Loader2, XCircle, CalendarCheck, ArrowLeft
+  HardDrive, Building2, Clock, Truck, Loader2, XCircle, CalendarCheck, ArrowLeft, ShoppingBag
 } from "lucide-react";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
@@ -131,6 +131,23 @@ type RepairCenter = {
   id: string;
   name: string;
   resellerId: string | null;
+};
+
+type SuggestedAccessory = {
+  id: string;
+  name: string;
+  sku: string | null;
+  unitPrice: number;
+  imageUrl: string | null;
+  specs: {
+    accessoryType: string | null;
+    color: string | null;
+    material: string | null;
+  } | null;
+  deviceCompatibilities: Array<{
+    brandName: string | null;
+    modelName: string | null;
+  }>;
 };
 
 interface RepairDetailPageProps {
@@ -308,6 +325,20 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
     },
     enabled: !!repairOrderId,
     retry: false,
+  });
+
+  // Suggested accessories for pickup (only when status is pronto_ritiro)
+  const { data: suggestedAccessories = [], isLoading: accessoriesLoading } = useQuery<SuggestedAccessory[]>({
+    queryKey: ["/api/repairs", repairOrderId, "suggested-accessories"],
+    queryFn: async () => {
+      const response = await fetch(`/api/repairs/${repairOrderId}/suggested-accessories`, {
+        credentials: "include",
+      });
+      if (!response.ok) return [];
+      return response.json();
+    },
+    enabled: !!repairOrderId && repair?.status === 'pronto_ritiro',
+    staleTime: 60000,
   });
 
   const updateQuoteStatusMutation = useMutation({
@@ -975,6 +1006,71 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
                           <Truck className="mr-2 h-4 w-4" />
                           Completa Consegna
                         </Button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Suggested Accessories for pickup */}
+                  {repair.status === 'pronto_ritiro' && (
+                    <div className="mt-4 pt-4 border-t">
+                      <p className="text-xs text-muted-foreground mb-3 flex items-center gap-2">
+                        <ShoppingBag className="h-3 w-3" />
+                        ACCESSORI CONSIGLIATI PER IL CLIENTE
+                      </p>
+                      {accessoriesLoading && (
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground p-3">
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          Caricamento accessori compatibili...
+                        </div>
+                      )}
+                      {!accessoriesLoading && suggestedAccessories.length === 0 && (
+                        <p className="text-sm text-muted-foreground p-3 text-center">
+                          Nessun accessorio compatibile trovato per questo dispositivo.
+                        </p>
+                      )}
+                      <div className="grid gap-3">
+                        {suggestedAccessories.slice(0, 4).map((accessory) => (
+                          <div
+                            key={accessory.id}
+                            className="flex items-center gap-3 p-3 rounded-lg border bg-card hover-elevate"
+                            data-testid={`card-suggested-accessory-${accessory.id}`}
+                          >
+                            {accessory.imageUrl ? (
+                              <img
+                                src={accessory.imageUrl}
+                                alt={accessory.name}
+                                className="w-12 h-12 object-cover rounded"
+                              />
+                            ) : (
+                              <div className="w-12 h-12 bg-muted rounded flex items-center justify-center">
+                                <ShoppingBag className="h-5 w-5 text-muted-foreground" />
+                              </div>
+                            )}
+                            <div className="flex-1 min-w-0">
+                              <p className="font-medium text-sm truncate">{accessory.name}</p>
+                              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                {accessory.specs?.accessoryType && (
+                                  <Badge variant="secondary" className="text-xs">
+                                    {accessory.specs.accessoryType}
+                                  </Badge>
+                                )}
+                                {accessory.specs?.color && (
+                                  <span>{accessory.specs.color}</span>
+                                )}
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <p className="font-bold text-sm">
+                                {(accessory.unitPrice / 100).toLocaleString('it-IT', { style: 'currency', currency: 'EUR' })}
+                              </p>
+                            </div>
+                          </div>
+                        ))}
+                        {suggestedAccessories.length > 4 && (
+                          <p className="text-xs text-muted-foreground text-center">
+                            +{suggestedAccessories.length - 4} altri accessori compatibili
+                          </p>
+                        )}
                       </div>
                     </div>
                   )}

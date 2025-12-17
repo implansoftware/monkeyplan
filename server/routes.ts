@@ -999,13 +999,29 @@ export function registerRoutes(app: Express): Server {
   });
 
   // Suggested Accessories for Repair (when status is pronto_ritiro)
-  app.get("/api/repairs/:id/suggested-accessories", requireAuth, async (req, res) => {
+  app.get("/api/repairs/:id/suggested-accessories", requireAuth, requireRole("admin", "reseller", "reseller_staff", "repair_center"), async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
       const repair = await storage.getRepairOrder(req.params.id);
       if (!repair) {
         return res.status(404).send("Repair order not found");
+      }
+      
+      // Verify ownership based on role
+      if (req.user.role === 'reseller' || req.user.role === 'reseller_staff') {
+        const resellerId = req.user.role === 'reseller' ? req.user.id : req.user.resellerId;
+        if (repair.resellerId !== resellerId) {
+          // Also check if customer belongs to this reseller
+          const customer = await storage.getUser(repair.customerId);
+          if (!customer || customer.resellerId !== resellerId) {
+            return res.status(403).send("Access denied");
+          }
+        }
+      } else if (req.user.role === 'repair_center') {
+        if (repair.repairCenterId !== req.user.repairCenterId) {
+          return res.status(403).send("Access denied");
+        }
       }
       
       // Only suggest accessories when repair is ready for pickup
