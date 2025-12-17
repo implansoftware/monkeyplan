@@ -44,6 +44,21 @@ const CONDITION_OPTIONS = [
 ];
 const BRANDS = ["Apple", "Samsung", "Xiaomi", "Huawei", "OPPO", "OnePlus", "Google", "Motorola", "Sony", "Nokia", "Altro"];
 
+const COLOR_OPTIONS = [
+  "Nero", "Bianco", "Argento", "Grigio", "Oro", "Oro Rosa", "Blu", "Blu Notte", 
+  "Verde", "Verde Alpino", "Viola", "Rosso", "Giallo", "Arancione", "Rosa", "Titanio Nero", 
+  "Titanio Naturale", "Titanio Blu", "Titanio Bianco", "Altro"
+];
+
+const BATTERY_OPTIONS = [
+  { value: "100", label: "100%" },
+  { value: "95-99", label: "95-99%" },
+  { value: "90-94", label: "90-94%" },
+  { value: "85-89", label: "85-89%" },
+  { value: "80-84", label: "80-84%" },
+  { value: "<80", label: "Meno di 80%" },
+];
+
 export default function AdminSmartphoneCatalog() {
   const [searchQuery, setSearchQuery] = useState("");
   const [brandFilter, setBrandFilter] = useState<string>("all");
@@ -69,8 +84,6 @@ export default function AdminSmartphoneCatalog() {
     condition: "ricondizionato",
     warrantyMonths: "12",
     storage: "128GB",
-    ram: "",
-    screenSize: "",
     batteryHealth: "",
     grade: "A",
     networkLock: "unlocked",
@@ -213,8 +226,6 @@ export default function AdminSmartphoneCatalog() {
       condition: "ricondizionato",
       warrantyMonths: "12",
       storage: "128GB",
-      ram: "",
-      screenSize: "",
       batteryHealth: "",
       grade: "A",
       networkLock: "unlocked",
@@ -240,8 +251,6 @@ export default function AdminSmartphoneCatalog() {
       condition: smartphone.condition,
       warrantyMonths: smartphone.warrantyMonths?.toString() || "12",
       storage: smartphone.specs?.storage || "128GB",
-      ram: smartphone.specs?.ram || "",
-      screenSize: smartphone.specs?.screenSize || "",
       batteryHealth: smartphone.specs?.batteryHealth?.toString() || "",
       grade: smartphone.specs?.grade || "A",
       networkLock: smartphone.specs?.networkLock || "unlocked",
@@ -271,9 +280,7 @@ export default function AdminSmartphoneCatalog() {
 
     const specs = {
       storage: formData.storage,
-      ram: formData.ram || null,
-      screenSize: formData.screenSize || null,
-      batteryHealth: formData.batteryHealth ? parseInt(formData.batteryHealth) : null,
+      batteryHealth: formData.batteryHealth || null,
       grade: formData.grade,
       networkLock: formData.networkLock,
       imei: formData.imei || null,
@@ -542,13 +549,16 @@ export default function AdminSmartphoneCatalog() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="color">Colore</Label>
-                <Input
-                  id="color"
-                  value={formData.color}
-                  onChange={(e) => setFormData({ ...formData, color: e.target.value })}
-                  placeholder="es. Space Black"
-                  data-testid="input-smartphone-color"
-                />
+                <Select value={formData.color} onValueChange={(v) => setFormData({ ...formData, color: v })}>
+                  <SelectTrigger data-testid="select-smartphone-color">
+                    <SelectValue placeholder="Seleziona colore" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {COLOR_OPTIONS.map((c) => (
+                      <SelectItem key={c} value={c}>{c}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="condition">Condizione</Label>
@@ -609,37 +619,17 @@ export default function AdminSmartphoneCatalog() {
 
             <div className="grid grid-cols-3 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="ram">RAM</Label>
-                <Input
-                  id="ram"
-                  value={formData.ram}
-                  onChange={(e) => setFormData({ ...formData, ram: e.target.value })}
-                  placeholder="es. 8GB"
-                  data-testid="input-smartphone-ram"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="screenSize">Display</Label>
-                <Input
-                  id="screenSize"
-                  value={formData.screenSize}
-                  onChange={(e) => setFormData({ ...formData, screenSize: e.target.value })}
-                  placeholder="es. 6.7 pollici"
-                  data-testid="input-smartphone-screen"
-                />
-              </div>
-              <div className="space-y-2">
                 <Label htmlFor="batteryHealth">Batteria %</Label>
-                <Input
-                  id="batteryHealth"
-                  type="number"
-                  min="0"
-                  max="100"
-                  value={formData.batteryHealth}
-                  onChange={(e) => setFormData({ ...formData, batteryHealth: e.target.value })}
-                  placeholder="es. 95"
-                  data-testid="input-smartphone-battery"
-                />
+                <Select value={formData.batteryHealth} onValueChange={(v) => setFormData({ ...formData, batteryHealth: v })}>
+                  <SelectTrigger data-testid="select-smartphone-battery">
+                    <SelectValue placeholder="Seleziona batteria" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {BATTERY_OPTIONS.map((b) => (
+                      <SelectItem key={b.value} value={b.value}>{b.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
 

@@ -596,9 +596,9 @@ export const smartphoneSpecs = pgTable("smartphone_specs", {
   
   // Specifiche tecniche
   storage: smartphoneStorageEnum("storage").notNull(),
-  ram: text("ram"), // es. "8GB"
-  screenSize: text("screen_size"), // es. "6.1 pollici"
-  batteryHealth: integer("battery_health"), // Percentuale salute batteria (0-100)
+  ram: text("ram"), // es. "8GB" - deprecated, kept for backward compatibility
+  screenSize: text("screen_size"), // es. "6.1 pollici" - deprecated, kept for backward compatibility
+  batteryHealth: text("battery_health"), // Range batteria: "100", "95-99", "90-94", "85-89", "80-84", "<80"
   
   // Condizione e grading
   grade: smartphoneGradeEnum("grade"),
