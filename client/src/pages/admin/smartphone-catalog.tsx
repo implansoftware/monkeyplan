@@ -113,6 +113,27 @@ export default function AdminSmartphoneCatalog() {
     select: (users) => users.filter((u) => u.role === "reseller"),
   });
 
+  // Fetch all product assignments for displaying in the table
+  const { data: allProductAssignments = [] } = useQuery<ProductPriceWithReseller[]>({
+    queryKey: ["/api/admin/product-prices"],
+    queryFn: async () => {
+      const response = await fetch(`/api/admin/product-prices`, {
+        credentials: "include",
+      });
+      if (!response.ok) throw new Error("Failed to fetch assignments");
+      return response.json();
+    },
+  });
+
+  // Group assignments by product ID for quick lookup
+  const assignmentsByProductId = allProductAssignments.reduce((acc, assignment) => {
+    if (!acc[assignment.productId]) {
+      acc[assignment.productId] = [];
+    }
+    acc[assignment.productId].push(assignment);
+    return acc;
+  }, {} as Record<string, ProductPriceWithReseller[]>);
+
   const { data: productAssignments = [], refetch: refetchAssignments } = useQuery<ProductPriceWithReseller[]>({
     queryKey: ["/api/admin/product-prices", { productId: smartphoneToAssign?.id }],
     queryFn: async () => {
@@ -138,8 +159,7 @@ export default function AdminSmartphoneCatalog() {
       refetchAssignments();
       toast({ title: "Assegnato", description: "Lo smartphone è stato assegnato al rivenditore." });
       setSelectedResellerId("");
-      setAssignPrice("");
-      setAssignCostPrice("");
+      // Keep prices pre-filled for next assignment
     },
     onError: (error: any) => {
       toast({ title: "Errore", description: error.message, variant: "destructive" });
@@ -501,10 +521,29 @@ export default function AdminSmartphoneCatalog() {
                         </div>
                       </TableCell>
                       <TableCell>
-                        <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                          <Store className="h-4 w-4" />
-                          {smartphone.reseller?.fullName || smartphone.reseller?.username || "-"}
-                        </div>
+                        {(() => {
+                          const assignments = assignmentsByProductId[smartphone.id] || [];
+                          if (assignments.length === 0) {
+                            return (
+                              <span className="text-sm text-muted-foreground">-</span>
+                            );
+                          }
+                          return (
+                            <div className="flex flex-wrap gap-1">
+                              {assignments.slice(0, 2).map((a) => (
+                                <Badge key={a.id} variant="secondary" className="text-xs">
+                                  <Users className="h-3 w-3 mr-1" />
+                                  {a.reseller?.fullName || a.reseller?.username || "?"}
+                                </Badge>
+                              ))}
+                              {assignments.length > 2 && (
+                                <Badge variant="outline" className="text-xs">
+                                  +{assignments.length - 2}
+                                </Badge>
+                              )}
+                            </div>
+                          );
+                        })()}
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-1">
