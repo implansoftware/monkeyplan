@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
@@ -11,12 +11,18 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Checkbox } from "@/components/ui/checkbox";
-import { ShoppingBag, Search, Plus, Pencil, Trash2, Loader2, Tag, Store, ImagePlus, X, Image } from "lucide-react";
+import { ShoppingBag, Search, Plus, Pencil, Trash2, Loader2, Tag, Store, X, Image, ChevronDown, ImagePlus } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { useRef } from "react";
 import type { AccessorySpecs, Product, DeviceModel, DeviceBrand } from "@shared/schema";
+
+type DeviceCompatibilityEntry = {
+  deviceBrandId: string;
+  deviceModelId: string | null;
+  brandName?: string;
+  modelName?: string | null;
+};
 
 type AccessoryWithSpecs = Product & {
   specs: AccessorySpecs | null;
@@ -74,6 +80,15 @@ export default function AdminAccessoryCatalog() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
+  // Device compatibility state (like spare parts)
+  const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set());
+  const [deviceCompatibilities, setDeviceCompatibilities] = useState<DeviceCompatibilityEntry[]>([]);
+  const [newBrandDialogOpen, setNewBrandDialogOpen] = useState(false);
+  const [newBrandName, setNewBrandName] = useState("");
+  const [newModelDialogOpen, setNewModelDialogOpen] = useState(false);
+  const [newModelName, setNewModelName] = useState("");
+  const [newModelBrandId, setNewModelBrandId] = useState("");
+
   const [formData, setFormData] = useState({
     name: "",
     sku: "",
@@ -88,20 +103,130 @@ export default function AdminAccessoryCatalog() {
     isUniversal: false,
     compatibleBrands: [] as string[],
     compatibleModels: "",
-    compatibleDeviceModelIds: [] as string[],
     material: "",
     notes: "",
   });
-  const [modelSearchQuery, setModelSearchQuery] = useState("");
 
   const { data: accessories = [], isLoading } = useQuery<AccessoryWithSpecs[]>({
     queryKey: ["/api/accessories"],
   });
 
-  // Fetch device models for compatibility selection
-  const { data: deviceModels = [] } = useQuery<Array<DeviceModel & { brand?: DeviceBrand | null }>>({
+  // Fetch device brands and models for compatibility selection
+  const { data: deviceBrands = [] } = useQuery<DeviceBrand[]>({
+    queryKey: ["/api/device-brands"],
+  });
+
+  const { data: deviceModels = [] } = useQuery<DeviceModel[]>({
     queryKey: ["/api/device-models"],
   });
+
+  const createBrandMutation = useMutation({
+    mutationFn: async (name: string) => {
+      const res = await apiRequest("POST", "/api/device-brands", { name });
+      return await res.json();
+    },
+    onSuccess: (newBrand: DeviceBrand) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/device-brands"] });
+      setNewBrandDialogOpen(false);
+      setNewBrandName("");
+      toast({ title: "Brand creato", description: `"${newBrand.name}" aggiunto con successo` });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Errore", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const createModelMutation = useMutation({
+    mutationFn: async ({ brandId, modelName }: { brandId: string; modelName: string }) => {
+      const res = await apiRequest("POST", "/api/device-models", { brandId, modelName });
+      return await res.json();
+    },
+    onSuccess: (newModel: DeviceModel) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/device-models"] });
+      setNewModelDialogOpen(false);
+      setNewModelName("");
+      setNewModelBrandId("");
+      if (newModel.brandId) {
+        setExpandedBrands(prev => {
+          const newSet = new Set(prev);
+          newSet.add(newModel.brandId!);
+          return newSet;
+        });
+      }
+      toast({ title: "Modello creato", description: `"${newModel.modelName}" aggiunto con successo` });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Errore", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const handleCreateBrand = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (newBrandName.trim()) {
+      createBrandMutation.mutate(newBrandName.trim());
+    }
+  };
+
+  const handleCreateModel = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (newModelName.trim() && newModelBrandId) {
+      createModelMutation.mutate({ brandId: newModelBrandId, modelName: newModelName.trim() });
+    }
+  };
+
+  const openNewModelDialog = (brandId: string) => {
+    setNewModelBrandId(brandId);
+    setNewModelDialogOpen(true);
+  };
+
+  const toggleBrandExpansion = (brandId: string) => {
+    const newExpanded = new Set(expandedBrands);
+    if (newExpanded.has(brandId)) {
+      newExpanded.delete(brandId);
+    } else {
+      newExpanded.add(brandId);
+    }
+    setExpandedBrands(newExpanded);
+  };
+
+  const toggleBrandCompatibility = (brandId: string) => {
+    const hasAnyFromBrand = deviceCompatibilities.some(c => c.deviceBrandId === brandId);
+    if (hasAnyFromBrand) {
+      setDeviceCompatibilities(deviceCompatibilities.filter(c => c.deviceBrandId !== brandId));
+    } else {
+      const brand = deviceBrands.find(b => b.id === brandId);
+      setDeviceCompatibilities([...deviceCompatibilities, {
+        deviceBrandId: brandId,
+        deviceModelId: null,
+        brandName: brand?.name,
+        modelName: null
+      }]);
+    }
+  };
+
+  const toggleModelCompatibility = (brandId: string, modelId: string) => {
+    const exists = deviceCompatibilities.some(c => c.deviceBrandId === brandId && c.deviceModelId === modelId);
+    if (exists) {
+      setDeviceCompatibilities(deviceCompatibilities.filter(c => !(c.deviceBrandId === brandId && c.deviceModelId === modelId)));
+    } else {
+      const brandOnly = deviceCompatibilities.find(c => c.deviceBrandId === brandId && !c.deviceModelId);
+      if (brandOnly) {
+        setDeviceCompatibilities(deviceCompatibilities.filter(c => !(c.deviceBrandId === brandId && !c.deviceModelId)));
+      }
+      const brand = deviceBrands.find(b => b.id === brandId);
+      const model = deviceModels.find(m => m.id === modelId);
+      setDeviceCompatibilities([...deviceCompatibilities.filter(c => !(c.deviceBrandId === brandId && !c.deviceModelId)), {
+        deviceBrandId: brandId,
+        deviceModelId: modelId,
+        brandName: brand?.name,
+        modelName: model?.modelName
+      }]);
+    }
+  };
+
+  const getModelsForBrand = (brandId: string) => {
+    return deviceModels.filter(m => m.brandId === brandId);
+  };
 
   const createMutation = useMutation({
     mutationFn: async (data: { product: any; specs: any; imageFile?: File | null; compatibleDeviceModelIds?: string[] }) => {
@@ -228,7 +353,8 @@ export default function AdminAccessoryCatalog() {
   const resetForm = () => {
     setImageFile(null);
     setImagePreview(null);
-    setModelSearchQuery("");
+    setDeviceCompatibilities([]);
+    setExpandedBrands(new Set());
     setFormData({
       name: "",
       sku: "",
@@ -243,7 +369,6 @@ export default function AdminAccessoryCatalog() {
       isUniversal: false,
       compatibleBrands: [],
       compatibleModels: "",
-      compatibleDeviceModelIds: [],
       material: "",
       notes: "",
     });
@@ -251,11 +376,15 @@ export default function AdminAccessoryCatalog() {
 
   const openEditDialog = (accessory: AccessoryWithSpecs) => {
     setEditingAccessory(accessory);
-    setModelSearchQuery("");
-    // Extract device model IDs from deviceCompatibilities
-    const existingModelIds = accessory.deviceCompatibilities
-      ?.filter(dc => dc.deviceModelId)
-      .map(dc => dc.deviceModelId as string) || [];
+    setExpandedBrands(new Set());
+    // Extract device compatibilities from existing data
+    const existingCompatibilities: DeviceCompatibilityEntry[] = (accessory.deviceCompatibilities || []).map(dc => ({
+      deviceBrandId: dc.deviceBrandId,
+      deviceModelId: dc.deviceModelId,
+      brandName: dc.deviceBrand?.name,
+      modelName: dc.deviceModel?.modelName
+    }));
+    setDeviceCompatibilities(existingCompatibilities);
     setFormData({
       name: accessory.name,
       sku: accessory.sku,
@@ -270,7 +399,6 @@ export default function AdminAccessoryCatalog() {
       isUniversal: accessory.specs?.isUniversal || false,
       compatibleBrands: accessory.specs?.compatibleBrands || [],
       compatibleModels: accessory.specs?.compatibleModels?.join(", ") || "",
-      compatibleDeviceModelIds: existingModelIds,
       material: accessory.specs?.material || "",
       notes: accessory.specs?.notes || "",
     });
@@ -301,8 +429,10 @@ export default function AdminAccessoryCatalog() {
       notes: formData.notes || null,
     };
 
-    // Include device model IDs for compatibility
-    const compatibleDeviceModelIds = formData.isUniversal ? [] : formData.compatibleDeviceModelIds;
+    // Convert device compatibilities to model IDs for backend
+    const compatibleDeviceModelIds = formData.isUniversal ? [] : deviceCompatibilities
+      .filter(c => c.deviceModelId !== null)
+      .map(c => c.deviceModelId as string);
 
     if (editingAccessory) {
       updateMutation.mutate({ productId: editingAccessory.id, data: { product, specs, compatibleDeviceModelIds } });
@@ -598,82 +728,115 @@ export default function AdminAccessoryCatalog() {
 
             {!formData.isUniversal && (
               <div className="space-y-2">
-                <Label>Modelli compatibili</Label>
-                <div className="space-y-2">
-                  <Input
-                    value={modelSearchQuery}
-                    onChange={(e) => setModelSearchQuery(e.target.value)}
-                    placeholder="Cerca modello (es. iPhone 14, Galaxy S24...)"
-                    data-testid="input-search-device-models"
-                  />
-                  {modelSearchQuery.length >= 2 && (
-                    <ScrollArea className="h-32 border rounded-md p-2">
-                      {deviceModels
-                        .filter(m => 
-                          m.modelName.toLowerCase().includes(modelSearchQuery.toLowerCase()) ||
-                          (m.brand && m.brand.toLowerCase().includes(modelSearchQuery.toLowerCase()))
-                        )
-                        .slice(0, 20)
-                        .map(model => (
-                          <div
-                            key={model.id}
-                            className={`flex items-center justify-between p-2 rounded cursor-pointer hover-elevate ${
-                              formData.compatibleDeviceModelIds.includes(model.id) ? "bg-primary/10" : ""
-                            }`}
-                            onClick={() => {
-                              if (formData.compatibleDeviceModelIds.includes(model.id)) {
-                                setFormData({
-                                  ...formData,
-                                  compatibleDeviceModelIds: formData.compatibleDeviceModelIds.filter(id => id !== model.id)
-                                });
-                              } else {
-                                setFormData({
-                                  ...formData,
-                                  compatibleDeviceModelIds: [...formData.compatibleDeviceModelIds, model.id]
-                                });
-                              }
-                            }}
-                            data-testid={`option-device-model-${model.id}`}
-                          >
-                            <span className="text-sm">{model.brand || ""} {model.modelName}</span>
-                            {formData.compatibleDeviceModelIds.includes(model.id) && (
-                              <Badge variant="secondary" className="text-xs">Selezionato</Badge>
+                <div className="flex items-center justify-between">
+                  <Label>Dispositivi Compatibili</Label>
+                  <div className="flex gap-1">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setNewBrandDialogOpen(true)}
+                      data-testid="button-new-brand"
+                    >
+                      <Plus className="h-3 w-3 mr-1" />
+                      Brand
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setNewModelDialogOpen(true)}
+                      data-testid="button-new-model"
+                    >
+                      <Plus className="h-3 w-3 mr-1" />
+                      Modello
+                    </Button>
+                  </div>
+                </div>
+                <p className="text-xs text-muted-foreground mb-2">
+                  Seleziona i brand e modelli di dispositivo con cui questo accessorio è compatibile
+                </p>
+                <ScrollArea className="h-64 border rounded-md p-2">
+                  {deviceBrands.length === 0 ? (
+                    <p className="text-sm text-muted-foreground p-2">Nessun brand di dispositivo disponibile</p>
+                  ) : (
+                    <div className="space-y-1">
+                      {deviceBrands.map((brand) => {
+                        const models = getModelsForBrand(brand.id);
+                        const isExpanded = expandedBrands.has(brand.id);
+                        const hasAnyCompatibility = deviceCompatibilities.some(c => c.deviceBrandId === brand.id);
+                        const hasBrandOnlyCompatibility = deviceCompatibilities.some(c => c.deviceBrandId === brand.id && !c.deviceModelId);
+                        
+                        return (
+                          <div key={brand.id} className="border rounded-md">
+                            <div className="flex items-center gap-2 p-2 hover-elevate">
+                              <Checkbox
+                                checked={hasAnyCompatibility}
+                                onCheckedChange={() => toggleBrandCompatibility(brand.id)}
+                                data-testid={`checkbox-brand-${brand.id}`}
+                              />
+                              <button
+                                type="button"
+                                onClick={() => toggleBrandExpansion(brand.id)}
+                                className="flex items-center gap-1 flex-1 text-left"
+                              >
+                                <ChevronDown className={`h-4 w-4 transition-transform ${isExpanded ? 'rotate-0' : '-rotate-90'}`} />
+                                <span className="font-medium">{brand.name}</span>
+                                {hasBrandOnlyCompatibility && (
+                                  <Badge variant="outline" className="ml-2 text-xs">Tutti i modelli</Badge>
+                                )}
+                              </button>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                className="h-6 w-6"
+                                onClick={(e) => { e.stopPropagation(); openNewModelDialog(brand.id); }}
+                                data-testid={`button-add-model-${brand.id}`}
+                              >
+                                <Plus className="h-3 w-3" />
+                              </Button>
+                            </div>
+                            {isExpanded && (
+                              <div className="pl-8 pb-2 space-y-1">
+                                {models.map((model) => {
+                                  const isModelSelected = deviceCompatibilities.some(c => c.deviceBrandId === brand.id && c.deviceModelId === model.id);
+                                  return (
+                                    <div key={model.id} className="flex items-center gap-2 p-1 hover-elevate rounded">
+                                      <Checkbox
+                                        checked={isModelSelected || hasBrandOnlyCompatibility}
+                                        disabled={hasBrandOnlyCompatibility}
+                                        onCheckedChange={() => toggleModelCompatibility(brand.id, model.id)}
+                                        data-testid={`checkbox-model-${model.id}`}
+                                      />
+                                      <span className="text-sm">{model.modelName}</span>
+                                    </div>
+                                  );
+                                })}
+                                {models.length === 0 && (
+                                  <p className="text-xs text-muted-foreground italic">Nessun modello. Clicca + per aggiungerne uno.</p>
+                                )}
+                              </div>
                             )}
                           </div>
-                        ))}
-                      {deviceModels.filter(m => 
-                        m.modelName.toLowerCase().includes(modelSearchQuery.toLowerCase()) ||
-                        (m.brand && m.brand.toLowerCase().includes(modelSearchQuery.toLowerCase()))
-                      ).length === 0 && (
-                        <p className="text-sm text-muted-foreground p-2">Nessun modello trovato</p>
-                      )}
-                    </ScrollArea>
-                  )}
-                  {formData.compatibleDeviceModelIds.length > 0 && (
-                    <div className="flex flex-wrap gap-1 mt-2">
-                      {formData.compatibleDeviceModelIds.map(modelId => {
-                        const model = deviceModels.find(m => m.id === modelId);
-                        return model ? (
-                          <Badge 
-                            key={modelId} 
-                            variant="secondary" 
-                            className="cursor-pointer"
-                            onClick={() => setFormData({
-                              ...formData,
-                              compatibleDeviceModelIds: formData.compatibleDeviceModelIds.filter(id => id !== modelId)
-                            })}
-                          >
-                            {model.brand || ""} {model.modelName}
-                            <X className="h-3 w-3 ml-1" />
-                          </Badge>
-                        ) : null;
+                        );
                       })}
                     </div>
                   )}
-                  <p className="text-xs text-muted-foreground">
-                    Digita almeno 2 caratteri per cercare, clicca per selezionare/deselezionare
-                  </p>
-                </div>
+                </ScrollArea>
+                {deviceCompatibilities.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {deviceCompatibilities.map((c, idx) => {
+                      const brand = deviceBrands.find(b => b.id === c.deviceBrandId);
+                      const model = c.deviceModelId ? deviceModels.find(m => m.id === c.deviceModelId) : null;
+                      return (
+                        <Badge key={idx} variant="secondary">
+                          {brand?.name}{model ? ` - ${model.modelName}` : ' (tutti)'}
+                        </Badge>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             )}
 
@@ -853,6 +1016,81 @@ export default function AdminAccessoryCatalog() {
               Elimina
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog per nuovo brand */}
+      <Dialog open={newBrandDialogOpen} onOpenChange={setNewBrandDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Nuovo Brand Dispositivo</DialogTitle>
+            <DialogDescription>Aggiungi un nuovo brand di dispositivo al sistema</DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleCreateBrand} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="new-brand-name">Nome Brand</Label>
+              <Input
+                id="new-brand-name"
+                value={newBrandName}
+                onChange={(e) => setNewBrandName(e.target.value)}
+                placeholder="Es. Apple, Samsung, Xiaomi..."
+                data-testid="input-new-brand-name"
+              />
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setNewBrandDialogOpen(false)}>
+                Annulla
+              </Button>
+              <Button type="submit" disabled={!newBrandName.trim() || createBrandMutation.isPending} data-testid="button-create-brand">
+                {createBrandMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Crea Brand
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog per nuovo modello */}
+      <Dialog open={newModelDialogOpen} onOpenChange={setNewModelDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Nuovo Modello Dispositivo</DialogTitle>
+            <DialogDescription>Aggiungi un nuovo modello di dispositivo</DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleCreateModel} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="new-model-brand">Brand</Label>
+              <Select value={newModelBrandId} onValueChange={setNewModelBrandId}>
+                <SelectTrigger data-testid="select-new-model-brand">
+                  <SelectValue placeholder="Seleziona brand..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {deviceBrands.map((brand) => (
+                    <SelectItem key={brand.id} value={brand.id}>{brand.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="new-model-name">Nome Modello</Label>
+              <Input
+                id="new-model-name"
+                value={newModelName}
+                onChange={(e) => setNewModelName(e.target.value)}
+                placeholder="Es. iPhone 15 Pro, Galaxy S24 Ultra..."
+                data-testid="input-new-model-name"
+              />
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setNewModelDialogOpen(false)}>
+                Annulla
+              </Button>
+              <Button type="submit" disabled={!newModelName.trim() || !newModelBrandId || createModelMutation.isPending} data-testid="button-create-model">
+                {createModelMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Crea Modello
+              </Button>
+            </DialogFooter>
+          </form>
         </DialogContent>
       </Dialog>
     </div>
