@@ -404,6 +404,48 @@ export const carrierEnum = pgEnum("carrier", [
   "other",             // Altro
 ]);
 
+// Stato reso ordine vendita
+export const salesReturnStatusEnum = pgEnum("sales_return_status", [
+  "requested",         // Richiesto dal cliente
+  "approved",          // Approvato
+  "rejected",          // Rifiutato
+  "awaiting_shipment", // In attesa spedizione reso
+  "shipped",           // Spedito dal cliente
+  "received",          // Ricevuto
+  "inspecting",        // In ispezione
+  "refunded",          // Rimborsato
+  "partially_refunded",// Parzialmente rimborsato
+  "cancelled",         // Annullato
+]);
+
+// Motivo reso ordine vendita
+export const salesReturnReasonEnum = pgEnum("sales_return_reason", [
+  "defective",         // Difettoso
+  "wrong_item",        // Articolo errato
+  "not_as_described",  // Non conforme alla descrizione
+  "changed_mind",      // Cambio idea
+  "damaged_in_transit",// Danneggiato in transito
+  "missing_parts",     // Parti mancanti
+  "quality_issue",     // Problema qualità
+  "other",             // Altro
+]);
+
+// Condizione articolo reso
+export const returnItemConditionEnum = pgEnum("return_item_condition", [
+  "new_sealed",        // Nuovo sigillato
+  "new_opened",        // Nuovo aperto
+  "used_good",         // Usato buone condizioni
+  "used_damaged",      // Usato danneggiato
+  "defective",         // Difettoso
+]);
+
+// Metodo rimborso
+export const refundMethodEnum = pgEnum("refund_method", [
+  "original_payment",  // Stesso metodo pagamento originale
+  "store_credit",      // Credito negozio
+  "bank_transfer",     // Bonifico bancario
+]);
+
 // Users table with role-based access
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -2796,6 +2838,65 @@ export const salesOrderStateHistory = pgTable("sales_order_state_history", {
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
+// Sales Order Returns - Resi ordini vendita
+export const salesOrderReturns = pgTable("sales_order_returns", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  returnNumber: text("return_number").notNull().unique(), // es: "RES-SALE-2024-0001"
+  orderId: varchar("order_id").notNull(),
+  resellerId: varchar("reseller_id"),
+  customerId: varchar("customer_id"),
+  status: salesReturnStatusEnum("status").notNull().default("requested"),
+  reason: salesReturnReasonEnum("reason").notNull(),
+  reasonDetails: text("reason_details"),
+  // Importi
+  totalAmount: real("total_amount").notNull().default(0), // Valore totale articoli resi
+  refundAmount: real("refund_amount"), // Importo effettivamente rimborsato
+  refundMethod: refundMethodEnum("refund_method"),
+  // Spedizione reso
+  trackingNumber: text("tracking_number"),
+  carrier: carrierEnum("carrier"),
+  shippingCost: real("shipping_cost"), // Costo spedizione reso (a carico cliente o negozio)
+  customerPaysShipping: boolean("customer_pays_shipping").default(false),
+  // Date
+  requestedAt: timestamp("requested_at").notNull().defaultNow(),
+  approvedAt: timestamp("approved_at"),
+  rejectedAt: timestamp("rejected_at"),
+  shippedAt: timestamp("shipped_at"),
+  receivedAt: timestamp("received_at"),
+  inspectedAt: timestamp("inspected_at"),
+  refundedAt: timestamp("refunded_at"),
+  // Note
+  customerNotes: text("customer_notes"), // Note del cliente
+  internalNotes: text("internal_notes"), // Note interne
+  rejectionReason: text("rejection_reason"), // Motivo rifiuto
+  inspectionNotes: text("inspection_notes"), // Note ispezione
+  // Meta
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+// Sales Order Return Items - Articoli reso
+export const salesOrderReturnItems = pgTable("sales_order_return_items", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  returnId: varchar("return_id").notNull(),
+  orderItemId: varchar("order_item_id"), // Riferimento all'articolo originale
+  productId: varchar("product_id"),
+  productName: text("product_name").notNull(),
+  productSku: text("product_sku"),
+  quantity: integer("quantity").notNull().default(1),
+  unitPrice: real("unit_price").notNull(), // Prezzo unitario originale
+  refundAmount: real("refund_amount"), // Importo rimborsato per questo articolo
+  reason: text("reason"), // Motivo specifico per questo articolo
+  condition: returnItemConditionEnum("condition"), // Condizione articolo ricevuto
+  conditionNotes: text("condition_notes"),
+  // Restock
+  restocked: boolean("restocked").default(false), // Rimesso in inventario
+  restockedAt: timestamp("restocked_at"),
+  restockedQuantity: integer("restocked_quantity"),
+  // Meta
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
 // Relations
 export const usersRelations = relations(users, ({ one, many }) => ({
   repairCenter: one(repairCenters, {
@@ -3849,6 +3950,18 @@ export const insertSalesOrderStateHistorySchema = createInsertSchema(salesOrderS
   createdAt: true,
 });
 
+export const insertSalesOrderReturnSchema = createInsertSchema(salesOrderReturns).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  requestedAt: true,
+});
+
+export const insertSalesOrderReturnItemSchema = createInsertSchema(salesOrderReturnItems).omit({
+  id: true,
+  createdAt: true,
+});
+
 export const createDataRecoveryEventSchema = z.object({
   eventType: z.enum(["created", "status_change", "assigned", "shipped", "received", "completed", "note_added", "document_uploaded"]).default("note_added"),
   title: z.string().min(1, "Title is required").max(200, "Title too long"),
@@ -4293,6 +4406,12 @@ export type InsertStockReservation = z.infer<typeof insertStockReservationSchema
 export type SalesOrderStateHistoryEntry = typeof salesOrderStateHistory.$inferSelect;
 export type InsertSalesOrderStateHistoryEntry = z.infer<typeof insertSalesOrderStateHistorySchema>;
 
+export type SalesOrderReturn = typeof salesOrderReturns.$inferSelect;
+export type InsertSalesOrderReturn = z.infer<typeof insertSalesOrderReturnSchema>;
+
+export type SalesOrderReturnItem = typeof salesOrderReturnItems.$inferSelect;
+export type InsertSalesOrderReturnItem = z.infer<typeof insertSalesOrderReturnItemSchema>;
+
 // Sales Order Status Type
 export type SalesOrderStatus = "pending" | "confirmed" | "processing" | "ready_to_ship" | "shipped" | "delivered" | "completed" | "cancelled" | "refunded";
 export type PaymentMethod = "cash" | "card" | "bank_transfer" | "paypal" | "stripe" | "satispay" | "pos" | "credit";
@@ -4300,3 +4419,7 @@ export type SalesPaymentStatus = "pending" | "processing" | "completed" | "faile
 export type ShipmentStatus = "pending" | "preparing" | "ready" | "picked_up" | "in_transit" | "out_for_delivery" | "delivered" | "failed_delivery" | "returned";
 export type DeliveryType = "pickup" | "shipping" | "express";
 export type Carrier = "brt" | "gls" | "dhl" | "ups" | "fedex" | "poste_italiane" | "sda" | "tnt" | "other";
+export type SalesReturnStatus = "requested" | "approved" | "rejected" | "awaiting_shipment" | "shipped" | "received" | "inspecting" | "refunded" | "partially_refunded" | "cancelled";
+export type SalesReturnReason = "defective" | "wrong_item" | "not_as_described" | "changed_mind" | "damaged_in_transit" | "missing_parts" | "quality_issue" | "other";
+export type ReturnItemCondition = "new_sealed" | "new_opened" | "used_good" | "used_damaged" | "defective";
+export type RefundMethod = "original_payment" | "store_credit" | "bank_transfer";
