@@ -11,15 +11,19 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Smartphone, Search, Plus, Pencil, Trash2, Battery, HardDrive, Loader2, Store, ImagePlus, X, Image } from "lucide-react";
+import { Smartphone, Search, Plus, Pencil, Trash2, Battery, HardDrive, Loader2, Store, ImagePlus, X, Image, Users, UserPlus } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useRef } from "react";
-import type { SmartphoneSpecs, Product, User } from "@shared/schema";
+import type { SmartphoneSpecs, Product, User, ProductPrice } from "@shared/schema";
 
 type SmartphoneWithSpecs = Product & {
   specs: SmartphoneSpecs | null;
+  reseller?: { id: string; username: string; fullName: string | null } | null;
+};
+
+type ProductPriceWithReseller = ProductPrice & {
   reseller?: { id: string; username: string; fullName: string | null } | null;
 };
 
@@ -70,6 +74,11 @@ export default function AdminSmartphoneCatalog() {
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [assignDialogOpen, setAssignDialogOpen] = useState(false);
+  const [smartphoneToAssign, setSmartphoneToAssign] = useState<SmartphoneWithSpecs | null>(null);
+  const [selectedResellerId, setSelectedResellerId] = useState<string>("");
+  const [assignPrice, setAssignPrice] = useState<string>("");
+  const [assignCostPrice, setAssignCostPrice] = useState<string>("");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
@@ -97,6 +106,59 @@ export default function AdminSmartphoneCatalog() {
 
   const { data: smartphones = [], isLoading } = useQuery<SmartphoneWithSpecs[]>({
     queryKey: ["/api/smartphones"],
+  });
+
+  const { data: resellers = [] } = useQuery<User[]>({
+    queryKey: ["/api/admin/users"],
+    select: (users) => users.filter((u) => u.role === "reseller"),
+  });
+
+  const { data: productAssignments = [], refetch: refetchAssignments } = useQuery<ProductPriceWithReseller[]>({
+    queryKey: ["/api/admin/product-prices", { productId: smartphoneToAssign?.id }],
+    queryFn: async () => {
+      if (!smartphoneToAssign?.id) return [];
+      const response = await fetch(`/api/admin/product-prices?productId=${smartphoneToAssign.id}`, {
+        credentials: "include",
+      });
+      if (!response.ok) throw new Error("Failed to fetch assignments");
+      return response.json();
+    },
+    enabled: !!smartphoneToAssign,
+  });
+
+  const currentProductAssignments = productAssignments;
+
+  const assignMutation = useMutation({
+    mutationFn: async (data: { productId: string; resellerId: string; priceCents: number; costPriceCents?: number }) => {
+      return apiRequest("POST", "/api/admin/product-prices", data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/product-prices"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/smartphones"] });
+      refetchAssignments();
+      toast({ title: "Assegnato", description: "Lo smartphone è stato assegnato al rivenditore." });
+      setSelectedResellerId("");
+      setAssignPrice("");
+      setAssignCostPrice("");
+    },
+    onError: (error: any) => {
+      toast({ title: "Errore", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const unassignMutation = useMutation({
+    mutationFn: async (priceId: string) => {
+      return apiRequest("DELETE", `/api/admin/product-prices/${priceId}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/product-prices"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/smartphones"] });
+      refetchAssignments();
+      toast({ title: "Rimosso", description: "L'assegnazione è stata rimossa." });
+    },
+    onError: (error: any) => {
+      toast({ title: "Errore", description: error.message, variant: "destructive" });
+    },
   });
 
   const createMutation = useMutation({
@@ -476,6 +538,15 @@ export default function AdminSmartphoneCatalog() {
                           <Button
                             variant="ghost"
                             size="icon"
+                            onClick={() => { setSmartphoneToAssign(smartphone); setAssignDialogOpen(true); }}
+                            title="Assegna a rivenditore"
+                            data-testid={`button-assign-smartphone-${smartphone.id}`}
+                          >
+                            <UserPlus className="h-4 w-4 text-blue-500" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
                             onClick={() => openEditDialog(smartphone)}
                             data-testid={`button-edit-smartphone-${smartphone.id}`}
                           >
@@ -850,6 +921,123 @@ export default function AdminSmartphoneCatalog() {
             >
               {deleteMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Elimina
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={assignDialogOpen} onOpenChange={(open) => { setAssignDialogOpen(open); if (!open) { setSelectedResellerId(""); setAssignPrice(""); setAssignCostPrice(""); } }}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Users className="h-5 w-5" />
+              Assegna a Rivenditore
+            </DialogTitle>
+            <DialogDescription>
+              Assegna "{smartphoneToAssign?.name}" a uno o più rivenditori con prezzi personalizzati.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            {currentProductAssignments.length > 0 && (
+              <div className="space-y-2">
+                <Label>Rivenditori assegnati</Label>
+                <div className="space-y-2">
+                  {currentProductAssignments.map((assignment) => (
+                    <div key={assignment.id} className="flex items-center justify-between p-2 bg-muted rounded-md">
+                      <div>
+                        <span className="font-medium">{assignment.reseller?.fullName || assignment.reseller?.username || assignment.resellerId}</span>
+                        <span className="text-sm text-muted-foreground ml-2">
+                          €{(assignment.priceCents / 100).toFixed(2)}
+                        </span>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => unassignMutation.mutate(assignment.id)}
+                        disabled={unassignMutation.isPending}
+                        data-testid={`button-unassign-${assignment.id}`}
+                      >
+                        <X className="h-4 w-4 text-destructive" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className="border-t pt-4 space-y-4">
+              <Label>Aggiungi nuovo rivenditore</Label>
+              
+              <div className="space-y-2">
+                <Label htmlFor="reseller">Rivenditore</Label>
+                <Select value={selectedResellerId} onValueChange={setSelectedResellerId}>
+                  <SelectTrigger data-testid="select-assign-reseller">
+                    <SelectValue placeholder="Seleziona rivenditore" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {resellers
+                      .filter((r) => !currentProductAssignments.some((a) => a.resellerId === r.id))
+                      .map((r) => (
+                        <SelectItem key={r.id} value={r.id}>
+                          {r.fullName || r.username}
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="assignPrice">Prezzo vendita (€) *</Label>
+                  <Input
+                    id="assignPrice"
+                    type="number"
+                    step="0.01"
+                    value={assignPrice}
+                    onChange={(e) => setAssignPrice(e.target.value)}
+                    placeholder={smartphoneToAssign ? (smartphoneToAssign.unitPrice / 100).toFixed(2) : "0.00"}
+                    data-testid="input-assign-price"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="assignCostPrice">Prezzo costo (€)</Label>
+                  <Input
+                    id="assignCostPrice"
+                    type="number"
+                    step="0.01"
+                    value={assignCostPrice}
+                    onChange={(e) => setAssignCostPrice(e.target.value)}
+                    placeholder={smartphoneToAssign?.costPrice ? (smartphoneToAssign.costPrice / 100).toFixed(2) : "0.00"}
+                    data-testid="input-assign-cost-price"
+                  />
+                </div>
+              </div>
+
+              <Button
+                onClick={() => {
+                  if (!smartphoneToAssign || !selectedResellerId || !assignPrice) return;
+                  assignMutation.mutate({
+                    productId: smartphoneToAssign.id,
+                    resellerId: selectedResellerId,
+                    priceCents: Math.round(parseFloat(assignPrice) * 100),
+                    costPriceCents: assignCostPrice ? Math.round(parseFloat(assignCostPrice) * 100) : undefined,
+                  });
+                }}
+                disabled={!selectedResellerId || !assignPrice || assignMutation.isPending}
+                className="w-full"
+                data-testid="button-confirm-assign"
+              >
+                {assignMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                <UserPlus className="mr-2 h-4 w-4" />
+                Assegna
+              </Button>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setAssignDialogOpen(false)} data-testid="button-close-assign">
+              Chiudi
             </Button>
           </DialogFooter>
         </DialogContent>

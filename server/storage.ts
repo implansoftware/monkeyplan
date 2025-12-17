@@ -994,25 +994,59 @@ export class DatabaseStorage implements IStorage {
   }
 
   async listSmartphones(filters?: { resellerId?: string; brand?: string; condition?: string }): Promise<Array<Product & { specs: SmartphoneSpecs | null }>> {
-    let query = db.select().from(products)
-      .leftJoin(smartphoneSpecs, eq(products.id, smartphoneSpecs.productId))
-      .where(eq(products.productType, 'dispositivo'));
-    
-    const conditions = [eq(products.productType, 'dispositivo' as any)];
-    if (filters?.resellerId) {
-      conditions.push(eq(products.createdBy, filters.resellerId));
-    }
+    const baseConditions: any[] = [eq(products.productType, 'dispositivo' as any)];
     if (filters?.brand) {
-      conditions.push(eq(products.brand, filters.brand));
+      baseConditions.push(eq(products.brand, filters.brand));
     }
     if (filters?.condition) {
-      conditions.push(eq(products.condition, filters.condition as any));
+      baseConditions.push(eq(products.condition, filters.condition as any));
     }
     
+    if (filters?.resellerId) {
+      // For resellers: get products they created OR products assigned to them via product_prices
+      const ownProducts = await db.select()
+        .from(products)
+        .leftJoin(smartphoneSpecs, eq(products.id, smartphoneSpecs.productId))
+        .where(and(...baseConditions, eq(products.createdBy, filters.resellerId)))
+        .orderBy(desc(products.createdAt));
+      
+      // Get products assigned via product_prices
+      const assignedProducts = await db.select({
+        products: products,
+        smartphone_specs: smartphoneSpecs,
+      })
+        .from(productPrices)
+        .innerJoin(products, eq(productPrices.productId, products.id))
+        .leftJoin(smartphoneSpecs, eq(products.id, smartphoneSpecs.productId))
+        .where(and(
+          eq(productPrices.resellerId, filters.resellerId),
+          eq(productPrices.isActive, true),
+          eq(products.productType, 'dispositivo' as any),
+          ...(filters.brand ? [eq(products.brand, filters.brand)] : []),
+          ...(filters.condition ? [eq(products.condition, filters.condition as any)] : [])
+        ))
+        .orderBy(desc(products.createdAt));
+      
+      // Merge and deduplicate by product id
+      const allProducts = [...ownProducts, ...assignedProducts];
+      const uniqueProducts = new Map();
+      for (const r of allProducts) {
+        if (!uniqueProducts.has(r.products.id)) {
+          uniqueProducts.set(r.products.id, {
+            ...r.products,
+            specs: r.smartphone_specs || null
+          });
+        }
+      }
+      
+      return Array.from(uniqueProducts.values());
+    }
+    
+    // For admin: get all products
     const results = await db.select()
       .from(products)
       .leftJoin(smartphoneSpecs, eq(products.id, smartphoneSpecs.productId))
-      .where(and(...conditions))
+      .where(and(...baseConditions))
       .orderBy(desc(products.createdAt));
     
     return results.map(r => ({
@@ -1045,18 +1079,61 @@ export class DatabaseStorage implements IStorage {
   }
 
   async listAccessories(filters?: { resellerId?: string; accessoryType?: string }): Promise<Array<Product & { specs: AccessorySpecs | null }>> {
-    const conditions = [eq(products.productType, 'accessorio' as any)];
+    const baseConditions: any[] = [eq(products.productType, 'accessorio' as any)];
+    
     if (filters?.resellerId) {
-      conditions.push(eq(products.createdBy, filters.resellerId));
+      // For resellers: get accessories they created OR accessories assigned via product_prices
+      const ownProducts = await db.select()
+        .from(products)
+        .leftJoin(accessorySpecs, eq(products.id, accessorySpecs.productId))
+        .where(and(...baseConditions, eq(products.createdBy, filters.resellerId)))
+        .orderBy(desc(products.createdAt));
+      
+      // Get accessories assigned via product_prices
+      const assignedProducts = await db.select({
+        products: products,
+        accessory_specs: accessorySpecs,
+      })
+        .from(productPrices)
+        .innerJoin(products, eq(productPrices.productId, products.id))
+        .leftJoin(accessorySpecs, eq(products.id, accessorySpecs.productId))
+        .where(and(
+          eq(productPrices.resellerId, filters.resellerId),
+          eq(productPrices.isActive, true),
+          eq(products.productType, 'accessorio' as any)
+        ))
+        .orderBy(desc(products.createdAt));
+      
+      // Merge and deduplicate by product id
+      const allProducts = [...ownProducts, ...assignedProducts];
+      const uniqueProducts = new Map();
+      for (const r of allProducts) {
+        if (!uniqueProducts.has(r.products.id)) {
+          uniqueProducts.set(r.products.id, {
+            ...r.products,
+            specs: r.accessory_specs || null
+          });
+        }
+      }
+      
+      let results = Array.from(uniqueProducts.values());
+      
+      // Filter by accessory type in memory if needed
+      if (filters.accessoryType) {
+        results = results.filter((r: any) => r.specs?.accessoryType === filters.accessoryType);
+      }
+      
+      return results;
     }
     
+    // For admin: get all accessories
     const results = await db.select()
       .from(products)
       .leftJoin(accessorySpecs, eq(products.id, accessorySpecs.productId))
-      .where(and(...conditions))
+      .where(and(...baseConditions))
       .orderBy(desc(products.createdAt));
     
-    // Filter by accessory type in memory if needed (since it's on the joined table)
+    // Filter by accessory type in memory if needed
     let filtered = results;
     if (filters?.accessoryType) {
       filtered = results.filter(r => r.accessory_specs?.accessoryType === filters.accessoryType);

@@ -1974,7 +1974,23 @@ export function registerRoutes(app: Express): Server {
       if (resellerId) filters.resellerId = resellerId as string;
       
       const prices = await storage.listProductPrices(filters);
-      res.json(prices);
+      
+      // Add reseller info to each price
+      const pricesWithReseller = await Promise.all(
+        prices.map(async (price) => {
+          const reseller = await storage.getUser(price.resellerId);
+          return {
+            ...price,
+            reseller: reseller ? {
+              id: reseller.id,
+              username: reseller.username,
+              fullName: reseller.fullName,
+            } : null,
+          };
+        })
+      );
+      
+      res.json(pricesWithReseller);
     } catch (error: any) {
       res.status(500).send(error.message);
     }
