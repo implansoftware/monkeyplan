@@ -63,8 +63,8 @@ export default function AdminPayments() {
   const { toast } = useToast();
   
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState<string>("");
-  const [methodFilter, setMethodFilter] = useState<string>("");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [methodFilter, setMethodFilter] = useState<string>("all");
   const [selectedPayment, setSelectedPayment] = useState<SalesOrderPayment | null>(null);
   const [showDetailDialog, setShowDetailDialog] = useState(false);
   const [showRefundDialog, setShowRefundDialog] = useState(false);
@@ -75,8 +75,8 @@ export default function AdminPayments() {
     queryKey: ['/api/admin/payments', { status: statusFilter, method: methodFilter }],
     queryFn: async () => {
       const params = new URLSearchParams();
-      if (statusFilter) params.set('status', statusFilter);
-      if (methodFilter) params.set('method', methodFilter);
+      if (statusFilter && statusFilter !== "all") params.set('status', statusFilter);
+      if (methodFilter && methodFilter !== "all") params.set('method', methodFilter);
       const res = await fetch(`/api/payments?${params}`, { credentials: 'include' });
       if (!res.ok) throw new Error('Errore nel caricamento pagamenti');
       return res.json();
@@ -275,7 +275,7 @@ export default function AdminPayments() {
             <SelectValue placeholder="Tutti i metodi" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">Tutti i metodi</SelectItem>
+            <SelectItem value="all">Tutti i metodi</SelectItem>
             {Object.entries(methodLabels).map(([value, label]) => (
               <SelectItem key={value} value={value}>{label}</SelectItem>
             ))}
@@ -287,7 +287,7 @@ export default function AdminPayments() {
             <SelectValue placeholder="Tutti gli stati" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">Tutti gli stati</SelectItem>
+            <SelectItem value="all">Tutti gli stati</SelectItem>
             {Object.entries(statusLabels).map(([value, label]) => (
               <SelectItem key={value} value={value}>{label}</SelectItem>
             ))}

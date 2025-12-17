@@ -62,8 +62,8 @@ export default function AdminSalesOrders() {
   const { toast } = useToast();
   
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState<string>("");
-  const [resellerFilter, setResellerFilter] = useState<string>("");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [resellerFilter, setResellerFilter] = useState<string>("all");
   const [selectedOrder, setSelectedOrder] = useState<SalesOrder | null>(null);
   const [showStatusDialog, setShowStatusDialog] = useState(false);
   const [showDetailDialog, setShowDetailDialog] = useState(false);
@@ -74,8 +74,8 @@ export default function AdminSalesOrders() {
     queryKey: ['/api/admin/sales-orders', { status: statusFilter, resellerId: resellerFilter }],
     queryFn: async () => {
       const params = new URLSearchParams();
-      if (statusFilter) params.set('status', statusFilter);
-      if (resellerFilter) params.set('resellerId', resellerFilter);
+      if (statusFilter && statusFilter !== "all") params.set('status', statusFilter);
+      if (resellerFilter && resellerFilter !== "all") params.set('resellerId', resellerFilter);
       const res = await fetch(`/api/sales-orders?${params}`, { credentials: 'include' });
       if (!res.ok) throw new Error('Errore nel caricamento ordini');
       return res.json();
@@ -282,9 +282,9 @@ export default function AdminSalesOrders() {
             <SelectValue placeholder="Tutti i reseller" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">Tutti i reseller</SelectItem>
+            <SelectItem value="all">Tutti i reseller</SelectItem>
             {resellers?.map((reseller) => (
-              <SelectItem key={reseller.id} value={reseller.id}>
+              <SelectItem key={reseller.id} value={reseller.id || "unknown"}>
                 {reseller.fullName}
               </SelectItem>
             ))}
@@ -296,7 +296,7 @@ export default function AdminSalesOrders() {
             <SelectValue placeholder="Tutti gli stati" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">Tutti gli stati</SelectItem>
+            <SelectItem value="all">Tutti gli stati</SelectItem>
             {Object.entries(statusLabels).map(([value, label]) => (
               <SelectItem key={value} value={value}>{label}</SelectItem>
             ))}

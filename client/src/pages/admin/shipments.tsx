@@ -58,8 +58,8 @@ export default function AdminShipments() {
   const { toast } = useToast();
   
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState<string>("");
-  const [carrierFilter, setCarrierFilter] = useState<string>("");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [carrierFilter, setCarrierFilter] = useState<string>("all");
   const [showTrackingDialog, setShowTrackingDialog] = useState(false);
   const [selectedShipment, setSelectedShipment] = useState<SalesOrderShipment | null>(null);
   
@@ -73,8 +73,8 @@ export default function AdminShipments() {
     queryKey: ['/api/admin/shipments', { status: statusFilter, carrier: carrierFilter }],
     queryFn: async () => {
       const params = new URLSearchParams();
-      if (statusFilter) params.set('status', statusFilter);
-      if (carrierFilter) params.set('carrier', carrierFilter);
+      if (statusFilter && statusFilter !== "all") params.set('status', statusFilter);
+      if (carrierFilter && carrierFilter !== "all") params.set('carrier', carrierFilter);
       const res = await fetch(`/api/shipments?${params}`, { credentials: 'include' });
       if (!res.ok) throw new Error('Errore nel caricamento spedizioni');
       return res.json();
@@ -275,7 +275,7 @@ export default function AdminShipments() {
             <SelectValue placeholder="Tutti i corrieri" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">Tutti i corrieri</SelectItem>
+            <SelectItem value="all">Tutti i corrieri</SelectItem>
             {carriers.map((carrier) => (
               <SelectItem key={carrier.value} value={carrier.value}>{carrier.label}</SelectItem>
             ))}
@@ -287,7 +287,7 @@ export default function AdminShipments() {
             <SelectValue placeholder="Tutti gli stati" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">Tutti gli stati</SelectItem>
+            <SelectItem value="all">Tutti gli stati</SelectItem>
             {Object.entries(statusLabels).map(([value, label]) => (
               <SelectItem key={value} value={value}>{label}</SelectItem>
             ))}
