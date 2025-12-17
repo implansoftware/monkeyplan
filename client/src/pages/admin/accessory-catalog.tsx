@@ -11,11 +11,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Checkbox } from "@/components/ui/checkbox";
-import { ShoppingBag, Search, Plus, Pencil, Trash2, Loader2, Tag, Store, X, Image, ChevronDown, ImagePlus } from "lucide-react";
+import { ShoppingBag, Search, Plus, Pencil, Trash2, Loader2, Tag, Store, X, Image, ChevronDown, ImagePlus, UserPlus } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import type { AccessorySpecs, Product, DeviceModel, DeviceBrand } from "@shared/schema";
+import type { AccessorySpecs, Product, DeviceModel, DeviceBrand, User } from "@shared/schema";
 
 type DeviceCompatibilityEntry = {
   deviceBrandId: string;
@@ -74,6 +74,9 @@ export default function AdminAccessoryCatalog() {
   const [editingAccessory, setEditingAccessory] = useState<AccessoryWithSpecs | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [accessoryToDelete, setAccessoryToDelete] = useState<AccessoryWithSpecs | null>(null);
+  const [assignDialogOpen, setAssignDialogOpen] = useState(false);
+  const [accessoryToAssign, setAccessoryToAssign] = useState<AccessoryWithSpecs | null>(null);
+  const [selectedResellerId, setSelectedResellerId] = useState<string>("");
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
@@ -118,6 +121,29 @@ export default function AdminAccessoryCatalog() {
 
   const { data: deviceModels = [] } = useQuery<DeviceModel[]>({
     queryKey: ["/api/device-models"],
+  });
+
+  // Fetch resellers for assignment
+  const { data: allUsers = [] } = useQuery<User[]>({
+    queryKey: ["/api/admin/users"],
+  });
+  const resellers = allUsers.filter(u => u.role === 'reseller');
+
+  // Assign accessory to reseller mutation
+  const assignMutation = useMutation({
+    mutationFn: async ({ productId, resellerId }: { productId: string; resellerId: string | null }) => {
+      await apiRequest("PATCH", `/api/admin/accessories/${productId}/assign`, { resellerId });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/accessories"] });
+      setAssignDialogOpen(false);
+      setAccessoryToAssign(null);
+      setSelectedResellerId("");
+      toast({ title: "Accessorio assegnato", description: "L'accessorio è stato assegnato al rivenditore." });
+    },
+    onError: (error: any) => {
+      toast({ title: "Errore", description: error.message, variant: "destructive" });
+    },
   });
 
   const createBrandMutation = useMutation({
@@ -585,6 +611,15 @@ export default function AdminAccessoryCatalog() {
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-1">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => { setAccessoryToAssign(accessory); setSelectedResellerId(accessory.reseller?.id || ""); setAssignDialogOpen(true); }}
+                            title="Assegna a rivenditore"
+                            data-testid={`button-assign-accessory-${accessory.id}`}
+                          >
+                            <UserPlus className="h-4 w-4" />
+                          </Button>
                           <Button
                             variant="ghost"
                             size="icon"
@@ -1091,6 +1126,57 @@ export default function AdminAccessoryCatalog() {
               </Button>
             </DialogFooter>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog per assegnare accessorio a rivenditore */}
+      <Dialog open={assignDialogOpen} onOpenChange={setAssignDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Assegna Accessorio</DialogTitle>
+            <DialogDescription>
+              Seleziona il rivenditore a cui assegnare "{accessoryToAssign?.name}"
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Rivenditore</Label>
+              <Select value={selectedResellerId} onValueChange={setSelectedResellerId}>
+                <SelectTrigger data-testid="select-assign-reseller">
+                  <SelectValue placeholder="Seleziona rivenditore..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none__">Nessuno (rimuovi assegnazione)</SelectItem>
+                  {resellers.map((reseller) => (
+                    <SelectItem key={reseller.id} value={reseller.id}>
+                      {reseller.fullName || reseller.username}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            {accessoryToAssign?.reseller && (
+              <p className="text-sm text-muted-foreground">
+                Attualmente assegnato a: <strong>{accessoryToAssign.reseller.fullName || accessoryToAssign.reseller.username}</strong>
+              </p>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setAssignDialogOpen(false)}>
+              Annulla
+            </Button>
+            <Button
+              onClick={() => accessoryToAssign && assignMutation.mutate({ 
+                productId: accessoryToAssign.id, 
+                resellerId: selectedResellerId === "__none__" ? null : selectedResellerId 
+              })}
+              disabled={assignMutation.isPending}
+              data-testid="button-confirm-assign"
+            >
+              {assignMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Assegna
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

@@ -7176,6 +7176,49 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Assign accessory to reseller (admin only)
+  app.patch("/api/admin/accessories/:productId/assign", requireAuth, requireRole("admin"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const { resellerId } = req.body;
+      const product = await storage.getProduct(req.params.productId);
+      
+      if (!product) return res.status(404).send("Accessory not found");
+      if (product.category !== "accessorio") return res.status(400).send("Product is not an accessory");
+      
+      // Validate reseller if provided
+      if (resellerId) {
+        const reseller = await storage.getUser(resellerId);
+        if (!reseller || reseller.role !== 'reseller') {
+          return res.status(400).send("Invalid reseller");
+        }
+      }
+      
+      // Update product ownership
+      const updatedProduct = await storage.updateProduct(req.params.productId, {
+        ownerId: resellerId || null,
+        ownerType: resellerId ? 'reseller' : null,
+      });
+      
+      // Log activity
+      await storage.createActivityLog({
+        userId: req.user.id,
+        action: resellerId ? 'accessory_assigned' : 'accessory_unassigned',
+        entityType: 'product',
+        entityId: req.params.productId,
+        details: {
+          productName: product.name,
+          resellerId: resellerId || null,
+        },
+      });
+      
+      res.json(updatedProduct);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
   // ============ INVENTORY ============
   
   // List inventory stock with role-based filtering
