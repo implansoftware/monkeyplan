@@ -80,7 +80,9 @@ import {
   salesOrderShipments, SalesOrderShipment, InsertSalesOrderShipment,
   shipmentTrackingEvents, ShipmentTrackingEvent, InsertShipmentTrackingEvent,
   stockReservations, StockReservation, InsertStockReservation,
-  salesOrderStateHistory, SalesOrderStateHistoryEntry, InsertSalesOrderStateHistoryEntry
+  salesOrderStateHistory, SalesOrderStateHistoryEntry, InsertSalesOrderStateHistoryEntry,
+  salesOrderReturns, SalesOrderReturn, InsertSalesOrderReturn,
+  salesOrderReturnItems, SalesOrderReturnItem, InsertSalesOrderReturnItem
 } from "@shared/schema";
 import { db, pool } from "./db";
 import { eq, and, or, desc, lt, sql, not, inArray, isNull } from "drizzle-orm";
@@ -702,6 +704,21 @@ export interface IStorage {
   // E-commerce: Order State History
   listSalesOrderStateHistory(orderId: string): Promise<SalesOrderStateHistoryEntry[]>;
   createSalesOrderStateHistory(entry: InsertSalesOrderStateHistoryEntry): Promise<SalesOrderStateHistoryEntry>;
+  
+  // E-commerce: Sales Order Returns
+  listSalesOrderReturns(filters?: { status?: string; resellerId?: string; customerId?: string; orderId?: string }): Promise<SalesOrderReturn[]>;
+  getSalesOrderReturn(id: string): Promise<SalesOrderReturn | undefined>;
+  getSalesOrderReturnByNumber(returnNumber: string): Promise<SalesOrderReturn | undefined>;
+  createSalesOrderReturn(data: InsertSalesOrderReturn): Promise<SalesOrderReturn>;
+  updateSalesOrderReturn(id: string, updates: Partial<InsertSalesOrderReturn>): Promise<SalesOrderReturn>;
+  generateReturnNumber(resellerId: string): Promise<string>;
+  
+  // E-commerce: Sales Order Return Items
+  listSalesOrderReturnItems(returnId: string): Promise<SalesOrderReturnItem[]>;
+  getSalesOrderReturnItem(id: string): Promise<SalesOrderReturnItem | undefined>;
+  createSalesOrderReturnItem(item: InsertSalesOrderReturnItem): Promise<SalesOrderReturnItem>;
+  updateSalesOrderReturnItem(id: string, updates: Partial<InsertSalesOrderReturnItem>): Promise<SalesOrderReturnItem>;
+  deleteSalesOrderReturnItem(id: string): Promise<void>;
   
   sessionStore: session.Store;
 }
@@ -5971,6 +5988,91 @@ export class DatabaseStorage implements IStorage {
       .values(entry)
       .returning();
     return created;
+  }
+
+  // E-commerce: Sales Order Returns
+  async listSalesOrderReturns(filters?: { status?: string; resellerId?: string; customerId?: string; orderId?: string }): Promise<SalesOrderReturn[]> {
+    const conditions = [];
+    if (filters?.status) conditions.push(eq(salesOrderReturns.status, filters.status as any));
+    if (filters?.resellerId) conditions.push(eq(salesOrderReturns.resellerId, filters.resellerId));
+    if (filters?.customerId) conditions.push(eq(salesOrderReturns.customerId, filters.customerId));
+    if (filters?.orderId) conditions.push(eq(salesOrderReturns.orderId, filters.orderId));
+    
+    if (conditions.length === 0) {
+      return await db.select().from(salesOrderReturns).orderBy(desc(salesOrderReturns.createdAt));
+    }
+    return await db.select().from(salesOrderReturns)
+      .where(and(...conditions))
+      .orderBy(desc(salesOrderReturns.createdAt));
+  }
+
+  async getSalesOrderReturn(id: string): Promise<SalesOrderReturn | undefined> {
+    const [ret] = await db.select().from(salesOrderReturns).where(eq(salesOrderReturns.id, id));
+    return ret || undefined;
+  }
+
+  async getSalesOrderReturnByNumber(returnNumber: string): Promise<SalesOrderReturn | undefined> {
+    const [ret] = await db.select().from(salesOrderReturns).where(eq(salesOrderReturns.returnNumber, returnNumber));
+    return ret || undefined;
+  }
+
+  async createSalesOrderReturn(data: InsertSalesOrderReturn): Promise<SalesOrderReturn> {
+    const [created] = await db.insert(salesOrderReturns)
+      .values(data)
+      .returning();
+    return created;
+  }
+
+  async updateSalesOrderReturn(id: string, updates: Partial<InsertSalesOrderReturn>): Promise<SalesOrderReturn> {
+    const [updated] = await db.update(salesOrderReturns)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(salesOrderReturns.id, id))
+      .returning();
+    if (!updated) throw new Error("Sales order return not found");
+    return updated;
+  }
+
+  async generateReturnNumber(resellerId: string): Promise<string> {
+    const year = new Date().getFullYear();
+    const prefix = `RES-${year}`;
+    
+    const [result] = await db.select({ count: sql<number>`count(*)` })
+      .from(salesOrderReturns)
+      .where(sql`${salesOrderReturns.returnNumber} LIKE ${prefix + '%'}`);
+    
+    const nextNumber = (result?.count || 0) + 1;
+    return `${prefix}-${String(nextNumber).padStart(5, '0')}`;
+  }
+
+  // E-commerce: Sales Order Return Items
+  async listSalesOrderReturnItems(returnId: string): Promise<SalesOrderReturnItem[]> {
+    return await db.select().from(salesOrderReturnItems)
+      .where(eq(salesOrderReturnItems.returnId, returnId));
+  }
+
+  async getSalesOrderReturnItem(id: string): Promise<SalesOrderReturnItem | undefined> {
+    const [item] = await db.select().from(salesOrderReturnItems).where(eq(salesOrderReturnItems.id, id));
+    return item || undefined;
+  }
+
+  async createSalesOrderReturnItem(item: InsertSalesOrderReturnItem): Promise<SalesOrderReturnItem> {
+    const [created] = await db.insert(salesOrderReturnItems)
+      .values(item)
+      .returning();
+    return created;
+  }
+
+  async updateSalesOrderReturnItem(id: string, updates: Partial<InsertSalesOrderReturnItem>): Promise<SalesOrderReturnItem> {
+    const [updated] = await db.update(salesOrderReturnItems)
+      .set(updates)
+      .where(eq(salesOrderReturnItems.id, id))
+      .returning();
+    if (!updated) throw new Error("Return item not found");
+    return updated;
+  }
+
+  async deleteSalesOrderReturnItem(id: string): Promise<void> {
+    await db.delete(salesOrderReturnItems).where(eq(salesOrderReturnItems.id, id));
   }
 }
 
