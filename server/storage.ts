@@ -70,7 +70,17 @@ import {
   customerRepairCenters, CustomerRepairCenter, InsertCustomerRepairCenter,
   staffRepairCenters, StaffRepairCenter, InsertStaffRepairCenter,
   smartphoneSpecs, SmartphoneSpecs, InsertSmartphoneSpecs,
-  accessorySpecs, AccessorySpecs, InsertAccessorySpecs
+  accessorySpecs, AccessorySpecs, InsertAccessorySpecs,
+  customerAddresses, CustomerAddress, InsertCustomerAddress,
+  carts, Cart, InsertCart,
+  cartItems, CartItem, InsertCartItem,
+  salesOrders, SalesOrder, InsertSalesOrder,
+  salesOrderItems, SalesOrderItem, InsertSalesOrderItem,
+  salesOrderPayments, SalesOrderPayment, InsertSalesOrderPayment,
+  salesOrderShipments, SalesOrderShipment, InsertSalesOrderShipment,
+  shipmentTrackingEvents, ShipmentTrackingEvent, InsertShipmentTrackingEvent,
+  stockReservations, StockReservation, InsertStockReservation,
+  salesOrderStateHistory, SalesOrderStateHistoryEntry, InsertSalesOrderStateHistoryEntry
 } from "@shared/schema";
 import { db, pool } from "./db";
 import { eq, and, or, desc, lt, sql, not, inArray, isNull } from "drizzle-orm";
@@ -622,6 +632,75 @@ export interface IStorage {
   deleteStaffPermissionsByUser(userId: string): Promise<void>;
   upsertStaffPermissions(userId: string, resellerId: string, permissions: { module: string; canRead: boolean; canCreate: boolean; canUpdate: boolean; canDelete: boolean }[]): Promise<ResellerStaffPermission[]>;
   checkStaffPermission(userId: string, module: string, action: 'read' | 'create' | 'update' | 'delete'): Promise<boolean>;
+  
+  // E-commerce: Customer Addresses
+  listCustomerAddresses(customerId: string): Promise<CustomerAddress[]>;
+  getCustomerAddress(id: string): Promise<CustomerAddress | undefined>;
+  createCustomerAddress(address: InsertCustomerAddress): Promise<CustomerAddress>;
+  updateCustomerAddress(id: string, updates: Partial<InsertCustomerAddress>): Promise<CustomerAddress>;
+  deleteCustomerAddress(id: string): Promise<void>;
+  setDefaultAddress(customerId: string, addressId: string, isBilling?: boolean): Promise<void>;
+  
+  // E-commerce: Shopping Cart
+  getActiveCart(customerId: string | null, sessionId: string | null, resellerId: string): Promise<Cart | undefined>;
+  getCart(id: string): Promise<Cart | undefined>;
+  createCart(cart: InsertCart): Promise<Cart>;
+  updateCart(id: string, updates: Partial<InsertCart>): Promise<Cart>;
+  deleteCart(id: string): Promise<void>;
+  clearExpiredCarts(): Promise<number>;
+  
+  // E-commerce: Cart Items
+  listCartItems(cartId: string): Promise<CartItem[]>;
+  getCartItem(id: string): Promise<CartItem | undefined>;
+  getCartItemByProduct(cartId: string, productId: string): Promise<CartItem | undefined>;
+  addCartItem(item: InsertCartItem): Promise<CartItem>;
+  updateCartItem(id: string, updates: Partial<Pick<CartItem, 'quantity' | 'unitPrice' | 'totalPrice' | 'discount'>>): Promise<CartItem>;
+  removeCartItem(id: string): Promise<void>;
+  clearCart(cartId: string): Promise<void>;
+  recalculateCartTotals(cartId: string): Promise<Cart>;
+  
+  // E-commerce: Sales Orders
+  listSalesOrders(filters?: { resellerId?: string; customerId?: string; status?: string; branchId?: string }): Promise<SalesOrder[]>;
+  getSalesOrder(id: string): Promise<SalesOrder | undefined>;
+  getSalesOrderByNumber(orderNumber: string): Promise<SalesOrder | undefined>;
+  createSalesOrder(order: InsertSalesOrder): Promise<SalesOrder>;
+  updateSalesOrder(id: string, updates: Partial<InsertSalesOrder>): Promise<SalesOrder>;
+  updateSalesOrderStatus(id: string, status: string, changedBy?: string, reason?: string): Promise<SalesOrder>;
+  generateOrderNumber(resellerId: string): Promise<string>;
+  
+  // E-commerce: Sales Order Items
+  listSalesOrderItems(orderId: string): Promise<SalesOrderItem[]>;
+  getSalesOrderItem(id: string): Promise<SalesOrderItem | undefined>;
+  createSalesOrderItem(item: InsertSalesOrderItem): Promise<SalesOrderItem>;
+  updateSalesOrderItem(id: string, updates: Partial<InsertSalesOrderItem>): Promise<SalesOrderItem>;
+  deleteSalesOrderItem(id: string): Promise<void>;
+  
+  // E-commerce: Sales Order Payments
+  listSalesOrderPayments(orderId: string): Promise<SalesOrderPayment[]>;
+  getSalesOrderPayment(id: string): Promise<SalesOrderPayment | undefined>;
+  createSalesOrderPayment(payment: InsertSalesOrderPayment): Promise<SalesOrderPayment>;
+  updateSalesOrderPayment(id: string, updates: Partial<InsertSalesOrderPayment>): Promise<SalesOrderPayment>;
+  
+  // E-commerce: Sales Order Shipments
+  listSalesOrderShipments(orderId: string): Promise<SalesOrderShipment[]>;
+  getSalesOrderShipment(id: string): Promise<SalesOrderShipment | undefined>;
+  createSalesOrderShipment(shipment: InsertSalesOrderShipment): Promise<SalesOrderShipment>;
+  updateSalesOrderShipment(id: string, updates: Partial<InsertSalesOrderShipment>): Promise<SalesOrderShipment>;
+  
+  // E-commerce: Shipment Tracking
+  listShipmentTrackingEvents(shipmentId: string): Promise<ShipmentTrackingEvent[]>;
+  createShipmentTrackingEvent(event: InsertShipmentTrackingEvent): Promise<ShipmentTrackingEvent>;
+  
+  // E-commerce: Stock Reservations
+  listStockReservations(orderId: string): Promise<StockReservation[]>;
+  createStockReservation(reservation: InsertStockReservation): Promise<StockReservation>;
+  updateStockReservation(id: string, updates: Partial<InsertStockReservation>): Promise<StockReservation>;
+  releaseStockReservation(id: string): Promise<void>;
+  commitStockReservation(id: string): Promise<void>;
+  
+  // E-commerce: Order State History
+  listSalesOrderStateHistory(orderId: string): Promise<SalesOrderStateHistoryEntry[]>;
+  createSalesOrderStateHistory(entry: InsertSalesOrderStateHistoryEntry): Promise<SalesOrderStateHistoryEntry>;
   
   sessionStore: session.Store;
 }
@@ -5386,6 +5465,490 @@ export class DatabaseStorage implements IStorage {
       case 'delete': return permission.canDelete;
       default: return false;
     }
+  }
+
+  // ==========================================
+  // E-COMMERCE: CUSTOMER ADDRESSES
+  // ==========================================
+
+  async listCustomerAddresses(customerId: string): Promise<CustomerAddress[]> {
+    return await db.select()
+      .from(customerAddresses)
+      .where(eq(customerAddresses.customerId, customerId))
+      .orderBy(desc(customerAddresses.isDefault), desc(customerAddresses.createdAt));
+  }
+
+  async getCustomerAddress(id: string): Promise<CustomerAddress | undefined> {
+    const [address] = await db.select()
+      .from(customerAddresses)
+      .where(eq(customerAddresses.id, id));
+    return address;
+  }
+
+  async createCustomerAddress(address: InsertCustomerAddress): Promise<CustomerAddress> {
+    const [created] = await db.insert(customerAddresses)
+      .values(address)
+      .returning();
+    return created;
+  }
+
+  async updateCustomerAddress(id: string, updates: Partial<InsertCustomerAddress>): Promise<CustomerAddress> {
+    const [updated] = await db.update(customerAddresses)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(customerAddresses.id, id))
+      .returning();
+    if (!updated) throw new Error("Customer address not found");
+    return updated;
+  }
+
+  async deleteCustomerAddress(id: string): Promise<void> {
+    await db.delete(customerAddresses)
+      .where(eq(customerAddresses.id, id));
+  }
+
+  async setDefaultAddress(customerId: string, addressId: string, isBilling: boolean = false): Promise<void> {
+    if (isBilling) {
+      await db.update(customerAddresses)
+        .set({ isBilling: false })
+        .where(eq(customerAddresses.customerId, customerId));
+      await db.update(customerAddresses)
+        .set({ isBilling: true })
+        .where(eq(customerAddresses.id, addressId));
+    } else {
+      await db.update(customerAddresses)
+        .set({ isDefault: false })
+        .where(eq(customerAddresses.customerId, customerId));
+      await db.update(customerAddresses)
+        .set({ isDefault: true })
+        .where(eq(customerAddresses.id, addressId));
+    }
+  }
+
+  // ==========================================
+  // E-COMMERCE: SHOPPING CART
+  // ==========================================
+
+  async getActiveCart(customerId: string | null, sessionId: string | null, resellerId: string): Promise<Cart | undefined> {
+    const conditions = [
+      eq(carts.resellerId, resellerId),
+      eq(carts.status, 'active')
+    ];
+    
+    if (customerId) {
+      conditions.push(eq(carts.customerId, customerId));
+    } else if (sessionId) {
+      conditions.push(eq(carts.sessionId, sessionId));
+    } else {
+      return undefined;
+    }
+    
+    const [cart] = await db.select()
+      .from(carts)
+      .where(and(...conditions))
+      .limit(1);
+    return cart;
+  }
+
+  async getCart(id: string): Promise<Cart | undefined> {
+    const [cart] = await db.select()
+      .from(carts)
+      .where(eq(carts.id, id));
+    return cart;
+  }
+
+  async createCart(cart: InsertCart): Promise<Cart> {
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + 7);
+    const [created] = await db.insert(carts)
+      .values({ ...cart, expiresAt })
+      .returning();
+    return created;
+  }
+
+  async updateCart(id: string, updates: Partial<InsertCart>): Promise<Cart> {
+    const [updated] = await db.update(carts)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(carts.id, id))
+      .returning();
+    if (!updated) throw new Error("Cart not found");
+    return updated;
+  }
+
+  async deleteCart(id: string): Promise<void> {
+    await db.delete(cartItems).where(eq(cartItems.cartId, id));
+    await db.delete(carts).where(eq(carts.id, id));
+  }
+
+  async clearExpiredCarts(): Promise<number> {
+    const result = await db.delete(carts)
+      .where(and(
+        lt(carts.expiresAt, new Date()),
+        eq(carts.status, 'active')
+      ))
+      .returning();
+    return result.length;
+  }
+
+  // ==========================================
+  // E-COMMERCE: CART ITEMS
+  // ==========================================
+
+  async listCartItems(cartId: string): Promise<CartItem[]> {
+    return await db.select()
+      .from(cartItems)
+      .where(eq(cartItems.cartId, cartId))
+      .orderBy(desc(cartItems.createdAt));
+  }
+
+  async getCartItem(id: string): Promise<CartItem | undefined> {
+    const [item] = await db.select()
+      .from(cartItems)
+      .where(eq(cartItems.id, id));
+    return item;
+  }
+
+  async getCartItemByProduct(cartId: string, productId: string): Promise<CartItem | undefined> {
+    const [item] = await db.select()
+      .from(cartItems)
+      .where(and(
+        eq(cartItems.cartId, cartId),
+        eq(cartItems.productId, productId)
+      ));
+    return item;
+  }
+
+  async addCartItem(item: InsertCartItem): Promise<CartItem> {
+    const [created] = await db.insert(cartItems)
+      .values(item)
+      .returning();
+    await this.recalculateCartTotals(item.cartId);
+    return created;
+  }
+
+  async updateCartItem(id: string, updates: Partial<Pick<CartItem, 'quantity' | 'unitPrice' | 'totalPrice' | 'discount'>>): Promise<CartItem> {
+    const [item] = await db.select().from(cartItems).where(eq(cartItems.id, id));
+    if (!item) throw new Error("Cart item not found");
+    
+    const newQuantity = updates.quantity ?? item.quantity;
+    const newUnitPrice = updates.unitPrice ?? item.unitPrice;
+    const newDiscount = updates.discount ?? item.discount;
+    const newTotalPrice = (newQuantity * newUnitPrice) - newDiscount;
+    
+    const [updated] = await db.update(cartItems)
+      .set({ 
+        ...updates, 
+        totalPrice: newTotalPrice,
+        updatedAt: new Date() 
+      })
+      .where(eq(cartItems.id, id))
+      .returning();
+    
+    await this.recalculateCartTotals(item.cartId);
+    return updated;
+  }
+
+  async removeCartItem(id: string): Promise<void> {
+    const [item] = await db.select().from(cartItems).where(eq(cartItems.id, id));
+    if (item) {
+      await db.delete(cartItems).where(eq(cartItems.id, id));
+      await this.recalculateCartTotals(item.cartId);
+    }
+  }
+
+  async clearCart(cartId: string): Promise<void> {
+    await db.delete(cartItems).where(eq(cartItems.cartId, cartId));
+    await this.updateCart(cartId, { subtotal: 0, discount: 0, total: 0 });
+  }
+
+  async recalculateCartTotals(cartId: string): Promise<Cart> {
+    const items = await this.listCartItems(cartId);
+    const subtotal = items.reduce((sum, item) => sum + item.totalPrice, 0);
+    const discount = items.reduce((sum, item) => sum + item.discount, 0);
+    
+    const cart = await this.getCart(cartId);
+    const shippingCost = cart?.shippingCost ?? 0;
+    const total = subtotal - discount + shippingCost;
+    
+    return await this.updateCart(cartId, { subtotal, discount, total });
+  }
+
+  // ==========================================
+  // E-COMMERCE: SALES ORDERS
+  // ==========================================
+
+  async listSalesOrders(filters?: { resellerId?: string; customerId?: string; status?: string; branchId?: string }): Promise<SalesOrder[]> {
+    const conditions = [];
+    if (filters?.resellerId) conditions.push(eq(salesOrders.resellerId, filters.resellerId));
+    if (filters?.customerId) conditions.push(eq(salesOrders.customerId, filters.customerId));
+    if (filters?.status) conditions.push(sql`${salesOrders.status} = ${filters.status}`);
+    if (filters?.branchId) conditions.push(eq(salesOrders.branchId, filters.branchId));
+    
+    return await db.select()
+      .from(salesOrders)
+      .where(conditions.length > 0 ? and(...conditions) : undefined)
+      .orderBy(desc(salesOrders.createdAt));
+  }
+
+  async getSalesOrder(id: string): Promise<SalesOrder | undefined> {
+    const [order] = await db.select()
+      .from(salesOrders)
+      .where(eq(salesOrders.id, id));
+    return order;
+  }
+
+  async getSalesOrderByNumber(orderNumber: string): Promise<SalesOrder | undefined> {
+    const [order] = await db.select()
+      .from(salesOrders)
+      .where(eq(salesOrders.orderNumber, orderNumber));
+    return order;
+  }
+
+  async createSalesOrder(order: InsertSalesOrder): Promise<SalesOrder> {
+    const [created] = await db.insert(salesOrders)
+      .values(order)
+      .returning();
+    
+    await this.createSalesOrderStateHistory({
+      orderId: created.id,
+      fromStatus: null,
+      toStatus: created.status
+    });
+    
+    return created;
+  }
+
+  async updateSalesOrder(id: string, updates: Partial<InsertSalesOrder>): Promise<SalesOrder> {
+    const [updated] = await db.update(salesOrders)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(salesOrders.id, id))
+      .returning();
+    if (!updated) throw new Error("Sales order not found");
+    return updated;
+  }
+
+  async updateSalesOrderStatus(id: string, status: string, changedBy?: string, reason?: string): Promise<SalesOrder> {
+    const currentOrder = await this.getSalesOrder(id);
+    if (!currentOrder) throw new Error("Sales order not found");
+    
+    const statusUpdates: Partial<InsertSalesOrder> = { status: status as any };
+    
+    if (status === 'confirmed') statusUpdates.confirmedAt = new Date();
+    if (status === 'shipped') statusUpdates.shippedAt = new Date();
+    if (status === 'delivered') statusUpdates.deliveredAt = new Date();
+    if (status === 'cancelled') {
+      statusUpdates.cancelledAt = new Date();
+      if (reason) statusUpdates.cancellationReason = reason;
+    }
+    
+    const updated = await this.updateSalesOrder(id, statusUpdates);
+    
+    await this.createSalesOrderStateHistory({
+      orderId: id,
+      fromStatus: currentOrder.status,
+      toStatus: status,
+      changedBy,
+      reason
+    });
+    
+    return updated;
+  }
+
+  async generateOrderNumber(resellerId: string): Promise<string> {
+    const year = new Date().getFullYear();
+    const prefix = `ORD-${year}`;
+    
+    const [result] = await db.select({ count: sql<number>`count(*)` })
+      .from(salesOrders)
+      .where(and(
+        eq(salesOrders.resellerId, resellerId),
+        sql`${salesOrders.orderNumber} LIKE ${prefix + '%'}`
+      ));
+    
+    const nextNumber = (result?.count ?? 0) + 1;
+    return `${prefix}-${nextNumber.toString().padStart(6, '0')}`;
+  }
+
+  // ==========================================
+  // E-COMMERCE: SALES ORDER ITEMS
+  // ==========================================
+
+  async listSalesOrderItems(orderId: string): Promise<SalesOrderItem[]> {
+    return await db.select()
+      .from(salesOrderItems)
+      .where(eq(salesOrderItems.orderId, orderId));
+  }
+
+  async getSalesOrderItem(id: string): Promise<SalesOrderItem | undefined> {
+    const [item] = await db.select()
+      .from(salesOrderItems)
+      .where(eq(salesOrderItems.id, id));
+    return item;
+  }
+
+  async createSalesOrderItem(item: InsertSalesOrderItem): Promise<SalesOrderItem> {
+    const [created] = await db.insert(salesOrderItems)
+      .values(item)
+      .returning();
+    return created;
+  }
+
+  async updateSalesOrderItem(id: string, updates: Partial<InsertSalesOrderItem>): Promise<SalesOrderItem> {
+    const [updated] = await db.update(salesOrderItems)
+      .set(updates)
+      .where(eq(salesOrderItems.id, id))
+      .returning();
+    if (!updated) throw new Error("Sales order item not found");
+    return updated;
+  }
+
+  async deleteSalesOrderItem(id: string): Promise<void> {
+    await db.delete(salesOrderItems)
+      .where(eq(salesOrderItems.id, id));
+  }
+
+  // ==========================================
+  // E-COMMERCE: SALES ORDER PAYMENTS
+  // ==========================================
+
+  async listSalesOrderPayments(orderId: string): Promise<SalesOrderPayment[]> {
+    return await db.select()
+      .from(salesOrderPayments)
+      .where(eq(salesOrderPayments.orderId, orderId))
+      .orderBy(desc(salesOrderPayments.createdAt));
+  }
+
+  async getSalesOrderPayment(id: string): Promise<SalesOrderPayment | undefined> {
+    const [payment] = await db.select()
+      .from(salesOrderPayments)
+      .where(eq(salesOrderPayments.id, id));
+    return payment;
+  }
+
+  async createSalesOrderPayment(payment: InsertSalesOrderPayment): Promise<SalesOrderPayment> {
+    const [created] = await db.insert(salesOrderPayments)
+      .values(payment)
+      .returning();
+    return created;
+  }
+
+  async updateSalesOrderPayment(id: string, updates: Partial<InsertSalesOrderPayment>): Promise<SalesOrderPayment> {
+    const [updated] = await db.update(salesOrderPayments)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(salesOrderPayments.id, id))
+      .returning();
+    if (!updated) throw new Error("Sales order payment not found");
+    return updated;
+  }
+
+  // ==========================================
+  // E-COMMERCE: SALES ORDER SHIPMENTS
+  // ==========================================
+
+  async listSalesOrderShipments(orderId: string): Promise<SalesOrderShipment[]> {
+    return await db.select()
+      .from(salesOrderShipments)
+      .where(eq(salesOrderShipments.orderId, orderId))
+      .orderBy(desc(salesOrderShipments.createdAt));
+  }
+
+  async getSalesOrderShipment(id: string): Promise<SalesOrderShipment | undefined> {
+    const [shipment] = await db.select()
+      .from(salesOrderShipments)
+      .where(eq(salesOrderShipments.id, id));
+    return shipment;
+  }
+
+  async createSalesOrderShipment(shipment: InsertSalesOrderShipment): Promise<SalesOrderShipment> {
+    const [created] = await db.insert(salesOrderShipments)
+      .values(shipment)
+      .returning();
+    return created;
+  }
+
+  async updateSalesOrderShipment(id: string, updates: Partial<InsertSalesOrderShipment>): Promise<SalesOrderShipment> {
+    const [updated] = await db.update(salesOrderShipments)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(salesOrderShipments.id, id))
+      .returning();
+    if (!updated) throw new Error("Sales order shipment not found");
+    return updated;
+  }
+
+  // ==========================================
+  // E-COMMERCE: SHIPMENT TRACKING
+  // ==========================================
+
+  async listShipmentTrackingEvents(shipmentId: string): Promise<ShipmentTrackingEvent[]> {
+    return await db.select()
+      .from(shipmentTrackingEvents)
+      .where(eq(shipmentTrackingEvents.shipmentId, shipmentId))
+      .orderBy(desc(shipmentTrackingEvents.eventAt));
+  }
+
+  async createShipmentTrackingEvent(event: InsertShipmentTrackingEvent): Promise<ShipmentTrackingEvent> {
+    const [created] = await db.insert(shipmentTrackingEvents)
+      .values(event)
+      .returning();
+    return created;
+  }
+
+  // ==========================================
+  // E-COMMERCE: STOCK RESERVATIONS
+  // ==========================================
+
+  async listStockReservations(orderId: string): Promise<StockReservation[]> {
+    return await db.select()
+      .from(stockReservations)
+      .where(eq(stockReservations.orderId, orderId));
+  }
+
+  async createStockReservation(reservation: InsertStockReservation): Promise<StockReservation> {
+    const expiresAt = new Date();
+    expiresAt.setMinutes(expiresAt.getMinutes() + 30);
+    
+    const [created] = await db.insert(stockReservations)
+      .values({ ...reservation, expiresAt })
+      .returning();
+    return created;
+  }
+
+  async updateStockReservation(id: string, updates: Partial<InsertStockReservation>): Promise<StockReservation> {
+    const [updated] = await db.update(stockReservations)
+      .set(updates)
+      .where(eq(stockReservations.id, id))
+      .returning();
+    if (!updated) throw new Error("Stock reservation not found");
+    return updated;
+  }
+
+  async releaseStockReservation(id: string): Promise<void> {
+    await db.update(stockReservations)
+      .set({ status: 'released', releasedAt: new Date() })
+      .where(eq(stockReservations.id, id));
+  }
+
+  async commitStockReservation(id: string): Promise<void> {
+    await db.update(stockReservations)
+      .set({ status: 'committed', committedAt: new Date() })
+      .where(eq(stockReservations.id, id));
+  }
+
+  // ==========================================
+  // E-COMMERCE: ORDER STATE HISTORY
+  // ==========================================
+
+  async listSalesOrderStateHistory(orderId: string): Promise<SalesOrderStateHistoryEntry[]> {
+    return await db.select()
+      .from(salesOrderStateHistory)
+      .where(eq(salesOrderStateHistory.orderId, orderId))
+      .orderBy(desc(salesOrderStateHistory.createdAt));
+  }
+
+  async createSalesOrderStateHistory(entry: InsertSalesOrderStateHistoryEntry): Promise<SalesOrderStateHistoryEntry> {
+    const [created] = await db.insert(salesOrderStateHistory)
+      .values(entry)
+      .returning();
+    return created;
   }
 }
 

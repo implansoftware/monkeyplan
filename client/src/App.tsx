@@ -126,6 +126,16 @@ import CustomerRepairDetail from "@/pages/customer/repair-detail";
 import CustomerTickets from "@/pages/customer/tickets";
 import CustomerTicketDetail from "@/pages/customer/ticket-detail";
 import CustomerInvoices from "@/pages/customer/invoices";
+import CustomerOrders from "@/pages/customer/orders";
+
+// Shop pages (public)
+import ShopCatalog from "@/pages/shop/catalog";
+import ShopCart from "@/pages/shop/cart";
+import ShopCheckout from "@/pages/shop/checkout";
+
+// Reseller sales orders and shipments
+import ResellerSalesOrders from "@/pages/reseller/sales-orders";
+import ResellerShipments from "@/pages/reseller/shipments";
 
 function Router() {
   return (
@@ -218,6 +228,10 @@ function Router() {
       <ProtectedRoute path="/reseller/device-catalog" component={ResellerDeviceCatalog} />
       <ProtectedRoute path="/reseller/smartphone-catalog" component={ResellerSmartphoneCatalog} />
       <ProtectedRoute path="/reseller/accessory-catalog" component={ResellerAccessoryCatalog} />
+      <ProtectedRoute path="/reseller/sales-orders/:id" component={ResellerSalesOrders} />
+      <ProtectedRoute path="/reseller/sales-orders" component={ResellerSalesOrders} />
+      <ProtectedRoute path="/reseller/shipments/:id" component={ResellerShipments} />
+      <ProtectedRoute path="/reseller/shipments" component={ResellerShipments} />
       
       {/* Repair Center routes */}
       <ProtectedRoute path="/repair-center" component={RepairCenterDashboard} />
@@ -237,6 +251,13 @@ function Router() {
       <ProtectedRoute path="/customer/tickets" component={CustomerTickets} />
       <ProtectedRoute path="/customer/tickets/:id" component={CustomerTicketDetail} />
       <ProtectedRoute path="/customer/invoices" component={CustomerInvoices} />
+      <ProtectedRoute path="/customer/orders/:id" component={CustomerOrders} />
+      <ProtectedRoute path="/customer/orders" component={CustomerOrders} />
+      
+      {/* Shop routes (public) */}
+      <Route path="/shop/:resellerId" component={ShopCatalog} />
+      <Route path="/shop/:resellerId/cart" component={ShopCart} />
+      <ProtectedRoute path="/shop/:resellerId/checkout" component={ShopCheckout} />
       
       <Route component={NotFound} />
     </Switch>

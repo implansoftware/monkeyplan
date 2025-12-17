@@ -16696,5 +16696,558 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // ==========================================
+  // E-COMMERCE: CUSTOMER ADDRESSES
+  // ==========================================
+
+  app.get("/api/customer-addresses", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      const addresses = await storage.listCustomerAddresses(req.user.id);
+      res.json(addresses);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/customer-addresses/:id", requireAuth, async (req, res) => {
+    try {
+      const address = await storage.getCustomerAddress(req.params.id);
+      if (!address) return res.status(404).json({ error: "Indirizzo non trovato" });
+      if (address.customerId !== req.user?.id) return res.status(403).json({ error: "Accesso negato" });
+      res.json(address);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post("/api/customer-addresses", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      const address = await storage.createCustomerAddress({
+        ...req.body,
+        customerId: req.user.id,
+        resellerId: req.user.resellerId || req.user.id
+      });
+      res.json(address);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.put("/api/customer-addresses/:id", requireAuth, async (req, res) => {
+    try {
+      const existing = await storage.getCustomerAddress(req.params.id);
+      if (!existing) return res.status(404).json({ error: "Indirizzo non trovato" });
+      if (existing.customerId !== req.user?.id) return res.status(403).json({ error: "Accesso negato" });
+      const updated = await storage.updateCustomerAddress(req.params.id, req.body);
+      res.json(updated);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.delete("/api/customer-addresses/:id", requireAuth, async (req, res) => {
+    try {
+      const existing = await storage.getCustomerAddress(req.params.id);
+      if (!existing) return res.status(404).json({ error: "Indirizzo non trovato" });
+      if (existing.customerId !== req.user?.id) return res.status(403).json({ error: "Accesso negato" });
+      await storage.deleteCustomerAddress(req.params.id);
+      res.json({ success: true });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post("/api/customer-addresses/:id/set-default", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      const existing = await storage.getCustomerAddress(req.params.id);
+      if (!existing) return res.status(404).json({ error: "Indirizzo non trovato" });
+      if (existing.customerId !== req.user.id) return res.status(403).json({ error: "Accesso negato" });
+      await storage.setDefaultAddress(req.user.id, req.params.id, req.body.isBilling || false);
+      res.json({ success: true });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // ==========================================
+  // E-COMMERCE: SHOP CATALOG (Public)
+  // ==========================================
+
+  app.get("/api/shop/:resellerId/products", async (req, res) => {
+    try {
+      const { resellerId } = req.params;
+      const { type, brand, category, search, limit, offset } = req.query;
+      
+      let products = await storage.listProductsByReseller(resellerId);
+      
+      products = products.filter(p => p.isActive && (p.stockQuantity ?? 0) > 0);
+      
+      if (type) products = products.filter(p => p.type === type);
+      if (brand) products = products.filter(p => p.brand === brand);
+      if (category) products = products.filter(p => p.category === category);
+      if (search) {
+        const searchLower = (search as string).toLowerCase();
+        products = products.filter(p => 
+          p.name.toLowerCase().includes(searchLower) ||
+          p.sku?.toLowerCase().includes(searchLower)
+        );
+      }
+      
+      const total = products.length;
+      const offsetNum = parseInt(offset as string) || 0;
+      const limitNum = parseInt(limit as string) || 20;
+      products = products.slice(offsetNum, offsetNum + limitNum);
+      
+      res.json({ products, total, limit: limitNum, offset: offsetNum });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/shop/:resellerId/products/:productId", async (req, res) => {
+    try {
+      const product = await storage.getProduct(req.params.productId);
+      if (!product) return res.status(404).json({ error: "Prodotto non trovato" });
+      if (product.resellerId !== req.params.resellerId) return res.status(404).json({ error: "Prodotto non trovato" });
+      
+      let specs = null;
+      if (product.type === 'dispositivo') {
+        specs = await storage.getSmartphoneSpecs(product.id);
+      } else if (product.type === 'accessorio') {
+        specs = await storage.getAccessorySpecs(product.id);
+      }
+      
+      res.json({ product, specs });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // ==========================================
+  // E-COMMERCE: SHOPPING CART
+  // ==========================================
+
+  app.get("/api/shop/:resellerId/cart", async (req, res) => {
+    try {
+      const { resellerId } = req.params;
+      const customerId = req.user?.id || null;
+      const sessionId = req.session?.id || null;
+      
+      let cart = await storage.getActiveCart(customerId, sessionId, resellerId);
+      
+      if (!cart) {
+        cart = await storage.createCart({
+          resellerId,
+          customerId,
+          sessionId: customerId ? null : sessionId
+        });
+      }
+      
+      const items = await storage.listCartItems(cart.id);
+      
+      const itemsWithProducts = await Promise.all(items.map(async (item) => {
+        const product = await storage.getProduct(item.productId);
+        return { ...item, product };
+      }));
+      
+      res.json({ cart, items: itemsWithProducts });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post("/api/shop/:resellerId/cart/items", async (req, res) => {
+    try {
+      const { resellerId } = req.params;
+      const { productId, quantity = 1 } = req.body;
+      
+      const customerId = req.user?.id || null;
+      const sessionId = req.session?.id || null;
+      
+      let cart = await storage.getActiveCart(customerId, sessionId, resellerId);
+      if (!cart) {
+        cart = await storage.createCart({
+          resellerId,
+          customerId,
+          sessionId: customerId ? null : sessionId
+        });
+      }
+      
+      const product = await storage.getProduct(productId);
+      if (!product) return res.status(404).json({ error: "Prodotto non trovato" });
+      if (product.resellerId !== resellerId) return res.status(400).json({ error: "Prodotto non disponibile" });
+      
+      const existingItem = await storage.getCartItemByProduct(cart.id, productId);
+      
+      if (existingItem) {
+        const updated = await storage.updateCartItem(existingItem.id, {
+          quantity: existingItem.quantity + quantity
+        });
+        res.json(updated);
+      } else {
+        const unitPrice = (product.priceCents || 0) / 100;
+        const item = await storage.addCartItem({
+          cartId: cart.id,
+          productId,
+          quantity,
+          unitPrice,
+          totalPrice: unitPrice * quantity,
+          discount: 0
+        });
+        res.json(item);
+      }
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.put("/api/cart/items/:itemId", async (req, res) => {
+    try {
+      const { quantity } = req.body;
+      if (quantity < 1) {
+        await storage.removeCartItem(req.params.itemId);
+        return res.json({ success: true, removed: true });
+      }
+      const updated = await storage.updateCartItem(req.params.itemId, { quantity });
+      res.json(updated);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.delete("/api/cart/items/:itemId", async (req, res) => {
+    try {
+      await storage.removeCartItem(req.params.itemId);
+      res.json({ success: true });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.delete("/api/cart/:cartId", async (req, res) => {
+    try {
+      await storage.clearCart(req.params.cartId);
+      res.json({ success: true });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // ==========================================
+  // E-COMMERCE: CHECKOUT
+  // ==========================================
+
+  app.post("/api/shop/:resellerId/checkout", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      
+      const { resellerId } = req.params;
+      const {
+        shippingAddressId,
+        billingAddressId,
+        deliveryType = 'shipping',
+        paymentMethod,
+        customerNotes
+      } = req.body;
+      
+      const cart = await storage.getActiveCart(req.user.id, null, resellerId);
+      if (!cart) return res.status(400).json({ error: "Carrello vuoto" });
+      
+      const cartItems = await storage.listCartItems(cart.id);
+      if (cartItems.length === 0) return res.status(400).json({ error: "Carrello vuoto" });
+      
+      const shippingAddress = shippingAddressId ? await storage.getCustomerAddress(shippingAddressId) : null;
+      const billingAddress = billingAddressId ? await storage.getCustomerAddress(billingAddressId) : shippingAddress;
+      
+      const orderNumber = await storage.generateOrderNumber(resellerId);
+      
+      const order = await storage.createSalesOrder({
+        orderNumber,
+        customerId: req.user.id,
+        resellerId,
+        status: 'pending',
+        deliveryType: deliveryType as any,
+        subtotal: cart.subtotal,
+        discountAmount: cart.discount,
+        shippingCost: cart.shippingCost,
+        taxAmount: 0,
+        total: cart.total,
+        shippingAddressId,
+        shippingRecipient: shippingAddress?.recipientName,
+        shippingAddress: shippingAddress?.address,
+        shippingCity: shippingAddress?.city,
+        shippingProvince: shippingAddress?.province,
+        shippingPostalCode: shippingAddress?.postalCode,
+        shippingCountry: shippingAddress?.country,
+        shippingPhone: shippingAddress?.phone,
+        billingAddressId,
+        billingRecipient: billingAddress?.recipientName,
+        billingAddress: billingAddress?.address,
+        billingCity: billingAddress?.city,
+        billingProvince: billingAddress?.province,
+        billingPostalCode: billingAddress?.postalCode,
+        billingCountry: billingAddress?.country,
+        customerNotes,
+        source: 'web'
+      });
+      
+      for (const item of cartItems) {
+        const product = await storage.getProduct(item.productId);
+        await storage.createSalesOrderItem({
+          orderId: order.id,
+          productId: item.productId,
+          productName: product?.name || 'Prodotto',
+          productSku: product?.sku,
+          productImage: product?.images?.[0],
+          quantity: item.quantity,
+          unitPrice: item.unitPrice,
+          discount: item.discount,
+          totalPrice: item.totalPrice
+        });
+      }
+      
+      if (paymentMethod) {
+        await storage.createSalesOrderPayment({
+          orderId: order.id,
+          method: paymentMethod,
+          status: 'pending',
+          amount: cart.total,
+          currency: 'EUR'
+        });
+      }
+      
+      await storage.updateCart(cart.id, { status: 'converted' });
+      
+      res.json({ order, orderNumber: order.orderNumber });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // ==========================================
+  // E-COMMERCE: SALES ORDERS (Customer view)
+  // ==========================================
+
+  app.get("/api/my-orders", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      const orders = await storage.listSalesOrders({ customerId: req.user.id });
+      res.json(orders);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/my-orders/:orderId", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      const order = await storage.getSalesOrder(req.params.orderId);
+      if (!order) return res.status(404).json({ error: "Ordine non trovato" });
+      if (order.customerId !== req.user.id) return res.status(403).json({ error: "Accesso negato" });
+      
+      const items = await storage.listSalesOrderItems(order.id);
+      const payments = await storage.listSalesOrderPayments(order.id);
+      const shipments = await storage.listSalesOrderShipments(order.id);
+      
+      res.json({ order, items, payments, shipments });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // ==========================================
+  // E-COMMERCE: SALES ORDERS (Reseller management)
+  // ==========================================
+
+  app.get("/api/sales-orders", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      if (!['admin', 'admin_staff', 'reseller', 'reseller_staff'].includes(req.user.role)) {
+        return res.status(403).json({ error: "Accesso negato" });
+      }
+      
+      const filters: { resellerId?: string; status?: string; branchId?: string } = {};
+      
+      if (req.user.role === 'reseller') filters.resellerId = req.user.id;
+      else if (req.user.role === 'reseller_staff' && req.user.resellerId) filters.resellerId = req.user.resellerId;
+      else if (req.query.resellerId) filters.resellerId = req.query.resellerId as string;
+      
+      if (req.query.status) filters.status = req.query.status as string;
+      if (req.query.branchId) filters.branchId = req.query.branchId as string;
+      
+      const orders = await storage.listSalesOrders(filters);
+      res.json(orders);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/sales-orders/:id", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      
+      const order = await storage.getSalesOrder(req.params.id);
+      if (!order) return res.status(404).json({ error: "Ordine non trovato" });
+      
+      if (req.user.role === 'reseller' && order.resellerId !== req.user.id) {
+        return res.status(403).json({ error: "Accesso negato" });
+      }
+      if (req.user.role === 'reseller_staff' && order.resellerId !== req.user.resellerId) {
+        return res.status(403).json({ error: "Accesso negato" });
+      }
+      
+      const items = await storage.listSalesOrderItems(order.id);
+      const payments = await storage.listSalesOrderPayments(order.id);
+      const shipments = await storage.listSalesOrderShipments(order.id);
+      const history = await storage.listSalesOrderStateHistory(order.id);
+      
+      res.json({ order, items, payments, shipments, history });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.put("/api/sales-orders/:id/status", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      if (!['admin', 'admin_staff', 'reseller', 'reseller_staff'].includes(req.user.role)) {
+        return res.status(403).json({ error: "Accesso negato" });
+      }
+      
+      const order = await storage.getSalesOrder(req.params.id);
+      if (!order) return res.status(404).json({ error: "Ordine non trovato" });
+      
+      if (req.user.role === 'reseller' && order.resellerId !== req.user.id) {
+        return res.status(403).json({ error: "Accesso negato" });
+      }
+      if (req.user.role === 'reseller_staff' && order.resellerId !== req.user.resellerId) {
+        return res.status(403).json({ error: "Accesso negato" });
+      }
+      
+      const { status, reason } = req.body;
+      const updated = await storage.updateSalesOrderStatus(req.params.id, status, req.user.id, reason);
+      res.json(updated);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // ==========================================
+  // E-COMMERCE: PAYMENTS
+  // ==========================================
+
+  app.get("/api/sales-orders/:orderId/payments", requireAuth, async (req, res) => {
+    try {
+      const payments = await storage.listSalesOrderPayments(req.params.orderId);
+      res.json(payments);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post("/api/sales-orders/:orderId/payments", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      if (!['admin', 'admin_staff', 'reseller', 'reseller_staff'].includes(req.user.role)) {
+        return res.status(403).json({ error: "Accesso negato" });
+      }
+      
+      const payment = await storage.createSalesOrderPayment({
+        orderId: req.params.orderId,
+        ...req.body
+      });
+      res.json(payment);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.put("/api/payments/:id", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      if (!['admin', 'admin_staff', 'reseller', 'reseller_staff'].includes(req.user.role)) {
+        return res.status(403).json({ error: "Accesso negato" });
+      }
+      
+      const updated = await storage.updateSalesOrderPayment(req.params.id, req.body);
+      res.json(updated);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // ==========================================
+  // E-COMMERCE: SHIPMENTS
+  // ==========================================
+
+  app.get("/api/sales-orders/:orderId/shipments", requireAuth, async (req, res) => {
+    try {
+      const shipments = await storage.listSalesOrderShipments(req.params.orderId);
+      res.json(shipments);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post("/api/sales-orders/:orderId/shipments", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      if (!['admin', 'admin_staff', 'reseller', 'reseller_staff'].includes(req.user.role)) {
+        return res.status(403).json({ error: "Accesso negato" });
+      }
+      
+      const shipment = await storage.createSalesOrderShipment({
+        orderId: req.params.orderId,
+        ...req.body
+      });
+      res.json(shipment);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.put("/api/shipments/:id", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      if (!['admin', 'admin_staff', 'reseller', 'reseller_staff'].includes(req.user.role)) {
+        return res.status(403).json({ error: "Accesso negato" });
+      }
+      
+      const updated = await storage.updateSalesOrderShipment(req.params.id, req.body);
+      res.json(updated);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/shipments/:id/tracking", requireAuth, async (req, res) => {
+    try {
+      const events = await storage.listShipmentTrackingEvents(req.params.id);
+      res.json(events);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post("/api/shipments/:id/tracking", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      if (!['admin', 'admin_staff', 'reseller', 'reseller_staff'].includes(req.user.role)) {
+        return res.status(403).json({ error: "Accesso negato" });
+      }
+      
+      const event = await storage.createShipmentTrackingEvent({
+        shipmentId: req.params.id,
+        ...req.body
+      });
+      res.json(event);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   return httpServer;
 }
