@@ -80,8 +80,22 @@ export default function AccessoryCatalog() {
   });
 
   const createMutation = useMutation({
-    mutationFn: async (data: any) => {
-      return apiRequest("POST", "/api/accessories", data);
+    mutationFn: async (data: { product: any; specs: any; imageFile?: File | null }) => {
+      if (data.imageFile) {
+        const formDataUpload = new FormData();
+        formDataUpload.append("product", JSON.stringify(data.product));
+        formDataUpload.append("specs", JSON.stringify(data.specs));
+        formDataUpload.append("image", data.imageFile);
+        const response = await fetch("/api/accessories", {
+          method: "POST",
+          body: formDataUpload,
+          credentials: "include",
+        });
+        if (!response.ok) throw new Error(await response.text());
+        return response.json();
+      } else {
+        return apiRequest("POST", "/api/accessories", { product: data.product, specs: data.specs });
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/accessories"] });
@@ -251,7 +265,7 @@ export default function AccessoryCatalog() {
     if (editingAccessory) {
       updateMutation.mutate({ productId: editingAccessory.id, data: { product, specs } });
     } else {
-      createMutation.mutate({ product, specs });
+      createMutation.mutate({ product, specs, imageFile });
     }
   };
 
@@ -640,29 +654,10 @@ export default function AccessoryCatalog() {
               />
             </div>
 
-            {editingAccessory && (
-              <div className="space-y-2">
+            <div className="space-y-2">
                 <Label>Immagine prodotto</Label>
                 <div className="flex items-start gap-4">
-                  {(imagePreview || editingAccessory.imageUrl) && !imageFile ? (
-                    <div className="relative">
-                      <img
-                        src={imagePreview || editingAccessory.imageUrl || ""}
-                        alt="Preview"
-                        className="h-24 w-24 object-cover rounded-lg border"
-                      />
-                      <Button
-                        type="button"
-                        variant="destructive"
-                        size="icon"
-                        className="absolute -top-2 -right-2 h-6 w-6"
-                        onClick={() => deleteImage(editingAccessory.id)}
-                        data-testid="button-delete-image"
-                      >
-                        <X className="h-3 w-3" />
-                      </Button>
-                    </div>
-                  ) : imagePreview && imageFile ? (
+                  {imagePreview ? (
                     <div className="relative">
                       <img
                         src={imagePreview}
@@ -674,8 +669,26 @@ export default function AccessoryCatalog() {
                         variant="destructive"
                         size="icon"
                         className="absolute -top-2 -right-2 h-6 w-6"
-                        onClick={() => { setImageFile(null); setImagePreview(editingAccessory.imageUrl || null); }}
+                        onClick={() => { setImageFile(null); setImagePreview(null); }}
                         data-testid="button-cancel-image"
+                      >
+                        <X className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  ) : editingAccessory?.imageUrl ? (
+                    <div className="relative">
+                      <img
+                        src={editingAccessory.imageUrl}
+                        alt="Existing"
+                        className="h-24 w-24 object-cover rounded-lg border"
+                      />
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        size="icon"
+                        className="absolute -top-2 -right-2 h-6 w-6"
+                        onClick={() => deleteImage(editingAccessory.id)}
+                        data-testid="button-delete-image"
                       >
                         <X className="h-3 w-3" />
                       </Button>
@@ -707,7 +720,7 @@ export default function AccessoryCatalog() {
                       <ImagePlus className="mr-2 h-4 w-4" />
                       Seleziona immagine
                     </Button>
-                    {imageFile && (
+                    {editingAccessory && imageFile && (
                       <Button
                         type="button"
                         size="sm"
@@ -723,7 +736,6 @@ export default function AccessoryCatalog() {
                   </div>
                 </div>
               </div>
-            )}
           </div>
 
           <DialogFooter>

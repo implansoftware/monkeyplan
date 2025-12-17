@@ -6780,12 +6780,20 @@ export function registerRoutes(app: Express): Server {
     }
   });
   
-  // Create smartphone with specs (reseller or admin)
-  app.post("/api/smartphones", requireAuth, requireRole("admin", "reseller", "reseller_collaborator"), async (req, res) => {
+  // Create smartphone with specs (reseller or admin) - supports multipart/form-data for image upload
+  app.post("/api/smartphones", requireAuth, requireRole("admin", "reseller", "reseller_collaborator"), upload.single("image"), async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
-      const { product, specs } = req.body;
+      // Parse product and specs - support both JSON body and FormData (stringified JSON)
+      let product, specs;
+      if (typeof req.body.product === 'string') {
+        product = JSON.parse(req.body.product);
+        specs = JSON.parse(req.body.specs);
+      } else {
+        product = req.body.product;
+        specs = req.body.specs;
+      }
       
       if (!product || !specs) {
         return res.status(400).send("Product and specs are required");
@@ -6802,7 +6810,37 @@ export function registerRoutes(app: Express): Server {
       specs.productId = createdProduct.id;
       const createdSpecs = await storage.createSmartphoneSpecs(specs);
       
-      res.json({ ...createdProduct, specs: createdSpecs });
+      // Handle image upload if file is provided
+      let imageUrl = null;
+      if (req.file) {
+        const allowedMimeTypes = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+        if (!allowedMimeTypes.includes(req.file.mimetype)) {
+          return res.status(400).send("Formato immagine non supportato. Usa JPEG, PNG, WebP o GIF.");
+        }
+        
+        const maxSize = 10 * 1024 * 1024;
+        if (req.file.size > maxSize) {
+          return res.status(400).send("Immagine troppo grande. Massimo 10MB.");
+        }
+        
+        const ext = req.file.originalname.split(".").pop() || "jpg";
+        const objectPath = `products/${createdProduct.id}/${Date.now()}.${ext}`;
+        
+        const privateObjectDir = objectStorage.getPrivateObjectDir();
+        const fullPath = `${privateObjectDir}/${objectPath}`;
+        const { bucketName, objectName } = parseObjectPath(fullPath);
+        const bucket = objectStorageClient.bucket(bucketName);
+        const file = bucket.file(objectName);
+        
+        await file.save(req.file.buffer, {
+          metadata: { contentType: req.file.mimetype }
+        });
+        
+        imageUrl = `/objects/${objectPath}`;
+        await storage.updateProduct(createdProduct.id, { imageUrl });
+      }
+      
+      res.json({ ...createdProduct, imageUrl: imageUrl || createdProduct.imageUrl, specs: createdSpecs });
     } catch (error: any) {
       res.status(500).send(error.message);
     }
@@ -6896,12 +6934,20 @@ export function registerRoutes(app: Express): Server {
     }
   });
   
-  // Create accessory with specs
-  app.post("/api/accessories", requireAuth, requireRole("admin", "reseller", "reseller_collaborator"), async (req, res) => {
+  // Create accessory with specs - supports multipart/form-data for image upload
+  app.post("/api/accessories", requireAuth, requireRole("admin", "reseller", "reseller_collaborator"), upload.single("image"), async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
-      const { product, specs } = req.body;
+      // Parse product and specs - support both JSON body and FormData (stringified JSON)
+      let product, specs;
+      if (typeof req.body.product === 'string') {
+        product = JSON.parse(req.body.product);
+        specs = JSON.parse(req.body.specs);
+      } else {
+        product = req.body.product;
+        specs = req.body.specs;
+      }
       
       if (!product || !specs) {
         return res.status(400).send("Product and specs are required");
@@ -6918,7 +6964,37 @@ export function registerRoutes(app: Express): Server {
       specs.productId = createdProduct.id;
       const createdSpecs = await storage.createAccessorySpecs(specs);
       
-      res.json({ ...createdProduct, specs: createdSpecs });
+      // Handle image upload if file is provided
+      let imageUrl = null;
+      if (req.file) {
+        const allowedMimeTypes = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+        if (!allowedMimeTypes.includes(req.file.mimetype)) {
+          return res.status(400).send("Formato immagine non supportato. Usa JPEG, PNG, WebP o GIF.");
+        }
+        
+        const maxSize = 10 * 1024 * 1024;
+        if (req.file.size > maxSize) {
+          return res.status(400).send("Immagine troppo grande. Massimo 10MB.");
+        }
+        
+        const ext = req.file.originalname.split(".").pop() || "jpg";
+        const objectPath = `products/${createdProduct.id}/${Date.now()}.${ext}`;
+        
+        const privateObjectDir = objectStorage.getPrivateObjectDir();
+        const fullPath = `${privateObjectDir}/${objectPath}`;
+        const { bucketName, objectName } = parseObjectPath(fullPath);
+        const bucket = objectStorageClient.bucket(bucketName);
+        const file = bucket.file(objectName);
+        
+        await file.save(req.file.buffer, {
+          metadata: { contentType: req.file.mimetype }
+        });
+        
+        imageUrl = `/objects/${objectPath}`;
+        await storage.updateProduct(createdProduct.id, { imageUrl });
+      }
+      
+      res.json({ ...createdProduct, imageUrl: imageUrl || createdProduct.imageUrl, specs: createdSpecs });
     } catch (error: any) {
       res.status(500).send(error.message);
     }

@@ -79,8 +79,22 @@ export default function AdminAccessoryCatalog() {
   });
 
   const createMutation = useMutation({
-    mutationFn: async (data: any) => {
-      return apiRequest("POST", "/api/accessories", data);
+    mutationFn: async (data: { product: any; specs: any; imageFile?: File | null }) => {
+      if (data.imageFile) {
+        const formDataUpload = new FormData();
+        formDataUpload.append("product", JSON.stringify(data.product));
+        formDataUpload.append("specs", JSON.stringify(data.specs));
+        formDataUpload.append("image", data.imageFile);
+        const response = await fetch("/api/accessories", {
+          method: "POST",
+          body: formDataUpload,
+          credentials: "include",
+        });
+        if (!response.ok) throw new Error(await response.text());
+        return response.json();
+      } else {
+        return apiRequest("POST", "/api/accessories", { product: data.product, specs: data.specs });
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/accessories"] });
@@ -248,7 +262,7 @@ export default function AdminAccessoryCatalog() {
     if (editingAccessory) {
       updateMutation.mutate({ productId: editingAccessory.id, data: { product, specs } });
     } else {
-      createMutation.mutate({ product, specs });
+      createMutation.mutate({ product, specs, imageFile });
     }
   };
 
@@ -608,8 +622,7 @@ export default function AdminAccessoryCatalog() {
               />
             </div>
 
-            {editingAccessory && (
-              <div className="space-y-2">
+            <div className="space-y-2">
                 <Label>Immagine prodotto</Label>
                 <div className="flex items-start gap-4">
                   <div className="flex-shrink-0">
@@ -627,7 +640,7 @@ export default function AdminAccessoryCatalog() {
                           <X className="h-3 w-3" />
                         </Button>
                       </div>
-                    ) : editingAccessory.imageUrl ? (
+                    ) : editingAccessory?.imageUrl ? (
                       <div className="relative">
                         <img src={editingAccessory.imageUrl} alt={editingAccessory.name} className="w-24 h-24 object-cover rounded" />
                         <Button
@@ -666,7 +679,7 @@ export default function AdminAccessoryCatalog() {
                       <ImagePlus className="mr-2 h-4 w-4" />
                       Seleziona immagine
                     </Button>
-                    {imageFile && (
+                    {editingAccessory && imageFile && (
                       <Button
                         type="button"
                         size="sm"
@@ -682,7 +695,6 @@ export default function AdminAccessoryCatalog() {
                   </div>
                 </div>
               </div>
-            )}
           </div>
 
           <DialogFooter>

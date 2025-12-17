@@ -86,8 +86,22 @@ export default function SmartphoneCatalog() {
   });
 
   const createMutation = useMutation({
-    mutationFn: async (data: any) => {
-      return apiRequest("POST", "/api/smartphones", data);
+    mutationFn: async (data: { product: any; specs: any; imageFile?: File | null }) => {
+      if (data.imageFile) {
+        const formDataUpload = new FormData();
+        formDataUpload.append("product", JSON.stringify(data.product));
+        formDataUpload.append("specs", JSON.stringify(data.specs));
+        formDataUpload.append("image", data.imageFile);
+        const response = await fetch("/api/smartphones", {
+          method: "POST",
+          body: formDataUpload,
+          credentials: "include",
+        });
+        if (!response.ok) throw new Error(await response.text());
+        return response.json();
+      } else {
+        return apiRequest("POST", "/api/smartphones", { product: data.product, specs: data.specs });
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/smartphones"] });
@@ -274,7 +288,7 @@ export default function SmartphoneCatalog() {
     if (editingSmartphone) {
       updateMutation.mutate({ productId: editingSmartphone.id, data: { product, specs } });
     } else {
-      createMutation.mutate({ product, specs });
+      createMutation.mutate({ product, specs, imageFile });
     }
   };
 
@@ -718,29 +732,10 @@ export default function SmartphoneCatalog() {
               />
             </div>
 
-            {editingSmartphone && (
-              <div className="space-y-2">
+            <div className="space-y-2">
                 <Label>Immagine prodotto</Label>
                 <div className="flex items-start gap-4">
-                  {(imagePreview || editingSmartphone.imageUrl) && !imageFile ? (
-                    <div className="relative">
-                      <img
-                        src={imagePreview || editingSmartphone.imageUrl || ""}
-                        alt="Preview"
-                        className="h-24 w-24 object-cover rounded-lg border"
-                      />
-                      <Button
-                        type="button"
-                        variant="destructive"
-                        size="icon"
-                        className="absolute -top-2 -right-2 h-6 w-6"
-                        onClick={() => deleteImage(editingSmartphone.id)}
-                        data-testid="button-delete-image"
-                      >
-                        <X className="h-3 w-3" />
-                      </Button>
-                    </div>
-                  ) : imagePreview && imageFile ? (
+                  {imagePreview ? (
                     <div className="relative">
                       <img
                         src={imagePreview}
@@ -752,8 +747,26 @@ export default function SmartphoneCatalog() {
                         variant="destructive"
                         size="icon"
                         className="absolute -top-2 -right-2 h-6 w-6"
-                        onClick={() => { setImageFile(null); setImagePreview(editingSmartphone.imageUrl || null); }}
+                        onClick={() => { setImageFile(null); setImagePreview(null); }}
                         data-testid="button-cancel-image"
+                      >
+                        <X className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  ) : editingSmartphone?.imageUrl ? (
+                    <div className="relative">
+                      <img
+                        src={editingSmartphone.imageUrl}
+                        alt="Existing"
+                        className="h-24 w-24 object-cover rounded-lg border"
+                      />
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        size="icon"
+                        className="absolute -top-2 -right-2 h-6 w-6"
+                        onClick={() => deleteImage(editingSmartphone.id)}
+                        data-testid="button-delete-image"
                       >
                         <X className="h-3 w-3" />
                       </Button>
@@ -785,7 +798,7 @@ export default function SmartphoneCatalog() {
                       <ImagePlus className="mr-2 h-4 w-4" />
                       Seleziona immagine
                     </Button>
-                    {imageFile && (
+                    {editingSmartphone && imageFile && (
                       <Button
                         type="button"
                         size="sm"
@@ -801,7 +814,6 @@ export default function SmartphoneCatalog() {
                   </div>
                 </div>
               </div>
-            )}
           </div>
 
           <DialogFooter>
