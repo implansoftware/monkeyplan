@@ -332,6 +332,78 @@ export const adminModuleEnum = pgEnum("admin_module", [
   "service_catalog",   // Catalogo interventi
 ]);
 
+// ==========================================
+// SALES / E-COMMERCE ENUMS
+// ==========================================
+
+// Stato ordine di vendita
+export const salesOrderStatusEnum = pgEnum("sales_order_status", [
+  "pending",           // In attesa di pagamento
+  "confirmed",         // Confermato/Pagato
+  "processing",        // In elaborazione
+  "ready_to_ship",     // Pronto per la spedizione
+  "shipped",           // Spedito
+  "delivered",         // Consegnato
+  "completed",         // Completato
+  "cancelled",         // Annullato
+  "refunded",          // Rimborsato
+]);
+
+// Metodo di pagamento
+export const paymentMethodEnum = pgEnum("payment_method", [
+  "cash",              // Contanti
+  "card",              // Carta di credito/debito
+  "bank_transfer",     // Bonifico bancario
+  "paypal",            // PayPal
+  "stripe",            // Stripe
+  "satispay",          // Satispay
+  "pos",               // POS in negozio
+  "credit",            // Credito/Finanziamento
+]);
+
+// Stato pagamento vendita
+export const salesPaymentStatusEnum = pgEnum("sales_payment_status", [
+  "pending",           // In attesa
+  "processing",        // In elaborazione
+  "completed",         // Completato
+  "failed",            // Fallito
+  "refunded",          // Rimborsato
+  "partially_refunded",// Parzialmente rimborsato
+]);
+
+// Stato spedizione
+export const shipmentStatusEnum = pgEnum("shipment_status", [
+  "pending",           // In attesa di preparazione
+  "preparing",         // In preparazione
+  "ready",             // Pronto per ritiro corriere
+  "picked_up",         // Ritirato dal corriere
+  "in_transit",        // In transito
+  "out_for_delivery",  // In consegna
+  "delivered",         // Consegnato
+  "failed_delivery",   // Consegna fallita
+  "returned",          // Reso al mittente
+]);
+
+// Tipo di consegna
+export const deliveryTypeEnum = pgEnum("delivery_type", [
+  "pickup",            // Ritiro in negozio
+  "shipping",          // Spedizione
+  "express",           // Spedizione express
+]);
+
+// Corriere
+export const carrierEnum = pgEnum("carrier", [
+  "brt",               // BRT/Bartolini
+  "gls",               // GLS
+  "dhl",               // DHL
+  "ups",               // UPS
+  "fedex",             // FedEx
+  "poste_italiane",    // Poste Italiane
+  "sda",               // SDA
+  "tnt",               // TNT
+  "other",             // Altro
+]);
+
 // Users table with role-based access
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -2502,6 +2574,228 @@ export const notificationPreferences = pgTable("notification_preferences", {
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 
+// ==========================================
+// SALES / E-COMMERCE TABLES
+// ==========================================
+
+// Customer Addresses - Indirizzi di spedizione/fatturazione clienti
+export const customerAddresses = pgTable("customer_addresses", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  customerId: varchar("customer_id").notNull(),
+  resellerId: varchar("reseller_id").notNull(),
+  label: text("label"), // es. "Casa", "Ufficio"
+  recipientName: text("recipient_name").notNull(),
+  phone: text("phone"),
+  address: text("address").notNull(),
+  city: text("city").notNull(),
+  province: text("province").notNull(),
+  postalCode: text("postal_code").notNull(),
+  country: text("country").notNull().default("IT"),
+  isDefault: boolean("is_default").notNull().default(false),
+  isBilling: boolean("is_billing").notNull().default(false), // Indirizzo fatturazione
+  notes: text("notes"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+// Shopping Carts - Carrelli attivi
+export const carts = pgTable("carts", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  customerId: varchar("customer_id"), // Null per carrelli anonimi/guest
+  resellerId: varchar("reseller_id").notNull(), // Shop del reseller
+  sessionId: varchar("session_id"), // Per carrelli guest
+  status: text("status").notNull().default("active"), // active, abandoned, converted
+  subtotal: real("subtotal").notNull().default(0),
+  discount: real("discount").notNull().default(0),
+  shippingCost: real("shipping_cost").notNull().default(0),
+  total: real("total").notNull().default(0),
+  couponCode: text("coupon_code"),
+  notes: text("notes"),
+  expiresAt: timestamp("expires_at"), // Scadenza carrello
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+// Cart Items - Articoli nel carrello
+export const cartItems = pgTable("cart_items", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  cartId: varchar("cart_id").notNull(),
+  productId: varchar("product_id").notNull(),
+  quantity: integer("quantity").notNull().default(1),
+  unitPrice: real("unit_price").notNull(),
+  totalPrice: real("total_price").notNull(),
+  discount: real("discount").notNull().default(0),
+  productSnapshot: text("product_snapshot"), // JSON con dati prodotto al momento dell'aggiunta
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+// Sales Orders - Ordini di vendita
+export const salesOrders = pgTable("sales_orders", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  orderNumber: text("order_number").notNull().unique(), // es. ORD-2024-00001
+  customerId: varchar("customer_id").notNull(),
+  resellerId: varchar("reseller_id").notNull(),
+  branchId: varchar("branch_id"), // Filiale cliente se corporate
+  status: salesOrderStatusEnum("status").notNull().default("pending"),
+  deliveryType: deliveryTypeEnum("delivery_type").notNull().default("shipping"),
+  // Totali
+  subtotal: real("subtotal").notNull(),
+  discountAmount: real("discount_amount").notNull().default(0),
+  discountCode: text("discount_code"),
+  shippingCost: real("shipping_cost").notNull().default(0),
+  taxAmount: real("tax_amount").notNull().default(0),
+  total: real("total").notNull(),
+  // Indirizzo spedizione (copia al momento ordine)
+  shippingAddressId: varchar("shipping_address_id"),
+  shippingRecipient: text("shipping_recipient"),
+  shippingAddress: text("shipping_address"),
+  shippingCity: text("shipping_city"),
+  shippingProvince: text("shipping_province"),
+  shippingPostalCode: text("shipping_postal_code"),
+  shippingCountry: text("shipping_country").default("IT"),
+  shippingPhone: text("shipping_phone"),
+  // Indirizzo fatturazione
+  billingAddressId: varchar("billing_address_id"),
+  billingRecipient: text("billing_recipient"),
+  billingAddress: text("billing_address"),
+  billingCity: text("billing_city"),
+  billingProvince: text("billing_province"),
+  billingPostalCode: text("billing_postal_code"),
+  billingCountry: text("billing_country").default("IT"),
+  // Note
+  customerNotes: text("customer_notes"), // Note del cliente
+  internalNotes: text("internal_notes"), // Note interne
+  // Tracking
+  estimatedDelivery: timestamp("estimated_delivery"),
+  confirmedAt: timestamp("confirmed_at"),
+  shippedAt: timestamp("shipped_at"),
+  deliveredAt: timestamp("delivered_at"),
+  cancelledAt: timestamp("cancelled_at"),
+  cancellationReason: text("cancellation_reason"),
+  // Meta
+  source: text("source").default("web"), // web, pos, phone
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+// Sales Order Items - Righe ordine di vendita
+export const salesOrderItems = pgTable("sales_order_items", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  orderId: varchar("order_id").notNull(),
+  productId: varchar("product_id").notNull(),
+  productName: text("product_name").notNull(), // Snapshot nome
+  productSku: text("product_sku"), // Snapshot SKU
+  productImage: text("product_image"), // Snapshot immagine
+  quantity: integer("quantity").notNull(),
+  unitPrice: real("unit_price").notNull(),
+  discount: real("discount").notNull().default(0),
+  totalPrice: real("total_price").notNull(),
+  // Tracking inventario
+  inventoryReserved: boolean("inventory_reserved").notNull().default(false),
+  inventoryDeducted: boolean("inventory_deducted").notNull().default(false),
+  // Meta
+  productSnapshot: text("product_snapshot"), // JSON completo prodotto
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+// Sales Order Payments - Pagamenti ordine
+export const salesOrderPayments = pgTable("sales_order_payments", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  orderId: varchar("order_id").notNull(),
+  method: paymentMethodEnum("method").notNull(),
+  status: salesPaymentStatusEnum("status").notNull().default("pending"),
+  amount: real("amount").notNull(),
+  currency: text("currency").notNull().default("EUR"),
+  // Gateway info
+  transactionId: text("transaction_id"), // ID transazione gateway
+  gatewayReference: text("gateway_reference"), // Riferimento gateway
+  gatewayResponse: text("gateway_response"), // JSON risposta gateway
+  // Dettagli
+  paidAt: timestamp("paid_at"),
+  failedAt: timestamp("failed_at"),
+  refundedAt: timestamp("refunded_at"),
+  refundAmount: real("refund_amount"),
+  refundReason: text("refund_reason"),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+// Sales Order Shipments - Spedizioni ordine
+export const salesOrderShipments = pgTable("sales_order_shipments", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  orderId: varchar("order_id").notNull(),
+  status: shipmentStatusEnum("status").notNull().default("pending"),
+  carrier: carrierEnum("carrier"),
+  carrierName: text("carrier_name"), // Nome corriere se "other"
+  trackingNumber: text("tracking_number"),
+  trackingUrl: text("tracking_url"),
+  // Dimensioni pacco
+  weight: real("weight"), // kg
+  length: real("length"), // cm
+  width: real("width"),   // cm
+  height: real("height"), // cm
+  // Costi
+  shippingCost: real("shipping_cost"),
+  insuranceValue: real("insurance_value"),
+  // Date
+  preparedAt: timestamp("prepared_at"),
+  pickedUpAt: timestamp("picked_up_at"),
+  deliveredAt: timestamp("delivered_at"),
+  estimatedDelivery: timestamp("estimated_delivery"),
+  // Dettagli consegna
+  deliverySignature: text("delivery_signature"),
+  deliveryPhoto: text("delivery_photo"),
+  deliveryNotes: text("delivery_notes"),
+  // Meta
+  labelUrl: text("label_url"), // URL etichetta
+  manifestId: text("manifest_id"), // ID manifesto corriere
+  notes: text("notes"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+// Shipment Tracking Events - Eventi tracking spedizione
+export const shipmentTrackingEvents = pgTable("shipment_tracking_events", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  shipmentId: varchar("shipment_id").notNull(),
+  status: text("status").notNull(), // Stato del corriere
+  statusCode: text("status_code"), // Codice stato corriere
+  description: text("description"),
+  location: text("location"),
+  eventAt: timestamp("event_at").notNull(),
+  rawData: text("raw_data"), // JSON dati grezzi corriere
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+// Stock Reservations - Prenotazioni stock per ordini
+export const stockReservations = pgTable("stock_reservations", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  orderId: varchar("order_id").notNull(),
+  orderItemId: varchar("order_item_id").notNull(),
+  productId: varchar("product_id").notNull(),
+  resellerId: varchar("reseller_id").notNull(),
+  repairCenterId: varchar("repair_center_id"),
+  quantity: integer("quantity").notNull(),
+  status: text("status").notNull().default("reserved"), // reserved, committed, released
+  reservedAt: timestamp("reserved_at").notNull().defaultNow(),
+  expiresAt: timestamp("expires_at"), // Scadenza prenotazione
+  committedAt: timestamp("committed_at"), // Quando stock effettivamente detratto
+  releasedAt: timestamp("released_at"), // Quando liberato (annullamento)
+});
+
+// Sales Order State History - Storico stati ordine
+export const salesOrderStateHistory = pgTable("sales_order_state_history", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  orderId: varchar("order_id").notNull(),
+  fromStatus: text("from_status"),
+  toStatus: text("to_status").notNull(),
+  changedBy: varchar("changed_by"),
+  reason: text("reason"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
 // Relations
 export const usersRelations = relations(users, ({ one, many }) => ({
   repairCenter: one(repairCenters, {
@@ -3499,6 +3793,62 @@ export const insertUtilityPracticeStateHistorySchema = createInsertSchema(utilit
   createdAt: true,
 });
 
+// Sales / E-commerce Insert Schemas
+export const insertCustomerAddressSchema = createInsertSchema(customerAddresses).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertCartSchema = createInsertSchema(carts).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertCartItemSchema = createInsertSchema(cartItems).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertSalesOrderSchema = createInsertSchema(salesOrders).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertSalesOrderItemSchema = createInsertSchema(salesOrderItems).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertSalesOrderPaymentSchema = createInsertSchema(salesOrderPayments).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertSalesOrderShipmentSchema = createInsertSchema(salesOrderShipments).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertShipmentTrackingEventSchema = createInsertSchema(shipmentTrackingEvents).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertStockReservationSchema = createInsertSchema(stockReservations).omit({
+  id: true,
+});
+
+export const insertSalesOrderStateHistorySchema = createInsertSchema(salesOrderStateHistory).omit({
+  id: true,
+  createdAt: true,
+});
+
 export const createDataRecoveryEventSchema = z.object({
   eventType: z.enum(["created", "status_change", "assigned", "shipped", "received", "completed", "note_added", "document_uploaded"]).default("note_added"),
   title: z.string().min(1, "Title is required").max(200, "Title too long"),
@@ -3911,3 +4261,42 @@ export type InsertUtilityPracticeTimelineEvent = z.infer<typeof insertUtilityPra
 
 export type UtilityPracticeStateHistoryEntry = typeof utilityPracticeStateHistory.$inferSelect;
 export type InsertUtilityPracticeStateHistoryEntry = z.infer<typeof insertUtilityPracticeStateHistorySchema>;
+
+// Sales / E-commerce Types
+export type CustomerAddress = typeof customerAddresses.$inferSelect;
+export type InsertCustomerAddress = z.infer<typeof insertCustomerAddressSchema>;
+
+export type Cart = typeof carts.$inferSelect;
+export type InsertCart = z.infer<typeof insertCartSchema>;
+
+export type CartItem = typeof cartItems.$inferSelect;
+export type InsertCartItem = z.infer<typeof insertCartItemSchema>;
+
+export type SalesOrder = typeof salesOrders.$inferSelect;
+export type InsertSalesOrder = z.infer<typeof insertSalesOrderSchema>;
+
+export type SalesOrderItem = typeof salesOrderItems.$inferSelect;
+export type InsertSalesOrderItem = z.infer<typeof insertSalesOrderItemSchema>;
+
+export type SalesOrderPayment = typeof salesOrderPayments.$inferSelect;
+export type InsertSalesOrderPayment = z.infer<typeof insertSalesOrderPaymentSchema>;
+
+export type SalesOrderShipment = typeof salesOrderShipments.$inferSelect;
+export type InsertSalesOrderShipment = z.infer<typeof insertSalesOrderShipmentSchema>;
+
+export type ShipmentTrackingEvent = typeof shipmentTrackingEvents.$inferSelect;
+export type InsertShipmentTrackingEvent = z.infer<typeof insertShipmentTrackingEventSchema>;
+
+export type StockReservation = typeof stockReservations.$inferSelect;
+export type InsertStockReservation = z.infer<typeof insertStockReservationSchema>;
+
+export type SalesOrderStateHistoryEntry = typeof salesOrderStateHistory.$inferSelect;
+export type InsertSalesOrderStateHistoryEntry = z.infer<typeof insertSalesOrderStateHistorySchema>;
+
+// Sales Order Status Type
+export type SalesOrderStatus = "pending" | "confirmed" | "processing" | "ready_to_ship" | "shipped" | "delivered" | "completed" | "cancelled" | "refunded";
+export type PaymentMethod = "cash" | "card" | "bank_transfer" | "paypal" | "stripe" | "satispay" | "pos" | "credit";
+export type SalesPaymentStatus = "pending" | "processing" | "completed" | "failed" | "refunded" | "partially_refunded";
+export type ShipmentStatus = "pending" | "preparing" | "ready" | "picked_up" | "in_transit" | "out_for_delivery" | "delivered" | "failed_delivery" | "returned";
+export type DeliveryType = "pickup" | "shipping" | "express";
+export type Carrier = "brt" | "gls" | "dhl" | "ups" | "fedex" | "poste_italiane" | "sda" | "tnt" | "other";
