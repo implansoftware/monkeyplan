@@ -1,0 +1,41 @@
+A. Modulo Marketplace & Catalogo
+
+Ricerca avanzata con filtri granulari (categoria, prezzo, condizioni, set).
+Schede prodotto dettagliate con gallery immagini, storico prezzi e attributi specifici.
+Sistema di "Preferiti" e "Watchlist".
+B. Valuation Engine (Cuore Tecnologico)
+
+Algoritmo proprietario per la stima del prezzo "Fair Market Value".
+Analisi dei trend di mercato (grafici storici prezzi).
+"Deal Score": Indicatore automatico della convenienza di un annuncio (es. "Ottimo Affare", "Prezzo Alto").
+Suggerimenti di prezzo automatici per i venditori in fase di listing.
+C. Modulo Vendite & Gestione Ordini
+
+Dashboard venditore con KPI (vendite totali, revenue, oggetti attivi).
+Flusso di creazione annuncio guidato.
+Gestione offerte e contro-proposte.
+Workflow spedizioni: Integrazione stati (Da spedire, In transito, Consegnato).
+D. Modulo Finanziario & Escrow
+
+Sistema di pagamento sicuro (i fondi sono congelati fino alla consegna).
+Wallet virtuale per ogni utente.
+Gestione Payout (bonifici in uscita verso venditori).
+Calcolo automatico commissioni piattaforma (Fee).
+Generazione reportistica fiscale e fatturazione automatica fee.
+E. Modulo Amministrazione
+
+Gestione utenti (Ban, Verifica KYC).
+Moderazione annunci (Approvazione/Rifiuto).
+Gestione Dispute e rimborsi forzati.
+Analytics globali piattaforma (GMV, Revenue).
+5. Specifiche Tecniche (Consigliate per Produzione)
+Frontend: React.js / Next.js, Tailwind CSS (per massime performance e SEO).
+Backend: Node.js o Python (Django/FastAPI) per la logica dell'algoritmo di stima.
+Database: PostgreSQL (dati relazionali) + Redis (caching per performance).
+Infrastruttura: Cloud AWS o Google Cloud, container Docker.
+Pagamenti: Integrazione Stripe Connect o Mangopay (specifici per marketplace).
+6. Servizi Aggiuntivi (Opzionali)
+Sviluppo App Mobile Nativa (iOS/Android).
+Integrazione API corrieri per generazione automatica etichette (es. ShippyPro, Qapla).
+Sistema di notifiche Push e Email transazionali avanzate.
+Piano di manutenzione evolutiva post-lancio (SLA).
