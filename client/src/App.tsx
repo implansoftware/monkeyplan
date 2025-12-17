@@ -136,10 +136,11 @@ import ShopCatalog from "@/pages/shop/catalog";
 import ShopCart from "@/pages/shop/cart";
 import ShopCheckout from "@/pages/shop/checkout";
 
-// Reseller sales orders, shipments and payments
+// Reseller sales orders, shipments, payments and returns
 import ResellerSalesOrders from "@/pages/reseller/sales-orders";
 import ResellerShipments from "@/pages/reseller/shipments";
 import ResellerPayments from "@/pages/reseller/payments";
+import ResellerSalesReturns from "@/pages/reseller/sales-returns";
 
 function Router() {
   return (
@@ -168,6 +169,7 @@ function Router() {
       <ProtectedRoute path="/admin/sales-orders" component={AdminSalesOrders} />
       <ProtectedRoute path="/admin/shipments" component={AdminShipments} />
       <ProtectedRoute path="/admin/payments" component={AdminPayments} />
+      <ProtectedRoute path="/admin/sales-returns" component={ResellerSalesReturns} />
       <ProtectedRoute path="/admin/reports" component={AdminReports} />
       <ProtectedRoute path="/admin/chat" component={AdminChat} />
       <ProtectedRoute path="/admin/activity-logs" component={AdminActivityLogs} />
@@ -240,6 +242,7 @@ function Router() {
       <ProtectedRoute path="/reseller/shipments/:id" component={ResellerShipments} />
       <ProtectedRoute path="/reseller/shipments" component={ResellerShipments} />
       <ProtectedRoute path="/reseller/payments" component={ResellerPayments} />
+      <ProtectedRoute path="/reseller/sales-returns" component={ResellerSalesReturns} />
       
       {/* Repair Center routes */}
       <ProtectedRoute path="/repair-center" component={RepairCenterDashboard} />
