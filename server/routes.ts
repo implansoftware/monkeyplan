@@ -17267,5 +17267,183 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // ==========================================
+  // E-COMMERCE: SALES ORDER RETURNS
+  // ==========================================
+
+  // List all returns with filtering
+  app.get("/api/sales-returns", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      
+      const filters: any = {};
+      if (req.query.status && req.query.status !== 'all') {
+        filters.status = req.query.status;
+      }
+      if (req.query.orderId) {
+        filters.orderId = req.query.orderId;
+      }
+      
+      // Role-based filtering
+      if (req.user.role === 'customer') {
+        filters.customerId = req.user.id;
+      } else if (['reseller', 'reseller_staff'].includes(req.user.role)) {
+        filters.resellerId = req.user.role === 'reseller' ? req.user.id : req.user.resellerId;
+      }
+      // Admin sees all
+      
+      const returns = await storage.listSalesOrderReturns(filters);
+      res.json(returns);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Get single return by ID
+  app.get("/api/sales-returns/:id", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      
+      const returnOrder = await storage.getSalesOrderReturn(req.params.id);
+      if (!returnOrder) {
+        return res.status(404).json({ error: "Reso non trovato" });
+      }
+      
+      // Authorization check
+      if (req.user.role === 'customer' && returnOrder.customerId !== req.user.id) {
+        return res.status(403).json({ error: "Accesso negato" });
+      }
+      if (['reseller', 'reseller_staff'].includes(req.user.role)) {
+        const resellerId = req.user.role === 'reseller' ? req.user.id : req.user.resellerId;
+        if (returnOrder.resellerId !== resellerId) {
+          return res.status(403).json({ error: "Accesso negato" });
+        }
+      }
+      
+      res.json(returnOrder);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Create a new return request
+  app.post("/api/sales-returns", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      
+      const { orderId, reason, notes, items } = req.body;
+      
+      // Get the order to verify ownership and extract details
+      const order = await storage.getSalesOrder(orderId);
+      if (!order) {
+        return res.status(404).json({ error: "Ordine non trovato" });
+      }
+      
+      // Authorization: customer can only return their own orders
+      if (req.user.role === 'customer' && order.customerId !== req.user.id) {
+        return res.status(403).json({ error: "Non autorizzato" });
+      }
+      
+      // Generate return number
+      const returnNumber = await storage.generateReturnNumber(order.resellerId);
+      
+      // Create the return
+      const returnData = await storage.createSalesOrderReturn({
+        returnNumber,
+        orderId,
+        resellerId: order.resellerId,
+        customerId: order.customerId || undefined,
+        reason,
+        customerNotes: notes,
+        status: 'requested'
+      });
+      
+      // Create return items if provided
+      if (items && Array.isArray(items)) {
+        for (const item of items) {
+          await storage.createSalesOrderReturnItem({
+            returnId: returnData.id,
+            orderItemId: item.orderItemId,
+            productId: item.productId,
+            quantity: item.quantity,
+            reason: item.reason || reason,
+            condition: item.condition || 'unknown'
+          });
+        }
+      }
+      
+      res.status(201).json(returnData);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Update return status
+  app.put("/api/sales-returns/:id", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      if (!['admin', 'admin_staff', 'reseller', 'reseller_staff'].includes(req.user.role)) {
+        return res.status(403).json({ error: "Accesso negato" });
+      }
+      
+      const updated = await storage.updateSalesOrderReturn(req.params.id, req.body);
+      res.json(updated);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Get return items
+  app.get("/api/sales-returns/:returnId/items", requireAuth, async (req, res) => {
+    try {
+      const items = await storage.listSalesOrderReturnItems(req.params.returnId);
+      res.json(items);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Add item to return
+  app.post("/api/sales-returns/:returnId/items", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      
+      const item = await storage.createSalesOrderReturnItem({
+        returnId: req.params.returnId,
+        ...req.body
+      });
+      res.status(201).json(item);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Update return item
+  app.put("/api/sales-return-items/:id", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      if (!['admin', 'admin_staff', 'reseller', 'reseller_staff'].includes(req.user.role)) {
+        return res.status(403).json({ error: "Accesso negato" });
+      }
+      
+      const updated = await storage.updateSalesOrderReturnItem(req.params.id, req.body);
+      res.json(updated);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Delete return item
+  app.delete("/api/sales-return-items/:id", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      
+      await storage.deleteSalesOrderReturnItem(req.params.id);
+      res.status(204).send();
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   return httpServer;
 }
