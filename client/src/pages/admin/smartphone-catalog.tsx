@@ -538,7 +538,12 @@ export default function AdminSmartphoneCatalog() {
                           <Button
                             variant="ghost"
                             size="icon"
-                            onClick={() => { setSmartphoneToAssign(smartphone); setAssignDialogOpen(true); }}
+                            onClick={() => { 
+                              setSmartphoneToAssign(smartphone); 
+                              setAssignPrice((smartphone.unitPrice / 100).toFixed(2));
+                              setAssignCostPrice(smartphone.costPrice ? (smartphone.costPrice / 100).toFixed(2) : "");
+                              setAssignDialogOpen(true); 
+                            }}
                             title="Assegna a rivenditore"
                             data-testid={`button-assign-smartphone-${smartphone.id}`}
                           >
