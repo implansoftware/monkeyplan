@@ -17139,6 +17139,24 @@ export function registerRoutes(app: Express): Server {
   // E-COMMERCE: PAYMENTS
   // ==========================================
 
+  app.get("/api/payments", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      if (!['admin', 'admin_staff'].includes(req.user.role)) {
+        return res.status(403).json({ error: "Accesso negato" });
+      }
+      
+      const { status, method } = req.query;
+      const payments = await storage.listAllPayments({
+        status: status as string | undefined,
+        method: method as string | undefined
+      });
+      res.json(payments);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   app.get("/api/sales-orders/:orderId/payments", requireAuth, async (req, res) => {
     try {
       const payments = await storage.listSalesOrderPayments(req.params.orderId);

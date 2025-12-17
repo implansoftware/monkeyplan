@@ -44,6 +44,9 @@ import AdminRepairDetail from "@/pages/admin/repair-detail";
 import AdminTeam from "@/pages/admin/team";
 import AdminSmartphoneCatalog from "@/pages/admin/smartphone-catalog";
 import AdminAccessoryCatalog from "@/pages/admin/accessory-catalog";
+import AdminSalesOrders from "@/pages/admin/sales-orders";
+import AdminShipments from "@/pages/admin/shipments";
+import AdminPayments from "@/pages/admin/payments";
 import DiagnosisList from "@/pages/DiagnosisList";
 import QuotesList from "@/pages/QuotesList";
 
@@ -161,6 +164,9 @@ function Router() {
       <ProtectedRoute path="/admin/products" component={AdminProducts} />
       <ProtectedRoute path="/admin/parts-orders" component={AdminPartsOrders} />
       <ProtectedRoute path="/admin/invoices" component={AdminInvoices} />
+      <ProtectedRoute path="/admin/sales-orders" component={AdminSalesOrders} />
+      <ProtectedRoute path="/admin/shipments" component={AdminShipments} />
+      <ProtectedRoute path="/admin/payments" component={AdminPayments} />
       <ProtectedRoute path="/admin/reports" component={AdminReports} />
       <ProtectedRoute path="/admin/chat" component={AdminChat} />
       <ProtectedRoute path="/admin/activity-logs" component={AdminActivityLogs} />

@@ -31,6 +31,7 @@ import {
   ChevronDown,
   ChevronRight,
   ExternalLink,
+  CreditCard,
 } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useState, Fragment } from "react";
@@ -82,6 +83,9 @@ const menuItems = {
     { title: "Activity Logs", url: "/admin/activity-logs", icon: Shield, group: "Sistema" },
     { title: "Impostazioni", url: "/admin/settings", icon: Settings, group: "Sistema" },
     { title: "Team Admin", url: "/admin/team", icon: UsersRound, group: "Sistema" },
+    { title: "Ordini Vendita", url: "/admin/sales-orders", icon: ShoppingCart, group: "E-commerce" },
+    { title: "Spedizioni", url: "/admin/shipments", icon: Truck, group: "E-commerce" },
+    { title: "Pagamenti", url: "/admin/payments", icon: CreditCard, group: "E-commerce" },
     { title: "Ticket", url: "/admin/tickets", icon: Ticket, group: "Assistenza" },
     { title: "Live Chat", url: "/admin/chat", icon: MessageSquare, group: "Assistenza" },
   ],
@@ -110,6 +114,9 @@ const menuItems = {
     { title: "Pratiche", url: "/admin/utility/practices", icon: FileCheck, group: "Utility" },
     { title: "Compensi", url: "/admin/utility/commissions", icon: Coins, group: "Utility" },
     { title: "Report Utility", url: "/admin/utility/reports", icon: PieChart, group: "Utility" },
+    { title: "Ordini Vendita", url: "/admin/sales-orders", icon: ShoppingCart, group: "E-commerce" },
+    { title: "Spedizioni", url: "/admin/shipments", icon: Truck, group: "E-commerce" },
+    { title: "Pagamenti", url: "/admin/payments", icon: CreditCard, group: "E-commerce" },
     { title: "Ticket", url: "/admin/tickets", icon: Ticket, group: "Assistenza" },
     { title: "Live Chat", url: "/admin/chat", icon: MessageSquare, group: "Assistenza" },
   ],
@@ -195,6 +202,7 @@ const groupIcons: Record<string, typeof LayoutDashboard> = {
   "Sistema": Settings,
   "Utility": Zap,
   "Fatturazione": FileText,
+  "E-commerce": ShoppingCart,
   "Assistenza": Ticket,
   "Principale": LayoutDashboard,
   "Magazzino": Package,

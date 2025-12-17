@@ -677,6 +677,7 @@ export interface IStorage {
   
   // E-commerce: Sales Order Payments
   listSalesOrderPayments(orderId: string): Promise<SalesOrderPayment[]>;
+  listAllPayments(filters?: { status?: string; method?: string }): Promise<SalesOrderPayment[]>;
   getSalesOrderPayment(id: string): Promise<SalesOrderPayment | undefined>;
   createSalesOrderPayment(payment: InsertSalesOrderPayment): Promise<SalesOrderPayment>;
   updateSalesOrderPayment(id: string, updates: Partial<InsertSalesOrderPayment>): Promise<SalesOrderPayment>;
@@ -5814,6 +5815,27 @@ export class DatabaseStorage implements IStorage {
     return await db.select()
       .from(salesOrderPayments)
       .where(eq(salesOrderPayments.orderId, orderId))
+      .orderBy(desc(salesOrderPayments.createdAt));
+  }
+
+  async listAllPayments(filters?: { status?: string; method?: string }): Promise<SalesOrderPayment[]> {
+    const conditions = [];
+    if (filters?.status) {
+      conditions.push(eq(salesOrderPayments.status, filters.status as any));
+    }
+    if (filters?.method) {
+      conditions.push(eq(salesOrderPayments.method, filters.method as any));
+    }
+    
+    if (conditions.length === 0) {
+      return await db.select()
+        .from(salesOrderPayments)
+        .orderBy(desc(salesOrderPayments.createdAt));
+    }
+    
+    return await db.select()
+      .from(salesOrderPayments)
+      .where(and(...conditions))
       .orderBy(desc(salesOrderPayments.createdAt));
   }
 

@@ -1,0 +1,480 @@
+import { useState } from "react";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Skeleton } from "@/components/ui/skeleton";
+import { 
+  Search, CreditCard, DollarSign, CheckCircle, XCircle, 
+  Clock, AlertCircle, Download, RefreshCw, TrendingUp,
+  Banknote, Receipt
+} from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import type { SalesOrderPayment } from "@shared/schema";
+
+const statusLabels: Record<string, string> = {
+  pending: "In attesa",
+  processing: "In elaborazione",
+  completed: "Completato",
+  failed: "Fallito",
+  refunded: "Rimborsato",
+  partially_refunded: "Rimborso parziale"
+};
+
+const statusColors: Record<string, string> = {
+  pending: "secondary",
+  processing: "default",
+  completed: "default",
+  failed: "destructive",
+  refunded: "destructive",
+  partially_refunded: "secondary"
+};
+
+const methodLabels: Record<string, string> = {
+  cash: "Contanti",
+  card: "Carta",
+  bank_transfer: "Bonifico",
+  paypal: "PayPal",
+  stripe: "Stripe",
+  satispay: "Satispay",
+  pos: "POS",
+  credit: "Credito"
+};
+
+const methodIcons: Record<string, any> = {
+  cash: Banknote,
+  card: CreditCard,
+  bank_transfer: Receipt,
+  paypal: DollarSign,
+  stripe: CreditCard,
+  satispay: DollarSign,
+  pos: CreditCard,
+  credit: Receipt
+};
+
+export default function AdminPayments() {
+  const { toast } = useToast();
+  
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string>("");
+  const [methodFilter, setMethodFilter] = useState<string>("");
+  const [selectedPayment, setSelectedPayment] = useState<SalesOrderPayment | null>(null);
+  const [showDetailDialog, setShowDetailDialog] = useState(false);
+  const [showRefundDialog, setShowRefundDialog] = useState(false);
+  const [refundAmount, setRefundAmount] = useState("");
+  const [refundReason, setRefundReason] = useState("");
+  
+  const { data: payments, isLoading } = useQuery<SalesOrderPayment[]>({
+    queryKey: ['/api/admin/payments', { status: statusFilter, method: methodFilter }],
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      if (statusFilter) params.set('status', statusFilter);
+      if (methodFilter) params.set('method', methodFilter);
+      const res = await fetch(`/api/payments?${params}`, { credentials: 'include' });
+      if (!res.ok) throw new Error('Errore nel caricamento pagamenti');
+      return res.json();
+    }
+  });
+  
+  const updatePayment = useMutation({
+    mutationFn: async ({ paymentId, status }: { paymentId: string; status: string }) => {
+      return await apiRequest('PUT', `/api/payments/${paymentId}`, { status });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/payments'] });
+      toast({ title: "Pagamento aggiornato" });
+      setShowDetailDialog(false);
+    },
+    onError: (error: any) => {
+      toast({ title: "Errore", description: error.message, variant: "destructive" });
+    }
+  });
+  
+  const formatPrice = (value: number) => {
+    return new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR' }).format(value);
+  };
+  
+  const formatDate = (date: Date | string | null) => {
+    if (!date) return "-";
+    return new Date(date).toLocaleDateString('it-IT', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+  
+  const filteredPayments = payments?.filter(payment => {
+    if (search) {
+      const searchLower = search.toLowerCase();
+      if (!payment.transactionId?.toLowerCase().includes(searchLower)) {
+        return false;
+      }
+    }
+    return true;
+  }) || [];
+  
+  const openDetailDialog = (payment: SalesOrderPayment) => {
+    setSelectedPayment(payment);
+    setShowDetailDialog(true);
+  };
+  
+  const openRefundDialog = (payment: SalesOrderPayment) => {
+    setSelectedPayment(payment);
+    setRefundAmount(payment.amount.toString());
+    setRefundReason("");
+    setShowRefundDialog(true);
+  };
+  
+  const handleRefund = () => {
+    if (!selectedPayment) return;
+    const amount = parseFloat(refundAmount);
+    if (isNaN(amount) || amount <= 0 || amount > selectedPayment.amount) {
+      toast({ title: "Errore", description: "Importo non valido", variant: "destructive" });
+      return;
+    }
+    
+    const newStatus = amount === selectedPayment.amount ? 'refunded' : 'partially_refunded';
+    updatePayment.mutate({ paymentId: selectedPayment.id, status: newStatus });
+    setShowRefundDialog(false);
+  };
+  
+  const handleExport = () => {
+    toast({ title: "Export", description: "Funzionalità in arrivo" });
+  };
+  
+  const stats = {
+    total: payments?.length || 0,
+    pending: payments?.filter(p => p.status === 'pending').length || 0,
+    completed: payments?.filter(p => p.status === 'completed').length || 0,
+    totalAmount: payments?.filter(p => p.status === 'completed').reduce((sum, p) => sum + p.amount, 0) || 0,
+    refunded: payments?.filter(p => ['refunded', 'partially_refunded'].includes(p.status)).length || 0
+  };
+  
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex justify-between items-center">
+          <Skeleton className="h-10 w-48" />
+          <Skeleton className="h-10 w-32" />
+        </div>
+        <div className="grid gap-4 md:grid-cols-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Card key={i}>
+              <CardContent className="p-6">
+                <Skeleton className="h-8 w-20" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+        <Card>
+          <CardContent className="p-6">
+            <div className="space-y-4">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <Skeleton key={i} className="h-16 w-full" />
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+  
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <div>
+          <h1 className="text-3xl font-bold" data-testid="text-admin-payments-title">Pagamenti</h1>
+          <p className="text-muted-foreground">Gestione di tutti i pagamenti</p>
+        </div>
+        
+        <Button variant="outline" onClick={handleExport} data-testid="button-export">
+          <Download className="mr-2 h-4 w-4" />
+          Esporta
+        </Button>
+      </div>
+      
+      <div className="grid gap-4 md:grid-cols-4">
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-primary/10 rounded-lg">
+                <CreditCard className="h-5 w-5 text-primary" />
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Totale</p>
+                <p className="text-2xl font-bold" data-testid="stat-total-payments">{stats.total}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-yellow-100 dark:bg-yellow-900/30 rounded-lg">
+                <Clock className="h-5 w-5 text-yellow-600" />
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">In attesa</p>
+                <p className="text-2xl font-bold" data-testid="stat-pending-payments">{stats.pending}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
+                <CheckCircle className="h-5 w-5 text-green-600" />
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Completati</p>
+                <p className="text-2xl font-bold" data-testid="stat-completed-payments">{stats.completed}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+                <TrendingUp className="h-5 w-5 text-blue-600" />
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Incassato</p>
+                <p className="text-2xl font-bold" data-testid="stat-total-amount">{formatPrice(stats.totalAmount)}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+      
+      <div className="flex flex-col gap-4 md:flex-row md:items-center">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Cerca per ID transazione..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="pl-10"
+            data-testid="input-search"
+          />
+        </div>
+        
+        <Select value={methodFilter} onValueChange={setMethodFilter}>
+          <SelectTrigger className="w-[180px]" data-testid="select-method-filter">
+            <CreditCard className="mr-2 h-4 w-4" />
+            <SelectValue placeholder="Tutti i metodi" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="">Tutti i metodi</SelectItem>
+            {Object.entries(methodLabels).map(([value, label]) => (
+              <SelectItem key={value} value={value}>{label}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        
+        <Select value={statusFilter} onValueChange={setStatusFilter}>
+          <SelectTrigger className="w-[180px]" data-testid="select-status-filter">
+            <SelectValue placeholder="Tutti gli stati" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="">Tutti gli stati</SelectItem>
+            {Object.entries(statusLabels).map(([value, label]) => (
+              <SelectItem key={value} value={value}>{label}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+      
+      <Card>
+        <CardContent className="p-0">
+          {filteredPayments.length === 0 ? (
+            <div className="p-12 text-center">
+              <CreditCard className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+              <p className="text-muted-foreground">Nessun pagamento trovato</p>
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>ID Transazione</TableHead>
+                  <TableHead>Data</TableHead>
+                  <TableHead>Metodo</TableHead>
+                  <TableHead>Importo</TableHead>
+                  <TableHead>Stato</TableHead>
+                  <TableHead className="text-right">Azioni</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredPayments.map((payment) => {
+                  const MethodIcon = methodIcons[payment.method] || CreditCard;
+                  return (
+                    <TableRow key={payment.id} data-testid={`row-payment-${payment.id}`}>
+                      <TableCell className="font-mono text-sm" data-testid={`text-transaction-${payment.id}`}>
+                        {payment.transactionId || payment.id.slice(0, 12)}
+                      </TableCell>
+                      <TableCell>{formatDate(payment.createdAt)}</TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <MethodIcon className="h-4 w-4" />
+                          {methodLabels[payment.method] || payment.method}
+                        </div>
+                      </TableCell>
+                      <TableCell className="font-medium" data-testid={`text-amount-${payment.id}`}>
+                        {formatPrice(payment.amount)}
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={statusColors[payment.status] as any || "secondary"}>
+                          {statusLabels[payment.status] || payment.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => openDetailDialog(payment)}
+                            data-testid={`button-view-payment-${payment.id}`}
+                          >
+                            Dettagli
+                          </Button>
+                          {payment.status === 'completed' && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => openRefundDialog(payment)}
+                              data-testid={`button-refund-${payment.id}`}
+                            >
+                              <RefreshCw className="mr-2 h-4 w-4" />
+                              Rimborsa
+                            </Button>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
+      
+      <Dialog open={showDetailDialog} onOpenChange={setShowDetailDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Dettaglio pagamento</DialogTitle>
+            <DialogDescription>
+              {selectedPayment?.transactionId || selectedPayment?.id}
+            </DialogDescription>
+          </DialogHeader>
+          {selectedPayment && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-muted-foreground">Importo</Label>
+                  <p className="text-lg font-semibold">{formatPrice(selectedPayment.amount)}</p>
+                </div>
+                <div>
+                  <Label className="text-muted-foreground">Stato</Label>
+                  <div className="mt-1">
+                    <Badge variant={statusColors[selectedPayment.status] as any}>
+                      {statusLabels[selectedPayment.status]}
+                    </Badge>
+                  </div>
+                </div>
+                <div>
+                  <Label className="text-muted-foreground">Metodo</Label>
+                  <p>{methodLabels[selectedPayment.method]}</p>
+                </div>
+                <div>
+                  <Label className="text-muted-foreground">Data</Label>
+                  <p>{formatDate(selectedPayment.createdAt)}</p>
+                </div>
+              </div>
+              
+              {selectedPayment.status === 'pending' && (
+                <div className="space-y-2">
+                  <Label>Aggiorna stato</Label>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="default"
+                      onClick={() => updatePayment.mutate({ paymentId: selectedPayment.id, status: 'completed' })}
+                      disabled={updatePayment.isPending}
+                    >
+                      <CheckCircle className="mr-2 h-4 w-4" />
+                      Conferma
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      onClick={() => updatePayment.mutate({ paymentId: selectedPayment.id, status: 'failed' })}
+                      disabled={updatePayment.isPending}
+                    >
+                      <XCircle className="mr-2 h-4 w-4" />
+                      Fallito
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+      
+      <Dialog open={showRefundDialog} onOpenChange={setShowRefundDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Rimborsa pagamento</DialogTitle>
+            <DialogDescription>
+              Importo originale: {selectedPayment && formatPrice(selectedPayment.amount)}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Importo rimborso</Label>
+              <Input
+                type="number"
+                value={refundAmount}
+                onChange={(e) => setRefundAmount(e.target.value)}
+                placeholder="0.00"
+                step="0.01"
+                min="0"
+                max={selectedPayment?.amount}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Motivo (opzionale)</Label>
+              <Textarea
+                value={refundReason}
+                onChange={(e) => setRefundReason(e.target.value)}
+                placeholder="Motivo del rimborso..."
+                rows={3}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowRefundDialog(false)}>
+              Annulla
+            </Button>
+            <Button 
+              onClick={handleRefund}
+              disabled={updatePayment.isPending}
+              variant="destructive"
+            >
+              Conferma rimborso
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
