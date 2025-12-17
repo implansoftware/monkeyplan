@@ -12561,6 +12561,10 @@ export function registerRoutes(app: Express): Server {
         return res.status(404).send("Credenziali TrovaUsati non configurate");
       }
       
+      if (!credential.isActive) {
+        return res.status(400).json({ success: false, message: "Credenziali disattivate" });
+      }
+      
       const { createTrovausatiService } = await import('./trovausatiService');
       const service = createTrovausatiService(credential);
       const result = await service.testConnection();
@@ -12749,6 +12753,13 @@ export function registerRoutes(app: Express): Server {
         return res.status(404).send("Negozio non trovato");
       }
       
+      const resellerId = req.user!.role === 'admin' ? req.body.resellerId : req.user!.id;
+      const credential = await storage.getTrovausatiCredentialByReseller(resellerId);
+      
+      if (!credential || shop.credentialId !== credential.id) {
+        return res.status(403).send("Non autorizzato a modificare questo negozio");
+      }
+      
       const updated = await storage.updateTrovausatiShop(req.params.id, {
         shopId: req.body.shopId,
         shopName: req.body.shopName,
@@ -12766,6 +12777,18 @@ export function registerRoutes(app: Express): Server {
   // DELETE /api/trovausati/shops/:id - Delete TrovaUsati shop
   app.delete("/api/trovausati/shops/:id", requireAuth, requireRole("admin", "reseller"), async (req, res) => {
     try {
+      const shop = await storage.getTrovausatiShop(req.params.id);
+      if (!shop) {
+        return res.status(404).send("Negozio non trovato");
+      }
+      
+      const resellerId = req.user!.role === 'admin' ? req.query.resellerId as string : req.user!.id;
+      const credential = await storage.getTrovausatiCredentialByReseller(resellerId);
+      
+      if (!credential || shop.credentialId !== credential.id) {
+        return res.status(403).send("Non autorizzato a eliminare questo negozio");
+      }
+      
       await storage.deleteTrovausatiShop(req.params.id);
       res.status(204).send();
     } catch (error: any) {

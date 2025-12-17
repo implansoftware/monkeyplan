@@ -61,6 +61,21 @@ type SifarStore = {
   isDefault: boolean;
 };
 
+type TrovausatiCredential = {
+  id: string;
+  apiType: string;
+  isActive: boolean;
+  lastTestResult: string | null;
+  createdAt: string;
+};
+
+type TrovausatiShop = {
+  id: string;
+  shopId: string;
+  shopName: string | null;
+  isActive: boolean;
+};
+
 const initialFormData: SupplierFormData = {
   name: "",
   email: "",
@@ -109,6 +124,15 @@ export default function ResellerSuppliers() {
 
   const { data: externalIntegrations = [] } = useQuery<ExternalIntegration[]>({
     queryKey: ["/api/external-integrations"],
+  });
+
+  const { data: trovausatiCredential } = useQuery<TrovausatiCredential | null>({
+    queryKey: ["/api/trovausati/credentials"],
+  });
+
+  const { data: trovausatiShops = [] } = useQuery<TrovausatiShop[]>({
+    queryKey: ["/api/trovausati/shops"],
+    enabled: !!trovausatiCredential,
   });
 
   const createMutation = useMutation({
@@ -232,6 +256,8 @@ export default function ResellerSuppliers() {
 
   const sifarConfigured = sifarCredential?.hasClientKey === true;
   const sifarStoreCount = sifarStores.length;
+  const trovausatiConfigured = !!trovausatiCredential;
+  const trovausatiShopCount = trovausatiShops.length;
 
   if (isLoading) {
     return (
@@ -274,7 +300,9 @@ export default function ResellerSuppliers() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {externalIntegrations.map((integration) => {
               const isSifar = integration.code === 'sifar';
-              const isConfigured = isSifar ? sifarConfigured : false;
+              const isTrovausati = integration.code === 'trovausati';
+              const isKnownIntegration = isSifar || isTrovausati;
+              const isConfigured = isSifar ? sifarConfigured : (isTrovausati ? trovausatiConfigured : false);
               
               return (
                 <Card 
@@ -311,7 +339,7 @@ export default function ResellerSuppliers() {
                           )}
                         </div>
                       </div>
-                      {isSifar && (
+                      {isKnownIntegration && (
                         isConfigured ? (
                           <Badge variant="default" className="gap-1" data-testid={`badge-${integration.code}-status`}>
                             <CheckCircle className="h-3 w-3" />
@@ -324,7 +352,7 @@ export default function ResellerSuppliers() {
                           </Badge>
                         )
                       )}
-                      {!isSifar && (
+                      {!isKnownIntegration && (
                         <Badge variant="outline" className="gap-1">
                           <Info className="h-3 w-3" />
                           Prossimamente
@@ -379,6 +407,44 @@ export default function ResellerSuppliers() {
                             <Button data-testid="button-sifar-configure">
                               <Settings className="h-4 w-4 mr-2" />
                               Configura SIFAR
+                            </Button>
+                          </Link>
+                        </div>
+                      )
+                    ) : isTrovausati ? (
+                      isConfigured ? (
+                        <div className="space-y-4">
+                          <div className="flex items-center gap-6 text-sm text-muted-foreground">
+                            <div className="flex items-center gap-1">
+                              <Package className="h-4 w-4" />
+                              <span>Tipo: <Badge variant="outline" className="ml-1" data-testid="text-trovausati-type">{trovausatiCredential?.apiType === 'resellers' ? 'Rivenditori' : 'Negozi/GDS'}</Badge></span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <MapPin className="h-4 w-4" />
+                              <span data-testid="text-trovausati-shop-count">{trovausatiShopCount} {trovausatiShopCount === 1 ? 'negozio' : 'negozi'}</span>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <Link href="/reseller/trovausati/settings">
+                              <Button variant="ghost" size="sm" data-testid="button-trovausati-settings">
+                                <Settings className="h-4 w-4 mr-2" />
+                                Impostazioni
+                              </Button>
+                            </Link>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="space-y-4">
+                          <Alert>
+                            <AlertTriangle className="h-4 w-4" />
+                            <AlertDescription>
+                              Configura le credenziali TrovaUsati per accedere a valutazioni dispositivi e marketplace usato.
+                            </AlertDescription>
+                          </Alert>
+                          <Link href="/reseller/trovausati/settings">
+                            <Button data-testid="button-trovausati-configure">
+                              <Settings className="h-4 w-4 mr-2" />
+                              Configura TrovaUsati
                             </Button>
                           </Link>
                         </div>
