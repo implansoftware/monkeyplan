@@ -6951,7 +6951,7 @@ export function registerRoutes(app: Express): Server {
 
   // ============ ACCESSORIES (Accessori) ============
   
-  // List accessories with specs
+  // List accessories with specs and device compatibilities
   app.get("/api/accessories", requireAuth, async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
@@ -6968,7 +6968,16 @@ export function registerRoutes(app: Express): Server {
       if (req.query.accessoryType) filters.accessoryType = req.query.accessoryType as string;
       
       const accessories = await storage.listAccessories(filters);
-      res.json(accessories);
+      
+      // Fetch device compatibilities for each accessory
+      const accessoriesWithCompatibilities = await Promise.all(
+        accessories.map(async (accessory) => {
+          const deviceCompatibilities = await storage.listProductCompatibilities(accessory.id);
+          return { ...accessory, deviceCompatibilities };
+        })
+      );
+      
+      res.json(accessoriesWithCompatibilities);
     } catch (error: any) {
       res.status(500).send(error.message);
     }
@@ -6994,13 +7003,17 @@ export function registerRoutes(app: Express): Server {
       if (!req.user) return res.status(401).send("Unauthorized");
       
       // Parse product and specs - support both JSON body and FormData (stringified JSON)
-      let product, specs;
+      let product, specs, compatibleDeviceModelIds: string[] = [];
       if (typeof req.body.product === 'string') {
         product = JSON.parse(req.body.product);
         specs = JSON.parse(req.body.specs);
+        if (req.body.compatibleDeviceModelIds) {
+          compatibleDeviceModelIds = JSON.parse(req.body.compatibleDeviceModelIds);
+        }
       } else {
         product = req.body.product;
         specs = req.body.specs;
+        compatibleDeviceModelIds = req.body.compatibleDeviceModelIds || [];
       }
       
       if (!product || !specs) {
@@ -7017,6 +7030,12 @@ export function registerRoutes(app: Express): Server {
       // Create specs linked to product
       specs.productId = createdProduct.id;
       const createdSpecs = await storage.createAccessorySpecs(specs);
+      
+      // Handle device model compatibilities
+      if (compatibleDeviceModelIds && compatibleDeviceModelIds.length > 0) {
+        const compatibilities = compatibleDeviceModelIds.map((deviceModelId: string) => ({ deviceModelId }));
+        await storage.setProductCompatibilities(createdProduct.id, compatibilities);
+      }
       
       // Handle image upload if file is provided
       let imageUrl = null;
@@ -7048,13 +7067,67 @@ export function registerRoutes(app: Express): Server {
         await storage.updateProduct(createdProduct.id, { imageUrl });
       }
       
-      res.json({ ...createdProduct, imageUrl: imageUrl || createdProduct.imageUrl, specs: createdSpecs });
+      // Fetch device compatibilities to include in response
+      const deviceCompatibilities = await storage.listProductCompatibilities(createdProduct.id);
+      
+      res.json({ ...createdProduct, imageUrl: imageUrl || createdProduct.imageUrl, specs: createdSpecs, deviceCompatibilities });
     } catch (error: any) {
       res.status(500).send(error.message);
     }
   });
   
-  // Update accessory specs
+  // Update accessory (product, specs, and device compatibilities)
+  app.patch("/api/accessories/:productId", requireAuth, requireRole("admin", "reseller", "reseller_collaborator"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const existingProduct = await storage.getProduct(req.params.productId);
+      if (!existingProduct) return res.status(404).send("Product not found");
+      
+      // Check ownership for reseller (admin can edit all)
+      const effectiveResellerId = req.user.role === 'reseller_collaborator' ? req.user.resellerId : req.user.id;
+      if (req.user.role === 'reseller' || req.user.role === 'reseller_collaborator') {
+        // Resellers can edit products they created or that are assigned to them via product_prices
+        const isCreator = existingProduct.createdBy === effectiveResellerId;
+        if (!isCreator) {
+          // Check if product is assigned to this reseller
+          const assignedPrice = await storage.getProductPriceForReseller(req.params.productId, effectiveResellerId!);
+          if (!assignedPrice) {
+            return res.status(403).send("Access denied");
+          }
+        }
+      }
+      
+      const { product, specs, compatibleDeviceModelIds } = req.body;
+      
+      // Update product fields if provided
+      if (product) {
+        await storage.updateProduct(req.params.productId, product);
+      }
+      
+      // Update specs if provided
+      let updatedSpecs = null;
+      if (specs) {
+        updatedSpecs = await storage.updateAccessorySpecs(req.params.productId, specs);
+      }
+      
+      // Update device compatibilities if provided
+      if (compatibleDeviceModelIds !== undefined) {
+        const compatibilities = compatibleDeviceModelIds.map((deviceModelId: string) => ({ deviceModelId }));
+        await storage.setProductCompatibilities(req.params.productId, compatibilities);
+      }
+      
+      // Fetch updated data
+      const updatedProduct = await storage.getProduct(req.params.productId);
+      const deviceCompatibilities = await storage.listProductCompatibilities(req.params.productId);
+      
+      res.json({ ...updatedProduct, specs: updatedSpecs, deviceCompatibilities });
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+  
+  // Update accessory specs only (legacy endpoint)
   app.patch("/api/accessories/:productId/specs", requireAuth, requireRole("admin", "reseller", "reseller_collaborator"), async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
