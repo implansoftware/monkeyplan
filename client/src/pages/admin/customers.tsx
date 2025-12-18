@@ -164,7 +164,7 @@ export default function AdminCustomers() {
     customer: User; 
     billingData: BillingData | null;
   }>({
-    queryKey: ["/api/customers", editingCustomer?.id],
+    queryKey: [`/api/customers/${editingCustomer?.id}`],
     enabled: !!editingCustomer,
   });
 
@@ -199,7 +199,7 @@ export default function AdminCustomers() {
   };
 
   const handleSaveEdit = async () => {
-    if (!editingCustomer) return;
+    if (!editingCustomer || isLoadingDetails || !customerDetails) return;
     
     try {
       await updateCustomerMutation.mutateAsync({
@@ -229,6 +229,7 @@ export default function AdminCustomers() {
         },
       });
       
+      queryClient.invalidateQueries({ queryKey: [`/api/customers/${editingCustomer.id}`] });
       setEditingCustomer(null);
       toast({ title: "Cliente aggiornato con successo" });
     } catch (error) {
