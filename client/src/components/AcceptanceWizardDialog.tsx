@@ -63,6 +63,8 @@ const acceptanceWizardSchema = z.object({
   deviceType: z.string().min(1, "Seleziona il tipo di dispositivo"),
   deviceModel: z.string().optional(),
   brand: z.string().optional(),
+  deviceModelId: z.string().optional(), // FK to device catalog
+  deviceBrandId: z.string().optional(), // FK to device brand catalog
   issueDescription: z.string().min(1, "Seleziona almeno un problema"),
   otherIssueDescription: z.string().optional(),
   notes: z.string().optional(),
@@ -400,6 +402,8 @@ export function AcceptanceWizardDialog({
       deviceType: "",
       deviceModel: "",
       brand: "",
+      deviceModelId: "",
+      deviceBrandId: "",
       issueDescription: "",
       otherIssueDescription: "",
       notes: "",
@@ -1254,6 +1258,8 @@ export function AcceptanceWizardDialog({
                 setSelectedTypeId(type?.id || "");
                 form.setValue("brand", "");
                 form.setValue("deviceModel", "");
+                form.setValue("deviceBrandId", "");
+                form.setValue("deviceModelId", "");
                 form.setValue("issueDescription", "");
                 form.setValue("otherIssueDescription", "");
                 form.setValue("acceptance.aestheticNotes", "");
@@ -1303,12 +1309,15 @@ export function AcceptanceWizardDialog({
                 if (name === "__all__") {
                   field.onChange("");
                   setSelectedBrandId("");
+                  form.setValue("deviceBrandId", "");
                 } else {
                   field.onChange(name);
                   const brand = deviceBrands.find(b => b.name === name);
                   setSelectedBrandId(brand?.id || "");
+                  form.setValue("deviceBrandId", brand?.id || "");
                 }
                 form.setValue("deviceModel", "");
+                form.setValue("deviceModelId", "");
               }} 
               value={field.value || "__all__"}
               disabled={!selectedTypeId}
@@ -1351,9 +1360,17 @@ export function AcceptanceWizardDialog({
                     onValueChange={(value) => {
                       if (value === "__other__") {
                         field.onChange("__other__");
+                        form.setValue("deviceModelId", "");
                       } else {
                         setCustomModelInput("");
                         field.onChange(value);
+                        // Find model by name and set the ID
+                        const selectedModel = filteredModels.find(m => m.modelName === value);
+                        form.setValue("deviceModelId", selectedModel?.id || "");
+                        // Also set brand ID if model has it and brandId is not already set
+                        if (selectedModel?.brandId && !form.getValues("deviceBrandId")) {
+                          form.setValue("deviceBrandId", selectedModel.brandId);
+                        }
                       }
                     }} 
                     value={selectValue}

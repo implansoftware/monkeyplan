@@ -6418,6 +6418,7 @@ export function registerRoutes(app: Express): Server {
         imeiNotPresent: true,
         serialOnly: true,
         brand: true,
+        deviceModelId: true, // FK to device catalog
       });
       
       const orderSchema = hasAcceptance ? acceptanceOrderSchema : basicOrderSchema;
