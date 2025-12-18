@@ -9687,46 +9687,46 @@ export function registerRoutes(app: Express): Server {
       doc.moveDown();
       
       // Customer info
-      doc.fontSize(12).font('Helvetica-Bold').text('DATI CLIENTE');
+      doc.fontSize(12).font('Helvetica-Bold').text('DATI CLIENTE', { align: 'left' });
       doc.fontSize(10).font('Helvetica');
       if (customer) {
-        doc.text(`Nome: ${customer.fullName || customer.username || ''}`);
-        if (customer.email) doc.text(`Email: ${customer.email}`);
-        if (customer.phone) doc.text(`Telefono: ${customer.phone}`);
+        doc.text(`Nome: ${customer.fullName || customer.username || ''}`, { align: 'left' });
+        if (customer.email) doc.text(`Email: ${customer.email}`, { align: 'left' });
+        if (customer.phone) doc.text(`Telefono: ${customer.phone}`, { align: 'left' });
       }
       doc.moveDown();
       
       // Device info
-      doc.fontSize(12).font('Helvetica-Bold').text('DISPOSITIVO RIPARATO');
+      doc.fontSize(12).font('Helvetica-Bold').text('DISPOSITIVO RIPARATO', { align: 'left' });
       doc.fontSize(10).font('Helvetica');
-      doc.text(`Tipo: ${repairOrder.deviceType || 'N/A'}`);
-      doc.text(`Modello: ${repairOrder.deviceModel || 'N/A'}`);
-      if (acceptance?.imei) doc.text(`IMEI/Seriale: ${acceptance.imei}`);
-      if (repairOrder.issueDescription) doc.text(`Problema originale: ${repairOrder.issueDescription}`);
+      doc.text(`Tipo: ${repairOrder.deviceType || 'N/A'}`, { align: 'left' });
+      doc.text(`Modello: ${repairOrder.deviceModel || 'N/A'}`, { align: 'left' });
+      if (acceptance?.imei) doc.text(`IMEI/Seriale: ${acceptance.imei}`, { align: 'left' });
+      if (repairOrder.issueDescription) doc.text(`Problema originale: ${repairOrder.issueDescription}`, { align: 'left' });
       doc.moveDown();
       
       // Repair summary
-      doc.fontSize(12).font('Helvetica-Bold').text('RIEPILOGO RIPARAZIONE');
+      doc.fontSize(12).font('Helvetica-Bold').text('RIEPILOGO RIPARAZIONE', { align: 'left' });
       doc.fontSize(10).font('Helvetica');
-      if (diagnostics?.diagnosis) doc.text(`Diagnosi: ${diagnostics.diagnosis}`);
+      if (diagnostics?.diagnosis) doc.text(`Diagnosi: ${diagnostics.diagnosis}`, { align: 'left' });
       if (quote) {
-        doc.text(`Totale Parti: € ${quote.partsTotal?.toFixed(2) || '0.00'}`);
-        doc.text(`Totale Manodopera: € ${quote.laborTotal?.toFixed(2) || '0.00'}`);
-        doc.font('Helvetica-Bold').text(`TOTALE: € ${quote.totalAmount?.toFixed(2) || '0.00'}`);
+        doc.text(`Totale Parti: € ${quote.partsTotal?.toFixed(2) || '0.00'}`, { align: 'left' });
+        doc.text(`Totale Manodopera: € ${quote.laborTotal?.toFixed(2) || '0.00'}`, { align: 'left' });
+        doc.font('Helvetica-Bold').text(`TOTALE: € ${quote.totalAmount?.toFixed(2) || '0.00'}`, { align: 'left' });
         doc.font('Helvetica');
       }
       doc.moveDown();
       
       // Delivery info
-      doc.fontSize(12).font('Helvetica-Bold').text('DATI CONSEGNA');
+      doc.fontSize(12).font('Helvetica-Bold').text('DATI CONSEGNA', { align: 'left' });
       doc.fontSize(10).font('Helvetica');
-      doc.text(`Ritirato da: ${delivery.deliveredTo}`);
+      doc.text(`Ritirato da: ${delivery.deliveredTo}`, { align: 'left' });
       const methodLabels: Record<string, string> = {
         'in_store': 'Ritiro in Negozio',
         'courier': 'Spedizione Corriere',
         'pickup': 'Ritiro Cliente'
       };
-      doc.text(`Metodo: ${methodLabels[delivery.deliveryMethod] || delivery.deliveryMethod}`);
+      doc.text(`Metodo: ${methodLabels[delivery.deliveryMethod] || delivery.deliveryMethod}`, { align: 'left' });
       if (delivery.idDocumentType) {
         const docTypeLabels: Record<string, string> = {
           'id_card': "Carta d'Identità",
@@ -9734,9 +9734,9 @@ export function registerRoutes(app: Express): Server {
           'passport': 'Passaporto',
           'other': 'Altro'
         };
-        doc.text(`Documento: ${docTypeLabels[delivery.idDocumentType] || delivery.idDocumentType} - ${delivery.idDocumentNumber || ''}`);
+        doc.text(`Documento: ${docTypeLabels[delivery.idDocumentType] || delivery.idDocumentType} - ${delivery.idDocumentNumber || ''}`, { align: 'left' });
       }
-      if (delivery.notes) doc.text(`Note: ${delivery.notes}`);
+      if (delivery.notes) doc.text(`Note: ${delivery.notes}`, { align: 'left' });
       doc.moveDown(2);
       
       // Signature areas
