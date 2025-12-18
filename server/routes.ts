@@ -10299,12 +10299,13 @@ export function registerRoutes(app: Express): Server {
         }
       }
       
-      // Format currency helper
-      const formatCurrency = (cents: number) => {
+      // Format currency helper (Italian format: € 1.234,56)
+      const formatCurrency = (amount: number | null | undefined) => {
+        if (amount == null) return '€ 0,00';
         return new Intl.NumberFormat('it-IT', {
           style: 'currency',
           currency: 'EUR',
-        }).format(cents / 100);
+        }).format(amount);
       };
       
       // Generate PDF
