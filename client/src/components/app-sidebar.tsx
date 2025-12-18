@@ -163,6 +163,8 @@ const menuItems = {
   customer: [
     { title: "Dashboard", url: "/customer", icon: LayoutDashboard, group: "Principale" },
     { title: "Riparazioni", url: "/customer/repairs", icon: Wrench, group: "Le mie riparazioni" },
+    { title: "Ordini", url: "/customer/orders", icon: ShoppingCart, group: "Acquisti" },
+    { title: "Resi", url: "/customer/sales-returns", icon: RotateCcw, group: "Acquisti" },
     { title: "Ticket", url: "/customer/tickets", icon: Ticket, group: "Assistenza" },
   ],
 };

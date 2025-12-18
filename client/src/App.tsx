@@ -130,6 +130,7 @@ import CustomerTickets from "@/pages/customer/tickets";
 import CustomerTicketDetail from "@/pages/customer/ticket-detail";
 import CustomerInvoices from "@/pages/customer/invoices";
 import CustomerOrders from "@/pages/customer/orders";
+import CustomerSalesReturns from "@/pages/customer/sales-returns";
 
 // Shop pages (public)
 import ShopCatalog from "@/pages/shop/catalog";
@@ -264,6 +265,7 @@ function Router() {
       <ProtectedRoute path="/customer/invoices" component={CustomerInvoices} />
       <ProtectedRoute path="/customer/orders/:id" component={CustomerOrders} />
       <ProtectedRoute path="/customer/orders" component={CustomerOrders} />
+      <ProtectedRoute path="/customer/sales-returns" component={CustomerSalesReturns} />
       
       {/* Shop routes (public) */}
       <Route path="/shop/:resellerId" component={ShopCatalog} />
