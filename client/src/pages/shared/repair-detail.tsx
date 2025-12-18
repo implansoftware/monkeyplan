@@ -1210,6 +1210,53 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
                 </div>
               )}
 
+              {/* Customer appointment booking section - visible only to customers when repair is ready for pickup */}
+              {user?.role === 'customer' && repair.status === 'pronto_ritiro' && (
+                <div className="mt-4 pt-4 border-t">
+                  <div className="bg-green-50 dark:bg-green-950 rounded-lg p-4 space-y-4">
+                    <div className="flex items-center gap-2">
+                      <PackageCheck className="h-5 w-5 text-green-600 dark:text-green-400" />
+                      <p className="font-medium text-green-800 dark:text-green-200">
+                        Il tuo dispositivo è pronto per il ritiro!
+                      </p>
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      Prenota un appuntamento per venire a ritirare il tuo dispositivo presso il centro di riparazione.
+                    </p>
+                    {appointment ? (
+                      <div className="bg-white dark:bg-gray-900 rounded-lg p-3 border space-y-2">
+                        <div className="flex items-center gap-2 text-sm">
+                          <CalendarCheck className="h-4 w-4 text-primary" />
+                          <span className="font-medium">Appuntamento prenotato</span>
+                        </div>
+                        <div className="text-sm">
+                          <p>Data: <strong>{appointment.date}</strong></p>
+                          <p>Ora: <strong>{appointment.startTime} - {appointment.endTime}</strong></p>
+                        </div>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setAppointmentDialogOpen(true)}
+                          className="w-full mt-2"
+                          data-testid="button-customer-manage-appointment"
+                        >
+                          Gestisci Appuntamento
+                        </Button>
+                      </div>
+                    ) : (
+                      <Button
+                        onClick={() => setAppointmentDialogOpen(true)}
+                        className="w-full"
+                        data-testid="button-customer-book-appointment"
+                      >
+                        <CalendarCheck className="mr-2 h-4 w-4" />
+                        Prenota Appuntamento per il Ritiro
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              )}
+
               <div className="mt-4 pt-4 border-t">
                 <p className="text-xs text-muted-foreground mb-3">DOCUMENTI</p>
                 <div className="flex flex-wrap gap-3">
