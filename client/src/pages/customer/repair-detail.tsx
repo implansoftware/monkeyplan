@@ -71,12 +71,11 @@ interface RepairLog {
 interface StateHistoryEntry {
   id: string;
   repairOrderId: string;
-  fromStatus: string | null;
-  toStatus: string;
-  changedBy: string;
-  notes: string | null;
-  createdAt: string;
-  changedByName?: string;
+  status: string;
+  enteredAt: string;
+  exitedAt: string | null;
+  durationMinutes: number | null;
+  changedBy: string | null;
 }
 
 
@@ -784,26 +783,30 @@ export default function CustomerRepairDetail() {
           <CardContent>
             <div className="space-y-4">
               {stateHistory.map((entry, index) => {
-                const toConfig = getStatusConfig(entry.toStatus);
+                const statusConfig = getStatusConfig(entry.status);
                 return (
                   <div key={entry.id} className="flex gap-4">
                     <div className="flex flex-col items-center">
-                      <div className={`w-3 h-3 rounded-full ${toConfig.bgColor} border-2 ${toConfig.borderColor}`} />
+                      <div className={`w-3 h-3 rounded-full ${statusConfig.bgColor} border-2 ${statusConfig.borderColor}`} />
                       {index < stateHistory.length - 1 && (
                         <div className="w-0.5 flex-1 bg-muted mt-1" />
                       )}
                     </div>
                     <div className="flex-1 pb-4">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <Badge className={`${toConfig.bgColor} ${toConfig.color} ${toConfig.borderColor} border text-xs`}>
-                          {toConfig.label}
+                        <Badge className={`${statusConfig.bgColor} ${statusConfig.color} ${statusConfig.borderColor} border text-xs`}>
+                          {statusConfig.label}
                         </Badge>
                         <span className="text-xs text-muted-foreground">
-                          {entry.createdAt ? format(new Date(entry.createdAt), "d MMM yyyy, HH:mm", { locale: it }) : "-"}
+                          {entry.enteredAt ? format(new Date(entry.enteredAt), "d MMM yyyy, HH:mm", { locale: it }) : "-"}
                         </span>
                       </div>
-                      {entry.notes && (
-                        <p className="text-sm text-muted-foreground mt-1">{entry.notes}</p>
+                      {entry.durationMinutes && (
+                        <p className="text-sm text-muted-foreground mt-1">
+                          Durata: {entry.durationMinutes < 60 
+                            ? `${entry.durationMinutes} min` 
+                            : `${Math.floor(entry.durationMinutes / 60)}h ${entry.durationMinutes % 60}min`}
+                        </p>
                       )}
                     </div>
                   </div>
