@@ -9720,8 +9720,13 @@ export function registerRoutes(app: Express): Server {
       if (req.user.role === 'customer' && repairOrder.customerId !== req.user.id) {
         return res.status(403).send("Access denied");
       }
-      if (req.user.role === 'reseller' && repairOrder.resellerId !== req.user.id) {
-        return res.status(403).send("Access denied");
+      if (req.user.role === 'reseller') {
+        let hasAccess = repairOrder.resellerId === req.user.id;
+        if (!hasAccess && repairOrder.customerId) {
+          const customerForAccess = await storage.getUser(repairOrder.customerId);
+          hasAccess = !!(customerForAccess && customerForAccess.resellerId === req.user.id);
+        }
+        if (!hasAccess) return res.status(403).send("Access denied");
       }
       if (req.user.role === 'repair_center' && repairOrder.repairCenterId !== req.user.repairCenterId) {
         return res.status(403).send("Access denied");
