@@ -1111,11 +1111,19 @@ export const repairDelivery = pgTable("repair_delivery", {
   repairOrderId: varchar("repair_order_id").notNull().unique().references(() => repairOrders.id),
   deliveredTo: text("delivered_to").notNull(), // Nome di chi ritira
   deliveryMethod: text("delivery_method").notNull().default("in_store"), // in_store, courier, pickup
-  signatureData: text("signature_data"), // Base64 firma (opzionale)
+  signatureData: text("signature_data"), // Base64 firma (legacy - opzionale)
   idDocumentType: text("id_document_type"), // Tipo documento identità
   idDocumentNumber: text("id_document_number"), // Numero documento
   idDocumentPhoto: text("id_document_photo"), // URL foto documento identità
   notes: text("notes"),
+  // Firma Cliente
+  customerSignature: text("customer_signature"), // Base64 PNG della firma cliente
+  customerSignerName: text("customer_signer_name"), // Nome di chi ha firmato
+  customerSignedAt: timestamp("customer_signed_at"), // Quando ha firmato
+  // Firma Tecnico/Rivenditore
+  technicianSignature: text("technician_signature"), // Base64 PNG della firma tecnico
+  technicianSignerName: text("technician_signer_name"), // Nome del tecnico
+  technicianSignedAt: timestamp("technician_signed_at"), // Quando ha firmato
   deliveredBy: varchar("delivered_by").notNull(), // ID utente che ha consegnato
   deliveredAt: timestamp("delivered_at").notNull().defaultNow(),
 });
