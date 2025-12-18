@@ -32,9 +32,11 @@ import {
   ChevronRight,
   ExternalLink,
   CreditCard,
+  Network,
 } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { useState, Fragment } from "react";
+import { useState, Fragment, useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
 import {
   Sidebar,
   SidebarContent,
@@ -224,8 +226,41 @@ export function AppSidebar() {
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
   const [openSuppliers, setOpenSuppliers] = useState<Record<string, boolean>>({});
 
-  const items = user ? (menuItems[user.role as keyof typeof menuItems] || []) : [];
   const isReseller = user?.role === "reseller";
+  const isFranchisingOrGdo = user?.resellerCategory === "franchising" || user?.resellerCategory === "gdo";
+
+  // Query sub-resellers for franchising/gdo resellers
+  const { data: subResellers = [] } = useQuery<any[]>({
+    queryKey: ["/api/reseller/sub-resellers"],
+    enabled: isReseller && isFranchisingOrGdo,
+  });
+
+  const hasSubResellers = subResellers.length > 0;
+
+  // Build menu items dynamically based on sub-resellers
+  const items = useMemo(() => {
+    const baseItems = user ? (menuItems[user.role as keyof typeof menuItems] || []) : [];
+    
+    if (isReseller && hasSubResellers) {
+      // Add Sub-Reseller item after Team in "Clienti & Team" group
+      const teamIndex = baseItems.findIndex(item => item.title === "Team");
+      if (teamIndex !== -1) {
+        const subResellerItem = { 
+          title: "Sub-Reseller", 
+          url: "/reseller/sub-resellers", 
+          icon: Network, 
+          group: "Clienti & Team" 
+        };
+        return [
+          ...baseItems.slice(0, teamIndex + 1),
+          subResellerItem,
+          ...baseItems.slice(teamIndex + 1),
+        ];
+      }
+    }
+    
+    return baseItems;
+  }, [user, isReseller, hasSubResellers]);
   
   const groupedItems = items.reduce((acc, item) => {
     if (!acc[item.group]) {

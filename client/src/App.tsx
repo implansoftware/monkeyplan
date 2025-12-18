@@ -109,6 +109,7 @@ import ResellerRepairCenterSchedules from "@/pages/reseller/repair-center-schedu
 import ResellerAppointments from "@/pages/reseller/appointments";
 import ResellerServiceCatalog from "@/pages/reseller/service-catalog";
 import ResellerTeam from "@/pages/reseller/team";
+import ResellerSubResellers from "@/pages/reseller/sub-resellers";
 import ResellerDeviceCatalog from "@/pages/reseller/device-catalog";
 import ResellerRepairDetail from "@/pages/reseller/repair-detail";
 import ResellerSmartphoneCatalog from "@/pages/reseller/smartphone-catalog";
@@ -237,6 +238,7 @@ function Router() {
       <ProtectedRoute path="/reseller/mobilesentrix/catalog" component={ResellerMobilesentrixCatalog} />
       <ProtectedRoute path="/reseller/trovausati/settings" component={ResellerTrovausatiSettings} />
       <ProtectedRoute path="/reseller/team" component={ResellerTeam} />
+      <ProtectedRoute path="/reseller/sub-resellers" component={ResellerSubResellers} />
       <ProtectedRoute path="/reseller/device-catalog" component={ResellerDeviceCatalog} />
       <ProtectedRoute path="/reseller/smartphone-catalog" component={ResellerSmartphoneCatalog} />
       <ProtectedRoute path="/reseller/accessory-catalog" component={ResellerAccessoryCatalog} />

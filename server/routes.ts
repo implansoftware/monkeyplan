@@ -2759,6 +2759,45 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Get sub-resellers with enriched data (customers count, repair centers count)
+  app.get("/api/reseller/sub-resellers", requireRole("reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      // Only franchising/gdo resellers can see sub-resellers
+      if (req.user.resellerCategory !== 'franchising' && req.user.resellerCategory !== 'gdo') {
+        return res.json([]);
+      }
+      
+      const childResellers = await storage.getChildResellers(req.user.id);
+      
+      // Enrich with counts
+      const enrichedResellers = await Promise.all(
+        childResellers.map(async (reseller) => {
+          const customers = await storage.listCustomers({ resellerId: reseller.id });
+          const repairCenters = await storage.getRepairCentersForReseller(reseller.id);
+          
+          return {
+            id: reseller.id,
+            fullName: reseller.fullName,
+            email: reseller.email,
+            username: reseller.username,
+            phone: reseller.phone,
+            resellerCategory: reseller.resellerCategory,
+            isActive: reseller.isActive,
+            createdAt: reseller.createdAt,
+            customersCount: customers.length,
+            repairCentersCount: repairCenters.length,
+          };
+        })
+      );
+      
+      res.json(enrichedResellers);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
   // Set active context (switch to view sub-reseller or repair center data)
   app.post("/api/reseller/context", requireRole("reseller"), async (req, res) => {
     try {
