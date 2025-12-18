@@ -10631,7 +10631,7 @@ export function registerRoutes(app: Express): Server {
       }
       
       const allowedUpdates = req.user.role === 'admin' 
-        ? ['username', 'email', 'fullName', 'role', 'isActive', 'repairCenterId', 'resellerCategory', 'resellerId'] as const
+        ? ['username', 'email', 'fullName', 'role', 'isActive', 'repairCenterId', 'resellerCategory', 'resellerId', 'parentResellerId'] as const
         : ['email', 'fullName'] as const; // Non-admin can only update own profile fields
       
       const updates: any = {};
@@ -10667,6 +10667,21 @@ export function registerRoutes(app: Express): Server {
           const reseller = await storage.getUser(updates.resellerId);
           if (!reseller || reseller.role !== 'reseller') {
             return res.status(400).send("Invalid reseller ID");
+          }
+        }
+      }
+      
+      // Validate parentResellerId if provided (for reseller hierarchy)
+      if (updates.parentResellerId !== undefined) {
+        // Allow null to unassign parent reseller
+        if (updates.parentResellerId !== null) {
+          const parentReseller = await storage.getUser(updates.parentResellerId);
+          if (!parentReseller || parentReseller.role !== 'reseller') {
+            return res.status(400).send("Invalid parent reseller ID");
+          }
+          // Prevent self-reference
+          if (updates.parentResellerId === req.params.id) {
+            return res.status(400).send("A reseller cannot be its own parent");
           }
         }
       }
