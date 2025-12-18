@@ -8689,6 +8689,11 @@ export function registerRoutes(app: Express): Server {
       // Role-based access control for viewing test checklist
       if (req.user.role === 'admin') {
         // Admin can view test checklist for any order
+      } else if (req.user.role === 'customer') {
+        // Customer can view test checklist for their own orders
+        if (repairOrder.customerId !== req.user.id) {
+          return res.status(403).send("Access denied");
+        }
       } else if (req.user.role === 'repair_center') {
         if (repairOrder.repairCenterId !== req.user.repairCenterId) {
           return res.status(403).send("Access denied");

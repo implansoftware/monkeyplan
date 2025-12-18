@@ -341,6 +341,37 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
     staleTime: 60000,
   });
 
+  // Test checklist query
+  const { data: testChecklist } = useQuery<{
+    displayTest?: boolean;
+    touchTest?: boolean;
+    batteryTest?: boolean;
+    audioTest?: boolean;
+    cameraTest?: boolean;
+    connectivityTest?: boolean;
+    buttonsTest?: boolean;
+    sensorsTest?: boolean;
+    chargingTest?: boolean;
+    softwareTest?: boolean;
+    overallResult?: boolean;
+    notes?: string;
+    testedAt?: string;
+  } | null>({
+    queryKey: ["/api/repair-orders", repairOrderId, "test-checklist"],
+    queryFn: async () => {
+      const response = await fetch(`/api/repair-orders/${repairOrderId}/test-checklist`, {
+        credentials: "include",
+      });
+      if (!response.ok) {
+        if (response.status === 404 || response.status === 403) return null;
+        return null;
+      }
+      return response.json();
+    },
+    enabled: !!repairOrderId,
+    retry: false,
+  });
+
   const updateQuoteStatusMutation = useMutation({
     mutationFn: async (status: string) => {
       return await apiRequest("PATCH", `/api/repair-orders/${repairOrderId}/quote`, { status });
@@ -1422,6 +1453,67 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
                   <div className="pt-2 border-t">
                     <span className="text-sm text-muted-foreground">Data Diagnosi</span>
                     <p className="font-medium">{format(new Date(diagnosis.diagnosedAt), "dd/MM/yyyy HH:mm", { locale: it })}</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
+
+          {testChecklist && (
+            <Card data-testid="card-test-checklist">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <ClipboardCheck className="h-4 w-4" />
+                  Dati Collaudo
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="text-sm font-medium">Esito Complessivo:</span>
+                  <Badge variant={testChecklist.overallResult ? 'default' : 'destructive'}>
+                    {testChecklist.overallResult ? 'Superato' : 'Non Superato'}
+                  </Badge>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-2">
+                  {[
+                    { key: 'displayTest', label: 'Display' },
+                    { key: 'touchTest', label: 'Touch' },
+                    { key: 'batteryTest', label: 'Batteria' },
+                    { key: 'audioTest', label: 'Audio' },
+                    { key: 'cameraTest', label: 'Fotocamera' },
+                    { key: 'connectivityTest', label: 'Connettività' },
+                    { key: 'buttonsTest', label: 'Pulsanti' },
+                    { key: 'sensorsTest', label: 'Sensori' },
+                    { key: 'chargingTest', label: 'Ricarica' },
+                    { key: 'softwareTest', label: 'Software' },
+                  ].map(({ key, label }) => {
+                    const value = testChecklist[key as keyof typeof testChecklist];
+                    if (value === undefined || value === null) return null;
+                    return (
+                      <div key={key} className="flex items-center justify-between text-sm bg-muted/50 rounded px-2 py-1">
+                        <span>{label}</span>
+                        {value ? (
+                          <CheckCircle2 className="h-4 w-4 text-green-500" />
+                        ) : (
+                          <XCircle className="h-4 w-4 text-red-500" />
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {testChecklist.notes && (
+                  <div className="pt-2 border-t">
+                    <span className="text-sm text-muted-foreground">Note Collaudo</span>
+                    <p className="text-sm whitespace-pre-wrap mt-1">{testChecklist.notes}</p>
+                  </div>
+                )}
+
+                {testChecklist.testedAt && (
+                  <div className="pt-2 border-t">
+                    <span className="text-sm text-muted-foreground">Data Collaudo</span>
+                    <p className="font-medium">{format(new Date(testChecklist.testedAt), "dd/MM/yyyy HH:mm", { locale: it })}</p>
                   </div>
                 )}
               </CardContent>
