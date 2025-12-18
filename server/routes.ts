@@ -10415,7 +10415,7 @@ export function registerRoutes(app: Express): Server {
       }
       
       // Totals section
-      doc.fontSize(12).font('Helvetica-Bold').text('RIEPILOGO COSTI');
+      doc.fontSize(12).font('Helvetica-Bold').text('RIEPILOGO COSTI', { align: 'left' });
       doc.moveDown(0.5);
       
       let currentTotalsY = doc.y;
