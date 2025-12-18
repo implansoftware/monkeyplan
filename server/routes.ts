@@ -8906,6 +8906,12 @@ export function registerRoutes(app: Express): Server {
         idDocumentPhoto: req.body.idDocumentPhoto,
         notes: req.body.notes,
         deliveredBy: req.user.id,
+        customerSignature: req.body.customerSignature,
+        customerSignerName: req.body.customerSignerName,
+        customerSignedAt: req.body.customerSignature ? new Date() : null,
+        technicianSignature: req.body.technicianSignature,
+        technicianSignerName: req.body.technicianSignerName,
+        technicianSignedAt: req.body.technicianSignature ? new Date() : null,
       });
       
       // Update status to consegnato
@@ -9735,10 +9741,43 @@ export function registerRoutes(app: Express): Server {
       
       // Signature areas
       doc.fontSize(10).font('Helvetica');
-      doc.text('_______________________________', 60);
-      doc.text('Firma del Cliente', 60);
-      doc.text('_______________________________', 320);
-      doc.text('Firma del Tecnico', 320);
+      const signatureY = doc.y;
+      
+      // Customer signature
+      doc.text('Firma del Cliente:', 60, signatureY);
+      if (delivery.customerSignature) {
+        try {
+          const customerSigBuffer = Buffer.from(delivery.customerSignature.replace(/^data:image\/\w+;base64,/, ''), 'base64');
+          doc.image(customerSigBuffer, 60, signatureY + 15, { width: 150, height: 60 });
+          doc.text(delivery.customerSignerName || delivery.deliveredTo, 60, signatureY + 80);
+          if (delivery.customerSignedAt) {
+            doc.fontSize(8).text(`Firmato: ${new Date(delivery.customerSignedAt).toLocaleString('it-IT')}`, 60, signatureY + 95);
+          }
+        } catch (e) {
+          doc.text('_______________________________', 60, signatureY + 15);
+        }
+      } else {
+        doc.text('_______________________________', 60, signatureY + 15);
+      }
+      
+      // Technician signature
+      doc.fontSize(10).text('Firma del Tecnico:', 320, signatureY);
+      if (delivery.technicianSignature) {
+        try {
+          const techSigBuffer = Buffer.from(delivery.technicianSignature.replace(/^data:image\/\w+;base64,/, ''), 'base64');
+          doc.image(techSigBuffer, 320, signatureY + 15, { width: 150, height: 60 });
+          doc.text(delivery.technicianSignerName || '', 320, signatureY + 80);
+          if (delivery.technicianSignedAt) {
+            doc.fontSize(8).text(`Firmato: ${new Date(delivery.technicianSignedAt).toLocaleString('it-IT')}`, 320, signatureY + 95);
+          }
+        } catch (e) {
+          doc.text('_______________________________', 320, signatureY + 15);
+        }
+      } else {
+        doc.text('_______________________________', 320, signatureY + 15);
+      }
+      
+      doc.y = signatureY + 110;
       doc.moveDown(2);
       
       // Footer

@@ -31,16 +31,19 @@ import {
 } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { PackageCheck, Store, Truck, UserCheck, CheckCircle, Camera, Download, Image, X } from "lucide-react";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { PackageCheck, Store, Truck, UserCheck, CheckCircle, Camera, Download, X } from "lucide-react";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
-import type { RepairDelivery } from "@shared/schema";
+import { SignaturePad } from "./SignaturePad";
+import type { RepairDelivery, User } from "@shared/schema";
 
 interface DeliveryDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   repairOrderId: string;
   onSuccess?: () => void;
+  currentUser?: User | null;
 }
 
 const deliverySchema = z.object({
@@ -53,17 +56,32 @@ const deliverySchema = z.object({
 
 type DeliveryFormData = z.infer<typeof deliverySchema>;
 
+interface SignatureData {
+  signature: string | null;
+  signerName: string;
+}
+
 export function DeliveryDialog({
   open,
   onOpenChange,
   repairOrderId,
   onSuccess,
+  currentUser,
 }: DeliveryDialogProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [documentPhotoPreview, setDocumentPhotoPreview] = useState<string | null>(null);
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  const [customerSignature, setCustomerSignature] = useState<SignatureData>({
+    signature: null,
+    signerName: "",
+  });
+  const [technicianSignature, setTechnicianSignature] = useState<SignatureData>({
+    signature: null,
+    signerName: currentUser ? `${currentUser.firstName || ""} ${currentUser.lastName || ""}`.trim() : "",
+  });
 
   const { data: existingDelivery } = useQuery<RepairDelivery | null>({
     queryKey: ["/api/repair-orders", repairOrderId, "delivery"],
@@ -164,6 +182,10 @@ export function DeliveryDialog({
         idDocumentType: data.idDocumentType || null,
         idDocumentNumber: data.idDocumentNumber || null,
         idDocumentPhoto: data.idDocumentPhoto || null,
+        customerSignature: customerSignature.signature,
+        customerSignerName: customerSignature.signerName || data.deliveredTo,
+        technicianSignature: technicianSignature.signature,
+        technicianSignerName: technicianSignature.signerName,
       });
     },
     onSuccess: () => {
@@ -315,7 +337,7 @@ export function DeliveryDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <PackageCheck className="h-5 w-5" />
@@ -326,6 +348,7 @@ export function DeliveryDialog({
           </DialogDescription>
         </DialogHeader>
 
+        <ScrollArea className="flex-1 pr-4">
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField
@@ -479,6 +502,29 @@ export function DeliveryDialog({
               </p>
             </div>
 
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <SignaturePad
+                title="Firma Cliente"
+                signerName={customerSignature.signerName || form.watch("deliveredTo")}
+                onSignatureChange={(sig, name) => {
+                  setCustomerSignature({
+                    signature: sig,
+                    signerName: name || form.watch("deliveredTo") || "",
+                  });
+                }}
+              />
+              <SignaturePad
+                title="Firma Tecnico"
+                signerName={technicianSignature.signerName}
+                onSignatureChange={(sig, name) => {
+                  setTechnicianSignature({
+                    signature: sig,
+                    signerName: name || technicianSignature.signerName,
+                  });
+                }}
+              />
+            </div>
+
             <div className="flex justify-end gap-3">
               <Button
                 type="button"
@@ -498,6 +544,7 @@ export function DeliveryDialog({
             </div>
           </form>
         </Form>
+        </ScrollArea>
       </DialogContent>
     </Dialog>
   );
