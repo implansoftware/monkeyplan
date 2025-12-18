@@ -9,6 +9,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import { Search, Pencil, Trash2, Download, Users, CalendarIcon, UserPlus, Building2, Eye } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -25,6 +28,8 @@ export default function AdminCustomers() {
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
   const [isExporting, setIsExporting] = useState(false);
   const [wizardOpen, setWizardOpen] = useState(false);
+  const [editingCustomer, setEditingCustomer] = useState<User | null>(null);
+  const [editFormData, setEditFormData] = useState({ fullName: "", email: "", resellerId: "", isActive: true });
   const { toast } = useToast();
 
   const { data: customers = [], isLoading } = useQuery<User[]>({
@@ -88,6 +93,44 @@ export default function AdminCustomers() {
       toast({ title: "Cliente eliminato" });
     },
   });
+
+  const updateCustomerMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: Partial<User> }) => {
+      const res = await apiRequest("PATCH", `/api/users/${id}`, data);
+      return await res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/customers"] });
+      setEditingCustomer(null);
+      toast({ title: "Cliente aggiornato con successo" });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Errore", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const handleEditCustomer = (customer: User) => {
+    setEditingCustomer(customer);
+    setEditFormData({
+      fullName: customer.fullName,
+      email: customer.email,
+      resellerId: customer.resellerId || "",
+      isActive: customer.isActive,
+    });
+  };
+
+  const handleSaveEdit = () => {
+    if (!editingCustomer) return;
+    updateCustomerMutation.mutate({
+      id: editingCustomer.id,
+      data: {
+        fullName: editFormData.fullName,
+        email: editFormData.email,
+        resellerId: editFormData.resellerId || null,
+        isActive: editFormData.isActive,
+      },
+    });
+  };
 
   const filteredCustomers = customers.filter((customer) => {
     const matchesSearch = 
@@ -297,6 +340,14 @@ export default function AdminCustomers() {
                               <Button
                                 size="icon"
                                 variant="ghost"
+                                onClick={() => handleEditCustomer(customer)}
+                                data-testid={`button-edit-customer-${customer.id}`}
+                              >
+                                <Pencil className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                size="icon"
+                                variant="ghost"
                                 onClick={() => deleteCustomerMutation.mutate(customer.id)}
                                 data-testid={`button-delete-customer-${customer.id}`}
                               >
@@ -322,6 +373,75 @@ export default function AdminCustomers() {
           queryClient.invalidateQueries({ queryKey: ["/api/customers"] });
         }}
       />
+
+      <Dialog open={!!editingCustomer} onOpenChange={(open) => !open && setEditingCustomer(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Modifica Cliente</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="edit-fullName">Nome Completo</Label>
+              <Input
+                id="edit-fullName"
+                value={editFormData.fullName}
+                onChange={(e) => setEditFormData({ ...editFormData, fullName: e.target.value })}
+                data-testid="input-edit-fullname"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-email">Email</Label>
+              <Input
+                id="edit-email"
+                type="email"
+                value={editFormData.email}
+                onChange={(e) => setEditFormData({ ...editFormData, email: e.target.value })}
+                data-testid="input-edit-email"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-reseller">Rivenditore</Label>
+              <Select
+                value={editFormData.resellerId || "none"}
+                onValueChange={(value) => setEditFormData({ ...editFormData, resellerId: value === "none" ? "" : value })}
+              >
+                <SelectTrigger id="edit-reseller" data-testid="select-edit-reseller">
+                  <SelectValue placeholder="Seleziona rivenditore" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Nessun rivenditore</SelectItem>
+                  {resellers.map((reseller) => (
+                    <SelectItem key={reseller.id} value={reseller.id}>
+                      {reseller.fullName}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex items-center justify-between">
+              <Label htmlFor="edit-active">Stato Attivo</Label>
+              <Switch
+                id="edit-active"
+                checked={editFormData.isActive}
+                onCheckedChange={(checked) => setEditFormData({ ...editFormData, isActive: checked })}
+                data-testid="switch-edit-active"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditingCustomer(null)} data-testid="button-cancel-edit">
+              Annulla
+            </Button>
+            <Button 
+              onClick={handleSaveEdit} 
+              disabled={updateCustomerMutation.isPending}
+              data-testid="button-save-edit"
+            >
+              {updateCustomerMutation.isPending ? "Salvataggio..." : "Salva"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

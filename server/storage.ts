@@ -97,7 +97,7 @@ export interface IStorage {
   getUserByUsername(username: string): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
-  updateUser(id: string, updates: Partial<Pick<User, 'username' | 'email' | 'fullName' | 'role' | 'isActive' | 'repairCenterId'>>): Promise<User>;
+  updateUser(id: string, updates: Partial<Pick<User, 'username' | 'email' | 'fullName' | 'role' | 'isActive' | 'repairCenterId' | 'resellerId' | 'resellerCategory'>>): Promise<User>;
   listUsers(): Promise<User[]>;
   listStaffUsers(): Promise<{ id: string; username: string; role: string }[]>;
   listCustomers(filters?: { resellerId?: string; repairCenterId?: string }): Promise<User[]>;
