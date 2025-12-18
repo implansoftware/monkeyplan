@@ -751,7 +751,7 @@ export class DatabaseStorage implements IStorage {
     return user;
   }
 
-  async updateUser(id: string, updates: Partial<Pick<User, 'username' | 'email' | 'fullName' | 'role' | 'isActive' | 'repairCenterId'>>): Promise<User> {
+  async updateUser(id: string, updates: Partial<Pick<User, 'username' | 'email' | 'fullName' | 'role' | 'isActive' | 'repairCenterId' | 'resellerId' | 'resellerCategory'>>): Promise<User> {
     const [user] = await db.update(users)
       .set(updates)
       .where(eq(users.id, id))

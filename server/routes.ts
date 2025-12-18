@@ -10474,7 +10474,7 @@ export function registerRoutes(app: Express): Server {
       }
       
       const allowedUpdates = req.user.role === 'admin' 
-        ? ['username', 'email', 'fullName', 'role', 'isActive', 'repairCenterId', 'resellerCategory'] as const
+        ? ['username', 'email', 'fullName', 'role', 'isActive', 'repairCenterId', 'resellerCategory', 'resellerId'] as const
         : ['email', 'fullName'] as const; // Non-admin can only update own profile fields
       
       const updates: any = {};
@@ -10500,6 +10500,17 @@ export function registerRoutes(app: Express): Server {
           delete updates.resellerCategory; // Ignore resellerCategory for non-resellers
         } else if (!['standard', 'franchising', 'gdo'].includes(updates.resellerCategory)) {
           return res.status(400).send("Invalid reseller category");
+        }
+      }
+      
+      // Validate resellerId if provided (for customers)
+      if (updates.resellerId !== undefined) {
+        // Allow null to unassign customer from reseller
+        if (updates.resellerId !== null) {
+          const reseller = await storage.getUser(updates.resellerId);
+          if (!reseller || reseller.role !== 'reseller') {
+            return res.status(400).send("Invalid reseller ID");
+          }
         }
       }
       
