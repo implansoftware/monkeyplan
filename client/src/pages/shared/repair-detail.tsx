@@ -1465,21 +1465,81 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
                   Preventivo
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-2">
+              <CardContent className="space-y-3">
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-muted-foreground">Numero</span>
                   <span className="font-mono text-sm">{quote.quoteNumber}</span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-sm text-muted-foreground">Totale</span>
-                  <span className="font-medium">{formatCurrency(quote.totalAmount, true)}</span>
-                </div>
-                <div className="flex justify-between items-center">
                   <span className="text-sm text-muted-foreground">Stato</span>
                   <Badge variant={quote.status === 'accepted' ? 'default' : quote.status === 'rejected' ? 'destructive' : 'outline'}>
-                    {quote.status === 'pending' ? 'In Attesa' : quote.status === 'accepted' ? 'Accettato' : 'Rifiutato'}
+                    {quote.status === 'pending' || quote.status === 'sent' || quote.status === 'draft' ? 'In Attesa' : quote.status === 'accepted' ? 'Accettato' : 'Rifiutato'}
                   </Badge>
                 </div>
+                
+                {/* Parts/Services list */}
+                {quote.parts && (() => {
+                  try {
+                    const parts = typeof quote.parts === 'string' ? JSON.parse(quote.parts) : quote.parts;
+                    if (Array.isArray(parts) && parts.length > 0) {
+                      return (
+                        <div className="pt-2 border-t">
+                          <span className="text-sm text-muted-foreground">Ricambi e Servizi</span>
+                          <div className="mt-2 space-y-2">
+                            {parts.map((part: { name: string; quantity: number; unitPrice: number }, idx: number) => (
+                              <div key={idx} className="flex justify-between items-center text-sm bg-muted/50 rounded px-2 py-1">
+                                <div className="flex items-center gap-2">
+                                  <span>{part.name}</span>
+                                  {part.quantity > 1 && (
+                                    <Badge variant="outline" className="text-xs">x{part.quantity}</Badge>
+                                  )}
+                                </div>
+                                <span className="font-medium">
+                                  {((part.unitPrice * part.quantity) / 100).toLocaleString('it-IT', { style: 'currency', currency: 'EUR' })}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    }
+                    return null;
+                  } catch {
+                    return null;
+                  }
+                })()}
+
+                {/* Labor cost */}
+                {quote.laborCost > 0 && (
+                  <div className="flex justify-between items-center pt-2 border-t">
+                    <span className="text-sm text-muted-foreground">Manodopera</span>
+                    <span className="font-medium">
+                      {(quote.laborCost / 100).toLocaleString('it-IT', { style: 'currency', currency: 'EUR' })}
+                    </span>
+                  </div>
+                )}
+
+                {/* Total */}
+                <div className="flex justify-between items-center pt-2 border-t bg-muted/30 rounded px-2 py-2">
+                  <span className="font-medium">Totale</span>
+                  <span className="text-lg font-bold">{formatCurrency(quote.totalAmount, true)}</span>
+                </div>
+
+                {/* Valid until */}
+                {quote.validUntil && (
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-muted-foreground">Valido fino al</span>
+                    <span>{format(new Date(quote.validUntil), "dd/MM/yyyy", { locale: it })}</span>
+                  </div>
+                )}
+
+                {/* Notes */}
+                {quote.notes && (
+                  <div className="pt-2 border-t">
+                    <span className="text-sm text-muted-foreground">Note</span>
+                    <p className="text-sm whitespace-pre-wrap mt-1">{quote.notes}</p>
+                  </div>
+                )}
               </CardContent>
             </Card>
           )}
