@@ -9476,13 +9476,13 @@ export function registerRoutes(app: Express): Server {
       
       const { date, startTime, endTime, status, notes, cancelReason } = req.body;
       
-      // Customers can only cancel, not reschedule or confirm
+      // Customers can only cancel, not reschedule, confirm, or modify notes
       if (isCustomer) {
         if (status !== 'cancelled') {
           return res.status(403).send("I clienti possono solo annullare gli appuntamenti");
         }
-        if (date || startTime || endTime) {
-          return res.status(403).send("I clienti non possono riprogrammare gli appuntamenti");
+        if (date || startTime || endTime || notes !== undefined) {
+          return res.status(403).send("I clienti non possono modificare i dettagli degli appuntamenti");
         }
       }
       

@@ -1050,11 +1050,15 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
                   {repair.status === 'pronto_ritiro' && (
                     <div className="bg-muted/50 rounded-lg p-4 space-y-3">
                       <p className="text-sm">
-                        Dispositivo pronto per il ritiro. <strong>Prenota un appuntamento</strong> o <strong>completa la consegna</strong> quando il cliente arriva.
+                        {user?.role === 'customer' ? (
+                          <>Il tuo dispositivo è <strong>pronto per il ritiro</strong>. Prenota un appuntamento per venire a ritirarlo.</>
+                        ) : (
+                          <>Dispositivo pronto per il ritiro. <strong>Prenota un appuntamento</strong> o <strong>completa la consegna</strong> quando il cliente arriva.</>
+                        )}
                       </p>
                       <div className="flex gap-2">
                         <Button
-                          variant="outline"
+                          variant={user?.role === 'customer' ? 'default' : 'outline'}
                           onClick={() => setAppointmentDialogOpen(true)}
                           className="flex-1"
                           data-testid="button-book-appointment"
@@ -1062,20 +1066,22 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
                           <CalendarCheck className="mr-2 h-4 w-4" />
                           Prenota Appuntamento
                         </Button>
-                        <Button
-                          onClick={() => setDeliveryDialogOpen(true)}
-                          className="flex-1"
-                          data-testid="button-complete-delivery"
-                        >
-                          <Truck className="mr-2 h-4 w-4" />
-                          Completa Consegna
-                        </Button>
+                        {user?.role !== 'customer' && (
+                          <Button
+                            onClick={() => setDeliveryDialogOpen(true)}
+                            className="flex-1"
+                            data-testid="button-complete-delivery"
+                          >
+                            <Truck className="mr-2 h-4 w-4" />
+                            Completa Consegna
+                          </Button>
+                        )}
                       </div>
                     </div>
                   )}
 
-                  {/* Suggested Accessories for pickup */}
-                  {repair.status === 'pronto_ritiro' && (
+                  {/* Suggested Accessories for pickup - only for staff, not customers */}
+                  {repair.status === 'pronto_ritiro' && user?.role !== 'customer' && (
                     <div className="mt-4 pt-4 border-t">
                       <p className="text-xs text-muted-foreground mb-3 flex items-center gap-2">
                         <ShoppingBag className="h-3 w-3" />
