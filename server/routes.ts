@@ -5596,6 +5596,15 @@ export function registerRoutes(app: Express): Server {
       const repairOrder = await storage.getRepairOrder(req.params.id);
       if (!repairOrder) return res.status(404).send("Repair order not found");
       
+      // For resellers, check if the order's customer belongs to them FIRST
+      // This handles the case where order.resellerId is NULL but customer.resellerId matches
+      if (req.user.role === 'reseller' && repairOrder.customerId) {
+        const customer = await storage.getUser(repairOrder.customerId);
+        if (customer && customer.resellerId === req.user.id) {
+          return res.json(repairOrder);
+        }
+      }
+      
       // Check access based on role
       const hasAccess = 
         req.user.role === 'admin' ||
@@ -5625,8 +5634,18 @@ export function registerRoutes(app: Express): Server {
       const repairOrder = await storage.getRepairOrder(repairOrderId);
       if (!repairOrder) return res.status(404).send("Repair order not found");
       
+      // For resellers, check if the order's customer belongs to them
+      let resellerHasAccess = false;
+      if (req.user.role === 'reseller' && repairOrder.customerId) {
+        const customer = await storage.getUser(repairOrder.customerId);
+        if (customer && customer.resellerId === req.user.id) {
+          resellerHasAccess = true;
+        }
+      }
+      
       // Check access based on role
       const hasAccess = 
+        resellerHasAccess ||
         req.user.role === 'admin' ||
         (req.user.role === 'customer' && repairOrder.customerId === req.user.id) ||
         (req.user.role === 'reseller' && repairOrder.resellerId === req.user.id) ||
@@ -5698,7 +5717,17 @@ export function registerRoutes(app: Express): Server {
       const repairOrder = await storage.getRepairOrder(repairOrderId);
       if (!repairOrder) return res.status(404).send("Repair order not found");
       
+      // For resellers, check if the order's customer belongs to them
+      let resellerHasAccess = false;
+      if (req.user.role === 'reseller' && repairOrder.customerId) {
+        const customer = await storage.getUser(repairOrder.customerId);
+        if (customer && customer.resellerId === req.user.id) {
+          resellerHasAccess = true;
+        }
+      }
+      
       const hasAccess = 
+        resellerHasAccess ||
         req.user.role === 'admin' ||
         (req.user.role === 'customer' && repairOrder.customerId === req.user.id) ||
         (req.user.role === 'reseller' && repairOrder.resellerId === req.user.id) ||
@@ -6335,42 +6364,6 @@ export function registerRoutes(app: Express): Server {
       }
       
       res.json(filteredOrders);
-    } catch (error: any) {
-      res.status(500).send(error.message);
-    }
-  });
-  
-  // Get single repair order details
-  app.get("/api/repair-orders/:id", requireAuth, async (req, res) => {
-    try {
-      if (!req.user) return res.status(401).send("Unauthorized");
-      
-      const order = await storage.getRepairOrder(req.params.id);
-      if (!order) return res.status(404).send("Repair order not found");
-      
-      // For resellers, check if the order's customer belongs to them FIRST
-      // This handles the case where order.resellerId is NULL but customer.resellerId matches
-      if (req.user.role === 'reseller' && order.customerId) {
-        const customer = await storage.getUser(order.customerId);
-        if (customer && customer.resellerId === req.user.id) {
-          // Reseller owns this customer, grant access immediately
-          return res.json(order);
-        }
-      }
-      
-      // Check access based on role
-      let hasAccess = 
-        req.user.role === 'admin' ||
-        order.customerId === req.user.id ||
-        order.resellerId === req.user.id ||
-        (req.user.role === 'repair_center' && 
-         req.user.repairCenterId && 
-         order.repairCenterId && 
-         order.repairCenterId === req.user.repairCenterId);
-      
-      if (!hasAccess) return res.status(403).send("Forbidden");
-      
-      res.json(order);
     } catch (error: any) {
       res.status(500).send(error.message);
     }
