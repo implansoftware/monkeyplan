@@ -374,7 +374,7 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
   ) : false;
 
   const canViewWorkflow = user ? (
-    user.role === 'admin' || user.role === 'repair_center' || user.role === 'reseller'
+    user.role === 'admin' || user.role === 'repair_center' || user.role === 'reseller' || user.role === 'customer'
   ) : false;
 
   const startRepairMutation = useMutation({
