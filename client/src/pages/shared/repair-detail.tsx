@@ -357,6 +357,39 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
     },
   });
 
+  // Customer-specific mutations for quote acceptance/rejection
+  const acceptQuoteMutation = useMutation({
+    mutationFn: async () => {
+      return await apiRequest("POST", `/api/repair-orders/${repairOrderId}/quote/accept`);
+    },
+    onSuccess: () => {
+      toast({ title: "Preventivo accettato", description: "La riparazione procederà come indicato nel preventivo." });
+      queryClient.invalidateQueries({ queryKey: ["/api/repair-orders"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/repair-orders", repairOrderId] });
+      queryClient.invalidateQueries({ queryKey: ["/api/repair-orders", repairOrderId, "quote"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/quotes"] });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Errore", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const rejectQuoteMutation = useMutation({
+    mutationFn: async () => {
+      return await apiRequest("POST", `/api/repair-orders/${repairOrderId}/quote/reject`);
+    },
+    onSuccess: () => {
+      toast({ title: "Preventivo rifiutato", description: "La riparazione è stata annullata." });
+      queryClient.invalidateQueries({ queryKey: ["/api/repair-orders"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/repair-orders", repairOrderId] });
+      queryClient.invalidateQueries({ queryKey: ["/api/repair-orders", repairOrderId, "quote"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/quotes"] });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Errore", description: error.message, variant: "destructive" });
+    },
+  });
+
   const canUpload = repair && user ? (
     user.role === 'admin' ||
     (user.role === 'customer' && repair.customerId === user.id) ||
@@ -1083,6 +1116,60 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
                       </p>
                     </div>
                   )}
+                </div>
+              )}
+
+              {/* Customer quote response section - visible only to customers when quote is pending */}
+              {user?.role === 'customer' && repair.status === 'preventivo_emesso' && quote && (
+                <div className="mt-4 pt-4 border-t">
+                  <div className="bg-amber-50 dark:bg-amber-950 rounded-lg p-4 space-y-4">
+                    <div className="flex items-center gap-2">
+                      <Receipt className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+                      <p className="font-medium text-amber-800 dark:text-amber-200">
+                        Preventivo in attesa di risposta
+                      </p>
+                    </div>
+                    <div className="bg-white dark:bg-gray-900 rounded-lg p-3 border">
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm text-muted-foreground">Totale preventivo:</span>
+                        <span className="text-lg font-bold">
+                          {((quote.totalAmount || 0) / 100).toLocaleString('it-IT', { style: 'currency', currency: 'EUR' })}
+                        </span>
+                      </div>
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      Accetta il preventivo per procedere con la riparazione, oppure rifiutalo per annullare.
+                    </p>
+                    <div className="flex gap-3">
+                      <Button
+                        variant="outline"
+                        onClick={() => rejectQuoteMutation.mutate()}
+                        disabled={rejectQuoteMutation.isPending || acceptQuoteMutation.isPending}
+                        className="flex-1"
+                        data-testid="button-customer-reject-quote"
+                      >
+                        {rejectQuoteMutation.isPending ? (
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        ) : (
+                          <XCircle className="mr-2 h-4 w-4" />
+                        )}
+                        Rifiuta Preventivo
+                      </Button>
+                      <Button
+                        onClick={() => acceptQuoteMutation.mutate()}
+                        disabled={acceptQuoteMutation.isPending || rejectQuoteMutation.isPending}
+                        className="flex-1"
+                        data-testid="button-customer-accept-quote"
+                      >
+                        {acceptQuoteMutation.isPending ? (
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        ) : (
+                          <CheckCircle className="mr-2 h-4 w-4" />
+                        )}
+                        Accetta Preventivo
+                      </Button>
+                    </div>
+                  </div>
                 </div>
               )}
 
