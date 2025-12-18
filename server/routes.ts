@@ -9654,6 +9654,15 @@ export function registerRoutes(app: Express): Server {
       // Get quote info
       const quote = await storage.getRepairQuote(req.params.id);
       
+      // Format currency helper (Italian format: € 1.234,56)
+      const formatCurrency = (amount: number | null | undefined) => {
+        if (amount == null) return '€ 0,00';
+        return new Intl.NumberFormat('it-IT', {
+          style: 'currency',
+          currency: 'EUR',
+        }).format(amount);
+      };
+      
       // Generate PDF
       const PDFDocument = (await import('pdfkit')).default;
       const doc = new PDFDocument({ margin: 50, size: 'A4' });
@@ -9710,9 +9719,9 @@ export function registerRoutes(app: Express): Server {
       doc.fontSize(10).font('Helvetica');
       if (diagnostics?.diagnosis) doc.text(`Diagnosi: ${diagnostics.diagnosis}`, { align: 'left' });
       if (quote) {
-        doc.text(`Totale Parti: € ${quote.partsTotal?.toFixed(2) || '0.00'}`, { align: 'left' });
-        doc.text(`Totale Manodopera: € ${quote.laborTotal?.toFixed(2) || '0.00'}`, { align: 'left' });
-        doc.font('Helvetica-Bold').text(`TOTALE: € ${quote.totalAmount?.toFixed(2) || '0.00'}`, { align: 'left' });
+        doc.text(`Totale Parti: ${formatCurrency(quote.partsTotal)}`, { align: 'left' });
+        doc.text(`Totale Manodopera: ${formatCurrency(quote.laborTotal)}`, { align: 'left' });
+        doc.font('Helvetica-Bold').text(`TOTALE: ${formatCurrency(quote.totalAmount)}`, { align: 'left' });
         doc.font('Helvetica');
       }
       doc.moveDown();
