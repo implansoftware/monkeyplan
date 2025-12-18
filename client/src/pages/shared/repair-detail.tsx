@@ -1305,6 +1305,15 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
                     <Download className="mr-2 h-4 w-4" />
                     Preventivo
                   </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => window.open(`/api/repair-orders/${repairOrderId}/delivery-document`, '_blank')}
+                    disabled={repair.status !== 'consegnato'}
+                    data-testid="button-download-delivery"
+                  >
+                    <Download className="mr-2 h-4 w-4" />
+                    Consegna/Garanzia
+                  </Button>
                 </div>
               </div>
             </CardContent>
