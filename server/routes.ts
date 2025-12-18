@@ -10551,6 +10551,53 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // GET /api/customers/:id - Get customer details with related data
+  app.get("/api/customers/:id", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const customerId = req.params.id;
+      const customer = await storage.getUser(customerId);
+      
+      if (!customer || customer.role !== 'customer') {
+        return res.status(404).send("Customer not found");
+      }
+      
+      // Check access rights
+      if (req.user.role === 'reseller') {
+        const context = getEffectiveContext(req);
+        if (customer.resellerId !== context.resellerId) {
+          return res.status(403).send("Access denied");
+        }
+      } else if (req.user.role !== 'admin') {
+        return res.status(403).send("Forbidden");
+      }
+      
+      // Get related data
+      const [repairOrders, salesOrders, billingData] = await Promise.all([
+        storage.listRepairOrders({ customerId }),
+        storage.listSalesOrders({ customerId }),
+        storage.getBillingDataByUserId(customerId),
+      ]);
+      
+      // Get reseller info if available
+      let reseller = null;
+      if (customer.resellerId) {
+        reseller = await storage.getUser(customer.resellerId);
+      }
+      
+      res.json({
+        customer,
+        reseller: reseller ? { id: reseller.id, fullName: reseller.fullName } : null,
+        repairOrders,
+        salesOrders,
+        billingData,
+      });
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
   // ============ QUICK CUSTOMER CREATION ============
   
   app.post("/api/customers/quick", requireAuth, async (req, res) => {

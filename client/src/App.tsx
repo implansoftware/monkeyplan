@@ -40,6 +40,7 @@ import AdminSupplierReturns from "@/pages/admin/supplier-returns";
 import AdminPartsLoad from "@/pages/admin/parts-load";
 import AdminExternalIntegrations from "@/pages/admin/external-integrations";
 import AdminCustomers from "@/pages/admin/customers";
+import AdminCustomerDetail from "@/pages/admin/customer-detail";
 import AdminRepairDetail from "@/pages/admin/repair-detail";
 import AdminTeam from "@/pages/admin/team";
 import AdminSmartphoneCatalog from "@/pages/admin/smartphone-catalog";
@@ -154,6 +155,7 @@ function Router() {
       {/* Admin routes */}
       <ProtectedRoute path="/" component={AdminDashboard} />
       <ProtectedRoute path="/admin/users" component={AdminUsers} />
+      <ProtectedRoute path="/admin/customers/:id" component={AdminCustomerDetail} />
       <ProtectedRoute path="/admin/customers" component={AdminCustomers} />
       <ProtectedRoute path="/admin/reseller-teams" component={AdminResellerTeams} />
       <ProtectedRoute path="/admin/resellers/:resellerId/team" component={AdminResellerTeam} />
