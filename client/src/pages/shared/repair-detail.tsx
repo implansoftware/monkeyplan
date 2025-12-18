@@ -1362,6 +1362,72 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
             </Card>
           )}
 
+          {diagnosis && (
+            <Card data-testid="card-diagnosis">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Stethoscope className="h-4 w-4" />
+                  Dati Diagnosi
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {diagnosis.technicalDiagnosis && (
+                  <div>
+                    <span className="text-sm text-muted-foreground">Diagnosi Tecnica</span>
+                    <p className="text-sm whitespace-pre-wrap">{diagnosis.technicalDiagnosis}</p>
+                  </div>
+                )}
+                {diagnosis.damagedComponents && diagnosis.damagedComponents.length > 0 && (
+                  <div>
+                    <span className="text-sm text-muted-foreground">Componenti Danneggiati</span>
+                    <div className="flex flex-wrap gap-1 mt-1">
+                      {diagnosis.damagedComponents.map((comp: string, idx: number) => (
+                        <Badge key={idx} variant="destructive" className="text-xs">
+                          {comp}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {diagnosis.diagnosisOutcome && (
+                  <div>
+                    <span className="text-sm text-muted-foreground">Esito Diagnosi</span>
+                    <Badge 
+                      variant={diagnosis.diagnosisOutcome === 'riparabile' ? 'default' : diagnosis.diagnosisOutcome === 'irriparabile' ? 'destructive' : 'secondary'}
+                      className="ml-2"
+                    >
+                      {diagnosis.diagnosisOutcome === 'riparabile' ? 'Riparabile' : diagnosis.diagnosisOutcome === 'irriparabile' ? 'Irriparabile' : 'Non Conveniente'}
+                    </Badge>
+                  </div>
+                )}
+                {diagnosis.estimatedRepairTime && (
+                  <div>
+                    <span className="text-sm text-muted-foreground">Tempo Stimato Riparazione</span>
+                    <p className="font-medium">{diagnosis.estimatedRepairTime} ore</p>
+                  </div>
+                )}
+                {diagnosis.requiresExternalParts && (
+                  <div className="flex items-center gap-2 text-amber-600 dark:text-amber-400">
+                    <Package className="h-4 w-4" />
+                    <span className="text-sm">Richiede ricambi esterni</span>
+                  </div>
+                )}
+                {diagnosis.diagnosisNotes && (
+                  <div>
+                    <span className="text-sm text-muted-foreground">Note del Tecnico</span>
+                    <p className="text-sm text-muted-foreground whitespace-pre-wrap">{diagnosis.diagnosisNotes}</p>
+                  </div>
+                )}
+                {diagnosis.diagnosedAt && (
+                  <div className="pt-2 border-t">
+                    <span className="text-sm text-muted-foreground">Data Diagnosi</span>
+                    <p className="font-medium">{format(new Date(diagnosis.diagnosedAt), "dd/MM/yyyy HH:mm", { locale: it })}</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
+
           {customer && (
             <Card data-testid="card-customer">
               <CardHeader className="pb-3">
