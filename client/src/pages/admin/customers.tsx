@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { User, BillingData } from "@shared/schema";
 import { Button } from "@/components/ui/button";
@@ -12,7 +12,8 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Search, Pencil, Trash2, Download, Users, CalendarIcon, UserPlus, Building2, Eye } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Search, Pencil, Trash2, Download, Users, CalendarIcon, UserPlus, Building2, Eye, Loader2 } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -22,6 +23,44 @@ import type { DateRange } from "react-day-picker";
 import { CustomerWizardDialog } from "@/components/CustomerWizardDialog";
 import { Link } from "wouter";
 
+interface CustomerEditFormData {
+  fullName: string;
+  email: string;
+  phone: string;
+  resellerId: string;
+  isActive: boolean;
+  customerType: "private" | "company";
+  companyName: string;
+  vatNumber: string;
+  fiscalCode: string;
+  pec: string;
+  codiceUnivoco: string;
+  iban: string;
+  address: string;
+  city: string;
+  zipCode: string;
+  country: string;
+}
+
+const defaultFormData: CustomerEditFormData = {
+  fullName: "",
+  email: "",
+  phone: "",
+  resellerId: "",
+  isActive: true,
+  customerType: "private",
+  companyName: "",
+  vatNumber: "",
+  fiscalCode: "",
+  pec: "",
+  codiceUnivoco: "",
+  iban: "",
+  address: "",
+  city: "",
+  zipCode: "",
+  country: "IT",
+};
+
 export default function AdminCustomers() {
   const [searchQuery, setSearchQuery] = useState("");
   const [resellerFilter, setResellerFilter] = useState<string>("all");
@@ -29,7 +68,8 @@ export default function AdminCustomers() {
   const [isExporting, setIsExporting] = useState(false);
   const [wizardOpen, setWizardOpen] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState<User | null>(null);
-  const [editFormData, setEditFormData] = useState({ fullName: "", email: "", resellerId: "", isActive: true });
+  const [editFormData, setEditFormData] = useState<CustomerEditFormData>(defaultFormData);
+  const [activeTab, setActiveTab] = useState("personal");
   const { toast } = useToast();
 
   const { data: customers = [], isLoading } = useQuery<User[]>({
@@ -101,36 +141,102 @@ export default function AdminCustomers() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/customers"] });
-      setEditingCustomer(null);
-      toast({ title: "Cliente aggiornato con successo" });
     },
     onError: (error: Error) => {
       toast({ title: "Errore", description: error.message, variant: "destructive" });
     },
   });
 
+  const updateBillingMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: any }) => {
+      const res = await apiRequest("PATCH", `/api/customers/${id}/billing`, data);
+      return await res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/customers"] });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Errore", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const { data: customerDetails, isLoading: isLoadingDetails } = useQuery<{ 
+    customer: User; 
+    billingData: BillingData | null;
+  }>({
+    queryKey: ["/api/customers", editingCustomer?.id],
+    enabled: !!editingCustomer,
+  });
+
+  useEffect(() => {
+    if (customerDetails && editingCustomer) {
+      const { customer, billingData } = customerDetails;
+      setEditFormData({
+        fullName: customer.fullName,
+        email: customer.email,
+        phone: customer.phone || "",
+        resellerId: customer.resellerId || "",
+        isActive: customer.isActive,
+        customerType: billingData?.customerType || "private",
+        companyName: billingData?.companyName || "",
+        vatNumber: billingData?.vatNumber || "",
+        fiscalCode: billingData?.fiscalCode || "",
+        pec: billingData?.pec || "",
+        codiceUnivoco: billingData?.codiceUnivoco || "",
+        iban: billingData?.iban || "",
+        address: billingData?.address || "",
+        city: billingData?.city || "",
+        zipCode: billingData?.zipCode || "",
+        country: billingData?.country || "IT",
+      });
+    }
+  }, [customerDetails, editingCustomer]);
+
   const handleEditCustomer = (customer: User) => {
     setEditingCustomer(customer);
-    setEditFormData({
-      fullName: customer.fullName,
-      email: customer.email,
-      resellerId: customer.resellerId || "",
-      isActive: customer.isActive,
-    });
+    setActiveTab("personal");
+    setEditFormData(defaultFormData);
   };
 
-  const handleSaveEdit = () => {
+  const handleSaveEdit = async () => {
     if (!editingCustomer) return;
-    updateCustomerMutation.mutate({
-      id: editingCustomer.id,
-      data: {
-        fullName: editFormData.fullName,
-        email: editFormData.email,
-        resellerId: editFormData.resellerId || null,
-        isActive: editFormData.isActive,
-      },
-    });
+    
+    try {
+      await updateCustomerMutation.mutateAsync({
+        id: editingCustomer.id,
+        data: {
+          fullName: editFormData.fullName,
+          email: editFormData.email,
+          resellerId: editFormData.resellerId || null,
+          isActive: editFormData.isActive,
+        },
+      });
+      
+      await updateBillingMutation.mutateAsync({
+        id: editingCustomer.id,
+        data: {
+          customerType: editFormData.customerType,
+          companyName: editFormData.companyName || null,
+          vatNumber: editFormData.vatNumber || null,
+          fiscalCode: editFormData.fiscalCode || null,
+          pec: editFormData.pec || null,
+          codiceUnivoco: editFormData.codiceUnivoco || null,
+          iban: editFormData.iban || null,
+          address: editFormData.address,
+          city: editFormData.city,
+          zipCode: editFormData.zipCode,
+          country: editFormData.country,
+        },
+      });
+      
+      setEditingCustomer(null);
+      toast({ title: "Cliente aggiornato con successo" });
+    } catch (error) {
+      // Error already handled in mutations
+    }
   };
+
+  const isSaving = updateCustomerMutation.isPending || updateBillingMutation.isPending;
 
   const filteredCustomers = customers.filter((customer) => {
     const matchesSearch = 
@@ -375,69 +481,247 @@ export default function AdminCustomers() {
       />
 
       <Dialog open={!!editingCustomer} onOpenChange={(open) => !open && setEditingCustomer(null)}>
-        <DialogContent>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Modifica Cliente</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="edit-fullName">Nome Completo</Label>
-              <Input
-                id="edit-fullName"
-                value={editFormData.fullName}
-                onChange={(e) => setEditFormData({ ...editFormData, fullName: e.target.value })}
-                data-testid="input-edit-fullname"
-              />
+          
+          {isLoadingDetails ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="h-6 w-6 animate-spin" />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="edit-email">Email</Label>
-              <Input
-                id="edit-email"
-                type="email"
-                value={editFormData.email}
-                onChange={(e) => setEditFormData({ ...editFormData, email: e.target.value })}
-                data-testid="input-edit-email"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="edit-reseller">Rivenditore</Label>
-              <Select
-                value={editFormData.resellerId || "none"}
-                onValueChange={(value) => setEditFormData({ ...editFormData, resellerId: value === "none" ? "" : value })}
-              >
-                <SelectTrigger id="edit-reseller" data-testid="select-edit-reseller">
-                  <SelectValue placeholder="Seleziona rivenditore" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">Nessun rivenditore</SelectItem>
-                  {resellers.map((reseller) => (
-                    <SelectItem key={reseller.id} value={reseller.id}>
-                      {reseller.fullName}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="flex items-center justify-between">
-              <Label htmlFor="edit-active">Stato Attivo</Label>
-              <Switch
-                id="edit-active"
-                checked={editFormData.isActive}
-                onCheckedChange={(checked) => setEditFormData({ ...editFormData, isActive: checked })}
-                data-testid="switch-edit-active"
-              />
-            </div>
-          </div>
-          <DialogFooter>
+          ) : (
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+              <TabsList className="grid w-full grid-cols-3">
+                <TabsTrigger value="personal" data-testid="tab-personal">Dati Personali</TabsTrigger>
+                <TabsTrigger value="assignment" data-testid="tab-assignment">Assegnazione</TabsTrigger>
+                <TabsTrigger value="billing" data-testid="tab-billing">Fatturazione</TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="personal" className="space-y-4 mt-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-fullName">Nome Completo</Label>
+                    <Input
+                      id="edit-fullName"
+                      value={editFormData.fullName}
+                      onChange={(e) => setEditFormData({ ...editFormData, fullName: e.target.value })}
+                      data-testid="input-edit-fullname"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-email">Email</Label>
+                    <Input
+                      id="edit-email"
+                      type="email"
+                      value={editFormData.email}
+                      onChange={(e) => setEditFormData({ ...editFormData, email: e.target.value })}
+                      data-testid="input-edit-email"
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="edit-phone">Telefono</Label>
+                  <Input
+                    id="edit-phone"
+                    value={editFormData.phone}
+                    onChange={(e) => setEditFormData({ ...editFormData, phone: e.target.value })}
+                    data-testid="input-edit-phone"
+                  />
+                </div>
+              </TabsContent>
+              
+              <TabsContent value="assignment" className="space-y-4 mt-4">
+                <div className="space-y-2">
+                  <Label htmlFor="edit-reseller">Rivenditore</Label>
+                  <Select
+                    value={editFormData.resellerId || "none"}
+                    onValueChange={(value) => setEditFormData({ ...editFormData, resellerId: value === "none" ? "" : value })}
+                  >
+                    <SelectTrigger id="edit-reseller" data-testid="select-edit-reseller">
+                      <SelectValue placeholder="Seleziona rivenditore" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">Nessun rivenditore</SelectItem>
+                      {resellers.map((reseller) => (
+                        <SelectItem key={reseller.id} value={reseller.id}>
+                          {reseller.fullName}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="flex items-center justify-between p-4 border rounded-lg">
+                  <div>
+                    <Label htmlFor="edit-active">Stato Attivo</Label>
+                    <p className="text-sm text-muted-foreground">Il cliente può accedere al sistema</p>
+                  </div>
+                  <Switch
+                    id="edit-active"
+                    checked={editFormData.isActive}
+                    onCheckedChange={(checked) => setEditFormData({ ...editFormData, isActive: checked })}
+                    data-testid="switch-edit-active"
+                  />
+                </div>
+              </TabsContent>
+              
+              <TabsContent value="billing" className="space-y-4 mt-4">
+                <div className="space-y-2">
+                  <Label>Tipo Cliente</Label>
+                  <Select
+                    value={editFormData.customerType}
+                    onValueChange={(value: "private" | "company") => setEditFormData({ ...editFormData, customerType: value })}
+                  >
+                    <SelectTrigger data-testid="select-customer-type">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="private">Privato</SelectItem>
+                      <SelectItem value="company">Azienda</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                {editFormData.customerType === "company" && (
+                  <>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="edit-companyName">Ragione Sociale</Label>
+                        <Input
+                          id="edit-companyName"
+                          value={editFormData.companyName}
+                          onChange={(e) => setEditFormData({ ...editFormData, companyName: e.target.value })}
+                          data-testid="input-edit-companyName"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="edit-vatNumber">Partita IVA</Label>
+                        <Input
+                          id="edit-vatNumber"
+                          value={editFormData.vatNumber}
+                          onChange={(e) => setEditFormData({ ...editFormData, vatNumber: e.target.value })}
+                          data-testid="input-edit-vatNumber"
+                        />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="edit-fiscalCode">Codice Fiscale</Label>
+                        <Input
+                          id="edit-fiscalCode"
+                          value={editFormData.fiscalCode}
+                          onChange={(e) => setEditFormData({ ...editFormData, fiscalCode: e.target.value })}
+                          data-testid="input-edit-fiscalCode"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="edit-codiceUnivoco">Codice SDI</Label>
+                        <Input
+                          id="edit-codiceUnivoco"
+                          value={editFormData.codiceUnivoco}
+                          onChange={(e) => setEditFormData({ ...editFormData, codiceUnivoco: e.target.value })}
+                          data-testid="input-edit-codiceUnivoco"
+                        />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="edit-pec">PEC</Label>
+                        <Input
+                          id="edit-pec"
+                          type="email"
+                          value={editFormData.pec}
+                          onChange={(e) => setEditFormData({ ...editFormData, pec: e.target.value })}
+                          data-testid="input-edit-pec"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="edit-iban">IBAN</Label>
+                        <Input
+                          id="edit-iban"
+                          value={editFormData.iban}
+                          onChange={(e) => setEditFormData({ ...editFormData, iban: e.target.value })}
+                          data-testid="input-edit-iban"
+                        />
+                      </div>
+                    </div>
+                  </>
+                )}
+                
+                {editFormData.customerType === "private" && (
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-fiscalCode-private">Codice Fiscale</Label>
+                    <Input
+                      id="edit-fiscalCode-private"
+                      value={editFormData.fiscalCode}
+                      onChange={(e) => setEditFormData({ ...editFormData, fiscalCode: e.target.value })}
+                      data-testid="input-edit-fiscalCode-private"
+                    />
+                  </div>
+                )}
+                
+                <div className="border-t pt-4 mt-4">
+                  <h4 className="font-medium mb-3">Indirizzo di Fatturazione</h4>
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="edit-address">Indirizzo</Label>
+                      <Input
+                        id="edit-address"
+                        value={editFormData.address}
+                        onChange={(e) => setEditFormData({ ...editFormData, address: e.target.value })}
+                        data-testid="input-edit-address"
+                      />
+                    </div>
+                    <div className="grid grid-cols-3 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="edit-city">Città</Label>
+                        <Input
+                          id="edit-city"
+                          value={editFormData.city}
+                          onChange={(e) => setEditFormData({ ...editFormData, city: e.target.value })}
+                          data-testid="input-edit-city"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="edit-zipCode">CAP</Label>
+                        <Input
+                          id="edit-zipCode"
+                          value={editFormData.zipCode}
+                          onChange={(e) => setEditFormData({ ...editFormData, zipCode: e.target.value })}
+                          data-testid="input-edit-zipCode"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="edit-country">Paese</Label>
+                        <Input
+                          id="edit-country"
+                          value={editFormData.country}
+                          onChange={(e) => setEditFormData({ ...editFormData, country: e.target.value })}
+                          data-testid="input-edit-country"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </TabsContent>
+            </Tabs>
+          )}
+          
+          <DialogFooter className="mt-4">
             <Button variant="outline" onClick={() => setEditingCustomer(null)} data-testid="button-cancel-edit">
               Annulla
             </Button>
             <Button 
               onClick={handleSaveEdit} 
-              disabled={updateCustomerMutation.isPending}
+              disabled={isSaving || isLoadingDetails}
               data-testid="button-save-edit"
             >
-              {updateCustomerMutation.isPending ? "Salvataggio..." : "Salva"}
+              {isSaving ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Salvataggio...
+                </>
+              ) : "Salva"}
             </Button>
           </DialogFooter>
         </DialogContent>

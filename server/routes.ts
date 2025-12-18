@@ -10609,6 +10609,73 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Update customer billing data
+  app.patch("/api/customers/:id/billing", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const customerId = req.params.id;
+      const customer = await storage.getUser(customerId);
+      
+      if (!customer || customer.role !== 'customer') {
+        return res.status(404).send("Customer not found");
+      }
+      
+      // Check permissions
+      const context = getEffectiveContext(req);
+      if (req.user.role === 'reseller') {
+        if (customer.resellerId !== context.resellerId) {
+          return res.status(403).send("Access denied");
+        }
+      } else if (req.user.role !== 'admin') {
+        return res.status(403).send("Forbidden");
+      }
+      
+      // Get existing billing data
+      let billingData = await storage.getBillingDataByUserId(customerId);
+      
+      const updates = {
+        customerType: req.body.customerType,
+        companyName: req.body.companyName,
+        vatNumber: req.body.vatNumber,
+        fiscalCode: req.body.fiscalCode,
+        pec: req.body.pec,
+        codiceUnivoco: req.body.codiceUnivoco,
+        iban: req.body.iban,
+        address: req.body.address,
+        city: req.body.city,
+        zipCode: req.body.zipCode,
+        country: req.body.country,
+      };
+      
+      // Remove undefined values
+      Object.keys(updates).forEach(key => {
+        if (updates[key as keyof typeof updates] === undefined) {
+          delete updates[key as keyof typeof updates];
+        }
+      });
+      
+      if (billingData) {
+        // Update existing
+        billingData = await storage.updateBillingData(billingData.id, updates);
+      } else {
+        // Create new billing data
+        billingData = await storage.createBillingData({
+          userId: customerId,
+          address: updates.address || '',
+          city: updates.city || '',
+          zipCode: updates.zipCode || '',
+          country: updates.country || 'IT',
+          ...updates,
+        });
+      }
+      
+      res.json(billingData);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
   // ============ QUICK CUSTOMER CREATION ============
   
   app.post("/api/customers/quick", requireAuth, async (req, res) => {

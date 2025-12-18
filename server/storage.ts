@@ -190,6 +190,7 @@ export interface IStorage {
   // Billing Data
   getBillingDataByUserId(userId: string): Promise<BillingData | undefined>;
   createBillingData(data: InsertBillingData): Promise<BillingData>;
+  updateBillingData(id: string, updates: Partial<Omit<BillingData, 'id' | 'userId' | 'createdAt'>>): Promise<BillingData>;
   
   // Chat Messages
   listChatMessages(userId1: string, userId2: string): Promise<ChatMessage[]>;
@@ -1626,6 +1627,19 @@ export class DatabaseStorage implements IStorage {
 
   async createBillingData(insertData: InsertBillingData): Promise<BillingData> {
     const [data] = await db.insert(billingData).values(insertData).returning();
+    return data;
+  }
+
+  async updateBillingData(id: string, updates: Partial<Omit<BillingData, 'id' | 'userId' | 'createdAt'>>): Promise<BillingData> {
+    const [data] = await db.update(billingData)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(billingData.id, id))
+      .returning();
+    
+    if (!data) {
+      throw new Error("Billing data not found");
+    }
+    
     return data;
   }
 
