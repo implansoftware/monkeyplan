@@ -9654,13 +9654,13 @@ export function registerRoutes(app: Express): Server {
       // Get quote info
       const quote = await storage.getRepairQuote(req.params.id);
       
-      // Format currency helper (Italian format: € 1.234,56)
-      const formatCurrency = (amount: number | null | undefined) => {
-        if (amount == null) return '€ 0,00';
+      // Format currency helper (Italian format: € 1.234,56) - values are in cents
+      const formatCurrency = (cents: number | null | undefined) => {
+        if (cents == null) return '€ 0,00';
         return new Intl.NumberFormat('it-IT', {
           style: 'currency',
           currency: 'EUR',
-        }).format(amount);
+        }).format(cents / 100);
       };
       
       // Generate PDF
@@ -10299,13 +10299,13 @@ export function registerRoutes(app: Express): Server {
         }
       }
       
-      // Format currency helper (Italian format: € 1.234,56)
-      const formatCurrency = (amount: number | null | undefined) => {
-        if (amount == null) return '€ 0,00';
+      // Format currency helper (Italian format: € 1.234,56) - values are in cents
+      const formatCurrency = (cents: number | null | undefined) => {
+        if (cents == null) return '€ 0,00';
         return new Intl.NumberFormat('it-IT', {
           style: 'currency',
           currency: 'EUR',
-        }).format(amount);
+        }).format(cents / 100);
       };
       
       // Generate PDF
