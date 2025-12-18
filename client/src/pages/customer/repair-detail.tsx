@@ -753,7 +753,7 @@ export default function CustomerRepairDetail() {
                     <div className="flex items-center justify-between gap-2 flex-wrap">
                       <span className="font-medium">{log.action}</span>
                       <span className="text-xs text-muted-foreground">
-                        {format(new Date(log.createdAt), "d MMM yyyy, HH:mm", { locale: it })}
+                        {log.createdAt ? format(new Date(log.createdAt), "d MMM yyyy, HH:mm", { locale: it }) : "-"}
                       </span>
                     </div>
                     {log.notes && (
@@ -799,7 +799,7 @@ export default function CustomerRepairDetail() {
                           {toConfig.label}
                         </Badge>
                         <span className="text-xs text-muted-foreground">
-                          {format(new Date(entry.createdAt), "d MMM yyyy, HH:mm", { locale: it })}
+                          {entry.createdAt ? format(new Date(entry.createdAt), "d MMM yyyy, HH:mm", { locale: it }) : "-"}
                         </span>
                       </div>
                       {entry.notes && (
