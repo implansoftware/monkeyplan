@@ -3,10 +3,12 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Separator } from "@/components/ui/separator";
 import { 
   ArrowLeft, Clock, Euro, Wrench, FileText, Paperclip, 
   CheckCircle, XCircle, Calendar, AlertTriangle, History,
-  Phone, MapPin, User
+  Phone, MapPin, User, Stethoscope, ClipboardCheck, Package,
+  Building2, Timer, AlertOctagon, Sparkles
 } from "lucide-react";
 import { useRoute, useLocation } from "wouter";
 import { format, formatDistanceToNow } from "date-fns";
@@ -18,10 +20,42 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { RepairOrder, RepairQuote, DeliveryAppointment } from "@shared/schema";
 
+interface RepairCenterInfo {
+  id: string;
+  fullName: string;
+  phone: string | null;
+  address: string | null;
+}
+
 interface RepairOrderWithDetails extends RepairOrder {
   customerName?: string;
   repairCenterName?: string;
   quoteTotalAmount?: number | null;
+  repairCenterInfo?: RepairCenterInfo | null;
+}
+
+interface RepairAcceptance {
+  id: string;
+  repairOrderId: string;
+  declaredDefects: string[] | null;
+  aestheticCondition: string | null;
+  aestheticNotes: string | null;
+  accessories: string[] | null;
+  lockCode: string | null;
+  hasLockCode: boolean | null;
+  acceptedBy: string;
+  acceptedAt: string;
+}
+
+interface RepairDiagnostics {
+  id: string;
+  repairOrderId: string;
+  technicalDiagnosis: string;
+  damagedComponents: string[] | null;
+  estimatedRepairTime: number | null;
+  diagnosisNotes: string | null;
+  diagnosisOutcome: string | null;
+  createdAt: string;
 }
 
 interface RepairLog {
@@ -44,6 +78,7 @@ interface StateHistoryEntry {
   createdAt: string;
   changedByName?: string;
 }
+
 
 export default function CustomerRepairDetail() {
   const [, params] = useRoute("/customer/repairs/:id");
@@ -86,9 +121,9 @@ export default function CustomerRepairDetail() {
   const quotes = quote ? [quote] : [];
 
   const { data: stateHistory = [] } = useQuery<StateHistoryEntry[]>({
-    queryKey: ["/api/repair-orders", repairId, "state-history"],
+    queryKey: ["/api/repairs", repairId, "state-history"],
     queryFn: async () => {
-      const response = await fetch(`/api/repair-orders/${repairId}/state-history`, {
+      const response = await fetch(`/api/repairs/${repairId}/state-history`, {
         credentials: "include",
       });
       if (!response.ok) return [];
@@ -109,6 +144,43 @@ export default function CustomerRepairDetail() {
     enabled: !!repairId,
   });
 
+  const { data: acceptance } = useQuery<RepairAcceptance | null>({
+    queryKey: ["/api/repair-orders", repairId, "acceptance"],
+    queryFn: async () => {
+      const response = await fetch(`/api/repair-orders/${repairId}/acceptance`, {
+        credentials: "include",
+      });
+      if (!response.ok) return null;
+      return response.json();
+    },
+    enabled: !!repairId,
+  });
+
+  const { data: diagnostics } = useQuery<RepairDiagnostics | null>({
+    queryKey: ["/api/repair-orders", repairId, "diagnostics"],
+    queryFn: async () => {
+      const response = await fetch(`/api/repair-orders/${repairId}/diagnostics`, {
+        credentials: "include",
+      });
+      if (!response.ok) return null;
+      return response.json();
+    },
+    enabled: !!repairId,
+  });
+
+  const { data: repairLogs = [] } = useQuery<RepairLog[]>({
+    queryKey: ["/api/repair-orders", repairId, "logs"],
+    queryFn: async () => {
+      const response = await fetch(`/api/repair-orders/${repairId}/logs`, {
+        credentials: "include",
+      });
+      if (!response.ok) return [];
+      return response.json();
+    },
+    enabled: !!repairId,
+  });
+
+  
   const acceptQuoteMutation = useMutation({
     mutationFn: async () => {
       const res = await apiRequest("POST", `/api/repair-orders/${repairId}/quote/accept`);
@@ -425,30 +497,61 @@ export default function CustomerRepairDetail() {
           <CardContent className="space-y-4">
             {quotes.length > 0 ? (
               <div className="space-y-3">
-                {quotes.map((quote) => (
-                  <div key={quote.id} className={`p-3 rounded-lg border ${
-                    quote.status === "accepted" 
+                {quotes.map((q) => (
+                  <div key={q.id} className={`p-3 rounded-lg border ${
+                    q.status === "accepted" 
                       ? "bg-green-50 border-green-200 dark:bg-green-950/20 dark:border-green-800"
-                      : quote.status === "rejected"
+                      : q.status === "rejected"
                         ? "bg-red-50 border-red-200 dark:bg-red-950/20 dark:border-red-800"
                         : "bg-muted"
                   }`}>
                     <div className="flex items-center justify-between mb-2">
-                      <span className="text-sm font-medium">Preventivo #{quote.quoteNumber}</span>
+                      <span className="text-sm font-medium">Preventivo #{q.quoteNumber}</span>
                       <Badge variant={
-                        quote.status === "accepted" ? "default" :
-                        quote.status === "rejected" ? "destructive" : "secondary"
+                        q.status === "accepted" ? "default" :
+                        q.status === "rejected" ? "destructive" : "secondary"
                       }>
-                        {quote.status === "accepted" ? "Accettato" :
-                         quote.status === "rejected" ? "Rifiutato" : "In attesa"}
+                        {q.status === "accepted" ? "Accettato" :
+                         q.status === "rejected" ? "Rifiutato" : "In attesa"}
                       </Badge>
                     </div>
-                    <div className="text-xl font-bold">
-                      {formatCurrency(quote.totalAmount)}
+                    
+                    {q.parts && Array.isArray(q.parts) && q.parts.length > 0 && (
+                      <div className="mb-3">
+                        <p className="text-xs text-muted-foreground mb-2">Ricambi:</p>
+                        <div className="space-y-1">
+                          {q.parts.map((part: any, idx: number) => (
+                            <div key={idx} className="flex justify-between text-sm">
+                              <span>{part.name || part.description}</span>
+                              <span className="font-medium">{formatCurrency(part.price || part.cost)}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    
+                    {q.laborCost > 0 && (
+                      <div className="flex justify-between text-sm mb-2">
+                        <span className="text-muted-foreground">Manodopera</span>
+                        <span className="font-medium">{formatCurrency(q.laborCost)}</span>
+                      </div>
+                    )}
+                    
+                    <Separator className="my-2" />
+                    <div className="flex justify-between items-center">
+                      <span className="font-medium">Totale</span>
+                      <span className="text-xl font-bold">{formatCurrency(q.totalAmount)}</span>
                     </div>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Emesso il {format(new Date(quote.createdAt), "d MMM yyyy", { locale: it })}
+                    
+                    <p className="text-xs text-muted-foreground mt-2">
+                      Emesso il {format(new Date(q.createdAt), "d MMM yyyy", { locale: it })}
                     </p>
+                    
+                    {q.notes && (
+                      <p className="text-sm text-muted-foreground mt-2 p-2 bg-background rounded">
+                        {q.notes}
+                      </p>
+                    )}
                   </div>
                 ))}
               </div>
@@ -469,6 +572,206 @@ export default function CustomerRepairDetail() {
           </CardContent>
         </Card>
       </div>
+
+      {acceptance && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <ClipboardCheck className="h-5 w-5" />
+              Dati Accettazione
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-6 md:grid-cols-2">
+              {acceptance.declaredDefects && acceptance.declaredDefects.length > 0 && (
+                <div>
+                  <p className="text-sm text-muted-foreground mb-2">Guasti Dichiarati</p>
+                  <div className="flex flex-wrap gap-2">
+                    {acceptance.declaredDefects.map((defect, idx) => (
+                      <Badge key={idx} variant="secondary">{defect}</Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+              
+              {acceptance.aestheticCondition && (
+                <div>
+                  <p className="text-sm text-muted-foreground mb-1">Condizione Estetica</p>
+                  <p className="font-medium capitalize">{acceptance.aestheticCondition}</p>
+                  {acceptance.aestheticNotes && (
+                    <p className="text-sm text-muted-foreground mt-1">{acceptance.aestheticNotes}</p>
+                  )}
+                </div>
+              )}
+              
+              {acceptance.accessories && acceptance.accessories.length > 0 && (
+                <div>
+                  <p className="text-sm text-muted-foreground mb-2">Accessori Consegnati</p>
+                  <div className="flex flex-wrap gap-2">
+                    {acceptance.accessories.map((acc, idx) => (
+                      <Badge key={idx} variant="outline">
+                        <Package className="h-3 w-3 mr-1" />
+                        {acc}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+              
+              <div>
+                <p className="text-sm text-muted-foreground mb-1">Data Accettazione</p>
+                <p className="font-medium">
+                  {format(new Date(acceptance.acceptedAt), "d MMMM yyyy, HH:mm", { locale: it })}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {diagnostics && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Stethoscope className="h-5 w-5" />
+              Diagnosi Tecnica
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div>
+                <p className="text-sm text-muted-foreground mb-1">Diagnosi</p>
+                <p className="p-3 bg-muted rounded-md text-sm">{diagnostics.technicalDiagnosis}</p>
+              </div>
+              
+              {diagnostics.diagnosisOutcome && (
+                <div>
+                  <p className="text-sm text-muted-foreground mb-1">Esito Diagnosi</p>
+                  <Badge variant={
+                    diagnostics.diagnosisOutcome === "riparabile" ? "default" :
+                    diagnostics.diagnosisOutcome === "non_conveniente" ? "secondary" : "destructive"
+                  }>
+                    {diagnostics.diagnosisOutcome === "riparabile" ? "Riparabile" :
+                     diagnostics.diagnosisOutcome === "non_conveniente" ? "Non Conveniente" : "Irriparabile"}
+                  </Badge>
+                </div>
+              )}
+              
+              {diagnostics.damagedComponents && diagnostics.damagedComponents.length > 0 && (
+                <div>
+                  <p className="text-sm text-muted-foreground mb-2">Componenti Danneggiati</p>
+                  <div className="flex flex-wrap gap-2">
+                    {diagnostics.damagedComponents.map((comp, idx) => (
+                      <Badge key={idx} variant="destructive" className="text-xs">
+                        <AlertOctagon className="h-3 w-3 mr-1" />
+                        {comp}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+              
+              {diagnostics.estimatedRepairTime && (
+                <div>
+                  <p className="text-sm text-muted-foreground mb-1">Tempo Stimato Riparazione</p>
+                  <div className="flex items-center gap-2">
+                    <Timer className="h-4 w-4 text-muted-foreground" />
+                    <span className="font-medium">
+                      {diagnostics.estimatedRepairTime < 1 
+                        ? `${Math.round(diagnostics.estimatedRepairTime * 60)} minuti`
+                        : `${diagnostics.estimatedRepairTime} ${diagnostics.estimatedRepairTime === 1 ? "ora" : "ore"}`
+                      }
+                    </span>
+                  </div>
+                </div>
+              )}
+              
+              {diagnostics.diagnosisNotes && (
+                <div>
+                  <p className="text-sm text-muted-foreground mb-1">Note del Tecnico</p>
+                  <p className="text-sm p-3 bg-muted rounded-md">{diagnostics.diagnosisNotes}</p>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {repair.repairCenterInfo && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Building2 className="h-5 w-5" />
+              Centro di Riparazione
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
+              <div>
+                <p className="text-sm text-muted-foreground mb-1">Nome</p>
+                <p className="font-medium">{repair.repairCenterInfo.fullName}</p>
+              </div>
+              {repair.repairCenterInfo.phone && (
+                <div>
+                  <p className="text-sm text-muted-foreground mb-1">Telefono</p>
+                  <div className="flex items-center gap-2">
+                    <Phone className="h-4 w-4 text-muted-foreground" />
+                    <a href={`tel:${repair.repairCenterInfo.phone}`} className="font-medium hover:underline">
+                      {repair.repairCenterInfo.phone}
+                    </a>
+                  </div>
+                </div>
+              )}
+              {repair.repairCenterInfo.address && (
+                <div>
+                  <p className="text-sm text-muted-foreground mb-1">Indirizzo</p>
+                  <div className="flex items-center gap-2">
+                    <MapPin className="h-4 w-4 text-muted-foreground" />
+                    <span className="font-medium">{repair.repairCenterInfo.address}</span>
+                  </div>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {repairLogs.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Sparkles className="h-5 w-5" />
+              Registro Attività
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {repairLogs.map((log) => (
+                <div key={log.id} className="flex gap-4 pb-3 border-b last:border-0">
+                  <div className="w-2 h-2 rounded-full bg-primary mt-2 shrink-0" />
+                  <div className="flex-1">
+                    <div className="flex items-center justify-between gap-2 flex-wrap">
+                      <span className="font-medium">{log.action}</span>
+                      <span className="text-xs text-muted-foreground">
+                        {format(new Date(log.createdAt), "d MMM yyyy, HH:mm", { locale: it })}
+                      </span>
+                    </div>
+                    {log.notes && (
+                      <p className="text-sm text-muted-foreground mt-1">{log.notes}</p>
+                    )}
+                    {log.technicianName && (
+                      <p className="text-xs text-muted-foreground mt-1">
+                        <User className="h-3 w-3 inline mr-1" />
+                        {log.technicianName}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {stateHistory.length > 0 && (
         <Card>

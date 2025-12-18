@@ -970,6 +970,30 @@ export function registerRoutes(app: Express): Server {
   // Repair Order State History - List
   app.get("/api/repairs/:id/state-history", requireAuth, async (req, res) => {
     try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const repair = await storage.getRepairOrder(req.params.id);
+      if (!repair) {
+        return res.status(404).send("Repair order not found");
+      }
+      
+      // RBAC for viewing state history
+      if (req.user.role === 'customer') {
+        if (repair.customerId !== req.user.id) {
+          return res.status(403).send("Access denied");
+        }
+      } else if (req.user.role === 'reseller') {
+        const canManage = await canResellerManageOrder(req.user.id, repair);
+        if (!canManage) {
+          return res.status(403).send("Access denied");
+        }
+      } else if (req.user.role === 'repair_center') {
+        if (repair.repairCenterId !== req.user.repairCenterId) {
+          return res.status(403).send("Access denied");
+        }
+      }
+      // Admin has full access
+      
       const history = await storage.listRepairOrderStateHistory(req.params.id);
       res.json(history);
     } catch (error: any) {
@@ -5434,7 +5458,24 @@ export function registerRoutes(app: Express): Server {
         return res.status(403).send("Cannot access other customers' repairs");
       }
       
-      res.json(repair);
+      // Enrich response with repair center info for customer display
+      let repairCenterInfo = null;
+      if (repair.repairCenterId) {
+        const repairCenter = await storage.getUser(repair.repairCenterId);
+        if (repairCenter) {
+          repairCenterInfo = {
+            id: repairCenter.id,
+            fullName: repairCenter.fullName,
+            phone: repairCenter.phone,
+            address: repairCenter.address,
+          };
+        }
+      }
+      
+      res.json({
+        ...repair,
+        repairCenterInfo,
+      });
     } catch (error: any) {
       res.status(500).send(error.message);
     }
@@ -8523,6 +8564,11 @@ export function registerRoutes(app: Express): Server {
       // Role-based access control for viewing logs
       if (req.user.role === 'admin') {
         // Admin can view logs for any order
+      } else if (req.user.role === 'customer') {
+        // Customer can view logs for their own orders
+        if (repairOrder.customerId !== req.user.id) {
+          return res.status(403).send("Access denied");
+        }
       } else if (req.user.role === 'repair_center') {
         if (repairOrder.repairCenterId !== req.user.repairCenterId) {
           return res.status(403).send("Access denied");
