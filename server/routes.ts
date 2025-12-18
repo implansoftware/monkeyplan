@@ -9356,9 +9356,14 @@ export function registerRoutes(app: Express): Server {
         return res.status(404).send("Repair order not found");
       }
       
-      // RBAC - reseller, admin, or repair_center can book
+      // RBAC - reseller, admin, repair_center, or customer (own orders) can book
       if (req.user.role === 'admin') {
         // Admin can book for any order
+      } else if (req.user.role === 'customer') {
+        // Customer can only book for their own orders
+        if (repairOrder.customerId !== req.user.id) {
+          return res.status(403).send("Access denied");
+        }
       } else if (req.user.role === 'reseller') {
         const canManage = await canResellerManageOrder(req.user.id, repairOrder);
         if (!canManage) {
@@ -9369,7 +9374,7 @@ export function registerRoutes(app: Express): Server {
           return res.status(403).send("Access denied");
         }
       } else {
-        return res.status(403).send("Only admins, resellers and repair centers can book appointments");
+        return res.status(403).send("Non autorizzato a prenotare appuntamenti");
       }
       
       // Must be ready for pickup
@@ -9448,8 +9453,14 @@ export function registerRoutes(app: Express): Server {
       }
       
       // RBAC
+      const isCustomer = req.user.role === 'customer';
       if (req.user.role === 'admin') {
         // Admin can modify any appointment
+      } else if (req.user.role === 'customer') {
+        // Customer can only cancel their own appointments
+        if (repairOrder.customerId !== req.user.id) {
+          return res.status(403).send("Access denied");
+        }
       } else if (req.user.role === 'repair_center') {
         if (repairOrder.repairCenterId !== req.user.repairCenterId) {
           return res.status(403).send("Access denied");
@@ -9464,6 +9475,16 @@ export function registerRoutes(app: Express): Server {
       }
       
       const { date, startTime, endTime, status, notes, cancelReason } = req.body;
+      
+      // Customers can only cancel, not reschedule or confirm
+      if (isCustomer) {
+        if (status !== 'cancelled') {
+          return res.status(403).send("I clienti possono solo annullare gli appuntamenti");
+        }
+        if (date || startTime || endTime) {
+          return res.status(403).send("I clienti non possono riprogrammare gli appuntamenti");
+        }
+      }
       
       let updates: any = {};
       
