@@ -1053,16 +1053,38 @@ export function registerRoutes(app: Express): Server {
         return res.json([]);
       }
       
-      // Get device brand from model if we have deviceModelId
+      // Get device brand from model if we have deviceModelId, otherwise try to find by brand name
       let deviceBrandId: string | undefined;
+      let deviceModelId: string | null = repair.deviceModelId || null;
+      
       if (repair.deviceModelId) {
         const model = await storage.getDeviceModel(repair.deviceModelId);
         deviceBrandId = model?.brandId || undefined;
+      } else if (repair.brand) {
+        // Fallback: try to find brand by name (case-insensitive)
+        const allBrands = await storage.listDeviceBrands();
+        const matchingBrand = allBrands.find(b => 
+          b.name.toLowerCase() === repair.brand?.toLowerCase()
+        );
+        if (matchingBrand) {
+          deviceBrandId = matchingBrand.id;
+          
+          // Also try to find model by name if we have the brand
+          if (repair.deviceModel) {
+            const allModels = await storage.listDeviceModels(matchingBrand.id);
+            const matchingModel = allModels.find(m => 
+              m.name.toLowerCase() === repair.deviceModel?.toLowerCase()
+            );
+            if (matchingModel) {
+              deviceModelId = matchingModel.id;
+            }
+          }
+        }
       }
       
       // Get compatible accessories
       const accessories = await storage.listAccessoriesCompatibleWithDevice(
-        repair.deviceModelId || null,
+        deviceModelId,
         deviceBrandId
       );
       
