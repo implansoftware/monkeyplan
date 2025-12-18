@@ -1056,6 +1056,24 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
                           <>Dispositivo pronto per il ritiro. <strong>Prenota un appuntamento</strong> o <strong>completa la consegna</strong> quando il cliente arriva.</>
                         )}
                       </p>
+                      
+                      {/* Show existing appointment if booked */}
+                      {appointment && (
+                        <div className="bg-green-50 dark:bg-green-950 rounded-lg p-3 border border-green-200 dark:border-green-800 space-y-2">
+                          <div className="flex items-center gap-2 text-sm text-green-700 dark:text-green-300">
+                            <CalendarCheck className="h-4 w-4" />
+                            <span className="font-medium">Appuntamento prenotato dal cliente</span>
+                          </div>
+                          <div className="text-sm">
+                            <p>Data: <strong>{appointment.date}</strong></p>
+                            <p>Ora: <strong>{appointment.startTime} - {appointment.endTime}</strong></p>
+                            {appointment.notes && (
+                              <p className="mt-1 text-muted-foreground">Note: {appointment.notes}</p>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                      
                       <div className="flex gap-2">
                         <Button
                           variant={user?.role === 'customer' ? 'default' : 'outline'}
@@ -1064,7 +1082,7 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
                           data-testid="button-book-appointment"
                         >
                           <CalendarCheck className="mr-2 h-4 w-4" />
-                          Prenota Appuntamento
+                          {appointment ? 'Gestisci Appuntamento' : 'Prenota Appuntamento'}
                         </Button>
                         {user?.role !== 'customer' && (
                           <Button
