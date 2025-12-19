@@ -701,6 +701,35 @@ export const productPrices = pgTable("product_prices", {
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 
+// Reseller Products (Assegnazione prodotti globali ai reseller per pubblicazione nello shop)
+export const resellerProducts = pgTable("reseller_products", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  productId: varchar("product_id").notNull().references(() => products.id, { onDelete: "cascade" }),
+  resellerId: varchar("reseller_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  
+  // Pubblicazione nello shop
+  isPublished: boolean("is_published").notNull().default(false),
+  
+  // Prezzo personalizzato (override del prezzo base del prodotto)
+  customPriceCents: integer("custom_price_cents"),
+  
+  // Ereditarietà franchising (prodotto assegnato dal reseller padre)
+  inheritedFrom: varchar("inherited_from").references(() => users.id, { onDelete: "set null" }),
+  canOverridePrice: boolean("can_override_price").notNull().default(true),
+  canUnpublish: boolean("can_unpublish").notNull().default(true),
+  
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export const insertResellerProductSchema = createInsertSchema(resellerProducts).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export type InsertResellerProduct = z.infer<typeof insertResellerProductSchema>;
+export type ResellerProduct = typeof resellerProducts.$inferSelect;
+
 // ==========================================
 // SMARTPHONE SPECS (1:1 con products di tipo dispositivo)
 // ==========================================
