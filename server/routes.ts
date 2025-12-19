@@ -2018,6 +2018,21 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Admin Products - Toggle shop visibility
+  app.patch("/api/admin/products/:id/visibility", requireRole("admin"), async (req, res) => {
+    try {
+      const { isVisibleInShop } = req.body;
+      if (typeof isVisibleInShop !== 'boolean') {
+        return res.status(400).send("isVisibleInShop deve essere un valore booleano");
+      }
+      const product = await storage.updateProduct(req.params.id, { isVisibleInShop });
+      setActivityEntity(res, { type: 'products', id: req.params.id });
+      res.json(product);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
   // Admin Products - Upload product image
   app.post("/api/admin/products/:id/image", requireRole("admin"), upload.single("image"), async (req, res) => {
     try {
