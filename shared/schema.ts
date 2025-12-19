@@ -679,6 +679,7 @@ export const products = pgTable("products", {
   
   // Metadata
   isActive: boolean("is_active").notNull().default(true),
+  isVisibleInShop: boolean("is_visible_in_shop").notNull().default(true), // Visibilità globale nello shop (controllata da admin)
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
