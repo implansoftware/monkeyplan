@@ -24,7 +24,6 @@ import AdminRepairCenters from "@/pages/admin/repair-centers";
 import AdminTickets from "@/pages/admin/tickets";
 import AdminTicketDetail from "@/pages/admin/ticket-detail";
 import AdminRepairs from "@/pages/admin/repairs";
-import AdminInventory from "@/pages/admin/inventory";
 import AdminProducts from "@/pages/admin/products";
 import AdminProductAssignments from "@/pages/admin/product-assignments";
 import AdminPartsOrders from "@/pages/admin/parts-orders";
@@ -100,7 +99,6 @@ import ResellerTrovausatiSettings from "@/pages/reseller/trovausati/settings";
 
 // Reseller Repairs & Inventory
 import ResellerRepairs from "@/pages/reseller/repairs";
-import ResellerInventory from "@/pages/reseller/inventory";
 import ResellerProducts from "@/pages/reseller/products";
 import ResellerSuppliers from "@/pages/reseller/suppliers";
 import ResellerSupplierOrders from "@/pages/reseller/supplier-orders";
@@ -120,7 +118,6 @@ import ResellerAccessoryCatalog from "@/pages/reseller/accessory-catalog";
 // Repair Center pages
 import RepairCenterDashboard from "@/pages/repair-center/dashboard";
 import RepairCenterRepairs from "@/pages/repair-center/repairs";
-import RepairCenterInventory from "@/pages/repair-center/inventory";
 import RepairCenterTickets from "@/pages/repair-center/tickets";
 import RepairCenterTicketDetail from "@/pages/repair-center/ticket-detail";
 import RepairCenterAppointments from "@/pages/repair-center/appointments";
@@ -171,7 +168,6 @@ function Router() {
       <ProtectedRoute path="/admin/repairs" component={AdminRepairs} />
       <ProtectedRoute path="/admin/tickets" component={AdminTickets} />
       <ProtectedRoute path="/admin/tickets/:id" component={AdminTicketDetail} />
-      <ProtectedRoute path="/admin/inventory" component={AdminInventory} />
       <ProtectedRoute path="/admin/warehouses" component={AdminWarehouses} />
       <ProtectedRoute path="/admin/products" component={AdminProducts} />
       <ProtectedRoute path="/admin/product-assignments" component={AdminProductAssignments} />
@@ -218,7 +214,7 @@ function Router() {
       <ProtectedRoute path="/reseller/diagnostics" component={DiagnosisList} />
       <ProtectedRoute path="/reseller/quotes" component={QuotesList} />
       <ProtectedRoute path="/reseller/service-catalog" component={ResellerServiceCatalog} />
-      <ProtectedRoute path="/reseller/inventory" component={ResellerInventory} />
+      <ProtectedRoute path="/reseller/warehouses" component={AdminWarehouses} />
       <ProtectedRoute path="/reseller/products" component={ResellerProducts} />
       <ProtectedRoute path="/reseller/suppliers" component={ResellerSuppliers} />
       <ProtectedRoute path="/reseller/supplier-orders" component={ResellerSupplierOrders} />
@@ -262,7 +258,7 @@ function Router() {
       <ProtectedRoute path="/repair-center/repairs/:id" component={RepairCenterRepairDetail} />
       <ProtectedRoute path="/repair-center/repairs" component={RepairCenterRepairs} />
       <ProtectedRoute path="/repair-center/appointments" component={RepairCenterAppointments} />
-      <ProtectedRoute path="/repair-center/inventory" component={RepairCenterInventory} />
+      <ProtectedRoute path="/repair-center/warehouses" component={AdminWarehouses} />
       <ProtectedRoute path="/repair-center/tickets" component={RepairCenterTickets} />
       <ProtectedRoute path="/repair-center/tickets/:id" component={RepairCenterTicketDetail} />
       <ProtectedRoute path="/repair-center/diagnostics" component={DiagnosisList} />

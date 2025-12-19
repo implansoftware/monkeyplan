@@ -140,7 +140,7 @@ const menuItems = {
     { title: "Lavorazioni", url: "/reseller/repairs", icon: Wrench, group: "Centri & Riparazioni" },
     { title: "Catalogo Interventi", url: "/reseller/service-catalog", icon: Receipt, group: "Centri & Riparazioni" },
     { title: "Catalogo Dispositivi", url: "/reseller/device-catalog", icon: Smartphone, group: "Centri & Riparazioni" },
-    { title: "Magazzino", url: "/reseller/inventory", icon: Package, group: "Magazzino & Fornitori" },
+    { title: "Magazzino", url: "/reseller/warehouses", icon: Warehouse, group: "Magazzino & Fornitori" },
     { title: "Ricambi", url: "/reseller/products", icon: Package, group: "Magazzino & Fornitori" },
     { title: "Smartphone", url: "/reseller/smartphone-catalog", icon: Smartphone, group: "Magazzino & Fornitori" },
     { title: "Accessori", url: "/reseller/accessory-catalog", icon: ShoppingCart, group: "Magazzino & Fornitori" },
@@ -167,7 +167,7 @@ const menuItems = {
     { title: "Dashboard", url: "/repair-center", icon: LayoutDashboard, group: "Principale" },
     { title: "Lavorazioni", url: "/repair-center/repairs", icon: Wrench, group: "Principale" },
     { title: "Appuntamenti", url: "/repair-center/appointments", icon: CalendarCheck, group: "Principale" },
-    { title: "Magazzino", url: "/repair-center/inventory", icon: Package, group: "Magazzino" },
+    { title: "Magazzino", url: "/repair-center/warehouses", icon: Warehouse, group: "Magazzino" },
     { title: "Ticket", url: "/repair-center/tickets", icon: Ticket, group: "Assistenza" },
   ],
   customer: [
