@@ -750,6 +750,7 @@ export interface IStorage {
   listWarehouseStock(warehouseId: string): Promise<WarehouseStock[]>;
   getWarehouseStockItem(warehouseId: string, productId: string): Promise<WarehouseStock | undefined>;
   upsertWarehouseStock(data: InsertWarehouseStock): Promise<WarehouseStock>;
+  updateWarehouseStock(id: string, updates: { minStock?: number | null; location?: string | null }): Promise<WarehouseStock>;
   updateWarehouseStockQuantity(warehouseId: string, productId: string, quantityDelta: number): Promise<WarehouseStock>;
   
   // Warehouse Movements
@@ -6461,6 +6462,18 @@ export class DatabaseStorage implements IStorage {
     }
     const [created] = await db.insert(warehouseStock).values(data).returning();
     return created;
+  }
+
+  async updateWarehouseStock(id: string, updates: { minStock?: number | null; location?: string | null }): Promise<WarehouseStock> {
+    const [updated] = await db.update(warehouseStock)
+      .set({ 
+        minStock: updates.minStock,
+        location: updates.location,
+        updatedAt: new Date() 
+      })
+      .where(eq(warehouseStock.id, id))
+      .returning();
+    return updated;
   }
 
   async updateWarehouseStockQuantity(warehouseId: string, productId: string, quantityDelta: number): Promise<WarehouseStock> {

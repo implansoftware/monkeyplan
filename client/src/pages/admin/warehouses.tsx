@@ -15,7 +15,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { 
   Warehouse, Package, ArrowLeftRight, Plus, Search, 
   TrendingUp, TrendingDown, RotateCcw, MapPin, Boxes,
-  ArrowRight, Clock, CheckCircle, XCircle, Truck
+  ArrowRight, Clock, CheckCircle, XCircle, Truck, Pencil
 } from "lucide-react";
 import type { Warehouse as WarehouseType, WarehouseStock, WarehouseMovement, WarehouseTransfer, Product } from "@shared/schema";
 
@@ -36,6 +36,9 @@ export default function WarehousesPage() {
   const [activeTab, setActiveTab] = useState("stock");
   const [searchTerm, setSearchTerm] = useState("");
   const [showMovementDialog, setShowMovementDialog] = useState(false);
+  const [showEditStockDialog, setShowEditStockDialog] = useState(false);
+  const [editingStockItem, setEditingStockItem] = useState<EnrichedStock | null>(null);
+  const [editStockData, setEditStockData] = useState({ minStock: 0, location: "" });
   const [movementData, setMovementData] = useState({
     productId: "",
     movementType: "carico" as string,
@@ -92,6 +95,33 @@ export default function WarehousesPage() {
       toast({ title: "Errore", description: error.message, variant: "destructive" });
     },
   });
+
+  const updateStockMutation = useMutation({
+    mutationFn: async (data: { stockId: string; minStock: number | null; location: string | null }) => {
+      return apiRequest("PATCH", `/api/warehouse-stock/${data.stockId}`, { 
+        minStock: data.minStock, 
+        location: data.location 
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/warehouses", warehouseId, "stock"] });
+      toast({ title: "Stock aggiornato", description: "Min. stock e posizione salvati" });
+      setShowEditStockDialog(false);
+      setEditingStockItem(null);
+    },
+    onError: (error: any) => {
+      toast({ title: "Errore", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const handleEditStock = (item: EnrichedStock) => {
+    setEditingStockItem(item);
+    setEditStockData({ 
+      minStock: item.minStock || 0, 
+      location: item.location || "" 
+    });
+    setShowEditStockDialog(true);
+  };
 
   const filteredStock = stock.filter(item => 
     item.product?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -212,6 +242,55 @@ export default function WarehousesPage() {
             </div>
           </DialogContent>
         </Dialog>
+
+        <Dialog open={showEditStockDialog} onOpenChange={setShowEditStockDialog}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Modifica Stock</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <p className="text-sm text-muted-foreground">
+                Prodotto: <span className="font-medium text-foreground">{editingStockItem?.product?.name}</span>
+              </p>
+              <div className="space-y-2">
+                <Label>Scorta Minima</Label>
+                <Input 
+                  type="number" 
+                  min="0"
+                  value={editStockData.minStock}
+                  onChange={(e) => setEditStockData(prev => ({ ...prev, minStock: parseInt(e.target.value) || 0 }))}
+                  data-testid="input-min-stock"
+                />
+                <p className="text-xs text-muted-foreground">Riceverai un avviso quando la quantità scende sotto questo valore</p>
+              </div>
+              <div className="space-y-2">
+                <Label>Posizione in Magazzino</Label>
+                <Input 
+                  value={editStockData.location}
+                  onChange={(e) => setEditStockData(prev => ({ ...prev, location: e.target.value }))}
+                  placeholder="Es: Scaffale A3, Ripiano 2"
+                  data-testid="input-location"
+                />
+              </div>
+              <Button 
+                className="w-full" 
+                onClick={() => {
+                  if (editingStockItem) {
+                    updateStockMutation.mutate({
+                      stockId: editingStockItem.id,
+                      minStock: editStockData.minStock || null,
+                      location: editStockData.location || null
+                    });
+                  }
+                }}
+                disabled={updateStockMutation.isPending}
+                data-testid="button-save-stock"
+              >
+                {updateStockMutation.isPending ? "Salvataggio..." : "Salva"}
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -317,16 +396,17 @@ export default function WarehousesPage() {
                       <th className="text-right p-4 font-medium">Quantità</th>
                       <th className="text-right p-4 font-medium">Min. Stock</th>
                       <th className="text-left p-4 font-medium">Posizione</th>
+                      <th className="text-center p-4 font-medium">Azioni</th>
                     </tr>
                   </thead>
                   <tbody>
                     {loadingStock ? (
                       <tr>
-                        <td colSpan={6} className="text-center p-8">Caricamento...</td>
+                        <td colSpan={7} className="text-center p-8">Caricamento...</td>
                       </tr>
                     ) : filteredStock.length === 0 ? (
                       <tr>
-                        <td colSpan={6} className="text-center p-8 text-muted-foreground">
+                        <td colSpan={7} className="text-center p-8 text-muted-foreground">
                           Nessun prodotto in stock
                         </td>
                       </tr>
@@ -360,6 +440,16 @@ export default function WarehousesPage() {
                           </td>
                           <td className="p-4 text-right text-muted-foreground">{item.minStock || "-"}</td>
                           <td className="p-4">{item.location || "-"}</td>
+                          <td className="p-4 text-center">
+                            <Button 
+                              size="icon" 
+                              variant="ghost" 
+                              onClick={() => handleEditStock(item)}
+                              data-testid={`button-edit-stock-${item.id}`}
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                          </td>
                         </tr>
                       ))
                     )}

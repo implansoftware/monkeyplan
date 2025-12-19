@@ -18455,6 +18455,17 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  app.patch("/api/warehouse-stock/:stockId", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      const { minStock, location } = req.body;
+      const updated = await storage.updateWarehouseStock(req.params.stockId, { minStock, location });
+      res.json(updated);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   app.get("/api/warehouse-transfers", requireAuth, async (req, res) => {
     try {
       if (!req.user) return res.status(401).json({ error: "Non autenticato" });
