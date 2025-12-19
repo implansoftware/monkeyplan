@@ -18,7 +18,7 @@ export default function ShopCatalog() {
   const { toast } = useToast();
   
   const [search, setSearch] = useState("");
-  const [typeFilter, setTypeFilter] = useState<string>("");
+  const [typeFilter, setTypeFilter] = useState<string>("all");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   
   const { data, isLoading } = useQuery<{ products: Product[]; total: number }>({
@@ -26,7 +26,7 @@ export default function ShopCatalog() {
     queryFn: async () => {
       const params = new URLSearchParams();
       if (search) params.set('search', search);
-      if (typeFilter) params.set('type', typeFilter);
+      if (typeFilter && typeFilter !== 'all') params.set('type', typeFilter);
       const res = await fetch(`/api/shop/${resellerId}/products?${params}`);
       if (!res.ok) throw new Error('Errore nel caricamento prodotti');
       return res.json();
@@ -83,7 +83,7 @@ export default function ShopCatalog() {
             <SelectValue placeholder="Tipo prodotto" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">Tutti</SelectItem>
+            <SelectItem value="all">Tutti</SelectItem>
             <SelectItem value="dispositivo">Dispositivi</SelectItem>
             <SelectItem value="accessorio">Accessori</SelectItem>
             <SelectItem value="ricambio">Ricambi</SelectItem>
@@ -140,9 +140,9 @@ export default function ShopCatalog() {
               {viewMode === 'grid' ? (
                 <>
                   <div className="aspect-square bg-muted flex items-center justify-center">
-                    {product.images?.[0] ? (
+                    {product.imageUrl ? (
                       <img 
-                        src={product.images[0]} 
+                        src={product.imageUrl} 
                         alt={product.name}
                         className="w-full h-full object-cover"
                       />
@@ -155,17 +155,14 @@ export default function ShopCatalog() {
                       <h3 className="font-semibold line-clamp-2" data-testid={`text-product-name-${product.id}`}>
                         {product.name}
                       </h3>
-                      <Badge variant="secondary">{product.type}</Badge>
+                      <Badge variant="secondary">{product.productType}</Badge>
                     </div>
                     {product.brand && (
                       <p className="text-sm text-muted-foreground mb-2">{product.brand}</p>
                     )}
                     <p className="text-xl font-bold text-primary" data-testid={`text-product-price-${product.id}`}>
-                      {formatPrice(product.priceCents || 0)}
+                      {formatPrice(product.unitPrice || 0)}
                     </p>
-                    {(product.stockQuantity ?? 0) <= 5 && (product.stockQuantity ?? 0) > 0 && (
-                      <Badge variant="outline" className="mt-2">Solo {product.stockQuantity} rimasti</Badge>
-                    )}
                   </CardContent>
                   <CardFooter className="p-4 pt-0">
                     <Button 
@@ -184,9 +181,9 @@ export default function ShopCatalog() {
               ) : (
                 <CardContent className="p-4 flex gap-4">
                   <div className="w-24 h-24 bg-muted rounded flex-shrink-0 flex items-center justify-center">
-                    {product.images?.[0] ? (
+                    {product.imageUrl ? (
                       <img 
-                        src={product.images[0]} 
+                        src={product.imageUrl} 
                         alt={product.name}
                         className="w-full h-full object-cover rounded"
                       />
@@ -199,7 +196,7 @@ export default function ShopCatalog() {
                       <h3 className="font-semibold" data-testid={`text-product-name-${product.id}`}>
                         {product.name}
                       </h3>
-                      <Badge variant="secondary">{product.type}</Badge>
+                      <Badge variant="secondary">{product.productType}</Badge>
                     </div>
                     {product.brand && (
                       <p className="text-sm text-muted-foreground">{product.brand}</p>
@@ -209,7 +206,7 @@ export default function ShopCatalog() {
                     )}
                     <div className="flex items-center justify-between mt-2">
                       <p className="text-xl font-bold text-primary" data-testid={`text-product-price-${product.id}`}>
-                        {formatPrice(product.priceCents || 0)}
+                        {formatPrice(product.unitPrice || 0)}
                       </p>
                       <Button 
                         size="sm"
