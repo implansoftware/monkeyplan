@@ -11,7 +11,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Smartphone, Search, Plus, Pencil, Trash2, Battery, HardDrive, Loader2, Store, ImagePlus, X, Image, Users, UserPlus } from "lucide-react";
+import { Smartphone, Search, Plus, Pencil, Trash2, Battery, HardDrive, Loader2, Store, ImagePlus, X, Image, Users, UserPlus, Eye, EyeOff } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
 import { Skeleton } from "@/components/ui/skeleton";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -237,6 +238,23 @@ export default function AdminSmartphoneCatalog() {
       toast({ title: "Eliminato", description: "Lo smartphone è stato rimosso dal catalogo." });
     },
     onError: (error: any) => {
+      toast({ title: "Errore", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const toggleVisibilityMutation = useMutation({
+    mutationFn: async ({ id, isVisibleInShop }: { id: string; isVisibleInShop: boolean }) => {
+      const res = await apiRequest("PATCH", `/api/admin/products/${id}/visibility`, { isVisibleInShop });
+      return res.json();
+    },
+    onSuccess: (_, { isVisibleInShop }) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/smartphones"] });
+      toast({
+        title: isVisibleInShop ? "Visibile nello shop" : "Nascosto dallo shop",
+        description: isVisibleInShop ? "Lo smartphone è ora visibile negli shop." : "Lo smartphone è stato nascosto dagli shop.",
+      });
+    },
+    onError: (error: Error) => {
       toast({ title: "Errore", description: error.message, variant: "destructive" });
     },
   });
@@ -491,6 +509,7 @@ export default function AdminSmartphoneCatalog() {
                     <TableHead>Stato Rete</TableHead>
                     <TableHead>Batteria</TableHead>
                     <TableHead className="text-right">Prezzo</TableHead>
+                    <TableHead className="text-center">Shop</TableHead>
                     <TableHead className="w-24">Azioni</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -571,6 +590,23 @@ export default function AdminSmartphoneCatalog() {
                       </TableCell>
                       <TableCell className="text-right font-medium">
                         {(smartphone.unitPrice / 100).toFixed(2)}
+                      </TableCell>
+                      <TableCell className="text-center">
+                        <div className="flex items-center justify-center gap-1">
+                          {smartphone.isVisibleInShop ? (
+                            <Eye className="h-4 w-4 text-green-500" />
+                          ) : (
+                            <EyeOff className="h-4 w-4 text-muted-foreground" />
+                          )}
+                          <Switch
+                            checked={smartphone.isVisibleInShop}
+                            onCheckedChange={(checked) =>
+                              toggleVisibilityMutation.mutate({ id: smartphone.id, isVisibleInShop: checked })
+                            }
+                            disabled={toggleVisibilityMutation.isPending}
+                            data-testid={`switch-visibility-smartphone-${smartphone.id}`}
+                          />
+                        </div>
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-1">
