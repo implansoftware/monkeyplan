@@ -65,6 +65,7 @@ import {
   fonedayCredentials, fonedayOrders,
   mobilesentrixCredentials, mobilesentrixOrders,
   serviceItems, serviceItemPrices, productPrices,
+  resellerProducts, ResellerProduct, InsertResellerProduct,
   resellerStaffPermissions, ResellerStaffPermission, InsertResellerStaffPermission,
   adminStaffPermissions, AdminStaffPermission, InsertAdminStaffPermission,
   customerRepairCenters, CustomerRepairCenter, InsertCustomerRepairCenter,
@@ -144,6 +145,16 @@ export interface IStorage {
   createProductPrice(price: InsertProductPrice): Promise<ProductPrice>;
   updateProductPrice(id: string, updates: Partial<Pick<ProductPrice, 'priceCents' | 'costPriceCents' | 'isActive'>>): Promise<ProductPrice>;
   deleteProductPrice(id: string): Promise<void>;
+
+  // Reseller Products (assegnazione prodotti globali ai reseller)
+  listResellerProducts(filters?: { resellerId?: string; productId?: string; isPublished?: boolean }): Promise<ResellerProduct[]>;
+  getResellerProduct(productId: string, resellerId: string): Promise<ResellerProduct | undefined>;
+  assignProductToReseller(data: InsertResellerProduct): Promise<ResellerProduct>;
+  assignProductToResellers(productId: string, resellerIds: string[], options?: { inheritedFrom?: string; createdBy?: string }): Promise<ResellerProduct[]>;
+  updateResellerProduct(id: string, updates: Partial<Pick<ResellerProduct, 'isPublished' | 'customPriceCents' | 'canOverridePrice' | 'canUnpublish'>>): Promise<ResellerProduct>;
+  removeProductFromReseller(productId: string, resellerId: string): Promise<void>;
+  getShopProductsForSeller(sellerId: string): Promise<Array<Product & { shopPrice: number; sellerName: string }>>;
+  getMarketplaceProducts(): Promise<Array<Product & { sellers: Array<{ sellerId: string; sellerName: string; price: number; isAdmin: boolean }> }>>;
   
   // Smartphone Specs (for products of type "dispositivo")
   getSmartphoneSpecs(productId: string): Promise<SmartphoneSpecs | undefined>;
@@ -1087,6 +1098,194 @@ export class DatabaseStorage implements IStorage {
 
   async deleteProductPrice(id: string): Promise<void> {
     await db.delete(productPrices).where(eq(productPrices.id, id));
+  }
+
+  // Reseller Products (assegnazione prodotti globali ai reseller)
+  async listResellerProducts(filters?: { resellerId?: string; productId?: string; isPublished?: boolean }): Promise<ResellerProduct[]> {
+    let query = db.select().from(resellerProducts);
+    
+    if (filters) {
+      const conditions = [];
+      if (filters.resellerId) conditions.push(eq(resellerProducts.resellerId, filters.resellerId));
+      if (filters.productId) conditions.push(eq(resellerProducts.productId, filters.productId));
+      if (filters.isPublished !== undefined) conditions.push(eq(resellerProducts.isPublished, filters.isPublished));
+      
+      if (conditions.length > 0) {
+        query = query.where(and(...conditions)) as any;
+      }
+    }
+    
+    return await query.orderBy(desc(resellerProducts.createdAt));
+  }
+
+  async getResellerProduct(productId: string, resellerId: string): Promise<ResellerProduct | undefined> {
+    const [rp] = await db.select().from(resellerProducts)
+      .where(and(
+        eq(resellerProducts.productId, productId),
+        eq(resellerProducts.resellerId, resellerId)
+      ));
+    return rp || undefined;
+  }
+
+  async assignProductToReseller(data: InsertResellerProduct): Promise<ResellerProduct> {
+    const [rp] = await db.insert(resellerProducts).values(data).returning();
+    return rp;
+  }
+
+  async assignProductToResellers(productId: string, resellerIds: string[], options?: { inheritedFrom?: string; createdBy?: string }): Promise<ResellerProduct[]> {
+    if (resellerIds.length === 0) return [];
+    
+    const values = resellerIds.map(resellerId => ({
+      productId,
+      resellerId,
+      isPublished: false,
+      inheritedFrom: options?.inheritedFrom || null,
+      createdBy: options?.createdBy || null,
+    }));
+    
+    const result = await db.insert(resellerProducts)
+      .values(values)
+      .onConflictDoNothing()
+      .returning();
+    
+    return result;
+  }
+
+  async updateResellerProduct(id: string, updates: Partial<Pick<ResellerProduct, 'isPublished' | 'customPriceCents' | 'canOverridePrice' | 'canUnpublish'>>): Promise<ResellerProduct> {
+    const [rp] = await db.update(resellerProducts)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(resellerProducts.id, id))
+      .returning();
+    if (!rp) throw new Error("Assegnazione prodotto non trovata");
+    return rp;
+  }
+
+  async removeProductFromReseller(productId: string, resellerId: string): Promise<void> {
+    await db.delete(resellerProducts)
+      .where(and(
+        eq(resellerProducts.productId, productId),
+        eq(resellerProducts.resellerId, resellerId)
+      ));
+  }
+
+  async getShopProductsForSeller(sellerId: string): Promise<Array<Product & { shopPrice: number; sellerName: string }>> {
+    // Se sellerId è 'admin', restituisci prodotti globali dell'admin
+    if (sellerId === 'admin') {
+      const adminProducts = await db.select().from(products)
+        .where(and(
+          isNull(products.createdBy),
+          eq(products.isActive, true)
+        ))
+        .orderBy(desc(products.createdAt));
+      
+      return adminProducts.map(p => ({
+        ...p,
+        shopPrice: p.unitPrice,
+        sellerName: 'MonkeyPlan Store',
+      }));
+    }
+    
+    // Altrimenti, prodotti del reseller (propri + assegnati pubblicati)
+    const reseller = await this.getUser(sellerId);
+    const sellerName = reseller?.fullName || 'Shop';
+    
+    // Prodotti propri del reseller
+    const ownProducts = await db.select().from(products)
+      .where(and(
+        eq(products.createdBy, sellerId),
+        eq(products.isActive, true)
+      ));
+    
+    // Prodotti globali assegnati e pubblicati
+    const assignedProducts = await db.select({
+      product: products,
+      resellerProduct: resellerProducts,
+    }).from(resellerProducts)
+      .innerJoin(products, eq(products.id, resellerProducts.productId))
+      .where(and(
+        eq(resellerProducts.resellerId, sellerId),
+        eq(resellerProducts.isPublished, true),
+        isNull(products.createdBy),
+        eq(products.isActive, true)
+      ));
+    
+    const result: Array<Product & { shopPrice: number; sellerName: string }> = [];
+    
+    // Aggiungi prodotti propri
+    for (const p of ownProducts) {
+      result.push({
+        ...p,
+        shopPrice: p.unitPrice,
+        sellerName,
+      });
+    }
+    
+    // Aggiungi prodotti assegnati con prezzo personalizzato
+    for (const { product, resellerProduct } of assignedProducts) {
+      result.push({
+        ...product,
+        shopPrice: resellerProduct.customPriceCents || product.unitPrice,
+        sellerName,
+      });
+    }
+    
+    return result;
+  }
+
+  async getMarketplaceProducts(): Promise<Array<Product & { sellers: Array<{ sellerId: string; sellerName: string; price: number; isAdmin: boolean }> }>> {
+    // Ottieni tutti i prodotti attivi
+    const allProducts = await db.select().from(products)
+      .where(eq(products.isActive, true));
+    
+    // Ottieni tutte le assegnazioni pubblicate
+    const allAssignments = await db.select().from(resellerProducts)
+      .where(eq(resellerProducts.isPublished, true));
+    
+    // Ottieni tutti i reseller per i nomi
+    const resellers = await db.select().from(users)
+      .where(eq(users.role, 'reseller'));
+    const resellerMap = new Map(resellers.map(r => [r.id, r.fullName || r.username]));
+    
+    const productMap = new Map<string, Product & { sellers: Array<{ sellerId: string; sellerName: string; price: number; isAdmin: boolean }> }>();
+    
+    for (const product of allProducts) {
+      const sellers: Array<{ sellerId: string; sellerName: string; price: number; isAdmin: boolean }> = [];
+      
+      // Se è un prodotto globale (admin), l'admin lo vende
+      if (!product.createdBy) {
+        sellers.push({
+          sellerId: 'admin',
+          sellerName: 'MonkeyPlan Store',
+          price: product.unitPrice,
+          isAdmin: true,
+        });
+        
+        // Aggiungi anche i reseller che lo hanno pubblicato
+        const productAssignments = allAssignments.filter(a => a.productId === product.id);
+        for (const assignment of productAssignments) {
+          sellers.push({
+            sellerId: assignment.resellerId,
+            sellerName: resellerMap.get(assignment.resellerId) || 'Reseller',
+            price: assignment.customPriceCents || product.unitPrice,
+            isAdmin: false,
+          });
+        }
+      } else {
+        // Prodotto del reseller
+        sellers.push({
+          sellerId: product.createdBy,
+          sellerName: resellerMap.get(product.createdBy) || 'Reseller',
+          price: product.unitPrice,
+          isAdmin: false,
+        });
+      }
+      
+      if (sellers.length > 0) {
+        productMap.set(product.id, { ...product, sellers });
+      }
+    }
+    
+    return Array.from(productMap.values());
   }
 
   // Smartphone Specs

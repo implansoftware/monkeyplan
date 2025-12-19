@@ -2241,6 +2241,96 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Reseller Products Assignment (Admin - assegna prodotti globali ai reseller)
+  app.get("/api/admin/products/:productId/reseller-assignments", requireRole("admin"), async (req, res) => {
+    try {
+      const product = await storage.getProduct(req.params.productId);
+      if (!product) {
+        return res.status(404).send("Prodotto non trovato");
+      }
+      
+      // Ottieni tutti i reseller
+      const allUsers = await storage.listUsers();
+      const resellers = allUsers.filter(u => u.role === "reseller" && u.isActive);
+      
+      // Ottieni assegnazioni per questo prodotto
+      const assignments = await storage.listResellerProducts({ productId: req.params.productId });
+      const assignmentMap = new Map(assignments.map(a => [a.resellerId, a]));
+      
+      // Combina i dati
+      const result = resellers.map(reseller => ({
+        reseller: {
+          id: reseller.id,
+          username: reseller.username,
+          fullName: reseller.fullName,
+          email: reseller.email,
+          resellerCategory: reseller.resellerCategory,
+        },
+        assignment: assignmentMap.get(reseller.id) || null,
+        isAssigned: assignmentMap.has(reseller.id),
+        isPublished: assignmentMap.get(reseller.id)?.isPublished || false,
+      }));
+      
+      res.json(result);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  app.post("/api/admin/products/:productId/assign", requireRole("admin"), async (req, res) => {
+    try {
+      const { resellerIds } = z.object({
+        resellerIds: z.array(z.string()).min(1),
+      }).parse(req.body);
+      
+      const product = await storage.getProduct(req.params.productId);
+      if (!product) {
+        return res.status(404).send("Prodotto non trovato");
+      }
+      
+      // Solo prodotti globali possono essere assegnati
+      if (product.createdBy) {
+        return res.status(400).send("Solo i prodotti globali (creati dall'admin) possono essere assegnati ai reseller");
+      }
+      
+      const assignments = await storage.assignProductToResellers(req.params.productId, resellerIds);
+      res.json({ message: `Prodotto assegnato a ${assignments.length} reseller`, assignments });
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+
+  app.delete("/api/admin/products/:productId/assign/:resellerId", requireRole("admin"), async (req, res) => {
+    try {
+      await storage.removeProductFromReseller(req.params.productId, req.params.resellerId);
+      res.sendStatus(204);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // Lista prodotti globali con stato assegnazione
+  app.get("/api/admin/global-products", requireRole("admin"), async (req, res) => {
+    try {
+      const allProducts = await storage.listProducts();
+      const globalProducts = allProducts.filter(p => !p.createdBy && p.isActive);
+      
+      // Per ogni prodotto, conta quanti reseller lo hanno assegnato/pubblicato
+      const result = await Promise.all(globalProducts.map(async (product) => {
+        const assignments = await storage.listResellerProducts({ productId: product.id });
+        return {
+          ...product,
+          assignedCount: assignments.length,
+          publishedCount: assignments.filter(a => a.isPublished).length,
+        };
+      }));
+      
+      res.json(result);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
   // Repair Orders (Admin)
   app.get("/api/admin/repairs", requireRole("admin"), async (req, res) => {
     try {
@@ -2795,6 +2885,108 @@ export function registerRoutes(app: Express): Server {
       res.json(enrichedResellers);
     } catch (error: any) {
       res.status(500).send(error.message);
+    }
+  });
+
+  // Get sub-resellers e-commerce data (for franchising/GDO resellers)
+  app.get("/api/reseller/sub-resellers/ecommerce", requireRole("reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      // Only franchising/gdo resellers can see sub-resellers e-commerce
+      if (req.user.resellerCategory !== 'franchising' && req.user.resellerCategory !== 'gdo') {
+        return res.json([]);
+      }
+      
+      const childResellers = await storage.getChildResellers(req.user.id);
+      
+      // Get e-commerce data for each sub-reseller
+      const ecommerceData = await Promise.all(
+        childResellers.map(async (reseller) => {
+          // Get product assignments
+          const assignments = await storage.listResellerProducts({ resellerId: reseller.id });
+          const publishedCount = assignments.filter(a => a.isPublished).length;
+          
+          // Get sales orders
+          const orders = await storage.listSalesOrders({ resellerId: reseller.id });
+          const totalRevenue = orders.reduce((sum, o) => sum + (o.totalAmountCents || 0), 0);
+          const pendingOrders = orders.filter(o => o.status === 'pending' || o.status === 'processing').length;
+          const lastOrder = orders.sort((a, b) => 
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+          )[0];
+          
+          return {
+            resellerId: reseller.id,
+            resellerName: reseller.fullName,
+            totalOrders: orders.length,
+            totalRevenue,
+            productsAssigned: assignments.length,
+            productsPublished: publishedCount,
+            pendingOrders,
+            lastOrderDate: lastOrder?.createdAt || null,
+          };
+        })
+      );
+      
+      res.json(ecommerceData);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // Assign products to sub-resellers (for franchising/GDO resellers)
+  app.post("/api/reseller/sub-resellers/:subResellerId/assign-products", requireRole("reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      // Only franchising/gdo resellers can assign to sub-resellers
+      if (req.user.resellerCategory !== 'franchising' && req.user.resellerCategory !== 'gdo') {
+        return res.status(403).send("Solo i rivenditori franchising/GDO possono assegnare prodotti ai sub-rivenditori");
+      }
+      
+      // Verify sub-reseller belongs to this parent
+      const childResellers = await storage.getChildResellers(req.user.id);
+      const subReseller = childResellers.find(r => r.id === req.params.subResellerId);
+      if (!subReseller) {
+        return res.status(404).send("Sub-rivenditore non trovato");
+      }
+      
+      const { productIds } = z.object({
+        productIds: z.array(z.string()).min(1),
+      }).parse(req.body);
+      
+      // Get parent's product assignments to verify they can be propagated
+      const parentAssignments = await storage.listResellerProducts({ resellerId: req.user.id });
+      const validProductIds = productIds.filter(pid => 
+        parentAssignments.some(a => a.productId === pid)
+      );
+      
+      if (validProductIds.length === 0) {
+        return res.status(400).send("Nessun prodotto valido da assegnare");
+      }
+      
+      // Assign products with inheritance chain
+      const results = await Promise.all(
+        validProductIds.map(async (productId) => {
+          const existing = await storage.getResellerProduct(productId, req.params.subResellerId);
+          if (existing) return existing;
+          
+          return storage.assignProductToReseller({
+            productId,
+            resellerId: req.params.subResellerId,
+            isPublished: false,
+            inheritedFrom: req.user!.id,
+            createdBy: req.user!.id,
+          });
+        })
+      );
+      
+      res.json({ 
+        message: `${results.length} prodotti assegnati al sub-rivenditore`,
+        assignments: results 
+      });
+    } catch (error: any) {
+      res.status(400).send(error.message);
     }
   });
 
@@ -3997,6 +4189,226 @@ export function registerRoutes(app: Express): Server {
       if (isActive !== undefined) updates.isActive = isActive;
       
       const updated = await storage.updateProduct(req.params.id, updates);
+      res.json(updated);
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+
+  // Reseller Catalog - prodotti assegnati dall'admin (non propri)
+  app.get("/api/reseller/catalog", requireRole("reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const context = getEffectiveContext(req);
+      if (!context.resellerId) return res.status(400).send("Rivenditore non trovato");
+      
+      // Ottieni prodotti assegnati a questo reseller
+      const assignments = await storage.listResellerProducts({ resellerId: context.resellerId });
+      
+      // Arricchisci con dati prodotto
+      const result = await Promise.all(assignments.map(async (assignment) => {
+        const product = await storage.getProduct(assignment.productId);
+        return {
+          ...assignment,
+          product,
+        };
+      }));
+      
+      res.json(result.filter(r => r.product !== undefined));
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // Reseller Catalog - pubblica/nascondi prodotto nello shop
+  app.patch("/api/reseller/catalog/:assignmentId/publish", requireRole("reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const { isPublished } = z.object({
+        isPublished: z.boolean(),
+      }).parse(req.body);
+      
+      const context = getEffectiveContext(req);
+      if (!context.resellerId) return res.status(400).send("Rivenditore non trovato");
+      
+      // Verifica che l'assegnazione appartenga al reseller
+      const assignments = await storage.listResellerProducts({ resellerId: context.resellerId });
+      const assignment = assignments.find(a => a.id === req.params.assignmentId);
+      
+      if (!assignment) {
+        return res.status(404).send("Assegnazione prodotto non trovata");
+      }
+      
+      if (!assignment.canUnpublish && !isPublished) {
+        return res.status(403).send("Non puoi rimuovere questo prodotto dallo shop");
+      }
+      
+      const updated = await storage.updateResellerProduct(req.params.assignmentId, { isPublished });
+      res.json(updated);
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+
+  // Reseller Catalog - imposta prezzo personalizzato
+  app.patch("/api/reseller/catalog/:assignmentId/price", requireRole("reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const { customPriceCents } = z.object({
+        customPriceCents: z.number().int().positive().nullable(),
+      }).parse(req.body);
+      
+      const context = getEffectiveContext(req);
+      if (!context.resellerId) return res.status(400).send("Rivenditore non trovato");
+      
+      // Verifica che l'assegnazione appartenga al reseller
+      const assignments = await storage.listResellerProducts({ resellerId: context.resellerId });
+      const assignment = assignments.find(a => a.id === req.params.assignmentId);
+      
+      if (!assignment) {
+        return res.status(404).send("Assegnazione prodotto non trovata");
+      }
+      
+      if (!assignment.canOverridePrice) {
+        return res.status(403).send("Non puoi modificare il prezzo di questo prodotto");
+      }
+      
+      const updated = await storage.updateResellerProduct(req.params.assignmentId, { 
+        customPriceCents: customPriceCents || undefined 
+      });
+      res.json(updated);
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+
+  // Reseller Shop Catalog - prodotti assegnati + propri con stato pubblicazione
+  app.get("/api/reseller/shop-catalog", requireRole("reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const context = getEffectiveContext(req);
+      if (!context.resellerId) return res.status(400).send("Rivenditore non trovato");
+      
+      // Ottieni prodotti assegnati a questo reseller
+      const assignments = await storage.listResellerProducts({ resellerId: context.resellerId });
+      
+      // Ottieni prodotti propri del reseller
+      const allProducts = await storage.listProducts();
+      const ownProducts = allProducts.filter(p => p.createdBy === context.resellerId && p.isActive);
+      
+      // Combina prodotti assegnati
+      const assignedProducts = await Promise.all(assignments.map(async (assignment) => {
+        const product = await storage.getProduct(assignment.productId);
+        if (!product) return null;
+        return {
+          product,
+          assignment: {
+            id: assignment.id,
+            isPublished: assignment.isPublished,
+            customPriceCents: assignment.customPriceCents,
+            inheritedFrom: assignment.inheritedFrom,
+          },
+          isOwn: false,
+          effectivePrice: assignment.customPriceCents || product.unitPrice,
+        };
+      }));
+      
+      // Aggiungi prodotti propri (sono sempre "pubblicabili")
+      const ownCatalog = ownProducts.map(product => ({
+        product,
+        assignment: null,
+        isOwn: true,
+        effectivePrice: product.unitPrice,
+      }));
+      
+      const result = [...assignedProducts.filter(Boolean), ...ownCatalog];
+      res.json(result);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // Reseller Catalog - pubblica prodotto per ID prodotto
+  app.post("/api/reseller/catalog/:productId/publish", requireRole("reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const context = getEffectiveContext(req);
+      if (!context.resellerId) return res.status(400).send("Rivenditore non trovato");
+      
+      // Trova l'assegnazione per questo prodotto
+      const assignments = await storage.listResellerProducts({ resellerId: context.resellerId });
+      const assignment = assignments.find(a => a.productId === req.params.productId);
+      
+      if (!assignment) {
+        return res.status(404).send("Prodotto non assegnato a questo reseller");
+      }
+      
+      const updated = await storage.updateResellerProduct(assignment.id, { isPublished: true });
+      res.json(updated);
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+
+  // Reseller Catalog - nascondi prodotto per ID prodotto
+  app.post("/api/reseller/catalog/:productId/unpublish", requireRole("reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const context = getEffectiveContext(req);
+      if (!context.resellerId) return res.status(400).send("Rivenditore non trovato");
+      
+      // Trova l'assegnazione per questo prodotto
+      const assignments = await storage.listResellerProducts({ resellerId: context.resellerId });
+      const assignment = assignments.find(a => a.productId === req.params.productId);
+      
+      if (!assignment) {
+        return res.status(404).send("Prodotto non assegnato a questo reseller");
+      }
+      
+      if (!assignment.canUnpublish) {
+        return res.status(403).send("Non puoi rimuovere questo prodotto dallo shop");
+      }
+      
+      const updated = await storage.updateResellerProduct(assignment.id, { isPublished: false });
+      res.json(updated);
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+
+  // Reseller Catalog - imposta prezzo per ID prodotto
+  app.patch("/api/reseller/catalog/:productId/price", requireRole("reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const { priceCents } = z.object({
+        priceCents: z.number().int().positive().nullable(),
+      }).parse(req.body);
+      
+      const context = getEffectiveContext(req);
+      if (!context.resellerId) return res.status(400).send("Rivenditore non trovato");
+      
+      // Trova l'assegnazione per questo prodotto
+      const assignments = await storage.listResellerProducts({ resellerId: context.resellerId });
+      const assignment = assignments.find(a => a.productId === req.params.productId);
+      
+      if (!assignment) {
+        return res.status(404).send("Prodotto non assegnato a questo reseller");
+      }
+      
+      if (!assignment.canOverridePrice) {
+        return res.status(403).send("Non puoi modificare il prezzo di questo prodotto");
+      }
+      
+      const updated = await storage.updateResellerProduct(assignment.id, { 
+        customPriceCents: priceCents || undefined 
+      });
       res.json(updated);
     } catch (error: any) {
       res.status(400).send(error.message);
@@ -17112,32 +17524,119 @@ export function registerRoutes(app: Express): Server {
   // E-COMMERCE: SHOP CATALOG (Public)
   // ==========================================
 
-  app.get("/api/shop/:resellerId/products", async (req, res) => {
+  // Shop del singolo venditore (admin o reseller)
+  // sellerId può essere 'admin' per lo shop dell'admin o un resellerId
+  app.get("/api/shop/:sellerId/products", async (req, res) => {
     try {
-      const { resellerId } = req.params;
+      const { sellerId } = req.params;
       const { type, brand, category, search, limit, offset } = req.query;
       
-      let products = await storage.listProductsByReseller(resellerId);
+      // Usa la nuova logica che include prodotti propri + assegnati pubblicati
+      let shopProducts = await storage.getShopProductsForSeller(sellerId);
       
-      products = products.filter(p => p.isActive && (p.stockQuantity ?? 0) > 0);
-      
-      if (type) products = products.filter(p => p.type === type);
-      if (brand) products = products.filter(p => p.brand === brand);
-      if (category) products = products.filter(p => p.category === category);
+      // Applica filtri
+      if (type) shopProducts = shopProducts.filter(p => p.productType === type);
+      if (brand) shopProducts = shopProducts.filter(p => p.brand === brand);
+      if (category) shopProducts = shopProducts.filter(p => p.category === category);
       if (search) {
         const searchLower = (search as string).toLowerCase();
-        products = products.filter(p => 
+        shopProducts = shopProducts.filter(p => 
           p.name.toLowerCase().includes(searchLower) ||
           p.sku?.toLowerCase().includes(searchLower)
         );
       }
       
-      const total = products.length;
+      const total = shopProducts.length;
       const offsetNum = parseInt(offset as string) || 0;
       const limitNum = parseInt(limit as string) || 20;
-      products = products.slice(offsetNum, offsetNum + limitNum);
+      const paginatedProducts = shopProducts.slice(offsetNum, offsetNum + limitNum);
       
-      res.json({ products, total, limit: limitNum, offset: offsetNum });
+      res.json({ products: paginatedProducts, total, limit: limitNum, offset: offsetNum });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Marketplace aggregato con info venditori (formato per frontend)
+  app.get("/api/shop/marketplace", async (req, res) => {
+    try {
+      const marketplaceProducts = await storage.getMarketplaceProducts();
+      
+      // Raggruppa per productId con tutti i venditori
+      const productMap = new Map<string, {
+        product: any;
+        sellers: Array<{ resellerId: string; resellerName: string; price: number; isPublished: boolean }>;
+      }>();
+      
+      for (const p of marketplaceProducts) {
+        const existing = productMap.get(p.id);
+        if (existing) {
+          existing.sellers.push({
+            resellerId: p.sellerId || 'admin',
+            resellerName: p.sellerName || 'Admin Shop',
+            price: p.effectivePrice || p.unitPrice,
+            isPublished: true,
+          });
+        } else {
+          productMap.set(p.id, {
+            product: {
+              id: p.id,
+              name: p.name,
+              description: p.description,
+              sku: p.sku,
+              category: p.category,
+              brand: p.brand,
+              imageUrl: p.imageUrl,
+              unitPrice: p.unitPrice,
+            },
+            sellers: [{
+              resellerId: p.sellerId || 'admin',
+              resellerName: p.sellerName || 'Admin Shop',
+              price: p.effectivePrice || p.unitPrice,
+              isPublished: true,
+            }],
+          });
+        }
+      }
+      
+      const result = Array.from(productMap.values()).map(entry => ({
+        product: entry.product,
+        sellers: entry.sellers,
+        lowestPrice: Math.min(...entry.sellers.map(s => s.price)),
+        sellerCount: entry.sellers.length,
+      }));
+      
+      res.json(result);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Marketplace - tutti i prodotti di tutti i venditori
+  app.get("/api/marketplace/products", async (req, res) => {
+    try {
+      const { type, brand, category, search, limit, offset } = req.query;
+      
+      let marketplaceProducts = await storage.getMarketplaceProducts();
+      
+      // Applica filtri
+      if (type) marketplaceProducts = marketplaceProducts.filter(p => p.productType === type);
+      if (brand) marketplaceProducts = marketplaceProducts.filter(p => p.brand === brand);
+      if (category) marketplaceProducts = marketplaceProducts.filter(p => p.category === category);
+      if (search) {
+        const searchLower = (search as string).toLowerCase();
+        marketplaceProducts = marketplaceProducts.filter(p => 
+          p.name.toLowerCase().includes(searchLower) ||
+          p.sku?.toLowerCase().includes(searchLower)
+        );
+      }
+      
+      const total = marketplaceProducts.length;
+      const offsetNum = parseInt(offset as string) || 0;
+      const limitNum = parseInt(limit as string) || 20;
+      const paginatedProducts = marketplaceProducts.slice(offsetNum, offsetNum + limitNum);
+      
+      res.json({ products: paginatedProducts, total, limit: limitNum, offset: offsetNum });
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }

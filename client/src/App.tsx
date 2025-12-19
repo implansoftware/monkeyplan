@@ -26,6 +26,7 @@ import AdminTicketDetail from "@/pages/admin/ticket-detail";
 import AdminRepairs from "@/pages/admin/repairs";
 import AdminInventory from "@/pages/admin/inventory";
 import AdminProducts from "@/pages/admin/products";
+import AdminProductAssignments from "@/pages/admin/product-assignments";
 import AdminPartsOrders from "@/pages/admin/parts-orders";
 import AdminInvoices from "@/pages/admin/invoices";
 import AdminReports from "@/pages/admin/reports";
@@ -138,9 +139,11 @@ import CustomerSalesReturns from "@/pages/customer/sales-returns";
 import ShopCatalog from "@/pages/shop/catalog";
 import ShopCart from "@/pages/shop/cart";
 import ShopCheckout from "@/pages/shop/checkout";
+import ShopMarketplace from "@/pages/shop/marketplace";
 
 // Reseller sales orders, shipments, payments and returns
 import ResellerSalesOrders from "@/pages/reseller/sales-orders";
+import ResellerShopCatalog from "@/pages/reseller/shop-catalog";
 import ResellerShipments from "@/pages/reseller/shipments";
 import ResellerPayments from "@/pages/reseller/payments";
 import ResellerSalesReturns from "@/pages/reseller/sales-returns";
@@ -168,6 +171,7 @@ function Router() {
       <ProtectedRoute path="/admin/tickets/:id" component={AdminTicketDetail} />
       <ProtectedRoute path="/admin/inventory" component={AdminInventory} />
       <ProtectedRoute path="/admin/products" component={AdminProducts} />
+      <ProtectedRoute path="/admin/product-assignments" component={AdminProductAssignments} />
       <ProtectedRoute path="/admin/parts-orders" component={AdminPartsOrders} />
       <ProtectedRoute path="/admin/invoices" component={AdminInvoices} />
       <ProtectedRoute path="/admin/sales-orders" component={AdminSalesOrders} />
@@ -242,6 +246,7 @@ function Router() {
       <ProtectedRoute path="/reseller/device-catalog" component={ResellerDeviceCatalog} />
       <ProtectedRoute path="/reseller/smartphone-catalog" component={ResellerSmartphoneCatalog} />
       <ProtectedRoute path="/reseller/accessory-catalog" component={ResellerAccessoryCatalog} />
+      <ProtectedRoute path="/reseller/shop-catalog" component={ResellerShopCatalog} />
       <ProtectedRoute path="/reseller/sales-orders/:id" component={ResellerSalesOrders} />
       <ProtectedRoute path="/reseller/sales-orders" component={ResellerSalesOrders} />
       <ProtectedRoute path="/reseller/shipments/:id" component={ResellerShipments} />
@@ -272,6 +277,7 @@ function Router() {
       <ProtectedRoute path="/customer/sales-returns" component={CustomerSalesReturns} />
       
       {/* Shop routes (public) */}
+      <Route path="/marketplace" component={ShopMarketplace} />
       <Route path="/shop/:resellerId" component={ShopCatalog} />
       <Route path="/shop/:resellerId/cart" component={ShopCart} />
       <ProtectedRoute path="/shop/:resellerId/checkout" component={ShopCheckout} />
