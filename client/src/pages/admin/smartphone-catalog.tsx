@@ -511,7 +511,8 @@ export default function AdminSmartphoneCatalog() {
             </div>
           ) : (
             <ScrollArea className="h-[500px]">
-              <Table>
+              <div className="overflow-x-auto">
+              <Table className="min-w-[1000px]">
                 <TableHeader>
                   <TableRow>
                     <TableHead>Foto</TableHead>
@@ -659,6 +660,7 @@ export default function AdminSmartphoneCatalog() {
                   ))}
                 </TableBody>
               </Table>
+              </div>
             </ScrollArea>
           )}
         </CardContent>
