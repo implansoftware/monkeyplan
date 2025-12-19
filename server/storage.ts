@@ -1174,7 +1174,8 @@ export class DatabaseStorage implements IStorage {
       const adminProducts = await db.select().from(products)
         .where(and(
           isNull(products.createdBy),
-          eq(products.isActive, true)
+          eq(products.isActive, true),
+          eq(products.isVisibleInShop, true)
         ))
         .orderBy(desc(products.createdAt));
       
@@ -1189,14 +1190,14 @@ export class DatabaseStorage implements IStorage {
     const reseller = await this.getUser(sellerId);
     const sellerName = reseller?.fullName || 'Shop';
     
-    // Prodotti propri del reseller
+    // Prodotti propri del reseller (questi sono sempre visibili, indipendentemente da isVisibleInShop)
     const ownProducts = await db.select().from(products)
       .where(and(
         eq(products.createdBy, sellerId),
         eq(products.isActive, true)
       ));
     
-    // Prodotti globali assegnati e pubblicati
+    // Prodotti globali assegnati e pubblicati (filtro isVisibleInShop per prodotti admin)
     const assignedProducts = await db.select({
       product: products,
       resellerProduct: resellerProducts,
@@ -1206,7 +1207,8 @@ export class DatabaseStorage implements IStorage {
         eq(resellerProducts.resellerId, sellerId),
         eq(resellerProducts.isPublished, true),
         isNull(products.createdBy),
-        eq(products.isActive, true)
+        eq(products.isActive, true),
+        eq(products.isVisibleInShop, true)
       ));
     
     const result: Array<Product & { shopPrice: number; sellerName: string }> = [];
@@ -1233,9 +1235,12 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getMarketplaceProducts(): Promise<Array<Product & { sellers: Array<{ sellerId: string; sellerName: string; price: number; isAdmin: boolean }> }>> {
-    // Ottieni tutti i prodotti attivi
+    // Ottieni tutti i prodotti attivi e visibili nello shop
     const allProducts = await db.select().from(products)
-      .where(eq(products.isActive, true));
+      .where(and(
+        eq(products.isActive, true),
+        eq(products.isVisibleInShop, true)
+      ));
     
     // Ottieni tutte le assegnazioni pubblicate
     const allAssignments = await db.select().from(resellerProducts)
