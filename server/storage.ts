@@ -83,7 +83,12 @@ import {
   stockReservations, StockReservation, InsertStockReservation,
   salesOrderStateHistory, SalesOrderStateHistoryEntry, InsertSalesOrderStateHistoryEntry,
   salesOrderReturns, SalesOrderReturn, InsertSalesOrderReturn,
-  salesOrderReturnItems, SalesOrderReturnItem, InsertSalesOrderReturnItem
+  salesOrderReturnItems, SalesOrderReturnItem, InsertSalesOrderReturnItem,
+  warehouses, Warehouse, InsertWarehouse,
+  warehouseStock, WarehouseStock, InsertWarehouseStock,
+  warehouseMovements, WarehouseMovement, InsertWarehouseMovement,
+  warehouseTransfers, WarehouseTransfer, InsertWarehouseTransfer,
+  warehouseTransferItems, WarehouseTransferItem, InsertWarehouseTransferItem
 } from "@shared/schema";
 import { db, pool } from "./db";
 import { eq, and, or, desc, lt, sql, not, inArray, isNull } from "drizzle-orm";
@@ -731,6 +736,37 @@ export interface IStorage {
   createSalesOrderReturnItem(item: InsertSalesOrderReturnItem): Promise<SalesOrderReturnItem>;
   updateSalesOrderReturnItem(id: string, updates: Partial<InsertSalesOrderReturnItem>): Promise<SalesOrderReturnItem>;
   deleteSalesOrderReturnItem(id: string): Promise<void>;
+  
+  // Warehouse Management
+  listWarehouses(filters?: { ownerType?: string; ownerId?: string; isActive?: boolean }): Promise<Warehouse[]>;
+  getWarehouse(id: string): Promise<Warehouse | undefined>;
+  getWarehouseByOwner(ownerType: string, ownerId: string): Promise<Warehouse | undefined>;
+  createWarehouse(data: InsertWarehouse): Promise<Warehouse>;
+  updateWarehouse(id: string, updates: Partial<InsertWarehouse>): Promise<Warehouse>;
+  deleteWarehouse(id: string): Promise<void>;
+  ensureDefaultWarehouse(ownerType: string, ownerId: string, ownerName: string): Promise<Warehouse>;
+  
+  // Warehouse Stock
+  listWarehouseStock(warehouseId: string): Promise<WarehouseStock[]>;
+  getWarehouseStockItem(warehouseId: string, productId: string): Promise<WarehouseStock | undefined>;
+  upsertWarehouseStock(data: InsertWarehouseStock): Promise<WarehouseStock>;
+  updateWarehouseStockQuantity(warehouseId: string, productId: string, quantityDelta: number): Promise<WarehouseStock>;
+  
+  // Warehouse Movements
+  listWarehouseMovements(filters?: { warehouseId?: string; productId?: string }): Promise<WarehouseMovement[]>;
+  createWarehouseMovement(data: InsertWarehouseMovement): Promise<WarehouseMovement>;
+  
+  // Warehouse Transfers
+  listWarehouseTransfers(filters?: { sourceWarehouseId?: string; destinationWarehouseId?: string; status?: string }): Promise<WarehouseTransfer[]>;
+  getWarehouseTransfer(id: string): Promise<WarehouseTransfer | undefined>;
+  createWarehouseTransfer(data: InsertWarehouseTransfer): Promise<WarehouseTransfer>;
+  updateWarehouseTransfer(id: string, updates: Partial<WarehouseTransfer>): Promise<WarehouseTransfer>;
+  generateTransferNumber(): Promise<string>;
+  
+  // Warehouse Transfer Items
+  listWarehouseTransferItems(transferId: string): Promise<WarehouseTransferItem[]>;
+  createWarehouseTransferItem(data: InsertWarehouseTransferItem): Promise<WarehouseTransferItem>;
+  updateWarehouseTransferItem(id: string, updates: Partial<WarehouseTransferItem>): Promise<WarehouseTransferItem>;
   
   sessionStore: session.Store;
 }
@@ -6291,6 +6327,209 @@ export class DatabaseStorage implements IStorage {
 
   async deleteSalesOrderReturnItem(id: string): Promise<void> {
     await db.delete(salesOrderReturnItems).where(eq(salesOrderReturnItems.id, id));
+  }
+
+  // ==========================================
+  // WAREHOUSE MANAGEMENT
+  // ==========================================
+
+  async listWarehouses(filters?: { ownerType?: string; ownerId?: string; isActive?: boolean }): Promise<Warehouse[]> {
+    const conditions = [];
+    if (filters?.ownerType) conditions.push(eq(warehouses.ownerType, filters.ownerType as any));
+    if (filters?.ownerId) conditions.push(eq(warehouses.ownerId, filters.ownerId));
+    if (filters?.isActive !== undefined) conditions.push(eq(warehouses.isActive, filters.isActive));
+    
+    if (conditions.length === 0) {
+      return await db.select().from(warehouses).orderBy(desc(warehouses.createdAt));
+    }
+    return await db.select().from(warehouses)
+      .where(and(...conditions))
+      .orderBy(desc(warehouses.createdAt));
+  }
+
+  async getWarehouse(id: string): Promise<Warehouse | undefined> {
+    const [warehouse] = await db.select().from(warehouses).where(eq(warehouses.id, id));
+    return warehouse || undefined;
+  }
+
+  async getWarehouseByOwner(ownerType: string, ownerId: string): Promise<Warehouse | undefined> {
+    const [warehouse] = await db.select().from(warehouses)
+      .where(and(
+        eq(warehouses.ownerType, ownerType as any),
+        eq(warehouses.ownerId, ownerId)
+      ));
+    return warehouse || undefined;
+  }
+
+  async createWarehouse(data: InsertWarehouse): Promise<Warehouse> {
+    const [created] = await db.insert(warehouses).values(data).returning();
+    return created;
+  }
+
+  async updateWarehouse(id: string, updates: Partial<InsertWarehouse>): Promise<Warehouse> {
+    const [updated] = await db.update(warehouses)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(warehouses.id, id))
+      .returning();
+    if (!updated) throw new Error("Warehouse not found");
+    return updated;
+  }
+
+  async deleteWarehouse(id: string): Promise<void> {
+    await db.delete(warehouses).where(eq(warehouses.id, id));
+  }
+
+  async ensureDefaultWarehouse(ownerType: string, ownerId: string, ownerName: string): Promise<Warehouse> {
+    const existing = await this.getWarehouseByOwner(ownerType, ownerId);
+    if (existing) return existing;
+    
+    const name = `Magazzino ${ownerName}`;
+    return await this.createWarehouse({
+      ownerType: ownerType as any,
+      ownerId,
+      name,
+      isActive: true,
+    });
+  }
+
+  // Warehouse Stock
+  async listWarehouseStock(warehouseId: string): Promise<WarehouseStock[]> {
+    return await db.select().from(warehouseStock)
+      .where(eq(warehouseStock.warehouseId, warehouseId));
+  }
+
+  async getWarehouseStockItem(warehouseId: string, productId: string): Promise<WarehouseStock | undefined> {
+    const [item] = await db.select().from(warehouseStock)
+      .where(and(
+        eq(warehouseStock.warehouseId, warehouseId),
+        eq(warehouseStock.productId, productId)
+      ));
+    return item || undefined;
+  }
+
+  async upsertWarehouseStock(data: InsertWarehouseStock): Promise<WarehouseStock> {
+    const existing = await this.getWarehouseStockItem(data.warehouseId, data.productId);
+    if (existing) {
+      const [updated] = await db.update(warehouseStock)
+        .set({ 
+          quantity: data.quantity ?? existing.quantity,
+          minStock: data.minStock ?? existing.minStock,
+          location: data.location ?? existing.location,
+          updatedAt: new Date() 
+        })
+        .where(eq(warehouseStock.id, existing.id))
+        .returning();
+      return updated;
+    }
+    const [created] = await db.insert(warehouseStock).values(data).returning();
+    return created;
+  }
+
+  async updateWarehouseStockQuantity(warehouseId: string, productId: string, quantityDelta: number): Promise<WarehouseStock> {
+    const existing = await this.getWarehouseStockItem(warehouseId, productId);
+    if (!existing) {
+      // Create new stock entry
+      const [created] = await db.insert(warehouseStock)
+        .values({ warehouseId, productId, quantity: quantityDelta })
+        .returning();
+      return created;
+    }
+    const [updated] = await db.update(warehouseStock)
+      .set({ 
+        quantity: existing.quantity + quantityDelta,
+        updatedAt: new Date() 
+      })
+      .where(eq(warehouseStock.id, existing.id))
+      .returning();
+    return updated;
+  }
+
+  // Warehouse Movements
+  async listWarehouseMovements(filters?: { warehouseId?: string; productId?: string }): Promise<WarehouseMovement[]> {
+    const conditions = [];
+    if (filters?.warehouseId) conditions.push(eq(warehouseMovements.warehouseId, filters.warehouseId));
+    if (filters?.productId) conditions.push(eq(warehouseMovements.productId, filters.productId));
+    
+    if (conditions.length === 0) {
+      return await db.select().from(warehouseMovements).orderBy(desc(warehouseMovements.createdAt));
+    }
+    return await db.select().from(warehouseMovements)
+      .where(and(...conditions))
+      .orderBy(desc(warehouseMovements.createdAt));
+  }
+
+  async createWarehouseMovement(data: InsertWarehouseMovement): Promise<WarehouseMovement> {
+    const [created] = await db.insert(warehouseMovements).values(data).returning();
+    return created;
+  }
+
+  // Warehouse Transfers
+  async listWarehouseTransfers(filters?: { sourceWarehouseId?: string; destinationWarehouseId?: string; status?: string }): Promise<WarehouseTransfer[]> {
+    const conditions = [];
+    if (filters?.sourceWarehouseId) conditions.push(eq(warehouseTransfers.sourceWarehouseId, filters.sourceWarehouseId));
+    if (filters?.destinationWarehouseId) conditions.push(eq(warehouseTransfers.destinationWarehouseId, filters.destinationWarehouseId));
+    if (filters?.status) conditions.push(eq(warehouseTransfers.status, filters.status as any));
+    
+    if (conditions.length === 0) {
+      return await db.select().from(warehouseTransfers).orderBy(desc(warehouseTransfers.createdAt));
+    }
+    return await db.select().from(warehouseTransfers)
+      .where(and(...conditions))
+      .orderBy(desc(warehouseTransfers.createdAt));
+  }
+
+  async getWarehouseTransfer(id: string): Promise<WarehouseTransfer | undefined> {
+    const [transfer] = await db.select().from(warehouseTransfers).where(eq(warehouseTransfers.id, id));
+    return transfer || undefined;
+  }
+
+  async createWarehouseTransfer(data: InsertWarehouseTransfer): Promise<WarehouseTransfer> {
+    const transferNumber = await this.generateTransferNumber();
+    const [created] = await db.insert(warehouseTransfers)
+      .values({ ...data, transferNumber })
+      .returning();
+    return created;
+  }
+
+  async updateWarehouseTransfer(id: string, updates: Partial<WarehouseTransfer>): Promise<WarehouseTransfer> {
+    const [updated] = await db.update(warehouseTransfers)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(warehouseTransfers.id, id))
+      .returning();
+    if (!updated) throw new Error("Warehouse transfer not found");
+    return updated;
+  }
+
+  async generateTransferNumber(): Promise<string> {
+    const year = new Date().getFullYear();
+    const prefix = `TRF-${year}`;
+    
+    const [result] = await db.select({ count: sql<number>`count(*)` })
+      .from(warehouseTransfers)
+      .where(sql`${warehouseTransfers.transferNumber} LIKE ${prefix + '%'}`);
+    
+    const nextNumber = (result?.count || 0) + 1;
+    return `${prefix}-${String(nextNumber).padStart(5, '0')}`;
+  }
+
+  // Warehouse Transfer Items
+  async listWarehouseTransferItems(transferId: string): Promise<WarehouseTransferItem[]> {
+    return await db.select().from(warehouseTransferItems)
+      .where(eq(warehouseTransferItems.transferId, transferId));
+  }
+
+  async createWarehouseTransferItem(data: InsertWarehouseTransferItem): Promise<WarehouseTransferItem> {
+    const [created] = await db.insert(warehouseTransferItems).values(data).returning();
+    return created;
+  }
+
+  async updateWarehouseTransferItem(id: string, updates: Partial<WarehouseTransferItem>): Promise<WarehouseTransferItem> {
+    const [updated] = await db.update(warehouseTransferItems)
+      .set(updates)
+      .where(eq(warehouseTransferItems.id, id))
+      .returning();
+    if (!updated) throw new Error("Transfer item not found");
+    return updated;
   }
 }
 

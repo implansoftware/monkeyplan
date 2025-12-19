@@ -26,6 +26,11 @@ export const repairStatusEnum = pgEnum("repair_status", [
 ]);
 export const paymentStatusEnum = pgEnum("payment_status", ["pending", "paid", "overdue", "cancelled"]);
 export const movementTypeEnum = pgEnum("movement_type", ["in", "out", "adjustment"]);
+
+// Warehouse Management Enums
+export const warehouseOwnerTypeEnum = pgEnum("warehouse_owner_type", ["admin", "reseller", "sub_reseller", "repair_center"]);
+export const warehouseMovementTypeEnum = pgEnum("warehouse_movement_type", ["carico", "scarico", "trasferimento_in", "trasferimento_out", "rettifica"]);
+export const warehouseTransferStatusEnum = pgEnum("warehouse_transfer_status", ["pending", "approved", "shipped", "received", "cancelled"]);
 export const notificationTypeEnum = pgEnum("notification_type", ["repair_update", "sla_warning", "review_request", "message", "system"]);
 // RIMOSSO: diagnosisSeverityEnum - non più necessario
 export const quoteStatusEnum = pgEnum("quote_status", ["draft", "sent", "accepted", "rejected"]);
@@ -807,6 +812,110 @@ export const inventoryStock = pgTable("inventory_stock", {
   repairCenterId: varchar("repair_center_id").notNull(),
   quantity: integer("quantity").notNull().default(0),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+// ==========================================
+// WAREHOUSE MANAGEMENT (Gestione Magazzini)
+// ==========================================
+
+// Magazzini - ogni utente/entità ha il suo magazzino
+export const warehouses = pgTable("warehouses", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  ownerType: warehouseOwnerTypeEnum("owner_type").notNull(),
+  ownerId: varchar("owner_id").notNull(), // ID dell'admin/reseller/sub_reseller/repair_center
+  name: text("name").notNull(),
+  address: text("address"),
+  notes: text("notes"),
+  isActive: boolean("is_active").notNull().default(true),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export const insertWarehouseSchema = createInsertSchema(warehouses).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+// Stock per magazzino
+export const warehouseStock = pgTable("warehouse_stock", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  warehouseId: varchar("warehouse_id").notNull(),
+  productId: varchar("product_id").notNull(),
+  quantity: integer("quantity").notNull().default(0),
+  minStock: integer("min_stock").default(0),
+  location: text("location"), // Posizione fisica: es. "A1-03"
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+}, (table) => ({
+  uniqueWarehouseProduct: unique().on(table.warehouseId, table.productId),
+}));
+
+export const insertWarehouseStockSchema = createInsertSchema(warehouseStock).omit({
+  id: true,
+  updatedAt: true,
+});
+
+// Movimenti magazzino
+export const warehouseMovements = pgTable("warehouse_movements", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  warehouseId: varchar("warehouse_id").notNull(),
+  productId: varchar("product_id").notNull(),
+  movementType: warehouseMovementTypeEnum("movement_type").notNull(),
+  quantity: integer("quantity").notNull(),
+  referenceType: text("reference_type"), // ordine, riparazione, trasferimento, carico_fornitore
+  referenceId: varchar("reference_id"),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  createdBy: varchar("created_by").notNull(),
+});
+
+export const insertWarehouseMovementSchema = createInsertSchema(warehouseMovements).omit({
+  id: true,
+  createdAt: true,
+});
+
+// Trasferimenti tra magazzini
+export const warehouseTransfers = pgTable("warehouse_transfers", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  transferNumber: text("transfer_number").notNull().unique(),
+  sourceWarehouseId: varchar("source_warehouse_id").notNull(),
+  destinationWarehouseId: varchar("destination_warehouse_id").notNull(),
+  status: warehouseTransferStatusEnum("status").notNull().default("pending"),
+  requestedBy: varchar("requested_by").notNull(),
+  approvedBy: varchar("approved_by"),
+  approvedAt: timestamp("approved_at"),
+  shippedAt: timestamp("shipped_at"),
+  receivedAt: timestamp("received_at"),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export const insertWarehouseTransferSchema = createInsertSchema(warehouseTransfers).omit({
+  id: true,
+  transferNumber: true,
+  approvedBy: true,
+  approvedAt: true,
+  shippedAt: true,
+  receivedAt: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+// Articoli del trasferimento
+export const warehouseTransferItems = pgTable("warehouse_transfer_items", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  transferId: varchar("transfer_id").notNull(),
+  productId: varchar("product_id").notNull(),
+  requestedQuantity: integer("requested_quantity").notNull(),
+  shippedQuantity: integer("shipped_quantity"),
+  receivedQuantity: integer("received_quantity"),
+});
+
+export const insertWarehouseTransferItemSchema = createInsertSchema(warehouseTransferItems).omit({
+  id: true,
+  shippedQuantity: true,
+  receivedQuantity: true,
 });
 
 // Repair orders (Lavorazioni)
@@ -3279,6 +3388,73 @@ export const inventoryMovementsRelations = relations(inventoryMovements, ({ one 
   }),
 }));
 
+// Warehouse Relations
+export const warehousesRelations = relations(warehouses, ({ many }) => ({
+  stock: many(warehouseStock),
+  movements: many(warehouseMovements),
+  outgoingTransfers: many(warehouseTransfers, { relationName: "sourceWarehouse" }),
+  incomingTransfers: many(warehouseTransfers, { relationName: "destinationWarehouse" }),
+}));
+
+export const warehouseStockRelations = relations(warehouseStock, ({ one }) => ({
+  warehouse: one(warehouses, {
+    fields: [warehouseStock.warehouseId],
+    references: [warehouses.id],
+  }),
+  product: one(products, {
+    fields: [warehouseStock.productId],
+    references: [products.id],
+  }),
+}));
+
+export const warehouseMovementsRelations = relations(warehouseMovements, ({ one }) => ({
+  warehouse: one(warehouses, {
+    fields: [warehouseMovements.warehouseId],
+    references: [warehouses.id],
+  }),
+  product: one(products, {
+    fields: [warehouseMovements.productId],
+    references: [products.id],
+  }),
+  createdByUser: one(users, {
+    fields: [warehouseMovements.createdBy],
+    references: [users.id],
+  }),
+}));
+
+export const warehouseTransfersRelations = relations(warehouseTransfers, ({ one, many }) => ({
+  sourceWarehouse: one(warehouses, {
+    fields: [warehouseTransfers.sourceWarehouseId],
+    references: [warehouses.id],
+    relationName: "sourceWarehouse",
+  }),
+  destinationWarehouse: one(warehouses, {
+    fields: [warehouseTransfers.destinationWarehouseId],
+    references: [warehouses.id],
+    relationName: "destinationWarehouse",
+  }),
+  requestedByUser: one(users, {
+    fields: [warehouseTransfers.requestedBy],
+    references: [users.id],
+  }),
+  approvedByUser: one(users, {
+    fields: [warehouseTransfers.approvedBy],
+    references: [users.id],
+  }),
+  items: many(warehouseTransferItems),
+}));
+
+export const warehouseTransferItemsRelations = relations(warehouseTransferItems, ({ one }) => ({
+  transfer: one(warehouseTransfers, {
+    fields: [warehouseTransferItems.transferId],
+    references: [warehouseTransfers.id],
+  }),
+  product: one(products, {
+    fields: [warehouseTransferItems.productId],
+    references: [products.id],
+  }),
+}));
+
 export const chatMessagesRelations = relations(chatMessages, ({ one }) => ({
   sender: one(users, {
     fields: [chatMessages.senderId],
@@ -4461,3 +4637,23 @@ export type SalesReturnStatus = "requested" | "approved" | "rejected" | "awaitin
 export type SalesReturnReason = "defective" | "wrong_item" | "not_as_described" | "changed_mind" | "damaged_in_transit" | "missing_parts" | "quality_issue" | "other";
 export type ReturnItemCondition = "new_sealed" | "new_opened" | "used_good" | "used_damaged" | "defective";
 export type RefundMethod = "original_payment" | "store_credit" | "bank_transfer";
+
+// Warehouse Management Types
+export type Warehouse = typeof warehouses.$inferSelect;
+export type InsertWarehouse = z.infer<typeof insertWarehouseSchema>;
+
+export type WarehouseStock = typeof warehouseStock.$inferSelect;
+export type InsertWarehouseStock = z.infer<typeof insertWarehouseStockSchema>;
+
+export type WarehouseMovement = typeof warehouseMovements.$inferSelect;
+export type InsertWarehouseMovement = z.infer<typeof insertWarehouseMovementSchema>;
+
+export type WarehouseTransfer = typeof warehouseTransfers.$inferSelect;
+export type InsertWarehouseTransfer = z.infer<typeof insertWarehouseTransferSchema>;
+
+export type WarehouseTransferItem = typeof warehouseTransferItems.$inferSelect;
+export type InsertWarehouseTransferItem = z.infer<typeof insertWarehouseTransferItemSchema>;
+
+export type WarehouseOwnerType = "admin" | "reseller" | "sub_reseller" | "repair_center";
+export type WarehouseMovementType = "carico" | "scarico" | "trasferimento_in" | "trasferimento_out" | "rettifica";
+export type WarehouseTransferStatus = "pending" | "approved" | "shipped" | "received" | "cancelled";

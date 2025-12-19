@@ -33,6 +33,7 @@ import {
   ExternalLink,
   CreditCard,
   Network,
+  Warehouse,
 } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useState, Fragment, useMemo } from "react";
@@ -66,6 +67,7 @@ const menuItems = {
     { title: "Lavorazioni", url: "/admin/repairs", icon: Wrench, group: "Centri & Riparazioni" },
     { title: "Catalogo Interventi", url: "/admin/service-catalog", icon: Receipt, group: "Centri & Riparazioni" },
     { title: "Magazzino", url: "/admin/inventory", icon: Package, group: "Magazzino & Fornitori" },
+    { title: "Magazzini", url: "/admin/warehouses", icon: Warehouse, group: "Magazzino & Fornitori" },
     { title: "Ricambi", url: "/admin/products", icon: Package, group: "Magazzino & Fornitori" },
     { title: "Smartphone", url: "/admin/smartphone-catalog", icon: Smartphone, group: "Magazzino & Fornitori" },
     { title: "Accessori", url: "/admin/accessory-catalog", icon: ShoppingCart, group: "Magazzino & Fornitori" },
@@ -105,6 +107,7 @@ const menuItems = {
     { title: "Lavorazioni", url: "/admin/repairs", icon: Wrench, group: "Centri & Riparazioni" },
     { title: "Catalogo Interventi", url: "/admin/service-catalog", icon: Receipt, group: "Centri & Riparazioni" },
     { title: "Magazzino", url: "/admin/inventory", icon: Package, group: "Magazzino & Fornitori" },
+    { title: "Magazzini", url: "/admin/warehouses", icon: Warehouse, group: "Magazzino & Fornitori" },
     { title: "Ricambi", url: "/admin/products", icon: Package, group: "Magazzino & Fornitori" },
     { title: "Smartphone", url: "/admin/smartphone-catalog", icon: Smartphone, group: "Magazzino & Fornitori" },
     { title: "Accessori", url: "/admin/accessory-catalog", icon: ShoppingCart, group: "Magazzino & Fornitori" },

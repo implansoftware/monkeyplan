@@ -18372,5 +18372,322 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // ==========================================
+  // WAREHOUSE MANAGEMENT (Gestione Magazzini)
+  // ==========================================
+
+  app.get("/api/warehouses", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      
+      let filters: { ownerType?: string; ownerId?: string; isActive?: boolean } = {};
+      if (req.query.ownerType) filters.ownerType = req.query.ownerType as string;
+      if (req.query.ownerId) filters.ownerId = req.query.ownerId as string;
+      if (req.query.isActive) filters.isActive = req.query.isActive === 'true';
+      
+      if (!['admin', 'admin_staff'].includes(req.user.role)) {
+        if (req.user.role === 'reseller' || req.user.role === 'reseller_staff') {
+          filters.ownerType = 'reseller';
+          filters.ownerId = req.user.resellerId || req.user.id;
+        } else if (req.user.role === 'repair_center') {
+          filters.ownerType = 'repair_center';
+          filters.ownerId = req.user.repairCenterId || req.user.id;
+        }
+      }
+      
+      const warehouses = await storage.listWarehouses(filters);
+      res.json(warehouses);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/warehouses/:id", requireAuth, async (req, res) => {
+    try {
+      const warehouse = await storage.getWarehouse(req.params.id);
+      if (!warehouse) return res.status(404).json({ error: "Magazzino non trovato" });
+      res.json(warehouse);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/my-warehouse", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      
+      let ownerType: string;
+      let ownerId: string;
+      let ownerName: string;
+      
+      if (req.user.role === 'admin' || req.user.role === 'admin_staff') {
+        ownerType = 'admin';
+        ownerId = 'system';
+        ownerName = 'Centrale';
+      } else if (req.user.role === 'reseller' || req.user.role === 'reseller_staff') {
+        ownerType = 'reseller';
+        ownerId = req.user.resellerId || req.user.id;
+        ownerName = req.user.fullName || req.user.username;
+      } else if (req.user.role === 'repair_center') {
+        ownerType = 'repair_center';
+        ownerId = req.user.repairCenterId || req.user.id;
+        ownerName = req.user.fullName || req.user.username;
+      } else {
+        return res.status(403).json({ error: "Accesso negato" });
+      }
+      
+      const warehouse = await storage.ensureDefaultWarehouse(ownerType, ownerId, ownerName);
+      res.json(warehouse);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post("/api/warehouses", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      if (!['admin', 'admin_staff'].includes(req.user.role)) {
+        return res.status(403).json({ error: "Solo admin possono creare magazzini" });
+      }
+      const warehouse = await storage.createWarehouse(req.body);
+      res.status(201).json(warehouse);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.patch("/api/warehouses/:id", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      const updated = await storage.updateWarehouse(req.params.id, req.body);
+      res.json(updated);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.delete("/api/warehouses/:id", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      if (!['admin', 'admin_staff'].includes(req.user.role)) {
+        return res.status(403).json({ error: "Solo admin possono eliminare magazzini" });
+      }
+      await storage.deleteWarehouse(req.params.id);
+      res.status(204).send();
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/warehouses/:warehouseId/stock", requireAuth, async (req, res) => {
+    try {
+      const stock = await storage.listWarehouseStock(req.params.warehouseId);
+      const enrichedStock = await Promise.all(stock.map(async (item) => {
+        const product = await storage.getProduct(item.productId);
+        return { ...item, product: product ? { id: product.id, name: product.name, sku: product.sku, type: product.type } : null };
+      }));
+      res.json(enrichedStock);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post("/api/warehouses/:warehouseId/stock", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      const { productId, quantity, location, minStock, movementType, notes } = req.body;
+      
+      const stock = await storage.upsertWarehouseStock({
+        warehouseId: req.params.warehouseId,
+        productId,
+        quantity: quantity || 0,
+        location,
+        minStock,
+      });
+      
+      if (movementType && quantity) {
+        await storage.createWarehouseMovement({
+          warehouseId: req.params.warehouseId,
+          productId,
+          movementType,
+          quantity: Math.abs(quantity),
+          notes,
+          createdBy: req.user.id,
+        });
+      }
+      res.json(stock);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/warehouses/:warehouseId/movements", requireAuth, async (req, res) => {
+    try {
+      const movements = await storage.listWarehouseMovements({ warehouseId: req.params.warehouseId });
+      const enrichedMovements = await Promise.all(movements.map(async (mov) => {
+        const product = await storage.getProduct(mov.productId);
+        const user = await storage.getUser(mov.createdBy);
+        return {
+          ...mov,
+          product: product ? { id: product.id, name: product.name, sku: product.sku } : null,
+          createdByUser: user ? { id: user.id, fullName: user.fullName, username: user.username } : null,
+        };
+      }));
+      res.json(enrichedMovements);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post("/api/warehouses/:warehouseId/movements", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      const { productId, movementType, quantity, notes, referenceType, referenceId } = req.body;
+      
+      const movement = await storage.createWarehouseMovement({
+        warehouseId: req.params.warehouseId,
+        productId,
+        movementType,
+        quantity,
+        referenceType,
+        referenceId,
+        notes,
+        createdBy: req.user.id,
+      });
+      
+      const quantityDelta = ['carico', 'trasferimento_in'].includes(movementType) ? quantity : -quantity;
+      await storage.updateWarehouseStockQuantity(req.params.warehouseId, productId, quantityDelta);
+      res.status(201).json(movement);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/warehouse-transfers", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      const filters: any = {};
+      if (req.query.status) filters.status = req.query.status;
+      if (req.query.sourceWarehouseId) filters.sourceWarehouseId = req.query.sourceWarehouseId;
+      if (req.query.destinationWarehouseId) filters.destinationWarehouseId = req.query.destinationWarehouseId;
+      
+      const transfers = await storage.listWarehouseTransfers(filters);
+      const enrichedTransfers = await Promise.all(transfers.map(async (t) => {
+        const source = await storage.getWarehouse(t.sourceWarehouseId);
+        const dest = await storage.getWarehouse(t.destinationWarehouseId);
+        const requestedBy = await storage.getUser(t.requestedBy);
+        const items = await storage.listWarehouseTransferItems(t.id);
+        return {
+          ...t,
+          sourceWarehouse: source ? { id: source.id, name: source.name } : null,
+          destinationWarehouse: dest ? { id: dest.id, name: dest.name } : null,
+          requestedByUser: requestedBy ? { id: requestedBy.id, fullName: requestedBy.fullName } : null,
+          itemCount: items.length,
+        };
+      }));
+      res.json(enrichedTransfers);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/warehouse-transfers/:id", requireAuth, async (req, res) => {
+    try {
+      const transfer = await storage.getWarehouseTransfer(req.params.id);
+      if (!transfer) return res.status(404).json({ error: "Trasferimento non trovato" });
+      
+      const items = await storage.listWarehouseTransferItems(transfer.id);
+      const enrichedItems = await Promise.all(items.map(async (item) => {
+        const product = await storage.getProduct(item.productId);
+        return { ...item, product: product ? { id: product.id, name: product.name, sku: product.sku } : null };
+      }));
+      
+      const source = await storage.getWarehouse(transfer.sourceWarehouseId);
+      const dest = await storage.getWarehouse(transfer.destinationWarehouseId);
+      res.json({ ...transfer, sourceWarehouse: source, destinationWarehouse: dest, items: enrichedItems });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post("/api/warehouse-transfers", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      const { sourceWarehouseId, destinationWarehouseId, notes, items } = req.body;
+      
+      const transfer = await storage.createWarehouseTransfer({
+        sourceWarehouseId,
+        destinationWarehouseId,
+        requestedBy: req.user.id,
+        status: 'pending',
+        notes,
+      });
+      
+      if (items && Array.isArray(items)) {
+        for (const item of items) {
+          await storage.createWarehouseTransferItem({
+            transferId: transfer.id,
+            productId: item.productId,
+            requestedQuantity: item.quantity,
+          });
+        }
+      }
+      res.status(201).json(transfer);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.patch("/api/warehouse-transfers/:id", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      const transfer = await storage.getWarehouseTransfer(req.params.id);
+      if (!transfer) return res.status(404).json({ error: "Trasferimento non trovato" });
+      
+      const { status, items } = req.body;
+      const updates: any = { ...req.body };
+      
+      if (status === 'approved') {
+        updates.approvedBy = req.user.id;
+        updates.approvedAt = new Date();
+      } else if (status === 'shipped' && items) {
+        updates.shippedAt = new Date();
+        for (const item of items) {
+          await storage.updateWarehouseTransferItem(item.id, { shippedQuantity: item.shippedQuantity });
+          await storage.updateWarehouseStockQuantity(transfer.sourceWarehouseId, item.productId, -item.shippedQuantity);
+          await storage.createWarehouseMovement({
+            warehouseId: transfer.sourceWarehouseId,
+            productId: item.productId,
+            movementType: 'trasferimento_out',
+            quantity: item.shippedQuantity,
+            referenceType: 'trasferimento',
+            referenceId: transfer.id,
+            createdBy: req.user.id,
+          });
+        }
+      } else if (status === 'received' && items) {
+        updates.receivedAt = new Date();
+        for (const item of items) {
+          await storage.updateWarehouseTransferItem(item.id, { receivedQuantity: item.receivedQuantity });
+          await storage.updateWarehouseStockQuantity(transfer.destinationWarehouseId, item.productId, item.receivedQuantity);
+          await storage.createWarehouseMovement({
+            warehouseId: transfer.destinationWarehouseId,
+            productId: item.productId,
+            movementType: 'trasferimento_in',
+            quantity: item.receivedQuantity,
+            referenceType: 'trasferimento',
+            referenceId: transfer.id,
+            createdBy: req.user.id,
+          });
+        }
+      }
+      
+      const updated = await storage.updateWarehouseTransfer(req.params.id, updates);
+      res.json(updated);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   return httpServer;
 }
