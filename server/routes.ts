@@ -2097,6 +2097,83 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // GET /api/products/:id - Get full product details with specs, prices, and compatibilities
+  app.get("/api/products/:id", requireAuth, async (req, res) => {
+    try {
+      const product = await storage.getProduct(req.params.id);
+      if (!product) {
+        return res.status(404).send("Prodotto non trovato");
+      }
+
+      // Get type-specific specs
+      let specs: any = null;
+      if (product.productType === 'dispositivo') {
+        specs = await storage.getSmartphoneSpecs(product.id);
+      } else if (product.productType === 'accessorio') {
+        specs = await storage.getAccessorySpecs(product.id);
+      }
+
+      // Get device compatibilities
+      const compatibilities = await storage.listProductCompatibilities(product.id);
+      
+      // Enrich compatibilities with brand and model names
+      const enrichedCompatibilities = await Promise.all(
+        compatibilities.map(async (c) => {
+          const brand = await storage.getDeviceBrand(c.deviceBrandId);
+          const model = c.deviceModelId ? await storage.getDeviceModel(c.deviceModelId) : null;
+          return {
+            ...c,
+            brandName: brand?.name || 'Sconosciuto',
+            modelName: model?.name || 'Tutti i modelli',
+          };
+        })
+      );
+
+      // Get reseller prices and assignments
+      const prices = await storage.listProductPrices({ productId: product.id });
+      const pricesWithReseller = await Promise.all(
+        prices.map(async (price) => {
+          const reseller = await storage.getUser(price.resellerId);
+          return {
+            ...price,
+            reseller: reseller ? {
+              id: reseller.id,
+              username: reseller.username,
+              fullName: reseller.fullName,
+            } : null,
+          };
+        })
+      );
+
+      // Get reseller assignments
+      const assignments = await storage.listResellerProducts({ productId: product.id });
+      const assignmentsWithReseller = await Promise.all(
+        assignments.map(async (a) => {
+          const reseller = await storage.getUser(a.resellerId);
+          return {
+            ...a,
+            reseller: reseller ? {
+              id: reseller.id,
+              username: reseller.username,
+              fullName: reseller.fullName,
+            } : null,
+          };
+        })
+      );
+
+      res.json({
+        product,
+        specs,
+        compatibilities: enrichedCompatibilities,
+        prices: pricesWithReseller,
+        assignments: assignmentsWithReseller,
+      });
+    } catch (error: any) {
+      console.error("Error fetching product details:", error);
+      res.status(500).send(error.message);
+    }
+  });
+
   // Product Prices (prezzi personalizzati per reseller - gestiti da admin)
   app.get("/api/admin/product-prices", requireRole("admin"), async (req, res) => {
     try {
