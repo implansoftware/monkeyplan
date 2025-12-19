@@ -15,7 +15,8 @@ The frontend is built with React 18+ and TypeScript, utilizing `shadcn/ui` (Radi
 The backend is an `Express.js` application with TypeScript, featuring a RESTful API and a `ws` WebSocket server for real-time communication. `Passport.js` and `express-session` handle session-based authentication with role-based authorization. Data is stored in a PostgreSQL database (Neon serverless) and accessed via `Drizzle ORM` for type-safe queries. The system enforces role-based access control (RBAC) and includes centralized error handling. Build processes use `Vite` for client assets and `esbuild` for server code.
 
 ### Feature Specifications
-*   **Core Management**: Includes comprehensive Ticketing, Repair Orders, Inventory, User, and Invoice & Billing management systems, all featuring RBAC and robust security.
+*   **Core Management**: Includes comprehensive Ticketing, Repair Orders, Warehouse/Inventory, User, and Invoice & Billing management systems, all featuring RBAC and robust security.
+*   **Warehouse System**: Multi-tenant warehouse management with automatic user-specific warehouses. Each user type (admin, reseller, sub-reseller, repair center) has dedicated warehouse with stock tracking, movements, and inter-warehouse transfers. Uses dual-write bridge pattern for backward compatibility with legacy inventory system during migration.
 *   **Workflow Systems**: Advanced repair workflow with a 10-state enum, acceptance wizard, diagnostics, quote management, parts ordering, and detailed repair logging.
 *   **Supply Chain**: Supplier/Procurement module with multi-supplier support, order/return workflows, and external API integration for catalog sync and ordering.
 *   **Customer & Service Management**: Corporate branch management, a standardized service catalog with custom pricing, and a delivery appointment system.
