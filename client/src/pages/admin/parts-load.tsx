@@ -286,7 +286,8 @@ export default function PartsLoadPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/parts-load", selectedDoc?.id] });
-      queryClient.invalidateQueries({ queryKey: ["/api/inventory"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/warehouses"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/my-warehouse"] });
       toast({ title: "Aggiunto all'inventario" });
     },
     onError: (error: Error) => {

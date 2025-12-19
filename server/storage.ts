@@ -1929,9 +1929,47 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createInventoryMovement(insertMovement: InsertInventoryMovement): Promise<InventoryMovement> {
+    // BRIDGE: Redirect to new warehouse system
+    // Find or create warehouse for this repair center
+    const repairCenter = await this.getRepairCenter(insertMovement.repairCenterId);
+    if (repairCenter) {
+      const warehouse = await this.ensureDefaultWarehouse(
+        'repair_center',
+        insertMovement.repairCenterId,
+        repairCenter.name
+      );
+      
+      // Map legacy movement types to new warehouse types
+      const movementTypeMap: Record<string, 'carico' | 'scarico' | 'rettifica'> = {
+        'in': 'carico',
+        'out': 'scarico',
+        'adjustment': 'rettifica',
+      };
+      const warehouseMovementType = movementTypeMap[insertMovement.movementType] || 'rettifica';
+      
+      // Calculate quantity change
+      const quantityDelta = insertMovement.movementType === "in" ? insertMovement.quantity :
+                            insertMovement.movementType === "out" ? -insertMovement.quantity :
+                            insertMovement.quantity;
+      
+      // Create movement in new warehouse system
+      await this.createWarehouseMovement({
+        warehouseId: warehouse.id,
+        productId: insertMovement.productId,
+        movementType: warehouseMovementType,
+        quantity: insertMovement.quantity,
+        referenceType: 'legacy_inventory',
+        notes: insertMovement.notes,
+        createdBy: insertMovement.createdBy,
+      });
+      
+      // Update stock in new warehouse system
+      await this.updateWarehouseStockQuantity(warehouse.id, insertMovement.productId, quantityDelta);
+    }
+    
+    // Also update legacy tables for backward compatibility during migration
     const [movement] = await db.insert(inventoryMovements).values(insertMovement).returning();
     
-    // Update stock
     const [existingStock] = await db.select().from(inventoryStock)
       .where(
         and(

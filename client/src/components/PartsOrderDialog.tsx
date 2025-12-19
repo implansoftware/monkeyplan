@@ -141,7 +141,8 @@ export function PartsOrderDialog({
       queryClient.invalidateQueries({ queryKey: ["/api/repair-orders", repairOrderId, "parts"] });
       queryClient.invalidateQueries({ queryKey: ["/api/repair-orders"] });
       queryClient.invalidateQueries({ queryKey: ["/api/products"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/inventory"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/warehouses"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/my-warehouse"] });
       form.reset();
       setSearchTerm("");
       onSuccess?.();
@@ -164,7 +165,8 @@ export function PartsOrderDialog({
       queryClient.invalidateQueries({ queryKey: ["/api/repair-orders", repairOrderId, "parts"] });
       queryClient.invalidateQueries({ queryKey: ["/api/repair-orders"] });
       queryClient.invalidateQueries({ queryKey: ["/api/products"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/inventory"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/warehouses"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/my-warehouse"] });
     },
     onError: (error: Error) => {
       toast({ title: "Errore", description: error.message, variant: "destructive" });
