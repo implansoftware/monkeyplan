@@ -19,7 +19,7 @@ import {
 } from "lucide-react";
 import type { Warehouse as WarehouseType, WarehouseStock, WarehouseMovement, WarehouseTransfer, Product } from "@shared/schema";
 
-type EnrichedStock = WarehouseStock & { product: { id: string; name: string; sku: string; type: string } | null };
+type EnrichedStock = WarehouseStock & { product: { id: string; name: string; sku: string; category: string; imageUrl?: string | null } | null };
 type EnrichedMovement = WarehouseMovement & { 
   product: { id: string; name: string; sku: string } | null;
   createdByUser: { id: string; fullName: string; username: string } | null;
@@ -333,10 +333,25 @@ export default function WarehousesPage() {
                     ) : (
                       filteredStock.map((item) => (
                         <tr key={item.id} className="border-b last:border-0 hover:bg-muted/50" data-testid={`row-stock-${item.id}`}>
-                          <td className="p-4 font-medium">{item.product?.name || "N/D"}</td>
+                          <td className="p-4">
+                            <div className="flex items-center gap-3">
+                              {item.product?.imageUrl ? (
+                                <img 
+                                  src={item.product.imageUrl} 
+                                  alt={item.product.name}
+                                  className="w-10 h-10 rounded object-cover"
+                                />
+                              ) : (
+                                <div className="w-10 h-10 rounded bg-muted flex items-center justify-center">
+                                  <Package className="h-5 w-5 text-muted-foreground" />
+                                </div>
+                              )}
+                              <span className="font-medium">{item.product?.name || "N/D"}</span>
+                            </div>
+                          </td>
                           <td className="p-4 text-muted-foreground">{item.product?.sku || "N/D"}</td>
                           <td className="p-4">
-                            <Badge variant="outline">{item.product?.type || "N/D"}</Badge>
+                            <Badge variant="outline">{item.product?.category || "N/D"}</Badge>
                           </td>
                           <td className="p-4 text-right">
                             <span className={item.minStock && item.quantity < item.minStock ? "text-red-500 font-bold" : ""}>

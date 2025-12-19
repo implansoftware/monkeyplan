@@ -18376,7 +18376,7 @@ export function registerRoutes(app: Express): Server {
       const stock = await storage.listWarehouseStock(req.params.warehouseId);
       const enrichedStock = await Promise.all(stock.map(async (item) => {
         const product = await storage.getProduct(item.productId);
-        return { ...item, product: product ? { id: product.id, name: product.name, sku: product.sku, type: product.type } : null };
+        return { ...item, product: product ? { id: product.id, name: product.name, sku: product.sku, category: product.category, imageUrl: product.imageUrl } : null };
       }));
       res.json(enrichedStock);
     } catch (error: any) {
