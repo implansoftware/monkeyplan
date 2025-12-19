@@ -155,6 +155,8 @@ export default function AdminProducts() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/products"] });
       queryClient.invalidateQueries({ queryKey: ["/api/products/with-stock"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/warehouses"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/my-warehouse"] });
       setDialogOpen(false);
       setInitialStock([]);
       setDeviceCompatibilities([]);
@@ -199,6 +201,8 @@ export default function AdminProducts() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/products/with-stock"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/warehouses"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/my-warehouse"] });
       toast({ title: "Quantità aggiornata" });
     },
     onError: (error: Error) => {

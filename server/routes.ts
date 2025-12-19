@@ -7473,13 +7473,17 @@ export function registerRoutes(app: Express): Server {
       if (!req.user) return res.status(401).send("Unauthorized");
       
       // Parse product and specs - support both JSON body and FormData (stringified JSON)
-      let product, specs;
+      let product, specs, initialQuantity = 0, warehouseId: string | null = null;
       if (typeof req.body.product === 'string') {
         product = JSON.parse(req.body.product);
         specs = JSON.parse(req.body.specs);
+        if (req.body.initialQuantity) initialQuantity = parseInt(req.body.initialQuantity) || 0;
+        if (req.body.warehouseId) warehouseId = req.body.warehouseId;
       } else {
         product = req.body.product;
         specs = req.body.specs;
+        initialQuantity = req.body.initialQuantity || 0;
+        warehouseId = req.body.warehouseId || null;
       }
       
       if (!product || !specs) {
@@ -7492,6 +7496,20 @@ export function registerRoutes(app: Express): Server {
       
       // Create product first
       const createdProduct = await storage.createProduct(product);
+      
+      // Create initial warehouse stock if quantity > 0
+      if (initialQuantity > 0 && warehouseId) {
+        await storage.createWarehouseMovement({
+          warehouseId,
+          productId: createdProduct.id,
+          movementType: 'carico',
+          quantity: initialQuantity,
+          referenceType: 'initial_stock',
+          notes: 'Quantità iniziale alla creazione prodotto',
+          createdBy: req.user.id,
+        });
+        await storage.updateWarehouseStockQuantity(warehouseId, createdProduct.id, initialQuantity);
+      }
       
       // Create specs linked to product
       specs.productId = createdProduct.id;
@@ -7675,16 +7693,21 @@ export function registerRoutes(app: Express): Server {
       
       // Parse product and specs - support both JSON body and FormData (stringified JSON)
       let product, specs, compatibleDeviceModelIds: string[] = [];
+      let initialQuantity = 0, warehouseId: string | null = null;
       if (typeof req.body.product === 'string') {
         product = JSON.parse(req.body.product);
         specs = JSON.parse(req.body.specs);
         if (req.body.compatibleDeviceModelIds) {
           compatibleDeviceModelIds = JSON.parse(req.body.compatibleDeviceModelIds);
         }
+        if (req.body.initialQuantity) initialQuantity = parseInt(req.body.initialQuantity) || 0;
+        if (req.body.warehouseId) warehouseId = req.body.warehouseId;
       } else {
         product = req.body.product;
         specs = req.body.specs;
         compatibleDeviceModelIds = req.body.compatibleDeviceModelIds || [];
+        initialQuantity = req.body.initialQuantity || 0;
+        warehouseId = req.body.warehouseId || null;
       }
       
       if (!product || !specs) {
@@ -7697,6 +7720,20 @@ export function registerRoutes(app: Express): Server {
       
       // Create product first
       const createdProduct = await storage.createProduct(product);
+      
+      // Create initial warehouse stock if quantity > 0
+      if (initialQuantity > 0 && warehouseId) {
+        await storage.createWarehouseMovement({
+          warehouseId,
+          productId: createdProduct.id,
+          movementType: 'carico',
+          quantity: initialQuantity,
+          referenceType: 'initial_stock',
+          notes: 'Quantità iniziale alla creazione prodotto',
+          createdBy: req.user.id,
+        });
+        await storage.updateWarehouseStockQuantity(warehouseId, createdProduct.id, initialQuantity);
+      }
       
       // Create specs linked to product
       specs.productId = createdProduct.id;

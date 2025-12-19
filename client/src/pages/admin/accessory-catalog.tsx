@@ -11,12 +11,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Checkbox } from "@/components/ui/checkbox";
-import { ShoppingBag, Search, Plus, Pencil, Trash2, Loader2, Tag, Store, X, Image, ChevronDown, ImagePlus, UserPlus, Eye, EyeOff } from "lucide-react";
+import { ShoppingBag, Search, Plus, Pencil, Trash2, Loader2, Tag, Store, X, Image, ChevronDown, ImagePlus, UserPlus, Eye, EyeOff, Warehouse } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Skeleton } from "@/components/ui/skeleton";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import type { AccessorySpecs, Product, DeviceModel, DeviceBrand, User } from "@shared/schema";
+import type { AccessorySpecs, Product, DeviceModel, DeviceBrand, User, Warehouse as WarehouseType } from "@shared/schema";
 
 type DeviceCompatibilityEntry = {
   deviceBrandId: string;
@@ -81,6 +81,8 @@ export default function AdminAccessoryCatalog() {
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [initialQuantity, setInitialQuantity] = useState<string>("");
+  const [selectedWarehouseId, setSelectedWarehouseId] = useState<string>("");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
@@ -113,6 +115,10 @@ export default function AdminAccessoryCatalog() {
 
   const { data: accessories = [], isLoading } = useQuery<AccessoryWithSpecs[]>({
     queryKey: ["/api/accessories"],
+  });
+
+  const { data: myWarehouse } = useQuery<WarehouseType>({
+    queryKey: ["/api/my-warehouse"],
   });
 
   // Fetch device brands and models for compatibility selection
@@ -256,13 +262,19 @@ export default function AdminAccessoryCatalog() {
   };
 
   const createMutation = useMutation({
-    mutationFn: async (data: { product: any; specs: any; imageFile?: File | null; compatibleDeviceModelIds?: string[] }) => {
+    mutationFn: async (data: { product: any; specs: any; imageFile?: File | null; compatibleDeviceModelIds?: string[]; initialQuantity?: number; warehouseId?: string }) => {
       if (data.imageFile) {
         const formDataUpload = new FormData();
         formDataUpload.append("product", JSON.stringify(data.product));
         formDataUpload.append("specs", JSON.stringify(data.specs));
         formDataUpload.append("compatibleDeviceModelIds", JSON.stringify(data.compatibleDeviceModelIds || []));
         formDataUpload.append("image", data.imageFile);
+        if (data.initialQuantity && data.initialQuantity > 0) {
+          formDataUpload.append("initialQuantity", data.initialQuantity.toString());
+        }
+        if (data.warehouseId) {
+          formDataUpload.append("warehouseId", data.warehouseId);
+        }
         const response = await fetch("/api/accessories", {
           method: "POST",
           body: formDataUpload,
@@ -274,12 +286,16 @@ export default function AdminAccessoryCatalog() {
         return apiRequest("POST", "/api/accessories", { 
           product: data.product, 
           specs: data.specs,
-          compatibleDeviceModelIds: data.compatibleDeviceModelIds || []
+          compatibleDeviceModelIds: data.compatibleDeviceModelIds || [],
+          initialQuantity: data.initialQuantity,
+          warehouseId: data.warehouseId
         });
       }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/accessories"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/warehouses"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/my-warehouse"] });
       setDialogOpen(false);
       resetForm();
       toast({ title: "Accessorio aggiunto", description: "L'accessorio è stato aggiunto al catalogo." });
@@ -412,6 +428,8 @@ export default function AdminAccessoryCatalog() {
     setImagePreview(null);
     setDeviceCompatibilities([]);
     setExpandedBrands(new Set());
+    setInitialQuantity("");
+    setSelectedWarehouseId("");
     setFormData({
       name: "",
       sku: "",
@@ -494,7 +512,9 @@ export default function AdminAccessoryCatalog() {
     if (editingAccessory) {
       updateMutation.mutate({ productId: editingAccessory.id, data: { product, specs, compatibleDeviceModelIds } });
     } else {
-      createMutation.mutate({ product, specs, imageFile, compatibleDeviceModelIds });
+      const qty = parseInt(initialQuantity) || 0;
+      const whId = selectedWarehouseId || myWarehouse?.id;
+      createMutation.mutate({ product, specs, imageFile, compatibleDeviceModelIds, initialQuantity: qty, warehouseId: whId });
     }
   };
 
@@ -962,6 +982,32 @@ export default function AdminAccessoryCatalog() {
                 data-testid="input-accessory-warranty"
               />
             </div>
+
+            {!editingAccessory && (
+              <div className="grid grid-cols-2 gap-4 p-3 bg-muted/50 rounded-lg">
+                <div className="space-y-2">
+                  <Label htmlFor="initialQuantity" className="flex items-center gap-2">
+                    <Warehouse className="h-4 w-4" />
+                    Quantità iniziale
+                  </Label>
+                  <Input
+                    id="initialQuantity"
+                    type="number"
+                    min="0"
+                    value={initialQuantity}
+                    onChange={(e) => setInitialQuantity(e.target.value)}
+                    placeholder="0"
+                    data-testid="input-accessory-initial-quantity"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="warehouseSelect">Magazzino destinazione</Label>
+                  <div className="text-sm text-muted-foreground">
+                    {myWarehouse?.name || "Magazzino predefinito"}
+                  </div>
+                </div>
+              </div>
+            )}
 
             <div className="space-y-2">
               <Label htmlFor="description">Descrizione</Label>

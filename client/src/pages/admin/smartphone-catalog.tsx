@@ -11,13 +11,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Smartphone, Search, Plus, Pencil, Trash2, Battery, HardDrive, Loader2, Store, ImagePlus, X, Image, Users, UserPlus, Eye, EyeOff } from "lucide-react";
+import { Smartphone, Search, Plus, Pencil, Trash2, Battery, HardDrive, Loader2, Store, ImagePlus, X, Image, Users, UserPlus, Eye, EyeOff, Warehouse } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Skeleton } from "@/components/ui/skeleton";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useRef } from "react";
-import type { SmartphoneSpecs, Product, User, ProductPrice } from "@shared/schema";
+import type { SmartphoneSpecs, Product, User, ProductPrice, Warehouse as WarehouseType } from "@shared/schema";
 
 type SmartphoneWithSpecs = Product & {
   specs: SmartphoneSpecs | null;
@@ -80,6 +80,8 @@ export default function AdminSmartphoneCatalog() {
   const [selectedResellerId, setSelectedResellerId] = useState<string>("");
   const [assignPrice, setAssignPrice] = useState<string>("");
   const [assignCostPrice, setAssignCostPrice] = useState<string>("");
+  const [initialQuantity, setInitialQuantity] = useState<string>("");
+  const [selectedWarehouseId, setSelectedWarehouseId] = useState<string>("");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
@@ -107,6 +109,10 @@ export default function AdminSmartphoneCatalog() {
 
   const { data: smartphones = [], isLoading } = useQuery<SmartphoneWithSpecs[]>({
     queryKey: ["/api/smartphones"],
+  });
+
+  const { data: myWarehouse } = useQuery<WarehouseType>({
+    queryKey: ["/api/my-warehouse"],
   });
 
   const { data: resellers = [] } = useQuery<User[]>({
@@ -183,12 +189,18 @@ export default function AdminSmartphoneCatalog() {
   });
 
   const createMutation = useMutation({
-    mutationFn: async (data: { product: any; specs: any; imageFile?: File | null }) => {
+    mutationFn: async (data: { product: any; specs: any; imageFile?: File | null; initialQuantity?: number; warehouseId?: string }) => {
       if (data.imageFile) {
         const formDataUpload = new FormData();
         formDataUpload.append("product", JSON.stringify(data.product));
         formDataUpload.append("specs", JSON.stringify(data.specs));
         formDataUpload.append("image", data.imageFile);
+        if (data.initialQuantity && data.initialQuantity > 0) {
+          formDataUpload.append("initialQuantity", data.initialQuantity.toString());
+        }
+        if (data.warehouseId) {
+          formDataUpload.append("warehouseId", data.warehouseId);
+        }
         const response = await fetch("/api/smartphones", {
           method: "POST",
           body: formDataUpload,
@@ -197,11 +209,18 @@ export default function AdminSmartphoneCatalog() {
         if (!response.ok) throw new Error(await response.text());
         return response.json();
       } else {
-        return apiRequest("POST", "/api/smartphones", { product: data.product, specs: data.specs });
+        return apiRequest("POST", "/api/smartphones", { 
+          product: data.product, 
+          specs: data.specs,
+          initialQuantity: data.initialQuantity,
+          warehouseId: data.warehouseId
+        });
       }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/smartphones"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/warehouses"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/my-warehouse"] });
       setDialogOpen(false);
       resetForm();
       toast({ title: "Smartphone aggiunto", description: "Il dispositivo è stato aggiunto al catalogo." });
@@ -328,6 +347,8 @@ export default function AdminSmartphoneCatalog() {
   const resetForm = () => {
     setImageFile(null);
     setImagePreview(null);
+    setInitialQuantity("");
+    setSelectedWarehouseId("");
     setFormData({
       name: "",
       sku: "",
@@ -407,7 +428,9 @@ export default function AdminSmartphoneCatalog() {
     if (editingSmartphone) {
       updateMutation.mutate({ productId: editingSmartphone.id, data: { product, specs } });
     } else {
-      createMutation.mutate({ product, specs, imageFile });
+      const qty = parseInt(initialQuantity) || 0;
+      const whId = selectedWarehouseId || myWarehouse?.id;
+      createMutation.mutate({ product, specs, imageFile, initialQuantity: qty, warehouseId: whId });
     }
   };
 
@@ -870,6 +893,32 @@ export default function AdminSmartphoneCatalog() {
                 data-testid="input-smartphone-warranty"
               />
             </div>
+
+            {!editingSmartphone && (
+              <div className="grid grid-cols-2 gap-4 p-3 bg-muted/50 rounded-lg">
+                <div className="space-y-2">
+                  <Label htmlFor="initialQuantity" className="flex items-center gap-2">
+                    <Warehouse className="h-4 w-4" />
+                    Quantità iniziale
+                  </Label>
+                  <Input
+                    id="initialQuantity"
+                    type="number"
+                    min="0"
+                    value={initialQuantity}
+                    onChange={(e) => setInitialQuantity(e.target.value)}
+                    placeholder="0"
+                    data-testid="input-smartphone-initial-quantity"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="warehouseSelect">Magazzino destinazione</Label>
+                  <div className="text-sm text-muted-foreground">
+                    {myWarehouse?.name || "Magazzino predefinito"}
+                  </div>
+                </div>
+              </div>
+            )}
 
             <div className="flex items-center gap-2">
               <Checkbox
