@@ -313,8 +313,7 @@ export default function AdminAccessoryCatalog() {
         compatibleDeviceModelIds: data.compatibleDeviceModelIds || []
       });
       if (addStock && addStock.quantity > 0 && addStock.warehouseId) {
-        await apiRequest("POST", "/api/warehouse-movements", {
-          warehouseId: addStock.warehouseId,
+        await apiRequest("POST", `/api/warehouses/${addStock.warehouseId}/movements`, {
           productId: productId,
           movementType: "carico",
           quantity: addStock.quantity,

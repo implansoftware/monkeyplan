@@ -234,8 +234,7 @@ export default function AdminSmartphoneCatalog() {
     mutationFn: async ({ productId, data, addStock }: { productId: string; data: any; addStock?: { quantity: number; warehouseId: string } }) => {
       await apiRequest("PATCH", `/api/smartphones/${productId}`, { product: data.product, specs: data.specs });
       if (addStock && addStock.quantity > 0 && addStock.warehouseId) {
-        await apiRequest("POST", "/api/warehouse-movements", {
-          warehouseId: addStock.warehouseId,
+        await apiRequest("POST", `/api/warehouses/${addStock.warehouseId}/movements`, {
           productId: productId,
           movementType: "carico",
           quantity: addStock.quantity,
