@@ -231,11 +231,22 @@ export default function AdminSmartphoneCatalog() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: async ({ productId, data }: { productId: string; data: any }) => {
+    mutationFn: async ({ productId, data, addStock }: { productId: string; data: any; addStock?: { quantity: number; warehouseId: string } }) => {
       await apiRequest("PATCH", `/api/smartphones/${productId}`, { product: data.product, specs: data.specs });
+      if (addStock && addStock.quantity > 0 && addStock.warehouseId) {
+        await apiRequest("POST", "/api/warehouse-movements", {
+          warehouseId: addStock.warehouseId,
+          productId: productId,
+          movementType: "carico",
+          quantity: addStock.quantity,
+          notes: "Aggiunta stock da modifica prodotto"
+        });
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/smartphones"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/warehouses"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/my-warehouse"] });
       setDialogOpen(false);
       setEditingSmartphone(null);
       resetForm();
@@ -426,7 +437,10 @@ export default function AdminSmartphoneCatalog() {
     };
 
     if (editingSmartphone) {
-      updateMutation.mutate({ productId: editingSmartphone.id, data: { product, specs } });
+      const qty = parseInt(initialQuantity) || 0;
+      const whId = selectedWarehouseId || myWarehouse?.id;
+      const addStock = qty > 0 && whId ? { quantity: qty, warehouseId: whId } : undefined;
+      updateMutation.mutate({ productId: editingSmartphone.id, data: { product, specs }, addStock });
     } else {
       const qty = parseInt(initialQuantity) || 0;
       const whId = selectedWarehouseId || myWarehouse?.id;
@@ -894,31 +908,34 @@ export default function AdminSmartphoneCatalog() {
               />
             </div>
 
-            {!editingSmartphone && (
-              <div className="grid grid-cols-2 gap-4 p-3 bg-muted/50 rounded-lg">
-                <div className="space-y-2">
-                  <Label htmlFor="initialQuantity" className="flex items-center gap-2">
-                    <Warehouse className="h-4 w-4" />
-                    Quantità iniziale
-                  </Label>
-                  <Input
-                    id="initialQuantity"
-                    type="number"
-                    min="0"
-                    value={initialQuantity}
-                    onChange={(e) => setInitialQuantity(e.target.value)}
-                    placeholder="0"
-                    data-testid="input-smartphone-initial-quantity"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="warehouseSelect">Magazzino destinazione</Label>
-                  <div className="text-sm text-muted-foreground">
-                    {myWarehouse?.name || "Magazzino predefinito"}
-                  </div>
+            <div className="grid grid-cols-2 gap-4 p-3 bg-muted/50 rounded-lg">
+              <div className="space-y-2">
+                <Label htmlFor="initialQuantity" className="flex items-center gap-2">
+                  <Warehouse className="h-4 w-4" />
+                  {editingSmartphone ? "Aggiungi stock" : "Quantità iniziale"}
+                </Label>
+                <Input
+                  id="initialQuantity"
+                  type="number"
+                  min="0"
+                  value={initialQuantity}
+                  onChange={(e) => setInitialQuantity(e.target.value)}
+                  placeholder="0"
+                  data-testid="input-smartphone-initial-quantity"
+                />
+                {editingSmartphone && (
+                  <p className="text-xs text-muted-foreground">
+                    Lascia vuoto o 0 per non aggiungere stock
+                  </p>
+                )}
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="warehouseSelect">Magazzino destinazione</Label>
+                <div className="text-sm text-muted-foreground">
+                  {myWarehouse?.name || "Magazzino predefinito"}
                 </div>
               </div>
-            )}
+            </div>
 
             <div className="flex items-center gap-2">
               <Checkbox

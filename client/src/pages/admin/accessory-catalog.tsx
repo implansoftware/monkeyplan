@@ -306,15 +306,26 @@ export default function AdminAccessoryCatalog() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: async ({ productId, data }: { productId: string; data: any }) => {
+    mutationFn: async ({ productId, data, addStock }: { productId: string; data: any; addStock?: { quantity: number; warehouseId: string } }) => {
       await apiRequest("PATCH", `/api/accessories/${productId}`, { 
         product: data.product, 
         specs: data.specs,
         compatibleDeviceModelIds: data.compatibleDeviceModelIds || []
       });
+      if (addStock && addStock.quantity > 0 && addStock.warehouseId) {
+        await apiRequest("POST", "/api/warehouse-movements", {
+          warehouseId: addStock.warehouseId,
+          productId: productId,
+          movementType: "carico",
+          quantity: addStock.quantity,
+          notes: "Aggiunta stock da modifica prodotto"
+        });
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/accessories"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/warehouses"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/my-warehouse"] });
       setDialogOpen(false);
       setEditingAccessory(null);
       resetForm();
@@ -510,7 +521,10 @@ export default function AdminAccessoryCatalog() {
       .map(c => c.deviceModelId as string);
 
     if (editingAccessory) {
-      updateMutation.mutate({ productId: editingAccessory.id, data: { product, specs, compatibleDeviceModelIds } });
+      const qty = parseInt(initialQuantity) || 0;
+      const whId = selectedWarehouseId || myWarehouse?.id;
+      const addStock = qty > 0 && whId ? { quantity: qty, warehouseId: whId } : undefined;
+      updateMutation.mutate({ productId: editingAccessory.id, data: { product, specs, compatibleDeviceModelIds }, addStock });
     } else {
       const qty = parseInt(initialQuantity) || 0;
       const whId = selectedWarehouseId || myWarehouse?.id;
@@ -983,31 +997,34 @@ export default function AdminAccessoryCatalog() {
               />
             </div>
 
-            {!editingAccessory && (
-              <div className="grid grid-cols-2 gap-4 p-3 bg-muted/50 rounded-lg">
-                <div className="space-y-2">
-                  <Label htmlFor="initialQuantity" className="flex items-center gap-2">
-                    <Warehouse className="h-4 w-4" />
-                    Quantità iniziale
-                  </Label>
-                  <Input
-                    id="initialQuantity"
-                    type="number"
-                    min="0"
-                    value={initialQuantity}
-                    onChange={(e) => setInitialQuantity(e.target.value)}
-                    placeholder="0"
-                    data-testid="input-accessory-initial-quantity"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="warehouseSelect">Magazzino destinazione</Label>
-                  <div className="text-sm text-muted-foreground">
-                    {myWarehouse?.name || "Magazzino predefinito"}
-                  </div>
+            <div className="grid grid-cols-2 gap-4 p-3 bg-muted/50 rounded-lg">
+              <div className="space-y-2">
+                <Label htmlFor="initialQuantity" className="flex items-center gap-2">
+                  <Warehouse className="h-4 w-4" />
+                  {editingAccessory ? "Aggiungi stock" : "Quantità iniziale"}
+                </Label>
+                <Input
+                  id="initialQuantity"
+                  type="number"
+                  min="0"
+                  value={initialQuantity}
+                  onChange={(e) => setInitialQuantity(e.target.value)}
+                  placeholder="0"
+                  data-testid="input-accessory-initial-quantity"
+                />
+                {editingAccessory && (
+                  <p className="text-xs text-muted-foreground">
+                    Lascia vuoto o 0 per non aggiungere stock
+                  </p>
+                )}
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="warehouseSelect">Magazzino destinazione</Label>
+                <div className="text-sm text-muted-foreground">
+                  {myWarehouse?.name || "Magazzino predefinito"}
                 </div>
               </div>
-            )}
+            </div>
 
             <div className="space-y-2">
               <Label htmlFor="description">Descrizione</Label>
