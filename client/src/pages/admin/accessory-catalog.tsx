@@ -329,15 +329,28 @@ export default function AdminAccessoryCatalog() {
       const res = await apiRequest("PATCH", `/api/admin/products/${id}/visibility`, { isVisibleInShop });
       return res.json();
     },
+    onMutate: async ({ id, isVisibleInShop }) => {
+      await queryClient.cancelQueries({ queryKey: ["/api/accessories"] });
+      const previousData = queryClient.getQueryData<AccessoryWithSpecs[]>(["/api/accessories"]);
+      queryClient.setQueryData<AccessoryWithSpecs[]>(["/api/accessories"], (old) =>
+        old?.map((a) => (a.id === id ? { ...a, isVisibleInShop } : a))
+      );
+      return { previousData };
+    },
+    onError: (error: Error, _, context) => {
+      if (context?.previousData) {
+        queryClient.setQueryData(["/api/accessories"], context.previousData);
+      }
+      toast({ title: "Errore", description: error.message, variant: "destructive" });
+    },
     onSuccess: (_, { isVisibleInShop }) => {
-      queryClient.invalidateQueries({ queryKey: ["/api/accessories"] });
       toast({
         title: isVisibleInShop ? "Visibile nello shop" : "Nascosto dallo shop",
         description: isVisibleInShop ? "L'accessorio è ora visibile negli shop." : "L'accessorio è stato nascosto dagli shop.",
       });
     },
-    onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/accessories"] });
     },
   });
 

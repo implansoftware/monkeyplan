@@ -247,15 +247,28 @@ export default function AdminSmartphoneCatalog() {
       const res = await apiRequest("PATCH", `/api/admin/products/${id}/visibility`, { isVisibleInShop });
       return res.json();
     },
+    onMutate: async ({ id, isVisibleInShop }) => {
+      await queryClient.cancelQueries({ queryKey: ["/api/smartphones"] });
+      const previousData = queryClient.getQueryData<SmartphoneWithSpecs[]>(["/api/smartphones"]);
+      queryClient.setQueryData<SmartphoneWithSpecs[]>(["/api/smartphones"], (old) =>
+        old?.map((s) => (s.id === id ? { ...s, isVisibleInShop } : s))
+      );
+      return { previousData };
+    },
+    onError: (error: Error, _, context) => {
+      if (context?.previousData) {
+        queryClient.setQueryData(["/api/smartphones"], context.previousData);
+      }
+      toast({ title: "Errore", description: error.message, variant: "destructive" });
+    },
     onSuccess: (_, { isVisibleInShop }) => {
-      queryClient.invalidateQueries({ queryKey: ["/api/smartphones"] });
       toast({
         title: isVisibleInShop ? "Visibile nello shop" : "Nascosto dallo shop",
         description: isVisibleInShop ? "Lo smartphone è ora visibile negli shop." : "Lo smartphone è stato nascosto dagli shop.",
       });
     },
-    onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/smartphones"] });
     },
   });
 
