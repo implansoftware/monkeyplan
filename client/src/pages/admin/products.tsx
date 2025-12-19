@@ -15,7 +15,8 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Plus, Search, Pencil, Trash2, Package, Warehouse, AlertTriangle, X, Building2, Star, StarOff, Users, Smartphone, Check, ChevronDown, ImageIcon, Upload, Loader2 } from "lucide-react";
+import { Plus, Search, Pencil, Trash2, Package, Warehouse, AlertTriangle, X, Building2, Star, StarOff, Users, Smartphone, Check, ChevronDown, ImageIcon, Upload, Loader2, Store, EyeOff, Eye } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -213,6 +214,23 @@ export default function AdminProducts() {
       queryClient.invalidateQueries({ queryKey: ["/api/products"] });
       queryClient.invalidateQueries({ queryKey: ["/api/products/with-stock"] });
       toast({ title: "Prodotto eliminato" });
+    },
+  });
+
+  const toggleShopVisibilityMutation = useMutation({
+    mutationFn: async ({ id, isVisibleInShop }: { id: string; isVisibleInShop: boolean }) => {
+      const res = await apiRequest("PATCH", `/api/admin/products/${id}/visibility`, { isVisibleInShop });
+      return await res.json();
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/products"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/products/with-stock"] });
+      toast({ 
+        title: variables.isVisibleInShop ? "Prodotto visibile nello shop" : "Prodotto nascosto dallo shop"
+      });
+    },
+    onError: () => {
+      toast({ title: "Errore", description: "Impossibile modificare la visibilità", variant: "destructive" });
     },
   });
 
@@ -2029,6 +2047,12 @@ export default function AdminProducts() {
                     </div>
                   </TableHead>
                   <TableHead>Compatibilità</TableHead>
+                  <TableHead>
+                    <div className="flex items-center gap-1">
+                      <Store className="h-4 w-4" />
+                      Shop
+                    </div>
+                  </TableHead>
                   <TableHead className="text-right">Azioni</TableHead>
                 </TableRow>
               </TableHeader>
@@ -2149,6 +2173,32 @@ export default function AdminProducts() {
                       ) : (
                         <span className="text-xs text-muted-foreground">-</span>
                       )}
+                    </TableCell>
+                    <TableCell>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div className="flex items-center gap-2">
+                            <Switch
+                              checked={product.isVisibleInShop ?? true}
+                              onCheckedChange={(checked) => 
+                                toggleShopVisibilityMutation.mutate({ id: product.id, isVisibleInShop: checked })
+                              }
+                              disabled={toggleShopVisibilityMutation.isPending}
+                              data-testid={`switch-shop-visibility-${product.id}`}
+                            />
+                            {product.isVisibleInShop === false ? (
+                              <EyeOff className="h-4 w-4 text-muted-foreground" />
+                            ) : (
+                              <Eye className="h-4 w-4 text-primary" />
+                            )}
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          {product.isVisibleInShop === false 
+                            ? "Nascosto dallo shop - clicca per mostrare" 
+                            : "Visibile nello shop - clicca per nascondere"}
+                        </TooltipContent>
+                      </Tooltip>
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
