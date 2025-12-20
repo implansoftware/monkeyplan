@@ -215,8 +215,8 @@ export default function AdminProducts() {
   });
 
   const updateStockMutation = useMutation({
-    mutationFn: async ({ productId, warehouseId, quantity }: { productId: string; warehouseId: string; quantity: number }) => {
-      const res = await apiRequest("POST", `/api/products/${productId}/warehouse-stock`, { warehouseId, quantity });
+    mutationFn: async ({ productId, warehouseId, quantity, location }: { productId: string; warehouseId: string; quantity: number; location?: string }) => {
+      const res = await apiRequest("POST", `/api/products/${productId}/warehouse-stock`, { warehouseId, quantity, location });
       return await res.json();
     },
     onSuccess: () => {
@@ -721,15 +721,19 @@ export default function AdminProducts() {
     ));
   };
 
-  const saveStockChange = async (warehouseId: string, quantity: number) => {
+  const saveStockChange = async (warehouseId: string) => {
     if (!editingProduct) return;
+    const stock = editStock.find(s => s.warehouseId === warehouseId);
+    if (!stock) return;
+    
     await updateStockMutation.mutateAsync({
       productId: editingProduct.id,
       warehouseId,
-      quantity
+      quantity: stock.quantity,
+      location: stock.location
     });
     setEditStock(editStock.map(s => 
-      s.warehouseId === warehouseId ? { ...s, originalQuantity: quantity } : s
+      s.warehouseId === warehouseId ? { ...s, originalQuantity: stock.quantity, originalLocation: stock.location } : s
     ));
   };
 
@@ -2016,27 +2020,17 @@ export default function AdminProducts() {
                     </TabsContent>
 
                     <TabsContent value="inventory" className="space-y-4 mt-4">
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="edit-minStock">Scorta Minima</Label>
-                          <Input
-                            id="edit-minStock"
-                            name="minStock"
-                            type="number"
-                            min="0"
-                            defaultValue={editingProduct.minStock ?? 5}
-                            data-testid="edit-input-min-stock"
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="edit-location">Ubicazione</Label>
-                          <Input
-                            id="edit-location"
-                            name="location"
-                            defaultValue={editingProduct.location || ""}
-                            data-testid="edit-input-location"
-                          />
-                        </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="edit-minStock">Scorta Minima</Label>
+                        <Input
+                          id="edit-minStock"
+                          name="minStock"
+                          type="number"
+                          min="0"
+                          defaultValue={editingProduct.minStock ?? 5}
+                          className="w-48"
+                          data-testid="edit-input-min-stock"
+                        />
                       </div>
 
                       <Separator />
@@ -2117,32 +2111,50 @@ export default function AdminProducts() {
                           </div>
                         ) : (
                           <div className="space-y-2">
-                            {editStock.map((stock) => (
-                              <div key={stock.warehouseId} className="flex items-center gap-2 p-2 bg-muted/50 rounded-md">
-                                <div className="flex-1">
-                                  <span className="text-sm font-medium">{stock.warehouseName}</span>
-                                  <span className="text-xs text-muted-foreground ml-2">({stock.ownerName})</span>
+                            {editStock.map((stock) => {
+                              const hasChanges = stock.quantity !== stock.originalQuantity || stock.location !== stock.originalLocation;
+                              return (
+                                <div key={stock.warehouseId} className="p-3 bg-muted/50 rounded-md space-y-2">
+                                  <div className="flex items-center justify-between">
+                                    <div>
+                                      <span className="text-sm font-medium">{stock.warehouseName}</span>
+                                      <span className="text-xs text-muted-foreground ml-2">({stock.ownerName})</span>
+                                    </div>
+                                    <Button
+                                      type="button"
+                                      size="sm"
+                                      variant={hasChanges ? "default" : "outline"}
+                                      disabled={!hasChanges || updateStockMutation.isPending}
+                                      onClick={() => saveStockChange(stock.warehouseId)}
+                                      data-testid={`edit-button-save-stock-${stock.warehouseId}`}
+                                    >
+                                      {updateStockMutation.isPending ? "..." : "Salva"}
+                                    </Button>
+                                  </div>
+                                  <div className="flex items-center gap-3">
+                                    <div className="flex-1">
+                                      <Label className="text-xs text-muted-foreground">Quantità</Label>
+                                      <Input
+                                        type="number"
+                                        min="0"
+                                        value={stock.quantity}
+                                        onChange={(e) => updateEditStock(stock.warehouseId, parseInt(e.target.value) || 0)}
+                                        data-testid={`edit-input-stock-${stock.warehouseId}`}
+                                      />
+                                    </div>
+                                    <div className="flex-1">
+                                      <Label className="text-xs text-muted-foreground">Ubicazione</Label>
+                                      <Input
+                                        value={stock.location}
+                                        onChange={(e) => updateEditStockLocation(stock.warehouseId, e.target.value)}
+                                        placeholder="es. Scaffale A3"
+                                        data-testid={`edit-input-location-${stock.warehouseId}`}
+                                      />
+                                    </div>
+                                  </div>
                                 </div>
-                                <Input
-                                  type="number"
-                                  min="0"
-                                  value={stock.quantity}
-                                  onChange={(e) => updateEditStock(stock.warehouseId, parseInt(e.target.value) || 0)}
-                                  className="w-24"
-                                  data-testid={`edit-input-stock-${stock.warehouseId}`}
-                                />
-                                <Button
-                                  type="button"
-                                  size="sm"
-                                  variant={stock.quantity !== stock.originalQuantity ? "default" : "outline"}
-                                  disabled={stock.quantity === stock.originalQuantity || updateStockMutation.isPending}
-                                  onClick={() => saveStockChange(stock.warehouseId, stock.quantity)}
-                                  data-testid={`edit-button-save-stock-${stock.warehouseId}`}
-                                >
-                                  {updateStockMutation.isPending ? "..." : "Salva"}
-                                </Button>
-                              </div>
-                            ))}
+                              );
+                            })}
                           </div>
                         )}
                       </div>
