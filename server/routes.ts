@@ -7512,14 +7512,15 @@ export function registerRoutes(app: Express): Server {
       // Enrich with owner info
       const enriched = await Promise.all(warehouseStocks.map(async (ws) => {
         let ownerName = 'Sistema';
-        if (ws.warehouse.ownerId && ws.warehouse.ownerId !== 'system') {
-          const owner = await storage.getUser(ws.warehouse.ownerId);
+        const warehouse = ws.warehouse || {};
+        if (warehouse.ownerId && warehouse.ownerId !== 'system') {
+          const owner = await storage.getUser(warehouse.ownerId);
           ownerName = owner?.fullName || owner?.username || 'Sconosciuto';
         }
         return {
           ...ws,
           warehouse: {
-            ...ws.warehouse,
+            ...warehouse,
             ownerName,
           },
         };
