@@ -7545,7 +7545,7 @@ export function registerRoutes(app: Express): Server {
       const product = await storage.getProduct(req.params.id);
       if (!product) return res.status(404).send("Product not found");
       
-      const { warehouseId, quantity, notes } = req.body;
+      const { warehouseId, quantity, notes, location } = req.body;
       
       if (!warehouseId) {
         return res.status(400).send("warehouseId is required");
@@ -7565,8 +7565,19 @@ export function registerRoutes(app: Express): Server {
       const currentQuantity = currentStock?.quantity || 0;
       const difference = quantity - currentQuantity;
       
+      // Update location if provided (even if quantity unchanged)
+      if (typeof location === 'string' && currentStock) {
+        await storage.updateWarehouseStock(currentStock.id, { location: location || null });
+      }
+      
       if (difference === 0) {
-        return res.json({ message: "No change in quantity" });
+        // Return updated stocks even if only location changed
+        const updatedStocks = await storage.getProductWarehouseStocks(req.params.id);
+        const totalQuantity = updatedStocks.reduce((sum, ws) => sum + ws.quantity, 0);
+        return res.json({
+          stocks: updatedStocks,
+          totalQuantity,
+        });
       }
       
       // Create warehouse movement for the difference

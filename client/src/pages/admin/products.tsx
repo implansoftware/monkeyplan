@@ -27,6 +27,7 @@ import { Info } from "lucide-react";
 interface InitialStockEntry {
   warehouseId: string;
   quantity: number;
+  location?: string;
 }
 
 interface WarehouseForStock {
@@ -104,7 +105,7 @@ export default function AdminProducts() {
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
   const [detailProductId, setDetailProductId] = useState<string | null>(null);
   const [initialStock, setInitialStock] = useState<InitialStockEntry[]>([]);
-  const [editStock, setEditStock] = useState<Array<{ warehouseId: string; warehouseName: string; ownerType: string; ownerName: string; quantity: number; originalQuantity: number }>>([]);
+  const [editStock, setEditStock] = useState<Array<{ warehouseId: string; warehouseName: string; ownerType: string; ownerName: string; quantity: number; originalQuantity: number; location: string; originalLocation: string }>>([]);
   const [isLoadingStock, setIsLoadingStock] = useState(false);
   const [productSuppliers, setProductSuppliers] = useState<ProductSupplierWithDetails[]>([]);
   const [isLoadingSuppliers, setIsLoadingSuppliers] = useState(false);
@@ -645,7 +646,9 @@ export default function AdminProducts() {
         ownerType: s.warehouse?.ownerType || 'admin',
         ownerName: s.warehouse?.ownerName || 'Sistema',
         quantity: s.quantity,
-        originalQuantity: s.quantity
+        originalQuantity: s.quantity,
+        location: s.location || '',
+        originalLocation: s.location || ''
       })));
     } catch {
       setEditStock([]);
@@ -699,7 +702,9 @@ export default function AdminProducts() {
         ownerType: wh.ownerType,
         ownerName,
         quantity: 0,
-        originalQuantity: 0
+        originalQuantity: 0,
+        location: '',
+        originalLocation: ''
       }]);
     }
   };
@@ -707,6 +712,12 @@ export default function AdminProducts() {
   const updateEditStock = (warehouseId: string, quantity: number) => {
     setEditStock(editStock.map(s => 
       s.warehouseId === warehouseId ? { ...s, quantity } : s
+    ));
+  };
+
+  const updateEditStockLocation = (warehouseId: string, location: string) => {
+    setEditStock(editStock.map(s => 
+      s.warehouseId === warehouseId ? { ...s, location } : s
     ));
   };
 
