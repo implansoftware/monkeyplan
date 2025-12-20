@@ -386,7 +386,7 @@ export function ProductDetailDialog({ open, onOpenChange, productId }: ProductDe
                         {data.prices.map((p) => (
                           <TableRow key={p.id}>
                             <TableCell>{p.reseller?.fullName || p.reseller?.username || "-"}</TableCell>
-                            <TableCell className="text-right font-medium">{Number(p.sellPrice).toFixed(2)} €</TableCell>
+                            <TableCell className="text-right font-medium">{p.sellPrice ? `${Number(p.sellPrice).toFixed(2)} €` : "-"}</TableCell>
                             <TableCell className="text-right text-muted-foreground">
                               {p.costPrice ? `${Number(p.costPrice).toFixed(2)} €` : "-"}
                             </TableCell>
