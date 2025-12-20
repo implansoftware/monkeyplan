@@ -18285,6 +18285,54 @@ export function registerRoutes(app: Express): Server {
   // WAREHOUSE MANAGEMENT (Gestione Magazzini)
   // ==========================================
 
+  // Admin endpoint to list ALL warehouses with owner info and stock counts
+  app.get("/api/admin/all-warehouses", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      if (!['admin', 'admin_staff'].includes(req.user.role)) {
+        return res.status(403).json({ error: "Accesso negato" });
+      }
+      
+      const { ownerType, isActive } = req.query;
+      let filters: { ownerType?: string; isActive?: boolean } = {};
+      if (ownerType) filters.ownerType = ownerType as string;
+      if (isActive !== undefined) filters.isActive = isActive === 'true';
+      
+      const warehouses = await storage.listWarehouses(filters);
+      
+      // Enrich with owner info and stock counts
+      const enrichedWarehouses = await Promise.all(warehouses.map(async (wh) => {
+        let owner: { id: string; username: string; fullName: string | null; role: string } | null = null;
+        
+        // Check for system warehouse (ownerId can be 'system' or null)
+        if (wh.ownerId === 'system' || !wh.ownerId || wh.ownerType === 'admin') {
+          owner = { id: 'system', username: 'system', fullName: 'Magazzino Centrale', role: 'admin' };
+        } else {
+          const user = await storage.getUser(wh.ownerId);
+          if (user) {
+            owner = { id: user.id, username: user.username, fullName: user.fullName, role: user.role };
+          }
+        }
+        
+        // Get stock count and total quantity
+        const stock = await storage.listWarehouseStock(wh.id);
+        const stockCount = stock.length;
+        const totalQuantity = stock.reduce((sum, s) => sum + s.quantity, 0);
+        
+        return {
+          ...wh,
+          owner,
+          stockCount,
+          totalQuantity,
+        };
+      }));
+      
+      res.json(enrichedWarehouses);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   app.get("/api/warehouses", requireAuth, async (req, res) => {
     try {
       if (!req.user) return res.status(401).json({ error: "Non autenticato" });

@@ -51,6 +51,7 @@ import AdminPayments from "@/pages/admin/payments";
 import DiagnosisList from "@/pages/DiagnosisList";
 import QuotesList from "@/pages/QuotesList";
 import AdminWarehouses from "@/pages/admin/warehouses";
+import AdminAllWarehouses from "@/pages/admin/all-warehouses";
 
 // Admin Utility pages
 import AdminUtility from "@/pages/admin/utility/index";
@@ -169,6 +170,7 @@ function Router() {
       <ProtectedRoute path="/admin/tickets" component={AdminTickets} />
       <ProtectedRoute path="/admin/tickets/:id" component={AdminTicketDetail} />
       <ProtectedRoute path="/admin/warehouses" component={AdminWarehouses} />
+      <ProtectedRoute path="/admin/all-warehouses" component={AdminAllWarehouses} />
       <ProtectedRoute path="/admin/products" component={AdminProducts} />
       <ProtectedRoute path="/admin/product-assignments" component={AdminProductAssignments} />
       <ProtectedRoute path="/admin/parts-orders" component={AdminPartsOrders} />
