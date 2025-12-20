@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectGroup, SelectLabel } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -1231,23 +1231,19 @@ export default function AdminProducts() {
                           </SelectTrigger>
                           <SelectContent>
                             {groupedWarehouses.admin.filter(w => !initialStock.find(s => s.warehouseId === w.id)).length > 0 && (
-                              <>
-                                <SelectItem value="_header_admin" disabled className="font-semibold text-xs text-muted-foreground">
-                                  Magazzini Admin
-                                </SelectItem>
+                              <SelectGroup>
+                                <SelectLabel>Magazzini Admin</SelectLabel>
                                 {groupedWarehouses.admin
                                   .filter(w => !initialStock.find(s => s.warehouseId === w.id))
                                   .map(wh => (
                                     <SelectItem key={wh.id} value={wh.id}>{wh.name}</SelectItem>
                                   ))
                                 }
-                              </>
+                              </SelectGroup>
                             )}
                             {groupedWarehouses.reseller.filter(w => !initialStock.find(s => s.warehouseId === w.id)).length > 0 && (
-                              <>
-                                <SelectItem value="_header_reseller" disabled className="font-semibold text-xs text-muted-foreground">
-                                  Magazzini Rivenditori
-                                </SelectItem>
+                              <SelectGroup>
+                                <SelectLabel>Magazzini Rivenditori</SelectLabel>
                                 {groupedWarehouses.reseller
                                   .filter(w => !initialStock.find(s => s.warehouseId === w.id))
                                   .map(wh => (
@@ -1256,13 +1252,11 @@ export default function AdminProducts() {
                                     </SelectItem>
                                   ))
                                 }
-                              </>
+                              </SelectGroup>
                             )}
                             {groupedWarehouses.sub_reseller.filter(w => !initialStock.find(s => s.warehouseId === w.id)).length > 0 && (
-                              <>
-                                <SelectItem value="_header_sub_reseller" disabled className="font-semibold text-xs text-muted-foreground">
-                                  Magazzini Sotto-Rivenditori
-                                </SelectItem>
+                              <SelectGroup>
+                                <SelectLabel>Magazzini Sotto-Rivenditori</SelectLabel>
                                 {groupedWarehouses.sub_reseller
                                   .filter(w => !initialStock.find(s => s.warehouseId === w.id))
                                   .map(wh => (
@@ -1271,13 +1265,11 @@ export default function AdminProducts() {
                                     </SelectItem>
                                   ))
                                 }
-                              </>
+                              </SelectGroup>
                             )}
                             {groupedWarehouses.repair_center.filter(w => !initialStock.find(s => s.warehouseId === w.id)).length > 0 && (
-                              <>
-                                <SelectItem value="_header_repair_center" disabled className="font-semibold text-xs text-muted-foreground">
-                                  Magazzini Centri Riparazione
-                                </SelectItem>
+                              <SelectGroup>
+                                <SelectLabel>Magazzini Centri Riparazione</SelectLabel>
                                 {groupedWarehouses.repair_center
                                   .filter(w => !initialStock.find(s => s.warehouseId === w.id))
                                   .map(wh => (
@@ -1286,7 +1278,7 @@ export default function AdminProducts() {
                                     </SelectItem>
                                   ))
                                 }
-                              </>
+                              </SelectGroup>
                             )}
                           </SelectContent>
                         </Select>

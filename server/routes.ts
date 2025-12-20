@@ -7289,7 +7289,14 @@ export function registerRoutes(app: Express): Server {
       if (initialStock && Array.isArray(initialStock)) {
         for (const stockEntry of initialStock) {
           if (stockEntry.warehouseId && stockEntry.quantity > 0) {
-            // Create warehouse movement and update stock
+            // Validate warehouse exists
+            const warehouse = await storage.getWarehouse(stockEntry.warehouseId);
+            if (!warehouse) {
+              console.warn(`Warehouse ${stockEntry.warehouseId} not found, skipping stock entry`);
+              continue;
+            }
+            
+            // Create warehouse movement
             await storage.createWarehouseMovement({
               warehouseId: stockEntry.warehouseId,
               productId: product.id,
@@ -7300,12 +7307,12 @@ export function registerRoutes(app: Express): Server {
               createdBy: req.user.id,
             });
             
-            // Update warehouse stock
-            await storage.upsertWarehouseStock({
-              warehouseId: stockEntry.warehouseId,
-              productId: product.id,
-              quantity: stockEntry.quantity,
-            });
+            // Update warehouse stock (increment, not overwrite)
+            await storage.updateWarehouseStockQuantity(
+              stockEntry.warehouseId,
+              product.id,
+              stockEntry.quantity
+            );
           }
         }
       }
