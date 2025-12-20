@@ -18601,6 +18601,56 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Get accessible warehouses for current user (for transfer destination selection)
+  // NOTE: Must be defined BEFORE /api/warehouses/:id to avoid route collision
+  app.get("/api/warehouses/accessible", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      
+      let accessibleWarehouses: any[] = [];
+      
+      if (['admin', 'admin_staff'].includes(req.user.role)) {
+        accessibleWarehouses = await storage.listWarehouses({});
+      } else if (req.user.role === 'reseller' || req.user.role === 'reseller_staff' || req.user.role === 'reseller_collaborator') {
+        const resellerId = req.user.resellerId || req.user.id;
+        const ownWarehouse = await storage.getWarehouseByOwner('reseller', resellerId);
+        if (ownWarehouse) accessibleWarehouses.push(ownWarehouse);
+        
+        const subResellers = await storage.listUsers({ role: 'sub_reseller', resellerId });
+        for (const sub of subResellers) {
+          const subWarehouse = await storage.getWarehouseByOwner('sub_reseller', sub.id);
+          if (subWarehouse) accessibleWarehouses.push(subWarehouse);
+        }
+        
+        const repairCenters = await storage.listUsers({ role: 'repair_center', resellerId });
+        for (const rc of repairCenters) {
+          const rcWarehouse = await storage.getWarehouseByOwner('repair_center', rc.id);
+          if (rcWarehouse) accessibleWarehouses.push(rcWarehouse);
+        }
+      } else if (req.user.role === 'sub_reseller') {
+        const ownWarehouse = await storage.getWarehouseByOwner('sub_reseller', req.user.id);
+        if (ownWarehouse) accessibleWarehouses.push(ownWarehouse);
+      } else if (req.user.role === 'repair_center') {
+        const rcId = req.user.repairCenterId || req.user.id;
+        const ownWarehouse = await storage.getWarehouseByOwner('repair_center', rcId);
+        if (ownWarehouse) accessibleWarehouses.push(ownWarehouse);
+      }
+      
+      const enriched = await Promise.all(accessibleWarehouses.map(async (wh) => {
+        let owner = null;
+        if (wh.ownerId && wh.ownerId !== 'system') {
+          const user = await storage.getUser(wh.ownerId);
+          if (user) owner = { id: user.id, username: user.username, fullName: user.fullName };
+        }
+        return { ...wh, owner };
+      }));
+      
+      res.json(enriched);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   app.get("/api/warehouses/:id", requireAuth, async (req, res) => {
     try {
       const warehouse = await storage.getWarehouse(req.params.id);
@@ -18637,62 +18687,6 @@ export function registerRoutes(app: Express): Server {
       
       const warehouse = await storage.ensureDefaultWarehouse(ownerType, ownerId, ownerName);
       res.json(warehouse);
-    } catch (error: any) {
-      res.status(500).json({ error: error.message });
-    }
-  });
-
-  // Get accessible warehouses for current user (for transfer destination selection)
-  app.get("/api/warehouses/accessible", requireAuth, async (req, res) => {
-    try {
-      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
-      
-      let accessibleWarehouses: any[] = [];
-      
-      if (['admin', 'admin_staff'].includes(req.user.role)) {
-        // Admin can access all warehouses
-        accessibleWarehouses = await storage.listWarehouses({});
-      } else if (req.user.role === 'reseller' || req.user.role === 'reseller_staff' || req.user.role === 'reseller_collaborator') {
-        const resellerId = req.user.resellerId || req.user.id;
-        // Reseller can access: own warehouse + sub-resellers' warehouses + repair centers' warehouses
-        const ownWarehouse = await storage.getWarehouseByOwner('reseller', resellerId);
-        if (ownWarehouse) accessibleWarehouses.push(ownWarehouse);
-        
-        // Get sub-resellers assigned to this reseller
-        const subResellers = await storage.listUsers({ role: 'sub_reseller', resellerId });
-        for (const sub of subResellers) {
-          const subWarehouse = await storage.getWarehouseByOwner('sub_reseller', sub.id);
-          if (subWarehouse) accessibleWarehouses.push(subWarehouse);
-        }
-        
-        // Get repair centers assigned to this reseller
-        const repairCenters = await storage.listUsers({ role: 'repair_center', resellerId });
-        for (const rc of repairCenters) {
-          const rcWarehouse = await storage.getWarehouseByOwner('repair_center', rc.id);
-          if (rcWarehouse) accessibleWarehouses.push(rcWarehouse);
-        }
-      } else if (req.user.role === 'sub_reseller') {
-        // Sub-reseller can access own warehouse only
-        const ownWarehouse = await storage.getWarehouseByOwner('sub_reseller', req.user.id);
-        if (ownWarehouse) accessibleWarehouses.push(ownWarehouse);
-      } else if (req.user.role === 'repair_center') {
-        // Repair center can access own warehouse only
-        const rcId = req.user.repairCenterId || req.user.id;
-        const ownWarehouse = await storage.getWarehouseByOwner('repair_center', rcId);
-        if (ownWarehouse) accessibleWarehouses.push(ownWarehouse);
-      }
-      
-      // Enrich with owner info
-      const enriched = await Promise.all(accessibleWarehouses.map(async (wh) => {
-        let owner = null;
-        if (wh.ownerId && wh.ownerId !== 'system') {
-          const user = await storage.getUser(wh.ownerId);
-          if (user) owner = { id: user.id, username: user.username, fullName: user.fullName };
-        }
-        return { ...wh, owner };
-      }));
-      
-      res.json(enriched);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }
