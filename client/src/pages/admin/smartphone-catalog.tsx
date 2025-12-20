@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectGroup, SelectLabel } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -28,6 +28,24 @@ type SmartphoneWithSpecs = Product & {
 type ProductPriceWithReseller = ProductPrice & {
   reseller?: { id: string; username: string; fullName: string | null } | null;
 };
+
+interface InitialStockEntry {
+  warehouseId: string;
+  quantity: number;
+}
+
+interface WarehouseForStock {
+  id: string;
+  name: string;
+  ownerType: 'admin' | 'reseller' | 'sub_reseller' | 'repair_center';
+  ownerId: string;
+  owner?: {
+    id: string;
+    username: string;
+    fullName: string | null;
+    role: string;
+  } | null;
+}
 
 const STORAGE_OPTIONS = ["16GB", "32GB", "64GB", "128GB", "256GB", "512GB", "1TB", "2TB"];
 const GRADE_OPTIONS = [
@@ -83,8 +101,7 @@ export default function AdminSmartphoneCatalog() {
   const [selectedResellerId, setSelectedResellerId] = useState<string>("");
   const [assignPrice, setAssignPrice] = useState<string>("");
   const [assignCostPrice, setAssignCostPrice] = useState<string>("");
-  const [initialQuantity, setInitialQuantity] = useState<string>("");
-  const [selectedWarehouseId, setSelectedWarehouseId] = useState<string>("");
+  const [initialStock, setInitialStock] = useState<InitialStockEntry[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
@@ -114,8 +131,8 @@ export default function AdminSmartphoneCatalog() {
     queryKey: ["/api/smartphones"],
   });
 
-  const { data: myWarehouse } = useQuery<WarehouseType>({
-    queryKey: ["/api/my-warehouse"],
+  const { data: warehouses = [] } = useQuery<WarehouseForStock[]>({
+    queryKey: ["/api/admin/all-warehouses"],
   });
 
   const { data: resellers = [] } = useQuery<User[]>({
@@ -192,17 +209,14 @@ export default function AdminSmartphoneCatalog() {
   });
 
   const createMutation = useMutation({
-    mutationFn: async (data: { product: any; specs: any; imageFile?: File | null; initialQuantity?: number; warehouseId?: string }) => {
+    mutationFn: async (data: { product: any; specs: any; imageFile?: File | null; initialStock?: InitialStockEntry[] }) => {
       if (data.imageFile) {
         const formDataUpload = new FormData();
         formDataUpload.append("product", JSON.stringify(data.product));
         formDataUpload.append("specs", JSON.stringify(data.specs));
         formDataUpload.append("image", data.imageFile);
-        if (data.initialQuantity && data.initialQuantity > 0) {
-          formDataUpload.append("initialQuantity", data.initialQuantity.toString());
-        }
-        if (data.warehouseId) {
-          formDataUpload.append("warehouseId", data.warehouseId);
+        if (data.initialStock && data.initialStock.length > 0) {
+          formDataUpload.append("initialStock", JSON.stringify(data.initialStock));
         }
         const response = await fetch("/api/smartphones", {
           method: "POST",
@@ -215,15 +229,14 @@ export default function AdminSmartphoneCatalog() {
         return apiRequest("POST", "/api/smartphones", { 
           product: data.product, 
           specs: data.specs,
-          initialQuantity: data.initialQuantity,
-          warehouseId: data.warehouseId
+          initialStock: data.initialStock
         });
       }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/smartphones"] });
       queryClient.invalidateQueries({ queryKey: ["/api/warehouses"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/my-warehouse"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/all-warehouses"] });
       setDialogOpen(false);
       resetForm();
       toast({ title: "Smartphone aggiunto", description: "Il dispositivo è stato aggiunto al catalogo." });
@@ -234,21 +247,25 @@ export default function AdminSmartphoneCatalog() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: async ({ productId, data, addStock }: { productId: string; data: any; addStock?: { quantity: number; warehouseId: string } }) => {
+    mutationFn: async ({ productId, data, initialStock: stockEntries }: { productId: string; data: any; initialStock?: InitialStockEntry[] }) => {
       await apiRequest("PATCH", `/api/smartphones/${productId}`, { product: data.product, specs: data.specs });
-      if (addStock && addStock.quantity > 0 && addStock.warehouseId) {
-        await apiRequest("POST", `/api/warehouses/${addStock.warehouseId}/movements`, {
-          productId: productId,
-          movementType: "carico",
-          quantity: addStock.quantity,
-          notes: "Aggiunta stock da modifica prodotto"
-        });
+      if (stockEntries && stockEntries.length > 0) {
+        for (const entry of stockEntries) {
+          if (entry.quantity > 0) {
+            await apiRequest("POST", `/api/warehouses/${entry.warehouseId}/movements`, {
+              productId: productId,
+              movementType: "carico",
+              quantity: entry.quantity,
+              notes: "Aggiunta stock da modifica prodotto"
+            });
+          }
+        }
       }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/smartphones"] });
       queryClient.invalidateQueries({ queryKey: ["/api/warehouses"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/my-warehouse"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/all-warehouses"] });
       setDialogOpen(false);
       setEditingSmartphone(null);
       resetForm();
@@ -357,11 +374,33 @@ export default function AdminSmartphoneCatalog() {
     }
   };
 
+  const addInitialStock = (warehouseId: string) => {
+    if (!initialStock.find(s => s.warehouseId === warehouseId)) {
+      setInitialStock([...initialStock, { warehouseId, quantity: 0 }]);
+    }
+  };
+
+  const updateInitialStock = (warehouseId: string, quantity: number) => {
+    setInitialStock(initialStock.map(s => 
+      s.warehouseId === warehouseId ? { ...s, quantity } : s
+    ));
+  };
+
+  const removeInitialStock = (warehouseId: string) => {
+    setInitialStock(initialStock.filter(s => s.warehouseId !== warehouseId));
+  };
+
+  const groupedWarehouses = {
+    admin: warehouses.filter(w => w.ownerType === 'admin'),
+    reseller: warehouses.filter(w => w.ownerType === 'reseller'),
+    sub_reseller: warehouses.filter(w => w.ownerType === 'sub_reseller'),
+    repair_center: warehouses.filter(w => w.ownerType === 'repair_center'),
+  };
+
   const resetForm = () => {
     setImageFile(null);
     setImagePreview(null);
-    setInitialQuantity("");
-    setSelectedWarehouseId("");
+    setInitialStock([]);
     setFormData({
       name: "",
       sku: "",
@@ -439,14 +478,11 @@ export default function AdminSmartphoneCatalog() {
     };
 
     if (editingSmartphone) {
-      const qty = parseInt(initialQuantity) || 0;
-      const whId = selectedWarehouseId || myWarehouse?.id;
-      const addStock = qty > 0 && whId ? { quantity: qty, warehouseId: whId } : undefined;
-      updateMutation.mutate({ productId: editingSmartphone.id, data: { product, specs }, addStock });
+      const stockEntries = initialStock.filter(s => s.quantity > 0);
+      updateMutation.mutate({ productId: editingSmartphone.id, data: { product, specs }, initialStock: stockEntries });
     } else {
-      const qty = parseInt(initialQuantity) || 0;
-      const whId = selectedWarehouseId || myWarehouse?.id;
-      createMutation.mutate({ product, specs, imageFile, initialQuantity: qty, warehouseId: whId });
+      const stockEntries = initialStock.filter(s => s.quantity > 0);
+      createMutation.mutate({ product, specs, imageFile, initialStock: stockEntries });
     }
   };
 
@@ -919,33 +955,117 @@ export default function AdminSmartphoneCatalog() {
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-4 p-3 bg-muted/50 rounded-lg">
-              <div className="space-y-2">
-                <Label htmlFor="initialQuantity" className="flex items-center gap-2">
+            <div className="space-y-3 p-3 bg-muted/50 rounded-lg">
+              <div className="flex items-center justify-between">
+                <Label className="flex items-center gap-2">
                   <Warehouse className="h-4 w-4" />
-                  {editingSmartphone ? "Aggiungi stock" : "Quantità iniziale"}
+                  {editingSmartphone ? "Aggiungi stock" : "Quantità iniziali per magazzino"}
                 </Label>
-                <Input
-                  id="initialQuantity"
-                  type="number"
-                  min="0"
-                  value={initialQuantity}
-                  onChange={(e) => setInitialQuantity(e.target.value)}
-                  placeholder="0"
-                  data-testid="input-smartphone-initial-quantity"
-                />
-                {editingSmartphone && (
-                  <p className="text-xs text-muted-foreground">
-                    Lascia vuoto o 0 per non aggiungere stock
-                  </p>
-                )}
+                <Select onValueChange={addInitialStock}>
+                  <SelectTrigger className="w-56" data-testid="select-add-stock-warehouse">
+                    <SelectValue placeholder="Aggiungi magazzino..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {groupedWarehouses.admin.filter(w => !initialStock.find(s => s.warehouseId === w.id)).length > 0 && (
+                      <SelectGroup>
+                        <SelectLabel>Magazzini Admin</SelectLabel>
+                        {groupedWarehouses.admin
+                          .filter(w => !initialStock.find(s => s.warehouseId === w.id))
+                          .map(wh => (
+                            <SelectItem key={wh.id} value={wh.id}>{wh.name}</SelectItem>
+                          ))
+                        }
+                      </SelectGroup>
+                    )}
+                    {groupedWarehouses.reseller.filter(w => !initialStock.find(s => s.warehouseId === w.id)).length > 0 && (
+                      <SelectGroup>
+                        <SelectLabel>Magazzini Rivenditori</SelectLabel>
+                        {groupedWarehouses.reseller
+                          .filter(w => !initialStock.find(s => s.warehouseId === w.id))
+                          .map(wh => (
+                            <SelectItem key={wh.id} value={wh.id}>
+                              {wh.name} ({wh.owner?.fullName || wh.owner?.username})
+                            </SelectItem>
+                          ))
+                        }
+                      </SelectGroup>
+                    )}
+                    {groupedWarehouses.sub_reseller.filter(w => !initialStock.find(s => s.warehouseId === w.id)).length > 0 && (
+                      <SelectGroup>
+                        <SelectLabel>Magazzini Sotto-Rivenditori</SelectLabel>
+                        {groupedWarehouses.sub_reseller
+                          .filter(w => !initialStock.find(s => s.warehouseId === w.id))
+                          .map(wh => (
+                            <SelectItem key={wh.id} value={wh.id}>
+                              {wh.name} ({wh.owner?.fullName || wh.owner?.username})
+                            </SelectItem>
+                          ))
+                        }
+                      </SelectGroup>
+                    )}
+                    {groupedWarehouses.repair_center.filter(w => !initialStock.find(s => s.warehouseId === w.id)).length > 0 && (
+                      <SelectGroup>
+                        <SelectLabel>Magazzini Centri Riparazione</SelectLabel>
+                        {groupedWarehouses.repair_center
+                          .filter(w => !initialStock.find(s => s.warehouseId === w.id))
+                          .map(wh => (
+                            <SelectItem key={wh.id} value={wh.id}>
+                              {wh.name} ({wh.owner?.fullName || wh.owner?.username})
+                            </SelectItem>
+                          ))
+                        }
+                      </SelectGroup>
+                    )}
+                  </SelectContent>
+                </Select>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="warehouseSelect">Magazzino destinazione</Label>
-                <div className="text-sm text-muted-foreground">
-                  {myWarehouse?.name || "Magazzino predefinito"}
+              
+              {initialStock.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-4">
+                  Nessuna quantità iniziale. Seleziona un magazzino per aggiungere.
+                </p>
+              ) : (
+                <div className="space-y-2">
+                  {initialStock.map(stock => {
+                    const wh = warehouses.find(w => w.id === stock.warehouseId);
+                    return (
+                      <div key={stock.warehouseId} className="flex items-center gap-3 p-3 border rounded-md">
+                        <Warehouse className="h-4 w-4 text-muted-foreground" />
+                        <div className="flex-1">
+                          <span className="font-medium">{wh?.name || "Magazzino"}</span>
+                          {wh && (
+                            <span className="text-xs text-muted-foreground ml-2">
+                              ({wh.ownerType === 'admin' ? 'Admin' : wh.owner?.fullName || wh.owner?.username})
+                            </span>
+                          )}
+                        </div>
+                        <Input
+                          type="number"
+                          min="0"
+                          value={stock.quantity}
+                          onChange={(e) => updateInitialStock(stock.warehouseId, parseInt(e.target.value) || 0)}
+                          className="w-24"
+                          data-testid={`input-stock-${stock.warehouseId}`}
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => removeInitialStock(stock.warehouseId)}
+                          data-testid={`button-remove-stock-${stock.warehouseId}`}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    );
+                  })}
                 </div>
-              </div>
+              )}
+              {editingSmartphone && (
+                <p className="text-xs text-muted-foreground">
+                  Le quantità saranno aggiunte come carico ai magazzini selezionati
+                </p>
+              )}
             </div>
 
             <div className="flex items-center gap-2">
