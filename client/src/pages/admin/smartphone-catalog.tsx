@@ -250,20 +250,9 @@ export default function AdminSmartphoneCatalog() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: async ({ productId, data, initialStock: stockEntries }: { productId: string; data: any; initialStock?: InitialStockEntry[] }) => {
+    mutationFn: async ({ productId, data }: { productId: string; data: any }) => {
+      // Stock changes are handled separately via updateStockMutation (per-row save buttons)
       await apiRequest("PATCH", `/api/smartphones/${productId}`, { product: data.product, specs: data.specs });
-      if (stockEntries && stockEntries.length > 0) {
-        for (const entry of stockEntries) {
-          if (entry.quantity > 0) {
-            await apiRequest("POST", `/api/warehouses/${entry.warehouseId}/movements`, {
-              productId: productId,
-              movementType: "carico",
-              quantity: entry.quantity,
-              notes: "Aggiunta stock da modifica prodotto"
-            });
-          }
-        }
-      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/smartphones"] });
@@ -575,8 +564,8 @@ export default function AdminSmartphoneCatalog() {
     };
 
     if (editingSmartphone) {
-      const stockEntries = initialStock.filter(s => s.quantity > 0);
-      updateMutation.mutate({ productId: editingSmartphone.id, data: { product, specs }, initialStock: stockEntries });
+      // Stock changes are saved individually via saveStockChange, not via handleSubmit
+      updateMutation.mutate({ productId: editingSmartphone.id, data: { product, specs } });
     } else {
       const stockEntries = initialStock.filter(s => s.quantity > 0);
       createMutation.mutate({ product, specs, imageFile, initialStock: stockEntries });
