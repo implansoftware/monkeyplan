@@ -7323,11 +7323,15 @@ export function registerRoutes(app: Express): Server {
               createdBy: req.user.id,
             });
             
-            // Update warehouse stock (increment, not overwrite)
+            // Update warehouse stock (increment, not overwrite) with optional location
+            const stockLocation = typeof stockEntry.location === 'string' && stockEntry.location.trim() 
+              ? stockEntry.location.trim() 
+              : null;
             await storage.updateWarehouseStockQuantity(
               stockEntry.warehouseId,
               product.id,
-              stockEntry.quantity
+              stockEntry.quantity,
+              stockLocation
             );
           }
         }
@@ -7565,9 +7569,12 @@ export function registerRoutes(app: Express): Server {
       const currentQuantity = currentStock?.quantity || 0;
       const difference = quantity - currentQuantity;
       
-      // Update location if provided (even if quantity unchanged)
-      if (typeof location === 'string' && currentStock) {
-        await storage.updateWarehouseStock(currentStock.id, { location: location || null });
+      // Normalize location value
+      const locationValue = typeof location === 'string' ? (location || null) : undefined;
+      
+      // Update location if provided (even if quantity unchanged) and stock exists
+      if (locationValue !== undefined && currentStock) {
+        await storage.updateWarehouseStock(currentStock.id, { location: locationValue });
       }
       
       if (difference === 0) {
@@ -7591,8 +7598,8 @@ export function registerRoutes(app: Express): Server {
         createdBy: req.user.id,
       });
       
-      // Update warehouse stock
-      await storage.updateWarehouseStockQuantity(warehouseId, req.params.id, difference);
+      // Update warehouse stock (passes location for new entries)
+      await storage.updateWarehouseStockQuantity(warehouseId, req.params.id, difference, locationValue);
       
       // Get updated stocks
       const updatedStocks = await storage.getProductWarehouseStocks(req.params.id);
@@ -7653,17 +7660,31 @@ export function registerRoutes(app: Express): Server {
       if (!req.user) return res.status(401).send("Unauthorized");
       
       // Parse product and specs - support both JSON body and FormData (stringified JSON)
-      let product, specs, initialQuantity = 0, warehouseId: string | null = null;
+      let product, specs, initialStock: any[] = [];
+      let legacyInitialQuantity = 0, legacyWarehouseId: string | null = null;
       if (typeof req.body.product === 'string') {
         product = JSON.parse(req.body.product);
         specs = JSON.parse(req.body.specs);
-        if (req.body.initialQuantity) initialQuantity = parseInt(req.body.initialQuantity) || 0;
-        if (req.body.warehouseId) warehouseId = req.body.warehouseId;
+        if (req.body.initialStock) {
+          initialStock = typeof req.body.initialStock === 'string' 
+            ? JSON.parse(req.body.initialStock) 
+            : req.body.initialStock;
+        }
+        // Legacy support
+        if (req.body.initialQuantity) legacyInitialQuantity = parseInt(req.body.initialQuantity) || 0;
+        if (req.body.warehouseId) legacyWarehouseId = req.body.warehouseId;
       } else {
         product = req.body.product;
         specs = req.body.specs;
-        initialQuantity = req.body.initialQuantity || 0;
-        warehouseId = req.body.warehouseId || null;
+        initialStock = req.body.initialStock || [];
+        // Legacy support
+        legacyInitialQuantity = req.body.initialQuantity || 0;
+        legacyWarehouseId = req.body.warehouseId || null;
+      }
+      
+      // Convert legacy format to initialStock if needed
+      if (initialStock.length === 0 && legacyInitialQuantity > 0 && legacyWarehouseId) {
+        initialStock = [{ warehouseId: legacyWarehouseId, quantity: legacyInitialQuantity, location: null }];
       }
       
       if (!product || !specs) {
@@ -7677,18 +7698,35 @@ export function registerRoutes(app: Express): Server {
       // Create product first
       const createdProduct = await storage.createProduct(product);
       
-      // Create initial warehouse stock if quantity > 0
-      if (initialQuantity > 0 && warehouseId) {
-        await storage.createWarehouseMovement({
-          warehouseId,
-          productId: createdProduct.id,
-          movementType: 'carico',
-          quantity: initialQuantity,
-          referenceType: 'initial_stock',
-          notes: 'Quantità iniziale alla creazione prodotto',
-          createdBy: req.user.id,
-        });
-        await storage.updateWarehouseStockQuantity(warehouseId, createdProduct.id, initialQuantity);
+      // Create initial warehouse stock for each entry
+      if (initialStock && Array.isArray(initialStock)) {
+        for (const stockEntry of initialStock) {
+          if (stockEntry.warehouseId && stockEntry.quantity > 0) {
+            const warehouse = await storage.getWarehouse(stockEntry.warehouseId);
+            if (!warehouse) {
+              console.warn(`Warehouse ${stockEntry.warehouseId} not found, skipping stock entry`);
+              continue;
+            }
+            await storage.createWarehouseMovement({
+              warehouseId: stockEntry.warehouseId,
+              productId: createdProduct.id,
+              movementType: 'carico',
+              quantity: stockEntry.quantity,
+              referenceType: 'initial_stock',
+              notes: 'Quantità iniziale alla creazione prodotto',
+              createdBy: req.user.id,
+            });
+            const stockLocation = typeof stockEntry.location === 'string' && stockEntry.location.trim() 
+              ? stockEntry.location.trim() 
+              : null;
+            await storage.updateWarehouseStockQuantity(
+              stockEntry.warehouseId, 
+              createdProduct.id, 
+              stockEntry.quantity,
+              stockLocation
+            );
+          }
+        }
       }
       
       // Create specs linked to product
@@ -7873,21 +7911,35 @@ export function registerRoutes(app: Express): Server {
       
       // Parse product and specs - support both JSON body and FormData (stringified JSON)
       let product, specs, compatibleDeviceModelIds: string[] = [];
-      let initialQuantity = 0, warehouseId: string | null = null;
+      let initialStock: any[] = [];
+      let legacyInitialQuantity = 0, legacyWarehouseId: string | null = null;
       if (typeof req.body.product === 'string') {
         product = JSON.parse(req.body.product);
         specs = JSON.parse(req.body.specs);
         if (req.body.compatibleDeviceModelIds) {
           compatibleDeviceModelIds = JSON.parse(req.body.compatibleDeviceModelIds);
         }
-        if (req.body.initialQuantity) initialQuantity = parseInt(req.body.initialQuantity) || 0;
-        if (req.body.warehouseId) warehouseId = req.body.warehouseId;
+        if (req.body.initialStock) {
+          initialStock = typeof req.body.initialStock === 'string' 
+            ? JSON.parse(req.body.initialStock) 
+            : req.body.initialStock;
+        }
+        // Legacy support
+        if (req.body.initialQuantity) legacyInitialQuantity = parseInt(req.body.initialQuantity) || 0;
+        if (req.body.warehouseId) legacyWarehouseId = req.body.warehouseId;
       } else {
         product = req.body.product;
         specs = req.body.specs;
         compatibleDeviceModelIds = req.body.compatibleDeviceModelIds || [];
-        initialQuantity = req.body.initialQuantity || 0;
-        warehouseId = req.body.warehouseId || null;
+        initialStock = req.body.initialStock || [];
+        // Legacy support
+        legacyInitialQuantity = req.body.initialQuantity || 0;
+        legacyWarehouseId = req.body.warehouseId || null;
+      }
+      
+      // Convert legacy format to initialStock if needed
+      if (initialStock.length === 0 && legacyInitialQuantity > 0 && legacyWarehouseId) {
+        initialStock = [{ warehouseId: legacyWarehouseId, quantity: legacyInitialQuantity, location: null }];
       }
       
       if (!product || !specs) {
@@ -7901,18 +7953,35 @@ export function registerRoutes(app: Express): Server {
       // Create product first
       const createdProduct = await storage.createProduct(product);
       
-      // Create initial warehouse stock if quantity > 0
-      if (initialQuantity > 0 && warehouseId) {
-        await storage.createWarehouseMovement({
-          warehouseId,
-          productId: createdProduct.id,
-          movementType: 'carico',
-          quantity: initialQuantity,
-          referenceType: 'initial_stock',
-          notes: 'Quantità iniziale alla creazione prodotto',
-          createdBy: req.user.id,
-        });
-        await storage.updateWarehouseStockQuantity(warehouseId, createdProduct.id, initialQuantity);
+      // Create initial warehouse stock for each entry
+      if (initialStock && Array.isArray(initialStock)) {
+        for (const stockEntry of initialStock) {
+          if (stockEntry.warehouseId && stockEntry.quantity > 0) {
+            const warehouse = await storage.getWarehouse(stockEntry.warehouseId);
+            if (!warehouse) {
+              console.warn(`Warehouse ${stockEntry.warehouseId} not found, skipping stock entry`);
+              continue;
+            }
+            await storage.createWarehouseMovement({
+              warehouseId: stockEntry.warehouseId,
+              productId: createdProduct.id,
+              movementType: 'carico',
+              quantity: stockEntry.quantity,
+              referenceType: 'initial_stock',
+              notes: 'Quantità iniziale alla creazione prodotto',
+              createdBy: req.user.id,
+            });
+            const stockLocation = typeof stockEntry.location === 'string' && stockEntry.location.trim() 
+              ? stockEntry.location.trim() 
+              : null;
+            await storage.updateWarehouseStockQuantity(
+              stockEntry.warehouseId, 
+              createdProduct.id, 
+              stockEntry.quantity,
+              stockLocation
+            );
+          }
+        }
       }
       
       // Create specs linked to product

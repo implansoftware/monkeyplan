@@ -29,6 +29,7 @@ type DeviceCompatibilityEntry = {
 interface InitialStockEntry {
   warehouseId: string;
   quantity: number;
+  location: string;
 }
 
 interface WarehouseForStock {
@@ -283,13 +284,19 @@ export default function AdminAccessoryCatalog() {
 
   const addInitialStock = (warehouseId: string) => {
     if (!initialStock.find(s => s.warehouseId === warehouseId)) {
-      setInitialStock([...initialStock, { warehouseId, quantity: 0 }]);
+      setInitialStock([...initialStock, { warehouseId, quantity: 0, location: "" }]);
     }
   };
 
   const updateInitialStock = (warehouseId: string, quantity: number) => {
     setInitialStock(initialStock.map(s => 
       s.warehouseId === warehouseId ? { ...s, quantity } : s
+    ));
+  };
+
+  const updateInitialStockLocation = (warehouseId: string, location: string) => {
+    setInitialStock(initialStock.map(s => 
+      s.warehouseId === warehouseId ? { ...s, location } : s
     ));
   };
 
@@ -1118,33 +1125,48 @@ export default function AdminAccessoryCatalog() {
                   {initialStock.map(stock => {
                     const wh = warehouses.find(w => w.id === stock.warehouseId);
                     return (
-                      <div key={stock.warehouseId} className="flex items-center gap-3 p-3 border rounded-md">
-                        <Warehouse className="h-4 w-4 text-muted-foreground" />
-                        <div className="flex-1">
-                          <span className="font-medium">{wh?.name || "Magazzino"}</span>
-                          {wh && (
-                            <span className="text-xs text-muted-foreground ml-2">
-                              ({wh.ownerType === 'admin' ? 'Admin' : wh.owner?.fullName || wh.owner?.username})
-                            </span>
-                          )}
+                      <div key={stock.warehouseId} className="p-3 border rounded-md space-y-2">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <Warehouse className="h-4 w-4 text-muted-foreground" />
+                            <span className="font-medium">{wh?.name || "Magazzino"}</span>
+                            {wh && (
+                              <span className="text-xs text-muted-foreground">
+                                ({wh.ownerType === 'admin' ? 'Admin' : wh.owner?.fullName || wh.owner?.username})
+                              </span>
+                            )}
+                          </div>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => removeInitialStock(stock.warehouseId)}
+                            data-testid={`button-remove-stock-${stock.warehouseId}`}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
                         </div>
-                        <Input
-                          type="number"
-                          min="0"
-                          value={stock.quantity}
-                          onChange={(e) => updateInitialStock(stock.warehouseId, parseInt(e.target.value) || 0)}
-                          className="w-24"
-                          data-testid={`input-stock-${stock.warehouseId}`}
-                        />
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => removeInitialStock(stock.warehouseId)}
-                          data-testid={`button-remove-stock-${stock.warehouseId}`}
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
+                        <div className="flex items-center gap-3">
+                          <div className="flex-1">
+                            <Label className="text-xs text-muted-foreground">Quantità</Label>
+                            <Input
+                              type="number"
+                              min="0"
+                              value={stock.quantity}
+                              onChange={(e) => updateInitialStock(stock.warehouseId, parseInt(e.target.value) || 0)}
+                              data-testid={`input-stock-${stock.warehouseId}`}
+                            />
+                          </div>
+                          <div className="flex-1">
+                            <Label className="text-xs text-muted-foreground">Ubicazione</Label>
+                            <Input
+                              value={stock.location}
+                              onChange={(e) => updateInitialStockLocation(stock.warehouseId, e.target.value)}
+                              placeholder="es. Scaffale A3"
+                              data-testid={`input-location-${stock.warehouseId}`}
+                            />
+                          </div>
+                        </div>
                       </div>
                     );
                   })}
