@@ -2097,6 +2097,22 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Get products with stock (admin only) - MUST be before :id routes
+  app.get("/api/products/with-stock", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      if (req.user.role !== 'admin') {
+        return res.status(403).send("Only admins can view stock across all warehouses");
+      }
+      
+      const productsWithStock = await storage.getAllProductsWithStock();
+      res.json(productsWithStock);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
   // GET /api/products/:id - Get full product details with specs, prices, and compatibilities
   app.get("/api/products/:id", requireAuth, async (req, res) => {
     try {
@@ -7474,6 +7490,107 @@ export function registerRoutes(app: Express): Server {
       setActivityEntity(res, { type: 'inventory', id: movement.id });
       
       res.json(updatedStock);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // Get product warehouse stocks (unified system)
+  app.get("/api/products/:id/warehouse-stocks", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const product = await storage.getProduct(req.params.id);
+      if (!product) return res.status(404).send("Product not found");
+      
+      const warehouseStocks = await storage.getProductWarehouseStocks(req.params.id);
+      
+      // Enrich with owner info
+      const enriched = await Promise.all(warehouseStocks.map(async (ws) => {
+        let ownerName = 'Sistema';
+        if (ws.warehouse.ownerId && ws.warehouse.ownerId !== 'system') {
+          const owner = await storage.getUser(ws.warehouse.ownerId);
+          ownerName = owner?.fullName || owner?.username || 'Sconosciuto';
+        }
+        return {
+          ...ws,
+          warehouse: {
+            ...ws.warehouse,
+            ownerName,
+          },
+        };
+      }));
+      
+      const totalQuantity = warehouseStocks.reduce((sum, ws) => sum + ws.quantity, 0);
+      
+      res.json({
+        stocks: enriched,
+        totalQuantity,
+      });
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // Update product warehouse stock (unified system)
+  app.post("/api/products/:id/warehouse-stock", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      // Only admins can update stock
+      if (req.user.role !== 'admin') {
+        return res.status(403).send("Only admins can update stock");
+      }
+      
+      const product = await storage.getProduct(req.params.id);
+      if (!product) return res.status(404).send("Product not found");
+      
+      const { warehouseId, quantity, notes } = req.body;
+      
+      if (!warehouseId) {
+        return res.status(400).send("warehouseId is required");
+      }
+      
+      if (typeof quantity !== 'number') {
+        return res.status(400).send("quantity must be a number");
+      }
+      
+      const warehouse = await storage.getWarehouse(warehouseId);
+      if (!warehouse) {
+        return res.status(404).send("Warehouse not found");
+      }
+      
+      // Get current stock
+      const currentStock = await storage.getWarehouseStockItem(warehouseId, req.params.id);
+      const currentQuantity = currentStock?.quantity || 0;
+      const difference = quantity - currentQuantity;
+      
+      if (difference === 0) {
+        return res.json({ message: "No change in quantity" });
+      }
+      
+      // Create warehouse movement for the difference
+      await storage.createWarehouseMovement({
+        warehouseId,
+        productId: req.params.id,
+        movementType: difference > 0 ? 'carico' : 'scarico',
+        quantity: Math.abs(difference),
+        referenceType: 'rettifica',
+        notes: notes || `Rettifica manuale: da ${currentQuantity} a ${quantity}`,
+        createdBy: req.user.id,
+      });
+      
+      // Update warehouse stock
+      await storage.updateWarehouseStockQuantity(warehouseId, req.params.id, difference);
+      
+      // Get updated stocks
+      const updatedStocks = await storage.getProductWarehouseStocks(req.params.id);
+      const totalQuantity = updatedStocks.reduce((sum, ws) => sum + ws.quantity, 0);
+      
+      res.json({
+        stocks: updatedStocks,
+        totalQuantity,
+      });
     } catch (error: any) {
       res.status(500).send(error.message);
     }

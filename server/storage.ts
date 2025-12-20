@@ -219,7 +219,7 @@ export interface IStorage {
   createInventoryMovement(movement: InsertInventoryMovement): Promise<InventoryMovement>;
   listInventoryMovements(filters?: { repairCenterId?: string; productId?: string }): Promise<InventoryMovement[]>;
   getProductStockByCenter(productId: string): Promise<Array<{ repairCenterId: string; repairCenterName: string; quantity: number }>>;
-  getAllProductsWithStock(): Promise<Array<{ product: Product; stockByCenter: Array<{ repairCenterId: string; repairCenterName: string; quantity: number }>; totalStock: number; compatibilities: Array<{ brandId: string; brandName: string; modelId: string | null; modelName: string | null }> }>>;
+  getAllProductsWithStock(): Promise<Array<{ product: Product; stockByWarehouse: Array<{ warehouseId: string; warehouseName: string; ownerType: string; ownerName: string; quantity: number }>; totalStock: number; compatibilities: Array<{ brandId: string; brandName: string; modelId: string | null; modelName: string | null }> }>>;
   updateProduct(id: string, updates: Partial<Omit<Product, 'id' | 'createdAt'>>): Promise<Product>;
   
   // Reseller Inventory (for own products in own centers)
@@ -749,6 +749,7 @@ export interface IStorage {
   // Warehouse Stock
   listWarehouseStock(warehouseId: string): Promise<WarehouseStock[]>;
   getWarehouseStockItem(warehouseId: string, productId: string): Promise<WarehouseStock | undefined>;
+  getProductWarehouseStocks(productId: string): Promise<Array<WarehouseStock & { warehouse: Warehouse }>>;
   upsertWarehouseStock(data: InsertWarehouseStock): Promise<WarehouseStock>;
   updateWarehouseStock(id: string, updates: { minStock?: number | null; location?: string | null }): Promise<WarehouseStock>;
   updateWarehouseStockQuantity(warehouseId: string, productId: string, quantityDelta: number): Promise<WarehouseStock>;
@@ -2043,19 +2044,32 @@ export class DatabaseStorage implements IStorage {
 
   async getAllProductsWithStock(): Promise<Array<{ 
     product: Product; 
-    stockByCenter: Array<{ repairCenterId: string; repairCenterName: string; quantity: number }>;
+    stockByWarehouse: Array<{ warehouseId: string; warehouseName: string; ownerType: string; ownerName: string; quantity: number }>;
     totalStock: number;
     compatibilities: Array<{ brandId: string; brandName: string; modelId: string | null; modelName: string | null }>;
   }>> {
     const allProducts = await this.listProducts();
+    
+    // Fetch warehouse stock with warehouse and owner info
     const allStock = await db.select({
-      productId: inventoryStock.productId,
-      repairCenterId: inventoryStock.repairCenterId,
-      repairCenterName: repairCenters.name,
-      quantity: inventoryStock.quantity,
+      productId: warehouseStock.productId,
+      warehouseId: warehouseStock.warehouseId,
+      warehouseName: warehouses.name,
+      ownerType: warehouses.ownerType,
+      ownerId: warehouses.ownerId,
+      quantity: warehouseStock.quantity,
     })
-    .from(inventoryStock)
-    .innerJoin(repairCenters, eq(inventoryStock.repairCenterId, repairCenters.id));
+    .from(warehouseStock)
+    .innerJoin(warehouses, eq(warehouseStock.warehouseId, warehouses.id));
+    
+    // Fetch owner names for warehouses
+    const ownerIds = [...new Set(allStock.filter(s => s.ownerId && s.ownerId !== 'system').map(s => s.ownerId!))];
+    const owners = ownerIds.length > 0 
+      ? await db.select({ id: users.id, username: users.username, fullName: users.fullName })
+          .from(users)
+          .where(inArray(users.id, ownerIds))
+      : [];
+    const ownerMap = new Map(owners.map(o => [o.id, o.fullName || o.username]));
     
     // Fetch all compatibilities with brand/model names
     const allCompatibilities = await db.select({
@@ -2083,32 +2097,37 @@ export class DatabaseStorage implements IStorage {
       });
     }
     
-    // Aggregate stock by product and repair center (handles potential duplicates)
-    const stockMap = new Map<string, Map<string, { repairCenterId: string; repairCenterName: string; quantity: number }>>();
+    // Aggregate stock by product and warehouse
+    const stockMap = new Map<string, Map<string, { warehouseId: string; warehouseName: string; ownerType: string; ownerName: string; quantity: number }>>();
     for (const stock of allStock) {
       if (!stockMap.has(stock.productId)) {
         stockMap.set(stock.productId, new Map());
       }
-      const centerMap = stockMap.get(stock.productId)!;
-      if (centerMap.has(stock.repairCenterId)) {
-        // Aggregate quantities for same product/center
-        const existing = centerMap.get(stock.repairCenterId)!;
+      const warehouseMap = stockMap.get(stock.productId)!;
+      const ownerName = stock.ownerId && stock.ownerId !== 'system' 
+        ? ownerMap.get(stock.ownerId) || 'Sconosciuto'
+        : 'Sistema';
+      
+      if (warehouseMap.has(stock.warehouseId)) {
+        const existing = warehouseMap.get(stock.warehouseId)!;
         existing.quantity += stock.quantity;
       } else {
-        centerMap.set(stock.repairCenterId, {
-          repairCenterId: stock.repairCenterId,
-          repairCenterName: stock.repairCenterName,
+        warehouseMap.set(stock.warehouseId, {
+          warehouseId: stock.warehouseId,
+          warehouseName: stock.warehouseName,
+          ownerType: stock.ownerType,
+          ownerName,
           quantity: stock.quantity,
         });
       }
     }
     
     return allProducts.map(product => {
-      const centerMap = stockMap.get(product.id);
-      const stockByCenter = centerMap ? Array.from(centerMap.values()) : [];
-      const totalStock = stockByCenter.reduce((sum, s) => sum + s.quantity, 0);
+      const warehouseMap = stockMap.get(product.id);
+      const stockByWarehouse = warehouseMap ? Array.from(warehouseMap.values()) : [];
+      const totalStock = stockByWarehouse.reduce((sum, s) => sum + s.quantity, 0);
       const compatibilities = compatibilityMap.get(product.id) || [];
-      return { product, stockByCenter, totalStock, compatibilities };
+      return { product, stockByWarehouse, totalStock, compatibilities };
     });
   }
 
@@ -6444,6 +6463,35 @@ export class DatabaseStorage implements IStorage {
         eq(warehouseStock.productId, productId)
       ));
     return item || undefined;
+  }
+
+  async getProductWarehouseStocks(productId: string): Promise<Array<WarehouseStock & { warehouse: Warehouse }>> {
+    const stocks = await db.select({
+      id: warehouseStock.id,
+      warehouseId: warehouseStock.warehouseId,
+      productId: warehouseStock.productId,
+      quantity: warehouseStock.quantity,
+      minStock: warehouseStock.minStock,
+      location: warehouseStock.location,
+      createdAt: warehouseStock.createdAt,
+      updatedAt: warehouseStock.updatedAt,
+      warehouse: warehouses,
+    })
+    .from(warehouseStock)
+    .innerJoin(warehouses, eq(warehouseStock.warehouseId, warehouses.id))
+    .where(eq(warehouseStock.productId, productId));
+    
+    return stocks.map(s => ({
+      id: s.id,
+      warehouseId: s.warehouseId,
+      productId: s.productId,
+      quantity: s.quantity,
+      minStock: s.minStock,
+      location: s.location,
+      createdAt: s.createdAt,
+      updatedAt: s.updatedAt,
+      warehouse: s.warehouse,
+    }));
   }
 
   async upsertWarehouseStock(data: InsertWarehouseStock): Promise<WarehouseStock> {

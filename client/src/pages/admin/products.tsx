@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Product, InsertProduct, RepairCenter, Supplier, ProductSupplier, InsertProductSupplier, DeviceType, DeviceBrand, DeviceModel } from "@shared/schema";
+import { Product, InsertProduct, Supplier, ProductSupplier, InsertProductSupplier, DeviceType, DeviceBrand, DeviceModel } from "@shared/schema";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -44,7 +44,7 @@ interface WarehouseForStock {
 
 interface ProductWithStock {
   product: Product;
-  stockByCenter: Array<{ repairCenterId: string; repairCenterName: string; quantity: number }>;
+  stockByWarehouse: Array<{ warehouseId: string; warehouseName: string; ownerType: string; ownerName: string; quantity: number }>;
   totalStock: number;
   compatibilities: Array<{ brandId: string; brandName: string; modelId: string | null; modelName: string | null }>;
 }
@@ -104,7 +104,7 @@ export default function AdminProducts() {
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
   const [detailProductId, setDetailProductId] = useState<string | null>(null);
   const [initialStock, setInitialStock] = useState<InitialStockEntry[]>([]);
-  const [editStock, setEditStock] = useState<Array<{ repairCenterId: string; repairCenterName: string; quantity: number; originalQuantity: number }>>([]);
+  const [editStock, setEditStock] = useState<Array<{ warehouseId: string; warehouseName: string; ownerType: string; ownerName: string; quantity: number; originalQuantity: number }>>([]);
   const [isLoadingStock, setIsLoadingStock] = useState(false);
   const [productSuppliers, setProductSuppliers] = useState<ProductSupplierWithDetails[]>([]);
   const [isLoadingSuppliers, setIsLoadingSuppliers] = useState(false);
@@ -133,10 +133,6 @@ export default function AdminProducts() {
 
   const { data: productsWithStock = [], isLoading } = useQuery<ProductWithStock[]>({
     queryKey: ["/api/products/with-stock"],
-  });
-
-  const { data: repairCenters = [] } = useQuery<RepairCenter[]>({
-    queryKey: ["/api/admin/repair-centers"],
   });
 
   const { data: suppliers = [] } = useQuery<Supplier[]>({
@@ -218,14 +214,15 @@ export default function AdminProducts() {
   });
 
   const updateStockMutation = useMutation({
-    mutationFn: async ({ productId, repairCenterId, quantity }: { productId: string; repairCenterId: string; quantity: number }) => {
-      const res = await apiRequest("POST", `/api/products/${productId}/stock`, { repairCenterId, quantity });
+    mutationFn: async ({ productId, warehouseId, quantity }: { productId: string; warehouseId: string; quantity: number }) => {
+      const res = await apiRequest("POST", `/api/products/${productId}/warehouse-stock`, { warehouseId, quantity });
       return await res.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/products/with-stock"] });
       queryClient.invalidateQueries({ queryKey: ["/api/warehouses"] });
       queryClient.invalidateQueries({ queryKey: ["/api/my-warehouse"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/all-warehouses"] });
       toast({ title: "Quantità aggiornata" });
     },
     onError: (error: Error) => {
@@ -639,10 +636,15 @@ export default function AdminProducts() {
     setExpandedBrands(new Set()); // Reset expanded brands when opening dialog
     
     try {
-      const res = await apiRequest("GET", `/api/products/${product.id}/stock`);
-      const stockData = await res.json();
-      setEditStock(stockData.map((s: { repairCenterId: string; repairCenterName: string; quantity: number }) => ({
-        ...s,
+      const res = await apiRequest("GET", `/api/products/${product.id}/warehouse-stocks`);
+      const data = await res.json();
+      const stockData = data.stocks || [];
+      setEditStock(stockData.map((s: any) => ({
+        warehouseId: s.warehouseId,
+        warehouseName: s.warehouse?.name || 'Sconosciuto',
+        ownerType: s.warehouse?.ownerType || 'admin',
+        ownerName: s.warehouse?.ownerName || 'Sistema',
+        quantity: s.quantity,
         originalQuantity: s.quantity
       })));
     } catch {
@@ -687,33 +689,36 @@ export default function AdminProducts() {
     setSupplierDialogOpen(true);
   };
 
-  const addEditStock = (repairCenterId: string) => {
-    const center = repairCenters.find(c => c.id === repairCenterId);
-    if (center && !editStock.find(s => s.repairCenterId === repairCenterId)) {
+  const addEditStock = (warehouseId: string) => {
+    const wh = warehouses.find(w => w.id === warehouseId);
+    if (wh && !editStock.find(s => s.warehouseId === warehouseId)) {
+      const ownerName = wh.owner?.fullName || wh.owner?.username || 'Sistema';
       setEditStock([...editStock, { 
-        repairCenterId, 
-        repairCenterName: center.name, 
+        warehouseId, 
+        warehouseName: wh.name,
+        ownerType: wh.ownerType,
+        ownerName,
         quantity: 0,
         originalQuantity: 0
       }]);
     }
   };
 
-  const updateEditStock = (repairCenterId: string, quantity: number) => {
+  const updateEditStock = (warehouseId: string, quantity: number) => {
     setEditStock(editStock.map(s => 
-      s.repairCenterId === repairCenterId ? { ...s, quantity } : s
+      s.warehouseId === warehouseId ? { ...s, quantity } : s
     ));
   };
 
-  const saveStockChange = async (repairCenterId: string, quantity: number) => {
+  const saveStockChange = async (warehouseId: string, quantity: number) => {
     if (!editingProduct) return;
     await updateStockMutation.mutateAsync({
       productId: editingProduct.id,
-      repairCenterId,
+      warehouseId,
       quantity
     });
     setEditStock(editStock.map(s => 
-      s.repairCenterId === repairCenterId ? { ...s, originalQuantity: quantity } : s
+      s.warehouseId === warehouseId ? { ...s, originalQuantity: quantity } : s
     ));
   };
 
@@ -2026,23 +2031,66 @@ export default function AdminProducts() {
                       <Separator />
 
                       <div className="space-y-3">
-                        <div className="flex items-center justify-between">
+                        <div className="flex items-center justify-between gap-2 flex-wrap">
                           <Label className="flex items-center gap-2">
                             <Warehouse className="h-4 w-4" />
-                            Quantità per Centro Riparazione
+                            Quantità per Magazzino
                           </Label>
                           <Select onValueChange={addEditStock}>
-                            <SelectTrigger className="w-48" data-testid="edit-select-add-center">
-                              <SelectValue placeholder="Aggiungi centro..." />
+                            <SelectTrigger className="w-56" data-testid="edit-select-add-warehouse">
+                              <SelectValue placeholder="Aggiungi magazzino..." />
                             </SelectTrigger>
                             <SelectContent>
-                              {repairCenters
-                                .filter(c => !editStock.find(s => s.repairCenterId === c.id))
-                                .map(center => (
-                                  <SelectItem key={center.id} value={center.id}>
-                                    {center.name}
-                                  </SelectItem>
-                                ))}
+                              {groupedWarehouses.admin.filter(w => !editStock.find(s => s.warehouseId === w.id)).length > 0 && (
+                                <SelectGroup>
+                                  <SelectLabel>Magazzini Admin</SelectLabel>
+                                  {groupedWarehouses.admin
+                                    .filter(w => !editStock.find(s => s.warehouseId === w.id))
+                                    .map(wh => (
+                                      <SelectItem key={wh.id} value={wh.id}>{wh.name}</SelectItem>
+                                    ))
+                                  }
+                                </SelectGroup>
+                              )}
+                              {groupedWarehouses.reseller.filter(w => !editStock.find(s => s.warehouseId === w.id)).length > 0 && (
+                                <SelectGroup>
+                                  <SelectLabel>Magazzini Rivenditori</SelectLabel>
+                                  {groupedWarehouses.reseller
+                                    .filter(w => !editStock.find(s => s.warehouseId === w.id))
+                                    .map(wh => (
+                                      <SelectItem key={wh.id} value={wh.id}>
+                                        {wh.name} ({wh.owner?.fullName || wh.owner?.username})
+                                      </SelectItem>
+                                    ))
+                                  }
+                                </SelectGroup>
+                              )}
+                              {groupedWarehouses.sub_reseller.filter(w => !editStock.find(s => s.warehouseId === w.id)).length > 0 && (
+                                <SelectGroup>
+                                  <SelectLabel>Magazzini Sotto-Rivenditori</SelectLabel>
+                                  {groupedWarehouses.sub_reseller
+                                    .filter(w => !editStock.find(s => s.warehouseId === w.id))
+                                    .map(wh => (
+                                      <SelectItem key={wh.id} value={wh.id}>
+                                        {wh.name} ({wh.owner?.fullName || wh.owner?.username})
+                                      </SelectItem>
+                                    ))
+                                  }
+                                </SelectGroup>
+                              )}
+                              {groupedWarehouses.repair_center.filter(w => !editStock.find(s => s.warehouseId === w.id)).length > 0 && (
+                                <SelectGroup>
+                                  <SelectLabel>Magazzini Centri Riparazione</SelectLabel>
+                                  {groupedWarehouses.repair_center
+                                    .filter(w => !editStock.find(s => s.warehouseId === w.id))
+                                    .map(wh => (
+                                      <SelectItem key={wh.id} value={wh.id}>
+                                        {wh.name} ({wh.owner?.fullName || wh.owner?.username})
+                                      </SelectItem>
+                                    ))
+                                  }
+                                </SelectGroup>
+                              )}
                             </SelectContent>
                           </Select>
                         </div>
@@ -2054,28 +2102,31 @@ export default function AdminProducts() {
                           </div>
                         ) : editStock.length === 0 ? (
                           <div className="text-center py-4 text-muted-foreground text-sm">
-                            Nessuna giacenza. Seleziona un centro per aggiungere quantità.
+                            Nessuna giacenza. Seleziona un magazzino per aggiungere quantità.
                           </div>
                         ) : (
                           <div className="space-y-2">
                             {editStock.map((stock) => (
-                              <div key={stock.repairCenterId} className="flex items-center gap-2 p-2 bg-muted/50 rounded-md">
-                                <span className="flex-1 text-sm font-medium">{stock.repairCenterName}</span>
+                              <div key={stock.warehouseId} className="flex items-center gap-2 p-2 bg-muted/50 rounded-md">
+                                <div className="flex-1">
+                                  <span className="text-sm font-medium">{stock.warehouseName}</span>
+                                  <span className="text-xs text-muted-foreground ml-2">({stock.ownerName})</span>
+                                </div>
                                 <Input
                                   type="number"
                                   min="0"
                                   value={stock.quantity}
-                                  onChange={(e) => updateEditStock(stock.repairCenterId, parseInt(e.target.value) || 0)}
+                                  onChange={(e) => updateEditStock(stock.warehouseId, parseInt(e.target.value) || 0)}
                                   className="w-24"
-                                  data-testid={`edit-input-stock-${stock.repairCenterId}`}
+                                  data-testid={`edit-input-stock-${stock.warehouseId}`}
                                 />
                                 <Button
                                   type="button"
                                   size="sm"
                                   variant={stock.quantity !== stock.originalQuantity ? "default" : "outline"}
                                   disabled={stock.quantity === stock.originalQuantity || updateStockMutation.isPending}
-                                  onClick={() => saveStockChange(stock.repairCenterId, stock.quantity)}
-                                  data-testid={`edit-button-save-stock-${stock.repairCenterId}`}
+                                  onClick={() => saveStockChange(stock.warehouseId, stock.quantity)}
+                                  data-testid={`edit-button-save-stock-${stock.warehouseId}`}
                                 >
                                   {updateStockMutation.isPending ? "..." : "Salva"}
                                 </Button>
@@ -2169,7 +2220,7 @@ export default function AdminProducts() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredProducts.map(({ product, stockByCenter, totalStock, compatibilities }) => (
+                {filteredProducts.map(({ product, stockByWarehouse, totalStock, compatibilities }) => (
                   <TableRow key={product.id} data-testid={`row-product-${product.id}`}>
                     <TableCell>
                       <div className="w-10 h-10 rounded border bg-muted flex items-center justify-center overflow-hidden">
@@ -2205,7 +2256,7 @@ export default function AdminProducts() {
                     <TableCell>{getConditionBadge(product.condition)}</TableCell>
                     <TableCell className="font-semibold">{formatCurrency(product.unitPrice)}</TableCell>
                     <TableCell>
-                      {stockByCenter.length > 0 ? (
+                      {stockByWarehouse.length > 0 ? (
                         <Tooltip>
                           <TooltipTrigger asChild>
                             <div className="cursor-help">
@@ -2214,10 +2265,10 @@ export default function AdminProducts() {
                           </TooltipTrigger>
                           <TooltipContent className="max-w-xs">
                             <div className="space-y-1">
-                              <div className="font-semibold mb-2">Giacenze per Centro:</div>
-                              {stockByCenter.map((stock) => (
-                                <div key={stock.repairCenterId} className="flex justify-between gap-4 text-sm">
-                                  <span>{stock.repairCenterName}</span>
+                              <div className="font-semibold mb-2">Giacenze per Magazzino:</div>
+                              {stockByWarehouse.map((stock) => (
+                                <div key={stock.warehouseId} className="flex justify-between gap-4 text-sm">
+                                  <span>{stock.warehouseName} ({stock.ownerName})</span>
                                   <span className="font-mono">{stock.quantity}</span>
                                 </div>
                               ))}
