@@ -813,7 +813,11 @@ export default function AdminProducts() {
         </div>
         <Dialog open={dialogOpen} onOpenChange={(open) => {
           setDialogOpen(open);
-          if (!open) setDeviceCompatibilities([]);
+          if (!open) {
+            setDeviceCompatibilities([]);
+            setSelectedSupplierId("");
+            setInitialStock([]);
+          }
         }}>
           <DialogTrigger asChild>
             <Button data-testid="button-new-product">

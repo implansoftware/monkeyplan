@@ -7272,7 +7272,10 @@ export function registerRoutes(app: Express): Server {
       }
       
       // Extract initial stock assignments and supplier info from request body
-      const { initialStock, supplierId, supplierCode, ...productData } = req.body;
+      const { initialStock, supplierId, supplierCode: supplierCodeParam, ...productData } = req.body;
+      
+      // Save costPrice before validation for use in supplier linking
+      const productCostPrice = productData.costPrice;
       
       // Admin products have createdBy = null (global products)
       const validatedData = insertProductSchema.parse({
@@ -7301,12 +7304,14 @@ export function registerRoutes(app: Express): Server {
       // Create product-supplier relationship if supplierId is provided
       if (supplierId) {
         const supplier = await storage.getSupplier(supplierId);
-        if (supplier) {
+        if (!supplier) {
+          console.warn(`Supplier ${supplierId} not found, skipping product-supplier link`);
+        } else {
           await storage.linkProductToSupplier({
             productId: product.id,
             supplierId: supplierId,
-            supplierCode: supplierCode || null,
-            costPrice: productData.costPrice || null,
+            supplierCode: supplierCodeParam || null,
+            costPrice: productCostPrice || null,
             isPreferred: true,
           });
         }
