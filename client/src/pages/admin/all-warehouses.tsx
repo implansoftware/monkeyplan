@@ -60,6 +60,7 @@ export default function AllWarehousesPage() {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [activeDetailTab, setActiveDetailTab] = useState("stock");
   const [editData, setEditData] = useState({ name: "", address: "", notes: "" });
+  const [stockSearchTerm, setStockSearchTerm] = useState("");
 
   const { data: warehouses = [], isLoading } = useQuery<EnrichedWarehouse[]>({
     queryKey: ["/api/admin/all-warehouses", ownerTypeFilter],
@@ -346,7 +347,7 @@ export default function AllWarehousesPage() {
         </CardContent>
       </Card>
 
-      <Dialog open={detailDialogOpen} onOpenChange={setDetailDialogOpen}>
+      <Dialog open={detailDialogOpen} onOpenChange={(open) => { setDetailDialogOpen(open); if (!open) setStockSearchTerm(""); }}>
         <DialogContent className="max-w-4xl max-h-[85vh]">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
@@ -386,7 +387,19 @@ export default function AllWarehousesPage() {
                 </TabsList>
 
                 <TabsContent value="stock">
-                  <ScrollArea className="h-[400px]">
+                  <div className="mb-3">
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        placeholder="Cerca prodotto per nome, SKU o categoria..."
+                        value={stockSearchTerm}
+                        onChange={(e) => setStockSearchTerm(e.target.value)}
+                        className="pl-9"
+                        data-testid="input-stock-search"
+                      />
+                    </div>
+                  </div>
+                  <ScrollArea className="h-[360px]">
                     {loadingStock ? (
                       <div className="flex items-center justify-center h-32">
                         <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary" />
@@ -396,40 +409,58 @@ export default function AllWarehousesPage() {
                         Nessun prodotto in stock
                       </div>
                     ) : (
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead>SKU</TableHead>
-                            <TableHead>Prodotto</TableHead>
-                            <TableHead>Categoria</TableHead>
-                            <TableHead className="text-right">Quantità</TableHead>
-                            <TableHead className="text-right">Min. Stock</TableHead>
-                            <TableHead>Posizione</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {warehouseStock.map((item) => (
-                            <TableRow key={item.id}>
-                              <TableCell className="font-mono text-xs">{item.product?.sku || "-"}</TableCell>
-                              <TableCell className="font-medium">{item.product?.name || "-"}</TableCell>
-                              <TableCell>
-                                <Badge variant="outline">{item.product?.category || "-"}</Badge>
-                              </TableCell>
-                              <TableCell className="text-right">
-                                <Badge variant={item.quantity > 0 ? (item.minStock && item.quantity <= item.minStock ? "destructive" : "default") : "secondary"}>
-                                  {item.quantity}
-                                </Badge>
-                              </TableCell>
-                              <TableCell className="text-right text-muted-foreground">
-                                {item.minStock || "-"}
-                              </TableCell>
-                              <TableCell className="text-muted-foreground">
-                                {item.location || "-"}
-                              </TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
+                      (() => {
+                        const filteredStock = warehouseStock.filter((item) => {
+                          if (!stockSearchTerm) return true;
+                          const search = stockSearchTerm.toLowerCase();
+                          return (
+                            item.product?.name?.toLowerCase().includes(search) ||
+                            item.product?.sku?.toLowerCase().includes(search) ||
+                            item.product?.category?.toLowerCase().includes(search) ||
+                            item.location?.toLowerCase().includes(search)
+                          );
+                        });
+                        return filteredStock.length === 0 ? (
+                          <div className="text-center py-8 text-muted-foreground">
+                            Nessun prodotto trovato per "{stockSearchTerm}"
+                          </div>
+                        ) : (
+                          <Table>
+                            <TableHeader>
+                              <TableRow>
+                                <TableHead>SKU</TableHead>
+                                <TableHead>Prodotto</TableHead>
+                                <TableHead>Categoria</TableHead>
+                                <TableHead className="text-right">Quantità</TableHead>
+                                <TableHead className="text-right">Min. Stock</TableHead>
+                                <TableHead>Posizione</TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {filteredStock.map((item) => (
+                                <TableRow key={item.id}>
+                                  <TableCell className="font-mono text-xs">{item.product?.sku || "-"}</TableCell>
+                                  <TableCell className="font-medium">{item.product?.name || "-"}</TableCell>
+                                  <TableCell>
+                                    <Badge variant="outline">{item.product?.category || "-"}</Badge>
+                                  </TableCell>
+                                  <TableCell className="text-right">
+                                    <Badge variant={item.quantity > 0 ? (item.minStock && item.quantity <= item.minStock ? "destructive" : "default") : "secondary"}>
+                                      {item.quantity}
+                                    </Badge>
+                                  </TableCell>
+                                  <TableCell className="text-right text-muted-foreground">
+                                    {item.minStock || "-"}
+                                  </TableCell>
+                                  <TableCell className="text-muted-foreground">
+                                    {item.location || "-"}
+                                  </TableCell>
+                                </TableRow>
+                              ))}
+                            </TableBody>
+                          </Table>
+                        );
+                      })()
                     )}
                   </ScrollArea>
                 </TabsContent>
