@@ -6466,32 +6466,24 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getProductWarehouseStocks(productId: string): Promise<Array<WarehouseStock & { warehouse: Warehouse }>> {
-    const stocks = await db.select({
-      id: warehouseStock.id,
-      warehouseId: warehouseStock.warehouseId,
-      productId: warehouseStock.productId,
-      quantity: warehouseStock.quantity,
-      minStock: warehouseStock.minStock,
-      location: warehouseStock.location,
-      createdAt: warehouseStock.createdAt,
-      updatedAt: warehouseStock.updatedAt,
-      warehouse: warehouses,
-    })
-    .from(warehouseStock)
-    .innerJoin(warehouses, eq(warehouseStock.warehouseId, warehouses.id))
-    .where(eq(warehouseStock.productId, productId));
+    // Get all stock entries for this product
+    const stockEntries = await db.select().from(warehouseStock)
+      .where(eq(warehouseStock.productId, productId));
     
-    return stocks.map(s => ({
-      id: s.id,
-      warehouseId: s.warehouseId,
-      productId: s.productId,
-      quantity: s.quantity,
-      minStock: s.minStock,
-      location: s.location,
-      createdAt: s.createdAt,
-      updatedAt: s.updatedAt,
-      warehouse: s.warehouse,
-    }));
+    // Fetch warehouse details for each stock entry
+    const result: Array<WarehouseStock & { warehouse: Warehouse }> = [];
+    for (const stock of stockEntries) {
+      const [warehouse] = await db.select().from(warehouses)
+        .where(eq(warehouses.id, stock.warehouseId));
+      if (warehouse) {
+        result.push({
+          ...stock,
+          warehouse,
+        });
+      }
+    }
+    
+    return result;
   }
 
   async upsertWarehouseStock(data: InsertWarehouseStock): Promise<WarehouseStock> {
