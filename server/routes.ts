@@ -18642,6 +18642,192 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Get accessible warehouses for current user (for transfer destination selection)
+  app.get("/api/warehouses/accessible", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      
+      let accessibleWarehouses: any[] = [];
+      
+      if (['admin', 'admin_staff'].includes(req.user.role)) {
+        // Admin can access all warehouses
+        accessibleWarehouses = await storage.listWarehouses({});
+      } else if (req.user.role === 'reseller' || req.user.role === 'reseller_staff' || req.user.role === 'reseller_collaborator') {
+        const resellerId = req.user.resellerId || req.user.id;
+        // Reseller can access: own warehouse + sub-resellers' warehouses + repair centers' warehouses
+        const ownWarehouse = await storage.getWarehouseByOwner('reseller', resellerId);
+        if (ownWarehouse) accessibleWarehouses.push(ownWarehouse);
+        
+        // Get sub-resellers assigned to this reseller
+        const subResellers = await storage.listUsers({ role: 'sub_reseller', resellerId });
+        for (const sub of subResellers) {
+          const subWarehouse = await storage.getWarehouseByOwner('sub_reseller', sub.id);
+          if (subWarehouse) accessibleWarehouses.push(subWarehouse);
+        }
+        
+        // Get repair centers assigned to this reseller
+        const repairCenters = await storage.listUsers({ role: 'repair_center', resellerId });
+        for (const rc of repairCenters) {
+          const rcWarehouse = await storage.getWarehouseByOwner('repair_center', rc.id);
+          if (rcWarehouse) accessibleWarehouses.push(rcWarehouse);
+        }
+      } else if (req.user.role === 'sub_reseller') {
+        // Sub-reseller can access own warehouse only
+        const ownWarehouse = await storage.getWarehouseByOwner('sub_reseller', req.user.id);
+        if (ownWarehouse) accessibleWarehouses.push(ownWarehouse);
+      } else if (req.user.role === 'repair_center') {
+        // Repair center can access own warehouse only
+        const rcId = req.user.repairCenterId || req.user.id;
+        const ownWarehouse = await storage.getWarehouseByOwner('repair_center', rcId);
+        if (ownWarehouse) accessibleWarehouses.push(ownWarehouse);
+      }
+      
+      // Enrich with owner info
+      const enriched = await Promise.all(accessibleWarehouses.map(async (wh) => {
+        let owner = null;
+        if (wh.ownerId && wh.ownerId !== 'system') {
+          const user = await storage.getUser(wh.ownerId);
+          if (user) owner = { id: user.id, username: user.username, fullName: user.fullName };
+        }
+        return { ...wh, owner };
+      }));
+      
+      res.json(enriched);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Immediate transfer between warehouses (executes stock movement right away)
+  app.post("/api/warehouses/transfer-immediate", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      
+      const { sourceWarehouseId, destinationWarehouseId, productId, quantity, notes } = req.body;
+      
+      if (!sourceWarehouseId || !destinationWarehouseId || !productId || !quantity) {
+        return res.status(400).json({ error: "Parametri mancanti: sourceWarehouseId, destinationWarehouseId, productId, quantity" });
+      }
+      
+      if (sourceWarehouseId === destinationWarehouseId) {
+        return res.status(400).json({ error: "Magazzino sorgente e destinazione devono essere diversi" });
+      }
+      
+      if (quantity <= 0) {
+        return res.status(400).json({ error: "La quantità deve essere maggiore di zero" });
+      }
+      
+      // Verify source warehouse exists
+      const sourceWarehouse = await storage.getWarehouse(sourceWarehouseId);
+      if (!sourceWarehouse) return res.status(404).json({ error: "Magazzino sorgente non trovato" });
+      
+      // Verify destination warehouse exists
+      const destWarehouse = await storage.getWarehouse(destinationWarehouseId);
+      if (!destWarehouse) return res.status(404).json({ error: "Magazzino destinazione non trovato" });
+      
+      // Check permissions - user must have access to both warehouses
+      let canAccessSource = false;
+      let canAccessDest = false;
+      
+      if (['admin', 'admin_staff'].includes(req.user.role)) {
+        canAccessSource = true;
+        canAccessDest = true;
+      } else if (req.user.role === 'reseller' || req.user.role === 'reseller_staff' || req.user.role === 'reseller_collaborator') {
+        const resellerId = req.user.resellerId || req.user.id;
+        
+        // Check source
+        if (sourceWarehouse.ownerType === 'reseller' && sourceWarehouse.ownerId === resellerId) {
+          canAccessSource = true;
+        } else if (sourceWarehouse.ownerType === 'sub_reseller') {
+          const subUser = await storage.getUser(sourceWarehouse.ownerId);
+          if (subUser?.resellerId === resellerId) canAccessSource = true;
+        } else if (sourceWarehouse.ownerType === 'repair_center') {
+          const rcUser = await storage.getUser(sourceWarehouse.ownerId);
+          if (rcUser?.resellerId === resellerId) canAccessSource = true;
+        }
+        
+        // Check destination
+        if (destWarehouse.ownerType === 'reseller' && destWarehouse.ownerId === resellerId) {
+          canAccessDest = true;
+        } else if (destWarehouse.ownerType === 'sub_reseller') {
+          const subUser = await storage.getUser(destWarehouse.ownerId);
+          if (subUser?.resellerId === resellerId) canAccessDest = true;
+        } else if (destWarehouse.ownerType === 'repair_center') {
+          const rcUser = await storage.getUser(destWarehouse.ownerId);
+          if (rcUser?.resellerId === resellerId) canAccessDest = true;
+        }
+      } else if (req.user.role === 'sub_reseller') {
+        // Sub-reseller can only transfer from/to their own warehouse
+        if (sourceWarehouse.ownerType === 'sub_reseller' && sourceWarehouse.ownerId === req.user.id) {
+          canAccessSource = true;
+        }
+        if (destWarehouse.ownerType === 'sub_reseller' && destWarehouse.ownerId === req.user.id) {
+          canAccessDest = true;
+        }
+      } else if (req.user.role === 'repair_center') {
+        // Repair center can only transfer from/to their own warehouse
+        const rcId = req.user.repairCenterId || req.user.id;
+        if (sourceWarehouse.ownerType === 'repair_center' && sourceWarehouse.ownerId === rcId) {
+          canAccessSource = true;
+        }
+        if (destWarehouse.ownerType === 'repair_center' && destWarehouse.ownerId === rcId) {
+          canAccessDest = true;
+        }
+      }
+      
+      if (!canAccessSource || !canAccessDest) {
+        return res.status(403).json({ error: "Non hai i permessi per trasferire tra questi magazzini" });
+      }
+      
+      // Check available stock in source warehouse
+      const sourceStock = await storage.getWarehouseStockItem(sourceWarehouseId, productId);
+      if (!sourceStock || sourceStock.quantity < quantity) {
+        return res.status(400).json({ error: `Stock insufficiente. Disponibili: ${sourceStock?.quantity || 0}` });
+      }
+      
+      // Get product info
+      const product = await storage.getProduct(productId);
+      if (!product) return res.status(404).json({ error: "Prodotto non trovato" });
+      
+      // Execute transfer: decrement source, increment destination
+      // Create movement for source warehouse (trasferimento_out)
+      await storage.createWarehouseMovement({
+        warehouseId: sourceWarehouseId,
+        productId,
+        movementType: 'trasferimento_out',
+        quantity,
+        referenceType: 'transfer',
+        notes: notes || `Trasferimento verso ${destWarehouse.name}`,
+        createdBy: req.user.id,
+      });
+      await storage.updateWarehouseStockQuantity(sourceWarehouseId, productId, -quantity);
+      
+      // Create movement for destination warehouse (trasferimento_in)
+      await storage.createWarehouseMovement({
+        warehouseId: destinationWarehouseId,
+        productId,
+        movementType: 'trasferimento_in',
+        quantity,
+        referenceType: 'transfer',
+        notes: notes || `Trasferimento da ${sourceWarehouse.name}`,
+        createdBy: req.user.id,
+      });
+      await storage.updateWarehouseStockQuantity(destinationWarehouseId, productId, quantity);
+      
+      res.json({ 
+        success: true, 
+        message: `Trasferite ${quantity} unità di "${product.name}" da "${sourceWarehouse.name}" a "${destWarehouse.name}"`,
+        product: { id: product.id, name: product.name, sku: product.sku },
+        quantity,
+        sourceWarehouse: { id: sourceWarehouse.id, name: sourceWarehouse.name },
+        destinationWarehouse: { id: destWarehouse.id, name: destWarehouse.name },
+      });
+    } catch (error: any) {
+      console.error("Transfer error:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   app.post("/api/warehouses", requireAuth, async (req, res) => {
     try {
       if (!req.user) return res.status(401).json({ error: "Non autenticato" });
