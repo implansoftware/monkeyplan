@@ -359,12 +359,12 @@ export default function AdminAccessoryCatalog() {
   };
 
   const createMutation = useMutation({
-    mutationFn: async (data: { product: any; specs: any; imageFile?: File | null; compatibleDeviceModelIds?: string[]; initialStock?: InitialStockEntry[] }) => {
+    mutationFn: async (data: { product: any; specs: any; imageFile?: File | null; deviceCompatibilities?: Array<{deviceBrandId: string; deviceModelId: string | null}>; initialStock?: InitialStockEntry[] }) => {
       if (data.imageFile) {
         const formDataUpload = new FormData();
         formDataUpload.append("product", JSON.stringify(data.product));
         formDataUpload.append("specs", JSON.stringify(data.specs));
-        formDataUpload.append("compatibleDeviceModelIds", JSON.stringify(data.compatibleDeviceModelIds || []));
+        formDataUpload.append("deviceCompatibilities", JSON.stringify(data.deviceCompatibilities || []));
         formDataUpload.append("image", data.imageFile);
         if (data.initialStock && data.initialStock.length > 0) {
           formDataUpload.append("initialStock", JSON.stringify(data.initialStock));
@@ -380,7 +380,7 @@ export default function AdminAccessoryCatalog() {
         return apiRequest("POST", "/api/accessories", { 
           product: data.product, 
           specs: data.specs,
-          compatibleDeviceModelIds: data.compatibleDeviceModelIds || [],
+          deviceCompatibilities: data.deviceCompatibilities || [],
           initialStock: data.initialStock
         });
       }
@@ -404,7 +404,7 @@ export default function AdminAccessoryCatalog() {
       await apiRequest("PATCH", `/api/accessories/${productId}`, { 
         product: data.product, 
         specs: data.specs,
-        compatibleDeviceModelIds: data.compatibleDeviceModelIds || []
+        deviceCompatibilities: data.deviceCompatibilities || []
       });
     },
     onSuccess: () => {
@@ -642,17 +642,18 @@ export default function AdminAccessoryCatalog() {
       notes: formData.notes || null,
     };
 
-    // Convert device compatibilities to model IDs for backend
-    const compatibleDeviceModelIds = formData.isUniversal ? [] : deviceCompatibilities
-      .filter(c => c.deviceModelId !== null)
-      .map(c => c.deviceModelId as string);
+    // Convert device compatibilities to full structure for backend (supports brand-only compatibilities)
+    const deviceCompatibilitiesData = formData.isUniversal ? [] : deviceCompatibilities.map(c => ({
+      deviceBrandId: c.deviceBrandId,
+      deviceModelId: c.deviceModelId || null, // null means "all models of this brand"
+    }));
 
     if (editingAccessory) {
       // Stock changes are saved individually via saveStockChange, not via handleSubmit
-      updateMutation.mutate({ productId: editingAccessory.id, data: { product, specs, compatibleDeviceModelIds } });
+      updateMutation.mutate({ productId: editingAccessory.id, data: { product, specs, deviceCompatibilities: deviceCompatibilitiesData } });
     } else {
       const stockEntries = initialStock.filter(s => s.quantity > 0);
-      createMutation.mutate({ product, specs, imageFile, compatibleDeviceModelIds, initialStock: stockEntries });
+      createMutation.mutate({ product, specs, imageFile, deviceCompatibilities: deviceCompatibilitiesData, initialStock: stockEntries });
     }
   };
 

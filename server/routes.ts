@@ -7921,14 +7921,15 @@ export function registerRoutes(app: Express): Server {
       if (!req.user) return res.status(401).send("Unauthorized");
       
       // Parse product and specs - support both JSON body and FormData (stringified JSON)
-      let product, specs, compatibleDeviceModelIds: string[] = [];
+      let product, specs;
+      let deviceCompatibilities: Array<{ deviceBrandId: string; deviceModelId?: string | null }> = [];
       let initialStock: any[] = [];
       let legacyInitialQuantity = 0, legacyWarehouseId: string | null = null;
       if (typeof req.body.product === 'string') {
         product = JSON.parse(req.body.product);
         specs = JSON.parse(req.body.specs);
-        if (req.body.compatibleDeviceModelIds) {
-          compatibleDeviceModelIds = JSON.parse(req.body.compatibleDeviceModelIds);
+        if (req.body.deviceCompatibilities) {
+          deviceCompatibilities = JSON.parse(req.body.deviceCompatibilities);
         }
         if (req.body.initialStock) {
           initialStock = typeof req.body.initialStock === 'string' 
@@ -7941,7 +7942,7 @@ export function registerRoutes(app: Express): Server {
       } else {
         product = req.body.product;
         specs = req.body.specs;
-        compatibleDeviceModelIds = req.body.compatibleDeviceModelIds || [];
+        deviceCompatibilities = req.body.deviceCompatibilities || [];
         initialStock = req.body.initialStock || [];
         // Legacy support
         legacyInitialQuantity = req.body.initialQuantity || 0;
@@ -7999,10 +8000,9 @@ export function registerRoutes(app: Express): Server {
       specs.productId = createdProduct.id;
       const createdSpecs = await storage.createAccessorySpecs(specs);
       
-      // Handle device model compatibilities
-      if (compatibleDeviceModelIds && compatibleDeviceModelIds.length > 0) {
-        const compatibilities = compatibleDeviceModelIds.map((deviceModelId: string) => ({ deviceModelId }));
-        await storage.setProductCompatibilities(createdProduct.id, compatibilities);
+      // Handle device compatibilities (supports brand-only and brand+model)
+      if (deviceCompatibilities && deviceCompatibilities.length > 0) {
+        await storage.setProductCompatibilities(createdProduct.id, deviceCompatibilities);
       }
       
       // Handle image upload if file is provided
@@ -8036,9 +8036,9 @@ export function registerRoutes(app: Express): Server {
       }
       
       // Fetch device compatibilities to include in response
-      const deviceCompatibilities = await storage.listProductCompatibilities(createdProduct.id);
+      const savedCompatibilities = await storage.listProductCompatibilities(createdProduct.id);
       
-      res.json({ ...createdProduct, imageUrl: imageUrl || createdProduct.imageUrl, specs: createdSpecs, deviceCompatibilities });
+      res.json({ ...createdProduct, imageUrl: imageUrl || createdProduct.imageUrl, specs: createdSpecs, deviceCompatibilities: savedCompatibilities });
     } catch (error: any) {
       res.status(500).send(error.message);
     }
@@ -8066,7 +8066,7 @@ export function registerRoutes(app: Express): Server {
         }
       }
       
-      const { product, specs, compatibleDeviceModelIds } = req.body;
+      const { product, specs, deviceCompatibilities: incomingCompatibilities } = req.body;
       
       // Update product fields if provided
       if (product) {
@@ -8079,10 +8079,9 @@ export function registerRoutes(app: Express): Server {
         updatedSpecs = await storage.updateAccessorySpecs(req.params.productId, specs);
       }
       
-      // Update device compatibilities if provided
-      if (compatibleDeviceModelIds !== undefined) {
-        const compatibilities = compatibleDeviceModelIds.map((deviceModelId: string) => ({ deviceModelId }));
-        await storage.setProductCompatibilities(req.params.productId, compatibilities);
+      // Update device compatibilities if provided (supports brand-only and brand+model)
+      if (incomingCompatibilities !== undefined) {
+        await storage.setProductCompatibilities(req.params.productId, incomingCompatibilities);
       }
       
       // Fetch updated data
