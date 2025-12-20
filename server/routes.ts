@@ -7285,17 +7285,26 @@ export function registerRoutes(app: Express): Server {
       const product = await storage.createProduct(validatedData);
       setActivityEntity(res, { type: 'product', id: product.id });
       
-      // Create initial inventory movements for each repair center
+      // Create initial stock in warehouses
       if (initialStock && Array.isArray(initialStock)) {
         for (const stockEntry of initialStock) {
-          if (stockEntry.repairCenterId && stockEntry.quantity > 0) {
-            await storage.createInventoryMovement({
+          if (stockEntry.warehouseId && stockEntry.quantity > 0) {
+            // Create warehouse movement and update stock
+            await storage.createWarehouseMovement({
+              warehouseId: stockEntry.warehouseId,
               productId: product.id,
-              repairCenterId: stockEntry.repairCenterId,
-              movementType: 'in',
+              movementType: 'carico',
               quantity: stockEntry.quantity,
+              referenceType: 'creazione_prodotto',
               notes: 'Quantità iniziale alla creazione prodotto',
               createdBy: req.user.id,
+            });
+            
+            // Update warehouse stock
+            await storage.upsertWarehouseStock({
+              warehouseId: stockEntry.warehouseId,
+              productId: product.id,
+              quantity: stockEntry.quantity,
             });
           }
         }

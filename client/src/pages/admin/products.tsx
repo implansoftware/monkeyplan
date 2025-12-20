@@ -25,8 +25,21 @@ import { ProductDetailDialog } from "@/components/product-detail-dialog";
 import { Info } from "lucide-react";
 
 interface InitialStockEntry {
-  repairCenterId: string;
+  warehouseId: string;
   quantity: number;
+}
+
+interface WarehouseForStock {
+  id: string;
+  name: string;
+  ownerType: 'admin' | 'reseller' | 'sub_reseller' | 'repair_center';
+  ownerId: string;
+  owner?: {
+    id: string;
+    username: string;
+    fullName: string | null;
+    role: string;
+  } | null;
 }
 
 interface ProductWithStock {
@@ -140,6 +153,10 @@ export default function AdminProducts() {
 
   const { data: deviceModels = [] } = useQuery<DeviceModel[]>({
     queryKey: ["/api/device-models"],
+  });
+
+  const { data: warehouses = [] } = useQuery<WarehouseForStock[]>({
+    queryKey: ["/api/admin/all-warehouses"],
   });
 
   const createProductMutation = useMutation({
@@ -581,20 +598,38 @@ export default function AdminProducts() {
   };
 
 
-  const addInitialStock = (repairCenterId: string) => {
-    if (!initialStock.find(s => s.repairCenterId === repairCenterId)) {
-      setInitialStock([...initialStock, { repairCenterId, quantity: 0 }]);
+  const addInitialStock = (warehouseId: string) => {
+    if (!initialStock.find(s => s.warehouseId === warehouseId)) {
+      setInitialStock([...initialStock, { warehouseId, quantity: 0 }]);
     }
   };
 
-  const updateInitialStock = (repairCenterId: string, quantity: number) => {
+  const updateInitialStock = (warehouseId: string, quantity: number) => {
     setInitialStock(initialStock.map(s => 
-      s.repairCenterId === repairCenterId ? { ...s, quantity } : s
+      s.warehouseId === warehouseId ? { ...s, quantity } : s
     ));
   };
 
-  const removeInitialStock = (repairCenterId: string) => {
-    setInitialStock(initialStock.filter(s => s.repairCenterId !== repairCenterId));
+  const removeInitialStock = (warehouseId: string) => {
+    setInitialStock(initialStock.filter(s => s.warehouseId !== warehouseId));
+  };
+
+  const getWarehouseLabel = (wh: WarehouseForStock) => {
+    const typeLabels: Record<string, string> = {
+      admin: 'Admin',
+      reseller: 'Rivenditore',
+      sub_reseller: 'Sotto-Rivenditore',
+      repair_center: 'Centro Riparazione'
+    };
+    const ownerName = wh.owner?.fullName || wh.owner?.username || 'Sistema';
+    return `${wh.name} (${typeLabels[wh.ownerType]} - ${ownerName})`;
+  };
+
+  const groupedWarehouses = {
+    admin: warehouses.filter(w => w.ownerType === 'admin'),
+    reseller: warehouses.filter(w => w.ownerType === 'reseller'),
+    sub_reseller: warehouses.filter(w => w.ownerType === 'sub_reseller'),
+    repair_center: warehouses.filter(w => w.ownerType === 'repair_center'),
   };
 
   const openEditDialog = async (product: Product) => {
@@ -1191,46 +1226,105 @@ export default function AdminProducts() {
                       <div className="flex items-center justify-between">
                         <Label>Quantità Iniziali per Magazzino</Label>
                         <Select onValueChange={addInitialStock}>
-                          <SelectTrigger className="w-48" data-testid="select-add-stock-center">
-                            <SelectValue placeholder="Aggiungi centro..." />
+                          <SelectTrigger className="w-56" data-testid="select-add-stock-warehouse">
+                            <SelectValue placeholder="Aggiungi magazzino..." />
                           </SelectTrigger>
                           <SelectContent>
-                            {repairCenters
-                              .filter(rc => rc.isActive && !initialStock.find(s => s.repairCenterId === rc.id))
-                              .map(rc => (
-                                <SelectItem key={rc.id} value={rc.id}>{rc.name}</SelectItem>
-                              ))
-                            }
+                            {groupedWarehouses.admin.filter(w => !initialStock.find(s => s.warehouseId === w.id)).length > 0 && (
+                              <>
+                                <SelectItem value="_header_admin" disabled className="font-semibold text-xs text-muted-foreground">
+                                  Magazzini Admin
+                                </SelectItem>
+                                {groupedWarehouses.admin
+                                  .filter(w => !initialStock.find(s => s.warehouseId === w.id))
+                                  .map(wh => (
+                                    <SelectItem key={wh.id} value={wh.id}>{wh.name}</SelectItem>
+                                  ))
+                                }
+                              </>
+                            )}
+                            {groupedWarehouses.reseller.filter(w => !initialStock.find(s => s.warehouseId === w.id)).length > 0 && (
+                              <>
+                                <SelectItem value="_header_reseller" disabled className="font-semibold text-xs text-muted-foreground">
+                                  Magazzini Rivenditori
+                                </SelectItem>
+                                {groupedWarehouses.reseller
+                                  .filter(w => !initialStock.find(s => s.warehouseId === w.id))
+                                  .map(wh => (
+                                    <SelectItem key={wh.id} value={wh.id}>
+                                      {wh.name} ({wh.owner?.fullName || wh.owner?.username})
+                                    </SelectItem>
+                                  ))
+                                }
+                              </>
+                            )}
+                            {groupedWarehouses.sub_reseller.filter(w => !initialStock.find(s => s.warehouseId === w.id)).length > 0 && (
+                              <>
+                                <SelectItem value="_header_sub_reseller" disabled className="font-semibold text-xs text-muted-foreground">
+                                  Magazzini Sotto-Rivenditori
+                                </SelectItem>
+                                {groupedWarehouses.sub_reseller
+                                  .filter(w => !initialStock.find(s => s.warehouseId === w.id))
+                                  .map(wh => (
+                                    <SelectItem key={wh.id} value={wh.id}>
+                                      {wh.name} ({wh.owner?.fullName || wh.owner?.username})
+                                    </SelectItem>
+                                  ))
+                                }
+                              </>
+                            )}
+                            {groupedWarehouses.repair_center.filter(w => !initialStock.find(s => s.warehouseId === w.id)).length > 0 && (
+                              <>
+                                <SelectItem value="_header_repair_center" disabled className="font-semibold text-xs text-muted-foreground">
+                                  Magazzini Centri Riparazione
+                                </SelectItem>
+                                {groupedWarehouses.repair_center
+                                  .filter(w => !initialStock.find(s => s.warehouseId === w.id))
+                                  .map(wh => (
+                                    <SelectItem key={wh.id} value={wh.id}>
+                                      {wh.name} ({wh.owner?.fullName || wh.owner?.username})
+                                    </SelectItem>
+                                  ))
+                                }
+                              </>
+                            )}
                           </SelectContent>
                         </Select>
                       </div>
                       
                       {initialStock.length === 0 ? (
                         <p className="text-sm text-muted-foreground text-center py-4">
-                          Nessuna quantità iniziale. Seleziona un centro riparazioni per aggiungere.
+                          Nessuna quantità iniziale. Seleziona un magazzino per aggiungere.
                         </p>
                       ) : (
                         <div className="space-y-2">
                           {initialStock.map(stock => {
-                            const center = repairCenters.find(rc => rc.id === stock.repairCenterId);
+                            const wh = warehouses.find(w => w.id === stock.warehouseId);
                             return (
-                              <div key={stock.repairCenterId} className="flex items-center gap-3 p-3 border rounded-md">
+                              <div key={stock.warehouseId} className="flex items-center gap-3 p-3 border rounded-md">
                                 <Warehouse className="h-4 w-4 text-muted-foreground" />
-                                <span className="flex-1 font-medium">{center?.name || "Centro"}</span>
+                                <div className="flex-1">
+                                  <span className="font-medium">{wh?.name || "Magazzino"}</span>
+                                  {wh && (
+                                    <span className="text-xs text-muted-foreground ml-2">
+                                      ({wh.ownerType === 'admin' ? 'Admin' : wh.owner?.fullName || wh.owner?.username})
+                                    </span>
+                                  )}
+                                </div>
                                 <Input
                                   type="number"
                                   min="0"
                                   value={stock.quantity}
-                                  onChange={(e) => updateInitialStock(stock.repairCenterId, parseInt(e.target.value) || 0)}
+                                  onChange={(e) => updateInitialStock(stock.warehouseId, parseInt(e.target.value) || 0)}
                                   className="w-24"
-                                  data-testid={`input-stock-${stock.repairCenterId}`}
+                                  data-testid={`input-stock-${stock.warehouseId}`}
                                 />
                                 <Button
                                   type="button"
                                   variant="ghost"
                                   size="icon"
-                                  onClick={() => removeInitialStock(stock.repairCenterId)}
-                                  data-testid={`button-remove-stock-${stock.repairCenterId}`}
+                                  onClick={() => removeInitialStock(stock.warehouseId)}
+                                  data-testid={`button-remove-stock-${stock.warehouseId}`}
                                 >
                                   <X className="h-4 w-4" />
                                 </Button>
@@ -1240,7 +1334,7 @@ export default function AdminProducts() {
                         </div>
                       )}
                       <p className="text-xs text-muted-foreground">
-                        Puoi assegnare quantità iniziali ai magazzini dei centri riparazione
+                        Puoi assegnare quantità iniziali ai magazzini di Admin, Rivenditori e Centri Riparazione
                       </p>
                     </div>
                   </TabsContent>
