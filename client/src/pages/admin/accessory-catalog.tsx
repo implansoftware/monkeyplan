@@ -17,6 +17,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import type { AccessorySpecs, Product, DeviceModel, DeviceBrand, User, Warehouse as WarehouseType } from "@shared/schema";
+import { ProductDetailDialog } from "@/components/product-detail-dialog";
 
 type DeviceCompatibilityEntry = {
   deviceBrandId: string;
@@ -77,6 +78,8 @@ export default function AdminAccessoryCatalog() {
   const [accessoryToDelete, setAccessoryToDelete] = useState<AccessoryWithSpecs | null>(null);
   const [assignDialogOpen, setAssignDialogOpen] = useState(false);
   const [accessoryToAssign, setAccessoryToAssign] = useState<AccessoryWithSpecs | null>(null);
+  const [detailDialogOpen, setDetailDialogOpen] = useState(false);
+  const [detailProductId, setDetailProductId] = useState<string | null>(null);
   const [selectedResellerId, setSelectedResellerId] = useState<string>("");
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -696,6 +699,15 @@ export default function AdminAccessoryCatalog() {
                           <Button
                             variant="ghost"
                             size="icon"
+                            onClick={() => { setDetailProductId(accessory.id); setDetailDialogOpen(true); }}
+                            title="Visualizza dettagli"
+                            data-testid={`button-detail-accessory-${accessory.id}`}
+                          >
+                            <Search className="h-4 w-4 text-primary" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
                             onClick={() => { setAccessoryToAssign(accessory); setSelectedResellerId(accessory.reseller?.id || ""); setAssignDialogOpen(true); }}
                             title="Assegna a rivenditore"
                             data-testid={`button-assign-accessory-${accessory.id}`}
@@ -1290,6 +1302,12 @@ export default function AdminAccessoryCatalog() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <ProductDetailDialog 
+        open={detailDialogOpen} 
+        onOpenChange={setDetailDialogOpen} 
+        productId={detailProductId} 
+      />
     </div>
   );
 }

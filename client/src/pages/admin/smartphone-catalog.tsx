@@ -18,6 +18,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useRef } from "react";
 import type { SmartphoneSpecs, Product, User, ProductPrice, Warehouse as WarehouseType } from "@shared/schema";
+import { ProductDetailDialog } from "@/components/product-detail-dialog";
 
 type SmartphoneWithSpecs = Product & {
   specs: SmartphoneSpecs | null;
@@ -77,6 +78,8 @@ export default function AdminSmartphoneCatalog() {
   const [uploadingImage, setUploadingImage] = useState(false);
   const [assignDialogOpen, setAssignDialogOpen] = useState(false);
   const [smartphoneToAssign, setSmartphoneToAssign] = useState<SmartphoneWithSpecs | null>(null);
+  const [detailDialogOpen, setDetailDialogOpen] = useState(false);
+  const [detailProductId, setDetailProductId] = useState<string | null>(null);
   const [selectedResellerId, setSelectedResellerId] = useState<string>("");
   const [assignPrice, setAssignPrice] = useState<string>("");
   const [assignCostPrice, setAssignCostPrice] = useState<string>("");
@@ -663,6 +666,15 @@ export default function AdminSmartphoneCatalog() {
                           <Button
                             variant="ghost"
                             size="icon"
+                            onClick={() => { setDetailProductId(smartphone.id); setDetailDialogOpen(true); }}
+                            title="Visualizza dettagli"
+                            data-testid={`button-detail-smartphone-${smartphone.id}`}
+                          >
+                            <Search className="h-4 w-4 text-primary" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
                             onClick={() => { 
                               setSmartphoneToAssign(smartphone); 
                               setAssignPrice((smartphone.unitPrice / 100).toFixed(2));
@@ -1202,6 +1214,12 @@ export default function AdminSmartphoneCatalog() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <ProductDetailDialog 
+        open={detailDialogOpen} 
+        onOpenChange={setDetailDialogOpen} 
+        productId={detailProductId} 
+      />
     </div>
   );
 }

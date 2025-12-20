@@ -21,6 +21,8 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ProductDetailDialog } from "@/components/product-detail-dialog";
+import { Info } from "lucide-react";
 
 interface InitialStockEntry {
   repairCenterId: string;
@@ -86,6 +88,8 @@ export default function AdminProducts() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [detailDialogOpen, setDetailDialogOpen] = useState(false);
+  const [detailProductId, setDetailProductId] = useState<string | null>(null);
   const [initialStock, setInitialStock] = useState<InitialStockEntry[]>([]);
   const [editStock, setEditStock] = useState<Array<{ repairCenterId: string; repairCenterName: string; quantity: number; originalQuantity: number }>>([]);
   const [isLoadingStock, setIsLoadingStock] = useState(false);
@@ -2211,6 +2215,19 @@ export default function AdminProducts() {
                             <Button 
                               variant="ghost" 
                               size="icon" 
+                              onClick={() => { setDetailProductId(product.id); setDetailDialogOpen(true); }}
+                              data-testid={`button-detail-${product.id}`}
+                            >
+                              <Info className="h-4 w-4 text-primary" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>Dettagli prodotto</TooltipContent>
+                        </Tooltip>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
                               onClick={() => openResellerPricesDialog(product)}
                               data-testid={`button-reseller-prices-${product.id}`}
                             >
@@ -2461,6 +2478,12 @@ export default function AdminProducts() {
           </form>
         </DialogContent>
       </Dialog>
+
+      <ProductDetailDialog 
+        open={detailDialogOpen} 
+        onOpenChange={setDetailDialogOpen} 
+        productId={detailProductId} 
+      />
     </div>
   );
 }

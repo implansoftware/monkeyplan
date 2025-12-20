@@ -2161,12 +2161,29 @@ export function registerRoutes(app: Express): Server {
         })
       );
 
+      // Get warehouse stock for this product across all warehouses
+      const warehouses = await storage.listWarehouses({});
+      const stockByWarehouse = await Promise.all(
+        warehouses.map(async (wh) => {
+          const stockItem = await storage.getWarehouseStockItem(wh.id, product.id);
+          return {
+            warehouseId: wh.id,
+            warehouseName: wh.name,
+            ownerType: wh.ownerType,
+            quantity: stockItem?.quantity || 0,
+            minStock: stockItem?.minStock || null,
+            location: stockItem?.location || null,
+          };
+        })
+      );
+
       res.json({
         product,
         specs,
         compatibilities: enrichedCompatibilities,
         prices: pricesWithReseller,
         assignments: assignmentsWithReseller,
+        stock: stockByWarehouse,
       });
     } catch (error: any) {
       console.error("Error fetching product details:", error);
