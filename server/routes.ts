@@ -7510,21 +7510,29 @@ export function registerRoutes(app: Express): Server {
       const warehouseStocks = await storage.getProductWarehouseStocks(req.params.id);
       
       // Enrich with owner info
-      const enriched = await Promise.all(warehouseStocks.map(async (ws) => {
+      const enriched = [];
+      for (const ws of warehouseStocks) {
         let ownerName = 'Sistema';
-        const warehouse = ws.warehouse || {};
-        if (warehouse.ownerId && warehouse.ownerId !== 'system') {
+        const warehouse = ws.warehouse;
+        if (warehouse && warehouse.ownerId && warehouse.ownerId !== 'system') {
           const owner = await storage.getUser(warehouse.ownerId);
           ownerName = owner?.fullName || owner?.username || 'Sconosciuto';
         }
-        return {
-          ...ws,
-          warehouse: {
-            ...warehouse,
+        enriched.push({
+          warehouseId: ws.warehouseId,
+          productId: ws.productId,
+          quantity: ws.quantity,
+          minStock: ws.minStock,
+          location: ws.location,
+          warehouse: warehouse ? {
+            id: warehouse.id,
+            name: warehouse.name,
+            ownerType: warehouse.ownerType,
+            ownerId: warehouse.ownerId,
             ownerName,
-          },
-        };
-      }));
+          } : null,
+        });
+      }
       
       const totalQuantity = warehouseStocks.reduce((sum, ws) => sum + ws.quantity, 0);
       
@@ -7533,6 +7541,7 @@ export function registerRoutes(app: Express): Server {
         totalQuantity,
       });
     } catch (error: any) {
+      console.error("Error in /api/products/:id/warehouse-stocks:", error);
       res.status(500).send(error.message);
     }
   });
@@ -7611,6 +7620,7 @@ export function registerRoutes(app: Express): Server {
         totalQuantity,
       });
     } catch (error: any) {
+      console.error("Error in POST /api/products/:id/warehouse-stock:", error);
       res.status(500).send(error.message);
     }
   });
