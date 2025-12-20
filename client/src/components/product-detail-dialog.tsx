@@ -21,8 +21,8 @@ type ProductDetails = {
   }>;
   prices: Array<{
     id: string;
-    sellPrice: number;
-    costPrice: number | null;
+    priceCents: number;
+    costPriceCents: number | null;
     reseller: { id: string; username: string; fullName: string | null } | null;
   }>;
   assignments: Array<{
@@ -386,9 +386,9 @@ export function ProductDetailDialog({ open, onOpenChange, productId }: ProductDe
                         {data.prices.map((p) => (
                           <TableRow key={p.id}>
                             <TableCell>{p.reseller?.fullName || p.reseller?.username || "-"}</TableCell>
-                            <TableCell className="text-right font-medium">{p.sellPrice ? `${Number(p.sellPrice).toFixed(2)} €` : "-"}</TableCell>
+                            <TableCell className="text-right font-medium">{p.priceCents ? `${(Number(p.priceCents) / 100).toFixed(2)} €` : "-"}</TableCell>
                             <TableCell className="text-right text-muted-foreground">
-                              {p.costPrice ? `${Number(p.costPrice).toFixed(2)} €` : "-"}
+                              {p.costPriceCents ? `${(Number(p.costPriceCents) / 100).toFixed(2)} €` : "-"}
                             </TableCell>
                           </TableRow>
                         ))}
