@@ -115,6 +115,7 @@ export default function AdminProducts() {
   const [newBrandName, setNewBrandName] = useState("");
   const [newModelName, setNewModelName] = useState("");
   const [newModelBrandId, setNewModelBrandId] = useState<string>("");
+  const [selectedSupplierId, setSelectedSupplierId] = useState<string>("");
   const { toast } = useToast();
 
   const { data: productsWithStock = [], isLoading } = useQuery<ProductWithStock[]>({
@@ -164,6 +165,7 @@ export default function AdminProducts() {
       setDialogOpen(false);
       setInitialStock([]);
       setDeviceCompatibilities([]);
+      setSelectedSupplierId("");
       toast({ title: "Prodotto creato con successo" });
     },
     onError: (error: Error) => {
@@ -689,7 +691,8 @@ export default function AdminProducts() {
     const minStockValue = formData.get("minStock") as string;
     
     const deviceTypeIdValue = formData.get("deviceTypeId") as string;
-    const data: InsertProduct & { initialStock?: InitialStockEntry[]; deviceCompatibilities?: DeviceCompatibilityEntry[] } = {
+    const supplierCodeValue = formData.get("supplierCode") as string || undefined;
+    const data = {
       name: formData.get("name") as string,
       sku: formData.get("sku") as string,
       category: formData.get("category") as string,
@@ -702,14 +705,17 @@ export default function AdminProducts() {
       unitPrice: Math.round(parseFloat(formData.get("unitPrice") as string) * 100),
       condition: formData.get("condition") as any,
       warrantyMonths: warrantyValue ? parseInt(warrantyValue) : undefined,
-      supplier: formData.get("supplier") as string || undefined,
-      supplierCode: formData.get("supplierCode") as string || undefined,
+      supplier: selectedSupplierId && selectedSupplierId !== 'none' 
+        ? suppliers.find(s => s.id === selectedSupplierId)?.name 
+        : undefined,
+      supplierCode: supplierCodeValue,
       minStock: minStockValue ? parseInt(minStockValue) : undefined,
       location: formData.get("location") as string || undefined,
       initialStock: initialStock.filter(s => s.quantity > 0),
       deviceCompatibilities: deviceCompatibilities.length > 0 ? deviceCompatibilities : undefined,
+      supplierId: selectedSupplierId && selectedSupplierId !== 'none' ? selectedSupplierId : undefined,
     };
-    createProductMutation.mutate(data);
+    createProductMutation.mutate(data as any);
   };
 
   const handleEditSubmit = (e: React.FormEvent<HTMLFormElement>) => {
@@ -1124,12 +1130,20 @@ export default function AdminProducts() {
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label htmlFor="supplier">Fornitore</Label>
-                        <Input
-                          id="supplier"
-                          name="supplier"
-                          placeholder="Nome fornitore"
-                          data-testid="input-supplier"
-                        />
+                        <Select 
+                          value={selectedSupplierId} 
+                          onValueChange={setSelectedSupplierId}
+                        >
+                          <SelectTrigger data-testid="select-supplier">
+                            <SelectValue placeholder="Seleziona fornitore..." />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="none">Nessun fornitore</SelectItem>
+                            {suppliers.filter(s => s.isActive).map(s => (
+                              <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="supplierCode">Codice Fornitore</Label>

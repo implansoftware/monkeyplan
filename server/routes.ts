@@ -7271,8 +7271,8 @@ export function registerRoutes(app: Express): Server {
         return res.status(403).send("Only admins can create products");
       }
       
-      // Extract initial stock assignments from request body
-      const { initialStock, ...productData } = req.body;
+      // Extract initial stock assignments and supplier info from request body
+      const { initialStock, supplierId, supplierCode, ...productData } = req.body;
       
       // Admin products have createdBy = null (global products)
       const validatedData = insertProductSchema.parse({
@@ -7295,6 +7295,20 @@ export function registerRoutes(app: Express): Server {
               createdBy: req.user.id,
             });
           }
+        }
+      }
+      
+      // Create product-supplier relationship if supplierId is provided
+      if (supplierId) {
+        const supplier = await storage.getSupplier(supplierId);
+        if (supplier) {
+          await storage.linkProductToSupplier({
+            productId: product.id,
+            supplierId: supplierId,
+            supplierCode: supplierCode || null,
+            costPrice: productData.costPrice || null,
+            isPreferred: true,
+          });
         }
       }
       
