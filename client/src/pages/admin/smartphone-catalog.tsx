@@ -103,6 +103,8 @@ export default function AdminSmartphoneCatalog() {
   const [assignPrice, setAssignPrice] = useState<string>("");
   const [assignCostPrice, setAssignCostPrice] = useState<string>("");
   const [initialStock, setInitialStock] = useState<InitialStockEntry[]>([]);
+  const [editStock, setEditStock] = useState<Array<{ warehouseId: string; warehouseName: string; ownerType: string; ownerName: string; quantity: number; originalQuantity: number; location: string; originalLocation: string }>>([]);
+  const [isLoadingStock, setIsLoadingStock] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
@@ -277,6 +279,22 @@ export default function AdminSmartphoneCatalog() {
     },
   });
 
+  const updateStockMutation = useMutation({
+    mutationFn: async ({ productId, warehouseId, quantity, location }: { productId: string; warehouseId: string; quantity: number; location?: string }) => {
+      const res = await apiRequest("POST", `/api/products/${productId}/warehouse-stock`, { warehouseId, quantity, location });
+      return await res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/smartphones"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/warehouses"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/all-warehouses"] });
+      toast({ title: "Quantità aggiornata" });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Errore", description: error.message, variant: "destructive" });
+    },
+  });
+
   const deleteMutation = useMutation({
     mutationFn: async (productId: string) => {
       return apiRequest("DELETE", `/api/smartphones/${productId}`);
@@ -397,6 +415,51 @@ export default function AdminSmartphoneCatalog() {
     setInitialStock(initialStock.filter(s => s.warehouseId !== warehouseId));
   };
 
+  const addEditStock = (warehouseId: string) => {
+    const wh = warehouses.find(w => w.id === warehouseId);
+    if (wh && !editStock.find(s => s.warehouseId === warehouseId)) {
+      const ownerName = wh.owner?.fullName || wh.owner?.username || 'Sistema';
+      setEditStock([...editStock, { 
+        warehouseId, 
+        warehouseName: wh.name, 
+        ownerType: wh.ownerType,
+        ownerName,
+        quantity: 0, 
+        originalQuantity: 0,
+        location: "",
+        originalLocation: ""
+      }]);
+    }
+  };
+
+  const updateEditStock = (warehouseId: string, quantity: number) => {
+    setEditStock(editStock.map(s => 
+      s.warehouseId === warehouseId ? { ...s, quantity } : s
+    ));
+  };
+
+  const updateEditStockLocation = (warehouseId: string, location: string) => {
+    setEditStock(editStock.map(s => 
+      s.warehouseId === warehouseId ? { ...s, location } : s
+    ));
+  };
+
+  const saveStockChange = async (warehouseId: string) => {
+    if (!editingSmartphone) return;
+    const stock = editStock.find(s => s.warehouseId === warehouseId);
+    if (!stock) return;
+    
+    await updateStockMutation.mutateAsync({
+      productId: editingSmartphone.id,
+      warehouseId,
+      quantity: stock.quantity,
+      location: stock.location
+    });
+    setEditStock(editStock.map(s => 
+      s.warehouseId === warehouseId ? { ...s, originalQuantity: stock.quantity, originalLocation: stock.location } : s
+    ));
+  };
+
   const groupedWarehouses = {
     admin: warehouses.filter(w => w.ownerType === 'admin'),
     reseller: warehouses.filter(w => w.ownerType === 'reseller'),
@@ -408,6 +471,7 @@ export default function AdminSmartphoneCatalog() {
     setImageFile(null);
     setImagePreview(null);
     setInitialStock([]);
+    setEditStock([]);
     setFormData({
       name: "",
       sku: "",
@@ -431,7 +495,7 @@ export default function AdminSmartphoneCatalog() {
     });
   };
 
-  const openEditDialog = (smartphone: SmartphoneWithSpecs) => {
+  const openEditDialog = async (smartphone: SmartphoneWithSpecs) => {
     setEditingSmartphone(smartphone);
     setFormData({
       name: smartphone.name,
@@ -455,6 +519,32 @@ export default function AdminSmartphoneCatalog() {
       notes: smartphone.specs?.notes || "",
     });
     setDialogOpen(true);
+    
+    // Load existing stock for this product
+    setIsLoadingStock(true);
+    try {
+      const response = await fetch(`/api/products/${smartphone.id}/warehouse-stocks`, {
+        credentials: "include",
+      });
+      if (response.ok) {
+        const data = await response.json();
+        const stockEntries = data.stocks.map((ws: any) => ({
+          warehouseId: ws.warehouseId,
+          warehouseName: ws.warehouse?.name || 'Sconosciuto',
+          ownerType: ws.warehouse?.ownerType || 'admin',
+          ownerName: ws.warehouse?.ownerName || 'Sistema',
+          quantity: ws.quantity,
+          originalQuantity: ws.quantity,
+          location: ws.location || "",
+          originalLocation: ws.location || "",
+        }));
+        setEditStock(stockEntries);
+      }
+    } catch (error) {
+      console.error("Error loading stock:", error);
+    } finally {
+      setIsLoadingStock(false);
+    }
   };
 
   const handleSubmit = () => {
@@ -966,29 +1056,29 @@ export default function AdminSmartphoneCatalog() {
               <div className="flex items-center justify-between">
                 <Label className="flex items-center gap-2">
                   <Warehouse className="h-4 w-4" />
-                  {editingSmartphone ? "Aggiungi stock" : "Quantità iniziali per magazzino"}
+                  {editingSmartphone ? "Gestione stock" : "Quantità iniziali per magazzino"}
                 </Label>
-                <Select onValueChange={addInitialStock}>
+                <Select onValueChange={editingSmartphone ? addEditStock : addInitialStock}>
                   <SelectTrigger className="w-56" data-testid="select-add-stock-warehouse">
                     <SelectValue placeholder="Aggiungi magazzino..." />
                   </SelectTrigger>
                   <SelectContent>
-                    {groupedWarehouses.admin.filter(w => !initialStock.find(s => s.warehouseId === w.id)).length > 0 && (
+                    {groupedWarehouses.admin.filter(w => !(editingSmartphone ? editStock : initialStock).find(s => s.warehouseId === w.id)).length > 0 && (
                       <SelectGroup>
                         <SelectLabel>Magazzini Admin</SelectLabel>
                         {groupedWarehouses.admin
-                          .filter(w => !initialStock.find(s => s.warehouseId === w.id))
+                          .filter(w => !(editingSmartphone ? editStock : initialStock).find(s => s.warehouseId === w.id))
                           .map(wh => (
                             <SelectItem key={wh.id} value={wh.id}>{wh.name}</SelectItem>
                           ))
                         }
                       </SelectGroup>
                     )}
-                    {groupedWarehouses.reseller.filter(w => !initialStock.find(s => s.warehouseId === w.id)).length > 0 && (
+                    {groupedWarehouses.reseller.filter(w => !(editingSmartphone ? editStock : initialStock).find(s => s.warehouseId === w.id)).length > 0 && (
                       <SelectGroup>
                         <SelectLabel>Magazzini Rivenditori</SelectLabel>
                         {groupedWarehouses.reseller
-                          .filter(w => !initialStock.find(s => s.warehouseId === w.id))
+                          .filter(w => !(editingSmartphone ? editStock : initialStock).find(s => s.warehouseId === w.id))
                           .map(wh => (
                             <SelectItem key={wh.id} value={wh.id}>
                               {wh.name} ({wh.owner?.fullName || wh.owner?.username})
@@ -997,11 +1087,11 @@ export default function AdminSmartphoneCatalog() {
                         }
                       </SelectGroup>
                     )}
-                    {groupedWarehouses.sub_reseller.filter(w => !initialStock.find(s => s.warehouseId === w.id)).length > 0 && (
+                    {groupedWarehouses.sub_reseller.filter(w => !(editingSmartphone ? editStock : initialStock).find(s => s.warehouseId === w.id)).length > 0 && (
                       <SelectGroup>
                         <SelectLabel>Magazzini Sotto-Rivenditori</SelectLabel>
                         {groupedWarehouses.sub_reseller
-                          .filter(w => !initialStock.find(s => s.warehouseId === w.id))
+                          .filter(w => !(editingSmartphone ? editStock : initialStock).find(s => s.warehouseId === w.id))
                           .map(wh => (
                             <SelectItem key={wh.id} value={wh.id}>
                               {wh.name} ({wh.owner?.fullName || wh.owner?.username})
@@ -1010,11 +1100,11 @@ export default function AdminSmartphoneCatalog() {
                         }
                       </SelectGroup>
                     )}
-                    {groupedWarehouses.repair_center.filter(w => !initialStock.find(s => s.warehouseId === w.id)).length > 0 && (
+                    {groupedWarehouses.repair_center.filter(w => !(editingSmartphone ? editStock : initialStock).find(s => s.warehouseId === w.id)).length > 0 && (
                       <SelectGroup>
                         <SelectLabel>Magazzini Centri Riparazione</SelectLabel>
                         {groupedWarehouses.repair_center
-                          .filter(w => !initialStock.find(s => s.warehouseId === w.id))
+                          .filter(w => !(editingSmartphone ? editStock : initialStock).find(s => s.warehouseId === w.id))
                           .map(wh => (
                             <SelectItem key={wh.id} value={wh.id}>
                               {wh.name} ({wh.owner?.fullName || wh.owner?.username})
@@ -1027,66 +1117,123 @@ export default function AdminSmartphoneCatalog() {
                 </Select>
               </div>
               
-              {initialStock.length === 0 ? (
-                <p className="text-sm text-muted-foreground text-center py-4">
-                  Nessuna quantità iniziale. Seleziona un magazzino per aggiungere.
-                </p>
+              {editingSmartphone ? (
+                // Edit mode: show editStock with save button per row
+                isLoadingStock ? (
+                  <div className="space-y-2">
+                    <div className="h-10 bg-muted animate-pulse rounded" />
+                    <div className="h-10 bg-muted animate-pulse rounded" />
+                  </div>
+                ) : editStock.length === 0 ? (
+                  <p className="text-sm text-muted-foreground text-center py-4">
+                    Nessuna giacenza. Seleziona un magazzino per aggiungere quantità.
+                  </p>
+                ) : (
+                  <div className="space-y-2">
+                    {editStock.map((stock) => {
+                      const hasChanges = stock.quantity !== stock.originalQuantity || stock.location !== stock.originalLocation;
+                      return (
+                        <div key={stock.warehouseId} className="p-3 bg-muted/50 rounded-md space-y-2">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <span className="text-sm font-medium">{stock.warehouseName}</span>
+                              <span className="text-xs text-muted-foreground ml-2">({stock.ownerName})</span>
+                            </div>
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant={hasChanges ? "default" : "outline"}
+                              disabled={!hasChanges || updateStockMutation.isPending}
+                              onClick={() => saveStockChange(stock.warehouseId)}
+                              data-testid={`edit-button-save-stock-${stock.warehouseId}`}
+                            >
+                              {updateStockMutation.isPending ? "..." : "Salva"}
+                            </Button>
+                          </div>
+                          <div className="flex items-center gap-3">
+                            <div className="flex-1">
+                              <Label className="text-xs text-muted-foreground">Quantità</Label>
+                              <Input
+                                type="number"
+                                min="0"
+                                value={stock.quantity}
+                                onChange={(e) => updateEditStock(stock.warehouseId, parseInt(e.target.value) || 0)}
+                                data-testid={`edit-input-stock-${stock.warehouseId}`}
+                              />
+                            </div>
+                            <div className="flex-1">
+                              <Label className="text-xs text-muted-foreground">Ubicazione</Label>
+                              <Input
+                                value={stock.location}
+                                onChange={(e) => updateEditStockLocation(stock.warehouseId, e.target.value)}
+                                placeholder="es. Scaffale A3"
+                                data-testid={`edit-input-location-${stock.warehouseId}`}
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )
               ) : (
-                <div className="space-y-2">
-                  {initialStock.map(stock => {
-                    const wh = warehouses.find(w => w.id === stock.warehouseId);
-                    return (
-                      <div key={stock.warehouseId} className="p-3 border rounded-md space-y-2">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <Warehouse className="h-4 w-4 text-muted-foreground" />
-                            <span className="font-medium">{wh?.name || "Magazzino"}</span>
-                            {wh && (
-                              <span className="text-xs text-muted-foreground">
-                                ({wh.ownerType === 'admin' ? 'Admin' : wh.owner?.fullName || wh.owner?.username})
-                              </span>
-                            )}
+                // Create mode: show initialStock
+                initialStock.length === 0 ? (
+                  <p className="text-sm text-muted-foreground text-center py-4">
+                    Nessuna quantità iniziale. Seleziona un magazzino per aggiungere.
+                  </p>
+                ) : (
+                  <div className="space-y-2">
+                    {initialStock.map(stock => {
+                      const wh = warehouses.find(w => w.id === stock.warehouseId);
+                      return (
+                        <div key={stock.warehouseId} className="p-3 border rounded-md space-y-2">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <Warehouse className="h-4 w-4 text-muted-foreground" />
+                              <span className="font-medium">{wh?.name || "Magazzino"}</span>
+                              {wh && (
+                                <span className="text-xs text-muted-foreground">
+                                  ({wh.ownerType === 'admin' ? 'Admin' : wh.owner?.fullName || wh.owner?.username})
+                                </span>
+                              )}
+                            </div>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => removeInitialStock(stock.warehouseId)}
+                              data-testid={`button-remove-stock-${stock.warehouseId}`}
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
                           </div>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => removeInitialStock(stock.warehouseId)}
-                            data-testid={`button-remove-stock-${stock.warehouseId}`}
-                          >
-                            <X className="h-4 w-4" />
-                          </Button>
+                          <div className="flex items-center gap-3">
+                            <div className="flex-1">
+                              <Label className="text-xs text-muted-foreground">Quantità</Label>
+                              <Input
+                                type="number"
+                                min="0"
+                                value={stock.quantity}
+                                onChange={(e) => updateInitialStock(stock.warehouseId, parseInt(e.target.value) || 0)}
+                                data-testid={`input-stock-${stock.warehouseId}`}
+                              />
+                            </div>
+                            <div className="flex-1">
+                              <Label className="text-xs text-muted-foreground">Ubicazione</Label>
+                              <Input
+                                value={stock.location}
+                                onChange={(e) => updateInitialStockLocation(stock.warehouseId, e.target.value)}
+                                placeholder="es. Scaffale A3"
+                                data-testid={`input-location-${stock.warehouseId}`}
+                              />
+                            </div>
+                          </div>
                         </div>
-                        <div className="flex items-center gap-3">
-                          <div className="flex-1">
-                            <Label className="text-xs text-muted-foreground">Quantità</Label>
-                            <Input
-                              type="number"
-                              min="0"
-                              value={stock.quantity}
-                              onChange={(e) => updateInitialStock(stock.warehouseId, parseInt(e.target.value) || 0)}
-                              data-testid={`input-stock-${stock.warehouseId}`}
-                            />
-                          </div>
-                          <div className="flex-1">
-                            <Label className="text-xs text-muted-foreground">Ubicazione</Label>
-                            <Input
-                              value={stock.location}
-                              onChange={(e) => updateInitialStockLocation(stock.warehouseId, e.target.value)}
-                              placeholder="es. Scaffale A3"
-                              data-testid={`input-location-${stock.warehouseId}`}
-                            />
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-              {editingSmartphone && (
-                <p className="text-xs text-muted-foreground">
-                  Le quantità saranno aggiunte come carico ai magazzini selezionati
-                </p>
+                      );
+                    })}
+                  </div>
+                )
               )}
             </div>
 
