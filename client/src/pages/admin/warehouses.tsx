@@ -15,9 +15,9 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { 
   Warehouse, Package, ArrowLeftRight, Plus, Search, 
   TrendingUp, TrendingDown, RotateCcw, MapPin, Boxes,
-  ArrowRight, Clock, CheckCircle, XCircle, Truck, Pencil
+  ArrowRight, Clock, CheckCircle, XCircle, Pencil
 } from "lucide-react";
-import type { Warehouse as WarehouseType, WarehouseStock, WarehouseMovement, WarehouseTransfer, Product } from "@shared/schema";
+import type { Warehouse as WarehouseType, WarehouseStock, WarehouseMovement, Product } from "@shared/schema";
 
 type AccessibleWarehouse = {
   id: string;
@@ -31,12 +31,6 @@ type EnrichedMovement = WarehouseMovement & {
   product: { id: string; name: string; sku: string } | null;
   createdByUser: { id: string; fullName: string; username: string } | null;
   relatedWarehouse?: { id: string; name: string } | null;
-};
-type EnrichedTransfer = WarehouseTransfer & {
-  sourceWarehouse: { id: string; name: string } | null;
-  destinationWarehouse: { id: string; name: string } | null;
-  requestedByUser: { id: string; fullName: string } | null;
-  itemCount: number;
 };
 
 export default function WarehousesPage() {
@@ -84,10 +78,6 @@ export default function WarehousesPage() {
       return res.json();
     },
     enabled: !!warehouseId,
-  });
-
-  const { data: transfers = [] } = useQuery<EnrichedTransfer[]>({
-    queryKey: ["/api/warehouse-transfers"],
   });
 
   const { data: products = [] } = useQuery<Product[]>({
@@ -147,7 +137,6 @@ export default function WarehousesPage() {
       toast({ title: "Trasferimento completato", description: "Il prodotto è stato trasferito con successo" });
       queryClient.invalidateQueries({ queryKey: ["/api/warehouses", warehouseId, "stock"] });
       queryClient.invalidateQueries({ queryKey: ["/api/warehouses", warehouseId, "movements"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/warehouse-transfers"] });
       setTransferDialogOpen(false);
       setTransferItem(null);
       setTransferDestWarehouseId("");
@@ -201,13 +190,6 @@ export default function WarehousesPage() {
     rettifica: { label: "Rettifica", icon: RotateCcw, color: "text-purple-500" },
   };
 
-  const transferStatusLabels: Record<string, { label: string; color: string }> = {
-    pending: { label: "In Attesa", color: "bg-yellow-500/10 text-yellow-500" },
-    approved: { label: "Approvato", color: "bg-blue-500/10 text-blue-500" },
-    shipped: { label: "Spedito", color: "bg-purple-500/10 text-purple-500" },
-    received: { label: "Ricevuto", color: "bg-green-500/10 text-green-500" },
-    cancelled: { label: "Annullato", color: "bg-red-500/10 text-red-500" },
-  };
 
   if (loadingWarehouse) {
     return (
@@ -402,21 +384,6 @@ export default function WarehousesPage() {
             </div>
           </CardContent>
         </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-4">
-              <div className="p-3 bg-blue-500/10 rounded-lg">
-                <ArrowLeftRight className="h-6 w-6 text-blue-500" />
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Trasferimenti Attivi</p>
-                <p className="text-2xl font-bold" data-testid="text-active-transfers">
-                  {transfers.filter(t => !['received', 'cancelled'].includes(t.status)).length}
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
@@ -428,10 +395,6 @@ export default function WarehousesPage() {
           <TabsTrigger value="movements" data-testid="tab-movements">
             <ArrowLeftRight className="h-4 w-4 mr-2" />
             Movimenti
-          </TabsTrigger>
-          <TabsTrigger value="transfers" data-testid="tab-transfers">
-            <Truck className="h-4 w-4 mr-2" />
-            Trasferimenti
           </TabsTrigger>
         </TabsList>
 
@@ -601,58 +564,6 @@ export default function WarehousesPage() {
                             </td>
                             <td className="p-4 text-muted-foreground truncate max-w-[200px]">
                               {mov.notes || "-"}
-                            </td>
-                          </tr>
-                        );
-                      })
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="transfers" className="space-y-4">
-          <Card>
-            <CardContent className="p-0">
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead className="border-b">
-                    <tr>
-                      <th className="text-left p-4 font-medium">Numero</th>
-                      <th className="text-left p-4 font-medium">Da</th>
-                      <th className="text-left p-4 font-medium">A</th>
-                      <th className="text-left p-4 font-medium">Stato</th>
-                      <th className="text-right p-4 font-medium">Articoli</th>
-                      <th className="text-left p-4 font-medium">Richiedente</th>
-                      <th className="text-left p-4 font-medium">Data</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {transfers.length === 0 ? (
-                      <tr>
-                        <td colSpan={7} className="text-center p-8 text-muted-foreground">
-                          Nessun trasferimento
-                        </td>
-                      </tr>
-                    ) : (
-                      transfers.map((transfer) => {
-                        const statusInfo = transferStatusLabels[transfer.status] || { label: transfer.status, color: "" };
-                        return (
-                          <tr key={transfer.id} className="border-b last:border-0 hover:bg-muted/50" data-testid={`row-transfer-${transfer.id}`}>
-                            <td className="p-4 font-mono">{transfer.transferNumber}</td>
-                            <td className="p-4">{transfer.sourceWarehouse?.name || "N/D"}</td>
-                            <td className="p-4">{transfer.destinationWarehouse?.name || "N/D"}</td>
-                            <td className="p-4">
-                              <Badge className={statusInfo.color}>{statusInfo.label}</Badge>
-                            </td>
-                            <td className="p-4 text-right">{transfer.itemCount}</td>
-                            <td className="p-4 text-muted-foreground">
-                              {transfer.requestedByUser?.fullName || "N/D"}
-                            </td>
-                            <td className="p-4 text-muted-foreground">
-                              {new Date(transfer.createdAt).toLocaleDateString('it-IT')}
                             </td>
                           </tr>
                         );
