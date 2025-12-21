@@ -376,7 +376,6 @@ export default function ResellerB2BCatalog() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="bank_transfer">Bonifico Bancario</SelectItem>
-                  <SelectItem value="credit">Credito Reseller</SelectItem>
                 </SelectContent>
               </Select>
             </div>
