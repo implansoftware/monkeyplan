@@ -130,6 +130,9 @@ export default function AdminProducts() {
   const [newModelName, setNewModelName] = useState("");
   const [newModelBrandId, setNewModelBrandId] = useState<string>("");
   const [selectedSupplierId, setSelectedSupplierId] = useState<string>("");
+  const [newProductCategory, setNewProductCategory] = useState<string>("display");
+  const [newProductType, setNewProductType] = useState<string>("ricambio");
+  const [newProductCondition, setNewProductCondition] = useState<string>("nuovo");
   const { toast } = useToast();
 
   const { data: productsWithStock = [], isLoading } = useQuery<ProductWithStock[]>({
@@ -750,15 +753,15 @@ export default function AdminProducts() {
     const data = {
       name: formData.get("name") as string,
       sku: formData.get("sku") as string,
-      category: formData.get("category") as string,
-      productType: formData.get("productType") as any,
+      category: newProductCategory,
+      productType: newProductType as any,
       description: formData.get("description") as string || undefined,
       deviceTypeId: deviceTypeIdValue && deviceTypeIdValue !== "all" ? deviceTypeIdValue : undefined,
       brand: formData.get("brand") as string || undefined,
       color: formData.get("color") as string || undefined,
       costPrice: costPriceValue ? Math.round(parseFloat(costPriceValue) * 100) : undefined,
       unitPrice: Math.round(parseFloat(formData.get("unitPrice") as string) * 100),
-      condition: formData.get("condition") as any,
+      condition: newProductCondition as any,
       warrantyMonths: warrantyValue ? parseInt(warrantyValue) : undefined,
       supplier: selectedSupplierId && selectedSupplierId !== 'none' 
         ? suppliers.find(s => s.id === selectedSupplierId)?.name 
@@ -872,6 +875,9 @@ export default function AdminProducts() {
             setDeviceCompatibilities([]);
             setSelectedSupplierId("");
             setInitialStock([]);
+            setNewProductCategory("display");
+            setNewProductType("ricambio");
+            setNewProductCondition("nuovo");
           }
         }}>
           <DialogTrigger asChild>
@@ -924,7 +930,7 @@ export default function AdminProducts() {
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label htmlFor="category">Categoria *</Label>
-                        <Select name="category" defaultValue="display">
+                        <Select value={newProductCategory} onValueChange={setNewProductCategory}>
                           <SelectTrigger id="category" data-testid="select-category">
                             <SelectValue />
                           </SelectTrigger>
@@ -939,7 +945,7 @@ export default function AdminProducts() {
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="productType">Tipo Prodotto *</Label>
-                        <Select name="productType" defaultValue="ricambio">
+                        <Select value={newProductType} onValueChange={setNewProductType}>
                           <SelectTrigger id="productType" data-testid="select-product-type">
                             <SelectValue />
                           </SelectTrigger>
@@ -956,7 +962,7 @@ export default function AdminProducts() {
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label htmlFor="condition">Condizione *</Label>
-                        <Select name="condition" defaultValue="nuovo">
+                        <Select value={newProductCondition} onValueChange={setNewProductCondition}>
                           <SelectTrigger id="condition" data-testid="select-condition">
                             <SelectValue />
                           </SelectTrigger>
