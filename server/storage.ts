@@ -701,8 +701,9 @@ export interface IStorage {
   
   // E-commerce: Sales Order Payments
   listSalesOrderPayments(orderId: string): Promise<SalesOrderPayment[]>;
-  listAllPayments(filters?: { status?: string; method?: string }): Promise<SalesOrderPayment[]>;
+  listAllPayments(filters?: { status?: string; method?: string; orderType?: string }): Promise<SalesOrderPayment[]>;
   getSalesOrderPayment(id: string): Promise<SalesOrderPayment | undefined>;
+  getPaymentByOrderId(orderId: string, orderType?: string): Promise<SalesOrderPayment | undefined>;
   createSalesOrderPayment(payment: InsertSalesOrderPayment): Promise<SalesOrderPayment>;
   updateSalesOrderPayment(id: string, updates: Partial<InsertSalesOrderPayment>): Promise<SalesOrderPayment>;
   
@@ -6199,13 +6200,16 @@ export class DatabaseStorage implements IStorage {
       .orderBy(desc(salesOrderPayments.createdAt));
   }
 
-  async listAllPayments(filters?: { status?: string; method?: string }): Promise<SalesOrderPayment[]> {
+  async listAllPayments(filters?: { status?: string; method?: string; orderType?: string }): Promise<SalesOrderPayment[]> {
     const conditions = [];
     if (filters?.status) {
       conditions.push(eq(salesOrderPayments.status, filters.status as any));
     }
     if (filters?.method) {
       conditions.push(eq(salesOrderPayments.method, filters.method as any));
+    }
+    if (filters?.orderType) {
+      conditions.push(eq(salesOrderPayments.orderType, filters.orderType as any));
     }
     
     if (conditions.length === 0) {
@@ -6224,6 +6228,17 @@ export class DatabaseStorage implements IStorage {
     const [payment] = await db.select()
       .from(salesOrderPayments)
       .where(eq(salesOrderPayments.id, id));
+    return payment;
+  }
+  
+  async getPaymentByOrderId(orderId: string, orderType?: string): Promise<SalesOrderPayment | undefined> {
+    const conditions = [eq(salesOrderPayments.orderId, orderId)];
+    if (orderType) {
+      conditions.push(eq(salesOrderPayments.orderType, orderType as any));
+    }
+    const [payment] = await db.select()
+      .from(salesOrderPayments)
+      .where(and(...conditions));
     return payment;
   }
 

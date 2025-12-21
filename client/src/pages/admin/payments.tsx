@@ -13,8 +13,9 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { 
   Search, CreditCard, DollarSign, CheckCircle, XCircle, 
   Clock, AlertCircle, Download, RefreshCw, TrendingUp,
-  Banknote, Receipt
+  Banknote, Receipt, ExternalLink
 } from "lucide-react";
+import { Link } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { SalesOrderPayment } from "@shared/schema";
@@ -23,9 +24,20 @@ const statusLabels: Record<string, string> = {
   pending: "In attesa",
   processing: "In elaborazione",
   completed: "Completato",
+  paid: "Pagato",
   failed: "Fallito",
   refunded: "Rimborsato",
   partially_refunded: "Rimborso parziale"
+};
+
+const orderTypeLabels: Record<string, string> = {
+  b2c: "B2C",
+  b2b: "B2B"
+};
+
+const orderTypeColors: Record<string, string> = {
+  b2c: "outline",
+  b2b: "secondary"
 };
 
 const statusColors: Record<string, string> = {
@@ -65,6 +77,7 @@ export default function AdminPayments() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [methodFilter, setMethodFilter] = useState<string>("all");
+  const [orderTypeFilter, setOrderTypeFilter] = useState<string>("all");
   const [selectedPayment, setSelectedPayment] = useState<SalesOrderPayment | null>(null);
   const [showDetailDialog, setShowDetailDialog] = useState(false);
   const [showRefundDialog, setShowRefundDialog] = useState(false);
@@ -72,11 +85,12 @@ export default function AdminPayments() {
   const [refundReason, setRefundReason] = useState("");
   
   const { data: payments, isLoading } = useQuery<SalesOrderPayment[]>({
-    queryKey: ['/api/admin/payments', { status: statusFilter, method: methodFilter }],
+    queryKey: ['/api/admin/payments', { status: statusFilter, method: methodFilter, orderType: orderTypeFilter }],
     queryFn: async () => {
       const params = new URLSearchParams();
       if (statusFilter && statusFilter !== "all") params.set('status', statusFilter);
       if (methodFilter && methodFilter !== "all") params.set('method', methodFilter);
+      if (orderTypeFilter && orderTypeFilter !== "all") params.set('orderType', orderTypeFilter);
       const res = await fetch(`/api/payments?${params}`, { credentials: 'include' });
       if (!res.ok) throw new Error('Errore nel caricamento pagamenti');
       return res.json();
@@ -113,9 +127,19 @@ export default function AdminPayments() {
   };
   
   const filteredPayments = payments?.filter(payment => {
+    const paymentAny = payment as any;
+    const orderType = paymentAny.orderType || 'b2c';
+    
+    if (orderTypeFilter && orderTypeFilter !== "all" && orderType !== orderTypeFilter) {
+      return false;
+    }
+    
     if (search) {
       const searchLower = search.toLowerCase();
-      if (!payment.transactionId?.toLowerCase().includes(searchLower)) {
+      const matchesTransaction = payment.transactionId?.toLowerCase().includes(searchLower);
+      const matchesOrderNumber = paymentAny.orderNumber?.toLowerCase().includes(searchLower);
+      const matchesReseller = paymentAny.resellerName?.toLowerCase().includes(searchLower);
+      if (!matchesTransaction && !matchesOrderNumber && !matchesReseller) {
         return false;
       }
     }
@@ -257,11 +281,11 @@ export default function AdminPayments() {
         </Card>
       </div>
       
-      <div className="flex flex-col gap-4 md:flex-row md:items-center">
-        <div className="relative flex-1">
+      <div className="flex flex-col gap-4 md:flex-row md:items-center flex-wrap">
+        <div className="relative flex-1 min-w-[200px]">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Cerca per ID transazione..."
+            placeholder="Cerca per n. ordine, reseller..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="pl-10"
@@ -269,8 +293,19 @@ export default function AdminPayments() {
           />
         </div>
         
+        <Select value={orderTypeFilter} onValueChange={setOrderTypeFilter}>
+          <SelectTrigger className="w-[140px]" data-testid="select-order-type-filter">
+            <SelectValue placeholder="Tutti i tipi" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Tutti i tipi</SelectItem>
+            <SelectItem value="b2c">B2C</SelectItem>
+            <SelectItem value="b2b">B2B</SelectItem>
+          </SelectContent>
+        </Select>
+        
         <Select value={methodFilter} onValueChange={setMethodFilter}>
-          <SelectTrigger className="w-[180px]" data-testid="select-method-filter">
+          <SelectTrigger className="w-[160px]" data-testid="select-method-filter">
             <CreditCard className="mr-2 h-4 w-4" />
             <SelectValue placeholder="Tutti i metodi" />
           </SelectTrigger>
@@ -283,7 +318,7 @@ export default function AdminPayments() {
         </Select>
         
         <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-[180px]" data-testid="select-status-filter">
+          <SelectTrigger className="w-[160px]" data-testid="select-status-filter">
             <SelectValue placeholder="Tutti gli stati" />
           </SelectTrigger>
           <SelectContent>
@@ -306,7 +341,9 @@ export default function AdminPayments() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>ID Transazione</TableHead>
+                  <TableHead>Tipo</TableHead>
+                  <TableHead>N. Ordine</TableHead>
+                  <TableHead>Reseller</TableHead>
                   <TableHead>Data</TableHead>
                   <TableHead>Metodo</TableHead>
                   <TableHead>Importo</TableHead>
@@ -317,12 +354,31 @@ export default function AdminPayments() {
               <TableBody>
                 {filteredPayments.map((payment) => {
                   const MethodIcon = methodIcons[payment.method] || CreditCard;
+                  const paymentAny = payment as any;
+                  const orderType = paymentAny.orderType || 'b2c';
                   return (
                     <TableRow key={payment.id} data-testid={`row-payment-${payment.id}`}>
-                      <TableCell className="font-mono text-sm" data-testid={`text-transaction-${payment.id}`}>
-                        {payment.transactionId || payment.id.slice(0, 12)}
+                      <TableCell>
+                        <Badge variant={orderTypeColors[orderType] as any || "secondary"}>
+                          {orderTypeLabels[orderType] || orderType.toUpperCase()}
+                        </Badge>
                       </TableCell>
-                      <TableCell>{formatDate(payment.createdAt)}</TableCell>
+                      <TableCell className="font-mono text-sm" data-testid={`text-order-number-${payment.id}`}>
+                        {orderType === 'b2b' ? (
+                          <Link href={`/admin/b2b-orders?order=${payment.orderId}`}>
+                            <span className="flex items-center gap-1 text-primary hover:underline cursor-pointer">
+                              {paymentAny.orderNumber || payment.orderId?.slice(0, 8) || '-'}
+                              <ExternalLink className="h-3 w-3" />
+                            </span>
+                          </Link>
+                        ) : (
+                          paymentAny.orderNumber || payment.orderId?.slice(0, 8) || '-'
+                        )}
+                      </TableCell>
+                      <TableCell data-testid={`text-reseller-${payment.id}`}>
+                        {paymentAny.resellerName || (orderType === 'b2b' ? 'N/A' : '-')}
+                      </TableCell>
+                      <TableCell>{formatDate(payment.paidAt || payment.createdAt)}</TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
                           <MethodIcon className="h-4 w-4" />
@@ -347,7 +403,7 @@ export default function AdminPayments() {
                           >
                             Dettagli
                           </Button>
-                          {payment.status === 'completed' && (
+                          {(payment.status === 'completed' || payment.status === 'paid') && orderType === 'b2c' && (
                             <Button
                               variant="outline"
                               size="sm"
@@ -377,9 +433,24 @@ export default function AdminPayments() {
               {selectedPayment?.transactionId || selectedPayment?.id}
             </DialogDescription>
           </DialogHeader>
-          {selectedPayment && (
+          {selectedPayment && (() => {
+            const paymentAny = selectedPayment as any;
+            const orderType = paymentAny.orderType || 'b2c';
+            return (
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-muted-foreground">Tipo Ordine</Label>
+                  <div className="mt-1">
+                    <Badge variant={orderTypeColors[orderType] as any}>
+                      {orderTypeLabels[orderType] || orderType.toUpperCase()}
+                    </Badge>
+                  </div>
+                </div>
+                <div>
+                  <Label className="text-muted-foreground">N. Ordine</Label>
+                  <p className="font-mono">{paymentAny.orderNumber || selectedPayment.orderId?.slice(0, 8) || '-'}</p>
+                </div>
                 <div>
                   <Label className="text-muted-foreground">Importo</Label>
                   <p className="text-lg font-semibold">{formatPrice(selectedPayment.amount)}</p>
@@ -398,11 +469,30 @@ export default function AdminPayments() {
                 </div>
                 <div>
                   <Label className="text-muted-foreground">Data</Label>
-                  <p>{formatDate(selectedPayment.createdAt)}</p>
+                  <p>{formatDate(selectedPayment.paidAt || selectedPayment.createdAt)}</p>
                 </div>
+                {orderType === 'b2b' && (
+                  <>
+                    <div>
+                      <Label className="text-muted-foreground">Reseller</Label>
+                      <p>{paymentAny.resellerName || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <Label className="text-muted-foreground">Riferimento Bonifico</Label>
+                      <p>{selectedPayment.gatewayReference || '-'}</p>
+                    </div>
+                  </>
+                )}
               </div>
               
-              {selectedPayment.status === 'pending' && (
+              {selectedPayment.notes && (
+                <div>
+                  <Label className="text-muted-foreground">Note</Label>
+                  <p className="text-sm">{selectedPayment.notes}</p>
+                </div>
+              )}
+              
+              {selectedPayment.status === 'pending' && orderType === 'b2c' && (
                 <div className="space-y-2">
                   <Label>Aggiorna stato</Label>
                   <div className="flex gap-2">
@@ -426,7 +516,8 @@ export default function AdminPayments() {
                 </div>
               )}
             </div>
-          )}
+            );
+          })()}
         </DialogContent>
       </Dialog>
       

@@ -18398,11 +18398,13 @@ export function registerRoutes(app: Express): Server {
         return res.status(403).json({ error: "Accesso negato" });
       }
       
-      const { status, method } = req.query;
+      const { status, method, orderType } = req.query;
       const payments = await storage.listAllPayments({
         status: status as string | undefined,
-        method: method as string | undefined
+        method: method as string | undefined,
+        orderType: orderType && orderType !== 'all' ? orderType as string : undefined
       });
+      
       res.json(payments);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
@@ -19537,6 +19539,68 @@ export function registerRoutes(app: Express): Server {
       });
       
       res.json(updated);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Admin: Confirm B2B order payment (bank transfer received)
+  const confirmB2BPaymentSchema = z.object({
+    transactionReference: z.string().optional(),
+    notes: z.string().optional()
+  });
+  
+  app.post("/api/admin/b2b-orders/:id/confirm-payment", requireRole("admin"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      
+      // Validate request body
+      const parseResult = confirmB2BPaymentSchema.safeParse(req.body);
+      if (!parseResult.success) {
+        return res.status(400).json({ error: "Dati non validi", details: parseResult.error.errors });
+      }
+      const { transactionReference, notes } = parseResult.data;
+      
+      const order = await storage.getResellerPurchaseOrder(req.params.id);
+      if (!order) return res.status(404).json({ error: "Ordine non trovato" });
+      
+      // Double-check: if paymentConfirmedAt is already set, reject (idempotency guard)
+      if (order.paymentConfirmedAt) {
+        return res.status(400).json({ error: "Pagamento già confermato" });
+      }
+      
+      // Check for existing payment record to prevent duplicates (efficient DB query)
+      const existingB2BPayment = await storage.getPaymentByOrderId(order.id, 'b2b');
+      if (existingB2BPayment) {
+        return res.status(400).json({ error: "Esiste già un pagamento per questo ordine B2B" });
+      }
+      
+      // Get reseller info
+      const reseller = await storage.getUser(order.resellerId);
+      
+      // Create payment record using storage interface
+      const payment = await storage.createSalesOrderPayment({
+        orderId: order.id,
+        orderType: 'b2b',
+        orderNumber: order.orderNumber,
+        method: (order.paymentMethod as any) || 'bank_transfer',
+        status: 'completed',
+        amount: order.totalAmount,
+        currency: 'EUR',
+        paidAt: new Date(),
+        gatewayReference: transactionReference || null,
+        notes: notes || `Bonifico ricevuto per ordine B2B ${order.orderNumber}`,
+        confirmedBy: req.user.id,
+        resellerId: order.resellerId,
+        resellerName: reseller?.fullName || reseller?.ragioneSociale || 'N/A',
+      });
+      
+      // Update order payment confirmation
+      const updated = await storage.updateResellerPurchaseOrder(order.id, {
+        paymentConfirmedAt: new Date(),
+      });
+      
+      res.json({ ...updated, paymentId: payment.id });
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }
