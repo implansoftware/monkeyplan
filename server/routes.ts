@@ -7433,11 +7433,11 @@ export function registerRoutes(app: Express): Server {
         if (!supplier) {
           console.warn(`Supplier ${supplierId} not found, skipping product-supplier link`);
         } else {
-          await storage.linkProductToSupplier({
+          await storage.createProductSupplier({
             productId: product.id,
             supplierId: supplierId,
             supplierCode: supplierCodeParam || null,
-            costPrice: productCostPrice || null,
+            purchasePrice: productCostPrice || null,
             isPreferred: true,
           });
         }
