@@ -798,7 +798,7 @@ export interface IStorage {
   }>>;
   
   // B2B Returns (Resi ordini B2B)
-  listB2bReturns(filters?: { resellerId?: string; status?: string }): Promise<B2bReturn[]>;
+  listB2bReturns(filters?: { resellerId?: string; status?: string; orderId?: string }): Promise<B2bReturn[]>;
   getB2bReturn(id: string): Promise<B2bReturn | undefined>;
   getB2bReturnByNumber(returnNumber: string): Promise<B2bReturn | undefined>;
   createB2bReturn(data: InsertB2bReturn): Promise<B2bReturn>;
@@ -6823,10 +6823,11 @@ export class DatabaseStorage implements IStorage {
   // B2B RETURNS - Resi ordini B2B
   // ==========================================
 
-  async listB2bReturns(filters?: { resellerId?: string; status?: string }): Promise<B2bReturn[]> {
+  async listB2bReturns(filters?: { resellerId?: string; status?: string; orderId?: string }): Promise<B2bReturn[]> {
     const conditions = [];
     if (filters?.resellerId) conditions.push(eq(b2bReturns.resellerId, filters.resellerId));
     if (filters?.status) conditions.push(eq(b2bReturns.status, filters.status as any));
+    if (filters?.orderId) conditions.push(eq(b2bReturns.orderId, filters.orderId));
     
     if (conditions.length === 0) {
       return await db.select().from(b2bReturns).orderBy(desc(b2bReturns.createdAt));

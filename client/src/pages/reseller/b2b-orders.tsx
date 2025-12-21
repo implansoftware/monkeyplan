@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { ResellerPurchaseOrder, ResellerPurchaseOrderItem, Product } from "@shared/schema";
+import { ResellerPurchaseOrder, ResellerPurchaseOrderItem, Product, B2bReturn } from "@shared/schema";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -24,7 +24,20 @@ import { useLocation } from "wouter";
 
 interface B2BOrderWithItems extends ResellerPurchaseOrder {
   items: (ResellerPurchaseOrderItem & { product?: Product })[];
+  returns?: B2bReturn[];
 }
+
+const returnStatusLabels: Record<string, string> = {
+  requested: "Richiesto",
+  approved: "Approvato",
+  rejected: "Rifiutato",
+  awaiting_shipment: "In attesa spedizione",
+  shipped: "Spedito",
+  received: "Ricevuto",
+  inspecting: "In ispezione",
+  completed: "Completato",
+  cancelled: "Annullato",
+};
 
 function formatPrice(cents: number): string {
   return new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR' }).format(cents / 100);
@@ -162,6 +175,10 @@ export default function ResellerB2BOrders() {
   const OrderCard = ({ order }: { order: B2BOrderWithItems }) => {
     const status = statusConfig[order.status] || statusConfig.pending;
     const StatusIcon = status.icon;
+    const hasActiveReturn = order.returns?.some(r => 
+      ['requested', 'approved', 'awaiting_shipment', 'shipped', 'inspecting'].includes(r.status)
+    );
+    const hasCompletedReturn = order.returns?.some(r => r.status === 'completed');
     
     return (
       <Card className="hover-elevate cursor-pointer" onClick={() => openDetail(order)} data-testid={`card-order-${order.id}`}>
@@ -173,10 +190,24 @@ export default function ResellerB2BOrders() {
                 {order.createdAt && format(new Date(order.createdAt), "d MMMM yyyy", { locale: it })}
               </CardDescription>
             </div>
-            <Badge variant={status.variant} className="flex items-center gap-1">
-              <StatusIcon className="h-3 w-3" />
-              {status.label}
-            </Badge>
+            <div className="flex flex-col gap-1 items-end">
+              <Badge variant={status.variant} className="flex items-center gap-1">
+                <StatusIcon className="h-3 w-3" />
+                {status.label}
+              </Badge>
+              {hasActiveReturn && (
+                <Badge variant="outline" className="flex items-center gap-1 text-orange-600 border-orange-300">
+                  <RotateCcw className="h-3 w-3" />
+                  Reso in corso
+                </Badge>
+              )}
+              {hasCompletedReturn && !hasActiveReturn && (
+                <Badge variant="outline" className="flex items-center gap-1 text-green-600 border-green-300">
+                  <CheckCircle className="h-3 w-3" />
+                  Reso completato
+                </Badge>
+              )}
+            </div>
           </div>
         </CardHeader>
         <CardContent className="space-y-2">
@@ -390,6 +421,38 @@ export default function ResellerB2BOrders() {
                 </div>
               )}
 
+              {/* Sezione Resi Collegati */}
+              {selectedOrder.returns && selectedOrder.returns.length > 0 && (
+                <div className="bg-orange-50 dark:bg-orange-950/30 p-3 rounded-lg space-y-2">
+                  <p className="text-sm font-medium flex items-center gap-2">
+                    <RotateCcw className="h-4 w-4" />
+                    Resi per questo ordine
+                  </p>
+                  {selectedOrder.returns.map((ret) => (
+                    <div 
+                      key={ret.id} 
+                      className="flex items-center justify-between bg-background/50 p-2 rounded cursor-pointer hover:bg-background/80"
+                      onClick={() => navigate(`/reseller/b2b-returns`)}
+                      data-testid={`return-link-${ret.id}`}
+                    >
+                      <div>
+                        <span className="font-medium text-sm">{ret.returnNumber}</span>
+                        <span className="text-xs text-muted-foreground ml-2">
+                          {ret.requestedAt && format(new Date(ret.requestedAt), "d MMM yyyy", { locale: it })}
+                        </span>
+                      </div>
+                      <Badge variant={
+                        ret.status === 'completed' ? 'default' :
+                        ret.status === 'rejected' || ret.status === 'cancelled' ? 'destructive' :
+                        'secondary'
+                      } className="text-xs">
+                        {returnStatusLabels[ret.status] || ret.status}
+                      </Badge>
+                    </div>
+                  ))}
+                </div>
+              )}
+
               <DialogFooter className="gap-2">
                 <Button variant="outline" onClick={() => setDetailOpen(false)}>
                   Chiudi
@@ -404,7 +467,8 @@ export default function ResellerB2BOrders() {
                     {confirmReceiptMutation.isPending ? "Conferma in corso..." : "Conferma Ricezione"}
                   </Button>
                 )}
-                {selectedOrder.status === 'received' && (
+                {selectedOrder.status === 'received' && 
+                 !selectedOrder.returns?.some(r => ['requested', 'approved', 'awaiting_shipment', 'shipped', 'inspecting'].includes(r.status)) && (
                   <Button 
                     variant="destructive"
                     onClick={openReturnDialog}

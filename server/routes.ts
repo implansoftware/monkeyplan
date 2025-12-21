@@ -19302,14 +19302,16 @@ export function registerRoutes(app: Express): Server {
       if (!req.user) return res.status(401).json({ error: "Non autenticato" });
       const orders = await storage.listResellerPurchaseOrders({ resellerId: req.user.id });
       
-      // Enrich orders with items and product info
+      // Enrich orders with items, product info, and returns
       const enrichedOrders = await Promise.all(orders.map(async (order) => {
         const items = await storage.listResellerPurchaseOrderItems(order.id);
         const enrichedItems = await Promise.all(items.map(async (item) => {
           const product = await storage.getProduct(item.productId);
           return { ...item, product };
         }));
-        return { ...order, items: enrichedItems };
+        // Get returns associated with this order
+        const returns = await storage.listB2bReturns({ orderId: order.id });
+        return { ...order, items: enrichedItems, returns };
       }));
       
       res.json(enrichedOrders);
@@ -19334,7 +19336,10 @@ export function registerRoutes(app: Express): Server {
         return { ...item, product };
       }));
       
-      res.json({ ...order, items: enrichedItems });
+      // Get returns associated with this order
+      const returns = await storage.listB2bReturns({ orderId: order.id });
+      
+      res.json({ ...order, items: enrichedItems, returns });
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }
