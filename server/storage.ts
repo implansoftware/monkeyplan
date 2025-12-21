@@ -6752,8 +6752,8 @@ export class DatabaseStorage implements IStorage {
     b2bPrice: number;
     minimumOrderQuantity: number;
   }>> {
-    // Get admin warehouse
-    const adminWarehouse = await this.getWarehouseByOwner('admin', 'admin');
+    // Get admin warehouse (owner_id is 'system' for the central admin warehouse)
+    const adminWarehouse = await this.getWarehouseByOwner('admin', 'system');
     if (!adminWarehouse) return [];
     
     // Get admin warehouse stock
