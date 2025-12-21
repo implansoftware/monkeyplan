@@ -17897,9 +17897,9 @@ export function registerRoutes(app: Express): Server {
       
       // Get specs based on product type
       let specs = null;
-      if (product.type === 'dispositivo') {
+      if (product.productType === 'dispositivo') {
         specs = await storage.getSmartphoneSpecs(product.id);
-      } else if (product.type === 'accessorio') {
+      } else if (product.productType === 'accessorio') {
         specs = await storage.getAccessorySpecs(product.id);
       }
       
@@ -17944,7 +17944,7 @@ export function registerRoutes(app: Express): Server {
           brand: product.brand,
           imageUrl: product.imageUrl,
           unitPrice: product.unitPrice,
-          type: product.type,
+          productType: product.productType,
         },
         specs,
         sellers: finalSellers,
@@ -17965,9 +17965,9 @@ export function registerRoutes(app: Express): Server {
       if (product.resellerId !== req.params.resellerId) return res.status(404).json({ error: "Prodotto non trovato" });
       
       let specs = null;
-      if (product.type === 'dispositivo') {
+      if (product.productType === 'dispositivo') {
         specs = await storage.getSmartphoneSpecs(product.id);
-      } else if (product.type === 'accessorio') {
+      } else if (product.productType === 'accessorio') {
         specs = await storage.getAccessorySpecs(product.id);
       }
       

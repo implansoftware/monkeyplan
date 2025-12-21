@@ -37,7 +37,7 @@ interface ProductDetail {
     brand: string | null;
     imageUrl: string | null;
     unitPrice: number;
-    type: string;
+    productType: string;
   };
   specs: any;
   sellers: ProductSeller[];
