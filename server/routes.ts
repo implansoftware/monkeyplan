@@ -19496,24 +19496,24 @@ export function registerRoutes(app: Express): Server {
       
       // Execute stock transfer
       for (const item of items) {
-        // Decrement admin warehouse stock
+        // Decrement admin warehouse stock (trasferimento_out = uscita verso reseller)
         await storage.updateWarehouseStockQuantity(adminWarehouse.id, item.productId, -item.quantity);
         await storage.createWarehouseMovement({
           warehouseId: adminWarehouse.id,
           productId: item.productId,
-          movementType: 'vendita_b2b',
+          movementType: 'trasferimento_out',
           quantity: item.quantity,
           referenceType: 'ordine_b2b',
           referenceId: order.id,
           createdBy: req.user.id,
         });
         
-        // Increment reseller warehouse stock
+        // Increment reseller warehouse stock (trasferimento_in = ingresso da admin)
         await storage.updateWarehouseStockQuantity(resellerWarehouse.id, item.productId, item.quantity);
         await storage.createWarehouseMovement({
           warehouseId: resellerWarehouse.id,
           productId: item.productId,
-          movementType: 'acquisto_b2b',
+          movementType: 'trasferimento_in',
           quantity: item.quantity,
           referenceType: 'ordine_b2b',
           referenceId: order.id,
