@@ -11,12 +11,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Smartphone, Search, Plus, Pencil, Trash2, Battery, HardDrive, Wifi, Loader2, ImagePlus, X, Image } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Smartphone, Search, Plus, Pencil, Trash2, Battery, HardDrive, Wifi, Loader2, ImagePlus, X, Image, ShoppingCart, Settings, Eye } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { useUser } from "@/hooks/use-user";
 import { useRef } from "react";
-import type { SmartphoneSpecs, Product } from "@shared/schema";
+import type { SmartphoneSpecs, Product, ResellerProduct } from "@shared/schema";
 
 type SmartphoneWithSpecs = Product & {
   specs: SmartphoneSpecs | null;
@@ -71,6 +73,23 @@ export default function SmartphoneCatalog() {
   const [uploadingImage, setUploadingImage] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
+  const { user } = useUser();
+  
+  // Dialog per impostazioni venditore (prodotti assegnati)
+  const [settingsDialogOpen, setSettingsDialogOpen] = useState(false);
+  const [settingsProduct, setSettingsProduct] = useState<SmartphoneWithSpecs | null>(null);
+  const [settingsData, setSettingsData] = useState({ customPriceCents: 0, isPublished: false });
+  
+  // Dialog per acquisto da admin
+  const [buyDialogOpen, setBuyDialogOpen] = useState(false);
+  const [buyProduct, setBuyProduct] = useState<SmartphoneWithSpecs | null>(null);
+  const [buyQuantity, setBuyQuantity] = useState(1);
+  
+  // Carrello B2B (in localStorage per persistenza)
+  const [cart, setCart] = useState<Array<{ productId: string; quantity: number; name: string; b2bPrice: number }>>(() => {
+    const saved = localStorage.getItem('b2b-cart');
+    return saved ? JSON.parse(saved) : [];
+  });
 
   const [formData, setFormData] = useState({
     name: "",
@@ -97,6 +116,78 @@ export default function SmartphoneCatalog() {
   const { data: smartphones = [], isLoading } = useQuery<SmartphoneWithSpecs[]>({
     queryKey: ["/api/smartphones"],
   });
+
+  // Query per le assegnazioni prodotti del reseller
+  const { data: assignments = [] } = useQuery<ResellerProduct[]>({
+    queryKey: ["/api/reseller/products"],
+    select: (data: any[]) => data.filter((a: any) => a.productId),
+  });
+
+  // Mappa per accesso rapido alle assegnazioni
+  const assignmentMap = new Map(assignments.map(a => [a.productId, a]));
+
+  // Funzione per determinare se un prodotto è proprio o assegnato
+  const isOwnProduct = (product: SmartphoneWithSpecs) => {
+    return product.createdBy === user?.id;
+  };
+
+  // Mutation per aggiornare impostazioni venditore
+  const updateSettingsMutation = useMutation({
+    mutationFn: async ({ productId, settings }: { productId: string; settings: { customPriceCents?: number; isPublished?: boolean } }) => {
+      return apiRequest("PATCH", `/api/reseller/products/${productId}/settings`, settings);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/reseller/products"] });
+      setSettingsDialogOpen(false);
+      setSettingsProduct(null);
+      toast({ title: "Impostazioni salvate", description: "Le impostazioni di vendita sono state aggiornate." });
+    },
+    onError: (error: any) => {
+      toast({ title: "Errore", description: error.message, variant: "destructive" });
+    },
+  });
+
+  // Salva carrello in localStorage
+  const updateCart = (newCart: typeof cart) => {
+    setCart(newCart);
+    localStorage.setItem('b2b-cart', JSON.stringify(newCart));
+  };
+
+  // Aggiungi al carrello B2B con validazione quantità
+  const addToCart = (product: SmartphoneWithSpecs, quantity: number, b2bPrice: number) => {
+    const assignment = assignmentMap.get(product.id);
+    const minQty = assignment?.minimumOrderQuantity || 1;
+    
+    // Validazione quantità
+    if (quantity < 1) {
+      toast({ title: "Errore", description: "La quantità deve essere almeno 1", variant: "destructive" });
+      return;
+    }
+    if (quantity < minQty) {
+      toast({ title: "Errore", description: `La quantità minima per questo prodotto è ${minQty}`, variant: "destructive" });
+      return;
+    }
+    
+    const existing = cart.find(item => item.productId === product.id);
+    if (existing) {
+      const newQty = existing.quantity + quantity;
+      if (newQty < minQty) {
+        toast({ title: "Errore", description: `La quantità minima per questo prodotto è ${minQty}`, variant: "destructive" });
+        return;
+      }
+      updateCart(cart.map(item => 
+        item.productId === product.id 
+          ? { ...item, quantity: newQty }
+          : item
+      ));
+    } else {
+      updateCart([...cart, { productId: product.id, quantity, name: product.name, b2bPrice }]);
+    }
+    toast({ title: "Aggiunto al carrello", description: `${quantity}x ${product.name}` });
+    setBuyDialogOpen(false);
+    setBuyProduct(null);
+    setBuyQuantity(1);
+  };
 
   const createMutation = useMutation({
     mutationFn: async (data: { product: any; specs: any; imageFile?: File | null }) => {
@@ -405,12 +496,12 @@ export default function SmartphoneCatalog() {
                   <TableRow>
                     <TableHead className="w-16">Foto</TableHead>
                     <TableHead>Dispositivo</TableHead>
+                    <TableHead>Tipo</TableHead>
                     <TableHead>Storage</TableHead>
                     <TableHead>Grado</TableHead>
-                    <TableHead>Stato Rete</TableHead>
                     <TableHead>Batteria</TableHead>
                     <TableHead className="text-right">Prezzo</TableHead>
-                    <TableHead className="w-24">Azioni</TableHead>
+                    <TableHead className="w-32">Azioni</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -439,6 +530,21 @@ export default function SmartphoneCatalog() {
                         </div>
                       </TableCell>
                       <TableCell>
+                        {isOwnProduct(smartphone) ? (
+                          <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                            Proprio
+                          </Badge>
+                        ) : assignmentMap.has(smartphone.id) ? (
+                          <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200">
+                            Assegnato
+                          </Badge>
+                        ) : (
+                          <Badge variant="outline" className="text-muted-foreground">
+                            Admin
+                          </Badge>
+                        )}
+                      </TableCell>
+                      <TableCell>
                         <div className="flex items-center gap-1">
                           <HardDrive className="h-4 w-4 text-muted-foreground" />
                           {smartphone.specs?.storage || "-"}
@@ -452,9 +558,6 @@ export default function SmartphoneCatalog() {
                         )}
                       </TableCell>
                       <TableCell>
-                        {getNetworkLockBadge(smartphone.specs?.networkLock)}
-                      </TableCell>
-                      <TableCell>
                         {smartphone.specs?.batteryHealth && (
                           <div className="flex items-center gap-1">
                             <Battery className="h-4 w-4 text-muted-foreground" />
@@ -463,26 +566,82 @@ export default function SmartphoneCatalog() {
                         )}
                       </TableCell>
                       <TableCell className="text-right font-medium">
-                        {(smartphone.unitPrice / 100).toFixed(2)}
+                        {(() => {
+                          const assignment = assignmentMap.get(smartphone.id);
+                          if (assignment?.customPriceCents) {
+                            return `€${(assignment.customPriceCents / 100).toFixed(2)}`;
+                          }
+                          return `€${(smartphone.unitPrice / 100).toFixed(2)}`;
+                        })()}
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-1">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => openEditDialog(smartphone)}
-                            data-testid={`button-edit-smartphone-${smartphone.id}`}
-                          >
-                            <Pencil className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => { setSmartphoneToDelete(smartphone); setDeleteDialogOpen(true); }}
-                            data-testid={`button-delete-smartphone-${smartphone.id}`}
-                          >
-                            <Trash2 className="h-4 w-4 text-destructive" />
-                          </Button>
+                          {isOwnProduct(smartphone) ? (
+                            <>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => openEditDialog(smartphone)}
+                                title="Modifica"
+                                data-testid={`button-edit-smartphone-${smartphone.id}`}
+                              >
+                                <Pencil className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => { setSmartphoneToDelete(smartphone); setDeleteDialogOpen(true); }}
+                                title="Elimina"
+                                data-testid={`button-delete-smartphone-${smartphone.id}`}
+                              >
+                                <Trash2 className="h-4 w-4 text-destructive" />
+                              </Button>
+                            </>
+                          ) : assignmentMap.has(smartphone.id) ? (
+                            <>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => {
+                                  const assignment = assignmentMap.get(smartphone.id);
+                                  setSettingsProduct(smartphone);
+                                  setSettingsData({
+                                    customPriceCents: assignment?.customPriceCents || smartphone.unitPrice,
+                                    isPublished: assignment?.isPublished || false,
+                                  });
+                                  setSettingsDialogOpen(true);
+                                }}
+                                title="Impostazioni vendita"
+                                data-testid={`button-settings-smartphone-${smartphone.id}`}
+                              >
+                                <Settings className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => {
+                                  const assignment = assignmentMap.get(smartphone.id);
+                                  setBuyProduct(smartphone);
+                                  setBuyQuantity(assignment?.minimumOrderQuantity || 1);
+                                  setBuyDialogOpen(true);
+                                }}
+                                title="Acquista da Admin"
+                                data-testid={`button-buy-smartphone-${smartphone.id}`}
+                              >
+                                <ShoppingCart className="h-4 w-4 text-green-600" />
+                              </Button>
+                            </>
+                          ) : (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => openEditDialog(smartphone)}
+                              title="Visualizza"
+                              data-testid={`button-view-smartphone-${smartphone.id}`}
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                          )}
                         </div>
                       </TableCell>
                     </TableRow>
@@ -842,6 +1001,155 @@ export default function SmartphoneCatalog() {
             >
               {deleteMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Elimina
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog Impostazioni Venditore */}
+      <Dialog open={settingsDialogOpen} onOpenChange={setSettingsDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Impostazioni Vendita</DialogTitle>
+            <DialogDescription>
+              Configura il prezzo e la visibilità di "{settingsProduct?.name}" nel tuo shop.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>Prezzo originale (Admin)</Label>
+              <div className="text-lg font-medium text-muted-foreground">
+                €{settingsProduct ? (settingsProduct.unitPrice / 100).toFixed(2) : '0.00'}
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="customPrice">Tuo prezzo di vendita (€)</Label>
+              <Input
+                id="customPrice"
+                type="number"
+                step="0.01"
+                min="0"
+                value={(settingsData.customPriceCents / 100).toFixed(2)}
+                onChange={(e) => setSettingsData({ ...settingsData, customPriceCents: Math.round(parseFloat(e.target.value || '0') * 100) })}
+                data-testid="input-custom-price"
+              />
+            </div>
+            <div className="flex items-center justify-between">
+              <div>
+                <Label htmlFor="isPublished">Pubblica nello Shop</Label>
+                <p className="text-sm text-muted-foreground">Rendi visibile questo prodotto ai tuoi clienti</p>
+              </div>
+              <Switch
+                id="isPublished"
+                checked={settingsData.isPublished}
+                onCheckedChange={(checked) => setSettingsData({ ...settingsData, isPublished: checked })}
+                data-testid="switch-is-published"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setSettingsDialogOpen(false)}>
+              Annulla
+            </Button>
+            <Button
+              onClick={() => settingsProduct && updateSettingsMutation.mutate({
+                productId: settingsProduct.id,
+                settings: settingsData
+              })}
+              disabled={updateSettingsMutation.isPending}
+              data-testid="button-save-settings"
+            >
+              {updateSettingsMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Salva
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog Acquista da Admin */}
+      <Dialog open={buyDialogOpen} onOpenChange={setBuyDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Acquista da Admin</DialogTitle>
+            <DialogDescription>
+              Aggiungi "{buyProduct?.name}" al carrello B2B.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="flex items-center gap-4">
+              {buyProduct?.imageUrl ? (
+                <img src={buyProduct.imageUrl} alt={buyProduct.name} className="h-16 w-16 object-cover rounded-md" />
+              ) : (
+                <div className="h-16 w-16 bg-muted rounded-md flex items-center justify-center">
+                  <Smartphone className="h-8 w-8 text-muted-foreground" />
+                </div>
+              )}
+              <div>
+                <div className="font-medium">{buyProduct?.name}</div>
+                <div className="text-sm text-muted-foreground">{buyProduct?.brand}</div>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Prezzo B2B</Label>
+              <div className="text-xl font-bold text-green-600">
+                €{(() => {
+                  if (!buyProduct) return '0.00';
+                  const assignment = assignmentMap.get(buyProduct.id);
+                  const b2bPrice = assignment?.b2bPriceCents || buyProduct.costPrice || Math.round(buyProduct.unitPrice * 0.7);
+                  return (b2bPrice / 100).toFixed(2);
+                })()}
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="buyQuantity">Quantità</Label>
+              <Input
+                id="buyQuantity"
+                type="number"
+                min={assignmentMap.get(buyProduct?.id || '')?.minimumOrderQuantity || 1}
+                value={buyQuantity}
+                onChange={(e) => setBuyQuantity(parseInt(e.target.value) || 1)}
+                data-testid="input-buy-quantity"
+              />
+              {assignmentMap.get(buyProduct?.id || '')?.minimumOrderQuantity && (
+                <p className="text-xs text-muted-foreground">
+                  Quantità minima: {assignmentMap.get(buyProduct?.id || '')?.minimumOrderQuantity}
+                </p>
+              )}
+            </div>
+            <div className="bg-muted p-3 rounded-lg">
+              <div className="flex justify-between">
+                <span>Totale:</span>
+                <span className="font-bold">
+                  €{(() => {
+                    if (!buyProduct) return '0.00';
+                    const assignment = assignmentMap.get(buyProduct.id);
+                    const b2bPrice = assignment?.b2bPriceCents || buyProduct.costPrice || Math.round(buyProduct.unitPrice * 0.7);
+                    return ((b2bPrice * buyQuantity) / 100).toFixed(2);
+                  })()}
+                </span>
+              </div>
+            </div>
+            {cart.length > 0 && (
+              <div className="text-sm text-muted-foreground">
+                Hai {cart.reduce((sum, item) => sum + item.quantity, 0)} articoli nel carrello B2B
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setBuyDialogOpen(false)}>
+              Annulla
+            </Button>
+            <Button
+              onClick={() => {
+                if (!buyProduct) return;
+                const assignment = assignmentMap.get(buyProduct.id);
+                const b2bPrice = assignment?.b2bPriceCents || buyProduct.costPrice || Math.round(buyProduct.unitPrice * 0.7);
+                addToCart(buyProduct, buyQuantity, b2bPrice);
+              }}
+              data-testid="button-add-to-cart"
+            >
+              <ShoppingCart className="mr-2 h-4 w-4" />
+              Aggiungi al Carrello
             </Button>
           </DialogFooter>
         </DialogContent>

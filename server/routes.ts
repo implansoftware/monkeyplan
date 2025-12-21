@@ -4670,6 +4670,50 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Update reseller product settings (price, publish status) for assigned products
+  app.patch("/api/reseller/products/:productId/settings", requireAuth, requireRole("reseller", "reseller_collaborator"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const context = getEffectiveContext(req);
+      if (!context.resellerId) return res.status(400).send("Rivenditore non trovato");
+      
+      // Verify product is assigned to this reseller
+      const assignment = await storage.getResellerProduct(req.params.productId, context.resellerId);
+      if (!assignment) {
+        return res.status(404).send("Prodotto non assegnato a questo rivenditore");
+      }
+      
+      // Check if reseller can override price
+      if (req.body.customPriceCents !== undefined && !assignment.canOverridePrice) {
+        return res.status(403).send("Non puoi modificare il prezzo di questo prodotto");
+      }
+      
+      // Check if reseller can unpublish
+      if (req.body.isPublished === false && !assignment.canUnpublish) {
+        return res.status(403).send("Non puoi rimuovere questo prodotto dallo shop");
+      }
+      
+      const updates: { customPriceCents?: number; isPublished?: boolean } = {};
+      if (req.body.customPriceCents !== undefined) {
+        updates.customPriceCents = req.body.customPriceCents;
+      }
+      if (req.body.isPublished !== undefined) {
+        updates.isPublished = req.body.isPublished;
+      }
+      
+      const updatedAssignment = await storage.updateResellerProductByProductAndReseller(
+        req.params.productId,
+        context.resellerId,
+        updates
+      );
+      
+      res.json(updatedAssignment);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
   // ========== RESELLER INVENTORY MANAGEMENT ==========
   
   // Reseller Products - Get all own products with stock in own centers
@@ -7814,7 +7858,7 @@ export function registerRoutes(app: Express): Server {
     }
   });
   
-  // Update smartphone (product and specs together)
+  // Update smartphone (product and specs together) - Admin or owner reseller only
   app.patch("/api/smartphones/:productId", requireAuth, requireRole("admin", "reseller", "reseller_collaborator"), async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
@@ -7822,21 +7866,16 @@ export function registerRoutes(app: Express): Server {
       const product = await storage.getProduct(req.params.productId);
       if (!product) return res.status(404).send("Product not found");
       
-      // Check ownership or assignment for reseller
+      // Resellers can only modify products they created, not assigned products
       if (req.user.role === 'reseller') {
-        const isOwner = product.createdBy === req.user.id;
-        const assignment = await storage.getResellerProduct(req.params.productId, req.user.id);
-        if (!isOwner && !assignment) {
-          return res.status(403).send("Access denied");
+        if (product.createdBy !== req.user.id) {
+          return res.status(403).send("Puoi modificare solo i prodotti che hai creato. Per i prodotti assegnati usa le impostazioni di vendita.");
         }
       }
       if (req.user.role === 'reseller_collaborator') {
         const resellerId = req.user.resellerId;
-        if (!resellerId) return res.status(403).send("Access denied");
-        const isOwner = product.createdBy === resellerId;
-        const assignment = await storage.getResellerProduct(req.params.productId, resellerId);
-        if (!isOwner && !assignment) {
-          return res.status(403).send("Access denied");
+        if (!resellerId || product.createdBy !== resellerId) {
+          return res.status(403).send("Puoi modificare solo i prodotti creati dal tuo rivenditore.");
         }
       }
       
@@ -7862,7 +7901,7 @@ export function registerRoutes(app: Express): Server {
     }
   });
   
-  // Update smartphone specs
+  // Update smartphone specs - Admin or owner reseller only
   app.patch("/api/smartphones/:productId/specs", requireAuth, requireRole("admin", "reseller", "reseller_collaborator"), async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
@@ -7870,21 +7909,16 @@ export function registerRoutes(app: Express): Server {
       const product = await storage.getProduct(req.params.productId);
       if (!product) return res.status(404).send("Product not found");
       
-      // Check ownership or assignment for reseller
+      // Resellers can only modify specs for products they created
       if (req.user.role === 'reseller') {
-        const isOwner = product.createdBy === req.user.id;
-        const assignment = await storage.getResellerProduct(req.params.productId, req.user.id);
-        if (!isOwner && !assignment) {
-          return res.status(403).send("Access denied");
+        if (product.createdBy !== req.user.id) {
+          return res.status(403).send("Puoi modificare solo le specifiche dei prodotti che hai creato.");
         }
       }
       if (req.user.role === 'reseller_collaborator') {
         const resellerId = req.user.resellerId;
-        if (!resellerId) return res.status(403).send("Access denied");
-        const isOwner = product.createdBy === resellerId;
-        const assignment = await storage.getResellerProduct(req.params.productId, resellerId);
-        if (!isOwner && !assignment) {
-          return res.status(403).send("Access denied");
+        if (!resellerId || product.createdBy !== resellerId) {
+          return res.status(403).send("Puoi modificare solo le specifiche dei prodotti creati dal tuo rivenditore.");
         }
       }
       
@@ -7895,7 +7929,7 @@ export function registerRoutes(app: Express): Server {
     }
   });
   
-  // Delete smartphone (deletes product and specs)
+  // Delete smartphone (deletes product and specs) - Admin or owner reseller only
   app.delete("/api/smartphones/:productId", requireAuth, requireRole("admin", "reseller", "reseller_collaborator"), async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
@@ -7903,12 +7937,17 @@ export function registerRoutes(app: Express): Server {
       const product = await storage.getProduct(req.params.productId);
       if (!product) return res.status(404).send("Product not found");
       
-      // Check ownership for reseller
-      if (req.user.role === 'reseller' && product.createdBy !== req.user.id) {
-        return res.status(403).send("Access denied");
+      // Resellers can only delete products they created
+      if (req.user.role === 'reseller') {
+        if (product.createdBy !== req.user.id) {
+          return res.status(403).send("Puoi eliminare solo i prodotti che hai creato.");
+        }
       }
-      if (req.user.role === 'reseller_collaborator' && product.createdBy !== req.user.resellerId) {
-        return res.status(403).send("Access denied");
+      if (req.user.role === 'reseller_collaborator') {
+        const resellerId = req.user.resellerId;
+        if (!resellerId || product.createdBy !== resellerId) {
+          return res.status(403).send("Puoi eliminare solo i prodotti creati dal tuo rivenditore.");
+        }
       }
       
       // Delete specs first, then product

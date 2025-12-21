@@ -159,6 +159,7 @@ export interface IStorage {
   assignProductToReseller(data: InsertResellerProduct): Promise<ResellerProduct>;
   assignProductToResellers(productId: string, resellerIds: string[], options?: { inheritedFrom?: string; createdBy?: string }): Promise<ResellerProduct[]>;
   updateResellerProduct(id: string, updates: Partial<Pick<ResellerProduct, 'isPublished' | 'customPriceCents' | 'canOverridePrice' | 'canUnpublish'>>): Promise<ResellerProduct>;
+  updateResellerProductByProductAndReseller(productId: string, resellerId: string, updates: Partial<Pick<ResellerProduct, 'isPublished' | 'customPriceCents'>>): Promise<ResellerProduct>;
   removeProductFromReseller(productId: string, resellerId: string): Promise<void>;
   getShopProductsForSeller(sellerId: string): Promise<Array<Product & { shopPrice: number; sellerName: string }>>;
   getMarketplaceProducts(): Promise<Array<Product & { sellers: Array<{ sellerId: string; sellerName: string; price: number; isAdmin: boolean }> }>>;
@@ -1217,6 +1218,18 @@ export class DatabaseStorage implements IStorage {
     const [rp] = await db.update(resellerProducts)
       .set({ ...updates, updatedAt: new Date() })
       .where(eq(resellerProducts.id, id))
+      .returning();
+    if (!rp) throw new Error("Assegnazione prodotto non trovata");
+    return rp;
+  }
+
+  async updateResellerProductByProductAndReseller(productId: string, resellerId: string, updates: Partial<Pick<ResellerProduct, 'isPublished' | 'customPriceCents'>>): Promise<ResellerProduct> {
+    const [rp] = await db.update(resellerProducts)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(and(
+        eq(resellerProducts.productId, productId),
+        eq(resellerProducts.resellerId, resellerId)
+      ))
       .returning();
     if (!rp) throw new Error("Assegnazione prodotto non trovata");
     return rp;
