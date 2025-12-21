@@ -13,7 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Package, RotateCcw, Clock, CheckCircle, XCircle, Truck, PackageCheck, Eye, ThumbsUp, ThumbsDown } from "lucide-react";
+import { Package, RotateCcw, Clock, CheckCircle, XCircle, Truck, PackageCheck, Eye, ThumbsUp, ThumbsDown, Download, FileText, Tag, RefreshCw } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
@@ -355,6 +355,98 @@ export default function AdminB2BReturns() {
                   <div className="bg-green-50 dark:bg-green-950/30 p-3 rounded-lg">
                     <p className="text-sm font-medium">Importo accreditato:</p>
                     <p className="text-lg font-semibold text-green-600">{formatPrice(selectedReturn.creditAmount)}</p>
+                  </div>
+                )}
+
+                {/* Document Downloads - Available after approval */}
+                {(selectedReturn.shippingLabelPath || selectedReturn.ddtPath || ['approved', 'awaiting_shipment', 'shipped', 'received', 'inspecting', 'completed'].includes(selectedReturn.status)) && (
+                  <div className="bg-blue-50 dark:bg-blue-950/30 p-3 rounded-lg space-y-2">
+                    <p className="text-sm font-medium flex items-center gap-2">
+                      <FileText className="h-4 w-4" />
+                      Documenti Spedizione
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      {selectedReturn.shippingLabelPath && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            const newWindow = window.open('', '_blank');
+                            fetch(`/api/admin/b2b-returns/${selectedReturn.id}/label`, { credentials: 'include' })
+                              .then(res => {
+                                if (res.ok) return res.json();
+                                throw new Error("Impossibile scaricare l'etichetta");
+                              })
+                              .then(data => {
+                                if (newWindow) newWindow.location.href = data.url;
+                              })
+                              .catch(() => {
+                                if (newWindow) newWindow.close();
+                                toast({ title: "Errore", description: "Impossibile scaricare l'etichetta", variant: "destructive" });
+                              });
+                          }}
+                          data-testid="button-admin-download-label"
+                        >
+                          <Tag className="h-4 w-4 mr-2" />
+                          Etichetta
+                        </Button>
+                      )}
+                      {selectedReturn.ddtPath && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            const newWindow = window.open('', '_blank');
+                            fetch(`/api/admin/b2b-returns/${selectedReturn.id}/ddt`, { credentials: 'include' })
+                              .then(res => {
+                                if (res.ok) return res.json();
+                                throw new Error("Impossibile scaricare il DDT");
+                              })
+                              .then(data => {
+                                if (newWindow) newWindow.location.href = data.url;
+                              })
+                              .catch(() => {
+                                if (newWindow) newWindow.close();
+                                toast({ title: "Errore", description: "Impossibile scaricare il DDT", variant: "destructive" });
+                              });
+                          }}
+                          data-testid="button-admin-download-ddt"
+                        >
+                          <Download className="h-4 w-4 mr-2" />
+                          DDT
+                        </Button>
+                      )}
+                      {['approved', 'awaiting_shipment', 'shipped', 'received', 'inspecting', 'completed'].includes(selectedReturn.status) && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            fetch(`/api/admin/b2b-returns/${selectedReturn.id}/regenerate-documents`, { 
+                              method: 'POST',
+                              credentials: 'include' 
+                            })
+                              .then(res => {
+                                if (res.ok) {
+                                  toast({ title: "Documenti rigenerati", description: "I documenti sono stati rigenerati con successo" });
+                                  queryClient.invalidateQueries({ queryKey: ['/api/admin/b2b-returns'] });
+                                } else {
+                                  throw new Error("Errore nella rigenerazione");
+                                }
+                              })
+                              .catch(() => {
+                                toast({ title: "Errore", description: "Impossibile rigenerare i documenti", variant: "destructive" });
+                              });
+                          }}
+                          data-testid="button-regenerate-documents"
+                        >
+                          <RefreshCw className="h-4 w-4 mr-2" />
+                          Rigenera
+                        </Button>
+                      )}
+                    </div>
                   </div>
                 )}
               </div>
