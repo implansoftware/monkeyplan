@@ -326,19 +326,21 @@ export default function ResellerB2BReturns() {
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={async (e) => {
+                          onClick={(e) => {
                             e.stopPropagation();
-                            try {
-                              const res = await fetch(`/api/reseller/b2b-returns/${selectedReturn.id}/label`, { credentials: 'include' });
-                              if (res.ok) {
-                                const data = await res.json();
-                                window.open(data.url, '_blank');
-                              } else {
+                            const newWindow = window.open('', '_blank');
+                            fetch(`/api/reseller/b2b-returns/${selectedReturn.id}/label`, { credentials: 'include' })
+                              .then(res => {
+                                if (res.ok) return res.json();
+                                throw new Error("Impossibile scaricare l'etichetta");
+                              })
+                              .then(data => {
+                                if (newWindow) newWindow.location.href = data.url;
+                              })
+                              .catch(() => {
+                                if (newWindow) newWindow.close();
                                 toast({ title: "Errore", description: "Impossibile scaricare l'etichetta", variant: "destructive" });
-                              }
-                            } catch (error) {
-                              toast({ title: "Errore", description: "Errore di connessione", variant: "destructive" });
-                            }
+                              });
                           }}
                           data-testid="button-download-label"
                         >
@@ -350,19 +352,21 @@ export default function ResellerB2BReturns() {
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={async (e) => {
+                          onClick={(e) => {
                             e.stopPropagation();
-                            try {
-                              const res = await fetch(`/api/reseller/b2b-returns/${selectedReturn.id}/ddt`, { credentials: 'include' });
-                              if (res.ok) {
-                                const data = await res.json();
-                                window.open(data.url, '_blank');
-                              } else {
+                            const newWindow = window.open('', '_blank');
+                            fetch(`/api/reseller/b2b-returns/${selectedReturn.id}/ddt`, { credentials: 'include' })
+                              .then(res => {
+                                if (res.ok) return res.json();
+                                throw new Error("Impossibile scaricare il DDT");
+                              })
+                              .then(data => {
+                                if (newWindow) newWindow.location.href = data.url;
+                              })
+                              .catch(() => {
+                                if (newWindow) newWindow.close();
                                 toast({ title: "Errore", description: "Impossibile scaricare il DDT", variant: "destructive" });
-                              }
-                            } catch (error) {
-                              toast({ title: "Errore", description: "Errore di connessione", variant: "destructive" });
-                            }
+                              });
                           }}
                           data-testid="button-download-ddt"
                         >
