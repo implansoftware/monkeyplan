@@ -19473,8 +19473,8 @@ export function registerRoutes(app: Express): Server {
       
       const items = await storage.listResellerPurchaseOrderItems(order.id);
       
-      // Get admin warehouse
-      const adminWarehouse = await storage.getWarehouseByOwner('admin', 'admin');
+      // Get admin warehouse (owner_id is 'system' for the central admin warehouse)
+      const adminWarehouse = await storage.getWarehouseByOwner('admin', 'system');
       if (!adminWarehouse) {
         return res.status(500).json({ error: "Magazzino admin non trovato" });
       }
