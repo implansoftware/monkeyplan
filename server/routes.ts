@@ -4410,7 +4410,7 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  // Reseller Shop Catalog - prodotti assegnati + propri con stato pubblicazione
+  // Reseller Shop Catalog - prodotti con stock nel magazzino del reseller
   app.get("/api/reseller/shop-catalog", requireRole("reseller"), async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
@@ -4418,39 +4418,73 @@ export function registerRoutes(app: Express): Server {
       const context = getEffectiveContext(req);
       if (!context.resellerId) return res.status(400).send("Rivenditore non trovato");
       
+      // Ottieni il magazzino del reseller
+      const warehouse = await storage.getWarehouseByOwner('reseller', context.resellerId);
+      if (!warehouse) {
+        return res.json([]); // Nessun magazzino, nessun prodotto
+      }
+      
+      // Ottieni lo stock del magazzino con quantità > 0
+      const stockItems = await storage.listWarehouseStock(warehouse.id);
+      const stockWithQuantity = stockItems.filter(s => s.quantity > 0);
+      
+      if (stockWithQuantity.length === 0) {
+        return res.json([]); // Nessun prodotto in stock
+      }
+      
+      // Crea mappa stock per lookup veloce
+      const stockMap = new Map<string, number>();
+      stockWithQuantity.forEach(s => stockMap.set(s.productId, s.quantity));
+      
       // Ottieni prodotti assegnati a questo reseller
       const assignments = await storage.listResellerProducts({ resellerId: context.resellerId });
       
-      // Ottieni prodotti propri del reseller
+      // Ottieni tutti i prodotti per lookup
       const allProducts = await storage.listProducts();
-      const ownProducts = allProducts.filter(p => p.createdBy === context.resellerId && p.isActive);
+      const productsMap = new Map(allProducts.map(p => [p.id, p]));
       
-      // Combina prodotti assegnati
-      const assignedProducts = await Promise.all(assignments.map(async (assignment) => {
-        const product = await storage.getProduct(assignment.productId);
-        if (!product) return null;
-        return {
-          product,
-          assignment: {
-            id: assignment.id,
-            isPublished: assignment.isPublished,
-            customPriceCents: assignment.customPriceCents,
-            inheritedFrom: assignment.inheritedFrom,
-          },
-          isOwn: false,
-          effectivePrice: assignment.customPriceCents || product.unitPrice,
-        };
-      }));
+      // Filtra prodotti assegnati che hanno stock
+      const assignedProducts = assignments
+        .filter(assignment => stockMap.has(assignment.productId))
+        .map(assignment => {
+          const product = productsMap.get(assignment.productId);
+          if (!product) return null;
+          return {
+            product,
+            assignment: {
+              id: assignment.id,
+              isPublished: assignment.isPublished,
+              customPriceCents: assignment.customPriceCents,
+              inheritedFrom: assignment.inheritedFrom,
+            },
+            isOwn: false,
+            effectivePrice: assignment.customPriceCents || product.unitPrice,
+            availableQuantity: stockMap.get(assignment.productId) || 0,
+          };
+        })
+        .filter(Boolean);
       
-      // Aggiungi prodotti propri (sono sempre "pubblicabili")
+      // Ottieni prodotti propri del reseller che hanno stock
+      const ownProducts = allProducts.filter(p => 
+        p.createdBy === context.resellerId && 
+        p.isActive && 
+        stockMap.has(p.id)
+      );
+      
+      // Aggiungi prodotti propri
       const ownCatalog = ownProducts.map(product => ({
         product,
         assignment: null,
         isOwn: true,
         effectivePrice: product.unitPrice,
+        availableQuantity: stockMap.get(product.id) || 0,
       }));
       
-      const result = [...assignedProducts.filter(Boolean), ...ownCatalog];
+      // Evita duplicati (prodotto potrebbe essere sia assegnato che proprio)
+      const assignedIds = new Set(assignments.map(a => a.productId));
+      const uniqueOwnCatalog = ownCatalog.filter(item => !assignedIds.has(item.product.id));
+      
+      const result = [...assignedProducts, ...uniqueOwnCatalog];
       res.json(result);
     } catch (error: any) {
       res.status(500).send(error.message);

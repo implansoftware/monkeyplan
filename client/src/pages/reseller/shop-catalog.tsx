@@ -11,7 +11,7 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Package, Search, Store, Eye, EyeOff, DollarSign } from "lucide-react";
+import { Package, Search, Store, Eye, EyeOff, DollarSign, Warehouse } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 
@@ -25,6 +25,7 @@ interface CatalogProduct {
   } | null;
   isOwn: boolean;
   effectivePrice: number;
+  availableQuantity?: number;
 }
 
 function formatPrice(cents: number): string {
@@ -139,6 +140,14 @@ export default function ResellerShopCatalog() {
       </TableCell>
       <TableCell>
         <div className="flex items-center gap-2">
+          <Warehouse className="h-4 w-4 text-muted-foreground" />
+          <span className="font-medium" data-testid={`text-stock-${item.product.id}`}>
+            {item.availableQuantity ?? 0}
+          </span>
+        </div>
+      </TableCell>
+      <TableCell>
+        <div className="flex items-center gap-2">
           <Switch
             checked={item.assignment?.isPublished ?? (item.isOwn && !item.assignment)}
             onCheckedChange={(checked) => togglePublishMutation.mutate({
@@ -211,10 +220,10 @@ export default function ResellerShopCatalog() {
             </div>
           ) : filteredCatalog.length === 0 ? (
             <div className="text-center py-12">
-              <Package className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-              <h3 className="text-lg font-semibold mb-2">Nessun prodotto disponibile</h3>
+              <Warehouse className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+              <h3 className="text-lg font-semibold mb-2">Nessun prodotto in stock</h3>
               <p className="text-muted-foreground">
-                I prodotti ti verranno assegnati dall'amministratore oppure puoi creare i tuoi prodotti
+                Carica prodotti nel tuo magazzino per vederli qui nel catalogo shop
               </p>
             </div>
           ) : (
@@ -241,6 +250,7 @@ export default function ResellerShopCatalog() {
                       <TableHead>SKU</TableHead>
                       <TableHead>Categoria</TableHead>
                       <TableHead>Prezzo</TableHead>
+                      <TableHead>Stock</TableHead>
                       <TableHead>Pubblicato</TableHead>
                       <TableHead className="text-right">Azioni</TableHead>
                     </TableRow>
@@ -261,6 +271,7 @@ export default function ResellerShopCatalog() {
                       <TableHead>SKU</TableHead>
                       <TableHead>Categoria</TableHead>
                       <TableHead>Prezzo</TableHead>
+                      <TableHead>Stock</TableHead>
                       <TableHead>Pubblicato</TableHead>
                       <TableHead className="text-right">Azioni</TableHead>
                     </TableRow>
@@ -281,6 +292,7 @@ export default function ResellerShopCatalog() {
                       <TableHead>SKU</TableHead>
                       <TableHead>Categoria</TableHead>
                       <TableHead>Prezzo</TableHead>
+                      <TableHead>Stock</TableHead>
                       <TableHead>Pubblicato</TableHead>
                       <TableHead className="text-right">Azioni</TableHead>
                     </TableRow>
