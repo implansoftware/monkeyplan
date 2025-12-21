@@ -133,6 +133,18 @@ export default function AdminProducts() {
   const [newProductCategory, setNewProductCategory] = useState<string>("display");
   const [newProductType, setNewProductType] = useState<string>("ricambio");
   const [newProductCondition, setNewProductCondition] = useState<string>("nuovo");
+  const [newProductName, setNewProductName] = useState<string>("");
+  const [newProductSku, setNewProductSku] = useState<string>("");
+  const [newProductUnitPrice, setNewProductUnitPrice] = useState<string>("");
+  const [newProductCostPrice, setNewProductCostPrice] = useState<string>("");
+  const [newProductDescription, setNewProductDescription] = useState<string>("");
+  const [newProductBrand, setNewProductBrand] = useState<string>("");
+  const [newProductColor, setNewProductColor] = useState<string>("");
+  const [newProductDeviceTypeId, setNewProductDeviceTypeId] = useState<string>("all");
+  const [newProductWarrantyMonths, setNewProductWarrantyMonths] = useState<string>("");
+  const [newProductMinStock, setNewProductMinStock] = useState<string>("");
+  const [newProductLocation, setNewProductLocation] = useState<string>("");
+  const [newProductSupplierCode, setNewProductSupplierCode] = useState<string>("");
   const { toast } = useToast();
 
   const { data: productsWithStock = [], isLoading } = useQuery<ProductWithStock[]>({
@@ -742,33 +754,26 @@ export default function AdminProducts() {
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const formData = new FormData(e.currentTarget);
     
-    const costPriceValue = formData.get("costPrice") as string;
-    const warrantyValue = formData.get("warrantyMonths") as string;
-    const minStockValue = formData.get("minStock") as string;
-    
-    const deviceTypeIdValue = formData.get("deviceTypeId") as string;
-    const supplierCodeValue = formData.get("supplierCode") as string || undefined;
     const data = {
-      name: formData.get("name") as string,
-      sku: formData.get("sku") as string,
+      name: newProductName,
+      sku: newProductSku,
       category: newProductCategory,
       productType: newProductType as any,
-      description: formData.get("description") as string || undefined,
-      deviceTypeId: deviceTypeIdValue && deviceTypeIdValue !== "all" ? deviceTypeIdValue : undefined,
-      brand: formData.get("brand") as string || undefined,
-      color: formData.get("color") as string || undefined,
-      costPrice: costPriceValue ? Math.round(parseFloat(costPriceValue) * 100) : undefined,
-      unitPrice: Math.round(parseFloat(formData.get("unitPrice") as string) * 100),
+      description: newProductDescription || undefined,
+      deviceTypeId: newProductDeviceTypeId && newProductDeviceTypeId !== "all" ? newProductDeviceTypeId : undefined,
+      brand: newProductBrand || undefined,
+      color: newProductColor || undefined,
+      costPrice: newProductCostPrice ? Math.round(parseFloat(newProductCostPrice) * 100) : undefined,
+      unitPrice: Math.round(parseFloat(newProductUnitPrice) * 100),
       condition: newProductCondition as any,
-      warrantyMonths: warrantyValue ? parseInt(warrantyValue) : undefined,
+      warrantyMonths: newProductWarrantyMonths ? parseInt(newProductWarrantyMonths) : undefined,
       supplier: selectedSupplierId && selectedSupplierId !== 'none' 
         ? suppliers.find(s => s.id === selectedSupplierId)?.name 
         : undefined,
-      supplierCode: supplierCodeValue,
-      minStock: minStockValue ? parseInt(minStockValue) : undefined,
-      location: formData.get("location") as string || undefined,
+      supplierCode: newProductSupplierCode || undefined,
+      minStock: newProductMinStock ? parseInt(newProductMinStock) : undefined,
+      location: newProductLocation || undefined,
       initialStock: initialStock.filter(s => s.quantity > 0),
       deviceCompatibilities: deviceCompatibilities.length > 0 ? deviceCompatibilities : undefined,
       supplierId: selectedSupplierId && selectedSupplierId !== 'none' ? selectedSupplierId : undefined,
@@ -878,6 +883,18 @@ export default function AdminProducts() {
             setNewProductCategory("display");
             setNewProductType("ricambio");
             setNewProductCondition("nuovo");
+            setNewProductName("");
+            setNewProductSku("");
+            setNewProductUnitPrice("");
+            setNewProductCostPrice("");
+            setNewProductDescription("");
+            setNewProductBrand("");
+            setNewProductColor("");
+            setNewProductDeviceTypeId("all");
+            setNewProductWarrantyMonths("");
+            setNewProductMinStock("");
+            setNewProductLocation("");
+            setNewProductSupplierCode("");
           }
         }}>
           <DialogTrigger asChild>
@@ -909,7 +926,8 @@ export default function AdminProducts() {
                         <Label htmlFor="name">Nome Prodotto *</Label>
                         <Input 
                           id="name" 
-                          name="name" 
+                          value={newProductName}
+                          onChange={(e) => setNewProductName(e.target.value)}
                           required 
                           placeholder="es. Display LCD iPhone 14"
                           data-testid="input-name" 
@@ -919,7 +937,8 @@ export default function AdminProducts() {
                         <Label htmlFor="sku">SKU/Codice *</Label>
                         <Input 
                           id="sku" 
-                          name="sku" 
+                          value={newProductSku}
+                          onChange={(e) => setNewProductSku(e.target.value)}
                           required 
                           placeholder="es. LCD-IP14-001"
                           data-testid="input-sku" 
@@ -1152,7 +1171,8 @@ export default function AdminProducts() {
                         <Label htmlFor="costPrice">Prezzo Acquisto (€)</Label>
                         <Input
                           id="costPrice"
-                          name="costPrice"
+                          value={newProductCostPrice}
+                          onChange={(e) => setNewProductCostPrice(e.target.value)}
                           type="number"
                           step="0.01"
                           min="0"
@@ -1165,7 +1185,8 @@ export default function AdminProducts() {
                         <Label htmlFor="unitPrice">Prezzo Vendita (€) *</Label>
                         <Input
                           id="unitPrice"
-                          name="unitPrice"
+                          value={newProductUnitPrice}
+                          onChange={(e) => setNewProductUnitPrice(e.target.value)}
                           type="number"
                           step="0.01"
                           min="0"
