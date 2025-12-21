@@ -153,7 +153,9 @@ import ResellerSalesReturns from "@/pages/reseller/sales-returns";
 // B2B ordering
 import ResellerB2BCatalog from "@/pages/reseller/b2b-catalog";
 import ResellerB2BOrders from "@/pages/reseller/b2b-orders";
+import ResellerB2BReturns from "@/pages/reseller/b2b-returns";
 import AdminB2BOrders from "@/pages/admin/b2b-orders";
+import AdminB2BReturns from "@/pages/admin/b2b-returns";
 
 function Router() {
   return (
@@ -210,6 +212,7 @@ function Router() {
       <ProtectedRoute path="/admin/accessory-catalog" component={AdminAccessoryCatalog} />
       <ProtectedRoute path="/admin/team" component={AdminTeam} />
       <ProtectedRoute path="/admin/b2b-orders" component={AdminB2BOrders} />
+      <ProtectedRoute path="/admin/b2b-returns" component={AdminB2BReturns} />
       
       {/* Reseller routes */}
       <ProtectedRoute path="/reseller" component={ResellerDashboard} />
@@ -265,6 +268,7 @@ function Router() {
       <ProtectedRoute path="/reseller/sales-returns" component={ResellerSalesReturns} />
       <ProtectedRoute path="/reseller/b2b-catalog" component={ResellerB2BCatalog} />
       <ProtectedRoute path="/reseller/b2b-orders" component={ResellerB2BOrders} />
+      <ProtectedRoute path="/reseller/b2b-returns" component={ResellerB2BReturns} />
       
       {/* Repair Center routes */}
       <ProtectedRoute path="/repair-center" component={RepairCenterDashboard} />

@@ -10,11 +10,17 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Package, ShoppingBag, Clock, CheckCircle, XCircle, Truck, PackageCheck, Eye } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Package, ShoppingBag, Clock, CheckCircle, XCircle, Truck, PackageCheck, Eye, RotateCcw } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
+import { useLocation } from "wouter";
 
 interface B2BOrderWithItems extends ResellerPurchaseOrder {
   items: (ResellerPurchaseOrderItem & { product?: Product })[];
@@ -40,10 +46,26 @@ const paymentMethodLabels: Record<string, string> = {
   credit: "Credito Reseller",
 };
 
+const returnReasons: Record<string, string> = {
+  defective: "Difettoso",
+  wrong_item: "Articolo errato",
+  not_as_described: "Non conforme alla descrizione",
+  damaged_in_transit: "Danneggiato in transito",
+  excess_stock: "Eccesso di stock",
+  quality_issue: "Problema qualità",
+  other: "Altro",
+};
+
 export default function ResellerB2BOrders() {
   const [selectedOrder, setSelectedOrder] = useState<B2BOrderWithItems | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
+  const [returnDialogOpen, setReturnDialogOpen] = useState(false);
+  const [returnReason, setReturnReason] = useState<string>("");
+  const [returnReasonDetails, setReturnReasonDetails] = useState("");
+  const [returnNotes, setReturnNotes] = useState("");
+  const [selectedItems, setSelectedItems] = useState<Record<string, number>>({});
   const { toast } = useToast();
+  const [, navigate] = useLocation();
 
   const { data: orders, isLoading } = useQuery<B2BOrderWithItems[]>({
     queryKey: ['/api/reseller/b2b-orders'],
@@ -63,6 +85,70 @@ export default function ResellerB2BOrders() {
       toast({ title: "Errore", description: error.message, variant: "destructive" });
     },
   });
+
+  const createReturnMutation = useMutation({
+    mutationFn: async (data: { orderId: string; reason: string; reasonDetails?: string; resellerNotes?: string; items: any[] }) => {
+      const res = await apiRequest('POST', '/api/reseller/b2b-returns', data);
+      return res.json();
+    },
+    onSuccess: () => {
+      toast({ title: "Richiesta reso inviata", description: "La tua richiesta di reso è stata inviata all'admin" });
+      queryClient.invalidateQueries({ queryKey: ['/api/reseller/b2b-orders'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/reseller/b2b-returns'] });
+      setReturnDialogOpen(false);
+      setDetailOpen(false);
+      resetReturnForm();
+    },
+    onError: (error: any) => {
+      toast({ title: "Errore", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const resetReturnForm = () => {
+    setReturnReason("");
+    setReturnReasonDetails("");
+    setReturnNotes("");
+    setSelectedItems({});
+  };
+
+  const openReturnDialog = () => {
+    if (selectedOrder) {
+      const initialItems: Record<string, number> = {};
+      selectedOrder.items?.forEach(item => {
+        initialItems[item.id] = item.quantity || 0;
+      });
+      setSelectedItems(initialItems);
+      setReturnDialogOpen(true);
+    }
+  };
+
+  const handleSubmitReturn = () => {
+    if (!selectedOrder || !returnReason) return;
+    
+    const items = selectedOrder.items
+      ?.filter(item => (selectedItems[item.id] || 0) > 0)
+      .map(item => ({
+        orderItemId: item.id,
+        productId: item.productId,
+        productName: item.productName,
+        productSku: item.productSku,
+        quantity: selectedItems[item.id],
+        unitPrice: item.unitPrice,
+      }));
+
+    if (!items || items.length === 0) {
+      toast({ title: "Errore", description: "Seleziona almeno un articolo da rendere", variant: "destructive" });
+      return;
+    }
+
+    createReturnMutation.mutate({
+      orderId: selectedOrder.id,
+      reason: returnReason,
+      reasonDetails: returnReasonDetails || undefined,
+      resellerNotes: returnNotes || undefined,
+      items,
+    });
+  };
 
   const openDetail = (order: B2BOrderWithItems) => {
     setSelectedOrder(order);
@@ -304,7 +390,7 @@ export default function ResellerB2BOrders() {
                 </div>
               )}
 
-              <DialogFooter>
+              <DialogFooter className="gap-2">
                 <Button variant="outline" onClick={() => setDetailOpen(false)}>
                   Chiudi
                 </Button>
@@ -318,9 +404,131 @@ export default function ResellerB2BOrders() {
                     {confirmReceiptMutation.isPending ? "Conferma in corso..." : "Conferma Ricezione"}
                   </Button>
                 )}
+                {selectedOrder.status === 'received' && (
+                  <Button 
+                    variant="destructive"
+                    onClick={openReturnDialog}
+                    data-testid="button-request-return"
+                  >
+                    <RotateCcw className="h-4 w-4 mr-2" />
+                    Richiedi Reso
+                  </Button>
+                )}
               </DialogFooter>
             </>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Return Request Dialog */}
+      <Dialog open={returnDialogOpen} onOpenChange={setReturnDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Richiesta Reso</DialogTitle>
+            <DialogDescription>
+              Ordine {selectedOrder?.orderNumber} - Seleziona gli articoli da rendere
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Motivo del reso *</Label>
+              <Select value={returnReason} onValueChange={setReturnReason}>
+                <SelectTrigger data-testid="select-return-reason">
+                  <SelectValue placeholder="Seleziona un motivo" />
+                </SelectTrigger>
+                <SelectContent>
+                  {Object.entries(returnReasons).map(([key, label]) => (
+                    <SelectItem key={key} value={key}>{label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {returnReason === 'other' && (
+              <div className="space-y-2">
+                <Label>Specifica il motivo</Label>
+                <Textarea
+                  value={returnReasonDetails}
+                  onChange={(e) => setReturnReasonDetails(e.target.value)}
+                  placeholder="Descrivi il motivo del reso..."
+                  data-testid="input-reason-details"
+                />
+              </div>
+            )}
+
+            <div className="space-y-2">
+              <Label>Articoli da rendere</Label>
+              <ScrollArea className="max-h-48 border rounded-lg">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Prodotto</TableHead>
+                      <TableHead className="text-right">Disponibile</TableHead>
+                      <TableHead className="text-right w-32">Qtà da rendere</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {selectedOrder?.items?.map((item) => (
+                      <TableRow key={item.id}>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            {item.product?.imageUrl ? (
+                              <img src={item.product.imageUrl} alt="" className="w-8 h-8 object-cover rounded" />
+                            ) : (
+                              <Package className="w-8 h-8 text-muted-foreground" />
+                            )}
+                            <div>
+                              <div className="font-medium text-sm">{item.productName}</div>
+                              {item.productSku && <div className="text-xs text-muted-foreground">{item.productSku}</div>}
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-right">{item.quantity}</TableCell>
+                        <TableCell className="text-right">
+                          <Input
+                            type="number"
+                            min={0}
+                            max={item.quantity || 0}
+                            value={selectedItems[item.id] || 0}
+                            onChange={(e) => {
+                              const val = Math.min(Math.max(0, parseInt(e.target.value) || 0), item.quantity || 0);
+                              setSelectedItems(prev => ({ ...prev, [item.id]: val }));
+                            }}
+                            className="w-20 text-right"
+                            data-testid={`input-return-qty-${item.id}`}
+                          />
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </ScrollArea>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Note aggiuntive</Label>
+              <Textarea
+                value={returnNotes}
+                onChange={(e) => setReturnNotes(e.target.value)}
+                placeholder="Inserisci eventuali note..."
+                data-testid="input-return-notes"
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setReturnDialogOpen(false); resetReturnForm(); }}>
+              Annulla
+            </Button>
+            <Button 
+              onClick={handleSubmitReturn}
+              disabled={!returnReason || createReturnMutation.isPending}
+              data-testid="button-submit-return"
+            >
+              {createReturnMutation.isPending ? "Invio in corso..." : "Invia Richiesta Reso"}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
