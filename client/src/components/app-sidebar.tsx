@@ -143,6 +143,7 @@ const menuItems = {
     { title: "Catalogo Interventi", url: "/reseller/service-catalog", icon: Receipt, group: "Centri & Riparazioni" },
     { title: "Catalogo Dispositivi", url: "/reseller/device-catalog", icon: Smartphone, group: "Centri & Riparazioni" },
     { title: "Magazzino", url: "/reseller/warehouses", icon: Warehouse, group: "Magazzino & Fornitori" },
+    { title: "Magazzini Rete", url: "/reseller/network-warehouses", icon: Building2, group: "Magazzino & Fornitori" },
     { title: "Ricambi", url: "/reseller/products", icon: Package, group: "Magazzino & Fornitori" },
     { title: "Smartphone", url: "/reseller/smartphone-catalog", icon: Smartphone, group: "Magazzino & Fornitori" },
     { title: "Accessori", url: "/reseller/accessory-catalog", icon: ShoppingCart, group: "Magazzino & Fornitori" },

@@ -101,6 +101,7 @@ import ResellerTrovausatiSettings from "@/pages/reseller/trovausati/settings";
 // Reseller Repairs & Inventory
 import ResellerRepairs from "@/pages/reseller/repairs";
 import ResellerProducts from "@/pages/reseller/products";
+import ResellerNetworkWarehouses from "@/pages/reseller/network-warehouses";
 import ResellerSuppliers from "@/pages/reseller/suppliers";
 import ResellerSupplierOrders from "@/pages/reseller/supplier-orders";
 import ResellerSupplierReturns from "@/pages/reseller/supplier-returns";
@@ -218,6 +219,7 @@ function Router() {
       <ProtectedRoute path="/reseller/quotes" component={QuotesList} />
       <ProtectedRoute path="/reseller/service-catalog" component={ResellerServiceCatalog} />
       <ProtectedRoute path="/reseller/warehouses" component={AdminWarehouses} />
+      <ProtectedRoute path="/reseller/network-warehouses" component={ResellerNetworkWarehouses} />
       <ProtectedRoute path="/reseller/products" component={ResellerProducts} />
       <ProtectedRoute path="/reseller/suppliers" component={ResellerSuppliers} />
       <ProtectedRoute path="/reseller/supplier-orders" component={ResellerSupplierOrders} />

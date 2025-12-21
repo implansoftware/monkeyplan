@@ -18682,23 +18682,26 @@ export function registerRoutes(app: Express): Server {
         accessibleWarehouses = await storage.listWarehouses({});
       } else if (req.user.role === 'reseller' || req.user.role === 'reseller_staff' || req.user.role === 'reseller_collaborator') {
         const resellerId = req.user.resellerId || req.user.id;
+        
+        // 1. Proprio magazzino
         const ownWarehouse = await storage.getWarehouseByOwner('reseller', resellerId);
         if (ownWarehouse) accessibleWarehouses.push(ownWarehouse);
         
-        const subResellers = await storage.listUsers({ role: 'sub_reseller', resellerId });
+        // 2. Sub-rivenditori (users con role='reseller' e parentResellerId = questo reseller)
+        const allUsers = await storage.listUsers();
+        const subResellers = allUsers.filter(u => u.parentResellerId === resellerId);
         for (const sub of subResellers) {
           const subWarehouse = await storage.getWarehouseByOwner('sub_reseller', sub.id);
           if (subWarehouse) accessibleWarehouses.push(subWarehouse);
         }
         
-        const repairCenters = await storage.listUsers({ role: 'repair_center', resellerId });
-        for (const rc of repairCenters) {
+        // 3. Centri di riparazione (dalla tabella repair_centers con resellerId = questo reseller)
+        const allRepairCenters = await storage.listRepairCenters();
+        const myRepairCenters = allRepairCenters.filter(rc => rc.resellerId === resellerId);
+        for (const rc of myRepairCenters) {
           const rcWarehouse = await storage.getWarehouseByOwner('repair_center', rc.id);
           if (rcWarehouse) accessibleWarehouses.push(rcWarehouse);
         }
-      } else if (req.user.role === 'sub_reseller') {
-        const ownWarehouse = await storage.getWarehouseByOwner('sub_reseller', req.user.id);
-        if (ownWarehouse) accessibleWarehouses.push(ownWarehouse);
       } else if (req.user.role === 'repair_center') {
         const rcId = req.user.repairCenterId || req.user.id;
         const ownWarehouse = await storage.getWarehouseByOwner('repair_center', rcId);
