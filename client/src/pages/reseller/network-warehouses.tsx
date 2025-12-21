@@ -88,7 +88,7 @@ export default function NetworkWarehousesPage() {
   });
 
   const transferMutation = useMutation({
-    mutationFn: async (data: { sourceWarehouseId: string; destWarehouseId: string; productId: string; quantity: number }) => {
+    mutationFn: async (data: { sourceWarehouseId: string; destinationWarehouseId: string; productId: string; quantity: number }) => {
       return apiRequest("POST", "/api/warehouses/transfer-immediate", data);
     },
     onSuccess: () => {
@@ -133,7 +133,7 @@ export default function NetworkWarehousesPage() {
     
     transferMutation.mutate({
       sourceWarehouseId: selectedWarehouse.id,
-      destWarehouseId: transferDestWarehouseId,
+      destinationWarehouseId: transferDestWarehouseId,
       productId: transferItem.productId,
       quantity: transferQuantity,
     });

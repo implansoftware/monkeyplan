@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -18,6 +18,13 @@ import {
   ArrowRight, Clock, CheckCircle, XCircle, Truck, Pencil
 } from "lucide-react";
 import type { Warehouse as WarehouseType, WarehouseStock, WarehouseMovement, WarehouseTransfer, Product } from "@shared/schema";
+
+type AccessibleWarehouse = {
+  id: string;
+  name: string;
+  ownerType: string;
+  owner?: { id: string; username: string; fullName?: string | null } | null;
+};
 
 type EnrichedStock = WarehouseStock & { product: { id: string; name: string; sku: string; category: string; imageUrl?: string | null } | null };
 type EnrichedMovement = WarehouseMovement & { 
@@ -45,6 +52,12 @@ export default function WarehousesPage() {
     quantity: 0,
     notes: "",
   });
+  
+  // Stati per trasferimento
+  const [transferDialogOpen, setTransferDialogOpen] = useState(false);
+  const [transferItem, setTransferItem] = useState<EnrichedStock | null>(null);
+  const [transferDestWarehouseId, setTransferDestWarehouseId] = useState<string>("");
+  const [transferQuantity, setTransferQuantity] = useState<number>(1);
 
   const { data: myWarehouse, isLoading: loadingWarehouse } = useQuery<WarehouseType>({
     queryKey: ["/api/my-warehouse"],
@@ -80,6 +93,16 @@ export default function WarehousesPage() {
     queryKey: ["/api/products"],
   });
 
+  // Query per magazzini accessibili (destinazioni trasferimento)
+  const { data: accessibleWarehouses = [] } = useQuery<AccessibleWarehouse[]>({
+    queryKey: ["/api/warehouses/accessible"],
+    queryFn: async () => {
+      const res = await fetch("/api/warehouses/accessible", { credentials: "include" });
+      if (!res.ok) throw new Error("Failed to load accessible warehouses");
+      return res.json();
+    },
+  });
+
   const createMovementMutation = useMutation({
     mutationFn: async (data: typeof movementData) => {
       return apiRequest("POST", `/api/warehouses/${warehouseId}/movements`, data);
@@ -113,6 +136,47 @@ export default function WarehousesPage() {
       toast({ title: "Errore", description: error.message, variant: "destructive" });
     },
   });
+
+  // Mutation per trasferimento immediato
+  const transferMutation = useMutation({
+    mutationFn: async (data: { sourceWarehouseId: string; destinationWarehouseId: string; productId: string; quantity: number; notes?: string }) => {
+      return apiRequest("POST", "/api/warehouses/transfer-immediate", data);
+    },
+    onSuccess: () => {
+      toast({ title: "Trasferimento completato", description: "Il prodotto è stato trasferito con successo" });
+      queryClient.invalidateQueries({ queryKey: ["/api/warehouses", warehouseId, "stock"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/warehouses", warehouseId, "movements"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/warehouse-transfers"] });
+      setTransferDialogOpen(false);
+      setTransferItem(null);
+      setTransferDestWarehouseId("");
+      setTransferQuantity(1);
+    },
+    onError: (error: any) => {
+      toast({ title: "Errore trasferimento", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const openTransferDialog = (item: EnrichedStock) => {
+    setTransferItem(item);
+    setTransferQuantity(1);
+    setTransferDestWarehouseId("");
+    setTransferDialogOpen(true);
+  };
+
+  const handleTransfer = () => {
+    if (!warehouseId || !transferItem || !transferDestWarehouseId || transferQuantity <= 0) return;
+    
+    transferMutation.mutate({
+      sourceWarehouseId: warehouseId,
+      destinationWarehouseId: transferDestWarehouseId,
+      productId: transferItem.productId,
+      quantity: transferQuantity,
+    });
+  };
+
+  // Magazzini destinazione (escluso il proprio)
+  const destinationWarehouses = accessibleWarehouses.filter(wh => wh.id !== warehouseId);
 
   const handleEditStock = (item: EnrichedStock) => {
     setEditingStockItem(item);
@@ -441,14 +505,28 @@ export default function WarehousesPage() {
                           <td className="p-4 text-right text-muted-foreground">{item.minStock || "-"}</td>
                           <td className="p-4">{item.location || "-"}</td>
                           <td className="p-4 text-center">
-                            <Button 
-                              size="icon" 
-                              variant="ghost" 
-                              onClick={() => handleEditStock(item)}
-                              data-testid={`button-edit-stock-${item.id}`}
-                            >
-                              <Pencil className="h-4 w-4" />
-                            </Button>
+                            <div className="flex items-center justify-center gap-1">
+                              {item.quantity > 0 && (
+                                <Button 
+                                  size="icon" 
+                                  variant="ghost" 
+                                  onClick={() => openTransferDialog(item)}
+                                  title="Trasferisci"
+                                  data-testid={`button-transfer-${item.id}`}
+                                >
+                                  <ArrowLeftRight className="h-4 w-4" />
+                                </Button>
+                              )}
+                              <Button 
+                                size="icon" 
+                                variant="ghost" 
+                                onClick={() => handleEditStock(item)}
+                                title="Modifica"
+                                data-testid={`button-edit-stock-${item.id}`}
+                              >
+                                <Pencil className="h-4 w-4" />
+                              </Button>
+                            </div>
                           </td>
                         </tr>
                       ))
@@ -577,6 +655,71 @@ export default function WarehousesPage() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Dialog Trasferimento */}
+      <Dialog open={transferDialogOpen} onOpenChange={setTransferDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Trasferisci Prodotto</DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div>
+              <p className="text-sm text-muted-foreground mb-2">Prodotto:</p>
+              <p className="font-medium">{transferItem?.product?.name}</p>
+              <p className="text-sm text-muted-foreground">SKU: {transferItem?.product?.sku}</p>
+              <p className="text-sm">Disponibilità: <span className="font-semibold">{transferItem?.quantity}</span></p>
+            </div>
+            
+            <div className="space-y-2">
+              <Label>Magazzino destinazione</Label>
+              {destinationWarehouses.length === 0 ? (
+                <p className="text-sm text-muted-foreground p-3 bg-muted rounded-md">
+                  Nessun magazzino disponibile per il trasferimento. Crea prima dei sub-rivenditori o centri di riparazione.
+                </p>
+              ) : (
+                <Select value={transferDestWarehouseId} onValueChange={setTransferDestWarehouseId}>
+                  <SelectTrigger data-testid="select-dest-warehouse">
+                    <SelectValue placeholder="Seleziona magazzino..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {destinationWarehouses.map(wh => (
+                      <SelectItem key={wh.id} value={wh.id}>
+                        {wh.name} ({wh.owner?.fullName || wh.owner?.username || wh.ownerType})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            </div>
+            
+            <div className="space-y-2">
+              <Label>Quantità</Label>
+              <Input
+                type="number"
+                min={1}
+                max={transferItem?.quantity || 1}
+                value={transferQuantity}
+                onChange={(e) => setTransferQuantity(Math.min(parseInt(e.target.value) || 1, transferItem?.quantity || 1))}
+                data-testid="input-transfer-quantity"
+              />
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setTransferDialogOpen(false)}>
+              Annulla
+            </Button>
+            <Button
+              onClick={handleTransfer}
+              disabled={!transferDestWarehouseId || transferQuantity <= 0 || transferMutation.isPending}
+              data-testid="button-confirm-transfer"
+            >
+              {transferMutation.isPending ? "Trasferimento..." : "Conferma Trasferimento"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
