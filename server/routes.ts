@@ -19302,10 +19302,14 @@ export function registerRoutes(app: Express): Server {
       if (!req.user) return res.status(401).json({ error: "Non autenticato" });
       const orders = await storage.listResellerPurchaseOrders({ resellerId: req.user.id });
       
-      // Enrich orders with items
+      // Enrich orders with items and product info
       const enrichedOrders = await Promise.all(orders.map(async (order) => {
         const items = await storage.listResellerPurchaseOrderItems(order.id);
-        return { ...order, items };
+        const enrichedItems = await Promise.all(items.map(async (item) => {
+          const product = await storage.getProduct(item.productId);
+          return { ...item, product };
+        }));
+        return { ...order, items: enrichedItems };
       }));
       
       res.json(enrichedOrders);
@@ -19410,13 +19414,17 @@ export function registerRoutes(app: Express): Server {
       const status = req.query.status as string | undefined;
       const orders = await storage.listResellerPurchaseOrders(status ? { status } : undefined);
       
-      // Enrich orders with reseller info and items
+      // Enrich orders with reseller info and items with product info
       const enrichedOrders = await Promise.all(orders.map(async (order) => {
         const [reseller, items] = await Promise.all([
           storage.getUser(order.resellerId),
           storage.listResellerPurchaseOrderItems(order.id)
         ]);
-        return { ...order, reseller: reseller ? { id: reseller.id, fullName: reseller.fullName, email: reseller.email } : null, items };
+        const enrichedItems = await Promise.all(items.map(async (item) => {
+          const product = await storage.getProduct(item.productId);
+          return { ...item, product };
+        }));
+        return { ...order, reseller: reseller ? { id: reseller.id, fullName: reseller.fullName, email: reseller.email } : null, items: enrichedItems };
       }));
       
       res.json(enrichedOrders);
