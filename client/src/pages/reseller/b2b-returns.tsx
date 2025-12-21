@@ -12,7 +12,7 @@ import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Package, RotateCcw, Clock, CheckCircle, XCircle, Truck, PackageCheck, Eye, Send } from "lucide-react";
+import { Package, RotateCcw, Clock, CheckCircle, XCircle, Truck, PackageCheck, Eye, Send, Download, FileText, Tag } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
@@ -311,6 +311,69 @@ export default function ResellerB2BReturns() {
                   <div className="bg-green-50 dark:bg-green-950/30 p-3 rounded-lg">
                     <p className="text-sm font-medium">Importo accreditato:</p>
                     <p className="text-lg font-semibold text-green-600">{formatPrice(selectedReturn.creditAmount)}</p>
+                  </div>
+                )}
+
+                {/* Document Downloads - Available after approval */}
+                {(selectedReturn.shippingLabelPath || selectedReturn.ddtPath) && (
+                  <div className="bg-blue-50 dark:bg-blue-950/30 p-3 rounded-lg space-y-2">
+                    <p className="text-sm font-medium flex items-center gap-2">
+                      <FileText className="h-4 w-4" />
+                      Documenti per la spedizione
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      {selectedReturn.shippingLabelPath && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={async (e) => {
+                            e.stopPropagation();
+                            try {
+                              const res = await fetch(`/api/reseller/b2b-returns/${selectedReturn.id}/label`, { credentials: 'include' });
+                              if (res.ok) {
+                                const data = await res.json();
+                                window.open(data.url, '_blank');
+                              } else {
+                                toast({ title: "Errore", description: "Impossibile scaricare l'etichetta", variant: "destructive" });
+                              }
+                            } catch (error) {
+                              toast({ title: "Errore", description: "Errore di connessione", variant: "destructive" });
+                            }
+                          }}
+                          data-testid="button-download-label"
+                        >
+                          <Tag className="h-4 w-4 mr-2" />
+                          Scarica Etichetta
+                        </Button>
+                      )}
+                      {selectedReturn.ddtPath && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={async (e) => {
+                            e.stopPropagation();
+                            try {
+                              const res = await fetch(`/api/reseller/b2b-returns/${selectedReturn.id}/ddt`, { credentials: 'include' });
+                              if (res.ok) {
+                                const data = await res.json();
+                                window.open(data.url, '_blank');
+                              } else {
+                                toast({ title: "Errore", description: "Impossibile scaricare il DDT", variant: "destructive" });
+                              }
+                            } catch (error) {
+                              toast({ title: "Errore", description: "Errore di connessione", variant: "destructive" });
+                            }
+                          }}
+                          data-testid="button-download-ddt"
+                        >
+                          <Download className="h-4 w-4 mr-2" />
+                          Scarica DDT
+                        </Button>
+                      )}
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Stampa questi documenti e allegali al pacco per la spedizione del reso.
+                    </p>
                   </div>
                 )}
               </div>

@@ -45,6 +45,7 @@ import {
 } from "@shared/schema";
 import { ObjectStorageService, objectStorageClient, parseObjectPath } from "./objectStorage";
 import { canAccessObject, ObjectPermission } from "./objectAcl";
+import { generateAndStoreReturnDocuments, getSignedDownloadUrl } from "./services/shippingDocuments";
 import { calculateRepairPriority } from "./helpers/priorityCalculation";
 import { db } from "./db";
 import { sql } from "drizzle-orm";
@@ -19782,10 +19783,50 @@ export function registerRoutes(app: Express): Server {
       
       const { adminNotes } = req.body;
       
+      // Get reseller and items for document generation
+      const reseller = await storage.getUser(returnDoc.resellerId);
+      const items = await storage.listB2bReturnItems(returnDoc.id);
+      
+      if (!reseller) {
+        return res.status(400).json({ error: "Rivenditore non trovato" });
+      }
+      
+      // Generate shipping label and DDT
+      let labelPath: string | undefined;
+      let ddtPath: string | undefined;
+      let documentsGeneratedAt: Date | undefined;
+      
+      try {
+        const docs = await generateAndStoreReturnDocuments({
+          returnData: returnDoc,
+          items,
+          reseller,
+          adminAddress: {
+            companyName: "MonkeyPlan S.r.l.",
+            address: "Via Roma 123",
+            city: "Milano",
+            postalCode: "20100",
+            province: "MI",
+            country: "Italia",
+            phone: "+39 02 1234567",
+            email: "resi@monkeyplan.it",
+          },
+        });
+        labelPath = docs.labelPath;
+        ddtPath = docs.ddtPath;
+        documentsGeneratedAt = new Date();
+      } catch (docError: any) {
+        console.error("Error generating return documents:", docError);
+        // Continue without documents - they can be regenerated later
+      }
+      
       const updated = await storage.updateB2bReturn(returnDoc.id, {
         status: 'awaiting_shipment',
         approvedAt: new Date(),
         adminNotes,
+        shippingLabelPath: labelPath,
+        ddtPath: ddtPath,
+        documentsGeneratedAt,
       });
       
       res.json(updated);
@@ -19879,6 +19920,129 @@ export function registerRoutes(app: Express): Server {
         completedAt: new Date(),
         inspectionNotes,
         creditAmount: creditAmount ?? returnDoc.totalAmount,
+      });
+      
+      res.json(updated);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Reseller: Download shipping label
+  app.get("/api/reseller/b2b-returns/:id/label", requireRole("reseller"), async (req, res) => {
+    try {
+      const returnDoc = await storage.getB2bReturn(req.params.id);
+      if (!returnDoc) return res.status(404).json({ error: "Reso non trovato" });
+      
+      // Verify ownership
+      if (returnDoc.resellerId !== req.user?.id) {
+        return res.status(403).json({ error: "Accesso non autorizzato" });
+      }
+      
+      if (!returnDoc.shippingLabelPath) {
+        return res.status(404).json({ error: "Etichetta non ancora generata" });
+      }
+      
+      const signedUrl = await getSignedDownloadUrl(returnDoc.shippingLabelPath);
+      res.json({ url: signedUrl, filename: `etichetta_${returnDoc.returnNumber}.pdf` });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Reseller: Download DDT
+  app.get("/api/reseller/b2b-returns/:id/ddt", requireRole("reseller"), async (req, res) => {
+    try {
+      const returnDoc = await storage.getB2bReturn(req.params.id);
+      if (!returnDoc) return res.status(404).json({ error: "Reso non trovato" });
+      
+      // Verify ownership
+      if (returnDoc.resellerId !== req.user?.id) {
+        return res.status(403).json({ error: "Accesso non autorizzato" });
+      }
+      
+      if (!returnDoc.ddtPath) {
+        return res.status(404).json({ error: "DDT non ancora generato" });
+      }
+      
+      const signedUrl = await getSignedDownloadUrl(returnDoc.ddtPath);
+      res.json({ url: signedUrl, filename: `ddt_${returnDoc.returnNumber}.pdf` });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Admin: Download shipping label (for any return)
+  app.get("/api/admin/b2b-returns/:id/label", requireRole("admin"), async (req, res) => {
+    try {
+      const returnDoc = await storage.getB2bReturn(req.params.id);
+      if (!returnDoc) return res.status(404).json({ error: "Reso non trovato" });
+      
+      if (!returnDoc.shippingLabelPath) {
+        return res.status(404).json({ error: "Etichetta non ancora generata" });
+      }
+      
+      const signedUrl = await getSignedDownloadUrl(returnDoc.shippingLabelPath);
+      res.json({ url: signedUrl, filename: `etichetta_${returnDoc.returnNumber}.pdf` });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Admin: Download DDT (for any return)
+  app.get("/api/admin/b2b-returns/:id/ddt", requireRole("admin"), async (req, res) => {
+    try {
+      const returnDoc = await storage.getB2bReturn(req.params.id);
+      if (!returnDoc) return res.status(404).json({ error: "Reso non trovato" });
+      
+      if (!returnDoc.ddtPath) {
+        return res.status(404).json({ error: "DDT non ancora generato" });
+      }
+      
+      const signedUrl = await getSignedDownloadUrl(returnDoc.ddtPath);
+      res.json({ url: signedUrl, filename: `ddt_${returnDoc.returnNumber}.pdf` });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Admin: Regenerate documents for a return
+  app.post("/api/admin/b2b-returns/:id/regenerate-documents", requireRole("admin"), async (req, res) => {
+    try {
+      const returnDoc = await storage.getB2bReturn(req.params.id);
+      if (!returnDoc) return res.status(404).json({ error: "Reso non trovato" });
+      
+      if (!['approved', 'awaiting_shipment', 'shipped', 'received', 'inspecting', 'completed'].includes(returnDoc.status)) {
+        return res.status(400).json({ error: "Documenti disponibili solo per resi approvati" });
+      }
+      
+      const reseller = await storage.getUser(returnDoc.resellerId);
+      const items = await storage.listB2bReturnItems(returnDoc.id);
+      
+      if (!reseller) {
+        return res.status(400).json({ error: "Rivenditore non trovato" });
+      }
+      
+      const docs = await generateAndStoreReturnDocuments({
+        returnData: returnDoc,
+        items,
+        reseller,
+        adminAddress: {
+          companyName: "MonkeyPlan S.r.l.",
+          address: "Via Roma 123",
+          city: "Milano",
+          postalCode: "20100",
+          province: "MI",
+          country: "Italia",
+          phone: "+39 02 1234567",
+          email: "resi@monkeyplan.it",
+        },
+      });
+      
+      const updated = await storage.updateB2bReturn(returnDoc.id, {
+        shippingLabelPath: docs.labelPath,
+        ddtPath: docs.ddtPath,
+        documentsGeneratedAt: new Date(),
       });
       
       res.json(updated);
