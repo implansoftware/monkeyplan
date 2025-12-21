@@ -90,7 +90,9 @@ import {
   warehouseTransfers, WarehouseTransfer, InsertWarehouseTransfer,
   warehouseTransferItems, WarehouseTransferItem, InsertWarehouseTransferItem,
   resellerPurchaseOrders, ResellerPurchaseOrder, InsertResellerPurchaseOrder,
-  resellerPurchaseOrderItems, ResellerPurchaseOrderItem, InsertResellerPurchaseOrderItem
+  resellerPurchaseOrderItems, ResellerPurchaseOrderItem, InsertResellerPurchaseOrderItem,
+  b2bReturns, B2bReturn, InsertB2bReturn,
+  b2bReturnItems, B2bReturnItem, InsertB2bReturnItem
 } from "@shared/schema";
 import { db, pool } from "./db";
 import { eq, and, or, desc, lt, sql, not, inArray, isNull } from "drizzle-orm";
@@ -794,6 +796,19 @@ export interface IStorage {
     b2bPrice: number;
     minimumOrderQuantity: number;
   }>>;
+  
+  // B2B Returns (Resi ordini B2B)
+  listB2bReturns(filters?: { resellerId?: string; status?: string }): Promise<B2bReturn[]>;
+  getB2bReturn(id: string): Promise<B2bReturn | undefined>;
+  getB2bReturnByNumber(returnNumber: string): Promise<B2bReturn | undefined>;
+  createB2bReturn(data: InsertB2bReturn): Promise<B2bReturn>;
+  updateB2bReturn(id: string, updates: Partial<B2bReturn>): Promise<B2bReturn>;
+  generateB2bReturnNumber(): Promise<string>;
+  
+  // B2B Return Items
+  listB2bReturnItems(returnId: string): Promise<B2bReturnItem[]>;
+  createB2bReturnItem(data: InsertB2bReturnItem): Promise<B2bReturnItem>;
+  updateB2bReturnItem(id: string, updates: Partial<B2bReturnItem>): Promise<B2bReturnItem>;
   
   sessionStore: session.Store;
 }
@@ -6802,6 +6817,79 @@ export class DatabaseStorage implements IStorage {
     }
     
     return catalog;
+  }
+
+  // ==========================================
+  // B2B RETURNS - Resi ordini B2B
+  // ==========================================
+
+  async listB2bReturns(filters?: { resellerId?: string; status?: string }): Promise<B2bReturn[]> {
+    const conditions = [];
+    if (filters?.resellerId) conditions.push(eq(b2bReturns.resellerId, filters.resellerId));
+    if (filters?.status) conditions.push(eq(b2bReturns.status, filters.status as any));
+    
+    if (conditions.length === 0) {
+      return await db.select().from(b2bReturns).orderBy(desc(b2bReturns.createdAt));
+    }
+    return await db.select().from(b2bReturns)
+      .where(and(...conditions))
+      .orderBy(desc(b2bReturns.createdAt));
+  }
+
+  async getB2bReturn(id: string): Promise<B2bReturn | undefined> {
+    const [result] = await db.select().from(b2bReturns).where(eq(b2bReturns.id, id));
+    return result || undefined;
+  }
+
+  async getB2bReturnByNumber(returnNumber: string): Promise<B2bReturn | undefined> {
+    const [result] = await db.select().from(b2bReturns).where(eq(b2bReturns.returnNumber, returnNumber));
+    return result || undefined;
+  }
+
+  async createB2bReturn(data: InsertB2bReturn): Promise<B2bReturn> {
+    const [created] = await db.insert(b2bReturns).values(data).returning();
+    return created;
+  }
+
+  async updateB2bReturn(id: string, updates: Partial<B2bReturn>): Promise<B2bReturn> {
+    const [updated] = await db.update(b2bReturns)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(b2bReturns.id, id))
+      .returning();
+    if (!updated) throw new Error("B2B return not found");
+    return updated;
+  }
+
+  async generateB2bReturnNumber(): Promise<string> {
+    const year = new Date().getFullYear();
+    const prefix = `RES-B2B-${year}`;
+    
+    const [result] = await db.select({ count: sql<number>`count(*)` })
+      .from(b2bReturns)
+      .where(sql`${b2bReturns.returnNumber} LIKE ${prefix + '%'}`);
+    
+    const nextNumber = (result?.count || 0) + 1;
+    return `${prefix}-${String(nextNumber).padStart(5, '0')}`;
+  }
+
+  // B2B Return Items
+  async listB2bReturnItems(returnId: string): Promise<B2bReturnItem[]> {
+    return await db.select().from(b2bReturnItems)
+      .where(eq(b2bReturnItems.returnId, returnId));
+  }
+
+  async createB2bReturnItem(data: InsertB2bReturnItem): Promise<B2bReturnItem> {
+    const [created] = await db.insert(b2bReturnItems).values(data).returning();
+    return created;
+  }
+
+  async updateB2bReturnItem(id: string, updates: Partial<B2bReturnItem>): Promise<B2bReturnItem> {
+    const [updated] = await db.update(b2bReturnItems)
+      .set(updates)
+      .where(eq(b2bReturnItems.id, id))
+      .returning();
+    if (!updated) throw new Error("B2B return item not found");
+    return updated;
   }
 }
 

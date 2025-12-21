@@ -3174,6 +3174,97 @@ export const salesOrderReturnItems = pgTable("sales_order_return_items", {
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
+// ==========================================
+// B2B RETURNS - Resi Ordini B2B (Reseller → Admin)
+// ==========================================
+
+// Stato reso B2B
+export const b2bReturnStatusEnum = pgEnum("b2b_return_status", [
+  "requested",         // Richiesto dal reseller
+  "approved",          // Approvato dall'admin
+  "rejected",          // Rifiutato
+  "awaiting_shipment", // In attesa spedizione reso
+  "shipped",           // Spedito dal reseller
+  "received",          // Ricevuto dall'admin
+  "inspecting",        // In ispezione
+  "completed",         // Completato (stock ripristinato)
+  "cancelled",         // Annullato
+]);
+
+// Motivo reso B2B
+export const b2bReturnReasonEnum = pgEnum("b2b_return_reason", [
+  "defective",         // Difettoso
+  "wrong_item",        // Articolo errato
+  "not_as_described",  // Non conforme alla descrizione
+  "damaged_in_transit",// Danneggiato in transito
+  "excess_stock",      // Eccesso di stock
+  "quality_issue",     // Problema qualità
+  "other",             // Altro
+]);
+
+// B2B Returns - Resi ordini B2B
+export const b2bReturns = pgTable("b2b_returns", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  returnNumber: text("return_number").notNull().unique(), // es: "RES-B2B-2024-0001"
+  orderId: varchar("order_id").notNull(), // Riferimento a reseller_purchase_orders
+  resellerId: varchar("reseller_id").notNull(),
+  status: b2bReturnStatusEnum("status").notNull().default("requested"),
+  reason: b2bReturnReasonEnum("reason").notNull(),
+  reasonDetails: text("reason_details"),
+  // Importi
+  totalAmount: real("total_amount").notNull().default(0), // Valore totale articoli resi
+  creditAmount: real("credit_amount"), // Importo accreditato
+  // Spedizione reso
+  trackingNumber: text("tracking_number"),
+  carrier: text("carrier"),
+  // Date
+  requestedAt: timestamp("requested_at").notNull().defaultNow(),
+  approvedAt: timestamp("approved_at"),
+  rejectedAt: timestamp("rejected_at"),
+  shippedAt: timestamp("shipped_at"),
+  receivedAt: timestamp("received_at"),
+  completedAt: timestamp("completed_at"),
+  // Note
+  resellerNotes: text("reseller_notes"),
+  adminNotes: text("admin_notes"),
+  rejectionReason: text("rejection_reason"),
+  inspectionNotes: text("inspection_notes"),
+  // Meta
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+// B2B Return Items - Articoli reso B2B
+export const b2bReturnItems = pgTable("b2b_return_items", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  returnId: varchar("return_id").notNull(),
+  orderItemId: varchar("order_item_id"), // Riferimento all'articolo originale
+  productId: varchar("product_id").notNull(),
+  productName: text("product_name").notNull(),
+  productSku: text("product_sku"),
+  quantity: integer("quantity").notNull().default(1),
+  unitPrice: real("unit_price").notNull(),
+  totalPrice: real("total_price").notNull(),
+  reason: text("reason"),
+  condition: returnItemConditionEnum("condition"),
+  conditionNotes: text("condition_notes"),
+  // Restock
+  restocked: boolean("restocked").default(false),
+  restockedAt: timestamp("restocked_at"),
+  restockedQuantity: integer("restocked_quantity"),
+  // Meta
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+// Zod schemas per B2B Returns
+export const insertB2bReturnSchema = createInsertSchema(b2bReturns).omit({ id: true, createdAt: true, updatedAt: true });
+export type InsertB2bReturn = z.infer<typeof insertB2bReturnSchema>;
+export type B2bReturn = typeof b2bReturns.$inferSelect;
+
+export const insertB2bReturnItemSchema = createInsertSchema(b2bReturnItems).omit({ id: true, createdAt: true });
+export type InsertB2bReturnItem = z.infer<typeof insertB2bReturnItemSchema>;
+export type B2bReturnItem = typeof b2bReturnItems.$inferSelect;
+
 // Relations
 export const usersRelations = relations(users, ({ one, many }) => ({
   repairCenter: one(repairCenters, {
