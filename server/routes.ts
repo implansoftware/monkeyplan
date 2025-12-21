@@ -19585,7 +19585,7 @@ export function registerRoutes(app: Express): Server {
         orderNumber: order.orderNumber,
         method: (order.paymentMethod as any) || 'bank_transfer',
         status: 'completed',
-        amount: order.totalAmount,
+        amount: order.total,
         currency: 'EUR',
         paidAt: new Date(),
         gatewayReference: transactionReference || null,
