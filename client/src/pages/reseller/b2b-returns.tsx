@@ -326,52 +326,34 @@ export default function ResellerB2BReturns() {
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            const newWindow = window.open('', '_blank');
-                            fetch(`/api/reseller/b2b-returns/${selectedReturn.id}/label`, { credentials: 'include' })
-                              .then(res => {
-                                if (res.ok) return res.json();
-                                throw new Error("Impossibile scaricare l'etichetta");
-                              })
-                              .then(data => {
-                                if (newWindow) newWindow.location.href = data.url;
-                              })
-                              .catch(() => {
-                                if (newWindow) newWindow.close();
-                                toast({ title: "Errore", description: "Impossibile scaricare l'etichetta", variant: "destructive" });
-                              });
-                          }}
-                          data-testid="button-download-label"
+                          asChild
                         >
-                          <Tag className="h-4 w-4 mr-2" />
-                          Scarica Etichetta
+                          <a 
+                            href={`/api/reseller/b2b-returns/${selectedReturn.id}/label`}
+                            download={`etichetta_${selectedReturn.returnNumber}.pdf`}
+                            onClick={(e) => e.stopPropagation()}
+                            data-testid="button-download-label"
+                          >
+                            <Tag className="h-4 w-4 mr-2" />
+                            Scarica Etichetta
+                          </a>
                         </Button>
                       )}
                       {selectedReturn.ddtPath && (
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            const newWindow = window.open('', '_blank');
-                            fetch(`/api/reseller/b2b-returns/${selectedReturn.id}/ddt`, { credentials: 'include' })
-                              .then(res => {
-                                if (res.ok) return res.json();
-                                throw new Error("Impossibile scaricare il DDT");
-                              })
-                              .then(data => {
-                                if (newWindow) newWindow.location.href = data.url;
-                              })
-                              .catch(() => {
-                                if (newWindow) newWindow.close();
-                                toast({ title: "Errore", description: "Impossibile scaricare il DDT", variant: "destructive" });
-                              });
-                          }}
-                          data-testid="button-download-ddt"
+                          asChild
                         >
-                          <Download className="h-4 w-4 mr-2" />
-                          Scarica DDT
+                          <a 
+                            href={`/api/reseller/b2b-returns/${selectedReturn.id}/ddt`}
+                            download={`ddt_${selectedReturn.returnNumber}.pdf`}
+                            onClick={(e) => e.stopPropagation()}
+                            data-testid="button-download-ddt"
+                          >
+                            <Download className="h-4 w-4 mr-2" />
+                            Scarica DDT
+                          </a>
                         </Button>
                       )}
                     </div>

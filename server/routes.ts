@@ -19928,13 +19928,12 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  // Reseller: Download shipping label
+  // Reseller: Download shipping label (proxy)
   app.get("/api/reseller/b2b-returns/:id/label", requireRole("reseller"), async (req, res) => {
     try {
       const returnDoc = await storage.getB2bReturn(req.params.id);
       if (!returnDoc) return res.status(404).json({ error: "Reso non trovato" });
       
-      // Verify ownership
       if (returnDoc.resellerId !== req.user?.id) {
         return res.status(403).json({ error: "Accesso non autorizzato" });
       }
@@ -19943,20 +19942,24 @@ export function registerRoutes(app: Express): Server {
         return res.status(404).json({ error: "Etichetta non ancora generata" });
       }
       
-      const signedUrl = await getSignedDownloadUrl(returnDoc.shippingLabelPath);
-      res.json({ url: signedUrl, filename: `etichetta_${returnDoc.returnNumber}.pdf` });
+      const { bucketName, objectName } = parseObjectPath(returnDoc.shippingLabelPath);
+      const file = objectStorageClient.bucket(bucketName).file(objectName);
+      
+      res.setHeader("Content-Type", "application/pdf");
+      res.setHeader("Content-Disposition", `attachment; filename="etichetta_${returnDoc.returnNumber}.pdf"`);
+      
+      file.createReadStream().pipe(res);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }
   });
 
-  // Reseller: Download DDT
+  // Reseller: Download DDT (proxy)
   app.get("/api/reseller/b2b-returns/:id/ddt", requireRole("reseller"), async (req, res) => {
     try {
       const returnDoc = await storage.getB2bReturn(req.params.id);
       if (!returnDoc) return res.status(404).json({ error: "Reso non trovato" });
       
-      // Verify ownership
       if (returnDoc.resellerId !== req.user?.id) {
         return res.status(403).json({ error: "Accesso non autorizzato" });
       }
@@ -19965,14 +19968,19 @@ export function registerRoutes(app: Express): Server {
         return res.status(404).json({ error: "DDT non ancora generato" });
       }
       
-      const signedUrl = await getSignedDownloadUrl(returnDoc.ddtPath);
-      res.json({ url: signedUrl, filename: `ddt_${returnDoc.returnNumber}.pdf` });
+      const { bucketName, objectName } = parseObjectPath(returnDoc.ddtPath);
+      const file = objectStorageClient.bucket(bucketName).file(objectName);
+      
+      res.setHeader("Content-Type", "application/pdf");
+      res.setHeader("Content-Disposition", `attachment; filename="ddt_${returnDoc.returnNumber}.pdf"`);
+      
+      file.createReadStream().pipe(res);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }
   });
 
-  // Admin: Download shipping label (for any return)
+  // Admin: Download shipping label (proxy)
   app.get("/api/admin/b2b-returns/:id/label", requireRole("admin"), async (req, res) => {
     try {
       const returnDoc = await storage.getB2bReturn(req.params.id);
@@ -19982,14 +19990,19 @@ export function registerRoutes(app: Express): Server {
         return res.status(404).json({ error: "Etichetta non ancora generata" });
       }
       
-      const signedUrl = await getSignedDownloadUrl(returnDoc.shippingLabelPath);
-      res.json({ url: signedUrl, filename: `etichetta_${returnDoc.returnNumber}.pdf` });
+      const { bucketName, objectName } = parseObjectPath(returnDoc.shippingLabelPath);
+      const file = objectStorageClient.bucket(bucketName).file(objectName);
+      
+      res.setHeader("Content-Type", "application/pdf");
+      res.setHeader("Content-Disposition", `attachment; filename="etichetta_${returnDoc.returnNumber}.pdf"`);
+      
+      file.createReadStream().pipe(res);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }
   });
 
-  // Admin: Download DDT (for any return)
+  // Admin: Download DDT (proxy)
   app.get("/api/admin/b2b-returns/:id/ddt", requireRole("admin"), async (req, res) => {
     try {
       const returnDoc = await storage.getB2bReturn(req.params.id);
@@ -19999,8 +20012,13 @@ export function registerRoutes(app: Express): Server {
         return res.status(404).json({ error: "DDT non ancora generato" });
       }
       
-      const signedUrl = await getSignedDownloadUrl(returnDoc.ddtPath);
-      res.json({ url: signedUrl, filename: `ddt_${returnDoc.returnNumber}.pdf` });
+      const { bucketName, objectName } = parseObjectPath(returnDoc.ddtPath);
+      const file = objectStorageClient.bucket(bucketName).file(objectName);
+      
+      res.setHeader("Content-Type", "application/pdf");
+      res.setHeader("Content-Disposition", `attachment; filename="ddt_${returnDoc.returnNumber}.pdf"`);
+      
+      file.createReadStream().pipe(res);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }
