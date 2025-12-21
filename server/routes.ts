@@ -7822,12 +7822,22 @@ export function registerRoutes(app: Express): Server {
       const product = await storage.getProduct(req.params.productId);
       if (!product) return res.status(404).send("Product not found");
       
-      // Check ownership for reseller
-      if (req.user.role === 'reseller' && product.createdBy !== req.user.id) {
-        return res.status(403).send("Access denied");
+      // Check ownership or assignment for reseller
+      if (req.user.role === 'reseller') {
+        const isOwner = product.createdBy === req.user.id;
+        const assignment = await storage.getResellerProduct(req.params.productId, req.user.id);
+        if (!isOwner && !assignment) {
+          return res.status(403).send("Access denied");
+        }
       }
-      if (req.user.role === 'reseller_collaborator' && product.createdBy !== req.user.resellerId) {
-        return res.status(403).send("Access denied");
+      if (req.user.role === 'reseller_collaborator') {
+        const resellerId = req.user.resellerId;
+        if (!resellerId) return res.status(403).send("Access denied");
+        const isOwner = product.createdBy === resellerId;
+        const assignment = await storage.getResellerProduct(req.params.productId, resellerId);
+        if (!isOwner && !assignment) {
+          return res.status(403).send("Access denied");
+        }
       }
       
       const { product: productData, specs: specsData } = req.body;
@@ -7860,12 +7870,22 @@ export function registerRoutes(app: Express): Server {
       const product = await storage.getProduct(req.params.productId);
       if (!product) return res.status(404).send("Product not found");
       
-      // Check ownership for reseller
-      if (req.user.role === 'reseller' && product.createdBy !== req.user.id) {
-        return res.status(403).send("Access denied");
+      // Check ownership or assignment for reseller
+      if (req.user.role === 'reseller') {
+        const isOwner = product.createdBy === req.user.id;
+        const assignment = await storage.getResellerProduct(req.params.productId, req.user.id);
+        if (!isOwner && !assignment) {
+          return res.status(403).send("Access denied");
+        }
       }
-      if (req.user.role === 'reseller_collaborator' && product.createdBy !== req.user.resellerId) {
-        return res.status(403).send("Access denied");
+      if (req.user.role === 'reseller_collaborator') {
+        const resellerId = req.user.resellerId;
+        if (!resellerId) return res.status(403).send("Access denied");
+        const isOwner = product.createdBy === resellerId;
+        const assignment = await storage.getResellerProduct(req.params.productId, resellerId);
+        if (!isOwner && !assignment) {
+          return res.status(403).send("Access denied");
+        }
       }
       
       const updatedSpecs = await storage.updateSmartphoneSpecs(req.params.productId, req.body);
