@@ -18810,27 +18810,32 @@ export function registerRoutes(app: Express): Server {
       } else if (req.user.role === 'reseller' || req.user.role === 'reseller_staff' || req.user.role === 'reseller_collaborator') {
         const resellerId = req.user.resellerId || req.user.id;
         
-        // Check source
-        if (sourceWarehouse.ownerType === 'reseller' && sourceWarehouse.ownerId === resellerId) {
-          canAccessSource = true;
-        } else if (sourceWarehouse.ownerType === 'sub_reseller') {
-          const subUser = await storage.getUser(sourceWarehouse.ownerId);
-          if (subUser?.resellerId === resellerId) canAccessSource = true;
-        } else if (sourceWarehouse.ownerType === 'repair_center') {
-          const rcUser = await storage.getUser(sourceWarehouse.ownerId);
-          if (rcUser?.resellerId === resellerId) canAccessSource = true;
+        // Costruisci set di magazzini accessibili (stessa logica di /api/warehouses/accessible)
+        const accessibleWarehouseIds = new Set<string>();
+        
+        // 1. Proprio magazzino
+        const ownWarehouse = await storage.getWarehouseByOwner('reseller', resellerId);
+        if (ownWarehouse) accessibleWarehouseIds.add(ownWarehouse.id);
+        
+        // 2. Sub-rivenditori (users con parentResellerId = questo reseller)
+        const allUsers = await storage.listUsers();
+        const subResellers = allUsers.filter(u => u.parentResellerId === resellerId);
+        for (const sub of subResellers) {
+          const subWarehouse = await storage.getWarehouseByOwner('sub_reseller', sub.id);
+          if (subWarehouse) accessibleWarehouseIds.add(subWarehouse.id);
         }
         
-        // Check destination
-        if (destWarehouse.ownerType === 'reseller' && destWarehouse.ownerId === resellerId) {
-          canAccessDest = true;
-        } else if (destWarehouse.ownerType === 'sub_reseller') {
-          const subUser = await storage.getUser(destWarehouse.ownerId);
-          if (subUser?.resellerId === resellerId) canAccessDest = true;
-        } else if (destWarehouse.ownerType === 'repair_center') {
-          const rcUser = await storage.getUser(destWarehouse.ownerId);
-          if (rcUser?.resellerId === resellerId) canAccessDest = true;
+        // 3. Centri di riparazione (dalla tabella repair_centers con resellerId = questo reseller)
+        const allRepairCenters = await storage.listRepairCenters();
+        const myRepairCenters = allRepairCenters.filter(rc => rc.resellerId === resellerId);
+        for (const rc of myRepairCenters) {
+          const rcWarehouse = await storage.getWarehouseByOwner('repair_center', rc.id);
+          if (rcWarehouse) accessibleWarehouseIds.add(rcWarehouse.id);
         }
+        
+        // Verifica accesso
+        canAccessSource = accessibleWarehouseIds.has(sourceWarehouseId);
+        canAccessDest = accessibleWarehouseIds.has(destinationWarehouseId);
       } else if (req.user.role === 'sub_reseller') {
         // Sub-reseller can only transfer from/to their own warehouse
         if (sourceWarehouse.ownerType === 'sub_reseller' && sourceWarehouse.ownerId === req.user.id) {
