@@ -3229,6 +3229,10 @@ export const b2bReturns = pgTable("b2b_returns", {
   adminNotes: text("admin_notes"),
   rejectionReason: text("rejection_reason"),
   inspectionNotes: text("inspection_notes"),
+  // Documenti spedizione (generati all'approvazione)
+  shippingLabelPath: text("shipping_label_path"),
+  ddtPath: text("ddt_path"),
+  documentsGeneratedAt: timestamp("documents_generated_at"),
   // Meta
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
