@@ -19505,6 +19505,7 @@ export function registerRoutes(app: Express): Server {
           quantity: item.quantity,
           referenceType: 'ordine_b2b',
           referenceId: order.id,
+          notes: `Ordine B2B ${order.orderNumber} → ${resellerWarehouse.name}`,
           createdBy: req.user.id,
         });
         
@@ -19517,6 +19518,7 @@ export function registerRoutes(app: Express): Server {
           quantity: item.quantity,
           referenceType: 'ordine_b2b',
           referenceId: order.id,
+          notes: `Ordine B2B ${order.orderNumber} ← ${adminWarehouse.name}`,
           createdBy: req.user.id,
         });
       }
