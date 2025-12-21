@@ -4382,16 +4382,27 @@ export function registerRoutes(app: Express): Server {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
-      const { customPriceCents } = z.object({
-        customPriceCents: z.number().int().positive().nullable(),
-      }).parse(req.body);
+      // Accetta sia priceCents che customPriceCents per retrocompatibilità
+      const schema = z.object({
+        priceCents: z.number().int().positive().nullable().optional(),
+        customPriceCents: z.number().int().positive().nullable().optional(),
+      }).refine(data => data.priceCents !== undefined || data.customPriceCents !== undefined, {
+        message: "priceCents o customPriceCents richiesto"
+      });
+      
+      const parsed = schema.parse(req.body);
+      const priceCents = parsed.priceCents ?? parsed.customPriceCents ?? null;
       
       const context = getEffectiveContext(req);
       if (!context.resellerId) return res.status(400).send("Rivenditore non trovato");
       
-      // Verifica che l'assegnazione appartenga al reseller
+      // Cerca per assignmentId O productId (supporta entrambi i pattern)
       const assignments = await storage.listResellerProducts({ resellerId: context.resellerId });
-      const assignment = assignments.find(a => a.id === req.params.assignmentId);
+      let assignment = assignments.find(a => a.id === req.params.assignmentId);
+      if (!assignment) {
+        // Prova a cercare per productId
+        assignment = assignments.find(a => a.productId === req.params.assignmentId);
+      }
       
       if (!assignment) {
         return res.status(404).send("Assegnazione prodotto non trovata");
@@ -4401,8 +4412,8 @@ export function registerRoutes(app: Express): Server {
         return res.status(403).send("Non puoi modificare il prezzo di questo prodotto");
       }
       
-      const updated = await storage.updateResellerProduct(req.params.assignmentId, { 
-        customPriceCents: customPriceCents || undefined 
+      const updated = await storage.updateResellerProduct(assignment.id, { 
+        customPriceCents: priceCents || undefined 
       });
       res.json(updated);
     } catch (error: any) {
