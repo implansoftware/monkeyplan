@@ -18711,8 +18711,17 @@ export function registerRoutes(app: Express): Server {
       const enriched = await Promise.all(accessibleWarehouses.map(async (wh) => {
         let owner = null;
         if (wh.ownerId && wh.ownerId !== 'system') {
-          const user = await storage.getUser(wh.ownerId);
-          if (user) owner = { id: user.id, username: user.username, fullName: user.fullName };
+          if (wh.ownerType === 'repair_center') {
+            // Per i centri di riparazione, ownerId punta a repair_centers, non users
+            const repairCenter = await storage.getRepairCenter(wh.ownerId);
+            if (repairCenter) {
+              owner = { id: repairCenter.id, username: repairCenter.name, fullName: repairCenter.name };
+            }
+          } else {
+            // Per admin, reseller, sub_reseller, ownerId punta a users
+            const user = await storage.getUser(wh.ownerId);
+            if (user) owner = { id: user.id, username: user.username, fullName: user.fullName };
+          }
         }
         return { ...wh, owner };
       }));
