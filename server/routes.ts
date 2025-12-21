@@ -19211,5 +19211,321 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // ==========================================
+  // B2B RESELLER PURCHASE ORDERS
+  // ==========================================
+
+  // Reseller: Get admin catalog (products with stock available for B2B purchase)
+  app.get("/api/reseller/b2b-catalog", requireRole("reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      const catalog = await storage.getAdminCatalogForReseller(req.user.id);
+      res.json(catalog);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Reseller: List own B2B orders
+  app.get("/api/reseller/b2b-orders", requireRole("reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      const orders = await storage.listResellerPurchaseOrders({ resellerId: req.user.id });
+      
+      // Enrich orders with items
+      const enrichedOrders = await Promise.all(orders.map(async (order) => {
+        const items = await storage.listResellerPurchaseOrderItems(order.id);
+        return { ...order, items };
+      }));
+      
+      res.json(enrichedOrders);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Reseller: Get single B2B order with items
+  app.get("/api/reseller/b2b-orders/:id", requireRole("reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      const order = await storage.getResellerPurchaseOrder(req.params.id);
+      if (!order) return res.status(404).json({ error: "Ordine non trovato" });
+      if (order.resellerId !== req.user.id) return res.status(403).json({ error: "Accesso negato" });
+      
+      const items = await storage.listResellerPurchaseOrderItems(order.id);
+      
+      // Enrich items with product info
+      const enrichedItems = await Promise.all(items.map(async (item) => {
+        const product = await storage.getProduct(item.productId);
+        return { ...item, product };
+      }));
+      
+      res.json({ ...order, items: enrichedItems });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Reseller: Create B2B order
+  app.post("/api/reseller/b2b-orders", requireRole("reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      const { items, paymentMethod, notes, shippingAddress } = req.body;
+      
+      if (!items || !Array.isArray(items) || items.length === 0) {
+        return res.status(400).json({ error: "L'ordine deve contenere almeno un prodotto" });
+      }
+      
+      // Get catalog to verify products and prices
+      const catalog = await storage.getAdminCatalogForReseller(req.user.id);
+      const catalogMap = new Map(catalog.map(c => [c.product.id, c]));
+      
+      let totalCents = 0;
+      const orderItems: Array<{ productId: string; quantity: number; unitPriceCents: number; productName: string }> = [];
+      
+      for (const item of items) {
+        const catalogItem = catalogMap.get(item.productId);
+        if (!catalogItem) {
+          return res.status(400).json({ error: `Prodotto ${item.productId} non disponibile nel catalogo` });
+        }
+        if (item.quantity > catalogItem.adminStock) {
+          return res.status(400).json({ error: `Stock insufficiente per ${catalogItem.product.name}: disponibili ${catalogItem.adminStock}` });
+        }
+        if (item.quantity < catalogItem.minimumOrderQuantity) {
+          return res.status(400).json({ error: `Quantità minima per ${catalogItem.product.name}: ${catalogItem.minimumOrderQuantity}` });
+        }
+        
+        const lineTotalCents = catalogItem.b2bPrice * item.quantity;
+        totalCents += lineTotalCents;
+        orderItems.push({
+          productId: item.productId,
+          quantity: item.quantity,
+          unitPriceCents: catalogItem.b2bPrice,
+          productName: catalogItem.product.name,
+        });
+      }
+      
+      // Create order
+      const order = await storage.createResellerPurchaseOrder({
+        resellerId: req.user.id,
+        status: 'pending',
+        subtotal: totalCents,
+        total: totalCents,
+        paymentMethod: paymentMethod || 'bank_transfer',
+        resellerNotes: notes,
+      });
+      
+      // Create order items
+      for (const item of orderItems) {
+        await storage.createResellerPurchaseOrderItem({
+          orderId: order.id,
+          productId: item.productId,
+          quantity: item.quantity,
+          unitPrice: item.unitPriceCents,
+          totalPrice: item.unitPriceCents * item.quantity,
+          productName: item.productName,
+        });
+      }
+      
+      const createdItems = await storage.listResellerPurchaseOrderItems(order.id);
+      res.status(201).json({ ...order, items: createdItems });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Admin: List all B2B orders from resellers
+  app.get("/api/admin/b2b-orders", requireRole("admin"), async (req, res) => {
+    try {
+      const status = req.query.status as string | undefined;
+      const orders = await storage.listResellerPurchaseOrders(status ? { status } : undefined);
+      
+      // Enrich orders with reseller info and items
+      const enrichedOrders = await Promise.all(orders.map(async (order) => {
+        const [reseller, items] = await Promise.all([
+          storage.getUser(order.resellerId),
+          storage.listResellerPurchaseOrderItems(order.id)
+        ]);
+        return { ...order, reseller: reseller ? { id: reseller.id, fullName: reseller.fullName, email: reseller.email } : null, items };
+      }));
+      
+      res.json(enrichedOrders);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Admin: Get single B2B order with full details
+  app.get("/api/admin/b2b-orders/:id", requireRole("admin"), async (req, res) => {
+    try {
+      const order = await storage.getResellerPurchaseOrder(req.params.id);
+      if (!order) return res.status(404).json({ error: "Ordine non trovato" });
+      
+      const [reseller, items] = await Promise.all([
+        storage.getUser(order.resellerId),
+        storage.listResellerPurchaseOrderItems(order.id)
+      ]);
+      
+      // Enrich items with product info
+      const enrichedItems = await Promise.all(items.map(async (item) => {
+        const product = await storage.getProduct(item.productId);
+        return { ...item, product };
+      }));
+      
+      res.json({ 
+        ...order, 
+        reseller: reseller ? { id: reseller.id, fullName: reseller.fullName, email: reseller.email } : null, 
+        items: enrichedItems 
+      });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Admin: Approve B2B order (transfers stock from admin warehouse to reseller warehouse)
+  app.post("/api/admin/b2b-orders/:id/approve", requireRole("admin"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      
+      const order = await storage.getResellerPurchaseOrder(req.params.id);
+      if (!order) return res.status(404).json({ error: "Ordine non trovato" });
+      if (order.status !== 'pending') {
+        return res.status(400).json({ error: `Impossibile approvare un ordine con stato ${order.status}` });
+      }
+      
+      const items = await storage.listResellerPurchaseOrderItems(order.id);
+      
+      // Get admin warehouse
+      const adminWarehouse = await storage.getWarehouseByOwner('admin', 'admin');
+      if (!adminWarehouse) {
+        return res.status(500).json({ error: "Magazzino admin non trovato" });
+      }
+      
+      // Get or create reseller warehouse
+      const reseller = await storage.getUser(order.resellerId);
+      if (!reseller) return res.status(404).json({ error: "Reseller non trovato" });
+      const resellerWarehouse = await storage.ensureDefaultWarehouse('reseller', order.resellerId, reseller.fullName || 'Reseller');
+      
+      // Verify stock availability and transfer
+      for (const item of items) {
+        const stockItem = await storage.getWarehouseStockItem(adminWarehouse.id, item.productId);
+        if (!stockItem || stockItem.quantity < item.quantity) {
+          return res.status(400).json({ 
+            error: `Stock insufficiente per prodotto ${item.productName}: disponibili ${stockItem?.quantity || 0}, richiesti ${item.quantity}` 
+          });
+        }
+      }
+      
+      // Execute stock transfer
+      for (const item of items) {
+        // Decrement admin warehouse stock
+        await storage.updateWarehouseStockQuantity(adminWarehouse.id, item.productId, -item.quantity);
+        await storage.createWarehouseMovement({
+          warehouseId: adminWarehouse.id,
+          productId: item.productId,
+          movementType: 'vendita_b2b',
+          quantity: item.quantity,
+          referenceType: 'ordine_b2b',
+          referenceId: order.id,
+          createdBy: req.user.id,
+        });
+        
+        // Increment reseller warehouse stock
+        await storage.updateWarehouseStockQuantity(resellerWarehouse.id, item.productId, item.quantity);
+        await storage.createWarehouseMovement({
+          warehouseId: resellerWarehouse.id,
+          productId: item.productId,
+          movementType: 'acquisto_b2b',
+          quantity: item.quantity,
+          referenceType: 'ordine_b2b',
+          referenceId: order.id,
+          createdBy: req.user.id,
+        });
+      }
+      
+      // Update order status
+      const updated = await storage.updateResellerPurchaseOrder(order.id, {
+        status: 'approved',
+        approvedAt: new Date(),
+        approvedBy: req.user.id,
+      });
+      
+      res.json(updated);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Admin: Reject B2B order
+  app.post("/api/admin/b2b-orders/:id/reject", requireRole("admin"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      
+      const order = await storage.getResellerPurchaseOrder(req.params.id);
+      if (!order) return res.status(404).json({ error: "Ordine non trovato" });
+      if (order.status !== 'pending') {
+        return res.status(400).json({ error: `Impossibile rifiutare un ordine con stato ${order.status}` });
+      }
+      
+      const { reason } = req.body;
+      
+      const updated = await storage.updateResellerPurchaseOrder(order.id, {
+        status: 'cancelled',
+        notes: order.notes ? `${order.notes}\n\nRIFIUTATO: ${reason || 'Nessun motivo specificato'}` : `RIFIUTATO: ${reason || 'Nessun motivo specificato'}`,
+      });
+      
+      res.json(updated);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Admin: Mark B2B order as shipped
+  app.post("/api/admin/b2b-orders/:id/ship", requireRole("admin"), async (req, res) => {
+    try {
+      const order = await storage.getResellerPurchaseOrder(req.params.id);
+      if (!order) return res.status(404).json({ error: "Ordine non trovato" });
+      if (order.status !== 'approved') {
+        return res.status(400).json({ error: `Impossibile spedire un ordine con stato ${order.status}` });
+      }
+      
+      const { trackingNumber, carrier } = req.body;
+      
+      const updated = await storage.updateResellerPurchaseOrder(order.id, {
+        status: 'shipped',
+        shippedAt: new Date(),
+        trackingNumber,
+        carrier,
+      });
+      
+      res.json(updated);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Reseller: Confirm receipt of B2B order
+  app.post("/api/reseller/b2b-orders/:id/receive", requireRole("reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      
+      const order = await storage.getResellerPurchaseOrder(req.params.id);
+      if (!order) return res.status(404).json({ error: "Ordine non trovato" });
+      if (order.resellerId !== req.user.id) return res.status(403).json({ error: "Accesso negato" });
+      if (order.status !== 'shipped') {
+        return res.status(400).json({ error: `Impossibile confermare ricezione per un ordine con stato ${order.status}` });
+      }
+      
+      const updated = await storage.updateResellerPurchaseOrder(order.id, {
+        status: 'received',
+        receivedAt: new Date(),
+      });
+      
+      res.json(updated);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   return httpServer;
 }

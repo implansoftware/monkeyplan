@@ -31,6 +31,25 @@ export const movementTypeEnum = pgEnum("movement_type", ["in", "out", "adjustmen
 export const warehouseOwnerTypeEnum = pgEnum("warehouse_owner_type", ["admin", "reseller", "sub_reseller", "repair_center"]);
 export const warehouseMovementTypeEnum = pgEnum("warehouse_movement_type", ["carico", "scarico", "trasferimento_in", "trasferimento_out", "rettifica"]);
 export const warehouseTransferStatusEnum = pgEnum("warehouse_transfer_status", ["pending", "approved", "shipped", "received", "cancelled"]);
+
+// B2B Reseller Purchase Orders Status
+export const resellerPurchaseOrderStatusEnum = pgEnum("reseller_purchase_order_status", [
+  "draft",             // Bozza (carrello non ancora inviato)
+  "pending",           // In attesa di approvazione admin
+  "approved",          // Approvato dall'admin
+  "rejected",          // Rifiutato dall'admin
+  "processing",        // In preparazione
+  "shipped",           // Spedito
+  "received",          // Ricevuto dal reseller
+  "cancelled",         // Annullato
+]);
+
+// B2B Payment Method
+export const b2bPaymentMethodEnum = pgEnum("b2b_payment_method", [
+  "bank_transfer",     // Bonifico bancario
+  "stripe",            // Pagamento Stripe
+  "credit",            // Credito/Fido
+]);
 export const notificationTypeEnum = pgEnum("notification_type", ["repair_update", "sla_warning", "review_request", "message", "system"]);
 // RIMOSSO: diagnosisSeverityEnum - non più necessario
 export const quoteStatusEnum = pgEnum("quote_status", ["draft", "sent", "accepted", "rejected"]);
@@ -716,8 +735,14 @@ export const resellerProducts = pgTable("reseller_products", {
   // Pubblicazione nello shop
   isPublished: boolean("is_published").notNull().default(false),
   
-  // Prezzo personalizzato (override del prezzo base del prodotto)
+  // Prezzo personalizzato per vendita al pubblico (override del prezzo base del prodotto)
   customPriceCents: integer("custom_price_cents"),
+  
+  // Prezzo B2B personalizzato (prezzo a cui il reseller acquista dall'admin)
+  b2bPriceCents: integer("b2b_price_cents"),
+  
+  // Quantità minima ordine B2B (configurabile dall'admin per ogni reseller)
+  minimumOrderQuantity: integer("minimum_order_quantity").default(1),
   
   // Ereditarietà franchising (prodotto assegnato dal reseller padre)
   inheritedFrom: varchar("inherited_from").references(() => users.id, { onDelete: "set null" }),
@@ -917,6 +942,111 @@ export const insertWarehouseTransferItemSchema = createInsertSchema(warehouseTra
   shippedQuantity: true,
   receivedQuantity: true,
 });
+
+// ==========================================
+// B2B RESELLER PURCHASE ORDERS (Ordini Reseller → Admin)
+// ==========================================
+
+// Ordini di acquisto B2B dei reseller verso l'admin
+export const resellerPurchaseOrders = pgTable("reseller_purchase_orders", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  orderNumber: text("order_number").notNull().unique(), // es. B2B-2024-00001
+  resellerId: varchar("reseller_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  
+  // Stato ordine
+  status: resellerPurchaseOrderStatusEnum("status").notNull().default("draft"),
+  
+  // Totali (in centesimi)
+  subtotal: integer("subtotal").notNull().default(0),
+  discountAmount: integer("discount_amount").notNull().default(0),
+  shippingCost: integer("shipping_cost").notNull().default(0),
+  total: integer("total").notNull().default(0),
+  
+  // Pagamento
+  paymentMethod: b2bPaymentMethodEnum("payment_method").default("bank_transfer"),
+  paymentReference: text("payment_reference"), // Riferimento bonifico / ID transazione Stripe
+  paymentConfirmedAt: timestamp("payment_confirmed_at"),
+  paymentConfirmedBy: varchar("payment_confirmed_by").references(() => users.id),
+  
+  // Note
+  resellerNotes: text("reseller_notes"), // Note del reseller
+  adminNotes: text("admin_notes"), // Note dell'admin
+  rejectionReason: text("rejection_reason"), // Motivo rifiuto (se rejected)
+  
+  // Tracking approvazione
+  approvedBy: varchar("approved_by").references(() => users.id),
+  approvedAt: timestamp("approved_at"),
+  rejectedBy: varchar("rejected_by").references(() => users.id),
+  rejectedAt: timestamp("rejected_at"),
+  
+  // Tracking spedizione
+  shippedAt: timestamp("shipped_at"),
+  shippedBy: varchar("shipped_by").references(() => users.id),
+  trackingNumber: text("tracking_number"),
+  trackingCarrier: text("tracking_carrier"),
+  
+  // Tracking ricezione
+  receivedAt: timestamp("received_at"),
+  
+  // Collegamento al trasferimento magazzino generato
+  warehouseTransferId: varchar("warehouse_transfer_id").references(() => warehouseTransfers.id),
+  
+  // Audit
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export const insertResellerPurchaseOrderSchema = createInsertSchema(resellerPurchaseOrders).omit({
+  id: true,
+  orderNumber: true,
+  approvedBy: true,
+  approvedAt: true,
+  rejectedBy: true,
+  rejectedAt: true,
+  shippedAt: true,
+  shippedBy: true,
+  receivedAt: true,
+  warehouseTransferId: true,
+  paymentConfirmedAt: true,
+  paymentConfirmedBy: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+// Articoli dell'ordine B2B
+export const resellerPurchaseOrderItems = pgTable("reseller_purchase_order_items", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  orderId: varchar("order_id").notNull().references(() => resellerPurchaseOrders.id, { onDelete: "cascade" }),
+  productId: varchar("product_id").notNull().references(() => products.id),
+  
+  // Dati articolo (snapshot al momento dell'ordine)
+  productName: text("product_name").notNull(),
+  productSku: text("product_sku"),
+  productImage: text("product_image"),
+  
+  // Quantità e prezzi (in centesimi)
+  quantity: integer("quantity").notNull(),
+  unitPrice: integer("unit_price").notNull(), // Prezzo B2B unitario
+  totalPrice: integer("total_price").notNull(), // quantity * unitPrice
+  
+  // Quantità effettivamente spedita/ricevuta (per gestione parziale)
+  shippedQuantity: integer("shipped_quantity"),
+  receivedQuantity: integer("received_quantity"),
+  
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const insertResellerPurchaseOrderItemSchema = createInsertSchema(resellerPurchaseOrderItems).omit({
+  id: true,
+  shippedQuantity: true,
+  receivedQuantity: true,
+  createdAt: true,
+});
+
+export type ResellerPurchaseOrder = typeof resellerPurchaseOrders.$inferSelect;
+export type InsertResellerPurchaseOrder = z.infer<typeof insertResellerPurchaseOrderSchema>;
+export type ResellerPurchaseOrderItem = typeof resellerPurchaseOrderItems.$inferSelect;
+export type InsertResellerPurchaseOrderItem = z.infer<typeof insertResellerPurchaseOrderItemSchema>;
 
 // Repair orders (Lavorazioni)
 export const repairOrders = pgTable("repair_orders", {

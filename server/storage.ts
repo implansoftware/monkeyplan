@@ -88,7 +88,9 @@ import {
   warehouseStock, WarehouseStock, InsertWarehouseStock,
   warehouseMovements, WarehouseMovement, InsertWarehouseMovement,
   warehouseTransfers, WarehouseTransfer, InsertWarehouseTransfer,
-  warehouseTransferItems, WarehouseTransferItem, InsertWarehouseTransferItem
+  warehouseTransferItems, WarehouseTransferItem, InsertWarehouseTransferItem,
+  resellerPurchaseOrders, ResellerPurchaseOrder, InsertResellerPurchaseOrder,
+  resellerPurchaseOrderItems, ResellerPurchaseOrderItem, InsertResellerPurchaseOrderItem
 } from "@shared/schema";
 import { db, pool } from "./db";
 import { eq, and, or, desc, lt, sql, not, inArray, isNull } from "drizzle-orm";
@@ -769,6 +771,28 @@ export interface IStorage {
   listWarehouseTransferItems(transferId: string): Promise<WarehouseTransferItem[]>;
   createWarehouseTransferItem(data: InsertWarehouseTransferItem): Promise<WarehouseTransferItem>;
   updateWarehouseTransferItem(id: string, updates: Partial<WarehouseTransferItem>): Promise<WarehouseTransferItem>;
+  
+  // B2B Reseller Purchase Orders
+  listResellerPurchaseOrders(filters?: { resellerId?: string; status?: string }): Promise<ResellerPurchaseOrder[]>;
+  getResellerPurchaseOrder(id: string): Promise<ResellerPurchaseOrder | undefined>;
+  getResellerPurchaseOrderByNumber(orderNumber: string): Promise<ResellerPurchaseOrder | undefined>;
+  createResellerPurchaseOrder(data: InsertResellerPurchaseOrder): Promise<ResellerPurchaseOrder>;
+  updateResellerPurchaseOrder(id: string, updates: Partial<ResellerPurchaseOrder>): Promise<ResellerPurchaseOrder>;
+  generateB2BOrderNumber(): Promise<string>;
+  
+  // B2B Reseller Purchase Order Items
+  listResellerPurchaseOrderItems(orderId: string): Promise<ResellerPurchaseOrderItem[]>;
+  createResellerPurchaseOrderItem(data: InsertResellerPurchaseOrderItem): Promise<ResellerPurchaseOrderItem>;
+  updateResellerPurchaseOrderItem(id: string, updates: Partial<ResellerPurchaseOrderItem>): Promise<ResellerPurchaseOrderItem>;
+  deleteResellerPurchaseOrderItem(id: string): Promise<void>;
+  
+  // B2B Catalog (prodotti admin con stock disponibile)
+  getAdminCatalogForReseller(resellerId: string): Promise<Array<{
+    product: Product;
+    adminStock: number;
+    b2bPrice: number;
+    minimumOrderQuantity: number;
+  }>>;
   
   sessionStore: session.Store;
 }
@@ -6626,6 +6650,145 @@ export class DatabaseStorage implements IStorage {
       .returning();
     if (!updated) throw new Error("Transfer item not found");
     return updated;
+  }
+
+  // ==========================================
+  // B2B RESELLER PURCHASE ORDERS
+  // ==========================================
+
+  async listResellerPurchaseOrders(filters?: { resellerId?: string; status?: string }): Promise<ResellerPurchaseOrder[]> {
+    const conditions = [];
+    if (filters?.resellerId) conditions.push(eq(resellerPurchaseOrders.resellerId, filters.resellerId));
+    if (filters?.status) conditions.push(eq(resellerPurchaseOrders.status, filters.status as any));
+    
+    if (conditions.length === 0) {
+      return await db.select().from(resellerPurchaseOrders).orderBy(desc(resellerPurchaseOrders.createdAt));
+    }
+    return await db.select().from(resellerPurchaseOrders)
+      .where(and(...conditions))
+      .orderBy(desc(resellerPurchaseOrders.createdAt));
+  }
+
+  async getResellerPurchaseOrder(id: string): Promise<ResellerPurchaseOrder | undefined> {
+    const [order] = await db.select().from(resellerPurchaseOrders).where(eq(resellerPurchaseOrders.id, id));
+    return order || undefined;
+  }
+
+  async getResellerPurchaseOrderByNumber(orderNumber: string): Promise<ResellerPurchaseOrder | undefined> {
+    const [order] = await db.select().from(resellerPurchaseOrders).where(eq(resellerPurchaseOrders.orderNumber, orderNumber));
+    return order || undefined;
+  }
+
+  async createResellerPurchaseOrder(data: InsertResellerPurchaseOrder): Promise<ResellerPurchaseOrder> {
+    const orderNumber = await this.generateB2BOrderNumber();
+    const [created] = await db.insert(resellerPurchaseOrders)
+      .values({ ...data, orderNumber })
+      .returning();
+    return created;
+  }
+
+  async updateResellerPurchaseOrder(id: string, updates: Partial<ResellerPurchaseOrder>): Promise<ResellerPurchaseOrder> {
+    const [updated] = await db.update(resellerPurchaseOrders)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(resellerPurchaseOrders.id, id))
+      .returning();
+    if (!updated) throw new Error("B2B order not found");
+    return updated;
+  }
+
+  async generateB2BOrderNumber(): Promise<string> {
+    const year = new Date().getFullYear();
+    const prefix = `B2B-${year}`;
+    
+    const [result] = await db.select({ count: sql<number>`count(*)` })
+      .from(resellerPurchaseOrders)
+      .where(sql`${resellerPurchaseOrders.orderNumber} LIKE ${prefix + '%'}`);
+    
+    const nextNumber = (result?.count || 0) + 1;
+    return `${prefix}-${String(nextNumber).padStart(5, '0')}`;
+  }
+
+  // B2B Order Items
+  async listResellerPurchaseOrderItems(orderId: string): Promise<ResellerPurchaseOrderItem[]> {
+    return await db.select().from(resellerPurchaseOrderItems)
+      .where(eq(resellerPurchaseOrderItems.orderId, orderId));
+  }
+
+  async createResellerPurchaseOrderItem(data: InsertResellerPurchaseOrderItem): Promise<ResellerPurchaseOrderItem> {
+    const [created] = await db.insert(resellerPurchaseOrderItems).values(data).returning();
+    return created;
+  }
+
+  async updateResellerPurchaseOrderItem(id: string, updates: Partial<ResellerPurchaseOrderItem>): Promise<ResellerPurchaseOrderItem> {
+    const [updated] = await db.update(resellerPurchaseOrderItems)
+      .set(updates)
+      .where(eq(resellerPurchaseOrderItems.id, id))
+      .returning();
+    if (!updated) throw new Error("B2B order item not found");
+    return updated;
+  }
+
+  async deleteResellerPurchaseOrderItem(id: string): Promise<void> {
+    await db.delete(resellerPurchaseOrderItems).where(eq(resellerPurchaseOrderItems.id, id));
+  }
+
+  // B2B Catalog - prodotti admin con stock disponibile per reseller
+  async getAdminCatalogForReseller(resellerId: string): Promise<Array<{
+    product: Product;
+    adminStock: number;
+    b2bPrice: number;
+    minimumOrderQuantity: number;
+  }>> {
+    // Get admin warehouse
+    const adminWarehouse = await this.getWarehouseByOwner('admin', 'admin');
+    if (!adminWarehouse) return [];
+    
+    // Get admin warehouse stock
+    const adminStock = await this.listWarehouseStock(adminWarehouse.id);
+    const stockMap = new Map(adminStock.map(s => [s.productId, s.quantity]));
+    
+    // Get all global products (created by admin, createdBy = null)
+    const globalProducts = await db.select().from(products)
+      .where(and(
+        isNull(products.createdBy),
+        eq(products.isActive, true)
+      ));
+    
+    // Get reseller-specific assignments/prices
+    const assignments = await db.select().from(resellerProducts)
+      .where(eq(resellerProducts.resellerId, resellerId));
+    const assignmentMap = new Map(assignments.map(a => [a.productId, a]));
+    
+    // Build catalog with available products (stock > 0)
+    const catalog: Array<{
+      product: Product;
+      adminStock: number;
+      b2bPrice: number;
+      minimumOrderQuantity: number;
+    }> = [];
+    
+    for (const product of globalProducts) {
+      const stock = stockMap.get(product.id) || 0;
+      if (stock <= 0) continue; // Skip products without stock
+      
+      const assignment = assignmentMap.get(product.id);
+      
+      // B2B price priority: assignment.b2bPriceCents > product.costPrice > product.unitPrice * 0.7
+      const b2bPrice = assignment?.b2bPriceCents 
+        ?? product.costPrice 
+        ?? Math.round((product.unitPrice || 0) * 0.7);
+      
+      const minimumOrderQuantity = assignment?.minimumOrderQuantity ?? 1;
+      
+      catalog.push({
+        product,
+        adminStock: stock,
+        b2bPrice,
+        minimumOrderQuantity,
+      });
+    }
+    
+    return catalog;
   }
 }
 
