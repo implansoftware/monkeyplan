@@ -575,7 +575,11 @@ export default function AllWarehousesPage() {
                                   </div>
                                 </TableCell>
                                 <TableCell className="font-medium">{mov.product?.name || "-"}</TableCell>
-                                <TableCell className="text-right font-medium">{mov.quantity}</TableCell>
+                                <TableCell className="text-right font-medium">
+                                  {['carico', 'trasferimento_in'].includes(mov.movementType) ? '+' : 
+                                   ['scarico', 'trasferimento_out'].includes(mov.movementType) ? '-' : ''}
+                                  {mov.quantity}
+                                </TableCell>
                                 <TableCell className="text-sm">
                                   {mov.createdByUser?.fullName || mov.createdByUser?.username || "-"}
                                 </TableCell>

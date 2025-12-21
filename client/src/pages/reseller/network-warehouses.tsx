@@ -353,18 +353,30 @@ export default function NetworkWarehousesPage() {
                             {mov.product?.name || "-"}
                           </TableCell>
                           <TableCell>
-                            <Badge className={
-                              mov.movementType === 'in' ? 'bg-green-500/10 text-green-600' :
-                              mov.movementType === 'out' ? 'bg-red-500/10 text-red-600' :
-                              'bg-yellow-500/10 text-yellow-600'
-                            }>
-                              {mov.movementType === 'in' && <TrendingUp className="h-3 w-3 mr-1" />}
-                              {mov.movementType === 'out' && <TrendingDown className="h-3 w-3 mr-1" />}
-                              {mov.movementType === 'in' ? 'Entrata' : mov.movementType === 'out' ? 'Uscita' : 'Rettifica'}
-                            </Badge>
+                            {(() => {
+                              const typeConfig: Record<string, { label: string; color: string; iconType: 'up' | 'down' | 'transfer' | 'neutral' }> = {
+                                carico: { label: 'Carico', color: 'text-green-500', iconType: 'up' },
+                                scarico: { label: 'Scarico', color: 'text-red-500', iconType: 'down' },
+                                trasferimento_in: { label: 'Trasf. In', color: 'text-blue-500', iconType: 'transfer' },
+                                trasferimento_out: { label: 'Trasf. Out', color: 'text-orange-500', iconType: 'transfer' },
+                                rettifica: { label: 'Rettifica', color: 'text-purple-500', iconType: 'neutral' },
+                              };
+                              const cfg = typeConfig[mov.movementType] || { label: mov.movementType, color: 'text-muted-foreground', iconType: 'neutral' };
+                              return (
+                                <div className={`flex items-center gap-1 ${cfg.color}`}>
+                                  {cfg.iconType === 'up' && <TrendingUp className="h-4 w-4" />}
+                                  {cfg.iconType === 'down' && <TrendingDown className="h-4 w-4" />}
+                                  {cfg.iconType === 'transfer' && <ArrowLeftRight className="h-4 w-4" />}
+                                  {cfg.iconType === 'neutral' && <Package className="h-4 w-4" />}
+                                  <span className="text-sm">{cfg.label}</span>
+                                </div>
+                              );
+                            })()}
                           </TableCell>
                           <TableCell className="text-right font-semibold">
-                            {mov.movementType === 'in' ? '+' : mov.movementType === 'out' ? '-' : ''}{mov.quantity}
+                            {['carico', 'trasferimento_in'].includes(mov.movementType) ? '+' : 
+                             ['scarico', 'trasferimento_out'].includes(mov.movementType) ? '-' : ''}
+                            {mov.quantity}
                           </TableCell>
                           <TableCell className="text-sm text-muted-foreground max-w-[200px] truncate">
                             {mov.notes || "-"}
