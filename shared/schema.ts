@@ -3018,17 +3018,22 @@ export const salesOrderItems = pgTable("sales_order_items", {
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
-// Sales Order Payments - Pagamenti ordine
+// Order type enum for payments
+export const paymentOrderTypeEnum = pgEnum("payment_order_type", ["b2c", "b2b"]);
+
+// Sales Order Payments - Pagamenti ordine (B2C e B2B)
 export const salesOrderPayments = pgTable("sales_order_payments", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  orderId: varchar("order_id").notNull(),
+  orderId: varchar("order_id").notNull(), // Per B2C: sales_orders.id, per B2B: reseller_purchase_orders.id
+  orderType: paymentOrderTypeEnum("order_type").notNull().default("b2c"), // Tipo ordine
+  orderNumber: text("order_number"), // Numero ordine per riferimento
   method: paymentMethodEnum("method").notNull(),
   status: salesPaymentStatusEnum("status").notNull().default("pending"),
   amount: real("amount").notNull(),
   currency: text("currency").notNull().default("EUR"),
   // Gateway info
   transactionId: text("transaction_id"), // ID transazione gateway
-  gatewayReference: text("gateway_reference"), // Riferimento gateway
+  gatewayReference: text("gateway_reference"), // Riferimento gateway / riferimento bonifico
   gatewayResponse: text("gateway_response"), // JSON risposta gateway
   // Dettagli
   paidAt: timestamp("paid_at"),
@@ -3037,6 +3042,11 @@ export const salesOrderPayments = pgTable("sales_order_payments", {
   refundAmount: real("refund_amount"),
   refundReason: text("refund_reason"),
   notes: text("notes"),
+  // Chi ha confermato
+  confirmedBy: varchar("confirmed_by"), // ID utente che ha confermato
+  // Reseller info (per B2B)
+  resellerId: varchar("reseller_id"), // ID reseller per ordini B2B
+  resellerName: text("reseller_name"), // Nome reseller
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
