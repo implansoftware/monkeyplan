@@ -139,6 +139,7 @@ import ShopCatalog from "@/pages/shop/catalog";
 import ShopCart from "@/pages/shop/cart";
 import ShopCheckout from "@/pages/shop/checkout";
 import ShopMarketplace from "@/pages/shop/marketplace";
+import MarketplaceProductDetail from "@/pages/shop/marketplace-product-detail";
 import ShopAdminProductDetail from "@/pages/shop/admin/product-detail";
 
 // Reseller sales orders, shipments, payments and returns
@@ -281,6 +282,7 @@ function Router() {
       <ProtectedRoute path="/shop/admin/products/:id" component={ShopAdminProductDetail} />
       
       {/* Shop routes (public) */}
+      <Route path="/marketplace/:productId" component={MarketplaceProductDetail} />
       <Route path="/marketplace" component={ShopMarketplace} />
       <Route path="/shop/:resellerId" component={ShopCatalog} />
       <Route path="/shop/:resellerId/cart" component={ShopCart} />

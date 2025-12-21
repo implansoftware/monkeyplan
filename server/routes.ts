@@ -17885,6 +17885,79 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Marketplace - dettaglio singolo prodotto con tutti i venditori
+  app.get("/api/marketplace/products/:productId", async (req, res) => {
+    try {
+      const { productId } = req.params;
+      
+      const product = await storage.getProduct(productId);
+      if (!product) {
+        return res.status(404).json({ error: "Prodotto non trovato" });
+      }
+      
+      // Get specs based on product type
+      let specs = null;
+      if (product.type === 'dispositivo') {
+        specs = await storage.getSmartphoneSpecs(product.id);
+      } else if (product.type === 'accessorio') {
+        specs = await storage.getAccessorySpecs(product.id);
+      }
+      
+      // Get all sellers for this product from marketplace
+      const marketplaceProducts = await storage.getMarketplaceProducts();
+      const productEntries = marketplaceProducts.filter(p => p.id === productId);
+      
+      const sellers = productEntries.map(p => ({
+        resellerId: p.sellerId || 'admin',
+        resellerName: p.sellerName || 'Admin Shop',
+        price: p.effectivePrice || p.unitPrice,
+        isPublished: true,
+      }));
+      
+      // If no sellers found, add the product with base price as admin
+      if (sellers.length === 0) {
+        sellers.push({
+          resellerId: 'admin',
+          resellerName: 'Admin Shop',
+          price: product.unitPrice,
+          isPublished: true,
+        });
+      }
+      
+      const lowestPrice = Math.min(...sellers.map(s => s.price));
+      
+      // Get warehouse stock for availability
+      const warehouseStock = await storage.listWarehouseStockByProduct(productId);
+      const totalStock = warehouseStock.reduce((sum, ws) => sum + ws.quantity, 0);
+      
+      // Filter out fake 'admin' seller if no real sellers exist
+      const validSellers = sellers.filter(s => s.resellerId !== 'admin' || sellers.length === 1);
+      const finalSellers = validSellers.length > 0 ? validSellers : sellers;
+      
+      res.json({
+        product: {
+          id: product.id,
+          name: product.name,
+          description: product.description,
+          sku: product.sku,
+          category: product.category,
+          brand: product.brand,
+          imageUrl: product.imageUrl,
+          unitPrice: product.unitPrice,
+          type: product.type,
+        },
+        specs,
+        sellers: finalSellers,
+        lowestPrice: finalSellers.length > 0 ? Math.min(...finalSellers.map(s => s.price)) : product.unitPrice,
+        sellerCount: finalSellers.length,
+        totalStock,
+        hasValidSellers: finalSellers.some(s => s.resellerId !== 'admin'),
+      });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   app.get("/api/shop/:resellerId/products/:productId", async (req, res) => {
     try {
       const product = await storage.getProduct(req.params.productId);
