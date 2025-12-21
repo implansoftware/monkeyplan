@@ -17930,10 +17930,6 @@ export function registerRoutes(app: Express): Server {
       const warehouseStock = await storage.getProductWarehouseStocks(productId);
       const totalStock = warehouseStock.reduce((sum, ws) => sum + ws.quantity, 0);
       
-      // Filter out fake 'admin' seller if no real sellers exist
-      const validSellers = sellers.filter(s => s.resellerId !== 'admin' || sellers.length === 1);
-      const finalSellers = validSellers.length > 0 ? validSellers : sellers;
-      
       res.json({
         product: {
           id: product.id,
@@ -17947,11 +17943,11 @@ export function registerRoutes(app: Express): Server {
           productType: product.productType,
         },
         specs,
-        sellers: finalSellers,
-        lowestPrice: finalSellers.length > 0 ? Math.min(...finalSellers.map(s => s.price)) : product.unitPrice,
-        sellerCount: finalSellers.length,
+        sellers,
+        lowestPrice: sellers.length > 0 ? Math.min(...sellers.map(s => s.price)) : product.unitPrice,
+        sellerCount: sellers.length,
         totalStock,
-        hasValidSellers: finalSellers.some(s => s.resellerId !== 'admin'),
+        hasValidSellers: sellers.length > 0,
       });
     } catch (error: any) {
       res.status(500).json({ error: error.message });

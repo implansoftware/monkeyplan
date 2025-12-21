@@ -225,7 +225,7 @@ export default function MarketplaceProductDetail() {
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-2 gap-2 text-sm">
-                  {product.type === 'dispositivo' && specs && (
+                  {product.productType === 'dispositivo' && specs && (
                     <>
                       {specs.storage && <><span className="text-muted-foreground">Memoria:</span><span>{specs.storage}</span></>}
                       {specs.color && <><span className="text-muted-foreground">Colore:</span><span>{specs.color}</span></>}
@@ -233,7 +233,7 @@ export default function MarketplaceProductDetail() {
                       {specs.batteryHealth && <><span className="text-muted-foreground">Batteria:</span><span>{specs.batteryHealth}%</span></>}
                     </>
                   )}
-                  {product.type === 'accessorio' && specs && (
+                  {product.productType === 'accessorio' && specs && (
                     <>
                       {specs.color && <><span className="text-muted-foreground">Colore:</span><span>{specs.color}</span></>}
                       {specs.material && <><span className="text-muted-foreground">Materiale:</span><span>{specs.material}</span></>}
@@ -249,10 +249,10 @@ export default function MarketplaceProductDetail() {
           <div>
             <h3 className="font-semibold mb-4 flex items-center gap-2">
               <Store className="h-4 w-4" />
-              Venditori disponibili ({sellers.filter(s => s.resellerId !== 'admin').length})
+              Venditori disponibili ({sellers.length})
             </h3>
             <div className="space-y-3">
-              {sellers.filter(s => s.resellerId !== 'admin').map((seller, idx) => (
+              {sellers.map((seller, idx) => (
                 <Card 
                   key={seller.resellerId} 
                   className={`hover-elevate cursor-pointer ${selectedSeller?.resellerId === seller.resellerId ? 'ring-2 ring-primary' : ''}`}
@@ -266,10 +266,15 @@ export default function MarketplaceProductDetail() {
                           <Store className="h-5 w-5 text-primary" />
                         </div>
                         <div>
-                          <p className="font-medium" data-testid={`text-seller-name-${idx}`}>{seller.resellerName}</p>
+                          <p className="font-medium" data-testid={`text-seller-name-${idx}`}>
+                            {seller.resellerName}
+                            {seller.resellerId === 'admin' && (
+                              <Badge variant="secondary" className="ml-2 text-xs">Ufficiale</Badge>
+                            )}
+                          </p>
                           <div className="flex items-center gap-1 text-sm text-muted-foreground">
                             <Check className="h-3 w-3 text-green-600" />
-                            Venditore verificato
+                            {seller.resellerId === 'admin' ? 'Negozio ufficiale' : 'Venditore verificato'}
                           </div>
                         </div>
                       </div>
@@ -294,7 +299,7 @@ export default function MarketplaceProductDetail() {
                   </CardContent>
                 </Card>
               ))}
-              {sellers.filter(s => s.resellerId !== 'admin').length === 0 && (
+              {sellers.length === 0 && (
                 <p className="text-muted-foreground text-center py-4">
                   Nessun venditore disponibile per questo prodotto
                 </p>
@@ -302,18 +307,17 @@ export default function MarketplaceProductDetail() {
             </div>
           </div>
 
-          {hasValidSellers && sellers.length > 0 && (
+          {sellers.length > 0 && (
             <div className="flex gap-2">
               <Button 
                 className="flex-1" 
                 size="lg"
                 onClick={() => {
-                  const validSellers = sellers.filter(s => s.resellerId !== 'admin');
-                  if (validSellers.length === 0) return;
-                  const bestSeller = validSellers.reduce((a, b) => a.price < b.price ? a : b);
+                  if (sellers.length === 0) return;
+                  const bestSeller = sellers.reduce((a, b) => a.price < b.price ? a : b);
                   handleAddToCart(bestSeller);
                 }}
-                disabled={addToCartMutation.isPending || totalStock === 0}
+                disabled={addToCartMutation.isPending}
                 data-testid="button-buy-best-price"
               >
                 <ShoppingCart className="h-5 w-5 mr-2" />
@@ -322,7 +326,7 @@ export default function MarketplaceProductDetail() {
             </div>
           )}
           
-          {!hasValidSellers && (
+          {sellers.length === 0 && (
             <div className="text-center p-4 bg-muted rounded-lg">
               <p className="text-muted-foreground">
                 Questo prodotto non è attualmente disponibile per l'acquisto
