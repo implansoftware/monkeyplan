@@ -30,6 +30,7 @@ type EnrichedStock = WarehouseStock & { product: { id: string; name: string; sku
 type EnrichedMovement = WarehouseMovement & { 
   product: { id: string; name: string; sku: string } | null;
   createdByUser: { id: string; fullName: string; username: string } | null;
+  relatedWarehouse?: { id: string; name: string } | null;
 };
 type EnrichedTransfer = WarehouseTransfer & {
   sourceWarehouse: { id: string; name: string } | null;
@@ -547,6 +548,7 @@ export default function WarehousesPage() {
                     <tr>
                       <th className="text-left p-4 font-medium">Data</th>
                       <th className="text-left p-4 font-medium">Tipo</th>
+                      <th className="text-left p-4 font-medium">Da/Verso</th>
                       <th className="text-left p-4 font-medium">Prodotto</th>
                       <th className="text-right p-4 font-medium">Quantità</th>
                       <th className="text-left p-4 font-medium">Operatore</th>
@@ -556,11 +558,11 @@ export default function WarehousesPage() {
                   <tbody>
                     {loadingMovements ? (
                       <tr>
-                        <td colSpan={6} className="text-center p-8">Caricamento...</td>
+                        <td colSpan={7} className="text-center p-8">Caricamento...</td>
                       </tr>
                     ) : movements.length === 0 ? (
                       <tr>
-                        <td colSpan={6} className="text-center p-8 text-muted-foreground">
+                        <td colSpan={7} className="text-center p-8 text-muted-foreground">
                           Nessun movimento registrato
                         </td>
                       </tr>
@@ -580,6 +582,14 @@ export default function WarehousesPage() {
                                 <TypeIcon className="h-4 w-4" />
                                 {typeInfo.label}
                               </div>
+                            </td>
+                            <td className="p-4 text-sm">
+                              {mov.relatedWarehouse ? (
+                                <span className="text-muted-foreground">
+                                  {mov.movementType === 'trasferimento_out' ? 'Verso: ' : 'Da: '}
+                                  <span className="text-foreground">{mov.relatedWarehouse.name}</span>
+                                </span>
+                              ) : '-'}
                             </td>
                             <td className="p-4 font-medium">{mov.product?.name || "N/D"}</td>
                             <td className="p-4 text-right font-medium">

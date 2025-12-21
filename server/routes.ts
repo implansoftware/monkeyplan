@@ -18877,6 +18877,7 @@ export function registerRoutes(app: Express): Server {
         movementType: 'trasferimento_out',
         quantity,
         referenceType: 'transfer',
+        referenceId: destinationWarehouseId,
         notes: notes || `Trasferimento verso ${destWarehouse.name}`,
         createdBy: req.user.id,
       });
@@ -18889,6 +18890,7 @@ export function registerRoutes(app: Express): Server {
         movementType: 'trasferimento_in',
         quantity,
         referenceType: 'transfer',
+        referenceId: sourceWarehouseId,
         notes: notes || `Trasferimento da ${sourceWarehouse.name}`,
         createdBy: req.user.id,
       });
@@ -18992,10 +18994,20 @@ export function registerRoutes(app: Express): Server {
       const enrichedMovements = await Promise.all(movements.map(async (mov) => {
         const product = await storage.getProduct(mov.productId);
         const user = await storage.getUser(mov.createdBy);
+        
+        let relatedWarehouse: { id: string; name: string } | null = null;
+        if (['trasferimento_in', 'trasferimento_out'].includes(mov.movementType) && mov.referenceId) {
+          const warehouse = await storage.getWarehouse(mov.referenceId);
+          if (warehouse) {
+            relatedWarehouse = { id: warehouse.id, name: warehouse.name };
+          }
+        }
+        
         return {
           ...mov,
           product: product ? { id: product.id, name: product.name, sku: product.sku } : null,
           createdByUser: user ? { id: user.id, fullName: user.fullName, username: user.username } : null,
+          relatedWarehouse,
         };
       }));
       res.json(enrichedMovements);

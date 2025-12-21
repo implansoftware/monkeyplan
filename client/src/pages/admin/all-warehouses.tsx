@@ -32,6 +32,7 @@ type EnrichedStock = WarehouseStock & {
 type EnrichedMovement = WarehouseMovement & { 
   product: { id: string; name: string; sku: string } | null;
   createdByUser: { id: string; fullName: string; username: string } | null;
+  relatedWarehouse?: { id: string; name: string } | null;
 };
 
 const OWNER_TYPE_LABELS: Record<string, { label: string; color: string }> = {
@@ -548,6 +549,7 @@ export default function AllWarehousesPage() {
                           <TableRow>
                             <TableHead>Data</TableHead>
                             <TableHead>Tipo</TableHead>
+                            <TableHead>Da/Verso</TableHead>
                             <TableHead>Prodotto</TableHead>
                             <TableHead className="text-right">Quantità</TableHead>
                             <TableHead>Operatore</TableHead>
@@ -573,6 +575,14 @@ export default function AllWarehousesPage() {
                                     <Icon className="h-4 w-4" />
                                     <span className="text-sm">{typeInfo.label}</span>
                                   </div>
+                                </TableCell>
+                                <TableCell className="text-sm">
+                                  {mov.relatedWarehouse ? (
+                                    <span className="text-muted-foreground">
+                                      {mov.movementType === 'trasferimento_out' ? 'Verso: ' : 'Da: '}
+                                      <span className="text-foreground">{mov.relatedWarehouse.name}</span>
+                                    </span>
+                                  ) : '-'}
                                 </TableCell>
                                 <TableCell className="font-medium">{mov.product?.name || "-"}</TableCell>
                                 <TableCell className="text-right font-medium">
