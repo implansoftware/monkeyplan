@@ -17927,7 +17927,7 @@ export function registerRoutes(app: Express): Server {
       const lowestPrice = Math.min(...sellers.map(s => s.price));
       
       // Get warehouse stock for availability
-      const warehouseStock = await storage.listWarehouseStockByProduct(productId);
+      const warehouseStock = await storage.getProductWarehouseStocks(productId);
       const totalStock = warehouseStock.reduce((sum, ws) => sum + ws.quantity, 0);
       
       // Filter out fake 'admin' seller if no real sellers exist
