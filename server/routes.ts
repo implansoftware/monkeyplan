@@ -8043,6 +8043,34 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Update smartphone marketplace settings
+  app.patch("/api/smartphones/:productId/marketplace", requireAuth, requireRole("reseller", "reseller_collaborator"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const product = await storage.getProduct(req.params.productId);
+      if (!product) return res.status(404).send("Product not found");
+      
+      // Verify ownership
+      const effectiveResellerId = req.user.role === 'reseller_collaborator' ? req.user.resellerId : req.user.id;
+      if (product.createdBy !== effectiveResellerId) {
+        return res.status(403).send("Puoi modificare solo i prodotti che hai creato.");
+      }
+      
+      const { enabled, priceCents, minQuantity } = req.body;
+      
+      const updatedProduct = await storage.updateProduct(req.params.productId, {
+        isMarketplaceEnabled: enabled ?? false,
+        marketplacePriceCents: priceCents ?? null,
+        marketplaceMinQuantity: minQuantity ?? 1,
+      });
+      
+      res.json(updatedProduct);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
   // ============ ACCESSORIES (Accessori) ============
   
   // List accessories with specs and device compatibilities
@@ -8314,6 +8342,34 @@ export function registerRoutes(app: Express): Server {
       await storage.deleteProduct(req.params.productId);
       
       res.json({ success: true });
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // Update accessory marketplace settings
+  app.patch("/api/accessories/:productId/marketplace", requireAuth, requireRole("reseller", "reseller_collaborator"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const product = await storage.getProduct(req.params.productId);
+      if (!product) return res.status(404).send("Product not found");
+      
+      // Verify ownership
+      const effectiveResellerId = req.user.role === 'reseller_collaborator' ? req.user.resellerId : req.user.id;
+      if (product.createdBy !== effectiveResellerId) {
+        return res.status(403).send("Puoi modificare solo i prodotti che hai creato.");
+      }
+      
+      const { enabled, priceCents, minQuantity } = req.body;
+      
+      const updatedProduct = await storage.updateProduct(req.params.productId, {
+        isMarketplaceEnabled: enabled ?? false,
+        marketplacePriceCents: priceCents ?? null,
+        marketplaceMinQuantity: minQuantity ?? 1,
+      });
+      
+      res.json(updatedProduct);
     } catch (error: any) {
       res.status(500).send(error.message);
     }
