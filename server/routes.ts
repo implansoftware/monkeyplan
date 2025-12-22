@@ -5408,9 +5408,18 @@ export function registerRoutes(app: Express): Server {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
-      // Get repair centers associated with this reseller
+      // Use effective context (may be viewing as sub-reseller or repair center)
+      const context = getEffectiveContext(req);
+      
+      // Get repair centers associated with this reseller (or acting-as reseller)
       const allCenters = await storage.listRepairCenters();
-      const resellerCenters = allCenters.filter(c => c.resellerId === req.user!.id);
+      let resellerCenters = allCenters.filter(c => c.resellerId === context.resellerId);
+      
+      // If viewing specific repair center, filter to just that center
+      if (context.repairCenterId) {
+        resellerCenters = resellerCenters.filter(c => c.id === context.repairCenterId);
+      }
+      
       const resellerCenterIds = resellerCenters.map(c => c.id);
       
       if (resellerCenterIds.length === 0) {
@@ -5531,17 +5540,25 @@ export function registerRoutes(app: Express): Server {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
+      // Use effective context (may be viewing as sub-reseller or repair center)
+      const context = getEffectiveContext(req);
+      
       const { repairCenterId, date } = req.query as { repairCenterId: string; date: string };
       
       if (!repairCenterId || !date) {
         return res.status(400).send("repairCenterId and date are required");
       }
       
-      // Verify the repairCenterId belongs to this reseller
+      // Verify the repairCenterId belongs to this reseller (or acting-as reseller)
       const allCenters = await storage.listRepairCenters();
-      const resellerCenterIds = allCenters
-        .filter(c => c.resellerId === req.user!.id)
-        .map(c => c.id);
+      let resellerCenters = allCenters.filter(c => c.resellerId === context.resellerId);
+      
+      // If viewing specific repair center, only allow access to that center
+      if (context.repairCenterId) {
+        resellerCenters = resellerCenters.filter(c => c.id === context.repairCenterId);
+      }
+      
+      const resellerCenterIds = resellerCenters.map(c => c.id);
       
       if (!resellerCenterIds.includes(repairCenterId)) {
         return res.status(403).send("Centro di riparazione non autorizzato");

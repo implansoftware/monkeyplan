@@ -46,20 +46,62 @@ export function ContextSwitcher() {
     queryClient.invalidateQueries({ queryKey: ['/api/stats'] });
     queryClient.invalidateQueries({ queryKey: ['/api/invoices'] });
     queryClient.invalidateQueries({ queryKey: ['/api/reseller/customers'] });
+    
+    const contextDependentPrefixes = [
+      '/api/repair-orders',
+      '/api/customers',
+      '/api/repair-centers',
+      '/api/reseller/products',
+      '/api/reseller/device-brands',
+      '/api/reseller/device-models',
+      '/api/reseller/team',
+      '/api/reseller/inventory',
+      '/api/reseller/customers',
+      '/api/warehouses',
+      '/api/reseller/suppliers',
+      '/api/reseller/supplier-orders',
+      '/api/reseller/supplier-returns',
+      '/api/reseller/b2b-orders',
+      '/api/reseller/b2b-returns',
+      '/api/reseller/rc-b2b-orders',
+      '/api/reseller/appointments',
+      '/api/reseller/services',
+      '/api/reseller/repair-center-schedules',
+      '/api/reseller/tickets',
+      '/api/reseller/utility',
+      '/api/reseller/invoices',
+      '/api/reseller/reports',
+      '/api/reseller/stats',
+      '/api/reseller/orders',
+      '/api/reseller/parts-load',
+      '/api/reseller/payments',
+      '/api/reseller/shipments',
+      '/api/reseller/sales-orders',
+      '/api/reseller/sales-returns',
+      '/api/reseller/repairs',
+      '/api/delivery-appointments',
+      '/api/reseller/context-options',
+      '/api/reseller/foneday',
+      '/api/reseller/mobilesentrix',
+      '/api/reseller/trovausati',
+      '/api/reseller/sifar',
+      '/api/reseller/shop',
+      '/api/reseller/network-warehouses',
+      '/api/reseller/activity',
+      '/api/reseller/sub-resellers',
+      '/api/reseller/device-catalog',
+      '/api/reseller/smartphone-catalog',
+      '/api/reseller/accessory-catalog',
+      '/api/reseller/shop-catalog',
+      '/api/appointments',
+    ];
+    
     queryClient.invalidateQueries({ 
       predicate: (query) => {
-        const key = query.queryKey[0];
-        return typeof key === 'string' && (
-          key.startsWith('/api/repair-orders') ||
-          key.startsWith('/api/customers') ||
-          key.startsWith('/api/repair-centers') ||
-          key.startsWith('/api/reseller/products') ||
-          key.startsWith('/api/reseller/device-brands') ||
-          key.startsWith('/api/reseller/device-models') ||
-          key.startsWith('/api/reseller/team') ||
-          key.startsWith('/api/reseller/inventory') ||
-          key.startsWith('/api/reseller/customers')
-        );
+        const firstKey = query.queryKey[0];
+        const keyToCheck = typeof firstKey === 'string' ? firstKey : null;
+        if (!keyToCheck) return false;
+        return contextDependentPrefixes.some(prefix => keyToCheck.startsWith(prefix));
       }
     });
   };
