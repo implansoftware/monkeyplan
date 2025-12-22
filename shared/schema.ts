@@ -564,6 +564,16 @@ export const repairCenters = pgTable("repair_centers", {
   pec: text("pec"),
   // Tariffa manodopera specifica per questo centro (in centesimi EUR)
   hourlyRateCents: integer("hourly_rate_cents"),
+  // Impostazioni profilo pubblico
+  description: text("description"), // Descrizione pubblica del centro
+  websiteUrl: text("website_url"),
+  logoUrl: text("logo_url"),
+  publicPhone: text("public_phone"), // Telefono visibile ai clienti
+  publicEmail: text("public_email"), // Email visibile ai clienti
+  acceptsWalkIns: boolean("accepts_walk_ins").default(false), // Accetta clienti senza appuntamento
+  openingHours: jsonb("opening_hours"), // JSON con orari di apertura per giorno
+  socialLinks: jsonb("social_links"), // JSON con link social (facebook, instagram, etc.)
+  notes: text("notes"), // Note interne
 });
 
 // Customer-RepairCenter many-to-many relationship
@@ -3882,6 +3892,45 @@ export const insertRepairCenterSchema = createInsertSchema(repairCenters).omit({
   id: true,
   createdAt: true,
 });
+
+// Schema per aggiornamento impostazioni profilo repair center (self-service)
+export const updateRepairCenterSettingsSchema = z.object({
+  name: z.string().min(1).optional(),
+  description: z.string().optional().nullable(),
+  address: z.string().optional(),
+  city: z.string().optional(),
+  cap: z.string().optional().nullable(),
+  provincia: z.string().optional().nullable(),
+  phone: z.string().optional(),
+  email: z.string().email().optional(),
+  publicPhone: z.string().optional().nullable(),
+  publicEmail: z.string().email().optional().nullable(),
+  websiteUrl: z.string().url().optional().nullable().or(z.literal('')),
+  logoUrl: z.string().optional().nullable(),
+  acceptsWalkIns: z.boolean().optional(),
+  openingHours: z.record(z.object({
+    isOpen: z.boolean(),
+    start: z.string().optional(),
+    end: z.string().optional(),
+    breakStart: z.string().optional().nullable(),
+    breakEnd: z.string().optional().nullable(),
+  })).optional().nullable(),
+  socialLinks: z.object({
+    facebook: z.string().optional().nullable(),
+    instagram: z.string().optional().nullable(),
+    linkedin: z.string().optional().nullable(),
+    twitter: z.string().optional().nullable(),
+  }).optional().nullable(),
+  notes: z.string().optional().nullable(),
+  // Dati fiscali (self-editable)
+  ragioneSociale: z.string().optional().nullable(),
+  partitaIva: z.string().optional().nullable(),
+  codiceFiscale: z.string().optional().nullable(),
+  iban: z.string().optional().nullable(),
+  codiceUnivoco: z.string().optional().nullable(),
+  pec: z.string().email().optional().nullable().or(z.literal('')),
+});
+export type UpdateRepairCenterSettings = z.infer<typeof updateRepairCenterSettingsSchema>;
 
 export const insertProductSchema = createInsertSchema(products).omit({
   id: true,
