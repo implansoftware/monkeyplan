@@ -18,7 +18,6 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { Skeleton } from "@/components/ui/skeleton";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { useUser } from "@/hooks/use-user";
 import { useRef } from "react";
 import type { SmartphoneSpecs, Product, ResellerProduct } from "@shared/schema";
 
@@ -75,7 +74,6 @@ export default function SmartphoneCatalog() {
   const [uploadingImage, setUploadingImage] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
-  const { user } = useUser();
   
   // Dialog per impostazioni venditore (prodotti assegnati)
   const [settingsDialogOpen, setSettingsDialogOpen] = useState(false);
@@ -135,11 +133,7 @@ export default function SmartphoneCatalog() {
   // Mappa per accesso rapido alle assegnazioni
   const assignmentMap = new Map(assignments.map(a => [a.productId, a]));
 
-  // Funzione per determinare se un prodotto è proprio o assegnato
-  const isOwnProduct = (product: SmartphoneWithSpecs) => {
-    return product.createdBy === user?.id;
-  };
-
+  
   // Mutation per aggiornare impostazioni venditore
   const updateSettingsMutation = useMutation({
     mutationFn: async ({ productId, settings }: { productId: string; settings: { customPriceCents?: number; isPublished?: boolean } }) => {
@@ -573,7 +567,7 @@ export default function SmartphoneCatalog() {
                         </div>
                       </TableCell>
                       <TableCell>
-                        {isOwnProduct(smartphone) ? (
+                        {(smartphone as any).isOwn ? (
                           <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
                             Proprio
                           </Badge>
@@ -618,7 +612,7 @@ export default function SmartphoneCatalog() {
                         })()}
                       </TableCell>
                       <TableCell className="text-center">
-                        {isOwnProduct(smartphone) ? (
+                        {(smartphone as any).isOwn ? (
                           <Tooltip>
                             <TooltipTrigger asChild>
                               <Button
@@ -644,7 +638,7 @@ export default function SmartphoneCatalog() {
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-1">
-                          {isOwnProduct(smartphone) ? (
+                          {(smartphone as any).isOwn ? (
                             <>
                               <Button
                                 variant="ghost"

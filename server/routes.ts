@@ -7794,9 +7794,10 @@ export function registerRoutes(app: Express): Server {
       if (!req.user) return res.status(401).send("Unauthorized");
       
       const filters: { resellerId?: string; brand?: string; condition?: string } = {};
+      let effectiveResellerId: string | null = null;
       
-      if (req.user.role === 'reseller' || req.user.role === 'reseller_collaborator') {
-        const effectiveResellerId = req.user.role === 'reseller_collaborator' ? req.user.resellerId : req.user.id;
+      if (req.user.role === 'reseller' || req.user.role === 'reseller_collaborator' || req.user.role === 'reseller_staff') {
+        effectiveResellerId = (req.user.role === 'reseller_collaborator' || req.user.role === 'reseller_staff') ? req.user.resellerId : req.user.id;
         if (effectiveResellerId) filters.resellerId = effectiveResellerId;
       } else if (req.user.role !== 'admin') {
         return res.status(403).send("Access denied");
@@ -7806,7 +7807,14 @@ export function registerRoutes(app: Express): Server {
       if (req.query.condition) filters.condition = req.query.condition as string;
       
       const smartphones = await storage.listSmartphones(filters);
-      res.json(smartphones);
+      
+      // Add isOwn flag to each smartphone
+      const smartphonesWithOwnership = smartphones.map(smartphone => ({
+        ...smartphone,
+        isOwn: effectiveResellerId ? smartphone.createdBy === effectiveResellerId : false,
+      }));
+      
+      res.json(smartphonesWithOwnership);
     } catch (error: any) {
       res.status(500).send(error.message);
     }
