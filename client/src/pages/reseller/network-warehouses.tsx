@@ -13,8 +13,9 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { 
   Warehouse, Search, Boxes, Package, Eye, 
-  TrendingUp, TrendingDown, ArrowLeftRight, Building2
+  TrendingUp, TrendingDown, ArrowLeftRight, Building2, ImageIcon
 } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import type { WarehouseStock, WarehouseMovement } from "@shared/schema";
 
 type NetworkWarehouse = {
@@ -276,6 +277,7 @@ export default function NetworkWarehousesPage() {
                   <Table>
                     <TableHeader>
                       <TableRow>
+                        <TableHead className="w-[60px]">Img</TableHead>
                         <TableHead>Prodotto</TableHead>
                         <TableHead>SKU</TableHead>
                         <TableHead>Categoria</TableHead>
@@ -286,6 +288,18 @@ export default function NetworkWarehousesPage() {
                     <TableBody>
                       {filteredStock.map((item) => (
                         <TableRow key={item.id} data-testid={`row-stock-${item.id}`}>
+                          <TableCell>
+                            <Avatar className="h-10 w-10 rounded-md">
+                              <AvatarImage 
+                                src={item.product?.imageUrl || undefined} 
+                                alt={item.product?.name || "Prodotto"} 
+                                className="object-cover"
+                              />
+                              <AvatarFallback className="rounded-md bg-muted">
+                                <Package className="h-5 w-5 text-muted-foreground" />
+                              </AvatarFallback>
+                            </Avatar>
+                          </TableCell>
                           <TableCell className="font-medium">
                             {item.product?.name || "Prodotto non trovato"}
                           </TableCell>
