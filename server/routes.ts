@@ -20272,6 +20272,399 @@ export function registerRoutes(app: Express): Server {
   });
 
   // ==========================================
+  // MARKETPLACE - Reseller to Reseller B2B
+  // ==========================================
+
+  // Reseller: Get marketplace catalog (products from other resellers)
+  app.get("/api/reseller/marketplace/catalog", requireRole("reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      const catalog = await storage.listMarketplaceCatalog(req.user.id);
+      res.json(catalog);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Reseller: List my marketplace orders (as buyer)
+  app.get("/api/reseller/marketplace/orders", requireRole("reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      const orders = await storage.listMarketplaceOrders({ buyerResellerId: req.user.id });
+      
+      // Enrich with seller info and items
+      const enrichedOrders = await Promise.all(orders.map(async (order) => {
+        const seller = await storage.getUser(order.sellerResellerId);
+        const items = await storage.listMarketplaceOrderItems(order.id);
+        return { 
+          ...order, 
+          items,
+          sellerName: seller?.fullName || seller?.ragioneSociale || 'Rivenditore'
+        };
+      }));
+      
+      res.json(enrichedOrders);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Reseller: List my marketplace sales (as seller)
+  app.get("/api/reseller/marketplace/sales", requireRole("reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      const orders = await storage.listMarketplaceOrders({ sellerResellerId: req.user.id });
+      
+      // Enrich with buyer info and items
+      const enrichedOrders = await Promise.all(orders.map(async (order) => {
+        const buyer = await storage.getUser(order.buyerResellerId);
+        const items = await storage.listMarketplaceOrderItems(order.id);
+        return { 
+          ...order, 
+          items,
+          buyerName: buyer?.fullName || buyer?.ragioneSociale || 'Rivenditore'
+        };
+      }));
+      
+      res.json(enrichedOrders);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Reseller: Get single marketplace order with items
+  app.get("/api/reseller/marketplace/orders/:id", requireRole("reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      
+      const order = await storage.getMarketplaceOrder(req.params.id);
+      if (!order) return res.status(404).json({ error: "Ordine non trovato" });
+      
+      // Allow access for both buyer and seller
+      if (order.buyerResellerId !== req.user.id && order.sellerResellerId !== req.user.id) {
+        return res.status(403).json({ error: "Accesso negato" });
+      }
+      
+      const items = await storage.listMarketplaceOrderItems(order.id);
+      const seller = await storage.getUser(order.sellerResellerId);
+      const buyer = await storage.getUser(order.buyerResellerId);
+      
+      res.json({ 
+        ...order, 
+        items,
+        sellerName: seller?.fullName || seller?.ragioneSociale || 'Rivenditore',
+        buyerName: buyer?.fullName || buyer?.ragioneSociale || 'Rivenditore'
+      });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Reseller: Create marketplace order (buy from another reseller)
+  app.post("/api/reseller/marketplace/orders", requireRole("reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      
+      const { sellerResellerId, items, buyerNotes, paymentMethod } = req.body;
+      
+      if (!sellerResellerId || !items || items.length === 0) {
+        return res.status(400).json({ error: "Dati ordine incompleti" });
+      }
+      
+      if (sellerResellerId === req.user.id) {
+        return res.status(400).json({ error: "Non puoi acquistare da te stesso" });
+      }
+      
+      // Validate seller exists and is a reseller
+      const seller = await storage.getUser(sellerResellerId);
+      if (!seller || seller.role !== 'reseller') {
+        return res.status(400).json({ error: "Venditore non valido" });
+      }
+      
+      // Get seller's warehouse for stock validation
+      const sellerWarehouse = await storage.getWarehouseByOwner('reseller', sellerResellerId);
+      if (!sellerWarehouse) {
+        return res.status(400).json({ error: "Magazzino venditore non trovato" });
+      }
+      
+      // Validate items and calculate totals
+      let subtotal = 0;
+      const validatedItems = [];
+      
+      for (const item of items) {
+        const product = await storage.getProduct(item.productId);
+        if (!product) {
+          return res.status(400).json({ error: `Prodotto ${item.productId} non trovato` });
+        }
+        if (!product.isMarketplaceEnabled) {
+          return res.status(400).json({ error: `Prodotto ${product.name} non disponibile nel marketplace` });
+        }
+        if (product.createdBy !== sellerResellerId) {
+          return res.status(400).json({ error: `Prodotto ${product.name} non appartiene al venditore` });
+        }
+        
+        // Check stock
+        const stockItem = await storage.getWarehouseStockItem(sellerWarehouse.id, item.productId);
+        if (!stockItem || stockItem.quantity < item.quantity) {
+          return res.status(400).json({ error: `Stock insufficiente per ${product.name}` });
+        }
+        
+        // Check minimum quantity
+        const minQty = product.marketplaceMinQuantity || 1;
+        if (item.quantity < minQty) {
+          return res.status(400).json({ error: `Quantità minima per ${product.name}: ${minQty}` });
+        }
+        
+        const unitPrice = product.marketplacePriceCents || product.unitPrice;
+        const totalPrice = unitPrice * item.quantity;
+        subtotal += totalPrice;
+        
+        validatedItems.push({
+          productId: item.productId,
+          quantity: item.quantity,
+          unitPrice,
+          totalPrice,
+          productName: product.name,
+          productSku: product.sku,
+        });
+      }
+      
+      // Create order
+      const order = await storage.createMarketplaceOrder({
+        buyerResellerId: req.user.id,
+        sellerResellerId,
+        status: 'pending',
+        subtotal,
+        discountAmount: 0,
+        shippingCost: 0,
+        total: subtotal,
+        paymentMethod: paymentMethod || 'bank_transfer',
+        buyerNotes,
+      });
+      
+      // Create order items
+      for (const item of validatedItems) {
+        await storage.createMarketplaceOrderItem({
+          orderId: order.id,
+          ...item,
+        });
+      }
+      
+      const createdItems = await storage.listMarketplaceOrderItems(order.id);
+      res.json({ ...order, items: createdItems });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Seller: Approve marketplace order (transfers stock)
+  app.post("/api/reseller/marketplace/orders/:id/approve", requireRole("reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      
+      const order = await storage.getMarketplaceOrder(req.params.id);
+      if (!order) return res.status(404).json({ error: "Ordine non trovato" });
+      if (order.sellerResellerId !== req.user.id) {
+        return res.status(403).json({ error: "Solo il venditore può approvare" });
+      }
+      if (order.status !== 'pending') {
+        return res.status(400).json({ error: `Impossibile approvare un ordine con stato ${order.status}` });
+      }
+      
+      const { sellerNotes } = req.body;
+      
+      // Get warehouses
+      const sellerWarehouse = await storage.getWarehouseByOwner('reseller', order.sellerResellerId);
+      const buyerWarehouse = await storage.ensureDefaultWarehouse('reseller', order.buyerResellerId, 'Buyer Reseller');
+      
+      if (!sellerWarehouse) {
+        return res.status(400).json({ error: "Magazzino venditore non trovato" });
+      }
+      
+      // Get items
+      const items = await storage.listMarketplaceOrderItems(order.id);
+      
+      // Validate stock still available
+      for (const item of items) {
+        const stockItem = await storage.getWarehouseStockItem(sellerWarehouse.id, item.productId);
+        if (!stockItem || stockItem.quantity < item.quantity) {
+          return res.status(400).json({ error: `Stock insufficiente per prodotto ${item.productName}` });
+        }
+      }
+      
+      // Create warehouse transfer
+      const transferNumber = await storage.generateTransferNumber();
+      const transfer = await storage.createWarehouseTransfer({
+        transferNumber,
+        sourceWarehouseId: sellerWarehouse.id,
+        destinationWarehouseId: buyerWarehouse.id,
+        status: 'completed',
+        notes: `Ordine Marketplace ${order.orderNumber}`,
+        createdBy: req.user.id,
+        approvedBy: req.user.id,
+        completedAt: new Date(),
+      });
+      
+      // Transfer stock and create movements
+      for (const item of items) {
+        // Remove from seller
+        await storage.updateWarehouseStockQuantity(sellerWarehouse.id, item.productId, -item.quantity);
+        await storage.createWarehouseMovement({
+          warehouseId: sellerWarehouse.id,
+          productId: item.productId,
+          quantity: -item.quantity,
+          movementType: 'trasferimento_out',
+          referenceType: 'marketplace_order',
+          referenceId: order.id,
+          notes: `Vendita Marketplace ${order.orderNumber} → ${buyerWarehouse.name}`,
+        });
+        
+        // Add to buyer
+        await storage.updateWarehouseStockQuantity(buyerWarehouse.id, item.productId, item.quantity);
+        await storage.createWarehouseMovement({
+          warehouseId: buyerWarehouse.id,
+          productId: item.productId,
+          quantity: item.quantity,
+          movementType: 'trasferimento_in',
+          referenceType: 'marketplace_order',
+          referenceId: order.id,
+          notes: `Acquisto Marketplace ${order.orderNumber} ← ${sellerWarehouse.name}`,
+        });
+        
+        // Create transfer item
+        await storage.createWarehouseTransferItem({
+          transferId: transfer.id,
+          productId: item.productId,
+          quantity: item.quantity,
+        });
+      }
+      
+      // Update order
+      const updated = await storage.updateMarketplaceOrder(order.id, {
+        status: 'approved',
+        approvedAt: new Date(),
+        approvedBy: req.user.id,
+        sellerNotes,
+        warehouseTransferId: transfer.id,
+      });
+      
+      res.json(updated);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Seller: Reject marketplace order
+  app.post("/api/reseller/marketplace/orders/:id/reject", requireRole("reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      
+      const order = await storage.getMarketplaceOrder(req.params.id);
+      if (!order) return res.status(404).json({ error: "Ordine non trovato" });
+      if (order.sellerResellerId !== req.user.id) {
+        return res.status(403).json({ error: "Solo il venditore può rifiutare" });
+      }
+      if (order.status !== 'pending') {
+        return res.status(400).json({ error: `Impossibile rifiutare un ordine con stato ${order.status}` });
+      }
+      
+      const { rejectionReason, sellerNotes } = req.body;
+      
+      const updated = await storage.updateMarketplaceOrder(order.id, {
+        status: 'rejected',
+        rejectedAt: new Date(),
+        rejectedBy: req.user.id,
+        rejectionReason,
+        sellerNotes,
+      });
+      
+      res.json(updated);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Seller: Mark marketplace order as shipped
+  app.post("/api/reseller/marketplace/orders/:id/ship", requireRole("reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      
+      const order = await storage.getMarketplaceOrder(req.params.id);
+      if (!order) return res.status(404).json({ error: "Ordine non trovato" });
+      if (order.sellerResellerId !== req.user.id) {
+        return res.status(403).json({ error: "Solo il venditore può spedire" });
+      }
+      if (order.status !== 'approved') {
+        return res.status(400).json({ error: `Impossibile spedire un ordine con stato ${order.status}` });
+      }
+      
+      const { trackingNumber, trackingCarrier } = req.body;
+      
+      const updated = await storage.updateMarketplaceOrder(order.id, {
+        status: 'shipped',
+        shippedAt: new Date(),
+        shippedBy: req.user.id,
+        trackingNumber,
+        trackingCarrier,
+      });
+      
+      res.json(updated);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Buyer: Confirm receipt of marketplace order
+  app.post("/api/reseller/marketplace/orders/:id/receive", requireRole("reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      
+      const order = await storage.getMarketplaceOrder(req.params.id);
+      if (!order) return res.status(404).json({ error: "Ordine non trovato" });
+      if (order.buyerResellerId !== req.user.id) {
+        return res.status(403).json({ error: "Solo l'acquirente può confermare ricezione" });
+      }
+      if (order.status !== 'shipped') {
+        return res.status(400).json({ error: `Impossibile confermare ricezione per un ordine con stato ${order.status}` });
+      }
+      
+      const updated = await storage.updateMarketplaceOrder(order.id, {
+        status: 'received',
+        receivedAt: new Date(),
+      });
+      
+      res.json(updated);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Reseller: Enable/disable product on marketplace
+  app.patch("/api/reseller/products/:id/marketplace", requireRole("reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      
+      const product = await storage.getProduct(req.params.id);
+      if (!product) return res.status(404).json({ error: "Prodotto non trovato" });
+      if (product.createdBy !== req.user.id) {
+        return res.status(403).json({ error: "Puoi modificare solo i tuoi prodotti" });
+      }
+      
+      const { isMarketplaceEnabled, marketplacePriceCents, marketplaceMinQuantity } = req.body;
+      
+      const updated = await storage.updateProduct(product.id, {
+        isMarketplaceEnabled: isMarketplaceEnabled ?? product.isMarketplaceEnabled,
+        marketplacePriceCents: marketplacePriceCents ?? product.marketplacePriceCents,
+        marketplaceMinQuantity: marketplaceMinQuantity ?? product.marketplaceMinQuantity,
+      });
+      
+      res.json(updated);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // ==========================================
   // B2B REPAIR CENTER PURCHASE ORDERS
   // ==========================================
 
