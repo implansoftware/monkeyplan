@@ -92,6 +92,7 @@ const menuItems = {
     { title: "Marketplace", url: "/marketplace", icon: Store, group: "E-commerce" },
     { title: "Ordini B2C", url: "/admin/sales-orders", icon: ShoppingCart, group: "E-commerce" },
     { title: "Ordini B2B Reseller", url: "/admin/b2b-orders", icon: Package, group: "E-commerce" },
+    { title: "Ordini B2B Centri Rip.", url: "/admin/rc-b2b-orders", icon: Building, group: "E-commerce" },
     { title: "Resi B2B", url: "/admin/b2b-returns", icon: RotateCcw, group: "E-commerce" },
     { title: "Spedizioni", url: "/admin/shipments", icon: Truck, group: "E-commerce" },
     { title: "Pagamenti", url: "/admin/payments", icon: CreditCard, group: "E-commerce" },

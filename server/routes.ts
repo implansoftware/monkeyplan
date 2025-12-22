@@ -19416,6 +19416,73 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // ==========================================
+  // ADMIN: REPAIR CENTER B2B ORDERS (sola lettura)
+  // ==========================================
+
+  // Admin: List all RC B2B orders (read-only visibility)
+  app.get("/api/admin/rc-b2b-orders", requireRole("admin"), async (req, res) => {
+    try {
+      const status = req.query.status as string | undefined;
+      const orders = await storage.listRepairCenterPurchaseOrders(status ? { status } : undefined);
+      
+      // Enrich orders with repair center, reseller info and items
+      const enrichedOrders = await Promise.all(orders.map(async (order) => {
+        const [repairCenter, reseller, items] = await Promise.all([
+          storage.getRepairCenter(order.repairCenterId),
+          storage.getUser(order.resellerId),
+          storage.listRepairCenterPurchaseOrderItems(order.id)
+        ]);
+        const enrichedItems = await Promise.all(items.map(async (item) => {
+          const product = await storage.getProduct(item.productId);
+          return { ...item, product };
+        }));
+        return { 
+          ...order, 
+          repairCenter: repairCenter ? { id: repairCenter.id, name: repairCenter.name, city: repairCenter.city } : null,
+          reseller: reseller ? { id: reseller.id, fullName: reseller.fullName, email: reseller.email } : null, 
+          items: enrichedItems 
+        };
+      }));
+      
+      res.json(enrichedOrders);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Admin: Get single RC B2B order with full details
+  app.get("/api/admin/rc-b2b-orders/:id", requireRole("admin"), async (req, res) => {
+    try {
+      const order = await storage.getRepairCenterPurchaseOrder(req.params.id);
+      if (!order) return res.status(404).json({ error: "Ordine non trovato" });
+      
+      const [repairCenter, reseller, items] = await Promise.all([
+        storage.getRepairCenter(order.repairCenterId),
+        storage.getUser(order.resellerId),
+        storage.listRepairCenterPurchaseOrderItems(order.id)
+      ]);
+      
+      const enrichedItems = await Promise.all(items.map(async (item) => {
+        const product = await storage.getProduct(item.productId);
+        return { ...item, product };
+      }));
+      
+      res.json({ 
+        ...order, 
+        repairCenter: repairCenter ? { id: repairCenter.id, name: repairCenter.name, city: repairCenter.city, address: repairCenter.address } : null,
+        reseller: reseller ? { id: reseller.id, fullName: reseller.fullName, email: reseller.email } : null, 
+        items: enrichedItems 
+      });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // ==========================================
+  // ADMIN: RESELLER B2B ORDERS
+  // ==========================================
+
   // Admin: List all B2B orders from resellers
   app.get("/api/admin/b2b-orders", requireRole("admin"), async (req, res) => {
     try {

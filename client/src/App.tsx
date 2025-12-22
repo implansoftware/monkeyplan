@@ -165,6 +165,7 @@ import ResellerB2BOrders from "@/pages/reseller/b2b-orders";
 import ResellerB2BReturns from "@/pages/reseller/b2b-returns";
 import ResellerRCB2BOrders from "@/pages/reseller/rc-b2b-orders";
 import AdminB2BOrders from "@/pages/admin/b2b-orders";
+import AdminRCB2BOrders from "@/pages/admin/rc-b2b-orders";
 import AdminB2BReturns from "@/pages/admin/b2b-returns";
 
 function Router() {
@@ -222,6 +223,7 @@ function Router() {
       <ProtectedRoute path="/admin/accessory-catalog" component={AdminAccessoryCatalog} />
       <ProtectedRoute path="/admin/team" component={AdminTeam} />
       <ProtectedRoute path="/admin/b2b-orders" component={AdminB2BOrders} />
+      <ProtectedRoute path="/admin/rc-b2b-orders" component={AdminRCB2BOrders} />
       <ProtectedRoute path="/admin/b2b-returns" component={AdminB2BReturns} />
       
       {/* Reseller routes */}
