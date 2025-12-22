@@ -714,6 +714,12 @@ export const products = pgTable("products", {
   // Metadata
   isActive: boolean("is_active").notNull().default(true),
   isVisibleInShop: boolean("is_visible_in_shop").notNull().default(true), // Visibilità globale nello shop (controllata da admin)
+  
+  // Marketplace settings (Reseller-to-Reseller B2B)
+  isMarketplaceEnabled: boolean("is_marketplace_enabled").notNull().default(false), // Disponibile per vendita ad altri rivenditori
+  marketplacePriceCents: integer("marketplace_price_cents"), // Prezzo B2B per marketplace (null = usa unitPrice)
+  marketplaceMinQuantity: integer("marketplace_min_quantity").default(1), // Quantità minima ordine
+  
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
@@ -4872,6 +4878,113 @@ export type InsertDeliveryAppointment = z.infer<typeof insertDeliveryAppointment
 // Appointment Status Type
 export type AppointmentStatus = "scheduled" | "confirmed" | "completed" | "cancelled" | "no_show";
 
+// ==========================================
+// MARKETPLACE (Reseller-to-Reseller B2B)
+// ==========================================
+
+// Marketplace Order Status Enum
+export const marketplaceOrderStatusEnum = pgEnum("marketplace_order_status", [
+  "pending",           // In attesa di approvazione venditore
+  "approved",          // Approvato dal venditore
+  "rejected",          // Rifiutato dal venditore
+  "processing",        // In preparazione
+  "shipped",           // Spedito
+  "received",          // Ricevuto dall'acquirente
+  "cancelled",         // Annullato
+]);
+
+// Marketplace Orders Table (Reseller-to-Reseller)
+export const marketplaceOrders = pgTable("marketplace_orders", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  orderNumber: text("order_number").notNull().unique(), // es. MP-2024-00001
+  
+  // Buyer and Seller
+  buyerResellerId: varchar("buyer_reseller_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  sellerResellerId: varchar("seller_reseller_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  
+  // Status
+  status: marketplaceOrderStatusEnum("status").notNull().default("pending"),
+  
+  // Totals (in cents)
+  subtotal: integer("subtotal").notNull().default(0),
+  discountAmount: integer("discount_amount").notNull().default(0),
+  shippingCost: integer("shipping_cost").notNull().default(0),
+  total: integer("total").notNull().default(0),
+  
+  // Payment
+  paymentMethod: b2bPaymentMethodEnum("payment_method").default("bank_transfer"),
+  paymentReference: text("payment_reference"),
+  paymentConfirmedAt: timestamp("payment_confirmed_at"),
+  paymentConfirmedBy: varchar("payment_confirmed_by").references(() => users.id),
+  
+  // Notes
+  buyerNotes: text("buyer_notes"),
+  sellerNotes: text("seller_notes"),
+  rejectionReason: text("rejection_reason"),
+  
+  // Approval tracking
+  approvedBy: varchar("approved_by").references(() => users.id),
+  approvedAt: timestamp("approved_at"),
+  rejectedBy: varchar("rejected_by").references(() => users.id),
+  rejectedAt: timestamp("rejected_at"),
+  
+  // Shipping tracking
+  shippedAt: timestamp("shipped_at"),
+  shippedBy: varchar("shipped_by").references(() => users.id),
+  trackingNumber: text("tracking_number"),
+  trackingCarrier: text("tracking_carrier"),
+  
+  // Receipt tracking
+  receivedAt: timestamp("received_at"),
+  
+  // Warehouse transfer link
+  warehouseTransferId: varchar("warehouse_transfer_id").references(() => warehouseTransfers.id),
+  
+  // Audit
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export const insertMarketplaceOrderSchema = createInsertSchema(marketplaceOrders).omit({
+  id: true,
+  orderNumber: true,
+  approvedBy: true,
+  approvedAt: true,
+  rejectedBy: true,
+  rejectedAt: true,
+  shippedAt: true,
+  shippedBy: true,
+  receivedAt: true,
+  warehouseTransferId: true,
+  paymentConfirmedAt: true,
+  paymentConfirmedBy: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+// Marketplace Order Items
+export const marketplaceOrderItems = pgTable("marketplace_order_items", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  orderId: varchar("order_id").notNull().references(() => marketplaceOrders.id, { onDelete: "cascade" }),
+  productId: varchar("product_id").notNull().references(() => products.id, { onDelete: "cascade" }),
+  
+  // Quantity & pricing (snapshot at order time)
+  quantity: integer("quantity").notNull(),
+  unitPrice: integer("unit_price").notNull(), // In cents
+  totalPrice: integer("total_price").notNull(), // quantity * unitPrice
+  
+  // Product snapshot (in case product changes later)
+  productName: text("product_name").notNull(),
+  productSku: text("product_sku"),
+  
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const insertMarketplaceOrderItemSchema = createInsertSchema(marketplaceOrderItems).omit({
+  id: true,
+  createdAt: true,
+});
+
 // SLA State History Types
 export type RepairOrderStateHistory = typeof repairOrderStateHistory.$inferSelect;
 export type InsertRepairOrderStateHistory = z.infer<typeof insertRepairOrderStateHistorySchema>;
@@ -5086,3 +5199,10 @@ export type InsertWarehouseTransferItem = z.infer<typeof insertWarehouseTransfer
 export type WarehouseOwnerType = "admin" | "reseller" | "sub_reseller" | "repair_center";
 export type WarehouseMovementType = "carico" | "scarico" | "trasferimento_in" | "trasferimento_out" | "rettifica";
 export type WarehouseTransferStatus = "pending" | "approved" | "shipped" | "received" | "cancelled";
+
+// Marketplace Types (Reseller-to-Reseller B2B)
+export type MarketplaceOrder = typeof marketplaceOrders.$inferSelect;
+export type InsertMarketplaceOrder = z.infer<typeof insertMarketplaceOrderSchema>;
+export type MarketplaceOrderItem = typeof marketplaceOrderItems.$inferSelect;
+export type InsertMarketplaceOrderItem = z.infer<typeof insertMarketplaceOrderItemSchema>;
+export type MarketplaceOrderStatus = "pending" | "approved" | "rejected" | "processing" | "shipped" | "received" | "cancelled";
