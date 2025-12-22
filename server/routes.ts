@@ -5972,6 +5972,60 @@ export function registerRoutes(app: Express): Server {
 
   // ============ REPAIR CENTER ROUTES ============
 
+  // GET /api/repair-center/settings - Get repair center profile settings
+  app.get("/api/repair-center/settings", requireRole("repair_center"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const repairCenterId = req.user.repairCenterId;
+      if (!repairCenterId) {
+        return res.status(400).send("Nessun centro di riparazione associato");
+      }
+      
+      const repairCenter = await storage.getRepairCenter(repairCenterId);
+      if (!repairCenter) {
+        return res.status(404).send("Centro di riparazione non trovato");
+      }
+      
+      res.json(repairCenter);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // PATCH /api/repair-center/settings - Update repair center profile settings
+  app.patch("/api/repair-center/settings", requireRole("repair_center"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const repairCenterId = req.user.repairCenterId;
+      if (!repairCenterId) {
+        return res.status(400).send("Nessun centro di riparazione associato");
+      }
+      
+      const repairCenter = await storage.getRepairCenter(repairCenterId);
+      if (!repairCenter) {
+        return res.status(404).send("Centro di riparazione non trovato");
+      }
+      
+      // Validate incoming data
+      const { updateRepairCenterSettingsSchema } = await import("@shared/schema");
+      const validatedData = updateRepairCenterSettingsSchema.parse(req.body);
+      
+      // Update repair center with validated data
+      const updated = await storage.updateRepairCenter(repairCenterId, validatedData);
+      
+      setActivityEntity(res, { type: 'repair_centers', id: repairCenterId });
+      
+      res.json(updated);
+    } catch (error: any) {
+      if (error.name === 'ZodError') {
+        return res.status(400).json({ errors: error.errors });
+      }
+      res.status(500).send(error.message);
+    }
+  });
+
   app.get("/api/repair-center/stats", requireRole("repair_center"), async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
