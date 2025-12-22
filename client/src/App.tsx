@@ -124,6 +124,10 @@ import RepairCenterTickets from "@/pages/repair-center/tickets";
 import RepairCenterTicketDetail from "@/pages/repair-center/ticket-detail";
 import RepairCenterAppointments from "@/pages/repair-center/appointments";
 import RepairCenterRepairDetail from "@/pages/repair-center/repair-detail";
+import RepairCenterWarehouses from "@/pages/repair-center/warehouses";
+import RepairCenterProducts from "@/pages/repair-center/products";
+import RepairCenterB2BCatalog from "@/pages/repair-center/b2b-catalog";
+import RepairCenterB2BOrders from "@/pages/repair-center/b2b-orders";
 
 // Customer pages
 import CustomerDashboard from "@/pages/customer/dashboard";
@@ -154,6 +158,7 @@ import ResellerSalesReturns from "@/pages/reseller/sales-returns";
 import ResellerB2BCatalog from "@/pages/reseller/b2b-catalog";
 import ResellerB2BOrders from "@/pages/reseller/b2b-orders";
 import ResellerB2BReturns from "@/pages/reseller/b2b-returns";
+import ResellerRCB2BOrders from "@/pages/reseller/rc-b2b-orders";
 import AdminB2BOrders from "@/pages/admin/b2b-orders";
 import AdminB2BReturns from "@/pages/admin/b2b-returns";
 
@@ -269,13 +274,17 @@ function Router() {
       <ProtectedRoute path="/reseller/b2b-catalog" component={ResellerB2BCatalog} />
       <ProtectedRoute path="/reseller/b2b-orders" component={ResellerB2BOrders} />
       <ProtectedRoute path="/reseller/b2b-returns" component={ResellerB2BReturns} />
+      <ProtectedRoute path="/reseller/rc-b2b-orders" component={ResellerRCB2BOrders} />
       
       {/* Repair Center routes */}
       <ProtectedRoute path="/repair-center" component={RepairCenterDashboard} />
       <ProtectedRoute path="/repair-center/repairs/:id" component={RepairCenterRepairDetail} />
       <ProtectedRoute path="/repair-center/repairs" component={RepairCenterRepairs} />
       <ProtectedRoute path="/repair-center/appointments" component={RepairCenterAppointments} />
-      <ProtectedRoute path="/repair-center/warehouses" component={AdminWarehouses} />
+      <ProtectedRoute path="/repair-center/warehouses" component={RepairCenterWarehouses} />
+      <ProtectedRoute path="/repair-center/products" component={RepairCenterProducts} />
+      <ProtectedRoute path="/repair-center/b2b-catalog" component={RepairCenterB2BCatalog} />
+      <ProtectedRoute path="/repair-center/b2b-orders" component={RepairCenterB2BOrders} />
       <ProtectedRoute path="/repair-center/tickets" component={RepairCenterTickets} />
       <ProtectedRoute path="/repair-center/tickets/:id" component={RepairCenterTicketDetail} />
       <ProtectedRoute path="/repair-center/diagnostics" component={DiagnosisList} />

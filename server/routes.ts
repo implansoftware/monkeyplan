@@ -20133,5 +20133,356 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // ==========================================
+  // B2B REPAIR CENTER PURCHASE ORDERS
+  // ==========================================
+
+  // Repair Center: Get reseller catalog (products with stock available for B2B purchase)
+  app.get("/api/repair-center/b2b-catalog", requireRole("repair_center"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      
+      // Get repair center to find the owning reseller
+      const repairCenter = await storage.getRepairCenter(req.user.repairCenterId!);
+      if (!repairCenter) {
+        return res.status(404).json({ error: "Centro riparazione non trovato" });
+      }
+      if (!repairCenter.resellerId) {
+        return res.status(400).json({ error: "Centro riparazione non associato a un rivenditore" });
+      }
+      
+      // Get reseller's warehouse stock with products assigned to repair centers
+      const resellerWarehouse = await storage.ensureDefaultWarehouse('reseller', repairCenter.resellerId, 'Reseller');
+      const stock = await storage.listWarehouseStock(resellerWarehouse.id);
+      
+      // Build catalog from reseller stock
+      const catalog = await Promise.all(stock.filter(s => s.quantity > 0).map(async (s) => {
+        const product = await storage.getProduct(s.productId);
+        if (!product || !product.isActive) return null;
+        
+        // Get B2B price for repair centers (use costPrice or 80% of unitPrice)
+        const b2bPrice = product.costPrice || Math.round((product.unitPrice || 0) * 0.8);
+        
+        return {
+          product,
+          resellerStock: s.quantity,
+          b2bPrice,
+          minimumOrderQuantity: 1,
+        };
+      }));
+      
+      res.json(catalog.filter(Boolean));
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Repair Center: List own B2B orders
+  app.get("/api/repair-center/b2b-orders", requireRole("repair_center"), async (req, res) => {
+    try {
+      if (!req.user || !req.user.repairCenterId) {
+        return res.status(401).json({ error: "Non autenticato o centro riparazione non configurato" });
+      }
+      
+      const orders = await storage.listRepairCenterPurchaseOrders({ repairCenterId: req.user.repairCenterId });
+      
+      // Enrich orders with items and product info
+      const enrichedOrders = await Promise.all(orders.map(async (order) => {
+        const items = await storage.listRepairCenterPurchaseOrderItems(order.id);
+        const enrichedItems = await Promise.all(items.map(async (item) => {
+          const product = await storage.getProduct(item.productId);
+          return { ...item, product };
+        }));
+        return { ...order, items: enrichedItems };
+      }));
+      
+      res.json(enrichedOrders);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Repair Center: Get single B2B order with items
+  app.get("/api/repair-center/b2b-orders/:id", requireRole("repair_center"), async (req, res) => {
+    try {
+      if (!req.user || !req.user.repairCenterId) {
+        return res.status(401).json({ error: "Non autenticato" });
+      }
+      
+      const order = await storage.getRepairCenterPurchaseOrder(req.params.id);
+      if (!order) return res.status(404).json({ error: "Ordine non trovato" });
+      if (order.repairCenterId !== req.user.repairCenterId) {
+        return res.status(403).json({ error: "Accesso negato" });
+      }
+      
+      const items = await storage.listRepairCenterPurchaseOrderItems(order.id);
+      const enrichedItems = await Promise.all(items.map(async (item) => {
+        const product = await storage.getProduct(item.productId);
+        return { ...item, product };
+      }));
+      
+      res.json({ ...order, items: enrichedItems });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Repair Center: Create B2B order (purchase from reseller)
+  app.post("/api/repair-center/b2b-orders", requireRole("repair_center"), async (req, res) => {
+    try {
+      if (!req.user || !req.user.repairCenterId) {
+        return res.status(401).json({ error: "Non autenticato" });
+      }
+      
+      const { items, paymentMethod, notes } = req.body;
+      
+      if (!items || !Array.isArray(items) || items.length === 0) {
+        return res.status(400).json({ error: "L'ordine deve contenere almeno un prodotto" });
+      }
+      
+      // Get repair center to find reseller
+      const repairCenter = await storage.getRepairCenter(req.user.repairCenterId);
+      if (!repairCenter || !repairCenter.resellerId) {
+        return res.status(400).json({ error: "Centro riparazione non associato a un rivenditore" });
+      }
+      
+      // Get reseller warehouse stock
+      const resellerWarehouse = await storage.ensureDefaultWarehouse('reseller', repairCenter.resellerId, 'Reseller');
+      const stock = await storage.listWarehouseStock(resellerWarehouse.id);
+      const stockMap = new Map(stock.map(s => [s.productId, s.quantity]));
+      
+      let totalCents = 0;
+      const orderItems: Array<{ productId: string; quantity: number; unitPriceCents: number; productName: string }> = [];
+      
+      for (const item of items) {
+        const product = await storage.getProduct(item.productId);
+        if (!product || !product.isActive) {
+          return res.status(400).json({ error: `Prodotto ${item.productId} non disponibile` });
+        }
+        
+        const availableStock = stockMap.get(item.productId) || 0;
+        if (item.quantity > availableStock) {
+          return res.status(400).json({ error: `Stock insufficiente per ${product.name}: disponibili ${availableStock}` });
+        }
+        
+        const b2bPrice = product.costPrice || Math.round((product.unitPrice || 0) * 0.8);
+        const lineTotalCents = b2bPrice * item.quantity;
+        totalCents += lineTotalCents;
+        
+        orderItems.push({
+          productId: item.productId,
+          quantity: item.quantity,
+          unitPriceCents: b2bPrice,
+          productName: product.name,
+        });
+      }
+      
+      // Create order
+      const order = await storage.createRepairCenterPurchaseOrder({
+        repairCenterId: req.user.repairCenterId,
+        resellerId: repairCenter.resellerId,
+        status: 'pending',
+        subtotal: totalCents,
+        total: totalCents,
+        paymentMethod: paymentMethod || 'bank_transfer',
+        notes,
+      });
+      
+      // Create order items
+      for (const item of orderItems) {
+        await storage.createRepairCenterPurchaseOrderItem({
+          orderId: order.id,
+          productId: item.productId,
+          quantity: item.quantity,
+          unitPrice: item.unitPriceCents,
+          totalPrice: item.unitPriceCents * item.quantity,
+          productName: item.productName,
+        });
+      }
+      
+      const createdItems = await storage.listRepairCenterPurchaseOrderItems(order.id);
+      res.status(201).json({ ...order, items: createdItems });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Repair Center: Confirm receipt of B2B order
+  app.post("/api/repair-center/b2b-orders/:id/receive", requireRole("repair_center"), async (req, res) => {
+    try {
+      if (!req.user || !req.user.repairCenterId) {
+        return res.status(401).json({ error: "Non autenticato" });
+      }
+      
+      const order = await storage.getRepairCenterPurchaseOrder(req.params.id);
+      if (!order) return res.status(404).json({ error: "Ordine non trovato" });
+      if (order.repairCenterId !== req.user.repairCenterId) {
+        return res.status(403).json({ error: "Accesso negato" });
+      }
+      if (order.status !== 'shipped') {
+        return res.status(400).json({ error: "Solo ordini spediti possono essere confermati come ricevuti" });
+      }
+      
+      const updated = await storage.updateRepairCenterPurchaseOrder(order.id, {
+        status: 'delivered',
+        deliveredAt: new Date(),
+      });
+      
+      res.json(updated);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Reseller: List B2B orders from repair centers
+  app.get("/api/reseller/rc-b2b-orders", requireRole("reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      
+      const status = req.query.status as string | undefined;
+      const orders = await storage.listRepairCenterPurchaseOrders({ 
+        resellerId: req.user.id,
+        ...(status && { status })
+      });
+      
+      // Enrich orders with repair center info and items
+      const enrichedOrders = await Promise.all(orders.map(async (order) => {
+        const [repairCenter, items] = await Promise.all([
+          storage.getRepairCenter(order.repairCenterId),
+          storage.listRepairCenterPurchaseOrderItems(order.id)
+        ]);
+        const enrichedItems = await Promise.all(items.map(async (item) => {
+          const product = await storage.getProduct(item.productId);
+          return { ...item, product };
+        }));
+        return { 
+          ...order, 
+          repairCenter: repairCenter ? { id: repairCenter.id, name: repairCenter.name } : null, 
+          items: enrichedItems 
+        };
+      }));
+      
+      res.json(enrichedOrders);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Reseller: Approve repair center B2B order
+  app.post("/api/reseller/rc-b2b-orders/:id/approve", requireRole("reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      
+      const order = await storage.getRepairCenterPurchaseOrder(req.params.id);
+      if (!order) return res.status(404).json({ error: "Ordine non trovato" });
+      if (order.resellerId !== req.user.id) {
+        return res.status(403).json({ error: "Accesso negato" });
+      }
+      if (order.status !== 'pending') {
+        return res.status(400).json({ error: "Solo ordini in attesa possono essere approvati" });
+      }
+      
+      // Get warehouses
+      const resellerWarehouse = await storage.ensureDefaultWarehouse('reseller', req.user.id, req.user.fullName || req.user.username);
+      const rcWarehouse = await storage.ensureDefaultWarehouse('repair_center', order.repairCenterId, 'Repair Center');
+      
+      // Transfer stock
+      const items = await storage.listRepairCenterPurchaseOrderItems(order.id);
+      for (const item of items) {
+        // Deduct from reseller
+        await storage.updateWarehouseStockQuantity(resellerWarehouse.id, item.productId, -item.quantity);
+        await storage.createWarehouseMovement({
+          warehouseId: resellerWarehouse.id,
+          productId: item.productId,
+          movementType: 'trasferimento_out',
+          quantity: item.quantity,
+          referenceType: 'ordine_rc_b2b',
+          referenceId: order.id,
+          notes: `Ordine RC B2B ${order.orderNumber}`,
+          createdBy: req.user.id,
+        });
+        
+        // Add to repair center
+        await storage.updateWarehouseStockQuantity(rcWarehouse.id, item.productId, item.quantity);
+        await storage.createWarehouseMovement({
+          warehouseId: rcWarehouse.id,
+          productId: item.productId,
+          movementType: 'trasferimento_in',
+          quantity: item.quantity,
+          referenceType: 'ordine_rc_b2b',
+          referenceId: order.id,
+          notes: `Ordine RC B2B ${order.orderNumber}`,
+          createdBy: req.user.id,
+        });
+      }
+      
+      const updated = await storage.updateRepairCenterPurchaseOrder(order.id, {
+        status: 'approved',
+        approvedAt: new Date(),
+        approvedBy: req.user.id,
+      });
+      
+      res.json(updated);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Reseller: Reject repair center B2B order
+  app.post("/api/reseller/rc-b2b-orders/:id/reject", requireRole("reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      
+      const order = await storage.getRepairCenterPurchaseOrder(req.params.id);
+      if (!order) return res.status(404).json({ error: "Ordine non trovato" });
+      if (order.resellerId !== req.user.id) {
+        return res.status(403).json({ error: "Accesso negato" });
+      }
+      if (order.status !== 'pending') {
+        return res.status(400).json({ error: "Solo ordini in attesa possono essere rifiutati" });
+      }
+      
+      const { reason } = req.body;
+      
+      const updated = await storage.updateRepairCenterPurchaseOrder(order.id, {
+        status: 'rejected',
+        rejectionReason: reason,
+      });
+      
+      res.json(updated);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Reseller: Ship repair center B2B order
+  app.post("/api/reseller/rc-b2b-orders/:id/ship", requireRole("reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      
+      const order = await storage.getRepairCenterPurchaseOrder(req.params.id);
+      if (!order) return res.status(404).json({ error: "Ordine non trovato" });
+      if (order.resellerId !== req.user.id) {
+        return res.status(403).json({ error: "Accesso negato" });
+      }
+      if (order.status !== 'approved' && order.status !== 'paid') {
+        return res.status(400).json({ error: "Ordine non in stato idoneo per spedizione" });
+      }
+      
+      const { trackingNumber, carrier } = req.body;
+      
+      const updated = await storage.updateRepairCenterPurchaseOrder(order.id, {
+        status: 'shipped',
+        shippedAt: new Date(),
+        trackingNumber,
+        carrier,
+      });
+      
+      res.json(updated);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   return httpServer;
 }

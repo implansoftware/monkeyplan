@@ -1048,6 +1048,77 @@ export type InsertResellerPurchaseOrder = z.infer<typeof insertResellerPurchaseO
 export type ResellerPurchaseOrderItem = typeof resellerPurchaseOrderItems.$inferSelect;
 export type InsertResellerPurchaseOrderItem = z.infer<typeof insertResellerPurchaseOrderItemSchema>;
 
+// Repair Center B2B Purchase Orders (RC ordina dal Reseller proprietario)
+export const repairCenterPurchaseOrders = pgTable("repair_center_purchase_orders", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  orderNumber: text("order_number").notNull().unique(),
+  repairCenterId: varchar("repair_center_id").notNull().references(() => repairCenters.id, { onDelete: "cascade" }),
+  resellerId: varchar("reseller_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  
+  status: resellerPurchaseOrderStatusEnum("status").notNull().default("pending"),
+  
+  subtotal: integer("subtotal").notNull().default(0),
+  discountAmount: integer("discount_amount").notNull().default(0),
+  shippingCost: integer("shipping_cost").notNull().default(0),
+  total: integer("total").notNull().default(0),
+  
+  paymentMethod: b2bPaymentMethodEnum("payment_method").default("bank_transfer"),
+  paymentReference: text("payment_reference"),
+  paymentConfirmedAt: timestamp("payment_confirmed_at"),
+  
+  notes: text("notes"),
+  rejectionReason: text("rejection_reason"),
+  
+  approvedBy: varchar("approved_by").references(() => users.id),
+  approvedAt: timestamp("approved_at"),
+  
+  shippedAt: timestamp("shipped_at"),
+  trackingNumber: text("tracking_number"),
+  carrier: text("carrier"),
+  
+  deliveredAt: timestamp("delivered_at"),
+  
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export const insertRepairCenterPurchaseOrderSchema = createInsertSchema(repairCenterPurchaseOrders).omit({
+  id: true,
+  orderNumber: true,
+  approvedBy: true,
+  approvedAt: true,
+  shippedAt: true,
+  deliveredAt: true,
+  paymentConfirmedAt: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const repairCenterPurchaseOrderItems = pgTable("repair_center_purchase_order_items", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  orderId: varchar("order_id").notNull().references(() => repairCenterPurchaseOrders.id, { onDelete: "cascade" }),
+  productId: varchar("product_id").notNull().references(() => products.id),
+  
+  productName: text("product_name").notNull(),
+  productSku: text("product_sku"),
+  
+  quantity: integer("quantity").notNull(),
+  unitPrice: integer("unit_price").notNull(),
+  totalPrice: integer("total_price").notNull(),
+  
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const insertRepairCenterPurchaseOrderItemSchema = createInsertSchema(repairCenterPurchaseOrderItems).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type RepairCenterPurchaseOrder = typeof repairCenterPurchaseOrders.$inferSelect;
+export type InsertRepairCenterPurchaseOrder = z.infer<typeof insertRepairCenterPurchaseOrderSchema>;
+export type RepairCenterPurchaseOrderItem = typeof repairCenterPurchaseOrderItems.$inferSelect;
+export type InsertRepairCenterPurchaseOrderItem = z.infer<typeof insertRepairCenterPurchaseOrderItemSchema>;
+
 // Repair orders (Lavorazioni)
 export const repairOrders = pgTable("repair_orders", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),

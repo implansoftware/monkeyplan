@@ -163,6 +163,7 @@ const menuItems = {
     { title: "Catalogo B2B", url: "/reseller/b2b-catalog", icon: Package, group: "Acquisti B2B" },
     { title: "I Miei Ordini B2B", url: "/reseller/b2b-orders", icon: ShoppingCart, group: "Acquisti B2B" },
     { title: "I Miei Resi B2B", url: "/reseller/b2b-returns", icon: RotateCcw, group: "Acquisti B2B" },
+    { title: "Ordini Centri Rip.", url: "/reseller/rc-b2b-orders", icon: Building2, group: "Acquisti B2B" },
     { title: "Utility", url: "/reseller/utility", icon: Zap, group: "Utility" },
     { title: "Fornitori Utility", url: "/reseller/utility/suppliers", icon: Phone, group: "Utility" },
     { title: "Listino Servizi", url: "/reseller/utility/services", icon: Package, group: "Utility" },
@@ -176,6 +177,9 @@ const menuItems = {
     { title: "Lavorazioni", url: "/repair-center/repairs", icon: Wrench, group: "Principale" },
     { title: "Appuntamenti", url: "/repair-center/appointments", icon: CalendarCheck, group: "Principale" },
     { title: "Magazzino", url: "/repair-center/warehouses", icon: Warehouse, group: "Magazzino" },
+    { title: "Prodotti", url: "/repair-center/products", icon: Package, group: "Magazzino" },
+    { title: "Catalogo B2B", url: "/repair-center/b2b-catalog", icon: ShoppingCart, group: "Acquisti B2B" },
+    { title: "Ordini B2B", url: "/repair-center/b2b-orders", icon: FileText, group: "Acquisti B2B" },
     { title: "Ticket", url: "/repair-center/tickets", icon: Ticket, group: "Assistenza" },
   ],
   customer: [

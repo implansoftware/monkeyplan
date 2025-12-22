@@ -21,6 +21,7 @@ The backend is an `Express.js` application with TypeScript, featuring a RESTful 
 *   **Supply Chain**: Supplier/Procurement module with multi-supplier support, order/return workflows, and external API integration for catalog sync and ordering.
 *   **Customer & Service Management**: Corporate branch management, a standardized service catalog with custom pricing, and a delivery appointment system.
 *   **Integrations**: Direct integration with SIFAR supplier API for spare parts ordering, including credential management, store mapping, catalog browsing, cart functionality, and order submission.
+*   **B2B Ordering System**: Multi-level B2B ordering supporting both Reseller→Admin and RepairCenter→Reseller purchase flows with automatic stock transfers, order approval workflows, shipping tracking, and receipt confirmation.
 
 ## External Dependencies
 

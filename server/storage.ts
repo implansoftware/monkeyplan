@@ -92,7 +92,9 @@ import {
   resellerPurchaseOrders, ResellerPurchaseOrder, InsertResellerPurchaseOrder,
   resellerPurchaseOrderItems, ResellerPurchaseOrderItem, InsertResellerPurchaseOrderItem,
   b2bReturns, B2bReturn, InsertB2bReturn,
-  b2bReturnItems, B2bReturnItem, InsertB2bReturnItem
+  b2bReturnItems, B2bReturnItem, InsertB2bReturnItem,
+  repairCenterPurchaseOrders, RepairCenterPurchaseOrder, InsertRepairCenterPurchaseOrder,
+  repairCenterPurchaseOrderItems, RepairCenterPurchaseOrderItem, InsertRepairCenterPurchaseOrderItem
 } from "@shared/schema";
 import { db, pool } from "./db";
 import { eq, and, or, desc, lt, sql, not, inArray, isNull } from "drizzle-orm";
@@ -810,6 +812,17 @@ export interface IStorage {
   listB2bReturnItems(returnId: string): Promise<B2bReturnItem[]>;
   createB2bReturnItem(data: InsertB2bReturnItem): Promise<B2bReturnItem>;
   updateB2bReturnItem(id: string, updates: Partial<B2bReturnItem>): Promise<B2bReturnItem>;
+  
+  // B2B Repair Center Purchase Orders
+  listRepairCenterPurchaseOrders(filters?: { repairCenterId?: string; resellerId?: string; status?: string }): Promise<RepairCenterPurchaseOrder[]>;
+  getRepairCenterPurchaseOrder(id: string): Promise<RepairCenterPurchaseOrder | undefined>;
+  createRepairCenterPurchaseOrder(data: InsertRepairCenterPurchaseOrder): Promise<RepairCenterPurchaseOrder>;
+  updateRepairCenterPurchaseOrder(id: string, updates: Partial<RepairCenterPurchaseOrder>): Promise<RepairCenterPurchaseOrder>;
+  generateRCB2BOrderNumber(): Promise<string>;
+  
+  // B2B Repair Center Purchase Order Items
+  listRepairCenterPurchaseOrderItems(orderId: string): Promise<RepairCenterPurchaseOrderItem[]>;
+  createRepairCenterPurchaseOrderItem(data: InsertRepairCenterPurchaseOrderItem): Promise<RepairCenterPurchaseOrderItem>;
   
   sessionStore: session.Store;
 }
@@ -6906,6 +6919,66 @@ export class DatabaseStorage implements IStorage {
       .returning();
     if (!updated) throw new Error("B2B return item not found");
     return updated;
+  }
+
+  // B2B Repair Center Purchase Orders
+  async listRepairCenterPurchaseOrders(filters?: { repairCenterId?: string; resellerId?: string; status?: string }): Promise<RepairCenterPurchaseOrder[]> {
+    const conditions = [];
+    if (filters?.repairCenterId) conditions.push(eq(repairCenterPurchaseOrders.repairCenterId, filters.repairCenterId));
+    if (filters?.resellerId) conditions.push(eq(repairCenterPurchaseOrders.resellerId, filters.resellerId));
+    if (filters?.status) conditions.push(eq(repairCenterPurchaseOrders.status, filters.status as any));
+    
+    if (conditions.length === 0) {
+      return await db.select().from(repairCenterPurchaseOrders).orderBy(desc(repairCenterPurchaseOrders.createdAt));
+    }
+    return await db.select().from(repairCenterPurchaseOrders)
+      .where(and(...conditions))
+      .orderBy(desc(repairCenterPurchaseOrders.createdAt));
+  }
+
+  async getRepairCenterPurchaseOrder(id: string): Promise<RepairCenterPurchaseOrder | undefined> {
+    const [order] = await db.select().from(repairCenterPurchaseOrders).where(eq(repairCenterPurchaseOrders.id, id));
+    return order || undefined;
+  }
+
+  async createRepairCenterPurchaseOrder(data: InsertRepairCenterPurchaseOrder): Promise<RepairCenterPurchaseOrder> {
+    const orderNumber = await this.generateRCB2BOrderNumber();
+    const [created] = await db.insert(repairCenterPurchaseOrders)
+      .values({ ...data, orderNumber })
+      .returning();
+    return created;
+  }
+
+  async updateRepairCenterPurchaseOrder(id: string, updates: Partial<RepairCenterPurchaseOrder>): Promise<RepairCenterPurchaseOrder> {
+    const [updated] = await db.update(repairCenterPurchaseOrders)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(repairCenterPurchaseOrders.id, id))
+      .returning();
+    if (!updated) throw new Error("RC B2B order not found");
+    return updated;
+  }
+
+  async generateRCB2BOrderNumber(): Promise<string> {
+    const year = new Date().getFullYear();
+    const prefix = `RCB2B-${year}`;
+    
+    const [result] = await db.select({ count: sql<number>`count(*)` })
+      .from(repairCenterPurchaseOrders)
+      .where(sql`${repairCenterPurchaseOrders.orderNumber} LIKE ${prefix + '%'}`);
+    
+    const nextNumber = (result?.count || 0) + 1;
+    return `${prefix}-${String(nextNumber).padStart(5, '0')}`;
+  }
+
+  // B2B Repair Center Purchase Order Items
+  async listRepairCenterPurchaseOrderItems(orderId: string): Promise<RepairCenterPurchaseOrderItem[]> {
+    return await db.select().from(repairCenterPurchaseOrderItems)
+      .where(eq(repairCenterPurchaseOrderItems.orderId, orderId));
+  }
+
+  async createRepairCenterPurchaseOrderItem(data: InsertRepairCenterPurchaseOrderItem): Promise<RepairCenterPurchaseOrderItem> {
+    const [created] = await db.insert(repairCenterPurchaseOrderItems).values(data).returning();
+    return created;
   }
 }
 
