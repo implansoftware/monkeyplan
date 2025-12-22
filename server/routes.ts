@@ -8079,9 +8079,10 @@ export function registerRoutes(app: Express): Server {
       if (!req.user) return res.status(401).send("Unauthorized");
       
       const filters: { resellerId?: string; accessoryType?: string } = {};
+      let effectiveResellerId: string | null = null;
       
-      if (req.user.role === 'reseller' || req.user.role === 'reseller_collaborator') {
-        const effectiveResellerId = req.user.role === 'reseller_collaborator' ? req.user.resellerId : req.user.id;
+      if (req.user.role === 'reseller' || req.user.role === 'reseller_collaborator' || req.user.role === 'reseller_staff') {
+        effectiveResellerId = (req.user.role === 'reseller_collaborator' || req.user.role === 'reseller_staff') ? req.user.resellerId : req.user.id;
         if (effectiveResellerId) filters.resellerId = effectiveResellerId;
       } else if (req.user.role !== 'admin') {
         return res.status(403).send("Access denied");
@@ -8091,11 +8092,15 @@ export function registerRoutes(app: Express): Server {
       
       const accessories = await storage.listAccessories(filters);
       
-      // Fetch device compatibilities for each accessory
+      // Fetch device compatibilities for each accessory and add isOwn flag
       const accessoriesWithCompatibilities = await Promise.all(
         accessories.map(async (accessory) => {
           const deviceCompatibilities = await storage.listProductCompatibilities(accessory.id);
-          return { ...accessory, deviceCompatibilities };
+          return { 
+            ...accessory, 
+            deviceCompatibilities,
+            isOwn: effectiveResellerId ? accessory.createdBy === effectiveResellerId : false,
+          };
         })
       );
       

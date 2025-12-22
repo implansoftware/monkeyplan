@@ -83,7 +83,6 @@ export default function AccessoryCatalog() {
   const [uploadingImage, setUploadingImage] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
-  const { user } = useUser();
 
   // Marketplace P2P state
   const [marketplaceDialogOpen, setMarketplaceDialogOpen] = useState(false);
@@ -325,8 +324,7 @@ export default function AccessoryCatalog() {
     },
   });
 
-  const isOwnProduct = (accessory: AccessoryWithSpecs) => accessory.createdBy === user?.id;
-
+  
   const openMarketplaceDialog = (product: AccessoryWithSpecs) => {
     setMarketplaceProduct(product);
     setMarketplaceEnabled((product as any).isMarketplaceEnabled || false);
@@ -657,7 +655,7 @@ export default function AccessoryCatalog() {
                           €{(accessory.unitPrice / 100).toFixed(2)}
                         </TableCell>
                         <TableCell className="text-center">
-                          {isOwnProduct(accessory) ? (
+                          {(accessory as any).isOwn ? (
                             <Tooltip>
                               <TooltipTrigger asChild>
                                 <Button
