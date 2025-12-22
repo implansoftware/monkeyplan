@@ -133,6 +133,7 @@ import RepairCenterAccessoryCatalog from "@/pages/repair-center/accessory-catalo
 import RepairCenterSparePartsCatalog from "@/pages/repair-center/spare-parts-catalog";
 import RepairCenterCustomers from "@/pages/repair-center/customers";
 import RepairCenterB2BReturns from "@/pages/repair-center/b2b-returns";
+import RepairCenterSettings from "@/pages/repair-center/settings";
 
 // Customer pages
 import CustomerDashboard from "@/pages/customer/dashboard";
@@ -296,6 +297,7 @@ function Router() {
       <ProtectedRoute path="/repair-center/accessory-catalog" component={RepairCenterAccessoryCatalog} />
       <ProtectedRoute path="/repair-center/spare-parts-catalog" component={RepairCenterSparePartsCatalog} />
       <ProtectedRoute path="/repair-center/customers" component={RepairCenterCustomers} />
+      <ProtectedRoute path="/repair-center/settings" component={RepairCenterSettings} />
       <ProtectedRoute path="/repair-center/b2b-returns" component={RepairCenterB2BReturns} />
       <ProtectedRoute path="/repair-center/tickets" component={RepairCenterTickets} />
       <ProtectedRoute path="/repair-center/tickets/:id" component={RepairCenterTicketDetail} />
