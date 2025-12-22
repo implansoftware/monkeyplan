@@ -20485,6 +20485,80 @@ export function registerRoutes(app: Express): Server {
   });
 
   // ==========================================
+  // REPAIR CENTER CUSTOMERS
+  // ==========================================
+
+  // Repair Center: List customers assigned to this repair center
+  app.get("/api/repair-center/customers", requireRole("repair_center"), async (req, res) => {
+    try {
+      if (!req.user || !req.user.repairCenterId) {
+        return res.status(401).json({ error: "Non autenticato" });
+      }
+      
+      // Get customer IDs assigned to this repair center
+      const customerIds = await storage.listCustomerIdsForRepairCenter(req.user.repairCenterId);
+      
+      if (customerIds.length === 0) {
+        return res.json([]);
+      }
+      
+      // Get customer details
+      const allUsers = await storage.listUsers();
+      const customers = allUsers.filter(user => 
+        user.role === "customer" && customerIds.includes(user.id)
+      );
+      
+      // Enrich with repair statistics
+      const customersWithStats = await Promise.all(
+        customers.map(async (customer) => {
+          const repairs = await storage.listRepairOrders({ customerId: customer.id });
+          const completedRepairs = repairs.filter(r => r.status === 'delivered');
+          const pendingRepairs = repairs.filter(r => !['delivered', 'cancelled'].includes(r.status || ''));
+          
+          return {
+            ...customer,
+            totalRepairs: repairs.length,
+            completedRepairs: completedRepairs.length,
+            pendingRepairs: pendingRepairs.length,
+          };
+        })
+      );
+      
+      res.json(customersWithStats);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Repair Center: Get single customer details
+  app.get("/api/repair-center/customers/:id", requireRole("repair_center"), async (req, res) => {
+    try {
+      if (!req.user || !req.user.repairCenterId) {
+        return res.status(401).json({ error: "Non autenticato" });
+      }
+      
+      // Verify customer is assigned to this repair center
+      const customerIds = await storage.listCustomerIdsForRepairCenter(req.user.repairCenterId);
+      if (!customerIds.includes(req.params.id)) {
+        return res.status(403).json({ error: "Cliente non associato a questo centro" });
+      }
+      
+      const customer = await storage.getUser(req.params.id);
+      if (!customer || customer.role !== "customer") {
+        return res.status(404).json({ error: "Cliente non trovato" });
+      }
+      
+      // Get customer's repair history at this repair center
+      const allRepairs = await storage.listRepairOrders({ customerId: customer.id });
+      const repairs = allRepairs.filter(r => r.repairCenterId === req.user?.repairCenterId);
+      
+      res.json({ ...customer, repairs });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // ==========================================
   // REPAIR CENTER PRODUCT CATALOGS (READ-ONLY FROM RESELLER)
   // ==========================================
 
