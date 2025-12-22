@@ -98,8 +98,18 @@ export function ContextSwitcher() {
     
     queryClient.invalidateQueries({ 
       predicate: (query) => {
-        const firstKey = query.queryKey[0];
-        const keyToCheck = typeof firstKey === 'string' ? firstKey : null;
+        const extractPath = (key: unknown): string | null => {
+          if (typeof key === 'string') return key;
+          if (Array.isArray(key) && key.length > 0) return extractPath(key[0]);
+          if (key && typeof key === 'object') {
+            const obj = key as Record<string, unknown>;
+            if (typeof obj.path === 'string') return obj.path;
+            if (typeof obj.queryKey === 'string') return obj.queryKey;
+          }
+          return null;
+        };
+        
+        const keyToCheck = extractPath(query.queryKey);
         if (!keyToCheck) return false;
         return contextDependentPrefixes.some(prefix => keyToCheck.startsWith(prefix));
       }
