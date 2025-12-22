@@ -20530,6 +20530,11 @@ export function registerRoutes(app: Express): Server {
       
       const { orderId, reason, reasonDetails, repairCenterNotes, items } = req.body;
       
+      // Validate request body
+      if (!orderId || !reason || !Array.isArray(items) || items.length === 0) {
+        return res.status(400).json({ error: "Dati richiesta incompleti" });
+      }
+      
       // Validate order exists and belongs to this repair center
       const order = await storage.getRepairCenterPurchaseOrder(orderId);
       if (!order) return res.status(404).json({ error: "Ordine non trovato" });
@@ -20540,16 +20545,55 @@ export function registerRoutes(app: Express): Server {
         return res.status(400).json({ error: "Puoi richiedere un reso solo per ordini ricevuti" });
       }
       
+      // SECURITY: Load order items from DB and validate against request
+      const orderItems = await storage.listRepairCenterPurchaseOrderItems(orderId);
+      const orderItemsMap = new Map(orderItems.map(oi => [oi.id, oi]));
+      
+      // Validate each requested item and calculate total from verified data
+      let totalAmount = 0;
+      const validatedItems: Array<{
+        orderItemId: string;
+        productId: string;
+        productName: string;
+        productSku: string | null;
+        quantity: number;
+        unitPrice: number;
+        returnReason?: string;
+        condition?: string;
+      }> = [];
+      
+      for (const reqItem of items) {
+        const orderItem = orderItemsMap.get(reqItem.orderItemId);
+        if (!orderItem) {
+          return res.status(400).json({ error: `Articolo ordine ${reqItem.orderItemId} non trovato` });
+        }
+        
+        // Validate quantity doesn't exceed ordered quantity
+        const returnQty = Math.min(Math.max(1, parseInt(reqItem.quantity) || 0), orderItem.quantity);
+        if (returnQty <= 0) {
+          return res.status(400).json({ error: `Quantità non valida per ${orderItem.productName}` });
+        }
+        
+        // Use verified price from DB, not client
+        const unitPriceCents = orderItem.unitPrice;
+        totalAmount += returnQty * unitPriceCents;
+        
+        validatedItems.push({
+          orderItemId: orderItem.id,
+          productId: orderItem.productId,
+          productName: orderItem.productName,
+          productSku: orderItem.productSku,
+          quantity: returnQty,
+          unitPrice: unitPriceCents,
+          returnReason: reqItem.returnReason,
+          condition: reqItem.condition,
+        });
+      }
+      
       // Generate return number
       const returnNumber = await storage.generateRcB2bReturnNumber();
       
-      // Calculate total amount
-      let totalAmount = 0;
-      for (const item of items) {
-        totalAmount += item.quantity * item.unitPrice;
-      }
-      
-      // Create return
+      // Create return with verified total
       const returnDoc = await storage.createRcB2bReturn({
         returnNumber,
         orderId,
@@ -20562,8 +20606,8 @@ export function registerRoutes(app: Express): Server {
         status: 'requested',
       });
       
-      // Create return items
-      for (const item of items) {
+      // Create return items with verified data
+      for (const item of validatedItems) {
         await storage.createRcB2bReturnItem({
           returnId: returnDoc.id,
           orderItemId: item.orderItemId,
