@@ -20484,5 +20484,125 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // ==========================================
+  // REPAIR CENTER PRODUCT CATALOGS (READ-ONLY FROM RESELLER)
+  // ==========================================
+
+  // Repair Center: Get smartphone catalog from reseller (devices available for B2B purchase)
+  app.get("/api/repair-center/smartphone-catalog", requireRole("repair_center"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      
+      const repairCenter = await storage.getRepairCenter(req.user.repairCenterId!);
+      if (!repairCenter || !repairCenter.resellerId) {
+        return res.status(400).json({ error: "Centro riparazione non associato a un rivenditore" });
+      }
+      
+      // Get reseller's smartphones
+      const smartphones = await storage.listSmartphones({ resellerId: repairCenter.resellerId });
+      
+      // Get reseller warehouse stock
+      const resellerWarehouse = await storage.ensureDefaultWarehouse('reseller', repairCenter.resellerId, 'Reseller');
+      const stock = await storage.listWarehouseStock(resellerWarehouse.id);
+      const stockMap = new Map(stock.map(s => [s.productId, s.quantity]));
+      
+      // Enrich with stock and B2B price
+      const catalog = smartphones.map(phone => {
+        const resellerStock = stockMap.get(phone.id) || 0;
+        const b2bPrice = phone.costPrice || Math.round((phone.unitPrice || 0) * 0.8);
+        return {
+          ...phone,
+          resellerStock,
+          b2bPrice,
+          availableForPurchase: resellerStock > 0,
+        };
+      });
+      
+      res.json(catalog);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Repair Center: Get accessory catalog from reseller
+  app.get("/api/repair-center/accessory-catalog", requireRole("repair_center"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      
+      const repairCenter = await storage.getRepairCenter(req.user.repairCenterId!);
+      if (!repairCenter || !repairCenter.resellerId) {
+        return res.status(400).json({ error: "Centro riparazione non associato a un rivenditore" });
+      }
+      
+      // Get reseller's accessories
+      const accessories = await storage.listAccessories({ resellerId: repairCenter.resellerId });
+      
+      // Get reseller warehouse stock
+      const resellerWarehouse = await storage.ensureDefaultWarehouse('reseller', repairCenter.resellerId, 'Reseller');
+      const stock = await storage.listWarehouseStock(resellerWarehouse.id);
+      const stockMap = new Map(stock.map(s => [s.productId, s.quantity]));
+      
+      // Enrich with stock, B2B price, and compatibilities
+      const catalog = await Promise.all(accessories.map(async (accessory) => {
+        const resellerStock = stockMap.get(accessory.id) || 0;
+        const b2bPrice = accessory.costPrice || Math.round((accessory.unitPrice || 0) * 0.8);
+        const deviceCompatibilities = await storage.listProductCompatibilities(accessory.id);
+        return {
+          ...accessory,
+          resellerStock,
+          b2bPrice,
+          availableForPurchase: resellerStock > 0,
+          deviceCompatibilities,
+        };
+      }));
+      
+      res.json(catalog);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Repair Center: Get spare parts catalog from reseller
+  app.get("/api/repair-center/spare-parts-catalog", requireRole("repair_center"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      
+      const repairCenter = await storage.getRepairCenter(req.user.repairCenterId!);
+      if (!repairCenter || !repairCenter.resellerId) {
+        return res.status(400).json({ error: "Centro riparazione non associato a un rivenditore" });
+      }
+      
+      // Get reseller's spare parts
+      const filters: { resellerId?: string; productType?: string } = { 
+        resellerId: repairCenter.resellerId,
+        productType: 'ricambio'
+      };
+      const spareParts = await storage.listProducts(filters);
+      
+      // Get reseller warehouse stock
+      const resellerWarehouse = await storage.ensureDefaultWarehouse('reseller', repairCenter.resellerId, 'Reseller');
+      const stock = await storage.listWarehouseStock(resellerWarehouse.id);
+      const stockMap = new Map(stock.map(s => [s.productId, s.quantity]));
+      
+      // Enrich with stock and B2B price
+      const catalog = await Promise.all(spareParts.map(async (part) => {
+        const resellerStock = stockMap.get(part.id) || 0;
+        const b2bPrice = part.costPrice || Math.round((part.unitPrice || 0) * 0.8);
+        const deviceCompatibilities = await storage.listProductCompatibilities(part.id);
+        return {
+          ...part,
+          resellerStock,
+          b2bPrice,
+          availableForPurchase: resellerStock > 0,
+          deviceCompatibilities,
+        };
+      }));
+      
+      res.json(catalog);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   return httpServer;
 }

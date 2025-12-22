@@ -128,6 +128,8 @@ import RepairCenterWarehouses from "@/pages/repair-center/warehouses";
 import RepairCenterProducts from "@/pages/repair-center/products";
 import RepairCenterB2BCatalog from "@/pages/repair-center/b2b-catalog";
 import RepairCenterB2BOrders from "@/pages/repair-center/b2b-orders";
+import RepairCenterSmartphoneCatalog from "@/pages/repair-center/smartphone-catalog";
+import RepairCenterAccessoryCatalog from "@/pages/repair-center/accessory-catalog";
 
 // Customer pages
 import CustomerDashboard from "@/pages/customer/dashboard";
@@ -285,6 +287,8 @@ function Router() {
       <ProtectedRoute path="/repair-center/products" component={RepairCenterProducts} />
       <ProtectedRoute path="/repair-center/b2b-catalog" component={RepairCenterB2BCatalog} />
       <ProtectedRoute path="/repair-center/b2b-orders" component={RepairCenterB2BOrders} />
+      <ProtectedRoute path="/repair-center/smartphone-catalog" component={RepairCenterSmartphoneCatalog} />
+      <ProtectedRoute path="/repair-center/accessory-catalog" component={RepairCenterAccessoryCatalog} />
       <ProtectedRoute path="/repair-center/tickets" component={RepairCenterTickets} />
       <ProtectedRoute path="/repair-center/tickets/:id" component={RepairCenterTicketDetail} />
       <ProtectedRoute path="/repair-center/diagnostics" component={DiagnosisList} />
