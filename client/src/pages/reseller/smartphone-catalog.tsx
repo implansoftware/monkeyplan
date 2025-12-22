@@ -12,7 +12,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
-import { Smartphone, Search, Plus, Pencil, Trash2, Battery, HardDrive, Wifi, Loader2, ImagePlus, X, Image, ShoppingCart, Settings, Eye } from "lucide-react";
+import { Smartphone, Search, Plus, Pencil, Trash2, Battery, HardDrive, Wifi, Loader2, ImagePlus, X, Image, ShoppingCart, Settings, Eye, Store, Save } from "lucide-react";
+import { Separator } from "@/components/ui/separator";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Skeleton } from "@/components/ui/skeleton";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -90,6 +92,13 @@ export default function SmartphoneCatalog() {
     const saved = localStorage.getItem('b2b-cart');
     return saved ? JSON.parse(saved) : [];
   });
+
+  // Marketplace P2P state
+  const [marketplaceDialogOpen, setMarketplaceDialogOpen] = useState(false);
+  const [marketplaceProduct, setMarketplaceProduct] = useState<SmartphoneWithSpecs | null>(null);
+  const [marketplaceEnabled, setMarketplaceEnabled] = useState(false);
+  const [marketplacePrice, setMarketplacePrice] = useState("");
+  const [marketplaceMinQty, setMarketplaceMinQty] = useState("1");
 
   const [formData, setFormData] = useState({
     name: "",
@@ -248,6 +257,39 @@ export default function SmartphoneCatalog() {
       toast({ title: "Errore", description: error.message, variant: "destructive" });
     },
   });
+
+  // Marketplace mutation
+  const updateMarketplaceMutation = useMutation({
+    mutationFn: async ({ productId, enabled, priceCents, minQuantity }: { productId: string; enabled: boolean; priceCents: number | null; minQuantity: number }) => {
+      return apiRequest("PATCH", `/api/smartphones/${productId}/marketplace`, { enabled, priceCents, minQuantity });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/smartphones"] });
+      setMarketplaceDialogOpen(false);
+      setMarketplaceProduct(null);
+      toast({ title: "Salvato", description: "Impostazioni Marketplace aggiornate." });
+    },
+    onError: (error: any) => {
+      toast({ title: "Errore", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const openMarketplaceDialog = (product: SmartphoneWithSpecs) => {
+    setMarketplaceProduct(product);
+    setMarketplaceEnabled((product as any).isMarketplaceEnabled || false);
+    setMarketplacePrice((product as any).marketplacePriceCents ? ((product as any).marketplacePriceCents / 100).toString() : "");
+    setMarketplaceMinQty(((product as any).marketplaceMinQuantity || 1).toString());
+    setMarketplaceDialogOpen(true);
+  };
+
+  const saveMarketplaceSettings = () => {
+    if (!marketplaceProduct) return;
+    const priceCents = marketplacePrice ? Math.round(parseFloat(marketplacePrice) * 100) : null;
+    const minQuantity = parseInt(marketplaceMinQty) || 1;
+    updateMarketplaceMutation.mutate({ productId: marketplaceProduct.id, enabled: marketplaceEnabled, priceCents, minQuantity });
+  };
+
+  const formatCurrency = (cents: number) => `€${(cents / 100).toFixed(2)}`;
 
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -501,6 +543,7 @@ export default function SmartphoneCatalog() {
                     <TableHead>Grado</TableHead>
                     <TableHead>Batteria</TableHead>
                     <TableHead className="text-right">Prezzo</TableHead>
+                    <TableHead className="text-center">Marketplace</TableHead>
                     <TableHead className="w-32">Azioni</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -573,6 +616,31 @@ export default function SmartphoneCatalog() {
                           }
                           return `€${(smartphone.unitPrice / 100).toFixed(2)}`;
                         })()}
+                      </TableCell>
+                      <TableCell className="text-center">
+                        {isOwnProduct(smartphone) ? (
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="gap-1"
+                                onClick={() => openMarketplaceDialog(smartphone)}
+                                data-testid={`button-marketplace-smartphone-${smartphone.id}`}
+                              >
+                                <Store className="h-3 w-3" />
+                                {(smartphone as any).isMarketplaceEnabled ? (
+                                  <Badge variant="default" className="text-xs">Attivo</Badge>
+                                ) : (
+                                  <Badge variant="secondary" className="text-xs">Off</Badge>
+                                )}
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>Configura vendita su Marketplace P2P</TooltipContent>
+                          </Tooltip>
+                        ) : (
+                          <span className="text-muted-foreground text-xs">-</span>
+                        )}
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-1">
@@ -1150,6 +1218,109 @@ export default function SmartphoneCatalog() {
             >
               <ShoppingCart className="mr-2 h-4 w-4" />
               Aggiungi al Carrello
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog Marketplace Settings */}
+      <Dialog open={marketplaceDialogOpen} onOpenChange={setMarketplaceDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Store className="h-5 w-5" />
+              Impostazioni Marketplace P2P
+            </DialogTitle>
+            <DialogDescription>
+              Configura la vendita di questo smartphone ad altri rivenditori nel marketplace.
+            </DialogDescription>
+          </DialogHeader>
+          {marketplaceProduct && (
+            <div className="space-y-4 py-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="font-medium">{marketplaceProduct.name}</div>
+                  <div className="text-sm text-muted-foreground">SKU: {marketplaceProduct.sku}</div>
+                </div>
+              </div>
+              
+              <Separator />
+              
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label className="text-base">Attivo su Marketplace</Label>
+                  <p className="text-sm text-muted-foreground">
+                    Rendi visibile questo prodotto agli altri rivenditori
+                  </p>
+                </div>
+                <Switch
+                  checked={marketplaceEnabled}
+                  onCheckedChange={setMarketplaceEnabled}
+                  data-testid="switch-marketplace-smartphone-enabled"
+                />
+              </div>
+              
+              {marketplaceEnabled && (
+                <>
+                  <div className="space-y-2">
+                    <Label htmlFor="marketplace-smartphone-price">Prezzo Marketplace (opzionale)</Label>
+                    <div className="flex items-center gap-2">
+                      <span className="text-muted-foreground">€</span>
+                      <Input
+                        id="marketplace-smartphone-price"
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        placeholder={`Default: ${formatCurrency(marketplaceProduct.unitPrice)}`}
+                        value={marketplacePrice}
+                        onChange={(e) => setMarketplacePrice(e.target.value)}
+                        data-testid="input-marketplace-smartphone-price"
+                      />
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Se vuoto, verrà usato il prezzo standard del prodotto
+                    </p>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="marketplace-smartphone-min-qty">Quantità Minima Ordine</Label>
+                    <Input
+                      id="marketplace-smartphone-min-qty"
+                      type="number"
+                      min="1"
+                      value={marketplaceMinQty}
+                      onChange={(e) => setMarketplaceMinQty(e.target.value)}
+                      data-testid="input-marketplace-smartphone-min-qty"
+                    />
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setMarketplaceDialogOpen(false)}
+              data-testid="button-cancel-marketplace-smartphone"
+            >
+              Annulla
+            </Button>
+            <Button
+              onClick={saveMarketplaceSettings}
+              disabled={updateMarketplaceMutation.isPending}
+              data-testid="button-save-marketplace-smartphone"
+            >
+              {updateMarketplaceMutation.isPending ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Salvataggio...
+                </>
+              ) : (
+                <>
+                  <Save className="h-4 w-4 mr-2" />
+                  Salva
+                </>
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>
