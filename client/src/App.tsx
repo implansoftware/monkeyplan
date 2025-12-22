@@ -169,6 +169,11 @@ import AdminB2BOrders from "@/pages/admin/b2b-orders";
 import AdminRCB2BOrders from "@/pages/admin/rc-b2b-orders";
 import AdminB2BReturns from "@/pages/admin/b2b-returns";
 
+// Reseller Marketplace (peer-to-peer)
+import ResellerMarketplace from "@/pages/reseller/marketplace";
+import ResellerMarketplaceOrders from "@/pages/reseller/marketplace-orders";
+import ResellerMarketplaceSales from "@/pages/reseller/marketplace-sales";
+
 function Router() {
   return (
     <Switch>
@@ -283,6 +288,9 @@ function Router() {
       <ProtectedRoute path="/reseller/b2b-orders" component={ResellerB2BOrders} />
       <ProtectedRoute path="/reseller/b2b-returns" component={ResellerB2BReturns} />
       <ProtectedRoute path="/reseller/rc-b2b-orders" component={ResellerRCB2BOrders} />
+      <ProtectedRoute path="/reseller/marketplace" component={ResellerMarketplace} />
+      <ProtectedRoute path="/reseller/marketplace-orders" component={ResellerMarketplaceOrders} />
+      <ProtectedRoute path="/reseller/marketplace-sales" component={ResellerMarketplaceSales} />
       
       {/* Repair Center routes */}
       <ProtectedRoute path="/repair-center" component={RepairCenterDashboard} />
