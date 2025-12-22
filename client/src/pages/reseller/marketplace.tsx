@@ -230,7 +230,20 @@ export default function ResellerMarketplace() {
               
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 {products.map((item) => (
-                  <Card key={item.product.id} className="hover-elevate">
+                  <Card key={item.product.id} className="hover-elevate overflow-hidden">
+                    {item.product.imageUrl ? (
+                      <div className="aspect-square w-full bg-muted">
+                        <img 
+                          src={item.product.imageUrl} 
+                          alt={item.product.name}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    ) : (
+                      <div className="aspect-square w-full bg-muted flex items-center justify-center">
+                        <Package className="h-12 w-12 text-muted-foreground/50" />
+                      </div>
+                    )}
                     <CardHeader className="pb-2">
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex-1 min-w-0">
