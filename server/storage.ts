@@ -96,7 +96,9 @@ import {
   repairCenterPurchaseOrders, RepairCenterPurchaseOrder, InsertRepairCenterPurchaseOrder,
   repairCenterPurchaseOrderItems, RepairCenterPurchaseOrderItem, InsertRepairCenterPurchaseOrderItem,
   rcB2bReturns, RcB2bReturn, InsertRcB2bReturn,
-  rcB2bReturnItems, RcB2bReturnItem, InsertRcB2bReturnItem
+  rcB2bReturnItems, RcB2bReturnItem, InsertRcB2bReturnItem,
+  marketplaceOrders, MarketplaceOrder, InsertMarketplaceOrder,
+  marketplaceOrderItems, MarketplaceOrderItem, InsertMarketplaceOrderItem
 } from "@shared/schema";
 import { db, pool } from "./db";
 import { eq, and, or, desc, lt, sql, not, inArray, isNull } from "drizzle-orm";
@@ -836,6 +838,26 @@ export interface IStorage {
   // B2B Repair Center Return Items
   listRcB2bReturnItems(returnId: string): Promise<RcB2bReturnItem[]>;
   createRcB2bReturnItem(data: InsertRcB2bReturnItem): Promise<RcB2bReturnItem>;
+  
+  // Marketplace (Reseller-to-Reseller B2B)
+  listMarketplaceCatalog(buyerResellerId: string): Promise<Array<{
+    product: Product;
+    sellerResellerId: string;
+    sellerName: string;
+    availableStock: number;
+    marketplacePrice: number;
+    minQuantity: number;
+  }>>;
+  listMarketplaceOrders(filters?: { buyerResellerId?: string; sellerResellerId?: string; status?: string }): Promise<MarketplaceOrder[]>;
+  getMarketplaceOrder(id: string): Promise<MarketplaceOrder | undefined>;
+  getMarketplaceOrderByNumber(orderNumber: string): Promise<MarketplaceOrder | undefined>;
+  createMarketplaceOrder(data: InsertMarketplaceOrder): Promise<MarketplaceOrder>;
+  updateMarketplaceOrder(id: string, updates: Partial<MarketplaceOrder>): Promise<MarketplaceOrder>;
+  generateMarketplaceOrderNumber(): Promise<string>;
+  
+  // Marketplace Order Items
+  listMarketplaceOrderItems(orderId: string): Promise<MarketplaceOrderItem[]>;
+  createMarketplaceOrderItem(data: InsertMarketplaceOrderItem): Promise<MarketplaceOrderItem>;
   
   sessionStore: session.Store;
 }
@@ -7049,6 +7071,128 @@ export class DatabaseStorage implements IStorage {
 
   async createRcB2bReturnItem(data: InsertRcB2bReturnItem): Promise<RcB2bReturnItem> {
     const [created] = await db.insert(rcB2bReturnItems).values(data).returning();
+    return created;
+  }
+
+  // ==========================================
+  // MARKETPLACE (Reseller-to-Reseller B2B)
+  // ==========================================
+
+  async listMarketplaceCatalog(buyerResellerId: string): Promise<Array<{
+    product: Product;
+    sellerResellerId: string;
+    sellerName: string;
+    availableStock: number;
+    marketplacePrice: number;
+    minQuantity: number;
+  }>> {
+    // Get all products that are marketplace-enabled from OTHER resellers
+    const catalogProducts = await db
+      .select({
+        product: products,
+        sellerResellerId: users.id,
+        sellerName: users.fullName,
+        warehouseId: warehouses.id,
+      })
+      .from(products)
+      .innerJoin(users, eq(products.createdBy, users.id))
+      .innerJoin(warehouses, and(
+        eq(warehouses.ownerId, users.id),
+        eq(warehouses.ownerType, 'reseller')
+      ))
+      .where(and(
+        eq(products.isMarketplaceEnabled, true),
+        eq(products.isActive, true),
+        not(eq(products.createdBy, buyerResellerId)) // Exclude buyer's own products
+      ));
+
+    // For each product, get the available stock from the seller's warehouse
+    const result = [];
+    for (const item of catalogProducts) {
+      const [stockItem] = await db.select()
+        .from(warehouseStock)
+        .where(and(
+          eq(warehouseStock.warehouseId, item.warehouseId),
+          eq(warehouseStock.productId, item.product.id)
+        ));
+      
+      const availableStock = stockItem?.quantity || 0;
+      if (availableStock > 0) {
+        result.push({
+          product: item.product,
+          sellerResellerId: item.sellerResellerId,
+          sellerName: item.sellerName || 'Rivenditore',
+          availableStock,
+          marketplacePrice: item.product.marketplacePriceCents || item.product.unitPrice,
+          minQuantity: item.product.marketplaceMinQuantity || 1,
+        });
+      }
+    }
+
+    return result;
+  }
+
+  async listMarketplaceOrders(filters?: { buyerResellerId?: string; sellerResellerId?: string; status?: string }): Promise<MarketplaceOrder[]> {
+    const conditions = [];
+    if (filters?.buyerResellerId) conditions.push(eq(marketplaceOrders.buyerResellerId, filters.buyerResellerId));
+    if (filters?.sellerResellerId) conditions.push(eq(marketplaceOrders.sellerResellerId, filters.sellerResellerId));
+    if (filters?.status) conditions.push(eq(marketplaceOrders.status, filters.status as any));
+    
+    if (conditions.length === 0) {
+      return await db.select().from(marketplaceOrders).orderBy(desc(marketplaceOrders.createdAt));
+    }
+    return await db.select().from(marketplaceOrders)
+      .where(and(...conditions))
+      .orderBy(desc(marketplaceOrders.createdAt));
+  }
+
+  async getMarketplaceOrder(id: string): Promise<MarketplaceOrder | undefined> {
+    const [order] = await db.select().from(marketplaceOrders).where(eq(marketplaceOrders.id, id));
+    return order || undefined;
+  }
+
+  async getMarketplaceOrderByNumber(orderNumber: string): Promise<MarketplaceOrder | undefined> {
+    const [order] = await db.select().from(marketplaceOrders).where(eq(marketplaceOrders.orderNumber, orderNumber));
+    return order || undefined;
+  }
+
+  async createMarketplaceOrder(data: InsertMarketplaceOrder): Promise<MarketplaceOrder> {
+    const orderNumber = await this.generateMarketplaceOrderNumber();
+    const [created] = await db.insert(marketplaceOrders)
+      .values({ ...data, orderNumber })
+      .returning();
+    return created;
+  }
+
+  async updateMarketplaceOrder(id: string, updates: Partial<MarketplaceOrder>): Promise<MarketplaceOrder> {
+    const [updated] = await db.update(marketplaceOrders)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(marketplaceOrders.id, id))
+      .returning();
+    if (!updated) throw new Error("Marketplace order not found");
+    return updated;
+  }
+
+  async generateMarketplaceOrderNumber(): Promise<string> {
+    const year = new Date().getFullYear();
+    const prefix = `MP-${year}`;
+    
+    const [result] = await db.select({ count: sql<number>`count(*)` })
+      .from(marketplaceOrders)
+      .where(sql`${marketplaceOrders.orderNumber} LIKE ${prefix + '%'}`);
+    
+    const nextNumber = (result?.count || 0) + 1;
+    return `${prefix}-${String(nextNumber).padStart(5, '0')}`;
+  }
+
+  // Marketplace Order Items
+  async listMarketplaceOrderItems(orderId: string): Promise<MarketplaceOrderItem[]> {
+    return await db.select().from(marketplaceOrderItems)
+      .where(eq(marketplaceOrderItems.orderId, orderId));
+  }
+
+  async createMarketplaceOrderItem(data: InsertMarketplaceOrderItem): Promise<MarketplaceOrderItem> {
+    const [created] = await db.insert(marketplaceOrderItems).values(data).returning();
     return created;
   }
 }
