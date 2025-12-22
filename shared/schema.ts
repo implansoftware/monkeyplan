@@ -1119,6 +1119,80 @@ export type InsertRepairCenterPurchaseOrder = z.infer<typeof insertRepairCenterP
 export type RepairCenterPurchaseOrderItem = typeof repairCenterPurchaseOrderItems.$inferSelect;
 export type InsertRepairCenterPurchaseOrderItem = z.infer<typeof insertRepairCenterPurchaseOrderItemSchema>;
 
+// ==========================================
+// REPAIR CENTER B2B RETURNS
+// ==========================================
+
+export const rcB2bReturnStatusEnum = pgEnum("rc_b2b_return_status", [
+  "requested",
+  "approved",
+  "awaiting_shipment",
+  "shipped",
+  "received",
+  "inspecting",
+  "completed",
+  "rejected",
+  "cancelled",
+]);
+
+export const rcB2bReturnReasonEnum = pgEnum("rc_b2b_return_reason", [
+  "defective",
+  "wrong_item",
+  "damaged",
+  "not_as_described",
+  "excess_quantity",
+  "other",
+]);
+
+export const rcB2bReturns = pgTable("rc_b2b_returns", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  returnNumber: text("return_number").notNull().unique(),
+  orderId: varchar("order_id").notNull(),
+  repairCenterId: varchar("repair_center_id").notNull(),
+  resellerId: varchar("reseller_id").notNull(),
+  status: rcB2bReturnStatusEnum("status").notNull().default("requested"),
+  reason: rcB2bReturnReasonEnum("reason").notNull(),
+  reasonDetails: text("reason_details"),
+  totalAmount: real("total_amount").notNull().default(0),
+  creditAmount: real("credit_amount"),
+  trackingNumber: text("tracking_number"),
+  carrier: text("carrier"),
+  requestedAt: timestamp("requested_at").notNull().defaultNow(),
+  approvedAt: timestamp("approved_at"),
+  rejectedAt: timestamp("rejected_at"),
+  shippedAt: timestamp("shipped_at"),
+  receivedAt: timestamp("received_at"),
+  completedAt: timestamp("completed_at"),
+  repairCenterNotes: text("repair_center_notes"),
+  resellerNotes: text("reseller_notes"),
+  rejectionReason: text("rejection_reason"),
+  inspectionNotes: text("inspection_notes"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export const rcB2bReturnItems = pgTable("rc_b2b_return_items", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  returnId: varchar("return_id").notNull().references(() => rcB2bReturns.id, { onDelete: "cascade" }),
+  orderItemId: varchar("order_item_id"),
+  productId: varchar("product_id").notNull(),
+  productName: text("product_name").notNull(),
+  productSku: text("product_sku"),
+  quantity: integer("quantity").notNull(),
+  unitPrice: real("unit_price").notNull(),
+  returnReason: text("return_reason"),
+  condition: text("condition"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const insertRcB2bReturnSchema = createInsertSchema(rcB2bReturns).omit({ id: true, createdAt: true, updatedAt: true });
+export type InsertRcB2bReturn = z.infer<typeof insertRcB2bReturnSchema>;
+export type RcB2bReturn = typeof rcB2bReturns.$inferSelect;
+
+export const insertRcB2bReturnItemSchema = createInsertSchema(rcB2bReturnItems).omit({ id: true, createdAt: true });
+export type InsertRcB2bReturnItem = z.infer<typeof insertRcB2bReturnItemSchema>;
+export type RcB2bReturnItem = typeof rcB2bReturnItems.$inferSelect;
+
 // Repair orders (Lavorazioni)
 export const repairOrders = pgTable("repair_orders", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),

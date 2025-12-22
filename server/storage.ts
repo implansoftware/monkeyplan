@@ -94,7 +94,9 @@ import {
   b2bReturns, B2bReturn, InsertB2bReturn,
   b2bReturnItems, B2bReturnItem, InsertB2bReturnItem,
   repairCenterPurchaseOrders, RepairCenterPurchaseOrder, InsertRepairCenterPurchaseOrder,
-  repairCenterPurchaseOrderItems, RepairCenterPurchaseOrderItem, InsertRepairCenterPurchaseOrderItem
+  repairCenterPurchaseOrderItems, RepairCenterPurchaseOrderItem, InsertRepairCenterPurchaseOrderItem,
+  rcB2bReturns, RcB2bReturn, InsertRcB2bReturn,
+  rcB2bReturnItems, RcB2bReturnItem, InsertRcB2bReturnItem
 } from "@shared/schema";
 import { db, pool } from "./db";
 import { eq, and, or, desc, lt, sql, not, inArray, isNull } from "drizzle-orm";
@@ -823,6 +825,17 @@ export interface IStorage {
   // B2B Repair Center Purchase Order Items
   listRepairCenterPurchaseOrderItems(orderId: string): Promise<RepairCenterPurchaseOrderItem[]>;
   createRepairCenterPurchaseOrderItem(data: InsertRepairCenterPurchaseOrderItem): Promise<RepairCenterPurchaseOrderItem>;
+  
+  // B2B Repair Center Returns (Resi RC -> Reseller)
+  listRcB2bReturns(filters?: { repairCenterId?: string; resellerId?: string; status?: string; orderId?: string }): Promise<RcB2bReturn[]>;
+  getRcB2bReturn(id: string): Promise<RcB2bReturn | undefined>;
+  createRcB2bReturn(data: InsertRcB2bReturn): Promise<RcB2bReturn>;
+  updateRcB2bReturn(id: string, updates: Partial<RcB2bReturn>): Promise<RcB2bReturn>;
+  generateRcB2bReturnNumber(): Promise<string>;
+  
+  // B2B Repair Center Return Items
+  listRcB2bReturnItems(returnId: string): Promise<RcB2bReturnItem[]>;
+  createRcB2bReturnItem(data: InsertRcB2bReturnItem): Promise<RcB2bReturnItem>;
   
   sessionStore: session.Store;
 }
@@ -6978,6 +6991,64 @@ export class DatabaseStorage implements IStorage {
 
   async createRepairCenterPurchaseOrderItem(data: InsertRepairCenterPurchaseOrderItem): Promise<RepairCenterPurchaseOrderItem> {
     const [created] = await db.insert(repairCenterPurchaseOrderItems).values(data).returning();
+    return created;
+  }
+
+  // B2B Repair Center Returns (Resi RC -> Reseller)
+  async listRcB2bReturns(filters?: { repairCenterId?: string; resellerId?: string; status?: string; orderId?: string }): Promise<RcB2bReturn[]> {
+    const conditions = [];
+    if (filters?.repairCenterId) conditions.push(eq(rcB2bReturns.repairCenterId, filters.repairCenterId));
+    if (filters?.resellerId) conditions.push(eq(rcB2bReturns.resellerId, filters.resellerId));
+    if (filters?.status) conditions.push(eq(rcB2bReturns.status, filters.status as any));
+    if (filters?.orderId) conditions.push(eq(rcB2bReturns.orderId, filters.orderId));
+    
+    if (conditions.length === 0) {
+      return await db.select().from(rcB2bReturns).orderBy(desc(rcB2bReturns.createdAt));
+    }
+    return await db.select().from(rcB2bReturns)
+      .where(and(...conditions))
+      .orderBy(desc(rcB2bReturns.createdAt));
+  }
+
+  async getRcB2bReturn(id: string): Promise<RcB2bReturn | undefined> {
+    const [result] = await db.select().from(rcB2bReturns).where(eq(rcB2bReturns.id, id));
+    return result || undefined;
+  }
+
+  async createRcB2bReturn(data: InsertRcB2bReturn): Promise<RcB2bReturn> {
+    const [created] = await db.insert(rcB2bReturns).values(data).returning();
+    return created;
+  }
+
+  async updateRcB2bReturn(id: string, updates: Partial<RcB2bReturn>): Promise<RcB2bReturn> {
+    const [updated] = await db.update(rcB2bReturns)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(rcB2bReturns.id, id))
+      .returning();
+    if (!updated) throw new Error("RC B2B return not found");
+    return updated;
+  }
+
+  async generateRcB2bReturnNumber(): Promise<string> {
+    const year = new Date().getFullYear();
+    const prefix = `RES-RCB2B-${year}`;
+    
+    const [result] = await db.select({ count: sql<number>`count(*)` })
+      .from(rcB2bReturns)
+      .where(sql`${rcB2bReturns.returnNumber} LIKE ${prefix + '%'}`);
+    
+    const nextNumber = (result?.count || 0) + 1;
+    return `${prefix}-${String(nextNumber).padStart(5, '0')}`;
+  }
+
+  // B2B Repair Center Return Items
+  async listRcB2bReturnItems(returnId: string): Promise<RcB2bReturnItem[]> {
+    return await db.select().from(rcB2bReturnItems)
+      .where(eq(rcB2bReturnItems.returnId, returnId));
+  }
+
+  async createRcB2bReturnItem(data: InsertRcB2bReturnItem): Promise<RcB2bReturnItem> {
+    const [created] = await db.insert(rcB2bReturnItems).values(data).returning();
     return created;
   }
 }

@@ -183,6 +183,7 @@ const menuItems = {
     { title: "Clienti", url: "/repair-center/customers", icon: Users, group: "Gestione" },
     { title: "Catalogo B2B", url: "/repair-center/b2b-catalog", icon: ShoppingCart, group: "Acquisti B2B" },
     { title: "Ordini B2B", url: "/repair-center/b2b-orders", icon: FileText, group: "Acquisti B2B" },
+    { title: "Resi B2B", url: "/repair-center/b2b-returns", icon: RotateCcw, group: "Acquisti B2B" },
     { title: "Ticket", url: "/repair-center/tickets", icon: Ticket, group: "Assistenza" },
   ],
   customer: [
