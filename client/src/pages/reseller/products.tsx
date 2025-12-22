@@ -13,7 +13,8 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Package, Search, Tag, Plus, Pencil, Trash2, User, Globe, Warehouse, Save, Loader2, X, ImageIcon, Upload, Smartphone, ChevronDown, ChevronRight } from "lucide-react";
+import { Package, Search, Tag, Plus, Pencil, Trash2, User, Globe, Warehouse, Save, Loader2, X, ImageIcon, Upload, Smartphone, ChevronDown, ChevronRight, Store } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -118,6 +119,11 @@ export default function ResellerProducts() {
   const [deviceSearchQuery, setDeviceSearchQuery] = useState("");
   const [editDeviceSearchQuery, setEditDeviceSearchQuery] = useState("");
   const [productCompatibilitiesMap, setProductCompatibilitiesMap] = useState<Map<string, ProductCompatibility[]>>(new Map());
+  const [marketplaceDialogOpen, setMarketplaceDialogOpen] = useState(false);
+  const [marketplaceProduct, setMarketplaceProduct] = useState<EnrichedProduct | null>(null);
+  const [marketplaceEnabled, setMarketplaceEnabled] = useState(false);
+  const [marketplacePrice, setMarketplacePrice] = useState("");
+  const [marketplaceMinQty, setMarketplaceMinQty] = useState("1");
   const { toast } = useToast();
 
   const { data: products = [], isLoading } = useQuery<EnrichedProduct[]>({
@@ -316,6 +322,50 @@ export default function ResellerProducts() {
     if (file) {
       uploadImageMutation.mutate({ productId, file });
     }
+  };
+
+  const updateMarketplaceMutation = useMutation({
+    mutationFn: async ({ id, isMarketplaceEnabled, marketplacePriceCents, marketplaceMinQuantity }: { 
+      id: string; 
+      isMarketplaceEnabled: boolean; 
+      marketplacePriceCents: number | null; 
+      marketplaceMinQuantity: number;
+    }) => {
+      const res = await apiRequest("PATCH", `/api/reseller/products/${id}/marketplace`, {
+        isMarketplaceEnabled,
+        marketplacePriceCents,
+        marketplaceMinQuantity,
+      });
+      return await res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/reseller/products"] });
+      setMarketplaceDialogOpen(false);
+      toast({ title: "Impostazioni marketplace aggiornate" });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Errore", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const openMarketplaceDialog = (product: EnrichedProduct) => {
+    setMarketplaceProduct(product);
+    setMarketplaceEnabled((product as any).isMarketplaceEnabled || false);
+    const mpPrice = (product as any).marketplacePriceCents;
+    setMarketplacePrice(mpPrice ? (mpPrice / 100).toFixed(2) : "");
+    setMarketplaceMinQty(String((product as any).marketplaceMinQuantity || 1));
+    setMarketplaceDialogOpen(true);
+  };
+
+  const saveMarketplaceSettings = () => {
+    if (!marketplaceProduct) return;
+    const priceCents = marketplacePrice ? Math.round(parseFloat(marketplacePrice) * 100) : null;
+    updateMarketplaceMutation.mutate({
+      id: marketplaceProduct.id,
+      isMarketplaceEnabled: marketplaceEnabled,
+      marketplacePriceCents: priceCents,
+      marketplaceMinQuantity: parseInt(marketplaceMinQty) || 1,
+    });
   };
 
   // Device compatibility helper functions
@@ -793,6 +843,7 @@ export default function ResellerProducts() {
                   <TableHead className="text-right">Prezzo</TableHead>
                   <TableHead className="text-center">Stock</TableHead>
                   <TableHead>Compatibilità</TableHead>
+                  <TableHead className="text-center">Marketplace</TableHead>
                   <TableHead className="text-right">Azioni</TableHead>
                 </TableRow>
               </TableHeader>
@@ -940,6 +991,31 @@ export default function ResellerProducts() {
                           </Tooltip>
                         );
                       })()}
+                    </TableCell>
+                    <TableCell className="text-center">
+                      {product.isOwn ? (
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="gap-1"
+                              onClick={() => openMarketplaceDialog(product)}
+                              data-testid={`button-marketplace-${product.id}`}
+                            >
+                              <Store className="h-3 w-3" />
+                              {(product as any).isMarketplaceEnabled ? (
+                                <Badge variant="default" className="text-xs">Attivo</Badge>
+                              ) : (
+                                <Badge variant="secondary" className="text-xs">Off</Badge>
+                              )}
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>Configura vendita su Marketplace P2P</TooltipContent>
+                        </Tooltip>
+                      ) : (
+                        <span className="text-muted-foreground text-xs">-</span>
+                      )}
                     </TableCell>
                     <TableCell className="text-right">
                       {product.isOwn && (
@@ -1909,6 +1985,109 @@ export default function ResellerProducts() {
               </DialogFooter>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog Marketplace Settings */}
+      <Dialog open={marketplaceDialogOpen} onOpenChange={setMarketplaceDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Store className="h-5 w-5" />
+              Impostazioni Marketplace P2P
+            </DialogTitle>
+            <DialogDescription>
+              Configura la vendita di questo prodotto ad altri rivenditori nel marketplace.
+            </DialogDescription>
+          </DialogHeader>
+          {marketplaceProduct && (
+            <div className="space-y-4 py-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="font-medium">{marketplaceProduct.name}</div>
+                  <div className="text-sm text-muted-foreground">SKU: {marketplaceProduct.sku}</div>
+                </div>
+              </div>
+              
+              <Separator />
+              
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label className="text-base">Attivo su Marketplace</Label>
+                  <p className="text-sm text-muted-foreground">
+                    Rendi visibile questo prodotto agli altri rivenditori
+                  </p>
+                </div>
+                <Switch
+                  checked={marketplaceEnabled}
+                  onCheckedChange={setMarketplaceEnabled}
+                  data-testid="switch-marketplace-enabled"
+                />
+              </div>
+              
+              {marketplaceEnabled && (
+                <>
+                  <div className="space-y-2">
+                    <Label htmlFor="marketplace-price">Prezzo Marketplace (opzionale)</Label>
+                    <div className="flex items-center gap-2">
+                      <span className="text-muted-foreground">€</span>
+                      <Input
+                        id="marketplace-price"
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        placeholder={`Default: ${formatCurrency(marketplaceProduct.unitPrice)}`}
+                        value={marketplacePrice}
+                        onChange={(e) => setMarketplacePrice(e.target.value)}
+                        data-testid="input-marketplace-price"
+                      />
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Se vuoto, verrà usato il prezzo standard del prodotto
+                    </p>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="marketplace-min-qty">Quantità Minima Ordine</Label>
+                    <Input
+                      id="marketplace-min-qty"
+                      type="number"
+                      min="1"
+                      value={marketplaceMinQty}
+                      onChange={(e) => setMarketplaceMinQty(e.target.value)}
+                      data-testid="input-marketplace-min-qty"
+                    />
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setMarketplaceDialogOpen(false)}
+              data-testid="button-cancel-marketplace"
+            >
+              Annulla
+            </Button>
+            <Button
+              onClick={saveMarketplaceSettings}
+              disabled={updateMarketplaceMutation.isPending}
+              data-testid="button-save-marketplace"
+            >
+              {updateMarketplaceMutation.isPending ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Salvataggio...
+                </>
+              ) : (
+                <>
+                  <Save className="h-4 w-4 mr-2" />
+                  Salva
+                </>
+              )}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
