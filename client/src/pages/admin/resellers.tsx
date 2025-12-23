@@ -700,16 +700,6 @@ export default function AdminResellers() {
                             <Eye className="h-4 w-4" />
                           </Button>
                         </Link>
-                        <Link href={`/admin/resellers/${reseller.id}/team`}>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            title="Gestisci team"
-                            data-testid={`button-team-${reseller.id}`}
-                          >
-                            <UsersRound className="h-4 w-4" />
-                          </Button>
-                        </Link>
                         <Button
                           variant="ghost"
                           size="icon"
