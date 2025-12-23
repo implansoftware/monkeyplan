@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useParams, Link } from "wouter";
-import { User, RepairOrder, SalesOrder, BillingData } from "@shared/schema";
+import { User, RepairOrder, SalesOrder, BillingData, UtilityPractice } from "@shared/schema";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -19,9 +19,15 @@ import {
   ShoppingCart, 
   FileText,
   Calendar,
-  Eye
+  Eye,
+  Zap
 } from "lucide-react";
 import { getStatusConfig } from "@/lib/repair-status-config";
+
+type EnrichedUtilityPractice = UtilityPractice & { 
+  supplierName: string | null; 
+  serviceName: string | null; 
+};
 
 interface CustomerDetailResponse {
   customer: User;
@@ -29,6 +35,7 @@ interface CustomerDetailResponse {
   repairOrders: RepairOrder[];
   salesOrders: SalesOrder[];
   billingData: BillingData | null;
+  utilityPractices: EnrichedUtilityPractice[];
 }
 
 export default function AdminCustomerDetail() {
@@ -68,7 +75,7 @@ export default function AdminCustomerDetail() {
     );
   }
 
-  const { customer, reseller, repairOrders, salesOrders, billingData } = data;
+  const { customer, reseller, repairOrders, salesOrders, billingData, utilityPractices = [] } = data;
 
   return (
     <div className="space-y-6" data-testid="page-customer-detail">
@@ -204,6 +211,10 @@ export default function AdminCustomerDetail() {
             <ShoppingCart className="h-4 w-4" />
             Ordini ({salesOrders.length})
           </TabsTrigger>
+          <TabsTrigger value="utility" className="gap-2" data-testid="tab-utility">
+            <Zap className="h-4 w-4" />
+            Pratiche Utility ({utilityPractices.length})
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="repairs">
@@ -307,6 +318,55 @@ export default function AdminCustomerDetail() {
                           <TableCell className="text-right">
                             <Link href={`/admin/sales-orders/${order.id}`}>
                               <Button size="icon" variant="ghost" data-testid={`button-view-order-${order.id}`}>
+                                <Eye className="h-4 w-4" />
+                              </Button>
+                            </Link>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="utility">
+          <Card>
+            <CardContent className="p-0">
+              {utilityPractices.length === 0 ? (
+                <div className="py-8 text-center text-muted-foreground">
+                  Nessuna pratica utility trovata
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Numero Pratica</TableHead>
+                        <TableHead>Fornitore</TableHead>
+                        <TableHead>Servizio</TableHead>
+                        <TableHead>Stato</TableHead>
+                        <TableHead>Data</TableHead>
+                        <TableHead className="text-right">Azioni</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {utilityPractices.map((practice) => (
+                        <TableRow key={practice.id} data-testid={`row-utility-${practice.id}`}>
+                          <TableCell className="font-mono">{practice.practiceNumber}</TableCell>
+                          <TableCell>{practice.supplierName || practice.temporarySupplierName || "-"}</TableCell>
+                          <TableCell>{practice.serviceName || practice.customServiceName || "-"}</TableCell>
+                          <TableCell>
+                            <Badge variant="secondary">{practice.status}</Badge>
+                          </TableCell>
+                          <TableCell>
+                            {format(new Date(practice.createdAt), "dd/MM/yyyy", { locale: it })}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <Link href={`/admin/utility/practices/${practice.id}`}>
+                              <Button size="icon" variant="ghost" data-testid={`button-view-utility-${practice.id}`}>
                                 <Eye className="h-4 w-4" />
                               </Button>
                             </Link>
