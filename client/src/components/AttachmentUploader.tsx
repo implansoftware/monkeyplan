@@ -506,8 +506,17 @@ export function AttachmentUploader({
                                     credentials: 'include',
                                   });
                                   if (!response.ok) throw new Error("Download failed");
-                                  const data = await response.json();
-                                  window.open(data.signedUrl, '_blank');
+                                  
+                                  // Backend returns binary file, use blob() not json()
+                                  const blob = await response.blob();
+                                  const url = window.URL.createObjectURL(blob);
+                                  const link = document.createElement('a');
+                                  link.href = url;
+                                  link.download = attachment.fileName;
+                                  document.body.appendChild(link);
+                                  link.click();
+                                  document.body.removeChild(link);
+                                  window.URL.revokeObjectURL(url);
                                 } catch (error: any) {
                                   toast({
                                     title: "Errore download",
