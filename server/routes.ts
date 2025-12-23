@@ -1561,6 +1561,53 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Get reseller overview with all related entities (for admin detail view)
+  app.get("/api/admin/resellers/:id/overview", requireRole("admin"), async (req, res) => {
+    try {
+      const { id } = req.params;
+      
+      // Get reseller
+      const reseller = await storage.getUser(id);
+      if (!reseller || reseller.role !== 'reseller') {
+        return res.status(404).send("Rivenditore non trovato");
+      }
+      
+      const { password, ...safeReseller } = reseller;
+      
+      // Get all related data
+      const allUsers = await storage.listUsers();
+      const repairCenters = await storage.listRepairCenters();
+      
+      // Sub-resellers (resellers with parentResellerId = this reseller)
+      const subResellers = allUsers
+        .filter(u => u.role === 'reseller' && u.parentResellerId === id)
+        .map(({ password, ...u }) => u);
+      
+      // Repair centers belonging to this reseller
+      const resellerRepairCenters = repairCenters.filter(rc => rc.resellerId === id);
+      
+      // Customers belonging to this reseller
+      const customers = allUsers
+        .filter(u => u.role === 'customer' && u.resellerId === id)
+        .map(({ password, ...u }) => u);
+      
+      // Staff belonging to this reseller
+      const staff = allUsers
+        .filter(u => u.role === 'reseller_staff' && u.resellerId === id)
+        .map(({ password, ...u }) => u);
+      
+      res.json({
+        reseller: safeReseller,
+        subResellers,
+        repairCenters: resellerRepairCenters,
+        customers,
+        staff,
+      });
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
   app.post("/api/admin/users", requireRole("admin"), async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
