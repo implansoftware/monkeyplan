@@ -11745,10 +11745,11 @@ export function registerRoutes(app: Express): Server {
       }
       
       // Get related data
-      const [repairOrders, salesOrders, billingData] = await Promise.all([
+      const [repairOrders, salesOrders, billingData, utilityPractices] = await Promise.all([
         storage.listRepairOrders({ customerId }),
         storage.listSalesOrders({ customerId }),
         storage.getBillingDataByUserId(customerId),
+        storage.listUtilityPractices({ customerId }),
       ]);
       
       // Get reseller info if available
@@ -11757,12 +11758,32 @@ export function registerRoutes(app: Express): Server {
         reseller = await storage.getUser(customer.resellerId);
       }
       
+      // Enrich utility practices with supplier and service names
+      const enrichedUtilityPractices = await Promise.all(
+        utilityPractices.map(async (practice) => {
+          let supplierName = practice.temporarySupplierName || null;
+          let serviceName = practice.customServiceName || null;
+          
+          if (practice.supplierId) {
+            const supplier = await storage.getUtilitySupplier(practice.supplierId);
+            if (supplier) supplierName = supplier.name;
+          }
+          if (practice.serviceId) {
+            const service = await storage.getUtilityService(practice.serviceId);
+            if (service) serviceName = service.name;
+          }
+          
+          return { ...practice, supplierName, serviceName };
+        })
+      );
+      
       res.json({
         customer,
         reseller: reseller ? { id: reseller.id, fullName: reseller.fullName } : null,
         repairOrders,
         salesOrders,
         billingData,
+        utilityPractices: enrichedUtilityPractices,
       });
     } catch (error: any) {
       res.status(500).send(error.message);
