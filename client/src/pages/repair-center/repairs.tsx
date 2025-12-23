@@ -12,7 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
-import { AcceptanceWizardDialog } from "@/components/AcceptanceWizardDialog";
+import { RepairIntakeWizard } from "@/components/RepairIntakeWizard";
 import { useLocation } from "wouter";
 import { RepairsKanbanBoard } from "@/components/RepairsKanbanBoard";
 
@@ -251,7 +251,7 @@ export default function RepairCenterRepairs() {
         </CardContent>
       </Card>
 
-      <AcceptanceWizardDialog
+      <RepairIntakeWizard
         open={wizardOpen}
         onOpenChange={setWizardOpen}
         onSuccess={() => {

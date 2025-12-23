@@ -18,7 +18,7 @@ import { useToast } from "@/hooks/use-toast";
 import { formatDistanceToNow, format } from "date-fns";
 import { it } from "date-fns/locale";
 import type { DateRange } from "react-day-picker";
-import { AcceptanceWizardDialog } from "@/components/AcceptanceWizardDialog";
+import { RepairIntakeWizard } from "@/components/RepairIntakeWizard";
 import { useLocation } from "wouter";
 import { RepairsKanbanBoard } from "@/components/RepairsKanbanBoard";
 
@@ -543,7 +543,7 @@ export default function AdminRepairs() {
         </CardContent>
       </Card>
 
-      <AcceptanceWizardDialog
+      <RepairIntakeWizard
         open={wizardOpen}
         onOpenChange={setWizardOpen}
         onSuccess={() => {
