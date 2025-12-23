@@ -10,7 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Search, Pencil, Store, Users, UsersRound, Trash2, Building2 } from "lucide-react";
+import { Plus, Search, Pencil, Store, Users, UsersRound, Trash2, Building2, Eye } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Switch } from "@/components/ui/switch";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -533,6 +533,16 @@ export default function AdminResellers() {
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-1">
+                        <Link href={`/admin/resellers/${reseller.id}`}>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            title="Visualizza dettagli"
+                            data-testid={`button-detail-${reseller.id}`}
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                        </Link>
                         <Link href={`/admin/resellers/${reseller.id}/team`}>
                           <Button
                             variant="ghost"

@@ -20,6 +20,7 @@ import AdminUsers from "@/pages/admin/users";
 import AdminResellers from "@/pages/admin/resellers";
 import AdminResellerTeam from "@/pages/admin/reseller-team";
 import AdminResellerTeams from "@/pages/admin/reseller-teams";
+import AdminResellerDetail from "@/pages/admin/reseller-detail";
 import AdminRepairCenters from "@/pages/admin/repair-centers";
 import AdminTickets from "@/pages/admin/tickets";
 import AdminTicketDetail from "@/pages/admin/ticket-detail";
@@ -197,6 +198,7 @@ function Router() {
       <ProtectedRoute path="/admin/customers" component={AdminCustomers} />
       <ProtectedRoute path="/admin/reseller-teams" component={AdminResellerTeams} />
       <ProtectedRoute path="/admin/resellers/:resellerId/team" component={AdminResellerTeam} />
+      <ProtectedRoute path="/admin/resellers/:id" component={AdminResellerDetail} />
       <ProtectedRoute path="/admin/resellers" component={AdminResellers} />
       <ProtectedRoute path="/admin/repair-centers" component={AdminRepairCenters} />
       <ProtectedRoute path="/admin/repairs/:id" component={AdminRepairDetail} />
