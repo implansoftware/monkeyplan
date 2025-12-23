@@ -135,6 +135,13 @@ import RepairCenterCustomers from "@/pages/repair-center/customers";
 import RepairCenterB2BReturns from "@/pages/repair-center/b2b-returns";
 import RepairCenterSettings from "@/pages/repair-center/settings";
 import RepairCenterMarketplace from "@/pages/repair-center/marketplace";
+import RepairCenterUtility from "@/pages/repair-center/utility/index";
+import RepairCenterUtilitySuppliers from "@/pages/repair-center/utility/suppliers";
+import RepairCenterUtilityServices from "@/pages/repair-center/utility/services";
+import RepairCenterUtilityPractices from "@/pages/repair-center/utility/practices";
+import RepairCenterUtilityPracticeDetail from "@/pages/repair-center/utility/practice-detail";
+import RepairCenterUtilityCommissions from "@/pages/repair-center/utility/commissions";
+import RepairCenterUtilityReports from "@/pages/repair-center/utility/reports";
 
 // Customer pages
 import CustomerDashboard from "@/pages/customer/dashboard";
@@ -311,6 +318,13 @@ function Router() {
       <ProtectedRoute path="/repair-center/marketplace" component={RepairCenterMarketplace} />
       <ProtectedRoute path="/repair-center/tickets" component={RepairCenterTickets} />
       <ProtectedRoute path="/repair-center/tickets/:id" component={RepairCenterTicketDetail} />
+      <ProtectedRoute path="/repair-center/utility" component={RepairCenterUtility} />
+      <ProtectedRoute path="/repair-center/utility/suppliers" component={RepairCenterUtilitySuppliers} />
+      <ProtectedRoute path="/repair-center/utility/services" component={RepairCenterUtilityServices} />
+      <ProtectedRoute path="/repair-center/utility/practices/:id" component={RepairCenterUtilityPracticeDetail} />
+      <ProtectedRoute path="/repair-center/utility/practices" component={RepairCenterUtilityPractices} />
+      <ProtectedRoute path="/repair-center/utility/commissions" component={RepairCenterUtilityCommissions} />
+      <ProtectedRoute path="/repair-center/utility/reports" component={RepairCenterUtilityReports} />
       <ProtectedRoute path="/repair-center/diagnostics" component={DiagnosisList} />
       <ProtectedRoute path="/repair-center/quotes" component={QuotesList} />
       

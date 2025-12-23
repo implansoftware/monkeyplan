@@ -15524,13 +15524,19 @@ export function registerRoutes(app: Express): Server {
   // ----- UTILITY SUPPLIERS -----
 
   // GET /api/utility/suppliers - List utility suppliers
-  app.get("/api/utility/suppliers", requireAuth, requireRole("admin", "reseller"), async (req, res) => {
+  app.get("/api/utility/suppliers", requireAuth, requireRole("admin", "reseller", "repair_center"), async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
       let filters: { resellerId?: string } = {};
       if (req.user.role === 'reseller') {
         filters.resellerId = req.user.id;
+      } else if (req.user.role === 'repair_center') {
+        // Repair center vede i fornitori del proprio reseller proprietario
+        const repairCenter = await storage.getRepairCenter(req.user.repairCenterId!);
+        if (repairCenter?.resellerId) {
+          filters.resellerId = repairCenter.resellerId;
+        }
       }
       
       const suppliers = await storage.listUtilitySuppliers(filters);
@@ -15541,7 +15547,7 @@ export function registerRoutes(app: Express): Server {
   });
 
   // GET /api/utility/suppliers/:id - Get utility supplier
-  app.get("/api/utility/suppliers/:id", requireAuth, requireRole("admin", "reseller"), async (req, res) => {
+  app.get("/api/utility/suppliers/:id", requireAuth, requireRole("admin", "reseller", "repair_center"), async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
@@ -15555,14 +15561,22 @@ export function registerRoutes(app: Express): Server {
         return res.status(403).send("Accesso non autorizzato a questo fornitore");
       }
       
+      // Repair center può vedere solo i fornitori del proprio reseller o globali
+      if (req.user.role === 'repair_center') {
+        const repairCenter = await storage.getRepairCenter(req.user.repairCenterId!);
+        if (supplier.resellerId && repairCenter?.resellerId !== supplier.resellerId) {
+          return res.status(403).send("Accesso non autorizzato a questo fornitore");
+        }
+      }
+      
       res.json(supplier);
     } catch (error: any) {
       res.status(500).send(error.message);
     }
   });
 
-  // POST /api/utility/suppliers - Create utility supplier (Admin o Reseller)
-  app.post("/api/utility/suppliers", requireAuth, requireRole("admin", "reseller"), async (req, res) => {
+  // POST /api/utility/suppliers - Create utility supplier (Admin, Reseller o Repair Center)
+  app.post("/api/utility/suppliers", requireAuth, requireRole("admin", "reseller", "repair_center"), async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
@@ -15571,6 +15585,13 @@ export function registerRoutes(app: Express): Server {
       // Se reseller, assegna automaticamente il resellerId
       if (req.user.role === 'reseller') {
         (validated as any).resellerId = req.user.id;
+      } else if (req.user.role === 'repair_center') {
+        // Per repair center, assegna il resellerId del proprietario
+        const repairCenter = await storage.getRepairCenter(req.user.repairCenterId!);
+        if (repairCenter?.resellerId) {
+          (validated as any).resellerId = repairCenter.resellerId;
+        }
+        (validated as any).repairCenterId = req.user.repairCenterId;
       }
       // Admin può creare fornitori globali (resellerId = null) o assegnati
       
@@ -15582,7 +15603,7 @@ export function registerRoutes(app: Express): Server {
   });
 
   // PATCH /api/utility/suppliers/:id - Update utility supplier
-  app.patch("/api/utility/suppliers/:id", requireAuth, requireRole("admin", "reseller"), async (req, res) => {
+  app.patch("/api/utility/suppliers/:id", requireAuth, requireRole("admin", "reseller", "repair_center"), async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
@@ -15608,7 +15629,7 @@ export function registerRoutes(app: Express): Server {
   });
 
   // DELETE /api/utility/suppliers/:id - Delete utility supplier
-  app.delete("/api/utility/suppliers/:id", requireAuth, requireRole("admin", "reseller"), async (req, res) => {
+  app.delete("/api/utility/suppliers/:id", requireAuth, requireRole("admin", "reseller", "repair_center"), async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
@@ -15634,7 +15655,7 @@ export function registerRoutes(app: Express): Server {
   // ----- UTILITY SERVICES -----
 
   // GET /api/utility/services - List utility services
-  app.get("/api/utility/services", requireAuth, requireRole("admin", "reseller"), async (req, res) => {
+  app.get("/api/utility/services", requireAuth, requireRole("admin", "reseller", "repair_center"), async (req, res) => {
     try {
       const supplierId = req.query.supplierId as string | undefined;
       const services = await storage.listUtilityServices(supplierId);
@@ -15645,7 +15666,7 @@ export function registerRoutes(app: Express): Server {
   });
 
   // GET /api/utility/services/:id - Get utility service
-  app.get("/api/utility/services/:id", requireAuth, requireRole("admin", "reseller"), async (req, res) => {
+  app.get("/api/utility/services/:id", requireAuth, requireRole("admin", "reseller", "repair_center"), async (req, res) => {
     try {
       const service = await storage.getUtilityService(req.params.id);
       if (!service) {
@@ -15776,7 +15797,7 @@ export function registerRoutes(app: Express): Server {
   });
 
   // POST /api/utility/practices - Create utility practice
-  app.post("/api/utility/practices", requireAuth, requireRole("admin", "reseller"), async (req, res) => {
+  app.post("/api/utility/practices", requireAuth, requireRole("admin", "reseller", "repair_center"), async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
@@ -15832,7 +15853,7 @@ export function registerRoutes(app: Express): Server {
   });
 
   // PATCH /api/utility/practices/:id - Update utility practice
-  app.patch("/api/utility/practices/:id", requireAuth, requireRole("admin", "reseller"), async (req, res) => {
+  app.patch("/api/utility/practices/:id", requireAuth, requireRole("admin", "reseller", "repair_center"), async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
@@ -15908,7 +15929,7 @@ export function registerRoutes(app: Express): Server {
   // ----- UTILITY COMMISSIONS -----
 
   // GET /api/utility/commissions - List utility commissions
-  app.get("/api/utility/commissions", requireAuth, requireRole("admin", "reseller"), async (req, res) => {
+  app.get("/api/utility/commissions", requireAuth, requireRole("admin", "reseller", "repair_center"), async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
@@ -15943,7 +15964,7 @@ export function registerRoutes(app: Express): Server {
   });
 
   // GET /api/utility/commissions/:id - Get utility commission
-  app.get("/api/utility/commissions/:id", requireAuth, requireRole("admin", "reseller"), async (req, res) => {
+  app.get("/api/utility/commissions/:id", requireAuth, requireRole("admin", "reseller", "repair_center"), async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
@@ -16023,7 +16044,7 @@ export function registerRoutes(app: Express): Server {
   });
 
   // POST /api/utility/practices/:id/documents - Upload practice document
-  app.post("/api/utility/practices/:id/documents", requireAuth, requireRole("admin", "reseller"), upload.single('file'), async (req, res) => {
+  app.post("/api/utility/practices/:id/documents", requireAuth, requireRole("admin", "reseller", "repair_center"), upload.single('file'), async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       if (!req.file) return res.status(400).send("Nessun file caricato");
@@ -16131,7 +16152,7 @@ export function registerRoutes(app: Express): Server {
   });
 
   // DELETE /api/utility/practices/:practiceId/documents/:id - Delete practice document
-  app.delete("/api/utility/practices/:practiceId/documents/:id", requireAuth, requireRole("admin", "reseller"), async (req, res) => {
+  app.delete("/api/utility/practices/:practiceId/documents/:id", requireAuth, requireRole("admin", "reseller", "repair_center"), async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
@@ -16188,7 +16209,7 @@ export function registerRoutes(app: Express): Server {
   });
 
   // POST /api/utility/practices/:id/tasks - Create practice task
-  app.post("/api/utility/practices/:id/tasks", requireAuth, requireRole("admin", "reseller"), async (req, res) => {
+  app.post("/api/utility/practices/:id/tasks", requireAuth, requireRole("admin", "reseller", "repair_center"), async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
@@ -16222,7 +16243,7 @@ export function registerRoutes(app: Express): Server {
   });
 
   // PATCH /api/utility/practices/:practiceId/tasks/:id - Update practice task
-  app.patch("/api/utility/practices/:practiceId/tasks/:id", requireAuth, requireRole("admin", "reseller"), async (req, res) => {
+  app.patch("/api/utility/practices/:practiceId/tasks/:id", requireAuth, requireRole("admin", "reseller", "repair_center"), async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
@@ -16261,7 +16282,7 @@ export function registerRoutes(app: Express): Server {
   });
 
   // DELETE /api/utility/practices/:practiceId/tasks/:id - Delete practice task
-  app.delete("/api/utility/practices/:practiceId/tasks/:id", requireAuth, requireRole("admin", "reseller"), async (req, res) => {
+  app.delete("/api/utility/practices/:practiceId/tasks/:id", requireAuth, requireRole("admin", "reseller", "repair_center"), async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
@@ -16315,7 +16336,7 @@ export function registerRoutes(app: Express): Server {
   });
 
   // POST /api/utility/practices/:id/notes - Create practice note
-  app.post("/api/utility/practices/:id/notes", requireAuth, requireRole("admin", "reseller"), async (req, res) => {
+  app.post("/api/utility/practices/:id/notes", requireAuth, requireRole("admin", "reseller", "repair_center"), async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
@@ -16350,7 +16371,7 @@ export function registerRoutes(app: Express): Server {
   });
 
   // DELETE /api/utility/practices/:practiceId/notes/:id - Delete practice note
-  app.delete("/api/utility/practices/:practiceId/notes/:id", requireAuth, requireRole("admin", "reseller"), async (req, res) => {
+  app.delete("/api/utility/practices/:practiceId/notes/:id", requireAuth, requireRole("admin", "reseller", "repair_center"), async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
@@ -16399,7 +16420,7 @@ export function registerRoutes(app: Express): Server {
   });
 
   // POST /api/utility/practices/:id/timeline - Add timeline event (comment)
-  app.post("/api/utility/practices/:id/timeline", requireAuth, requireRole("admin", "reseller"), async (req, res) => {
+  app.post("/api/utility/practices/:id/timeline", requireAuth, requireRole("admin", "reseller", "repair_center"), async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
@@ -16454,7 +16475,7 @@ export function registerRoutes(app: Express): Server {
   // ----- UTILITY PRACTICE STATUS UPDATE -----
 
   // PATCH /api/utility/practices/:id/status - Update practice status with history
-  app.patch("/api/utility/practices/:id/status", requireAuth, requireRole("admin", "reseller"), async (req, res) => {
+  app.patch("/api/utility/practices/:id/status", requireAuth, requireRole("admin", "reseller", "repair_center"), async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
@@ -16499,7 +16520,7 @@ export function registerRoutes(app: Express): Server {
   // ----- UTILITY REPORTS -----
 
   // GET /api/utility/reports/summary - Get utility summary report
-  app.get("/api/utility/reports/summary", requireAuth, requireRole("admin", "reseller"), async (req, res) => {
+  app.get("/api/utility/reports/summary", requireAuth, requireRole("admin", "reseller", "repair_center"), async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       

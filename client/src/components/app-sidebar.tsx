@@ -192,6 +192,12 @@ const menuItems = {
     { title: "Ordini B2B", url: "/repair-center/b2b-orders", icon: FileText, group: "Acquisti B2B" },
     { title: "Resi B2B", url: "/repair-center/b2b-returns", icon: RotateCcw, group: "Acquisti B2B" },
     { title: "Marketplace Rivenditori", url: "/repair-center/marketplace", icon: Store, group: "Marketplace" },
+    { title: "Utility", url: "/repair-center/utility", icon: Zap, group: "Utility" },
+    { title: "Fornitori Utility", url: "/repair-center/utility/suppliers", icon: Phone, group: "Utility" },
+    { title: "Listino Servizi", url: "/repair-center/utility/services", icon: Package, group: "Utility" },
+    { title: "Pratiche", url: "/repair-center/utility/practices", icon: FileCheck, group: "Utility" },
+    { title: "Compensi", url: "/repair-center/utility/commissions", icon: Coins, group: "Utility" },
+    { title: "Report Utility", url: "/repair-center/utility/reports", icon: PieChart, group: "Utility" },
     { title: "Ticket", url: "/repair-center/tickets", icon: Ticket, group: "Assistenza" },
   ],
   customer: [
