@@ -41,6 +41,9 @@ import {
   insertRepairCenterAvailabilitySchema,
   insertRepairCenterBlackoutSchema,
   insertDeliveryAppointmentSchema,
+  insertDeviceTypeSchema,
+  insertDeviceBrandSchema,
+  insertDeviceModelSchema,
   type Product
 } from "@shared/schema";
 import { ObjectStorageService, objectStorageClient, parseObjectPath } from "./objectStorage";
@@ -12571,6 +12574,104 @@ export function registerRoutes(app: Express): Server {
       res.json(deviceModels);
     } catch (error: any) {
       res.status(500).send(error.message);
+    }
+  });
+
+  // ============ ADMIN DEVICE CATALOG CRUD ============
+
+  // Create device type (admin only)
+  app.post("/api/admin/device-types", requireRole("admin"), async (req, res) => {
+    try {
+      const validated = insertDeviceTypeSchema.parse(req.body);
+      const deviceType = await storage.createDeviceType(validated);
+      res.status(201).json(deviceType);
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+
+  // Update device type (admin only)
+  app.patch("/api/admin/device-types/:id", requireRole("admin"), async (req, res) => {
+    try {
+      const updates = insertDeviceTypeSchema.partial().parse(req.body);
+      const deviceType = await storage.updateDeviceType(req.params.id, updates);
+      res.json(deviceType);
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+
+  // Delete device type (admin only)
+  app.delete("/api/admin/device-types/:id", requireRole("admin"), async (req, res) => {
+    try {
+      await storage.deleteDeviceType(req.params.id);
+      res.status(204).send();
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+
+  // Create device brand (admin only)
+  app.post("/api/admin/device-brands", requireRole("admin"), async (req, res) => {
+    try {
+      const validated = insertDeviceBrandSchema.parse(req.body);
+      const deviceBrand = await storage.createDeviceBrand(validated);
+      res.status(201).json(deviceBrand);
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+
+  // Update device brand (admin only)
+  app.patch("/api/admin/device-brands/:id", requireRole("admin"), async (req, res) => {
+    try {
+      const updates = insertDeviceBrandSchema.partial().parse(req.body);
+      const deviceBrand = await storage.updateDeviceBrand(req.params.id, updates);
+      res.json(deviceBrand);
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+
+  // Delete device brand (admin only)
+  app.delete("/api/admin/device-brands/:id", requireRole("admin"), async (req, res) => {
+    try {
+      await storage.deleteDeviceBrand(req.params.id);
+      res.status(204).send();
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+
+  // Create device model (admin only)
+  app.post("/api/admin/device-models", requireRole("admin"), async (req, res) => {
+    try {
+      const validated = insertDeviceModelSchema.parse(req.body);
+      const deviceModel = await storage.createDeviceModel(validated);
+      res.status(201).json(deviceModel);
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+
+  // Update device model (admin only)
+  app.patch("/api/admin/device-models/:id", requireRole("admin"), async (req, res) => {
+    try {
+      const updates = insertDeviceModelSchema.partial().parse(req.body);
+      const deviceModel = await storage.updateDeviceModel(req.params.id, updates);
+      res.json(deviceModel);
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+
+  // Delete device model (admin only)
+  app.delete("/api/admin/device-models/:id", requireRole("admin"), async (req, res) => {
+    try {
+      await storage.deleteDeviceModel(req.params.id);
+      res.status(204).send();
+    } catch (error: any) {
+      res.status(400).send(error.message);
     }
   });
 

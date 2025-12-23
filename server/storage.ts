@@ -331,6 +331,9 @@ export interface IStorage {
   // Device Models (Cascading dropdown catalog)
   listDeviceModels(filters?: { typeId?: string; brandId?: string; activeOnly?: boolean }): Promise<DeviceModel[]>;
   getDeviceModel(id: string): Promise<DeviceModel | undefined>;
+  createDeviceModel(insertDeviceModel: InsertDeviceModel): Promise<DeviceModel>;
+  updateDeviceModel(id: string, updates: Partial<InsertDeviceModel>): Promise<DeviceModel>;
+  deleteDeviceModel(id: string): Promise<void>;
   
   // Parts Orders (FASE 5)
   createPartsOrder(order: InsertPartsOrder): Promise<PartsOrder>;
@@ -3227,6 +3230,29 @@ export class DatabaseStorage implements IStorage {
   async getDeviceModel(id: string): Promise<DeviceModel | undefined> {
     const [deviceModel] = await db.select().from(deviceModels).where(eq(deviceModels.id, id));
     return deviceModel || undefined;
+  }
+
+  async createDeviceModel(insertDeviceModel: InsertDeviceModel): Promise<DeviceModel> {
+    const [deviceModel] = await db.insert(deviceModels).values(insertDeviceModel).returning();
+    return deviceModel;
+  }
+
+  async updateDeviceModel(id: string, updates: Partial<InsertDeviceModel>): Promise<DeviceModel> {
+    const [deviceModel] = await db
+      .update(deviceModels)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(deviceModels.id, id))
+      .returning();
+    
+    if (!deviceModel) {
+      throw new Error("Device model not found");
+    }
+    
+    return deviceModel;
+  }
+
+  async deleteDeviceModel(id: string): Promise<void> {
+    await db.delete(deviceModels).where(eq(deviceModels.id, id));
   }
 
   // Parts Orders (FASE 5)

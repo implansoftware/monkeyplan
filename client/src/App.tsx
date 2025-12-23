@@ -46,6 +46,7 @@ import AdminRepairDetail from "@/pages/admin/repair-detail";
 import AdminTeam from "@/pages/admin/team";
 import AdminSmartphoneCatalog from "@/pages/admin/smartphone-catalog";
 import AdminAccessoryCatalog from "@/pages/admin/accessory-catalog";
+import AdminDeviceCatalog from "@/pages/admin/device-catalog";
 import AdminSalesOrders from "@/pages/admin/sales-orders";
 import AdminShipments from "@/pages/admin/shipments";
 import AdminPayments from "@/pages/admin/payments";
@@ -237,6 +238,7 @@ function Router() {
       <ProtectedRoute path="/admin/service-catalog" component={AdminServiceCatalog} />
       <ProtectedRoute path="/admin/smartphone-catalog" component={AdminSmartphoneCatalog} />
       <ProtectedRoute path="/admin/accessory-catalog" component={AdminAccessoryCatalog} />
+      <ProtectedRoute path="/admin/device-catalog" component={AdminDeviceCatalog} />
       <ProtectedRoute path="/admin/team" component={AdminTeam} />
       <ProtectedRoute path="/admin/b2b-orders" component={AdminB2BOrders} />
       <ProtectedRoute path="/admin/rc-b2b-orders" component={AdminRCB2BOrders} />
