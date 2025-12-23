@@ -12579,6 +12579,41 @@ export function registerRoutes(app: Express): Server {
 
   // ============ ADMIN DEVICE CATALOG CRUD ============
 
+  // List device types (admin only - includes inactive)
+  app.get("/api/admin/device-types", requireRole("admin"), async (req, res) => {
+    try {
+      const activeOnly = req.query.activeOnly === 'true';
+      const deviceTypes = await storage.listDeviceTypes(activeOnly);
+      res.json(deviceTypes);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // List device brands (admin only - includes inactive)
+  app.get("/api/admin/device-brands", requireRole("admin"), async (req, res) => {
+    try {
+      const activeOnly = req.query.activeOnly === 'true';
+      const deviceBrands = await storage.listDeviceBrands(activeOnly);
+      res.json(deviceBrands);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // List device models (admin only - includes inactive)
+  app.get("/api/admin/device-models", requireRole("admin"), async (req, res) => {
+    try {
+      const activeOnly = req.query.activeOnly === 'true';
+      const typeId = req.query.typeId as string | undefined;
+      const brandId = req.query.brandId as string | undefined;
+      const deviceModels = await storage.listDeviceModels({ activeOnly, typeId, brandId });
+      res.json(deviceModels);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
   // Create device type (admin only)
   app.post("/api/admin/device-types", requireRole("admin"), async (req, res) => {
     try {
