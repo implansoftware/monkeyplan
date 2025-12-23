@@ -9,11 +9,19 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Search, MapPin, Phone, Mail, Pencil, Trash2, Building, Store, Clock } from "lucide-react";
+import { Plus, Search, MapPin, Phone, Mail, Pencil, Trash2, Building, Store, Clock, ChevronLeft, ChevronRight, Check, FileText, Settings } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Progress } from "@/components/ui/progress";
 import { AddressAutocomplete } from "@/components/address-autocomplete";
+
+const WIZARD_STEPS = [
+  { id: 1, title: "Info Base", icon: Building },
+  { id: 2, title: "Indirizzo", icon: MapPin },
+  { id: 3, title: "Dati Fiscali", icon: FileText },
+  { id: 4, title: "Configurazione", icon: Settings },
+];
 
 export default function AdminRepairCenters() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -22,6 +30,18 @@ export default function AdminRepairCenters() {
   const [selectedResellerId, setSelectedResellerId] = useState<string>("");
   const [addressData, setAddressData] = useState({ address: "", city: "", cap: "", provincia: "" });
   const [hourlyRateEuros, setHourlyRateEuros] = useState<string>("");
+  const [wizardStep, setWizardStep] = useState(1);
+  const [formData, setFormData] = useState({
+    name: "",
+    phone: "",
+    email: "",
+    ragioneSociale: "",
+    partitaIva: "",
+    codiceFiscale: "",
+    codiceUnivoco: "",
+    pec: "",
+    iban: "",
+  });
   const { toast } = useToast();
 
   const { data: centers = [], isLoading } = useQuery<RepairCenter[]>({
@@ -76,45 +96,79 @@ export default function AdminRepairCenters() {
     },
   });
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const formData = new FormData(e.currentTarget);
-    
-    // Validazione indirizzo
-    const finalAddress = addressData.address || (editingCenter?.address ?? "");
-    const finalCity = addressData.city || (editingCenter?.city ?? "");
-    
-    if (!finalAddress.trim() || !finalCity.trim()) {
+  const resetWizard = () => {
+    setWizardStep(1);
+    setFormData({
+      name: "",
+      phone: "",
+      email: "",
+      ragioneSociale: "",
+      partitaIva: "",
+      codiceFiscale: "",
+      codiceUnivoco: "",
+      pec: "",
+      iban: "",
+    });
+    setAddressData({ address: "", city: "", cap: "", provincia: "" });
+    setSelectedResellerId("");
+    setHourlyRateEuros("");
+  };
+
+  const progressPercent = (wizardStep / WIZARD_STEPS.length) * 100;
+
+  const canProceedToNextStep = () => {
+    switch (wizardStep) {
+      case 1: return formData.name && formData.email && formData.phone;
+      case 2: return addressData.address && addressData.city;
+      case 3: return true;
+      case 4: return true;
+      default: return true;
+    }
+  };
+
+  const nextStep = () => {
+    if (wizardStep < WIZARD_STEPS.length) {
+      setWizardStep(wizardStep + 1);
+    }
+  };
+
+  const prevStep = () => {
+    if (wizardStep > 1) {
+      setWizardStep(wizardStep - 1);
+    }
+  };
+
+  const isLastStep = () => wizardStep === WIZARD_STEPS.length;
+  const isFirstStep = () => wizardStep === 1;
+
+  const handleFinalSubmit = () => {
+    if (!addressData.address.trim() || !addressData.city.trim()) {
       toast({ title: "Errore", description: "Indirizzo e Città sono campi obbligatori", variant: "destructive" });
       return;
     }
     
-    // Dati fiscali - converti stringhe vuote in null
     const fiscalData = {
-      ragioneSociale: (formData.get("ragioneSociale") as string)?.trim() || null,
-      partitaIva: (formData.get("partitaIva") as string)?.trim() || null,
-      codiceFiscale: (formData.get("codiceFiscale") as string)?.trim() || null,
-      iban: (formData.get("iban") as string)?.trim() || null,
-      codiceUnivoco: (formData.get("codiceUnivoco") as string)?.trim() || null,
-      pec: (formData.get("pec") as string)?.trim() || null,
+      ragioneSociale: formData.ragioneSociale?.trim() || null,
+      partitaIva: formData.partitaIva?.trim() || null,
+      codiceFiscale: formData.codiceFiscale?.trim() || null,
+      iban: formData.iban?.trim() || null,
+      codiceUnivoco: formData.codiceUnivoco?.trim() || null,
+      pec: formData.pec?.trim() || null,
     };
     
-    // Tariffa manodopera - converti euro in centesimi
-    // Per modifica: mantieni valore esistente se non cambiato
-    // Per creazione: null se non specificato
     const hourlyRateCentsValue = hourlyRateEuros 
       ? Math.round(parseFloat(hourlyRateEuros) * 100)
       : (editingCenter ? editingCenter.hourlyRateCents : null);
     
     if (editingCenter) {
       const updates: Partial<RepairCenter> = {
-        name: formData.get("name") as string,
-        address: finalAddress,
-        city: finalCity,
-        cap: addressData.cap?.trim() || editingCenter.cap || null,
-        provincia: addressData.provincia?.trim() || editingCenter.provincia || null,
-        phone: formData.get("phone") as string,
-        email: formData.get("email") as string,
+        name: formData.name,
+        address: addressData.address,
+        city: addressData.city,
+        cap: addressData.cap?.trim() || null,
+        provincia: addressData.provincia?.trim() || null,
+        phone: formData.phone,
+        email: formData.email,
         resellerId: selectedResellerId || null,
         hourlyRateCents: hourlyRateCentsValue,
         ...fiscalData,
@@ -122,13 +176,13 @@ export default function AdminRepairCenters() {
       updateCenterMutation.mutate({ id: editingCenter.id, data: updates });
     } else {
       const data: InsertRepairCenter = {
-        name: formData.get("name") as string,
-        address: finalAddress,
-        city: finalCity,
+        name: formData.name,
+        address: addressData.address,
+        city: addressData.city,
         cap: addressData.cap?.trim() || null,
         provincia: addressData.provincia?.trim() || null,
-        phone: formData.get("phone") as string,
-        email: formData.get("email") as string,
+        phone: formData.phone,
+        email: formData.email,
         resellerId: selectedResellerId || null,
         isActive: true,
         hourlyRateCents: hourlyRateCentsValue,
@@ -156,202 +210,292 @@ export default function AdminRepairCenters() {
           setDialogOpen(open);
           if (!open) {
             setEditingCenter(null);
-            setSelectedResellerId("");
-            setAddressData({ address: "", city: "", cap: "", provincia: "" });
-            setHourlyRateEuros("");
+            resetWizard();
           }
         }}>
           <DialogTrigger asChild>
-            <Button data-testid="button-new-center">
+            <Button onClick={() => resetWizard()} data-testid="button-new-center">
               <Plus className="h-4 w-4 mr-2" />
               Nuovo Centro
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-h-[90vh] overflow-y-auto">
+          <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto" data-testid="dialog-center-form">
             <DialogHeader>
-              <DialogTitle>{editingCenter ? "Modifica Centro" : "Crea Nuovo Centro"}</DialogTitle>
+              <DialogTitle>{editingCenter ? "Modifica Centro" : "Nuovo Centro di Riparazione"}</DialogTitle>
             </DialogHeader>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="name">Nome Centro</Label>
-                <Input id="name" name="name" defaultValue={editingCenter?.name || ""} required data-testid="input-name" />
+            
+            <div className="space-y-4">
+              <div className="flex items-center justify-between gap-2 mb-2">
+                {WIZARD_STEPS.map((step, idx) => {
+                  const StepIcon = step.icon;
+                  const isActive = step.id === wizardStep;
+                  const isPast = wizardStep > step.id;
+                  return (
+                    <div key={step.id} className="flex flex-col items-center flex-1">
+                      <div 
+                        className={`w-10 h-10 rounded-full flex items-center justify-center border-2 transition-colors ${
+                          isActive ? 'bg-primary border-primary text-primary-foreground' : 
+                          isPast ? 'bg-primary/20 border-primary text-primary' : 
+                          'bg-muted border-muted-foreground/30 text-muted-foreground'
+                        }`}
+                      >
+                        {isPast ? <Check className="h-5 w-5" /> : <StepIcon className="h-5 w-5" />}
+                      </div>
+                      <span className={`text-xs mt-1 text-center ${isActive ? 'text-foreground font-medium' : 'text-muted-foreground'}`}>
+                        {step.title}
+                      </span>
+                    </div>
+                  );
+                })}
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="phone">Telefono</Label>
-                <Input id="phone" name="phone" type="tel" defaultValue={editingCenter?.phone || ""} required data-testid="input-phone" />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input id="email" name="email" type="email" defaultValue={editingCenter?.email || ""} required data-testid="input-email" />
-              </div>
-              
-              <div className="border-t pt-4 mt-4">
-                <h4 className="font-medium text-sm text-muted-foreground mb-3">Dati Fiscali</h4>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-2">
-                    <Label htmlFor="ragioneSociale">Ragione Sociale</Label>
-                    <Input 
-                      id="ragioneSociale" 
-                      name="ragioneSociale" 
-                      defaultValue={editingCenter?.ragioneSociale || ""} 
-                      data-testid="input-ragioneSociale" 
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="partitaIva">Partita IVA</Label>
-                    <Input 
-                      id="partitaIva" 
-                      name="partitaIva" 
-                      defaultValue={editingCenter?.partitaIva || ""} 
-                      data-testid="input-partitaIva" 
-                    />
-                  </div>
-                  <div className="space-y-2 col-span-2">
-                    <Label htmlFor="codiceFiscale">Codice Fiscale</Label>
-                    <Input 
-                      id="codiceFiscale" 
-                      name="codiceFiscale" 
-                      defaultValue={editingCenter?.codiceFiscale || ""} 
-                      data-testid="input-codiceFiscale" 
-                    />
-                  </div>
-                  <div className="space-y-2 col-span-2">
-                    <Label>Indirizzo</Label>
-                    <AddressAutocomplete
-                      value={addressData.address || editingCenter?.address || ""}
-                      onChange={(val) => setAddressData(prev => ({ ...prev, address: val }))}
-                      onAddressSelect={(result) => {
-                        setAddressData({
-                          address: result.address || result.fullAddress,
-                          city: result.city,
-                          cap: result.postalCode,
-                          provincia: result.province,
-                        });
-                      }}
-                      placeholder="Inizia a digitare per vedere i suggerimenti..."
-                      data-testid="input-address"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="city">Città</Label>
-                    <Input 
-                      id="city" 
-                      name="city" 
-                      value={addressData.city || editingCenter?.city || ""}
-                      onChange={(e) => setAddressData(prev => ({ ...prev, city: e.target.value }))}
-                      data-testid="input-city" 
-                    />
-                  </div>
-                  <div className="grid grid-cols-2 gap-2">
+              <Progress value={progressPercent} className="h-1" />
+
+              <div className="min-h-[280px]">
+                {wizardStep === 1 && (
+                  <div className="space-y-4">
+                    <p className="text-sm text-muted-foreground">Informazioni di base del centro di riparazione.</p>
                     <div className="space-y-2">
-                      <Label htmlFor="cap">CAP</Label>
+                      <Label htmlFor="name">Nome Centro *</Label>
                       <Input 
-                        id="cap" 
-                        name="cap" 
-                        value={addressData.cap || editingCenter?.cap || ""}
-                        onChange={(e) => setAddressData(prev => ({ ...prev, cap: e.target.value }))}
-                        data-testid="input-cap" 
+                        id="name"
+                        value={formData.name}
+                        onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                        data-testid="input-name" 
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="provincia">Prov.</Label>
+                      <Label htmlFor="email">Email *</Label>
                       <Input 
-                        id="provincia" 
-                        name="provincia" 
-                        maxLength={2}
-                        value={addressData.provincia || editingCenter?.provincia || ""}
-                        onChange={(e) => setAddressData(prev => ({ ...prev, provincia: e.target.value }))}
-                        placeholder="XX"
-                        data-testid="input-provincia" 
+                        id="email"
+                        type="email"
+                        value={formData.email}
+                        onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+                        data-testid="input-email" 
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="phone">Telefono *</Label>
+                      <Input 
+                        id="phone"
+                        type="tel"
+                        value={formData.phone}
+                        onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
+                        data-testid="input-phone" 
                       />
                     </div>
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="codiceUnivoco">Codice Univoco (SDI)</Label>
-                    <Input 
-                      id="codiceUnivoco" 
-                      name="codiceUnivoco" 
-                      maxLength={7}
-                      defaultValue={editingCenter?.codiceUnivoco || ""} 
-                      placeholder="7 caratteri"
-                      data-testid="input-codiceUnivoco" 
-                    />
+                )}
+
+                {wizardStep === 2 && (
+                  <div className="space-y-4">
+                    <p className="text-sm text-muted-foreground">Indirizzo e ubicazione del centro.</p>
+                    <div className="space-y-2">
+                      <Label>Indirizzo *</Label>
+                      <AddressAutocomplete
+                        value={addressData.address}
+                        onChange={(val) => setAddressData(prev => ({ ...prev, address: val }))}
+                        onAddressSelect={(result) => {
+                          setAddressData({
+                            address: result.address || result.fullAddress,
+                            city: result.city,
+                            cap: result.postalCode,
+                            provincia: result.province,
+                          });
+                        }}
+                        placeholder="Inizia a digitare..."
+                        data-testid="input-address"
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-2">
+                        <Label htmlFor="city">Città *</Label>
+                        <Input 
+                          id="city"
+                          value={addressData.city}
+                          onChange={(e) => setAddressData(prev => ({ ...prev, city: e.target.value }))}
+                          data-testid="input-city" 
+                        />
+                      </div>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div className="space-y-2">
+                          <Label htmlFor="cap">CAP</Label>
+                          <Input 
+                            id="cap"
+                            value={addressData.cap}
+                            onChange={(e) => setAddressData(prev => ({ ...prev, cap: e.target.value }))}
+                            data-testid="input-cap" 
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="provincia">Prov.</Label>
+                          <Input 
+                            id="provincia"
+                            maxLength={2}
+                            value={addressData.provincia}
+                            onChange={(e) => setAddressData(prev => ({ ...prev, provincia: e.target.value }))}
+                            placeholder="XX"
+                            data-testid="input-provincia" 
+                          />
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="pec">PEC</Label>
-                    <Input 
-                      id="pec" 
-                      name="pec" 
-                      type="email"
-                      defaultValue={editingCenter?.pec || ""} 
-                      placeholder="email@pec.it"
-                      data-testid="input-pec" 
-                    />
+                )}
+
+                {wizardStep === 3 && (
+                  <div className="space-y-4">
+                    <p className="text-sm text-muted-foreground">Dati fiscali e fatturazione (opzionali).</p>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-2">
+                        <Label htmlFor="ragioneSociale">Ragione Sociale</Label>
+                        <Input 
+                          id="ragioneSociale"
+                          value={formData.ragioneSociale}
+                          onChange={(e) => setFormData(prev => ({ ...prev, ragioneSociale: e.target.value }))}
+                          data-testid="input-ragioneSociale" 
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="partitaIva">Partita IVA</Label>
+                        <Input 
+                          id="partitaIva"
+                          value={formData.partitaIva}
+                          onChange={(e) => setFormData(prev => ({ ...prev, partitaIva: e.target.value }))}
+                          data-testid="input-partitaIva" 
+                        />
+                      </div>
+                      <div className="space-y-2 col-span-2">
+                        <Label htmlFor="codiceFiscale">Codice Fiscale</Label>
+                        <Input 
+                          id="codiceFiscale"
+                          value={formData.codiceFiscale}
+                          onChange={(e) => setFormData(prev => ({ ...prev, codiceFiscale: e.target.value }))}
+                          data-testid="input-codiceFiscale" 
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="codiceUnivoco">Codice SDI</Label>
+                        <Input 
+                          id="codiceUnivoco"
+                          maxLength={7}
+                          value={formData.codiceUnivoco}
+                          onChange={(e) => setFormData(prev => ({ ...prev, codiceUnivoco: e.target.value }))}
+                          placeholder="7 caratteri"
+                          data-testid="input-codiceUnivoco" 
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="pec">PEC</Label>
+                        <Input 
+                          id="pec"
+                          type="email"
+                          value={formData.pec}
+                          onChange={(e) => setFormData(prev => ({ ...prev, pec: e.target.value }))}
+                          placeholder="email@pec.it"
+                          data-testid="input-pec" 
+                        />
+                      </div>
+                      <div className="space-y-2 col-span-2">
+                        <Label htmlFor="iban">IBAN</Label>
+                        <Input 
+                          id="iban"
+                          value={formData.iban}
+                          onChange={(e) => setFormData(prev => ({ ...prev, iban: e.target.value }))}
+                          placeholder="IT..."
+                          data-testid="input-iban" 
+                        />
+                      </div>
+                    </div>
                   </div>
-                  <div className="space-y-2 col-span-2">
-                    <Label htmlFor="iban">IBAN</Label>
-                    <Input 
-                      id="iban" 
-                      name="iban" 
-                      defaultValue={editingCenter?.iban || ""} 
-                      placeholder="IT..."
-                      data-testid="input-iban" 
-                    />
+                )}
+
+                {wizardStep === 4 && (
+                  <div className="space-y-4">
+                    <p className="text-sm text-muted-foreground">Configurazione affiliazione e tariffe.</p>
+                    <div className="space-y-2">
+                      <Label htmlFor="resellerId">Rivenditore di Appartenenza</Label>
+                      <Select value={selectedResellerId} onValueChange={setSelectedResellerId}>
+                        <SelectTrigger id="resellerId" data-testid="select-reseller-id">
+                          <SelectValue placeholder="Seleziona un rivenditore" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {resellers.map((reseller) => (
+                            <SelectItem key={reseller.id} value={reseller.id}>
+                              {reseller.fullName} ({reseller.email})
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <p className="text-xs text-muted-foreground">
+                        Il rivenditore a cui il centro è affiliato potrà gestire questo centro e visualizzare le sue attività.
+                      </p>
+                    </div>
+                    
+                    <div className="border-t pt-4 mt-4">
+                      <h4 className="font-medium text-sm text-muted-foreground mb-3 flex items-center gap-2">
+                        <Clock className="h-4 w-4" />
+                        Tariffa Manodopera
+                      </h4>
+                      <div className="space-y-2">
+                        <Label htmlFor="hourlyRate">Tariffa Oraria (EUR)</Label>
+                        <div className="relative">
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">€</span>
+                          <Input
+                            id="hourlyRate"
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            placeholder="35.00"
+                            value={hourlyRateEuros}
+                            onChange={(e) => setHourlyRateEuros(e.target.value)}
+                            className="pl-7"
+                            data-testid="input-hourly-rate"
+                          />
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          Tariffa oraria per il calcolo del costo manodopera. 
+                          Se non specificata, verrà usata la tariffa di sistema.
+                        </p>
+                      </div>
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="resellerId">Rivenditore di Appartenenza</Label>
-                <Select value={selectedResellerId} onValueChange={setSelectedResellerId}>
-                  <SelectTrigger id="resellerId" data-testid="select-reseller-id">
-                    <SelectValue placeholder="Seleziona un rivenditore" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {resellers.map((reseller) => (
-                      <SelectItem key={reseller.id} value={reseller.id}>
-                        {reseller.fullName} ({reseller.email})
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+
+              <div className="flex justify-between pt-4 border-t">
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={prevStep}
+                  disabled={isFirstStep()}
+                  data-testid="button-wizard-prev"
+                >
+                  <ChevronLeft className="mr-1 h-4 w-4" />
+                  Indietro
+                </Button>
+                {isLastStep() ? (
+                  <Button 
+                    type="button"
+                    onClick={handleFinalSubmit}
+                    disabled={createCenterMutation.isPending || updateCenterMutation.isPending}
+                    data-testid="button-submit-center"
+                  >
+                    <Check className="mr-1 h-4 w-4" />
+                    {editingCenter ? "Aggiorna" : "Crea"} Centro
+                  </Button>
+                ) : (
+                  <Button 
+                    type="button"
+                    onClick={nextStep}
+                    disabled={!canProceedToNextStep()}
+                    data-testid="button-wizard-next"
+                  >
+                    Avanti
+                    <ChevronRight className="ml-1 h-4 w-4" />
+                  </Button>
+                )}
               </div>
-              
-              <div className="border-t pt-4 mt-4">
-                <h4 className="font-medium text-sm text-muted-foreground mb-3 flex items-center gap-2">
-                  <Clock className="h-4 w-4" />
-                  Tariffa Manodopera
-                </h4>
-                <div className="space-y-2">
-                  <Label htmlFor="hourlyRate">Tariffa Oraria (EUR)</Label>
-                  <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">€</span>
-                    <Input
-                      id="hourlyRate"
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      placeholder="35.00"
-                      value={hourlyRateEuros}
-                      onChange={(e) => setHourlyRateEuros(e.target.value)}
-                      className="pl-7"
-                      data-testid="input-hourly-rate"
-                    />
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    Tariffa oraria per il calcolo del costo manodopera nei preventivi. 
-                    Se non specificata, verrà usata la tariffa globale del sistema.
-                  </p>
-                </div>
-              </div>
-              
-              <Button type="submit" className="w-full" disabled={createCenterMutation.isPending || updateCenterMutation.isPending} data-testid="button-submit-center">
-                {editingCenter 
-                  ? (updateCenterMutation.isPending ? "Aggiornamento..." : "Aggiorna Centro")
-                  : (createCenterMutation.isPending ? "Creazione..." : "Crea Centro")
-                }
-              </Button>
-            </form>
+            </div>
           </DialogContent>
         </Dialog>
       </div>
@@ -440,6 +584,24 @@ export default function AdminRepairCenters() {
                           size="icon" 
                           onClick={() => {
                             setEditingCenter(center);
+                            setWizardStep(1);
+                            setFormData({
+                              name: center.name || "",
+                              phone: center.phone || "",
+                              email: center.email || "",
+                              ragioneSociale: center.ragioneSociale || "",
+                              partitaIva: center.partitaIva || "",
+                              codiceFiscale: center.codiceFiscale || "",
+                              codiceUnivoco: center.codiceUnivoco || "",
+                              pec: center.pec || "",
+                              iban: center.iban || "",
+                            });
+                            setAddressData({
+                              address: center.address || "",
+                              city: center.city || "",
+                              cap: center.cap || "",
+                              provincia: center.provincia || "",
+                            });
                             setSelectedResellerId(center.resellerId || "");
                             setHourlyRateEuros(center.hourlyRateCents ? (center.hourlyRateCents / 100).toFixed(2) : "");
                             setDialogOpen(true);
