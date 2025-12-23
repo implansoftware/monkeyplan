@@ -10681,6 +10681,7 @@ export function registerRoutes(app: Express): Server {
       doc.text(`Data Consegna: ${new Date(delivery.deliveredAt).toLocaleDateString('it-IT')}`, 60, boxY + 30);
       doc.text(`Ora: ${new Date(delivery.deliveredAt).toLocaleTimeString('it-IT')}`, 300, boxY + 30);
       doc.y = boxY + 50;
+      doc.x = 50; // Reset X position to left margin
       doc.moveDown();
       
       // Customer info
