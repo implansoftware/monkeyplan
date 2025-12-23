@@ -10,13 +10,21 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Search, Pencil, Store, Users, UsersRound, Trash2, Building2, Eye } from "lucide-react";
+import { Plus, Search, Pencil, Store, Users, UsersRound, Trash2, Building2, Eye, ChevronLeft, ChevronRight, Check, User as UserIcon, KeyRound, FileText, Settings } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Switch } from "@/components/ui/switch";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Progress } from "@/components/ui/progress";
 import { AddressAutocomplete } from "@/components/address-autocomplete";
+
+const WIZARD_STEPS = [
+  { id: 1, title: "Credenziali", icon: KeyRound },
+  { id: 2, title: "Info Base", icon: UserIcon },
+  { id: 3, title: "Dati Fiscali", icon: FileText },
+  { id: 4, title: "Configurazione", icon: Settings },
+];
 
 export default function AdminResellers() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -27,6 +35,20 @@ export default function AdminResellers() {
   const [addressData, setAddressData] = useState({ indirizzo: "", citta: "", cap: "", provincia: "" });
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [resellerToDelete, setResellerToDelete] = useState<Omit<User, 'password'> | null>(null);
+  const [wizardStep, setWizardStep] = useState(1);
+  const [formData, setFormData] = useState({
+    username: "",
+    password: "",
+    fullName: "",
+    email: "",
+    phone: "",
+    ragioneSociale: "",
+    partitaIva: "",
+    codiceFiscale: "",
+    codiceUnivoco: "",
+    pec: "",
+    iban: "",
+  });
   const { toast } = useToast();
 
   type ResellerWithCount = Omit<User, 'password'> & { customerCount: number; staffCount: number; repairCenterCount: number };
@@ -135,35 +157,103 @@ export default function AdminResellers() {
     r.resellerCategory === 'franchising' || r.resellerCategory === 'gdo'
   );
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const formData = new FormData(e.currentTarget);
-    
-    // Il parentResellerId si applica solo ai rivenditori standard
+  const resetWizard = () => {
+    setWizardStep(1);
+    setFormData({
+      username: "",
+      password: "",
+      fullName: "",
+      email: "",
+      phone: "",
+      ragioneSociale: "",
+      partitaIva: "",
+      codiceFiscale: "",
+      codiceUnivoco: "",
+      pec: "",
+      iban: "",
+    });
+    setAddressData({ indirizzo: "", citta: "", cap: "", provincia: "" });
+    setSelectedCategory("standard");
+    setSelectedParentResellerId("");
+  };
+
+  const getStepsForMode = () => {
+    if (editingReseller) {
+      return WIZARD_STEPS.filter(s => s.id !== 1);
+    }
+    return WIZARD_STEPS;
+  };
+
+  const currentSteps = getStepsForMode();
+  const maxStep = currentSteps.length;
+  const currentStepIndex = currentSteps.findIndex(s => s.id === wizardStep);
+  const progressPercent = ((currentStepIndex + 1) / maxStep) * 100;
+
+  const canProceedToNextStep = () => {
+    if (editingReseller) {
+      switch (wizardStep) {
+        case 2: return formData.fullName && formData.email;
+        case 3: return true;
+        case 4: return true;
+        default: return true;
+      }
+    }
+    switch (wizardStep) {
+      case 1: return formData.username && formData.password;
+      case 2: return formData.fullName && formData.email;
+      case 3: return true;
+      case 4: return true;
+      default: return true;
+    }
+  };
+
+  const nextStep = () => {
+    const currentIdx = currentSteps.findIndex(s => s.id === wizardStep);
+    if (currentIdx < currentSteps.length - 1) {
+      setWizardStep(currentSteps[currentIdx + 1].id);
+    }
+  };
+
+  const prevStep = () => {
+    const currentIdx = currentSteps.findIndex(s => s.id === wizardStep);
+    if (currentIdx > 0) {
+      setWizardStep(currentSteps[currentIdx - 1].id);
+    }
+  };
+
+  const isLastStep = () => {
+    const currentIdx = currentSteps.findIndex(s => s.id === wizardStep);
+    return currentIdx === currentSteps.length - 1;
+  };
+
+  const isFirstStep = () => {
+    const currentIdx = currentSteps.findIndex(s => s.id === wizardStep);
+    return currentIdx === 0;
+  };
+
+  const handleFinalSubmit = () => {
     const parentId = selectedCategory === 'standard' && selectedParentResellerId 
       ? selectedParentResellerId 
       : null;
     
-    // Dati fiscali comuni
     const fiscalData = {
-      ragioneSociale: formData.get("ragioneSociale") as string || null,
-      partitaIva: formData.get("partitaIva") as string || null,
-      codiceFiscale: formData.get("codiceFiscale") as string || null,
+      ragioneSociale: formData.ragioneSociale || null,
+      partitaIva: formData.partitaIva || null,
+      codiceFiscale: formData.codiceFiscale || null,
       indirizzo: addressData.indirizzo || null,
       citta: addressData.citta || null,
       cap: addressData.cap || null,
       provincia: addressData.provincia || null,
-      iban: formData.get("iban") as string || null,
-      codiceUnivoco: formData.get("codiceUnivoco") as string || null,
-      pec: formData.get("pec") as string || null,
+      iban: formData.iban || null,
+      codiceUnivoco: formData.codiceUnivoco || null,
+      pec: formData.pec || null,
     };
     
     if (editingReseller) {
       const updates: Partial<User> = {
-        fullName: formData.get("fullName") as string,
-        email: formData.get("email") as string,
-        phone: formData.get("phone") as string || null,
-        isActive: formData.get("isActive") === "true",
+        fullName: formData.fullName,
+        email: formData.email,
+        phone: formData.phone || null,
         resellerCategory: selectedCategory as any,
         parentResellerId: parentId,
         ...fiscalData,
@@ -171,11 +261,11 @@ export default function AdminResellers() {
       updateResellerMutation.mutate({ id: editingReseller.id, data: updates });
     } else {
       const userData: InsertUser = {
-        username: formData.get("username") as string,
-        password: formData.get("password") as string,
-        email: formData.get("email") as string,
-        fullName: formData.get("fullName") as string,
-        phone: formData.get("phone") as string || null,
+        username: formData.username,
+        password: formData.password,
+        email: formData.email,
+        fullName: formData.fullName,
+        phone: formData.phone || null,
         role: "reseller",
         isActive: true,
         resellerCategory: selectedCategory as any,
@@ -204,234 +294,296 @@ export default function AdminResellers() {
           setDialogOpen(open);
           if (!open) {
             setEditingReseller(null);
-            setSelectedCategory("standard");
-            setSelectedParentResellerId("");
-            setAddressData({ indirizzo: "", citta: "", cap: "", provincia: "" });
+            resetWizard();
           }
         }}>
           <DialogTrigger asChild>
-            <Button onClick={() => { setEditingReseller(null); setSelectedCategory("standard"); setSelectedParentResellerId(""); }} data-testid="button-add-reseller">
+            <Button onClick={() => { setEditingReseller(null); resetWizard(); }} data-testid="button-add-reseller">
               <Plus className="mr-2 h-4 w-4" />
               Nuovo Rivenditore
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-h-[90vh] overflow-y-auto" data-testid="dialog-reseller-form">
+          <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto" data-testid="dialog-reseller-form">
             <DialogHeader>
               <DialogTitle>{editingReseller ? "Modifica Rivenditore" : "Nuovo Rivenditore"}</DialogTitle>
             </DialogHeader>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              {!editingReseller && (
-                <>
-                  <div className="space-y-2">
-                    <Label htmlFor="username">Username</Label>
-                    <Input id="username" name="username" required data-testid="input-username" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="password">Password</Label>
-                    <Input id="password" name="password" type="password" required data-testid="input-password" />
-                  </div>
-                </>
-              )}
-              <div className="space-y-2">
-                <Label htmlFor="fullName">Nome Completo</Label>
-                <Input 
-                  id="fullName" 
-                  name="fullName" 
-                  defaultValue={editingReseller?.fullName} 
-                  required 
-                  data-testid="input-fullName" 
-                />
+            
+            <div className="space-y-4">
+              <div className="flex items-center justify-between gap-2 mb-2">
+                {currentSteps.map((step, idx) => {
+                  const StepIcon = step.icon;
+                  const isActive = step.id === wizardStep;
+                  const isPast = currentSteps.findIndex(s => s.id === wizardStep) > idx;
+                  return (
+                    <div key={step.id} className="flex flex-col items-center flex-1">
+                      <div 
+                        className={`w-10 h-10 rounded-full flex items-center justify-center border-2 transition-colors ${
+                          isActive ? 'bg-primary border-primary text-primary-foreground' : 
+                          isPast ? 'bg-primary/20 border-primary text-primary' : 
+                          'bg-muted border-muted-foreground/30 text-muted-foreground'
+                        }`}
+                      >
+                        {isPast ? <Check className="h-5 w-5" /> : <StepIcon className="h-5 w-5" />}
+                      </div>
+                      <span className={`text-xs mt-1 text-center ${isActive ? 'text-foreground font-medium' : 'text-muted-foreground'}`}>
+                        {step.title}
+                      </span>
+                    </div>
+                  );
+                })}
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input 
-                  id="email" 
-                  name="email" 
-                  type="email" 
-                  defaultValue={editingReseller?.email} 
-                  required 
-                  data-testid="input-email" 
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="phone">Telefono</Label>
-                <Input 
-                  id="phone" 
-                  name="phone" 
-                  defaultValue={editingReseller?.phone || ""} 
-                  data-testid="input-phone" 
-                />
-              </div>
-              
-              <div className="border-t pt-4 mt-4">
-                <h4 className="font-medium text-sm text-muted-foreground mb-3">Dati Fiscali</h4>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-2">
-                    <Label htmlFor="ragioneSociale">Ragione Sociale</Label>
-                    <Input 
-                      id="ragioneSociale" 
-                      name="ragioneSociale" 
-                      defaultValue={editingReseller?.ragioneSociale || ""} 
-                      data-testid="input-ragioneSociale" 
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="partitaIva">Partita IVA</Label>
-                    <Input 
-                      id="partitaIva" 
-                      name="partitaIva" 
-                      defaultValue={editingReseller?.partitaIva || ""} 
-                      data-testid="input-partitaIva" 
-                    />
-                  </div>
-                  <div className="space-y-2 col-span-2">
-                    <Label htmlFor="codiceFiscale">Codice Fiscale</Label>
-                    <Input 
-                      id="codiceFiscale" 
-                      name="codiceFiscale" 
-                      defaultValue={editingReseller?.codiceFiscale || ""} 
-                      data-testid="input-codiceFiscale" 
-                    />
-                  </div>
-                  <div className="space-y-2 col-span-2">
-                    <Label>Indirizzo</Label>
-                    <AddressAutocomplete
-                      value={addressData.indirizzo || editingReseller?.indirizzo || ""}
-                      onChange={(val) => setAddressData(prev => ({ ...prev, indirizzo: val }))}
-                      onAddressSelect={(result) => {
-                        setAddressData({
-                          indirizzo: result.address || result.fullAddress,
-                          citta: result.city,
-                          cap: result.postalCode,
-                          provincia: result.province,
-                        });
-                      }}
-                      placeholder="Inizia a digitare per vedere i suggerimenti..."
-                      data-testid="input-indirizzo"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="citta">Città</Label>
-                    <Input 
-                      id="citta" 
-                      name="citta" 
-                      value={addressData.citta || editingReseller?.citta || ""}
-                      onChange={(e) => setAddressData(prev => ({ ...prev, citta: e.target.value }))}
-                      data-testid="input-citta" 
-                    />
-                  </div>
-                  <div className="grid grid-cols-2 gap-2">
+              <Progress value={progressPercent} className="h-1" />
+
+              <div className="min-h-[280px]">
+                {wizardStep === 1 && !editingReseller && (
+                  <div className="space-y-4">
+                    <p className="text-sm text-muted-foreground">Inserisci le credenziali di accesso per il nuovo rivenditore.</p>
                     <div className="space-y-2">
-                      <Label htmlFor="cap">CAP</Label>
+                      <Label htmlFor="username">Username</Label>
                       <Input 
-                        id="cap" 
-                        name="cap" 
-                        value={addressData.cap || editingReseller?.cap || ""}
-                        onChange={(e) => setAddressData(prev => ({ ...prev, cap: e.target.value }))}
-                        data-testid="input-cap" 
+                        id="username" 
+                        value={formData.username}
+                        onChange={(e) => setFormData(prev => ({ ...prev, username: e.target.value }))}
+                        data-testid="input-username" 
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="provincia">Prov.</Label>
+                      <Label htmlFor="password">Password</Label>
                       <Input 
-                        id="provincia" 
-                        name="provincia" 
-                        maxLength={2}
-                        value={addressData.provincia || editingReseller?.provincia || ""}
-                        onChange={(e) => setAddressData(prev => ({ ...prev, provincia: e.target.value }))}
-                        placeholder="XX"
-                        data-testid="input-provincia" 
+                        id="password" 
+                        type="password"
+                        value={formData.password}
+                        onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
+                        data-testid="input-password" 
                       />
                     </div>
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="codiceUnivoco">Codice Univoco (SDI)</Label>
-                    <Input 
-                      id="codiceUnivoco" 
-                      name="codiceUnivoco" 
-                      maxLength={7}
-                      defaultValue={editingReseller?.codiceUnivoco || ""} 
-                      placeholder="7 caratteri"
-                      data-testid="input-codiceUnivoco" 
-                    />
+                )}
+
+                {wizardStep === 2 && (
+                  <div className="space-y-4">
+                    <p className="text-sm text-muted-foreground">Informazioni di base del rivenditore.</p>
+                    <div className="space-y-2">
+                      <Label htmlFor="fullName">Nome Completo *</Label>
+                      <Input 
+                        id="fullName"
+                        value={formData.fullName}
+                        onChange={(e) => setFormData(prev => ({ ...prev, fullName: e.target.value }))}
+                        data-testid="input-fullName" 
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="email">Email *</Label>
+                      <Input 
+                        id="email"
+                        type="email"
+                        value={formData.email}
+                        onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+                        data-testid="input-email" 
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="phone">Telefono</Label>
+                      <Input 
+                        id="phone"
+                        value={formData.phone}
+                        onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
+                        data-testid="input-phone" 
+                      />
+                    </div>
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="pec">PEC</Label>
-                    <Input 
-                      id="pec" 
-                      name="pec" 
-                      type="email"
-                      defaultValue={editingReseller?.pec || ""} 
-                      placeholder="email@pec.it"
-                      data-testid="input-pec" 
-                    />
+                )}
+
+                {wizardStep === 3 && (
+                  <div className="space-y-4">
+                    <p className="text-sm text-muted-foreground">Dati fiscali e fatturazione (opzionali).</p>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-2">
+                        <Label htmlFor="ragioneSociale">Ragione Sociale</Label>
+                        <Input 
+                          id="ragioneSociale"
+                          value={formData.ragioneSociale}
+                          onChange={(e) => setFormData(prev => ({ ...prev, ragioneSociale: e.target.value }))}
+                          data-testid="input-ragioneSociale" 
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="partitaIva">Partita IVA</Label>
+                        <Input 
+                          id="partitaIva"
+                          value={formData.partitaIva}
+                          onChange={(e) => setFormData(prev => ({ ...prev, partitaIva: e.target.value }))}
+                          data-testid="input-partitaIva" 
+                        />
+                      </div>
+                      <div className="space-y-2 col-span-2">
+                        <Label htmlFor="codiceFiscale">Codice Fiscale</Label>
+                        <Input 
+                          id="codiceFiscale"
+                          value={formData.codiceFiscale}
+                          onChange={(e) => setFormData(prev => ({ ...prev, codiceFiscale: e.target.value }))}
+                          data-testid="input-codiceFiscale" 
+                        />
+                      </div>
+                      <div className="space-y-2 col-span-2">
+                        <Label>Indirizzo</Label>
+                        <AddressAutocomplete
+                          value={addressData.indirizzo}
+                          onChange={(val) => setAddressData(prev => ({ ...prev, indirizzo: val }))}
+                          onAddressSelect={(result) => {
+                            setAddressData({
+                              indirizzo: result.address || result.fullAddress,
+                              citta: result.city,
+                              cap: result.postalCode,
+                              provincia: result.province,
+                            });
+                          }}
+                          placeholder="Inizia a digitare..."
+                          data-testid="input-indirizzo"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="citta">Città</Label>
+                        <Input 
+                          id="citta"
+                          value={addressData.citta}
+                          onChange={(e) => setAddressData(prev => ({ ...prev, citta: e.target.value }))}
+                          data-testid="input-citta" 
+                        />
+                      </div>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div className="space-y-2">
+                          <Label htmlFor="cap">CAP</Label>
+                          <Input 
+                            id="cap"
+                            value={addressData.cap}
+                            onChange={(e) => setAddressData(prev => ({ ...prev, cap: e.target.value }))}
+                            data-testid="input-cap" 
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="provincia">Prov.</Label>
+                          <Input 
+                            id="provincia"
+                            maxLength={2}
+                            value={addressData.provincia}
+                            onChange={(e) => setAddressData(prev => ({ ...prev, provincia: e.target.value }))}
+                            placeholder="XX"
+                            data-testid="input-provincia" 
+                          />
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="codiceUnivoco">Codice SDI</Label>
+                        <Input 
+                          id="codiceUnivoco"
+                          maxLength={7}
+                          value={formData.codiceUnivoco}
+                          onChange={(e) => setFormData(prev => ({ ...prev, codiceUnivoco: e.target.value }))}
+                          placeholder="7 caratteri"
+                          data-testid="input-codiceUnivoco" 
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="pec">PEC</Label>
+                        <Input 
+                          id="pec"
+                          type="email"
+                          value={formData.pec}
+                          onChange={(e) => setFormData(prev => ({ ...prev, pec: e.target.value }))}
+                          placeholder="email@pec.it"
+                          data-testid="input-pec" 
+                        />
+                      </div>
+                      <div className="space-y-2 col-span-2">
+                        <Label htmlFor="iban">IBAN</Label>
+                        <Input 
+                          id="iban"
+                          value={formData.iban}
+                          onChange={(e) => setFormData(prev => ({ ...prev, iban: e.target.value }))}
+                          placeholder="IT..."
+                          data-testid="input-iban" 
+                        />
+                      </div>
+                    </div>
                   </div>
-                  <div className="space-y-2 col-span-2">
-                    <Label htmlFor="iban">IBAN</Label>
-                    <Input 
-                      id="iban" 
-                      name="iban" 
-                      defaultValue={editingReseller?.iban || ""} 
-                      placeholder="IT..."
-                      data-testid="input-iban" 
-                    />
+                )}
+
+                {wizardStep === 4 && (
+                  <div className="space-y-4">
+                    <p className="text-sm text-muted-foreground">Configurazione categoria e affiliazione.</p>
+                    <div className="space-y-2">
+                      <Label htmlFor="resellerCategory">Categoria</Label>
+                      <Select value={selectedCategory} onValueChange={(val) => {
+                        setSelectedCategory(val);
+                        if (val !== 'standard') setSelectedParentResellerId("");
+                      }}>
+                        <SelectTrigger id="resellerCategory" data-testid="select-reseller-category">
+                          <SelectValue placeholder="Seleziona categoria" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="standard">Standard</SelectItem>
+                          <SelectItem value="franchising">Franchising</SelectItem>
+                          <SelectItem value="gdo">GDO (Grande Distribuzione)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    {selectedCategory === 'standard' && parentResellers.length > 0 && (
+                      <div className="space-y-2">
+                        <Label htmlFor="parentResellerId">Rivenditore Padre (opzionale)</Label>
+                        <Select value={selectedParentResellerId || "none"} onValueChange={(val) => setSelectedParentResellerId(val === "none" ? "" : val)}>
+                          <SelectTrigger id="parentResellerId" data-testid="select-parent-reseller">
+                            <SelectValue placeholder="Nessun rivenditore padre" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="none">Nessuno</SelectItem>
+                            {parentResellers.map((parent) => (
+                              <SelectItem key={parent.id} value={parent.id}>
+                                {parent.fullName} ({parent.resellerCategory === 'franchising' ? 'Franchising' : 'GDO'})
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
                   </div>
-                </div>
+                )}
               </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="resellerCategory">Categoria</Label>
-                <Select value={selectedCategory} onValueChange={(val) => {
-                  setSelectedCategory(val);
-                  if (val !== 'standard') setSelectedParentResellerId("");
-                }}>
-                  <SelectTrigger id="resellerCategory" data-testid="select-reseller-category">
-                    <SelectValue placeholder="Seleziona categoria" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="standard">Standard</SelectItem>
-                    <SelectItem value="franchising">Franchising</SelectItem>
-                    <SelectItem value="gdo">GDO (Grande Distribuzione)</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              {selectedCategory === 'standard' && parentResellers.length > 0 && (
-                <div className="space-y-2">
-                  <Label htmlFor="parentResellerId">Rivenditore Padre (opzionale)</Label>
-                  <Select value={selectedParentResellerId || "none"} onValueChange={(val) => setSelectedParentResellerId(val === "none" ? "" : val)}>
-                    <SelectTrigger id="parentResellerId" data-testid="select-parent-reseller">
-                      <SelectValue placeholder="Nessun rivenditore padre" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">Nessuno</SelectItem>
-                      {parentResellers.map((parent) => (
-                        <SelectItem key={parent.id} value={parent.id}>
-                          {parent.fullName} ({parent.resellerCategory === 'franchising' ? 'Franchising' : 'GDO'})
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
-              {editingReseller && (
-                <div className="space-y-2">
-                  <Label htmlFor="isActive">Stato</Label>
-                  <select 
-                    id="isActive" 
-                    name="isActive" 
-                    defaultValue={editingReseller.isActive ? "true" : "false"}
-                    className="w-full border rounded-md p-2"
-                    data-testid="select-isActive"
+
+              <div className="flex justify-between pt-4 border-t">
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={prevStep}
+                  disabled={isFirstStep()}
+                  data-testid="button-wizard-prev"
+                >
+                  <ChevronLeft className="mr-1 h-4 w-4" />
+                  Indietro
+                </Button>
+                {isLastStep() ? (
+                  <Button 
+                    type="button"
+                    onClick={handleFinalSubmit}
+                    disabled={createResellerMutation.isPending || updateResellerMutation.isPending}
+                    data-testid="button-submit"
                   >
-                    <option value="true">Attivo</option>
-                    <option value="false">Inattivo</option>
-                  </select>
-                </div>
-              )}
-              <Button type="submit" className="w-full" data-testid="button-submit">
-                {editingReseller ? "Aggiorna" : "Crea"} Rivenditore
-              </Button>
-            </form>
+                    <Check className="mr-1 h-4 w-4" />
+                    {editingReseller ? "Aggiorna" : "Crea"} Rivenditore
+                  </Button>
+                ) : (
+                  <Button 
+                    type="button"
+                    onClick={nextStep}
+                    disabled={!canProceedToNextStep()}
+                    data-testid="button-wizard-next"
+                  >
+                    Avanti
+                    <ChevronRight className="ml-1 h-4 w-4" />
+                  </Button>
+                )}
+              </div>
+            </div>
           </DialogContent>
         </Dialog>
       </div>
@@ -558,8 +710,28 @@ export default function AdminResellers() {
                           size="icon"
                           onClick={() => {
                             setEditingReseller(reseller);
+                            setFormData({
+                              username: reseller.username,
+                              password: "",
+                              fullName: reseller.fullName,
+                              email: reseller.email,
+                              phone: reseller.phone || "",
+                              ragioneSociale: reseller.ragioneSociale || "",
+                              partitaIva: reseller.partitaIva || "",
+                              codiceFiscale: reseller.codiceFiscale || "",
+                              codiceUnivoco: reseller.codiceUnivoco || "",
+                              pec: reseller.pec || "",
+                              iban: reseller.iban || "",
+                            });
+                            setAddressData({
+                              indirizzo: reseller.indirizzo || "",
+                              citta: reseller.citta || "",
+                              cap: reseller.cap || "",
+                              provincia: reseller.provincia || "",
+                            });
                             setSelectedCategory(reseller.resellerCategory || "standard");
                             setSelectedParentResellerId(reseller.parentResellerId || "");
+                            setWizardStep(2);
                             setDialogOpen(true);
                           }}
                           title="Modifica rivenditore"
