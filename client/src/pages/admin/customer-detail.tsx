@@ -248,7 +248,7 @@ export default function AdminCustomerDetail() {
                             className="cursor-pointer hover-elevate"
                             onClick={() => setLocation(`/admin/repairs/${order.id}`)}
                           >
-                            <TableCell className="font-mono text-sm text-primary">
+                            <TableCell className="font-mono text-sm underline-offset-4 hover:underline">
                               {order.id.substring(0, 8)}
                             </TableCell>
                             <TableCell>
