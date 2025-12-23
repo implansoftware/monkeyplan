@@ -15721,8 +15721,65 @@ export function registerRoutes(app: Express): Server {
       // RBAC: filter based on role
       if (req.user.role === 'customer') {
         filters.customerId = req.user.id;
+      } else if (req.user.role === 'repair_center') {
+        // Repair center sees only their own practices
+        const repairCenterId = req.user.repairCenterId;
+        if (!repairCenterId) {
+          return res.json([]);
+        }
+        // Get all practices and filter by repairCenterId
+        if (req.query.status) {
+          filters.status = req.query.status as string;
+        }
+        if (req.query.supplierId) {
+          filters.supplierId = req.query.supplierId as string;
+        }
+        const allPractices = await storage.listUtilityPractices(filters);
+        const filtered = allPractices.filter(p => p.repairCenterId === repairCenterId);
+        
+        // Enrich with product count
+        const enrichedPractices = await Promise.all(
+          filtered.map(async (practice) => {
+            if (practice.itemType === 'product' || practice.itemType === 'service_with_products') {
+              const practiceProducts = await storage.listUtilityPracticeProducts(practice.id);
+              return { ...practice, productCount: practiceProducts.length, practiceProducts };
+            }
+            return { ...practice, productCount: 0, practiceProducts: [] };
+          })
+        );
+        return res.json(enrichedPractices);
       } else if (req.user.role === 'reseller') {
-        filters.resellerId = req.user.id;
+        // Reseller sees their own practices + practices from their repair centers
+        const resellerRepairCenters = await storage.listRepairCenters();
+        const myRepairCenterIds = resellerRepairCenters
+          .filter(rc => rc.resellerId === req.user!.id)
+          .map(rc => rc.id);
+        
+        if (req.query.status) {
+          filters.status = req.query.status as string;
+        }
+        if (req.query.supplierId) {
+          filters.supplierId = req.query.supplierId as string;
+        }
+        
+        const allPractices = await storage.listUtilityPractices(filters);
+        // Filter: resellerId matches OR repairCenterId is one of reseller's centers
+        const filtered = allPractices.filter(p => 
+          p.resellerId === req.user!.id || 
+          (p.repairCenterId && myRepairCenterIds.includes(p.repairCenterId))
+        );
+        
+        // Enrich with product count
+        const enrichedPractices = await Promise.all(
+          filtered.map(async (practice) => {
+            if (practice.itemType === 'product' || practice.itemType === 'service_with_products') {
+              const practiceProducts = await storage.listUtilityPracticeProducts(practice.id);
+              return { ...practice, productCount: practiceProducts.length, practiceProducts };
+            }
+            return { ...practice, productCount: 0, practiceProducts: [] };
+          })
+        );
+        return res.json(enrichedPractices);
       }
       // Admin sees all
       
@@ -15770,8 +15827,25 @@ export function registerRoutes(app: Express): Server {
       if (req.user.role === 'customer' && practice.customerId !== req.user.id) {
         return res.status(403).send("Accesso negato");
       }
-      if (req.user.role === 'reseller' && practice.resellerId !== req.user.id) {
-        return res.status(403).send("Accesso negato");
+      if (req.user.role === 'repair_center') {
+        // Repair center can only see their own practices
+        if (practice.repairCenterId !== req.user.repairCenterId) {
+          return res.status(403).send("Accesso negato");
+        }
+      }
+      if (req.user.role === 'reseller') {
+        // Reseller can see their own practices OR practices from their repair centers
+        const resellerRepairCenters = await storage.listRepairCenters();
+        const myRepairCenterIds = resellerRepairCenters
+          .filter(rc => rc.resellerId === req.user!.id)
+          .map(rc => rc.id);
+        
+        const isOwnPractice = practice.resellerId === req.user.id;
+        const isFromMyRepairCenter = practice.repairCenterId && myRepairCenterIds.includes(practice.repairCenterId);
+        
+        if (!isOwnPractice && !isFromMyRepairCenter) {
+          return res.status(403).send("Accesso negato");
+        }
       }
       
       // Enrich with supplier, service, product info and practice products
@@ -15945,14 +16019,35 @@ export function registerRoutes(app: Express): Server {
         filters.periodYear = parseInt(req.query.periodYear as string);
       }
       
-      // For resellers, we need to filter commissions by their practices
-      if (req.user.role === 'reseller') {
-        const practices = await storage.listUtilityPractices({ resellerId: req.user.id });
-        const practiceIds = practices.map(p => p.id);
+      // For repair centers, filter commissions by their practices
+      if (req.user.role === 'repair_center') {
+        const repairCenterId = req.user.repairCenterId;
+        if (!repairCenterId) {
+          return res.json([]);
+        }
+        const allPractices = await storage.listUtilityPractices({});
+        const myPracticeIds = allPractices.filter(p => p.repairCenterId === repairCenterId).map(p => p.id);
         
-        // Get all commissions and filter by practiceIds
         const allCommissions = await storage.listUtilityCommissions(filters);
-        const filtered = allCommissions.filter(c => practiceIds.includes(c.practiceId));
+        const filtered = allCommissions.filter(c => myPracticeIds.includes(c.practiceId));
+        return res.json(filtered);
+      }
+      
+      // For resellers, filter commissions by their practices + their repair centers' practices
+      if (req.user.role === 'reseller') {
+        const resellerRepairCenters = await storage.listRepairCenters();
+        const myRepairCenterIds = resellerRepairCenters
+          .filter(rc => rc.resellerId === req.user!.id)
+          .map(rc => rc.id);
+        
+        const allPractices = await storage.listUtilityPractices({});
+        const myPracticeIds = allPractices.filter(p => 
+          p.resellerId === req.user!.id || 
+          (p.repairCenterId && myRepairCenterIds.includes(p.repairCenterId))
+        ).map(p => p.id);
+        
+        const allCommissions = await storage.listUtilityCommissions(filters);
+        const filtered = allCommissions.filter(c => myPracticeIds.includes(c.practiceId));
         return res.json(filtered);
       }
       
@@ -15973,10 +16068,30 @@ export function registerRoutes(app: Express): Server {
         return res.status(404).send("Commissione utility non trovata");
       }
       
-      // RBAC for resellers
+      // RBAC for repair_center
+      if (req.user.role === 'repair_center') {
+        const practice = await storage.getUtilityPractice(commission.practiceId);
+        if (!practice || practice.repairCenterId !== req.user.repairCenterId) {
+          return res.status(403).send("Accesso negato");
+        }
+      }
+      
+      // RBAC for resellers - can see their own + their repair centers' commissions
       if (req.user.role === 'reseller') {
         const practice = await storage.getUtilityPractice(commission.practiceId);
-        if (!practice || practice.resellerId !== req.user.id) {
+        if (!practice) {
+          return res.status(403).send("Accesso negato");
+        }
+        
+        const resellerRepairCenters = await storage.listRepairCenters();
+        const myRepairCenterIds = resellerRepairCenters
+          .filter(rc => rc.resellerId === req.user!.id)
+          .map(rc => rc.id);
+        
+        const isOwnPractice = practice.resellerId === req.user.id;
+        const isFromMyRepairCenter = practice.repairCenterId && myRepairCenterIds.includes(practice.repairCenterId);
+        
+        if (!isOwnPractice && !isFromMyRepairCenter) {
           return res.status(403).send("Accesso negato");
         }
       }
@@ -16032,8 +16147,21 @@ export function registerRoutes(app: Express): Server {
       if (req.user.role === 'customer' && practice.customerId !== req.user.id) {
         return res.status(403).send("Accesso negato");
       }
-      if (req.user.role === 'reseller' && practice.resellerId !== req.user.id) {
-        return res.status(403).send("Accesso negato");
+      if (req.user.role === 'repair_center') {
+        if (practice.repairCenterId !== req.user.repairCenterId) {
+          return res.status(403).send("Accesso negato");
+        }
+      }
+      if (req.user.role === 'reseller') {
+        const resellerRepairCenters = await storage.listRepairCenters();
+        const myRepairCenterIds = resellerRepairCenters
+          .filter(rc => rc.resellerId === req.user!.id)
+          .map(rc => rc.id);
+        const isOwnPractice = practice.resellerId === req.user.id;
+        const isFromMyRepairCenter = practice.repairCenterId && myRepairCenterIds.includes(practice.repairCenterId);
+        if (!isOwnPractice && !isFromMyRepairCenter) {
+          return res.status(403).send("Accesso negato");
+        }
       }
       
       const documents = await storage.listUtilityPracticeDocuments(req.params.id);
@@ -16052,9 +16180,22 @@ export function registerRoutes(app: Express): Server {
       const practice = await storage.getUtilityPractice(req.params.id);
       if (!practice) return res.status(404).send("Pratica non trovata");
       
-      // RBAC check for resellers
-      if (req.user.role === 'reseller' && practice.resellerId !== req.user.id) {
-        return res.status(403).send("Accesso negato");
+      // RBAC check for repair_center and resellers
+      if (req.user.role === 'repair_center') {
+        if (practice.repairCenterId !== req.user.repairCenterId) {
+          return res.status(403).send("Accesso negato");
+        }
+      }
+      if (req.user.role === 'reseller') {
+        const resellerRepairCenters = await storage.listRepairCenters();
+        const myRepairCenterIds = resellerRepairCenters
+          .filter(rc => rc.resellerId === req.user!.id)
+          .map(rc => rc.id);
+        const isOwnPractice = practice.resellerId === req.user.id;
+        const isFromMyRepairCenter = practice.repairCenterId && myRepairCenterIds.includes(practice.repairCenterId);
+        if (!isOwnPractice && !isFromMyRepairCenter) {
+          return res.status(403).send("Accesso negato");
+        }
       }
       
       // Generate unique object key
@@ -16162,9 +16303,22 @@ export function registerRoutes(app: Express): Server {
       const practice = await storage.getUtilityPractice(document.practiceId);
       if (!practice) return res.status(404).send("Pratica non trovata");
       
-      // RBAC check for resellers
-      if (req.user.role === 'reseller' && practice.resellerId !== req.user.id) {
-        return res.status(403).send("Accesso negato");
+      // RBAC check for repair_center and resellers
+      if (req.user.role === 'repair_center') {
+        if (practice.repairCenterId !== req.user.repairCenterId) {
+          return res.status(403).send("Accesso negato");
+        }
+      }
+      if (req.user.role === 'reseller') {
+        const resellerRepairCenters = await storage.listRepairCenters();
+        const myRepairCenterIds = resellerRepairCenters
+          .filter(rc => rc.resellerId === req.user!.id)
+          .map(rc => rc.id);
+        const isOwnPractice = practice.resellerId === req.user.id;
+        const isFromMyRepairCenter = practice.repairCenterId && myRepairCenterIds.includes(practice.repairCenterId);
+        if (!isOwnPractice && !isFromMyRepairCenter) {
+          return res.status(403).send("Accesso negato");
+        }
       }
       
       await storage.deleteUtilityPracticeDocument(req.params.id);
@@ -16197,8 +16351,21 @@ export function registerRoutes(app: Express): Server {
       if (req.user.role === 'customer' && practice.customerId !== req.user.id) {
         return res.status(403).send("Accesso negato");
       }
-      if (req.user.role === 'reseller' && practice.resellerId !== req.user.id) {
-        return res.status(403).send("Accesso negato");
+      if (req.user.role === 'repair_center') {
+        if (practice.repairCenterId !== req.user.repairCenterId) {
+          return res.status(403).send("Accesso negato");
+        }
+      }
+      if (req.user.role === 'reseller') {
+        const resellerRepairCenters = await storage.listRepairCenters();
+        const myRepairCenterIds = resellerRepairCenters
+          .filter(rc => rc.resellerId === req.user!.id)
+          .map(rc => rc.id);
+        const isOwnPractice = practice.resellerId === req.user.id;
+        const isFromMyRepairCenter = practice.repairCenterId && myRepairCenterIds.includes(practice.repairCenterId);
+        if (!isOwnPractice && !isFromMyRepairCenter) {
+          return res.status(403).send("Accesso negato");
+        }
       }
       
       const tasks = await storage.listUtilityPracticeTasks(req.params.id);
@@ -16216,9 +16383,22 @@ export function registerRoutes(app: Express): Server {
       const practice = await storage.getUtilityPractice(req.params.id);
       if (!practice) return res.status(404).send("Pratica non trovata");
       
-      // RBAC check for resellers
-      if (req.user.role === 'reseller' && practice.resellerId !== req.user.id) {
-        return res.status(403).send("Accesso negato");
+      // RBAC check for repair_center and resellers
+      if (req.user.role === 'repair_center') {
+        if (practice.repairCenterId !== req.user.repairCenterId) {
+          return res.status(403).send("Accesso negato");
+        }
+      }
+      if (req.user.role === 'reseller') {
+        const resellerRepairCenters = await storage.listRepairCenters();
+        const myRepairCenterIds = resellerRepairCenters
+          .filter(rc => rc.resellerId === req.user!.id)
+          .map(rc => rc.id);
+        const isOwnPractice = practice.resellerId === req.user.id;
+        const isFromMyRepairCenter = practice.repairCenterId && myRepairCenterIds.includes(practice.repairCenterId);
+        if (!isOwnPractice && !isFromMyRepairCenter) {
+          return res.status(403).send("Accesso negato");
+        }
       }
       
       const task = await storage.createUtilityPracticeTask({
@@ -16253,9 +16433,22 @@ export function registerRoutes(app: Express): Server {
       const practice = await storage.getUtilityPractice(existingTask.practiceId);
       if (!practice) return res.status(404).send("Pratica non trovata");
       
-      // RBAC check for resellers
-      if (req.user.role === 'reseller' && practice.resellerId !== req.user.id) {
-        return res.status(403).send("Accesso negato");
+      // RBAC check for repair_center and resellers
+      if (req.user.role === 'repair_center') {
+        if (practice.repairCenterId !== req.user.repairCenterId) {
+          return res.status(403).send("Accesso negato");
+        }
+      }
+      if (req.user.role === 'reseller') {
+        const resellerRepairCenters = await storage.listRepairCenters();
+        const myRepairCenterIds = resellerRepairCenters
+          .filter(rc => rc.resellerId === req.user!.id)
+          .map(rc => rc.id);
+        const isOwnPractice = practice.resellerId === req.user.id;
+        const isFromMyRepairCenter = practice.repairCenterId && myRepairCenterIds.includes(practice.repairCenterId);
+        if (!isOwnPractice && !isFromMyRepairCenter) {
+          return res.status(403).send("Accesso negato");
+        }
       }
       
       // Handle task completion
@@ -16292,9 +16485,22 @@ export function registerRoutes(app: Express): Server {
       const practice = await storage.getUtilityPractice(task.practiceId);
       if (!practice) return res.status(404).send("Pratica non trovata");
       
-      // RBAC check for resellers
-      if (req.user.role === 'reseller' && practice.resellerId !== req.user.id) {
-        return res.status(403).send("Accesso negato");
+      // RBAC check for repair_center and resellers
+      if (req.user.role === 'repair_center') {
+        if (practice.repairCenterId !== req.user.repairCenterId) {
+          return res.status(403).send("Accesso negato");
+        }
+      }
+      if (req.user.role === 'reseller') {
+        const resellerRepairCenters = await storage.listRepairCenters();
+        const myRepairCenterIds = resellerRepairCenters
+          .filter(rc => rc.resellerId === req.user!.id)
+          .map(rc => rc.id);
+        const isOwnPractice = practice.resellerId === req.user.id;
+        const isFromMyRepairCenter = practice.repairCenterId && myRepairCenterIds.includes(practice.repairCenterId);
+        if (!isOwnPractice && !isFromMyRepairCenter) {
+          return res.status(403).send("Accesso negato");
+        }
       }
       
       await storage.deleteUtilityPracticeTask(req.params.id);
@@ -16318,8 +16524,21 @@ export function registerRoutes(app: Express): Server {
       if (req.user.role === 'customer' && practice.customerId !== req.user.id) {
         return res.status(403).send("Accesso negato");
       }
-      if (req.user.role === 'reseller' && practice.resellerId !== req.user.id) {
-        return res.status(403).send("Accesso negato");
+      if (req.user.role === 'repair_center') {
+        if (practice.repairCenterId !== req.user.repairCenterId) {
+          return res.status(403).send("Accesso negato");
+        }
+      }
+      if (req.user.role === 'reseller') {
+        const resellerRepairCenters = await storage.listRepairCenters();
+        const myRepairCenterIds = resellerRepairCenters
+          .filter(rc => rc.resellerId === req.user!.id)
+          .map(rc => rc.id);
+        const isOwnPractice = practice.resellerId === req.user.id;
+        const isFromMyRepairCenter = practice.repairCenterId && myRepairCenterIds.includes(practice.repairCenterId);
+        if (!isOwnPractice && !isFromMyRepairCenter) {
+          return res.status(403).send("Accesso negato");
+        }
       }
       
       let notes = await storage.listUtilityPracticeNotes(req.params.id);
@@ -16343,9 +16562,22 @@ export function registerRoutes(app: Express): Server {
       const practice = await storage.getUtilityPractice(req.params.id);
       if (!practice) return res.status(404).send("Pratica non trovata");
       
-      // RBAC check for resellers
-      if (req.user.role === 'reseller' && practice.resellerId !== req.user.id) {
-        return res.status(403).send("Accesso negato");
+      // RBAC check for repair_center and resellers
+      if (req.user.role === 'repair_center') {
+        if (practice.repairCenterId !== req.user.repairCenterId) {
+          return res.status(403).send("Accesso negato");
+        }
+      }
+      if (req.user.role === 'reseller') {
+        const resellerRepairCenters = await storage.listRepairCenters();
+        const myRepairCenterIds = resellerRepairCenters
+          .filter(rc => rc.resellerId === req.user!.id)
+          .map(rc => rc.id);
+        const isOwnPractice = practice.resellerId === req.user.id;
+        const isFromMyRepairCenter = practice.repairCenterId && myRepairCenterIds.includes(practice.repairCenterId);
+        if (!isOwnPractice && !isFromMyRepairCenter) {
+          return res.status(403).send("Accesso negato");
+        }
       }
       
       const note = await storage.createUtilityPracticeNote({
@@ -16382,9 +16614,22 @@ export function registerRoutes(app: Express): Server {
       const practice = await storage.getUtilityPractice(note.practiceId);
       if (!practice) return res.status(404).send("Pratica non trovata");
       
-      // RBAC check for resellers
-      if (req.user.role === 'reseller' && practice.resellerId !== req.user.id) {
-        return res.status(403).send("Accesso negato");
+      // RBAC check for repair_center and resellers
+      if (req.user.role === 'repair_center') {
+        if (practice.repairCenterId !== req.user.repairCenterId) {
+          return res.status(403).send("Accesso negato");
+        }
+      }
+      if (req.user.role === 'reseller') {
+        const resellerRepairCenters = await storage.listRepairCenters();
+        const myRepairCenterIds = resellerRepairCenters
+          .filter(rc => rc.resellerId === req.user!.id)
+          .map(rc => rc.id);
+        const isOwnPractice = practice.resellerId === req.user.id;
+        const isFromMyRepairCenter = practice.repairCenterId && myRepairCenterIds.includes(practice.repairCenterId);
+        if (!isOwnPractice && !isFromMyRepairCenter) {
+          return res.status(403).send("Accesso negato");
+        }
       }
       
       await storage.deleteUtilityPracticeNote(req.params.id);
@@ -16408,8 +16653,21 @@ export function registerRoutes(app: Express): Server {
       if (req.user.role === 'customer' && practice.customerId !== req.user.id) {
         return res.status(403).send("Accesso negato");
       }
-      if (req.user.role === 'reseller' && practice.resellerId !== req.user.id) {
-        return res.status(403).send("Accesso negato");
+      if (req.user.role === 'repair_center') {
+        if (practice.repairCenterId !== req.user.repairCenterId) {
+          return res.status(403).send("Accesso negato");
+        }
+      }
+      if (req.user.role === 'reseller') {
+        const resellerRepairCenters = await storage.listRepairCenters();
+        const myRepairCenterIds = resellerRepairCenters
+          .filter(rc => rc.resellerId === req.user!.id)
+          .map(rc => rc.id);
+        const isOwnPractice = practice.resellerId === req.user.id;
+        const isFromMyRepairCenter = practice.repairCenterId && myRepairCenterIds.includes(practice.repairCenterId);
+        if (!isOwnPractice && !isFromMyRepairCenter) {
+          return res.status(403).send("Accesso negato");
+        }
       }
       
       const timeline = await storage.listUtilityPracticeTimeline(req.params.id);
@@ -16427,9 +16685,22 @@ export function registerRoutes(app: Express): Server {
       const practice = await storage.getUtilityPractice(req.params.id);
       if (!practice) return res.status(404).send("Pratica non trovata");
       
-      // RBAC check for resellers
-      if (req.user.role === 'reseller' && practice.resellerId !== req.user.id) {
-        return res.status(403).send("Accesso negato");
+      // RBAC check for repair_center and resellers
+      if (req.user.role === 'repair_center') {
+        if (practice.repairCenterId !== req.user.repairCenterId) {
+          return res.status(403).send("Accesso negato");
+        }
+      }
+      if (req.user.role === 'reseller') {
+        const resellerRepairCenters = await storage.listRepairCenters();
+        const myRepairCenterIds = resellerRepairCenters
+          .filter(rc => rc.resellerId === req.user!.id)
+          .map(rc => rc.id);
+        const isOwnPractice = practice.resellerId === req.user.id;
+        const isFromMyRepairCenter = practice.repairCenterId && myRepairCenterIds.includes(practice.repairCenterId);
+        if (!isOwnPractice && !isFromMyRepairCenter) {
+          return res.status(403).send("Accesso negato");
+        }
       }
       
       const event = await storage.createUtilityPracticeTimelineEvent({
@@ -16461,8 +16732,21 @@ export function registerRoutes(app: Express): Server {
       if (req.user.role === 'customer' && practice.customerId !== req.user.id) {
         return res.status(403).send("Accesso negato");
       }
-      if (req.user.role === 'reseller' && practice.resellerId !== req.user.id) {
-        return res.status(403).send("Accesso negato");
+      if (req.user.role === 'repair_center') {
+        if (practice.repairCenterId !== req.user.repairCenterId) {
+          return res.status(403).send("Accesso negato");
+        }
+      }
+      if (req.user.role === 'reseller') {
+        const resellerRepairCenters = await storage.listRepairCenters();
+        const myRepairCenterIds = resellerRepairCenters
+          .filter(rc => rc.resellerId === req.user!.id)
+          .map(rc => rc.id);
+        const isOwnPractice = practice.resellerId === req.user.id;
+        const isFromMyRepairCenter = practice.repairCenterId && myRepairCenterIds.includes(practice.repairCenterId);
+        if (!isOwnPractice && !isFromMyRepairCenter) {
+          return res.status(403).send("Accesso negato");
+        }
       }
       
       const history = await storage.listUtilityPracticeStateHistory(req.params.id);
@@ -16482,9 +16766,22 @@ export function registerRoutes(app: Express): Server {
       const practice = await storage.getUtilityPractice(req.params.id);
       if (!practice) return res.status(404).send("Pratica non trovata");
       
-      // RBAC check for resellers
-      if (req.user.role === 'reseller' && practice.resellerId !== req.user.id) {
-        return res.status(403).send("Accesso negato");
+      // RBAC check for repair_center and resellers
+      if (req.user.role === 'repair_center') {
+        if (practice.repairCenterId !== req.user.repairCenterId) {
+          return res.status(403).send("Accesso negato");
+        }
+      }
+      if (req.user.role === 'reseller') {
+        const resellerRepairCenters = await storage.listRepairCenters();
+        const myRepairCenterIds = resellerRepairCenters
+          .filter(rc => rc.resellerId === req.user!.id)
+          .map(rc => rc.id);
+        const isOwnPractice = practice.resellerId === req.user.id;
+        const isFromMyRepairCenter = practice.repairCenterId && myRepairCenterIds.includes(practice.repairCenterId);
+        if (!isOwnPractice && !isFromMyRepairCenter) {
+          return res.status(403).send("Accesso negato");
+        }
       }
       
       const { status, reason } = req.body;
@@ -16527,18 +16824,34 @@ export function registerRoutes(app: Express): Server {
       const year = req.query.year ? parseInt(req.query.year as string) : new Date().getFullYear();
       
       // Get practices based on role
-      let practicesFilters: { resellerId?: string } = {};
+      let practicesFilters: { resellerId?: string; repairCenterId?: string } = {};
       if (req.user.role === 'reseller') {
         practicesFilters.resellerId = req.user.id;
+      } else if (req.user.role === 'repair_center') {
+        practicesFilters.repairCenterId = req.user.repairCenterId || undefined;
       }
       
-      const practices = await storage.listUtilityPractices(practicesFilters);
+      let practices = await storage.listUtilityPractices(practicesFilters);
+      
+      // For resellers, also include practices from their repair centers
+      if (req.user.role === 'reseller') {
+        const resellerRepairCenters = await storage.listRepairCenters();
+        const myRepairCenterIds = resellerRepairCenters
+          .filter(rc => rc.resellerId === req.user!.id)
+          .map(rc => rc.id);
+        const allPractices = await storage.listUtilityPractices({});
+        const repairCenterPractices = allPractices.filter(
+          p => p.repairCenterId && myRepairCenterIds.includes(p.repairCenterId)
+        );
+        practices = [...practices, ...repairCenterPractices.filter(rcp => !practices.some(p => p.id === rcp.id))];
+      }
+      
       const commissions = await storage.listUtilityCommissions({ periodYear: year });
       const suppliers = await storage.listUtilitySuppliers();
       
-      // Filter commissions for resellers
+      // Filter commissions for resellers and repair_centers
       let relevantCommissions = commissions;
-      if (req.user.role === 'reseller') {
+      if (req.user.role === 'reseller' || req.user.role === 'repair_center') {
         const practiceIds = practices.map(p => p.id);
         relevantCommissions = commissions.filter(c => practiceIds.includes(c.practiceId));
       }
