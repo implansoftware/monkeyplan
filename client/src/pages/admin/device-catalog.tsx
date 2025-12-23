@@ -59,15 +59,15 @@ export default function AdminDeviceCatalog() {
   const [modelTypeFilter, setModelTypeFilter] = useState<string>("all");
 
   const { data: deviceTypes = [], isLoading: loadingTypes } = useQuery<DeviceType[]>({
-    queryKey: ["/api/device-types", { activeOnly: false }],
+    queryKey: ["/api/admin/device-types"],
   });
 
   const { data: deviceBrands = [], isLoading: loadingBrands } = useQuery<DeviceBrand[]>({
-    queryKey: ["/api/device-brands", { activeOnly: false }],
+    queryKey: ["/api/admin/device-brands"],
   });
 
   const { data: deviceModels = [], isLoading: loadingModels } = useQuery<DeviceModel[]>({
-    queryKey: ["/api/device-models", { activeOnly: false }],
+    queryKey: ["/api/admin/device-models"],
   });
 
   const createTypeMutation = useMutation({
@@ -75,7 +75,7 @@ export default function AdminDeviceCatalog() {
       return apiRequest("POST", "/api/admin/device-types", data);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/device-types"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/device-types"] });
       setTypeDialogOpen(false);
       setTypeForm({ name: "", description: "" });
       toast({ title: "Tipo creato", description: "Il tipo dispositivo è stato creato" });
@@ -90,7 +90,7 @@ export default function AdminDeviceCatalog() {
       return apiRequest("PATCH", `/api/admin/device-types/${id}`, data);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/device-types"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/device-types"] });
       setTypeDialogOpen(false);
       setEditingType(null);
       setTypeForm({ name: "", description: "" });
@@ -106,7 +106,7 @@ export default function AdminDeviceCatalog() {
       return apiRequest("DELETE", `/api/admin/device-types/${id}`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/device-types"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/device-types"] });
       setDeleteTypeDialogOpen(false);
       setTypeToDelete(null);
       toast({ title: "Tipo eliminato" });
@@ -121,7 +121,7 @@ export default function AdminDeviceCatalog() {
       return apiRequest("PATCH", `/api/admin/device-types/${id}`, { isActive });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/device-types"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/device-types"] });
     },
   });
 
@@ -130,7 +130,7 @@ export default function AdminDeviceCatalog() {
       return apiRequest("POST", "/api/admin/device-brands", data);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/device-brands"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/device-brands"] });
       setBrandDialogOpen(false);
       setBrandForm({ name: "", logoUrl: "" });
       toast({ title: "Marca creata" });
@@ -145,7 +145,7 @@ export default function AdminDeviceCatalog() {
       return apiRequest("PATCH", `/api/admin/device-brands/${id}`, data);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/device-brands"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/device-brands"] });
       setBrandDialogOpen(false);
       setEditingBrand(null);
       setBrandForm({ name: "", logoUrl: "" });
@@ -161,7 +161,7 @@ export default function AdminDeviceCatalog() {
       return apiRequest("DELETE", `/api/admin/device-brands/${id}`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/device-brands"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/device-brands"] });
       setDeleteBrandDialogOpen(false);
       setBrandToDelete(null);
       toast({ title: "Marca eliminata" });
@@ -176,7 +176,7 @@ export default function AdminDeviceCatalog() {
       return apiRequest("PATCH", `/api/admin/device-brands/${id}`, { isActive });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/device-brands"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/device-brands"] });
     },
   });
 
@@ -185,7 +185,7 @@ export default function AdminDeviceCatalog() {
       return apiRequest("POST", "/api/admin/device-models", data);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/device-models"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/device-models"] });
       setModelDialogOpen(false);
       setModelForm({ modelName: "", brandId: "", typeId: "", marketCode: "" });
       toast({ title: "Modello creato" });
@@ -200,7 +200,7 @@ export default function AdminDeviceCatalog() {
       return apiRequest("PATCH", `/api/admin/device-models/${id}`, data);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/device-models"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/device-models"] });
       setModelDialogOpen(false);
       setEditingModel(null);
       setModelForm({ modelName: "", brandId: "", typeId: "", marketCode: "" });
@@ -216,7 +216,7 @@ export default function AdminDeviceCatalog() {
       return apiRequest("DELETE", `/api/admin/device-models/${id}`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/device-models"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/device-models"] });
       setDeleteModelDialogOpen(false);
       setModelToDelete(null);
       toast({ title: "Modello eliminato" });
@@ -231,7 +231,7 @@ export default function AdminDeviceCatalog() {
       return apiRequest("PATCH", `/api/admin/device-models/${id}`, { isActive });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/device-models"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/device-models"] });
     },
   });
 
