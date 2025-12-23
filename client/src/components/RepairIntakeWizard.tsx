@@ -38,7 +38,7 @@ import {
   User, Smartphone, ClipboardCheck, CheckCircle2, 
   ChevronRight, ChevronLeft, Loader2, Plus, Search,
   Monitor, Tablet, Laptop, Tv, Gamepad2, Watch, Headphones, Printer,
-  AlertCircle
+  AlertCircle, UserPlus, X, Mail, Phone
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -113,6 +113,8 @@ export function RepairIntakeWizard({
   const [customerSearch, setCustomerSearch] = useState("");
   const [selectedTypeId, setSelectedTypeId] = useState("");
   const [selectedBrandId, setSelectedBrandId] = useState("");
+  const [showNewCustomerForm, setShowNewCustomerForm] = useState(false);
+  const [newCustomerForm, setNewCustomerForm] = useState({ fullName: "", email: "", phone: "" });
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { user } = useUser();
@@ -146,12 +148,42 @@ export function RepairIntakeWizard({
       setCustomerSearch("");
       setSelectedTypeId("");
       setSelectedBrandId("");
+      setShowNewCustomerForm(false);
+      setNewCustomerForm({ fullName: "", email: "", phone: "" });
       form.reset();
     }
   }, [open, form]);
 
   // Queries
   const customerEndpoint = user?.role === "reseller" ? "/api/reseller/customers" : "/api/customers";
+
+  // Mutation per creare nuovo cliente rapido
+  const createCustomerMutation = useMutation({
+    mutationFn: async (data: { fullName: string; email?: string; phone?: string }) => {
+      return apiRequest("POST", "/api/customers/quick", data);
+    },
+    onSuccess: async (response) => {
+      const newCustomer = await response.json();
+      // Invalida la cache clienti
+      queryClient.invalidateQueries({ queryKey: [customerEndpoint] });
+      // Seleziona automaticamente il nuovo cliente
+      form.setValue("customerId", newCustomer.id);
+      // Chiudi il form e resetta
+      setShowNewCustomerForm(false);
+      setNewCustomerForm({ fullName: "", email: "", phone: "" });
+      toast({ 
+        title: "Cliente creato", 
+        description: `${newCustomer.fullName} è stato aggiunto` 
+      });
+    },
+    onError: (error: any) => {
+      toast({ 
+        title: "Errore", 
+        description: error.message || "Impossibile creare il cliente", 
+        variant: "destructive" 
+      });
+    },
+  });
   const { data: customers = [] } = useQuery<Array<{
     id: string;
     fullName: string;
@@ -416,60 +448,197 @@ export function RepairIntakeWizard({
               <div className="space-y-4">
                 <div className="text-center mb-4">
                   <User className="h-12 w-12 mx-auto text-primary mb-2" />
-                  <h3 className="text-lg font-semibold">Seleziona il Cliente</h3>
+                  <h3 className="text-lg font-semibold">
+                    {showNewCustomerForm ? "Nuovo Cliente" : "Seleziona il Cliente"}
+                  </h3>
                   <p className="text-sm text-muted-foreground">
-                    Cerca e seleziona il cliente per questa riparazione
+                    {showNewCustomerForm 
+                      ? "Inserisci i dati del nuovo cliente" 
+                      : "Cerca e seleziona il cliente per questa riparazione"}
                   </p>
                 </div>
 
-                {/* Search */}
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Cerca per nome o email..."
-                    value={customerSearch}
-                    onChange={(e) => setCustomerSearch(e.target.value)}
-                    className="pl-10"
-                    data-testid="input-customer-search"
-                  />
-                </div>
-
-                {/* Customer List */}
-                <div className="max-h-64 overflow-y-auto space-y-2">
-                  {filteredCustomers.length === 0 ? (
-                    <div className="text-center py-8 text-muted-foreground">
-                      <AlertCircle className="h-8 w-8 mx-auto mb-2" />
-                      <p>Nessun cliente trovato</p>
-                    </div>
-                  ) : (
-                    filteredCustomers.map((customer) => (
-                      <Card
-                        key={customer.id}
-                        className={cn(
-                          "cursor-pointer transition-colors hover-elevate",
-                          form.watch("customerId") === customer.id && "ring-2 ring-primary"
-                        )}
-                        onClick={() => form.setValue("customerId", customer.id)}
-                        data-testid={`card-customer-${customer.id}`}
+                {!showNewCustomerForm ? (
+                  <>
+                    {/* Search + New Customer Button */}
+                    <div className="flex gap-2">
+                      <div className="relative flex-1">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input
+                          placeholder="Cerca per nome o email..."
+                          value={customerSearch}
+                          onChange={(e) => setCustomerSearch(e.target.value)}
+                          className="pl-10"
+                          data-testid="input-customer-search"
+                        />
+                      </div>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => setShowNewCustomerForm(true)}
+                        data-testid="button-new-customer"
                       >
-                        <CardContent className="p-3 flex items-center gap-3">
-                          <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
-                            <User className="h-5 w-5 text-primary" />
+                        <UserPlus className="h-4 w-4 mr-2" />
+                        Nuovo
+                      </Button>
+                    </div>
+
+                    {/* Customer List */}
+                    <div className="max-h-64 overflow-y-auto space-y-2">
+                      {filteredCustomers.length === 0 ? (
+                        <div className="text-center py-8 text-muted-foreground">
+                          <AlertCircle className="h-8 w-8 mx-auto mb-2" />
+                          <p>Nessun cliente trovato</p>
+                          <Button
+                            type="button"
+                            variant="link"
+                            onClick={() => setShowNewCustomerForm(true)}
+                            className="mt-2"
+                          >
+                            <UserPlus className="h-4 w-4 mr-1" />
+                            Crea nuovo cliente
+                          </Button>
+                        </div>
+                      ) : (
+                        filteredCustomers.map((customer) => (
+                          <Card
+                            key={customer.id}
+                            className={cn(
+                              "cursor-pointer transition-colors hover-elevate",
+                              form.watch("customerId") === customer.id && "ring-2 ring-primary"
+                            )}
+                            onClick={() => form.setValue("customerId", customer.id)}
+                            data-testid={`card-customer-${customer.id}`}
+                          >
+                            <CardContent className="p-3 flex items-center gap-3">
+                              <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+                                <User className="h-5 w-5 text-primary" />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="font-medium truncate">{customer.fullName}</p>
+                                <p className="text-sm text-muted-foreground truncate">
+                                  {customer.email}
+                                </p>
+                              </div>
+                              {form.watch("customerId") === customer.id && (
+                                <CheckCircle2 className="h-5 w-5 text-primary flex-shrink-0" />
+                              )}
+                            </CardContent>
+                          </Card>
+                        ))
+                      )}
+                    </div>
+                  </>
+                ) : (
+                  /* New Customer Form */
+                  <Card>
+                    <CardContent className="p-4 space-y-4">
+                      <div className="flex items-center justify-between">
+                        <h4 className="font-medium">Dati Cliente</h4>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => {
+                            setShowNewCustomerForm(false);
+                            setNewCustomerForm({ fullName: "", email: "", phone: "" });
+                          }}
+                          data-testid="button-cancel-new-customer"
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+
+                      <div className="space-y-3">
+                        <div>
+                          <Label htmlFor="new-customer-name">Nome Completo *</Label>
+                          <div className="relative mt-1">
+                            <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                            <Input
+                              id="new-customer-name"
+                              placeholder="Mario Rossi"
+                              value={newCustomerForm.fullName}
+                              onChange={(e) => setNewCustomerForm(prev => ({ ...prev, fullName: e.target.value }))}
+                              className="pl-10"
+                              data-testid="input-new-customer-name"
+                            />
                           </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="font-medium truncate">{customer.fullName}</p>
-                            <p className="text-sm text-muted-foreground truncate">
-                              {customer.email}
-                            </p>
+                        </div>
+
+                        <div>
+                          <Label htmlFor="new-customer-email">Email</Label>
+                          <div className="relative mt-1">
+                            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                            <Input
+                              id="new-customer-email"
+                              type="email"
+                              placeholder="mario.rossi@email.com"
+                              value={newCustomerForm.email}
+                              onChange={(e) => setNewCustomerForm(prev => ({ ...prev, email: e.target.value }))}
+                              className="pl-10"
+                              data-testid="input-new-customer-email"
+                            />
                           </div>
-                          {form.watch("customerId") === customer.id && (
-                            <CheckCircle2 className="h-5 w-5 text-primary flex-shrink-0" />
+                        </div>
+
+                        <div>
+                          <Label htmlFor="new-customer-phone">Telefono</Label>
+                          <div className="relative mt-1">
+                            <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                            <Input
+                              id="new-customer-phone"
+                              type="tel"
+                              placeholder="+39 333 1234567"
+                              value={newCustomerForm.phone}
+                              onChange={(e) => setNewCustomerForm(prev => ({ ...prev, phone: e.target.value }))}
+                              className="pl-10"
+                              data-testid="input-new-customer-phone"
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex gap-2 pt-2">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          className="flex-1"
+                          onClick={() => {
+                            setShowNewCustomerForm(false);
+                            setNewCustomerForm({ fullName: "", email: "", phone: "" });
+                          }}
+                        >
+                          Annulla
+                        </Button>
+                        <Button
+                          type="button"
+                          className="flex-1"
+                          disabled={!newCustomerForm.fullName.trim() || createCustomerMutation.isPending}
+                          onClick={() => {
+                            createCustomerMutation.mutate({
+                              fullName: newCustomerForm.fullName.trim(),
+                              email: newCustomerForm.email.trim() || undefined,
+                              phone: newCustomerForm.phone.trim() || undefined,
+                            });
+                          }}
+                          data-testid="button-create-customer"
+                        >
+                          {createCustomerMutation.isPending ? (
+                            <>
+                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                              Creazione...
+                            </>
+                          ) : (
+                            <>
+                              <UserPlus className="h-4 w-4 mr-2" />
+                              Crea Cliente
+                            </>
                           )}
-                        </CardContent>
-                      </Card>
-                    ))
-                  )}
-                </div>
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
               </div>
             )}
 
