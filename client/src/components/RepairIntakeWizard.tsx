@@ -193,10 +193,13 @@ export function RepairIntakeWizard({
     },
   });
 
-  // Mutation per creare nuova marca
+  // Mutation per creare nuova marca (usa endpoint diverso per admin vs reseller)
   const createBrandMutation = useMutation({
     mutationFn: async (data: { name: string; typeId: string }) => {
-      return apiRequest("POST", "/api/reseller/device-brands", data);
+      const endpoint = user?.role === "admin" 
+        ? "/api/admin/device-brands" 
+        : "/api/reseller/device-brands";
+      return apiRequest("POST", endpoint, data);
     },
     onSuccess: async (response) => {
       const newBrand = await response.json();
@@ -204,6 +207,7 @@ export function RepairIntakeWizard({
         queryKey: ["/api/reseller/device-brands", { includeGlobal: true }] 
       });
       queryClient.invalidateQueries({ queryKey: ["/api/device-brands"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/device-brands"] });
       form.setValue("deviceBrandId", newBrand.id);
       setSelectedBrandId(newBrand.id);
       form.setValue("deviceModelId", "");
@@ -220,10 +224,13 @@ export function RepairIntakeWizard({
     },
   });
 
-  // Mutation per creare nuovo modello
+  // Mutation per creare nuovo modello (usa endpoint diverso per admin vs reseller)
   const createModelMutation = useMutation({
     mutationFn: async (data: { modelName: string; typeId: string; brandId?: string; resellerBrandId?: string }) => {
-      return apiRequest("POST", "/api/reseller/device-models", data);
+      const endpoint = user?.role === "admin" 
+        ? "/api/admin/device-models" 
+        : "/api/reseller/device-models";
+      return apiRequest("POST", endpoint, data);
     },
     onSuccess: async (response) => {
       const newModel = await response.json();
@@ -231,6 +238,7 @@ export function RepairIntakeWizard({
         queryKey: ["/api/reseller/device-models", { typeId: selectedTypeId, includeGlobal: true }] 
       });
       queryClient.invalidateQueries({ queryKey: ["/api/device-models", { typeId: selectedTypeId }] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/device-models"] });
       form.setValue("deviceModelId", newModel.id);
       setShowNewModelForm(false);
       setNewModelName("");
@@ -265,6 +273,7 @@ export function RepairIntakeWizard({
   });
 
   const isResellerOrStaff = ["reseller", "reseller_staff"].includes(user?.role || "");
+  const canCreateCatalogItems = ["admin", "reseller", "reseller_staff"].includes(user?.role || "");
 
   const { data: deviceBrands = [] } = useQuery<Array<{ id: string; name: string }>>({
     queryKey: isResellerOrStaff 
@@ -784,7 +793,7 @@ export function RepairIntakeWizard({
                                   ))}
                                 </SelectContent>
                               </Select>
-                              {isResellerOrStaff && (
+                              {canCreateCatalogItems && (
                                 <Button
                                   type="button"
                                   size="icon"
@@ -826,7 +835,7 @@ export function RepairIntakeWizard({
                                   ))}
                                 </SelectContent>
                               </Select>
-                              {isResellerOrStaff && selectedBrandId && (
+                              {canCreateCatalogItems && selectedBrandId && (
                                 <Button
                                   type="button"
                                   size="icon"
