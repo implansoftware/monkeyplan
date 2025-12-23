@@ -1,8 +1,9 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -13,13 +14,10 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Upload, FileText, Download, Trash2, Image as ImageIcon, FileCheck } from "lucide-react";
+import { Upload, FileText, Download, Trash2, Image as ImageIcon, FileCheck, X } from "lucide-react";
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
-import Uppy from "@uppy/core";
-import Dashboard from "@uppy/react/dashboard";
-import XHRUpload from "@uppy/xhr-upload";
 
 type Attachment = {
   id: string;
@@ -42,62 +40,32 @@ interface AttachmentUploaderProps {
   canDelete?: boolean;
 }
 
+const ALLOWED_FILE_TYPES = [
+  "image/jpeg",
+  "image/jpg",
+  "image/png",
+  "image/gif",
+  "image/webp",
+  "application/pdf",
+  "application/msword",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+];
+
+const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+
 export function AttachmentUploader({
   repairOrderId,
   canUpload = true,
   canDelete = false,
 }: AttachmentUploaderProps) {
   const { toast } = useToast();
-  const [uppy] = useState(() =>
-    new Uppy({
-      restrictions: {
-        maxFileSize: 10 * 1024 * 1024, // 10MB
-        allowedFileTypes: [
-          "image/jpeg",
-          "image/jpg",
-          "image/png",
-          "image/gif",
-          "image/webp",
-          "application/pdf",
-          "application/msword",
-          "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-        ],
-      },
-    }).use(XHRUpload, {
-      endpoint: `/api/repair-orders/${repairOrderId}/attachments`,
-      fieldName: "file",
-      formData: true,
-      withCredentials: true,
-    })
-  );
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<number | null>(null);
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
 
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [attachmentToDelete, setAttachmentToDelete] = useState<Attachment | null>(null);
-
-  // Update Uppy endpoint when repairOrderId changes
-  useEffect(() => {
-    const plugin = uppy.getPlugin('XHRUpload');
-    if (plugin) {
-      uppy.setOptions({
-        id: uppy.getID(),
-      });
-      // @ts-ignore - Update XHRUpload endpoint
-      plugin.setOptions({
-        endpoint: `/api/repair-orders/${repairOrderId}/attachments`,
-      });
-    }
-  }, [repairOrderId, uppy]);
-
-  // Cleanup Uppy instance on unmount
-  useEffect(() => {
-    return () => {
-      try {
-        uppy.cancelAll();
-      } catch (e) {
-        // Ignore cleanup errors
-      }
-    };
-  }, [uppy]);
 
   const { data: attachments = [], isLoading, error } = useQuery<Attachment[]>({
     queryKey: ["/api/repair-orders", repairOrderId, "attachments"],
@@ -118,32 +86,19 @@ export function AttachmentUploader({
   });
 
   const [attachmentsWithPreviews, setAttachmentsWithPreviews] = useState<AttachmentWithPreview[]>([]);
-  const [retryCount, setRetryCount] = useState<Map<string, number>>(new Map());
-  const [loadedAttachmentIds, setLoadedAttachmentIds] = useState<string>("");
-  
-  // Use ref to access attachments without adding to dependency array
-  const attachmentsRef = useRef<Attachment[]>([]);
-  attachmentsRef.current = attachments;
 
-  // Load image previews - use stable string dependency to prevent infinite loops
+  // Load image previews when attachments change
   const attachmentIds = attachments.map(a => a.id).join(",");
   
   useEffect(() => {
-    // Skip if we already loaded these attachments
-    if (attachmentIds === loadedAttachmentIds) return;
-    // Skip if no attachments
     if (!attachmentIds) {
       setAttachmentsWithPreviews([]);
-      setLoadedAttachmentIds("");
       return;
     }
     
-    // Use ref to get current attachments without dependency issues
-    const currentAttachments = attachmentsRef.current;
-    
     const loadPreviews = async () => {
       const withPreviews = await Promise.all(
-        currentAttachments.map(async (attachment) => {
+        attachments.map(async (attachment) => {
           if (isImage(attachment.fileType)) {
             try {
               const response = await fetch(`/api/repair-orders/attachments/${attachment.id}/download?preview=true`, {
@@ -161,54 +116,68 @@ export function AttachmentUploader({
         })
       );
       setAttachmentsWithPreviews(withPreviews);
-      setLoadedAttachmentIds(attachmentIds);
     };
 
     loadPreviews();
-  }, [attachmentIds]); // Only depend on the string ID, not the attachments array
+  }, [attachmentIds]);
 
-  // Retry loading a preview for a specific attachment (max 3 retries)
-  const retryPreview = async (attachmentId: string) => {
-    const currentRetries = retryCount.get(attachmentId) || 0;
-    if (currentRetries >= 3) {
-      // Max retries exhausted - clear preview URL to show fallback
-      setAttachmentsWithPreviews(prev =>
-        prev.map(att =>
-          att.id === attachmentId ? { ...att, previewUrl: undefined } : att
-        )
-      );
-      return;
-    }
-    
-    setRetryCount(prev => new Map(prev).set(attachmentId, currentRetries + 1));
-    
-    try {
-      const response = await fetch(`/api/repair-orders/attachments/${attachmentId}/download?preview=true`, {
-        credentials: 'include',
+  const uploadMutation = useMutation({
+    mutationFn: async (file: File) => {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      return new Promise<void>((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        
+        xhr.upload.addEventListener('progress', (event) => {
+          if (event.lengthComputable) {
+            const progress = Math.round((event.loaded / event.total) * 100);
+            setUploadProgress(progress);
+          }
+        });
+
+        xhr.addEventListener('load', () => {
+          if (xhr.status >= 200 && xhr.status < 300) {
+            resolve();
+          } else {
+            try {
+              const error = JSON.parse(xhr.responseText);
+              reject(new Error(error.message || 'Errore durante il caricamento'));
+            } catch {
+              reject(new Error('Errore durante il caricamento'));
+            }
+          }
+        });
+
+        xhr.addEventListener('error', () => {
+          reject(new Error('Errore di rete durante il caricamento'));
+        });
+
+        xhr.open('POST', `/api/repair-orders/${repairOrderId}/attachments`);
+        xhr.withCredentials = true;
+        xhr.send(formData);
       });
-      if (response.ok) {
-        const data = await response.json();
-        setAttachmentsWithPreviews(prev =>
-          prev.map(att =>
-            att.id === attachmentId ? { ...att, previewUrl: data.signedUrl } : att
-          )
-        );
-      } else {
-        // Failed to fetch - retry again on next error
-      }
-    } catch (error) {
-      console.error('Failed to retry preview:', error);
-    }
-  };
-
-  // Reset retry count when image loads successfully
-  const handlePreviewLoad = (attachmentId: string) => {
-    setRetryCount(prev => {
-      const newMap = new Map(prev);
-      newMap.delete(attachmentId); // Reset retry count on successful load
-      return newMap;
-    });
-  };
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ["/api/repair-orders", repairOrderId, "attachments"],
+      });
+      toast({
+        title: "File caricato",
+        description: "L'allegato è stato caricato con successo",
+      });
+      setUploadProgress(null);
+      setSelectedFiles([]);
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Errore caricamento",
+        description: error.message || "Impossibile caricare il file",
+        variant: "destructive",
+      });
+      setUploadProgress(null);
+    },
+  });
 
   const deleteMutation = useMutation({
     mutationFn: async (attachmentId: string) => {
@@ -234,33 +203,77 @@ export function AttachmentUploader({
     },
   });
 
-  useEffect(() => {
-    const handleComplete = () => {
-      queryClient.invalidateQueries({
-        queryKey: ["/api/repair-orders", repairOrderId, "attachments"],
-      });
-      toast({
-        title: "File caricato",
-        description: "L'allegato è stato caricato con successo",
-      });
-    };
+  const validateFile = (file: File): string | null => {
+    if (!ALLOWED_FILE_TYPES.includes(file.type)) {
+      return `Tipo file non supportato: ${file.type}. Sono ammessi solo immagini, PDF e documenti Word.`;
+    }
+    if (file.size > MAX_FILE_SIZE) {
+      return `Il file è troppo grande (${formatFileSize(file.size)}). Dimensione massima: 10MB`;
+    }
+    return null;
+  };
 
-    const handleError = (file: any, error: any) => {
+  const handleFiles = useCallback((files: FileList | null) => {
+    if (!files || files.length === 0) return;
+
+    const validFiles: File[] = [];
+    const errors: string[] = [];
+
+    Array.from(files).forEach((file) => {
+      const error = validateFile(file);
+      if (error) {
+        errors.push(`${file.name}: ${error}`);
+      } else {
+        validFiles.push(file);
+      }
+    });
+
+    if (errors.length > 0) {
       toast({
-        title: "Errore caricamento",
-        description: error.message || "Impossibile caricare il file",
+        title: "Alcuni file non validi",
+        description: errors.join('\n'),
         variant: "destructive",
       });
-    };
+    }
 
-    uppy.on("complete", handleComplete);
-    uppy.on("upload-error", handleError);
+    if (validFiles.length > 0) {
+      setSelectedFiles(prev => [...prev, ...validFiles]);
+    }
+  }, [toast]);
 
-    return () => {
-      uppy.off("complete", handleComplete);
-      uppy.off("upload-error", handleError);
-    };
-  }, [uppy, repairOrderId, toast]);
+  const handleUpload = async () => {
+    if (selectedFiles.length === 0) return;
+    
+    for (const file of selectedFiles) {
+      await uploadMutation.mutateAsync(file);
+    }
+  };
+
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  }, []);
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  }, []);
+
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+    handleFiles(e.dataTransfer.files);
+  }, [handleFiles]);
+
+  const handleFileInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    handleFiles(e.target.files);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  }, [handleFiles]);
 
   const formatFileSize = (bytes: number) => {
     if (bytes < 1024) return `${bytes} B`;
@@ -289,7 +302,6 @@ export function AttachmentUploader({
     }
   };
 
-  // Show error state if fetch failed
   if (error) {
     return (
       <Card>
@@ -317,27 +329,89 @@ export function AttachmentUploader({
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Dashboard
-              uppy={uppy}
-              proudlyDisplayPoweredByUppy={false}
-              height={300}
-              locale={{
-                strings: {
-                  dropPasteFiles: "Trascina i file qui o %{browseFiles}",
-                  browseFiles: "sfoglia",
-                  uploadXFiles: {
-                    0: "Carica %{smart_count} file",
-                    1: "Carica %{smart_count} file",
-                  },
-                  uploadComplete: "Caricamento completato",
-                  uploadFailed: "Caricamento fallito",
-                  xFilesSelected: {
-                    0: "%{smart_count} file selezionato",
-                    1: "%{smart_count} file selezionati",
-                  },
-                },
-              }}
+            <input
+              ref={fileInputRef}
+              type="file"
+              multiple
+              accept={ALLOWED_FILE_TYPES.join(',')}
+              onChange={handleFileInputChange}
+              className="hidden"
+              data-testid="input-file-upload"
             />
+            
+            {/* Drop Zone */}
+            <div
+              onClick={() => fileInputRef.current?.click()}
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onDrop={handleDrop}
+              className={`
+                border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors
+                ${isDragging 
+                  ? 'border-primary bg-primary/5' 
+                  : 'border-muted-foreground/25 hover:border-primary/50 hover:bg-muted/50'
+                }
+              `}
+              data-testid="dropzone-upload"
+            >
+              <Upload className="h-10 w-10 mx-auto mb-4 text-muted-foreground" />
+              <p className="text-muted-foreground">
+                Trascina i file qui o{' '}
+                <span className="text-primary underline underline-offset-4">sfoglia</span>
+              </p>
+              <p className="text-xs text-muted-foreground mt-2">
+                Immagini, PDF, Word - Max 10MB
+              </p>
+            </div>
+
+            {/* Selected Files */}
+            {selectedFiles.length > 0 && (
+              <div className="mt-4 space-y-2">
+                {selectedFiles.map((file, index) => (
+                  <div 
+                    key={index} 
+                    className="flex items-center justify-between p-3 bg-muted rounded-lg"
+                  >
+                    <div className="flex items-center gap-3">
+                      {getFileIcon(file.type)}
+                      <div>
+                        <p className="font-medium text-sm">{file.name}</p>
+                        <p className="text-xs text-muted-foreground">{formatFileSize(file.size)}</p>
+                      </div>
+                    </div>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      onClick={() => setSelectedFiles(files => files.filter((_, i) => i !== index))}
+                      data-testid={`button-remove-file-${index}`}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
+
+                {/* Upload Progress */}
+                {uploadProgress !== null && (
+                  <div className="space-y-2">
+                    <Progress value={uploadProgress} className="h-2" />
+                    <p className="text-xs text-muted-foreground text-center">
+                      Caricamento in corso... {uploadProgress}%
+                    </p>
+                  </div>
+                )}
+
+                {/* Upload Button */}
+                <Button
+                  onClick={handleUpload}
+                  disabled={uploadMutation.isPending}
+                  className="w-full"
+                  data-testid="button-upload-files"
+                >
+                  <Upload className="h-4 w-4 mr-2" />
+                  {uploadMutation.isPending ? 'Caricamento...' : 'Carica file'}
+                </Button>
+              </div>
+            )}
           </CardContent>
         </Card>
       )}
@@ -380,14 +454,6 @@ export function AttachmentUploader({
                                 alt={attachment.fileName}
                                 className="w-full h-full object-cover"
                                 data-testid={`img-preview-${attachment.id}`}
-                                onLoad={() => {
-                                  // Reset retry count on successful load
-                                  handlePreviewLoad(attachment.id);
-                                }}
-                                onError={() => {
-                                  // Retry fetching preview URL (likely expired)
-                                  retryPreview(attachment.id);
-                                }}
                               />
                             ) : (
                               <div className="w-full h-full flex items-center justify-center">
@@ -441,8 +507,6 @@ export function AttachmentUploader({
                                   });
                                   if (!response.ok) throw new Error("Download failed");
                                   const data = await response.json();
-                                  
-                                  // Open signed URL in new tab for download
                                   window.open(data.signedUrl, '_blank');
                                 } catch (error: any) {
                                   toast({
