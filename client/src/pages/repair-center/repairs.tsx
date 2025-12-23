@@ -199,10 +199,7 @@ export default function RepairCenterRepairs() {
                 <TableRow>
                   <TableHead>Numero Ordine</TableHead>
                   <TableHead>Dispositivo</TableHead>
-                  <TableHead>Problema</TableHead>
                   <TableHead>Stato</TableHead>
-                  <TableHead>Costo Stimato</TableHead>
-                  <TableHead>Costo Finale</TableHead>
                   <TableHead>Data Creazione</TableHead>
                   <TableHead>Azioni</TableHead>
                 </TableRow>
@@ -226,12 +223,7 @@ export default function RepairCenterRepairs() {
                         <div className="text-sm text-muted-foreground">{repair.deviceModel}</div>
                       </div>
                     </TableCell>
-                    <TableCell className="max-w-xs truncate">
-                      {repair.issueDescription}
-                    </TableCell>
                     <TableCell>{getStatusBadge(repair.status)}</TableCell>
-                    <TableCell>{formatCurrency(repair.estimatedCost)}</TableCell>
-                    <TableCell>{formatCurrency(repair.finalCost)}</TableCell>
                     <TableCell>{format(new Date(repair.createdAt), "dd/MM/yyyy")}</TableCell>
                     <TableCell onClick={(e) => e.stopPropagation()}>
                       <Select

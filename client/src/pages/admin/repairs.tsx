@@ -394,8 +394,6 @@ export default function AdminRepairs() {
                   <TableHead>Cliente</TableHead>
                   <TableHead>Centro</TableHead>
                   <TableHead>Dispositivo</TableHead>
-                  <TableHead>Problema</TableHead>
-                  <TableHead>Costo</TableHead>
                   <TableHead>Stato</TableHead>
                   <TableHead>SLA</TableHead>
                   <TableHead>Data</TableHead>
@@ -451,22 +449,6 @@ export default function AdminRepairs() {
                           <div className="font-medium capitalize">{repair.deviceType}</div>
                           <div className="text-sm text-muted-foreground">{repair.deviceModel}</div>
                         </div>
-                      </TableCell>
-                      <TableCell 
-                        className="max-w-xs truncate cursor-pointer"
-                        onClick={() => {
-                          openRepairDetail(repair.id);
-                        }}
-                      >
-                        {repair.issueDescription}
-                      </TableCell>
-                      <TableCell
-                        className="cursor-pointer"
-                        onClick={() => {
-                          openRepairDetail(repair.id);
-                        }}
-                      >
-                        {formatCurrency(repair.quoteTotalAmount || repair.finalCost || repair.estimatedCost)}
                       </TableCell>
                       <TableCell
                         className="cursor-pointer"
