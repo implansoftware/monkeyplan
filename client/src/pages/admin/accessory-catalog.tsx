@@ -18,6 +18,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import type { AccessorySpecs, Product, DeviceModel, DeviceBrand, User, Warehouse as WarehouseType } from "@shared/schema";
 import { ProductDetailDialog } from "@/components/product-detail-dialog";
+import { AccessoryWizard } from "@/components/AccessoryWizard";
 
 type DeviceCompatibilityEntry = {
   deviceBrandId: string;
@@ -92,6 +93,7 @@ export default function AdminAccessoryCatalog() {
   const [searchQuery, setSearchQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState<string>("all");
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [wizardOpen, setWizardOpen] = useState(false);
   const [editingAccessory, setEditingAccessory] = useState<AccessoryWithSpecs | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [accessoryToDelete, setAccessoryToDelete] = useState<AccessoryWithSpecs | null>(null);
@@ -681,7 +683,7 @@ export default function AdminAccessoryCatalog() {
             Visualizza e gestisci tutti gli accessori di tutti i rivenditori
           </p>
         </div>
-        <Button onClick={() => { resetForm(); setEditingAccessory(null); setDialogOpen(true); }} data-testid="button-add-accessory">
+        <Button onClick={() => setWizardOpen(true)} data-testid="button-add-accessory">
           <Plus className="mr-2 h-4 w-4" />
           Aggiungi Accessorio
         </Button>
@@ -1586,6 +1588,14 @@ export default function AdminAccessoryCatalog() {
         open={detailDialogOpen} 
         onOpenChange={setDetailDialogOpen} 
         productId={detailProductId} 
+      />
+
+      <AccessoryWizard
+        open={wizardOpen}
+        onOpenChange={setWizardOpen}
+        onSuccess={() => {
+          queryClient.invalidateQueries({ queryKey: ["/api/accessories"] });
+        }}
       />
     </div>
   );

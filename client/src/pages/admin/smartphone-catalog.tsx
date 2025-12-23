@@ -19,6 +19,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useRef } from "react";
 import type { SmartphoneSpecs, Product, User, ProductPrice, Warehouse as WarehouseType } from "@shared/schema";
 import { ProductDetailDialog } from "@/components/product-detail-dialog";
+import { SmartphoneWizard } from "@/components/SmartphoneWizard";
 
 type SmartphoneWithSpecs = Product & {
   specs: SmartphoneSpecs | null;
@@ -89,6 +90,7 @@ export default function AdminSmartphoneCatalog() {
   const [brandFilter, setBrandFilter] = useState<string>("all");
   const [gradeFilter, setGradeFilter] = useState<string>("all");
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [wizardOpen, setWizardOpen] = useState(false);
   const [editingSmartphone, setEditingSmartphone] = useState<SmartphoneWithSpecs | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [smartphoneToDelete, setSmartphoneToDelete] = useState<SmartphoneWithSpecs | null>(null);
@@ -614,7 +616,7 @@ export default function AdminSmartphoneCatalog() {
             Visualizza e gestisci tutti gli smartphone di tutti i rivenditori
           </p>
         </div>
-        <Button onClick={() => { resetForm(); setEditingSmartphone(null); setDialogOpen(true); }} data-testid="button-add-smartphone">
+        <Button onClick={() => setWizardOpen(true)} data-testid="button-add-smartphone">
           <Plus className="mr-2 h-4 w-4" />
           Aggiungi Smartphone
         </Button>
@@ -1497,6 +1499,14 @@ export default function AdminSmartphoneCatalog() {
         open={detailDialogOpen} 
         onOpenChange={setDetailDialogOpen} 
         productId={detailProductId} 
+      />
+
+      <SmartphoneWizard
+        open={wizardOpen}
+        onOpenChange={setWizardOpen}
+        onSuccess={() => {
+          queryClient.invalidateQueries({ queryKey: ["/api/smartphones"] });
+        }}
       />
     </div>
   );

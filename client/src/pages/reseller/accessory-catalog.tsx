@@ -20,6 +20,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import type { AccessorySpecs, Product, DeviceModel, DeviceBrand } from "@shared/schema";
+import { AccessoryWizard } from "@/components/AccessoryWizard";
 
 type DeviceCompatibilityEntry = {
   deviceBrandId: string;
@@ -75,6 +76,7 @@ export default function AccessoryCatalog() {
   const [searchQuery, setSearchQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState<string>("all");
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [wizardOpen, setWizardOpen] = useState(false);
   const [editingAccessory, setEditingAccessory] = useState<AccessoryWithSpecs | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [accessoryToDelete, setAccessoryToDelete] = useState<AccessoryWithSpecs | null>(null);
@@ -536,7 +538,7 @@ export default function AccessoryCatalog() {
             Gestisci cover, caricatori, cavi, auricolari e altri accessori
           </p>
         </div>
-        <Button onClick={() => { resetForm(); setEditingAccessory(null); setDialogOpen(true); }} data-testid="button-add-accessory">
+        <Button onClick={() => setWizardOpen(true)} data-testid="button-add-accessory">
           <Plus className="mr-2 h-4 w-4" />
           Aggiungi Accessorio
         </Button>
@@ -1311,6 +1313,15 @@ export default function AccessoryCatalog() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <AccessoryWizard
+        open={wizardOpen}
+        onOpenChange={setWizardOpen}
+        userRole="reseller"
+        onSuccess={() => {
+          queryClient.invalidateQueries({ queryKey: ["/api/reseller/accessories"] });
+        }}
+      />
     </div>
   );
 }
