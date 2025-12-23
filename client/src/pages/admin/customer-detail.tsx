@@ -310,13 +310,18 @@ export default function AdminCustomerDetail() {
                     </TableHeader>
                     <TableBody>
                       {salesOrders.map((order) => (
-                        <TableRow key={order.id} data-testid={`row-order-${order.id}`}>
-                          <TableCell className="font-mono">{order.orderNumber}</TableCell>
+                        <TableRow 
+                          key={order.id} 
+                          data-testid={`row-order-${order.id}`}
+                          className="cursor-pointer hover-elevate"
+                          onClick={() => setLocation(`/admin/sales-orders/${order.id}`)}
+                        >
+                          <TableCell className="font-mono underline-offset-4 hover:underline">{order.orderNumber}</TableCell>
                           <TableCell>
                             <Badge variant="secondary">{order.status}</Badge>
                           </TableCell>
                           <TableCell>
-                            {Number(order.total).toFixed(2)}
+                            €{Number(order.total).toFixed(2)}
                           </TableCell>
                           <TableCell>
                             {format(new Date(order.createdAt), "dd/MM/yyyy", { locale: it })}
@@ -360,8 +365,13 @@ export default function AdminCustomerDetail() {
                     </TableHeader>
                     <TableBody>
                       {utilityPractices.map((practice) => (
-                        <TableRow key={practice.id} data-testid={`row-utility-${practice.id}`}>
-                          <TableCell className="font-mono">{practice.practiceNumber}</TableCell>
+                        <TableRow 
+                          key={practice.id} 
+                          data-testid={`row-utility-${practice.id}`}
+                          className="cursor-pointer hover-elevate"
+                          onClick={() => setLocation(`/admin/utility/practices/${practice.id}`)}
+                        >
+                          <TableCell className="font-mono underline-offset-4 hover:underline">{practice.practiceNumber}</TableCell>
                           <TableCell>{practice.supplierName || practice.temporarySupplierName || "-"}</TableCell>
                           <TableCell>{practice.serviceName || practice.customServiceName || "-"}</TableCell>
                           <TableCell>
