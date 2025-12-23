@@ -115,6 +115,10 @@ export function RepairIntakeWizard({
   const [selectedBrandId, setSelectedBrandId] = useState("");
   const [showNewCustomerForm, setShowNewCustomerForm] = useState(false);
   const [newCustomerForm, setNewCustomerForm] = useState({ fullName: "", email: "", phone: "" });
+  const [showNewBrandForm, setShowNewBrandForm] = useState(false);
+  const [newBrandName, setNewBrandName] = useState("");
+  const [showNewModelForm, setShowNewModelForm] = useState(false);
+  const [newModelName, setNewModelName] = useState("");
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { user } = useUser();
@@ -150,6 +154,10 @@ export function RepairIntakeWizard({
       setSelectedBrandId("");
       setShowNewCustomerForm(false);
       setNewCustomerForm({ fullName: "", email: "", phone: "" });
+      setShowNewBrandForm(false);
+      setNewBrandName("");
+      setShowNewModelForm(false);
+      setNewModelName("");
       form.reset();
     }
   }, [open, form]);
@@ -184,6 +192,59 @@ export function RepairIntakeWizard({
       });
     },
   });
+
+  // Mutation per creare nuova marca
+  const createBrandMutation = useMutation({
+    mutationFn: async (data: { name: string; typeId: string }) => {
+      return apiRequest("POST", "/api/reseller/device-brands", data);
+    },
+    onSuccess: async (response) => {
+      const newBrand = await response.json();
+      queryClient.invalidateQueries({ 
+        queryKey: ["/api/reseller/device-brands", { includeGlobal: true }] 
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/device-brands"] });
+      form.setValue("deviceBrandId", newBrand.id);
+      setSelectedBrandId(newBrand.id);
+      form.setValue("deviceModelId", "");
+      setShowNewBrandForm(false);
+      setNewBrandName("");
+      toast({ title: "Marca creata", description: `${newBrand.name} aggiunta al catalogo` });
+    },
+    onError: (error: any) => {
+      toast({ 
+        title: "Errore", 
+        description: error.message || "Impossibile creare la marca", 
+        variant: "destructive" 
+      });
+    },
+  });
+
+  // Mutation per creare nuovo modello
+  const createModelMutation = useMutation({
+    mutationFn: async (data: { modelName: string; typeId: string; brandId?: string; resellerBrandId?: string }) => {
+      return apiRequest("POST", "/api/reseller/device-models", data);
+    },
+    onSuccess: async (response) => {
+      const newModel = await response.json();
+      queryClient.invalidateQueries({ 
+        queryKey: ["/api/reseller/device-models", { typeId: selectedTypeId, includeGlobal: true }] 
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/device-models", { typeId: selectedTypeId }] });
+      form.setValue("deviceModelId", newModel.id);
+      setShowNewModelForm(false);
+      setNewModelName("");
+      toast({ title: "Modello creato", description: `${newModel.modelName} aggiunto al catalogo` });
+    },
+    onError: (error: any) => {
+      toast({ 
+        title: "Errore", 
+        description: error.message || "Impossibile creare il modello", 
+        variant: "destructive" 
+      });
+    },
+  });
+
   const { data: customers = [] } = useQuery<Array<{
     id: string;
     fullName: string;
@@ -265,10 +326,8 @@ export function RepairIntakeWizard({
     c.email.toLowerCase().includes(customerSearch.toLowerCase())
   );
 
-  // Filter brands that have models for selected type
-  const availableBrands = deviceBrands.filter(brand =>
-    deviceModels.some(model => model.brandId === brand.id)
-  );
+  // Show all brands for selected device type (don't filter by existing models)
+  const availableBrands = deviceBrands;
 
   // Filter models by selected brand
   const filteredModels = selectedBrandId 
@@ -491,7 +550,7 @@ export function RepairIntakeWizard({
                           <p>Nessun cliente trovato</p>
                           <Button
                             type="button"
-                            variant="link"
+                            variant="ghost"
                             onClick={() => setShowNewCustomerForm(true)}
                             className="mt-2"
                           >
@@ -694,65 +753,192 @@ export function RepairIntakeWizard({
 
                 {/* Brand & Model */}
                 {selectedTypeId && (
-                  <div className="grid grid-cols-2 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="deviceBrandId"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Marca</FormLabel>
-                          <Select
-                            value={field.value}
-                            onValueChange={(val) => {
-                              field.onChange(val);
-                              setSelectedBrandId(val);
-                              form.setValue("deviceModelId", "");
-                            }}
-                          >
-                            <FormControl>
-                              <SelectTrigger data-testid="select-brand">
-                                <SelectValue placeholder="Seleziona marca" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              {availableBrands.map((brand) => (
-                                <SelectItem key={brand.id} value={brand.id}>
-                                  {brand.name}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </FormItem>
-                      )}
-                    />
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      {/* Brand Select + Create */}
+                      <FormField
+                        control={form.control}
+                        name="deviceBrandId"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Marca</FormLabel>
+                            <div className="flex gap-2">
+                              <Select
+                                value={field.value}
+                                onValueChange={(val) => {
+                                  field.onChange(val);
+                                  setSelectedBrandId(val);
+                                  form.setValue("deviceModelId", "");
+                                }}
+                              >
+                                <FormControl>
+                                  <SelectTrigger data-testid="select-brand" className="flex-1">
+                                    <SelectValue placeholder="Seleziona marca" />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  {availableBrands.map((brand) => (
+                                    <SelectItem key={brand.id} value={brand.id}>
+                                      {brand.name}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                              {isResellerOrStaff && (
+                                <Button
+                                  type="button"
+                                  size="icon"
+                                  variant="outline"
+                                  onClick={() => setShowNewBrandForm(true)}
+                                  data-testid="button-new-brand"
+                                >
+                                  <Plus className="h-4 w-4" />
+                                </Button>
+                              )}
+                            </div>
+                          </FormItem>
+                        )}
+                      />
 
-                    <FormField
-                      control={form.control}
-                      name="deviceModelId"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Modello</FormLabel>
-                          <Select
-                            value={field.value}
-                            onValueChange={field.onChange}
-                            disabled={!selectedBrandId}
-                          >
-                            <FormControl>
-                              <SelectTrigger data-testid="select-model">
-                                <SelectValue placeholder="Seleziona modello" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              {filteredModels.map((model) => (
-                                <SelectItem key={model.id} value={model.id}>
-                                  {model.modelName}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </FormItem>
-                      )}
-                    />
+                      {/* Model Select + Create */}
+                      <FormField
+                        control={form.control}
+                        name="deviceModelId"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Modello</FormLabel>
+                            <div className="flex gap-2">
+                              <Select
+                                value={field.value}
+                                onValueChange={field.onChange}
+                                disabled={!selectedBrandId}
+                              >
+                                <FormControl>
+                                  <SelectTrigger data-testid="select-model" className="flex-1">
+                                    <SelectValue placeholder="Seleziona modello" />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  {filteredModels.map((model) => (
+                                    <SelectItem key={model.id} value={model.id}>
+                                      {model.modelName}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                              {isResellerOrStaff && selectedBrandId && (
+                                <Button
+                                  type="button"
+                                  size="icon"
+                                  variant="outline"
+                                  onClick={() => setShowNewModelForm(true)}
+                                  data-testid="button-new-model"
+                                >
+                                  <Plus className="h-4 w-4" />
+                                </Button>
+                              )}
+                            </div>
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+
+                    {/* New Brand Form Inline */}
+                    {showNewBrandForm && (
+                      <Card className="border-primary/50">
+                        <CardContent className="p-4">
+                          <div className="flex items-center justify-between mb-3">
+                            <h4 className="font-medium text-sm">Nuova Marca</h4>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => {
+                                setShowNewBrandForm(false);
+                                setNewBrandName("");
+                              }}
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </div>
+                          <div className="flex gap-2">
+                            <Input
+                              placeholder="Nome marca..."
+                              value={newBrandName}
+                              onChange={(e) => setNewBrandName(e.target.value)}
+                              data-testid="input-new-brand-name"
+                              className="flex-1"
+                            />
+                            <Button
+                              type="button"
+                              disabled={!newBrandName.trim() || createBrandMutation.isPending}
+                              onClick={() => {
+                                createBrandMutation.mutate({
+                                  name: newBrandName.trim(),
+                                  typeId: selectedTypeId,
+                                });
+                              }}
+                              data-testid="button-create-brand"
+                            >
+                              {createBrandMutation.isPending ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                "Crea"
+                              )}
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    )}
+
+                    {/* New Model Form Inline */}
+                    {showNewModelForm && selectedBrandId && (
+                      <Card className="border-primary/50">
+                        <CardContent className="p-4">
+                          <div className="flex items-center justify-between mb-3">
+                            <h4 className="font-medium text-sm">Nuovo Modello</h4>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => {
+                                setShowNewModelForm(false);
+                                setNewModelName("");
+                              }}
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </div>
+                          <div className="flex gap-2">
+                            <Input
+                              placeholder="Nome modello..."
+                              value={newModelName}
+                              onChange={(e) => setNewModelName(e.target.value)}
+                              data-testid="input-new-model-name"
+                              className="flex-1"
+                            />
+                            <Button
+                              type="button"
+                              disabled={!newModelName.trim() || createModelMutation.isPending}
+                              onClick={() => {
+                                createModelMutation.mutate({
+                                  modelName: newModelName.trim(),
+                                  typeId: selectedTypeId,
+                                  brandId: selectedBrandId,
+                                });
+                              }}
+                              data-testid="button-create-model"
+                            >
+                              {createModelMutation.isPending ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                "Crea"
+                              )}
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    )}
                   </div>
                 )}
 
