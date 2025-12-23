@@ -1216,14 +1216,16 @@ export function registerRoutes(app: Express): Server {
       const resellers = users.filter(u => u.role === 'reseller');
       const customers = users.filter(u => u.role === 'customer');
       const staff = users.filter(u => u.role === 'reseller_staff');
+      const repairCenters = await storage.listRepairCenters();
       
-      // Aggregate customer and staff counts per reseller, omit password
+      // Aggregate customer, staff and repair center counts per reseller, omit password
       const resellersWithCounts = resellers.map(reseller => {
         const { password, ...safeReseller } = reseller;
         return {
           ...safeReseller,
           customerCount: customers.filter(c => c.resellerId === reseller.id).length,
           staffCount: staff.filter(s => s.resellerId === reseller.id).length,
+          repairCenterCount: repairCenters.filter(rc => rc.resellerId === reseller.id).length,
         };
       });
       

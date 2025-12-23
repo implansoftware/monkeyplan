@@ -10,7 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Search, Pencil, Store, Users, UsersRound, Trash2 } from "lucide-react";
+import { Plus, Search, Pencil, Store, Users, UsersRound, Trash2, Building2 } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Switch } from "@/components/ui/switch";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -29,7 +29,7 @@ export default function AdminResellers() {
   const [resellerToDelete, setResellerToDelete] = useState<Omit<User, 'password'> | null>(null);
   const { toast } = useToast();
 
-  type ResellerWithCount = Omit<User, 'password'> & { customerCount: number };
+  type ResellerWithCount = Omit<User, 'password'> & { customerCount: number; staffCount: number; repairCenterCount: number };
   
   const { data: resellers = [], isLoading } = useQuery<ResellerWithCount[]>({
     queryKey: ["/api/admin/resellers"],
@@ -477,6 +477,7 @@ export default function AdminResellers() {
                   <TableHead>Categoria</TableHead>
                   <TableHead>Rivenditore Padre</TableHead>
                   <TableHead>Clienti</TableHead>
+                  <TableHead>Centri Rip.</TableHead>
                   <TableHead>Stato</TableHead>
                   <TableHead className="text-right">Azioni</TableHead>
                 </TableRow>
@@ -507,6 +508,12 @@ export default function AdminResellers() {
                       <Badge variant="secondary">
                         <Users className="h-3 w-3 mr-1" />
                         {reseller.customerCount}
+                      </Badge>
+                    </TableCell>
+                    <TableCell data-testid={`text-repair-centers-${reseller.id}`}>
+                      <Badge variant="secondary">
+                        <Building2 className="h-3 w-3 mr-1" />
+                        {reseller.repairCenterCount}
                       </Badge>
                     </TableCell>
                     <TableCell data-testid={`badge-status-${reseller.id}`}>
