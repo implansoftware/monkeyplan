@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { useParams, Link } from "wouter";
+import { useParams, Link, useLocation } from "wouter";
 import { User, RepairOrder, SalesOrder, BillingData, UtilityPractice } from "@shared/schema";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -41,6 +41,7 @@ interface CustomerDetailResponse {
 export default function AdminCustomerDetail() {
   const params = useParams<{ id: string }>();
   const customerId = params.id;
+  const [, setLocation] = useLocation();
 
   const { data, isLoading, error } = useQuery<CustomerDetailResponse>({
     queryKey: ["/api/customers", customerId],
@@ -241,8 +242,13 @@ export default function AdminCustomerDetail() {
                       {repairOrders.map((order) => {
                         const statusConfig = getStatusConfig(order.status);
                         return (
-                          <TableRow key={order.id} data-testid={`row-repair-${order.id}`}>
-                            <TableCell className="font-mono text-sm">
+                          <TableRow 
+                            key={order.id} 
+                            data-testid={`row-repair-${order.id}`}
+                            className="cursor-pointer hover-elevate"
+                            onClick={() => setLocation(`/admin/repairs/${order.id}`)}
+                          >
+                            <TableCell className="font-mono text-sm text-primary">
                               {order.id.substring(0, 8)}
                             </TableCell>
                             <TableCell>
