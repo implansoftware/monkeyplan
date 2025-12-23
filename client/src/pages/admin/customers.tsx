@@ -126,11 +126,18 @@ export default function AdminCustomers() {
 
   const deleteCustomerMutation = useMutation({
     mutationFn: async (id: string) => {
-      await apiRequest("DELETE", `/api/users/${id}`);
+      await apiRequest("DELETE", `/api/admin/users/${id}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/customers"] });
       toast({ title: "Cliente eliminato" });
+    },
+    onError: (error: Error) => {
+      toast({ 
+        title: "Errore", 
+        description: error.message, 
+        variant: "destructive" 
+      });
     },
   });
 
