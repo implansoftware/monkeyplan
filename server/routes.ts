@@ -20734,6 +20734,154 @@ export function registerRoutes(app: Express): Server {
   });
 
   // ==========================================
+  // REPAIR CENTER MARKETPLACE (Buy from ANY reseller)
+  // ==========================================
+
+  // Repair Center: Get marketplace catalog (products from ALL resellers with marketplace enabled)
+  // Optimized: uses single query with joins instead of N+1 queries
+  app.get("/api/repair-center/marketplace/catalog", requireRole("repair_center"), async (req, res) => {
+    try {
+      if (!req.user || !req.user.repairCenterId) {
+        return res.status(401).json({ error: "Non autenticato o centro riparazione non configurato" });
+      }
+      
+      // Get repair center info
+      const repairCenter = await storage.getRepairCenter(req.user.repairCenterId);
+      if (!repairCenter) {
+        return res.status(404).json({ error: "Centro riparazione non trovato" });
+      }
+      
+      // Reuse existing marketplace catalog function - it's already optimized
+      // Pass empty string since repair centers can buy from any reseller
+      const catalog = await storage.listMarketplaceCatalog('');
+      
+      // Filter out products with invalid prices
+      const validCatalog = catalog.filter(item => {
+        const price = item.marketplacePrice || 0;
+        return price > 0;
+      });
+      
+      res.json(validCatalog);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Repair Center: Create marketplace order (buy from any reseller)
+  // Uses repair_center_purchase_orders table for proper data integrity
+  app.post("/api/repair-center/marketplace/orders", requireRole("repair_center"), async (req, res) => {
+    try {
+      if (!req.user || !req.user.repairCenterId) {
+        return res.status(401).json({ error: "Non autenticato" });
+      }
+      
+      const { sellerResellerId, items, paymentMethod, buyerNotes } = req.body;
+      
+      if (!sellerResellerId || !items || !Array.isArray(items) || items.length === 0) {
+        return res.status(400).json({ error: "Dati ordine non validi" });
+      }
+      
+      const repairCenter = await storage.getRepairCenter(req.user.repairCenterId);
+      if (!repairCenter) {
+        return res.status(404).json({ error: "Centro riparazione non trovato" });
+      }
+      
+      const seller = await storage.getUser(sellerResellerId);
+      if (!seller || seller.role !== 'reseller') {
+        return res.status(404).json({ error: "Rivenditore non trovato" });
+      }
+      
+      // Validate items and calculate totals
+      let subtotal = 0;
+      const orderItems: { productId: string; quantity: number; unitPrice: number }[] = [];
+      
+      for (const item of items) {
+        const product = await storage.getProduct(item.productId);
+        if (!product) {
+          return res.status(400).json({ error: `Prodotto ${item.productId} non trovato` });
+        }
+        if (product.createdBy !== sellerResellerId) {
+          return res.status(400).json({ error: `Prodotto ${product.name} non appartiene al rivenditore selezionato` });
+        }
+        if (!product.isMarketplaceEnabled) {
+          return res.status(400).json({ error: `Prodotto ${product.name} non disponibile nel marketplace` });
+        }
+        
+        // Use marketplace price, fallback to unit price, ensure not zero
+        const price = product.marketplacePriceCents || product.unitPrice || 0;
+        if (price <= 0) {
+          return res.status(400).json({ error: `Prodotto ${product.name} non ha un prezzo valido` });
+        }
+        
+        subtotal += price * item.quantity;
+        orderItems.push({
+          productId: item.productId,
+          quantity: item.quantity,
+          unitPrice: price,
+        });
+      }
+      
+      // Generate order number using RC B2B pattern
+      const orderNumber = await storage.generateRepairCenterPurchaseOrderNumber();
+      
+      // Create order using repair_center_purchase_orders table (proper referential integrity)
+      const order = await storage.createRepairCenterPurchaseOrder({
+        orderNumber,
+        repairCenterId: req.user.repairCenterId,
+        resellerId: sellerResellerId,
+        status: 'pending',
+        subtotal,
+        discountAmount: 0,
+        shippingCost: 0,
+        total: subtotal,
+        paymentMethod: paymentMethod || 'bank_transfer',
+        notes: buyerNotes || null,
+      });
+      
+      // Create order items
+      for (const item of orderItems) {
+        await storage.createRepairCenterPurchaseOrderItem({
+          orderId: order.id,
+          productId: item.productId,
+          quantity: item.quantity,
+          unitPrice: item.unitPrice,
+        });
+      }
+      
+      res.json(order);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Repair Center: Get marketplace orders (from any reseller, not just owner)
+  app.get("/api/repair-center/marketplace/orders", requireRole("repair_center"), async (req, res) => {
+    try {
+      if (!req.user || !req.user.repairCenterId) {
+        return res.status(401).json({ error: "Non autenticato" });
+      }
+      
+      // Get all orders for this repair center
+      const orders = await storage.listRepairCenterPurchaseOrders(req.user.repairCenterId);
+      
+      // Enrich with seller info and items
+      const enrichedOrders = await Promise.all(orders.map(async (order) => {
+        const seller = await storage.getUser(order.resellerId);
+        const items = await storage.listRepairCenterPurchaseOrderItems(order.id);
+        return { 
+          ...order, 
+          items,
+          sellerName: seller?.fullName || seller?.ragioneSociale || 'Rivenditore'
+        };
+      }));
+      
+      res.json(enrichedOrders);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // ==========================================
   // B2B REPAIR CENTER PURCHASE ORDERS
   // ==========================================
 
