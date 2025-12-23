@@ -527,6 +527,11 @@ export default function AdminResellers() {
                           <SelectItem value="gdo">GDO (Grande Distribuzione)</SelectItem>
                         </SelectContent>
                       </Select>
+                      <div className="mt-3 p-3 bg-muted/50 rounded-md text-xs text-muted-foreground space-y-1.5">
+                        <p><strong className="text-foreground">Standard:</strong> Rivenditore singolo, può avere un rivenditore padre (Franchising/GDO) a cui essere affiliato.</p>
+                        <p><strong className="text-foreground">Franchising:</strong> Rete di rivenditori affiliati. Può avere sotto-rivenditori Standard e visualizzare le loro attività.</p>
+                        <p><strong className="text-foreground">GDO:</strong> Grande Distribuzione Organizzata. Come Franchising, gestisce una rete di punti vendita affiliati.</p>
+                      </div>
                     </div>
                     {selectedCategory === 'standard' && parentResellers.length > 0 && (
                       <div className="space-y-2">
