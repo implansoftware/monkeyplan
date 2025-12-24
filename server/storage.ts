@@ -436,8 +436,9 @@ export interface IStorage {
   setPreferredSupplier(productId: string, supplierId: string): Promise<void>;
   
   // Supplier Orders (Ordini fornitori)
-  listSupplierOrders(filters?: { supplierId?: string; repairCenterId?: string; status?: string }): Promise<SupplierOrder[]>;
+  listSupplierOrders(filters?: { supplierId?: string; repairCenterId?: string; status?: string; ownerType?: string; ownerId?: string }): Promise<SupplierOrder[]>;
   listSupplierOrdersByRepairCenters(repairCenterIds: string[]): Promise<SupplierOrder[]>;
+  listSupplierOrdersByOwner(ownerType: string, ownerId: string): Promise<SupplierOrder[]>;
   getSupplierOrder(id: string): Promise<SupplierOrder | undefined>;
   createSupplierOrder(order: InsertSupplierOrder): Promise<SupplierOrder>;
   updateSupplierOrder(id: string, updates: Partial<Omit<InsertSupplierOrder, 'orderNumber' | 'createdBy'>>): Promise<SupplierOrder>;
@@ -4007,7 +4008,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Supplier Orders
-  async listSupplierOrders(filters?: { supplierId?: string; repairCenterId?: string; status?: string }): Promise<SupplierOrder[]> {
+  async listSupplierOrders(filters?: { supplierId?: string; repairCenterId?: string; status?: string; ownerType?: string; ownerId?: string }): Promise<SupplierOrder[]> {
     const conditions = [];
     
     if (filters?.supplierId) {
@@ -4018,6 +4019,12 @@ export class DatabaseStorage implements IStorage {
     }
     if (filters?.status) {
       conditions.push(sql`${supplierOrders.status}::text = ${filters.status}`);
+    }
+    if (filters?.ownerType) {
+      conditions.push(sql`${supplierOrders.ownerType}::text = ${filters.ownerType}`);
+    }
+    if (filters?.ownerId) {
+      conditions.push(eq(supplierOrders.ownerId, filters.ownerId));
     }
     
     if (conditions.length > 0) {
@@ -4035,6 +4042,15 @@ export class DatabaseStorage implements IStorage {
     }
     return await db.select().from(supplierOrders)
       .where(inArray(supplierOrders.repairCenterId, repairCenterIds))
+      .orderBy(desc(supplierOrders.createdAt));
+  }
+
+  async listSupplierOrdersByOwner(ownerType: string, ownerId: string): Promise<SupplierOrder[]> {
+    return await db.select().from(supplierOrders)
+      .where(and(
+        sql`${supplierOrders.ownerType}::text = ${ownerType}`,
+        eq(supplierOrders.ownerId, ownerId)
+      ))
       .orderBy(desc(supplierOrders.createdAt));
   }
 
