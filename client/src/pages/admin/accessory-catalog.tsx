@@ -155,11 +155,11 @@ export default function AdminAccessoryCatalog() {
     queryKey: ["/api/device-models"],
   });
 
-  // Fetch resellers for assignment
-  const { data: allUsers = [] } = useQuery<User[]>({
+  // Fetch resellers for assignment (use select to filter directly like smartphone-catalog)
+  const { data: resellers = [], isLoading: isLoadingResellers } = useQuery<User[]>({
     queryKey: ["/api/admin/users"],
+    select: (users) => users.filter((u) => u.role === "reseller"),
   });
-  const resellers = allUsers.filter(u => u.role === 'reseller');
 
   // Assign accessory to reseller mutation
   const assignMutation = useMutation({
@@ -1545,19 +1545,28 @@ export default function AdminAccessoryCatalog() {
           <div className="space-y-4">
             <div className="space-y-2">
               <Label>Rivenditore</Label>
-              <Select value={selectedResellerId} onValueChange={setSelectedResellerId}>
-                <SelectTrigger data-testid="select-assign-reseller">
-                  <SelectValue placeholder="Seleziona rivenditore..." />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="__none__">Nessuno (rimuovi assegnazione)</SelectItem>
-                  {resellers.map((reseller) => (
-                    <SelectItem key={reseller.id} value={reseller.id}>
-                      {reseller.fullName || reseller.username}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              {isLoadingResellers ? (
+                <div className="flex items-center gap-2 py-2">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <span className="text-sm text-muted-foreground">Caricamento rivenditori...</span>
+                </div>
+              ) : resellers.length === 0 ? (
+                <p className="text-sm text-muted-foreground py-2">Nessun rivenditore disponibile</p>
+              ) : (
+                <Select value={selectedResellerId} onValueChange={setSelectedResellerId}>
+                  <SelectTrigger data-testid="select-assign-reseller">
+                    <SelectValue placeholder="Seleziona rivenditore..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__none__">Nessuno (rimuovi assegnazione)</SelectItem>
+                    {resellers.map((reseller) => (
+                      <SelectItem key={reseller.id} value={reseller.id}>
+                        {reseller.fullName || reseller.username}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
             </div>
             {accessoryToAssign?.reseller && (
               <p className="text-sm text-muted-foreground">
