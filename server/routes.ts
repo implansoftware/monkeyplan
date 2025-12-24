@@ -1618,6 +1618,26 @@ export function registerRoutes(app: Express): Server {
       // Validate input
       const validatedData = insertUserSchema.parse(req.body);
       
+      // Check for duplicate email
+      const existingEmail = await storage.getUserByEmail(validatedData.email);
+      if (existingEmail) {
+        return res.status(400).send("Email già registrata nel sistema");
+      }
+      
+      // Check for duplicate username
+      const existingUsername = await storage.getUserByUsername(validatedData.username);
+      if (existingUsername) {
+        return res.status(400).send("Username già in uso");
+      }
+      
+      // Check for duplicate partita IVA (only if provided and not empty)
+      if (validatedData.partitaIva && validatedData.partitaIva.trim() !== '') {
+        const existingPartitaIva = await storage.getUserByPartitaIva(validatedData.partitaIva.trim());
+        if (existingPartitaIva) {
+          return res.status(400).send("Partita IVA già registrata nel sistema");
+        }
+      }
+      
       // Hash password before storing
       const hashedPassword = await hashPassword(validatedData.password);
       
