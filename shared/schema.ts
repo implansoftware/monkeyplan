@@ -158,6 +158,14 @@ export const supplierSyncStatusEnum = pgEnum("supplier_sync_status", [
   "failed",            // Sincronizzazione fallita
 ]);
 
+// Tipo proprietario ordine fornitore
+export const supplierOrderOwnerTypeEnum = pgEnum("supplier_order_owner_type", [
+  "admin",             // Ordine per conto Admin (piattaforma)
+  "reseller",          // Ordine per conto Reseller
+  "sub_reseller",      // Ordine per conto Sub-Reseller
+  "repair_center",     // Ordine per conto Centro Riparazione
+]);
+
 // Stato ordine fornitore
 export const supplierOrderStatusEnum = pgEnum("supplier_order_status", [
   "draft",             // Bozza (non ancora inviato)
@@ -2327,7 +2335,13 @@ export const supplierOrders = pgTable("supplier_orders", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   orderNumber: text("order_number").notNull().unique(), // Numero ordine (es: "ORD-2024-0001")
   supplierId: varchar("supplier_id").notNull().references(() => suppliers.id),
-  repairCenterId: varchar("repair_center_id").notNull().references(() => repairCenters.id), // Centro che ordina
+  
+  // Proprietario ordine (chi effettua l'ordine)
+  ownerType: supplierOrderOwnerTypeEnum("owner_type").notNull().default("repair_center"), // Tipo entità proprietaria
+  ownerId: varchar("owner_id").notNull(), // ID dell'entità proprietaria (admin user ID, reseller ID, repair center ID)
+  
+  // Centro riparazione (opzionale, mantenuto per backward compatibility)
+  repairCenterId: varchar("repair_center_id").references(() => repairCenters.id), // Centro associato (ora opzionale)
   
   // Stato e tracking
   status: supplierOrderStatusEnum("status").notNull().default("draft"),
@@ -4890,6 +4904,7 @@ export type InsertSupplierCatalogProduct = z.infer<typeof insertSupplierCatalogP
 export type SupplierSyncLog = typeof supplierSyncLogs.$inferSelect;
 export type InsertSupplierSyncLog = z.infer<typeof insertSupplierSyncLogSchema>;
 
+export type SupplierOrderOwnerType = "admin" | "reseller" | "sub_reseller" | "repair_center";
 export type SupplierOrder = typeof supplierOrders.$inferSelect;
 export type InsertSupplierOrder = z.infer<typeof insertSupplierOrderSchema>;
 
