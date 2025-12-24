@@ -40,6 +40,7 @@ import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Textarea } from "@/components/ui/textarea";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import {
   Dialog,
   DialogContent,
@@ -1095,13 +1096,52 @@ export default function SupplierOrdersPage() {
               <Label htmlFor="productId">Prodotto (opzionale)</Label>
               <Select value={itemFormData.productId} onValueChange={handleProductSelect}>
                 <SelectTrigger data-testid="select-item-product">
-                  <SelectValue placeholder="Seleziona prodotto..." />
+                  {itemFormData.productId && itemFormData.productId !== "__none__" ? (
+                    <div className="flex items-center gap-2">
+                      {(() => {
+                        const selectedProduct = products.find(p => p.id === itemFormData.productId);
+                        return selectedProduct ? (
+                          <>
+                            <Avatar className="h-6 w-6">
+                              <AvatarImage src={selectedProduct.imageUrl || undefined} alt={selectedProduct.name} />
+                              <AvatarFallback className="bg-muted">
+                                <Package className="h-3 w-3" />
+                              </AvatarFallback>
+                            </Avatar>
+                            <span className="truncate">{selectedProduct.name} ({selectedProduct.sku})</span>
+                          </>
+                        ) : (
+                          <SelectValue placeholder="Seleziona prodotto..." />
+                        );
+                      })()}
+                    </div>
+                  ) : (
+                    <SelectValue placeholder="Seleziona prodotto..." />
+                  )}
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="__none__">Nessun prodotto collegato</SelectItem>
+                  <SelectItem value="__none__">
+                    <div className="flex items-center gap-2">
+                      <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center">
+                        <XCircle className="h-4 w-4 text-muted-foreground" />
+                      </div>
+                      <span>Nessun prodotto collegato</span>
+                    </div>
+                  </SelectItem>
                   {products.map(p => (
-                    <SelectItem key={p.id} value={p.id}>
-                      {p.name} ({p.sku})
+                    <SelectItem key={p.id} value={p.id} data-testid={`select-item-product-${p.id}`}>
+                      <div className="flex items-center gap-2">
+                        <Avatar className="h-8 w-8">
+                          <AvatarImage src={p.imageUrl || undefined} alt={p.name} />
+                          <AvatarFallback className="bg-muted">
+                            <Package className="h-4 w-4" />
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex flex-col">
+                          <span className="font-medium">{p.name}</span>
+                          <span className="text-xs text-muted-foreground">{p.sku}</span>
+                        </div>
+                      </div>
                     </SelectItem>
                   ))}
                 </SelectContent>
