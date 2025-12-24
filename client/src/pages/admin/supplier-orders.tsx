@@ -128,6 +128,7 @@ export default function SupplierOrdersPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const [filterSupplier, setFilterSupplier] = useState<string>("all");
+  const [filterOwnerType, setFilterOwnerType] = useState<string>("all");
   
   // Dialog states
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
@@ -289,7 +290,7 @@ export default function SupplierOrdersPage() {
       return;
     }
     
-    if (!newOrderOwnerId) {
+    if (newOrderOwnerType !== "admin" && !newOrderOwnerId) {
       toast({ title: "Errore", description: "Seleziona il destinatario dell'ordine", variant: "destructive" });
       return;
     }
@@ -297,7 +298,7 @@ export default function SupplierOrdersPage() {
     await createOrderMutation.mutateAsync({
       supplierId,
       ownerType: newOrderOwnerType,
-      ownerId: newOrderOwnerId,
+      ownerId: newOrderOwnerType === "admin" ? null : newOrderOwnerId,
       repairCenterId: newOrderOwnerType === "repair_center" ? newOrderOwnerId : undefined,
       notes: notes || undefined,
     });
@@ -400,6 +401,28 @@ export default function SupplierOrdersPage() {
     }
   };
 
+  // Helper to get owner name
+  const getOwnerName = (order: SupplierOrderWithDetails): string => {
+    if (order.ownerName) return order.ownerName;
+    
+    // Backward compatibility: legacy orders only have repairCenterId
+    const ownerType = order.ownerType || (order.repairCenterId ? "repair_center" : "admin");
+    const ownerId = order.ownerId || order.repairCenterId;
+    
+    switch (ownerType) {
+      case "admin":
+        return "Piattaforma";
+      case "reseller":
+        return resellers.find(r => r.id === ownerId)?.name || "Reseller";
+      case "sub_reseller":
+        return subResellers.find(sr => sr.id === ownerId)?.name || "Sub-Reseller";
+      case "repair_center":
+        return repairCenters.find(c => c.id === ownerId)?.name || "Centro";
+      default:
+        return "-";
+    }
+  };
+
   // Filter orders
   const filteredOrders = orders.filter(order => {
     const matchesSearch = searchTerm === "" || 
@@ -408,8 +431,11 @@ export default function SupplierOrdersPage() {
     
     const matchesStatus = filterStatus === "all" || order.status === filterStatus;
     const matchesSupplier = filterSupplier === "all" || order.supplierId === filterSupplier;
+    // Backward compatibility for legacy orders  
+    const orderOwnerType = order.ownerType || (order.repairCenterId ? "repair_center" : "admin");
+    const matchesOwnerType = filterOwnerType === "all" || orderOwnerType === filterOwnerType;
     
-    return matchesSearch && matchesStatus && matchesSupplier;
+    return matchesSearch && matchesStatus && matchesSupplier && matchesOwnerType;
   });
 
   // Get available products for selected supplier
@@ -471,6 +497,26 @@ export default function SupplierOrdersPage() {
             ))}
           </SelectContent>
         </Select>
+        
+        <Select value={filterOwnerType} onValueChange={setFilterOwnerType}>
+          <SelectTrigger className="w-[180px]" data-testid="select-filter-owner-type">
+            <SelectValue placeholder="Tipo Proprietario" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Tutti i tipi</SelectItem>
+            {Object.entries(OWNER_TYPE_CONFIG).map(([key, config]) => {
+              const OwnerIcon = config.icon;
+              return (
+                <SelectItem key={key} value={key}>
+                  <div className="flex items-center gap-2">
+                    <OwnerIcon className="h-4 w-4" />
+                    {config.label}
+                  </div>
+                </SelectItem>
+              );
+            })}
+          </SelectContent>
+        </Select>
       </div>
 
       {/* Orders List */}
@@ -502,7 +548,7 @@ export default function SupplierOrdersPage() {
                 <TableRow>
                   <TableHead>Numero</TableHead>
                   <TableHead>Fornitore</TableHead>
-                  <TableHead>Centro</TableHead>
+                  <TableHead>Destinatario</TableHead>
                   <TableHead>Stato</TableHead>
                   <TableHead className="text-right">Totale</TableHead>
                   <TableHead>Consegna Prevista</TableHead>
@@ -515,7 +561,10 @@ export default function SupplierOrdersPage() {
                   const statusConfig = STATUS_CONFIG[order.status] || STATUS_CONFIG.draft;
                   const StatusIcon = statusConfig.icon;
                   const supplier = suppliers.find(s => s.id === order.supplierId);
-                  const center = repairCenters.find(c => c.id === order.repairCenterId);
+                  // Backward compatibility for legacy orders
+                  const ownerType = (order.ownerType || (order.repairCenterId ? "repair_center" : "admin")) as SupplierOrderOwnerType;
+                  const ownerConfig = OWNER_TYPE_CONFIG[ownerType];
+                  const OwnerIcon = ownerConfig.icon;
                   
                   return (
                     <TableRow 
@@ -533,7 +582,12 @@ export default function SupplierOrdersPage() {
                           {supplier?.name || "-"}
                         </div>
                       </TableCell>
-                      <TableCell>{center?.name || "-"}</TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <OwnerIcon className="h-4 w-4 text-muted-foreground" />
+                          <span>{getOwnerName(order)}</span>
+                        </div>
+                      </TableCell>
                       <TableCell>
                         <Badge className={`gap-1 ${statusConfig.color}`}>
                           <StatusIcon className="h-3 w-3" />
