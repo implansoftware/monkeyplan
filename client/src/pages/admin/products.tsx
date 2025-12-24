@@ -2249,7 +2249,6 @@ export default function AdminProducts() {
                 <TableRow>
                   <TableHead className="w-12"></TableHead>
                   <TableHead>Prodotto</TableHead>
-                  <TableHead>SKU</TableHead>
                   <TableHead>Categoria</TableHead>
                   <TableHead>Condizione</TableHead>
                   <TableHead>Vendita</TableHead>
@@ -2301,7 +2300,6 @@ export default function AdminProducts() {
                         </div>
                       </div>
                     </TableCell>
-                    <TableCell className="font-mono text-sm">{product.sku}</TableCell>
                     <TableCell>{getCategoryLabel(product.category)}</TableCell>
                     <TableCell>{getConditionBadge(product.condition)}</TableCell>
                     <TableCell className="font-semibold">{formatCurrency(product.unitPrice)}</TableCell>
