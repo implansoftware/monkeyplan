@@ -630,7 +630,6 @@ export default function AdminResellers() {
                   <TableHead>Nome</TableHead>
                   <TableHead>Email</TableHead>
                   <TableHead>Telefono</TableHead>
-                  <TableHead>Username</TableHead>
                   <TableHead>Categoria</TableHead>
                   <TableHead>Rivenditore Padre</TableHead>
                   <TableHead>Clienti</TableHead>
@@ -647,7 +646,6 @@ export default function AdminResellers() {
                     </TableCell>
                     <TableCell data-testid={`text-email-${reseller.id}`}>{reseller.email}</TableCell>
                     <TableCell data-testid={`text-phone-${reseller.id}`}>{reseller.phone || "-"}</TableCell>
-                    <TableCell data-testid={`text-username-${reseller.id}`}>{reseller.username}</TableCell>
                     <TableCell data-testid={`text-category-${reseller.id}`}>
                       <Badge variant="outline">
                         {reseller.resellerCategory === 'franchising' ? 'Franchising' : 
