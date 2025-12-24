@@ -11405,6 +11405,44 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // GET /api/resellers - List all resellers (users with role 'reseller')
+  app.get("/api/resellers", requireAuth, requireRole("admin"), async (req, res) => {
+    try {
+      const allUsers = await storage.listUsers();
+      const resellers = allUsers
+        .filter(u => u.role === 'reseller' && u.isActive)
+        .map(u => ({
+          id: u.id,
+          name: u.fullName || u.username,
+          username: u.username,
+          email: u.email,
+          category: u.resellerCategory,
+        }));
+      res.json(resellers);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // GET /api/sub-resellers - List all sub-resellers (users with parentResellerId)
+  app.get("/api/sub-resellers", requireAuth, requireRole("admin"), async (req, res) => {
+    try {
+      const allUsers = await storage.listUsers();
+      const subResellers = allUsers
+        .filter(u => u.role === 'reseller' && u.parentResellerId && u.isActive)
+        .map(u => ({
+          id: u.id,
+          name: u.fullName || u.username,
+          username: u.username,
+          email: u.email,
+          parentResellerId: u.parentResellerId,
+        }));
+      res.json(subResellers);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
   app.patch("/api/users/:id", requireAuth, async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");

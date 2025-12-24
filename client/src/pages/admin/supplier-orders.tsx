@@ -11,10 +11,25 @@ import type {
   SupplierOrderItem,
   RepairCenter,
   ProductSupplier,
-  Reseller,
-  SubReseller,
   SupplierOrderOwnerType
 } from "@shared/schema";
+
+// Types for reseller/sub-reseller lists returned by API
+interface Reseller {
+  id: string;
+  name: string;
+  username: string;
+  email: string | null;
+  category: string | null;
+}
+
+interface SubReseller {
+  id: string;
+  name: string;
+  username: string;
+  email: string | null;
+  parentResellerId: string | null;
+}
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
