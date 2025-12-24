@@ -39,7 +39,6 @@ import AdminServiceCatalog from "@/pages/admin/service-catalog";
 import AdminSuppliers from "@/pages/admin/suppliers";
 import AdminSupplierOrders from "@/pages/admin/supplier-orders";
 import AdminSupplierReturns from "@/pages/admin/supplier-returns";
-import AdminPartsLoad from "@/pages/admin/parts-load";
 import AdminExternalIntegrations from "@/pages/admin/external-integrations";
 import AdminCustomers from "@/pages/admin/customers";
 import AdminCustomerDetail from "@/pages/admin/customer-detail";
@@ -108,7 +107,6 @@ import ResellerNetworkWarehouses from "@/pages/reseller/network-warehouses";
 import ResellerSuppliers from "@/pages/reseller/suppliers";
 import ResellerSupplierOrders from "@/pages/reseller/supplier-orders";
 import ResellerSupplierReturns from "@/pages/reseller/supplier-returns";
-import ResellerPartsLoad from "@/pages/reseller/parts-load";
 import ResellerRepairCenters from "@/pages/reseller/repair-centers";
 import ResellerRepairCenterSchedules from "@/pages/reseller/repair-center-schedules";
 import ResellerAppointments from "@/pages/reseller/appointments";
@@ -227,7 +225,6 @@ function Router() {
       <ProtectedRoute path="/admin/suppliers" component={AdminSuppliers} />
       <ProtectedRoute path="/admin/supplier-orders" component={AdminSupplierOrders} />
       <ProtectedRoute path="/admin/supplier-returns" component={AdminSupplierReturns} />
-      <ProtectedRoute path="/admin/parts-load" component={AdminPartsLoad} />
       <ProtectedRoute path="/admin/external-integrations" component={AdminExternalIntegrations} />
       <ProtectedRoute path="/admin/utility" component={AdminUtility} />
       <ProtectedRoute path="/admin/utility/suppliers" component={AdminUtilitySuppliers} />
@@ -265,7 +262,6 @@ function Router() {
       <ProtectedRoute path="/reseller/suppliers" component={ResellerSuppliers} />
       <ProtectedRoute path="/reseller/supplier-orders" component={ResellerSupplierOrders} />
       <ProtectedRoute path="/reseller/supplier-returns" component={ResellerSupplierReturns} />
-      <ProtectedRoute path="/reseller/parts-load" component={ResellerPartsLoad} />
       <ProtectedRoute path="/reseller/tickets" component={ResellerTickets} />
       <ProtectedRoute path="/reseller/tickets/:id" component={ResellerTicketDetail} />
       <ProtectedRoute path="/reseller/utility" component={ResellerUtility} />
