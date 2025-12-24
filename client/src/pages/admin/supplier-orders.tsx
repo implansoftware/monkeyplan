@@ -10,7 +10,10 @@ import type {
   Product, 
   SupplierOrderItem,
   RepairCenter,
-  ProductSupplier
+  ProductSupplier,
+  Reseller,
+  SubReseller,
+  SupplierOrderOwnerType
 } from "@shared/schema";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -75,13 +78,26 @@ import {
   Building2,
   ShoppingCart,
   Calendar,
+  Shield,
+  Users,
+  Store,
+  Wrench,
 } from "lucide-react";
 
 interface SupplierOrderWithDetails extends SupplierOrder {
   supplier?: Supplier;
   repairCenter?: RepairCenter;
+  ownerName?: string;
   itemCount?: number;
 }
+
+// Owner type configuration
+const OWNER_TYPE_CONFIG: Record<SupplierOrderOwnerType, { label: string; icon: typeof Shield }> = {
+  admin: { label: "Admin", icon: Shield },
+  reseller: { label: "Reseller", icon: Users },
+  sub_reseller: { label: "Sub-Reseller", icon: Store },
+  repair_center: { label: "Centro Riparazione", icon: Wrench },
+};
 
 interface OrderItemWithProduct extends SupplierOrderItem {
   product?: Product;
@@ -143,9 +159,21 @@ export default function SupplierOrdersPage() {
     queryKey: ["/api/repair-centers"],
   });
 
+  const { data: resellers = [] } = useQuery<Reseller[]>({
+    queryKey: ["/api/resellers"],
+  });
+
+  const { data: subResellers = [] } = useQuery<SubReseller[]>({
+    queryKey: ["/api/sub-resellers"],
+  });
+
   const { data: products = [] } = useQuery<Product[]>({
     queryKey: ["/api/products"],
   });
+
+  // State for create dialog owner type
+  const [newOrderOwnerType, setNewOrderOwnerType] = useState<SupplierOrderOwnerType>("repair_center");
+  const [newOrderOwnerId, setNewOrderOwnerId] = useState<string>("");
 
   // Order items for selected order
   const { data: orderItems = [], isLoading: isLoadingItems } = useQuery<OrderItemWithProduct[]>({
@@ -254,19 +282,29 @@ export default function SupplierOrdersPage() {
     const formData = new FormData(e.currentTarget);
     
     const supplierId = formData.get("supplierId") as string;
-    const repairCenterId = formData.get("repairCenterId") as string;
     const notes = formData.get("notes") as string;
     
-    if (!supplierId || !repairCenterId) {
-      toast({ title: "Errore", description: "Seleziona fornitore e centro riparazione", variant: "destructive" });
+    if (!supplierId) {
+      toast({ title: "Errore", description: "Seleziona un fornitore", variant: "destructive" });
+      return;
+    }
+    
+    if (!newOrderOwnerId) {
+      toast({ title: "Errore", description: "Seleziona il destinatario dell'ordine", variant: "destructive" });
       return;
     }
     
     await createOrderMutation.mutateAsync({
       supplierId,
-      repairCenterId,
+      ownerType: newOrderOwnerType,
+      ownerId: newOrderOwnerId,
+      repairCenterId: newOrderOwnerType === "repair_center" ? newOrderOwnerId : undefined,
       notes: notes || undefined,
     });
+    
+    // Reset form state
+    setNewOrderOwnerType("repair_center");
+    setNewOrderOwnerId("");
   };
 
   const handleStatusChange = async (orderId: string, newStatus: string) => {
@@ -611,13 +649,77 @@ export default function SupplierOrdersPage() {
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="repairCenterId">Centro Riparazione *</Label>
-              <Select name="repairCenterId">
-                <SelectTrigger data-testid="select-new-center">
-                  <SelectValue placeholder="Seleziona centro..." />
+              <Label>Tipo Destinatario *</Label>
+              <Select 
+                value={newOrderOwnerType} 
+                onValueChange={(value) => {
+                  setNewOrderOwnerType(value as SupplierOrderOwnerType);
+                  setNewOrderOwnerId("");
+                }}
+              >
+                <SelectTrigger data-testid="select-owner-type">
+                  <SelectValue placeholder="Seleziona tipo..." />
                 </SelectTrigger>
                 <SelectContent>
-                  {repairCenters.map(c => (
+                  <SelectItem value="admin">
+                    <div className="flex items-center gap-2">
+                      <Shield className="h-4 w-4" />
+                      <span>Admin (Piattaforma)</span>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="reseller">
+                    <div className="flex items-center gap-2">
+                      <Users className="h-4 w-4" />
+                      <span>Reseller</span>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="sub_reseller">
+                    <div className="flex items-center gap-2">
+                      <Store className="h-4 w-4" />
+                      <span>Sub-Reseller</span>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="repair_center">
+                    <div className="flex items-center gap-2">
+                      <Wrench className="h-4 w-4" />
+                      <span>Centro Riparazione</span>
+                    </div>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Destinatario *</Label>
+              <Select 
+                value={newOrderOwnerId} 
+                onValueChange={setNewOrderOwnerId}
+              >
+                <SelectTrigger data-testid="select-new-owner">
+                  <SelectValue placeholder={
+                    newOrderOwnerType === "admin" ? "Ordine per Admin" :
+                    newOrderOwnerType === "reseller" ? "Seleziona reseller..." :
+                    newOrderOwnerType === "sub_reseller" ? "Seleziona sub-reseller..." :
+                    "Seleziona centro..."
+                  } />
+                </SelectTrigger>
+                <SelectContent>
+                  {newOrderOwnerType === "admin" && (
+                    <SelectItem value="__admin__">
+                      Ordine per conto Admin
+                    </SelectItem>
+                  )}
+                  {newOrderOwnerType === "reseller" && resellers.map(r => (
+                    <SelectItem key={r.id} value={r.id}>
+                      {r.name}
+                    </SelectItem>
+                  ))}
+                  {newOrderOwnerType === "sub_reseller" && subResellers.map(sr => (
+                    <SelectItem key={sr.id} value={sr.id}>
+                      {sr.name}
+                    </SelectItem>
+                  ))}
+                  {newOrderOwnerType === "repair_center" && repairCenters.map(c => (
                     <SelectItem key={c.id} value={c.id}>
                       {c.name}
                     </SelectItem>
