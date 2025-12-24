@@ -19,6 +19,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { StaffWizard } from "@/components/StaffWizard";
 import type { User } from "@shared/schema";
 
 const MODULES = [
@@ -83,6 +84,7 @@ type StaffFormValues = z.infer<typeof staffFormSchema>;
 export default function AdminResellerTeam() {
   const { resellerId } = useParams<{ resellerId: string }>();
   const [searchQuery, setSearchQuery] = useState("");
+  const [wizardOpen, setWizardOpen] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [permissionsDialogOpen, setPermissionsDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -349,7 +351,7 @@ export default function AdminResellerTeam() {
             Gestisci i collaboratori del rivenditore e i loro permessi
           </p>
         </div>
-        <Button onClick={openCreateDialog} data-testid="button-new-staff">
+        <Button onClick={() => setWizardOpen(true)} data-testid="button-new-staff">
           <Plus className="h-4 w-4 mr-2" />
           Nuovo Collaboratore
         </Button>
@@ -765,6 +767,14 @@ export default function AdminResellerTeam() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <StaffWizard
+        open={wizardOpen}
+        onOpenChange={setWizardOpen}
+        resellerId={resellerId || ""}
+        resellerName={reseller?.fullName}
+        repairCenters={repairCenters}
+      />
     </div>
   );
 }
