@@ -14392,24 +14392,30 @@ export function registerRoutes(app: Express): Server {
         const supplier = await storage.getSupplier(order.supplierId);
         let ownerName = "";
         
-        // Get owner name based on type
-        switch (order.ownerType) {
-          case 'admin':
-            const adminUser = await storage.getUser(order.ownerId);
-            ownerName = adminUser ? `Admin: ${adminUser.name}` : "Admin";
-            break;
-          case 'reseller':
-            const reseller = await storage.getReseller(order.ownerId);
-            ownerName = reseller?.name || "Reseller";
-            break;
-          case 'sub_reseller':
-            const subReseller = await storage.getSubReseller(order.ownerId);
-            ownerName = subReseller?.name || "Sub-Reseller";
-            break;
-          case 'repair_center':
-            const repairCenter = await storage.getRepairCenter(order.ownerId);
-            ownerName = repairCenter?.name || "Centro Riparazione";
-            break;
+        // Get owner name based on type (handle NULL ownerId for legacy orders)
+        if (order.ownerId) {
+          switch (order.ownerType) {
+            case 'admin':
+              const adminUser = await storage.getUser(order.ownerId);
+              ownerName = adminUser ? `Admin: ${adminUser.name}` : "Admin";
+              break;
+            case 'reseller':
+              const reseller = await storage.getReseller(order.ownerId);
+              ownerName = reseller?.name || "Reseller";
+              break;
+            case 'sub_reseller':
+              const subReseller = await storage.getSubReseller(order.ownerId);
+              ownerName = subReseller?.name || "Sub-Reseller";
+              break;
+            case 'repair_center':
+              const repairCenter = await storage.getRepairCenter(order.ownerId);
+              ownerName = repairCenter?.name || "Centro Riparazione";
+              break;
+          }
+        } else if (order.repairCenterId) {
+          // Legacy fallback: use repairCenterId if ownerId is missing
+          const repairCenter = await storage.getRepairCenter(order.repairCenterId);
+          ownerName = repairCenter?.name || "Centro Riparazione";
         }
         
         // Legacy: also get repairCenterName if present
