@@ -2141,6 +2141,27 @@ export function registerRoutes(app: Express): Server {
         usersMap[u.id] = { id: u.id, fullName: u.fullName };
       });
       
+      // Get utility practices for customers of this center
+      const allUtilityPractices = await storage.listUtilityPractices();
+      const centerUtilityPractices = allUtilityPractices
+        .filter(p => p.customerId && customerIds.includes(p.customerId))
+        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+        .slice(0, 50);
+      
+      // Get utility suppliers and services for lookup
+      const allUtilitySuppliers = await storage.listUtilitySuppliers();
+      const allUtilityServices = await storage.listUtilityServices();
+      
+      const suppliersMap: Record<string, string> = {};
+      allUtilitySuppliers.forEach(s => {
+        suppliersMap[s.id] = s.name;
+      });
+      
+      const servicesMap: Record<string, string> = {};
+      allUtilityServices.forEach(s => {
+        servicesMap[s.id] = s.name;
+      });
+      
       res.json({
         center,
         reseller,
@@ -2148,8 +2169,14 @@ export function registerRoutes(app: Express): Server {
         b2bOrders: centerB2bOrders,
         customers,
         staff,
-        stats,
+        stats: {
+          ...stats,
+          totalUtilityPractices: centerUtilityPractices.length,
+        },
         usersMap,
+        utilityPractices: centerUtilityPractices,
+        suppliersMap,
+        servicesMap,
       });
     } catch (error: any) {
       res.status(500).send(error.message);

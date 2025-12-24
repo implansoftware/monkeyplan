@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useParams, Link } from "wouter";
-import { RepairCenter, RepairOrder, User } from "@shared/schema";
+import { RepairCenter, RepairOrder, User, UtilityPractice } from "@shared/schema";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -22,7 +22,8 @@ import {
   FileText,
   TrendingUp,
   Calendar,
-  Eye
+  Eye,
+  FileCheck
 } from "lucide-react";
 
 type SafeUser = Omit<User, 'password'>;
@@ -52,8 +53,12 @@ interface RepairCenterOverviewResponse {
     totalCustomers: number;
     totalStaff: number;
     totalB2bOrders: number;
+    totalUtilityPractices: number;
   };
   usersMap: Record<string, { id: string; fullName: string }>;
+  utilityPractices: UtilityPractice[];
+  suppliersMap: Record<string, string>;
+  servicesMap: Record<string, string>;
 }
 
 const STATUS_LABELS: Record<string, string> = {
@@ -94,6 +99,34 @@ const B2B_STATUS_LABELS: Record<string, string> = {
   cancelled: "Annullato",
 };
 
+const UTILITY_STATUS_LABELS: Record<string, string> = {
+  bozza: "Bozza",
+  inviata: "Inviata",
+  in_lavorazione: "In Lavorazione",
+  attesa_documenti: "Attesa Documenti",
+  completata: "Completata",
+  annullata: "Annullata",
+  rifiutata: "Rifiutata",
+};
+
+const UTILITY_STATUS_COLORS: Record<string, string> = {
+  bozza: "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300",
+  inviata: "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300",
+  in_lavorazione: "bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300",
+  attesa_documenti: "bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300",
+  completata: "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300",
+  annullata: "bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300",
+  rifiutata: "bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300",
+};
+
+const formatCurrency = (cents: number | null | undefined) => {
+  if (cents === null || cents === undefined) return "-";
+  return new Intl.NumberFormat("it-IT", {
+    style: "currency",
+    currency: "EUR",
+  }).format(cents / 100);
+};
+
 export default function AdminRepairCenterDetail() {
   const params = useParams<{ id: string }>();
   const centerId = params.id;
@@ -131,7 +164,7 @@ export default function AdminRepairCenterDetail() {
     );
   }
 
-  const { center, reseller, repairs, b2bOrders, customers, staff, stats, usersMap } = data;
+  const { center, reseller, repairs, b2bOrders, customers, staff, stats, usersMap, utilityPractices, suppliersMap, servicesMap } = data;
 
   return (
     <div className="space-y-6" data-testid="page-repair-center-detail">
@@ -153,14 +186,14 @@ export default function AdminRepairCenterDetail() {
         </Badge>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-5">
         <Card>
           <CardContent className="pt-4">
             <div className="flex items-center gap-2">
               <Wrench className="h-5 w-5 text-primary" />
               <div>
                 <p className="text-2xl font-bold" data-testid="stat-total-repairs">{stats.totalRepairs}</p>
-                <p className="text-sm text-muted-foreground">Lavorazioni Totali</p>
+                <p className="text-sm text-muted-foreground">Lavorazioni</p>
               </div>
             </div>
           </CardContent>
@@ -171,7 +204,18 @@ export default function AdminRepairCenterDetail() {
               <TrendingUp className="h-5 w-5 text-green-600" />
               <div>
                 <p className="text-2xl font-bold" data-testid="stat-active-repairs">{stats.activeRepairs}</p>
-                <p className="text-sm text-muted-foreground">Lavorazioni Attive</p>
+                <p className="text-sm text-muted-foreground">Attive</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-4">
+            <div className="flex items-center gap-2">
+              <FileCheck className="h-5 w-5 text-amber-600" />
+              <div>
+                <p className="text-2xl font-bold" data-testid="stat-utility-practices">{stats.totalUtilityPractices}</p>
+                <p className="text-sm text-muted-foreground">Pratiche Utility</p>
               </div>
             </div>
           </CardContent>
@@ -182,7 +226,7 @@ export default function AdminRepairCenterDetail() {
               <Users className="h-5 w-5 text-blue-600" />
               <div>
                 <p className="text-2xl font-bold" data-testid="stat-customers">{stats.totalCustomers}</p>
-                <p className="text-sm text-muted-foreground">Clienti Associati</p>
+                <p className="text-sm text-muted-foreground">Clienti</p>
               </div>
             </div>
           </CardContent>
@@ -193,7 +237,7 @@ export default function AdminRepairCenterDetail() {
               <Calendar className="h-5 w-5 text-purple-600" />
               <div>
                 <p className="text-2xl font-bold" data-testid="stat-repairs-30days">{stats.repairs30Days}</p>
-                <p className="text-sm text-muted-foreground">Ultimi 30 giorni</p>
+                <p className="text-sm text-muted-foreground">Ultimi 30gg</p>
               </div>
             </div>
           </CardContent>
@@ -311,10 +355,14 @@ export default function AdminRepairCenterDetail() {
       </div>
 
       <Tabs defaultValue="repairs" className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="repairs" data-testid="tab-repairs">
             <Wrench className="h-4 w-4 mr-2" />
             Lavorazioni ({repairs.length})
+          </TabsTrigger>
+          <TabsTrigger value="utility" data-testid="tab-utility">
+            <FileCheck className="h-4 w-4 mr-2" />
+            Pratiche ({utilityPractices.length})
           </TabsTrigger>
           <TabsTrigger value="orders" data-testid="tab-orders">
             <Package className="h-4 w-4 mr-2" />
@@ -369,6 +417,69 @@ export default function AdminRepairCenterDetail() {
                         <TableCell>
                           <Link href={`/admin/repairs/${repair.id}`}>
                             <Button variant="ghost" size="icon" data-testid={`button-view-repair-${repair.id}`}>
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                          </Link>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="utility" className="mt-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Pratiche Utility</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {utilityPractices.length === 0 ? (
+                <p className="text-center text-muted-foreground py-8">Nessuna pratica utility trovata</p>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Cliente</TableHead>
+                      <TableHead>Fornitore</TableHead>
+                      <TableHead>Servizio</TableHead>
+                      <TableHead>Stato</TableHead>
+                      <TableHead>Importo</TableHead>
+                      <TableHead>Data</TableHead>
+                      <TableHead>Azioni</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {utilityPractices.map((practice) => (
+                      <TableRow key={practice.id} data-testid={`row-practice-${practice.id}`}>
+                        <TableCell className="font-medium">
+                          {practice.customerId ? usersMap[practice.customerId]?.fullName : practice.temporaryCustomerName || "-"}
+                        </TableCell>
+                        <TableCell>
+                          {practice.supplierId ? suppliersMap[practice.supplierId] : practice.temporarySupplierName || "-"}
+                        </TableCell>
+                        <TableCell>
+                          {practice.serviceId ? servicesMap[practice.serviceId] : practice.customServiceName || "-"}
+                        </TableCell>
+                        <TableCell>
+                          <Badge className={UTILITY_STATUS_COLORS[practice.status] || ""}>
+                            {UTILITY_STATUS_LABELS[practice.status] || practice.status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          {practice.priceType === "mensile" 
+                            ? formatCurrency(practice.monthlyPriceCents) + "/mese"
+                            : formatCurrency(practice.flatPriceCents)
+                          }
+                        </TableCell>
+                        <TableCell>
+                          {format(new Date(practice.createdAt), "dd/MM/yyyy", { locale: it })}
+                        </TableCell>
+                        <TableCell>
+                          <Link href={`/admin/utility/practices/${practice.id}`}>
+                            <Button variant="ghost" size="icon" data-testid={`button-view-practice-${practice.id}`}>
                               <Eye className="h-4 w-4" />
                             </Button>
                           </Link>
