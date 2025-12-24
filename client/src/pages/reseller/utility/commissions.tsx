@@ -1,15 +1,20 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { UtilityCommission, UtilityPractice } from "@shared/schema";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
 import { 
-  Search, Coins, ArrowLeft, CheckCircle2, Clock, XCircle, Calendar
+  Search, Coins, ArrowLeft, CheckCircle2, Clock, XCircle, Calendar, Check, X
 } from "lucide-react";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Link } from "wouter";
 import { format } from "date-fns";
@@ -52,6 +57,10 @@ export default function ResellerUtilityCommissions() {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [yearFilter, setYearFilter] = useState<number>(new Date().getFullYear());
+  const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
+  const [rejectingCommission, setRejectingCommission] = useState<UtilityCommission | null>(null);
+  const [rejectReason, setRejectReason] = useState("");
+  const { toast } = useToast();
 
   const { data: commissions = [], isLoading } = useQuery<UtilityCommission[]>({
     queryKey: ["/api/utility/commissions", yearFilter],
@@ -65,6 +74,73 @@ export default function ResellerUtilityCommissions() {
   const { data: practices = [] } = useQuery<UtilityPractice[]>({
     queryKey: ["/api/utility/practices"],
   });
+
+  // Get sub-resellers under this reseller
+  const { data: mySubResellers = [] } = useQuery<{ id: string; name: string }[]>({
+    queryKey: ["/api/my-sub-resellers"],
+  });
+
+  const subResellerIds = mySubResellers.map(sr => sr.id);
+
+  // Check if commission can be approved by this reseller
+  // Reseller can approve commissions of practices belonging to their sub-resellers
+  const canApproveCommission = (commission: UtilityCommission): boolean => {
+    const practice = practices.find(p => p.id === commission.practiceId);
+    if (!practice || commission.status !== 'pending') return false;
+    
+    // Check if practice belongs to a sub-reseller
+    if (practice.resellerId && subResellerIds.includes(practice.resellerId)) return true;
+    
+    return false;
+  };
+
+  const approveMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const res = await apiRequest("POST", `/api/utility/commissions/${id}/approve`);
+      return await res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/utility/commissions"] });
+      toast({ title: "Commissione approvata", description: "La commissione è stata approvata con successo" });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Errore", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const rejectMutation = useMutation({
+    mutationFn: async ({ id, reason }: { id: string; reason: string }) => {
+      const res = await apiRequest("POST", `/api/utility/commissions/${id}/reject`, { reason });
+      return await res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/utility/commissions"] });
+      setRejectDialogOpen(false);
+      setRejectingCommission(null);
+      setRejectReason("");
+      toast({ title: "Commissione rifiutata", description: "La commissione è stata rifiutata" });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Errore", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const handleApprove = (commission: UtilityCommission) => {
+    if (confirm("Sei sicuro di voler approvare questa commissione?")) {
+      approveMutation.mutate(commission.id);
+    }
+  };
+
+  const handleReject = (commission: UtilityCommission) => {
+    setRejectingCommission(commission);
+    setRejectReason("");
+    setRejectDialogOpen(true);
+  };
+
+  const handleRejectSubmit = () => {
+    if (!rejectingCommission || !rejectReason.trim()) return;
+    rejectMutation.mutate({ id: rejectingCommission.id, reason: rejectReason });
+  };
 
   const filteredCommissions = commissions.filter((commission) => {
     const practice = practices.find(p => p.id === commission.practiceId);
@@ -219,6 +295,7 @@ export default function ResellerUtilityCommissions() {
                   <TableHead>Importo</TableHead>
                   <TableHead>Stato</TableHead>
                   <TableHead>Data Pagamento</TableHead>
+                  <TableHead className="text-right">Azioni</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -250,6 +327,36 @@ export default function ResellerUtilityCommissions() {
                           ? format(new Date(commission.paidAt), "dd/MM/yyyy", { locale: it })
                           : "-"}
                       </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex items-center justify-end gap-1">
+                          {canApproveCommission(commission) && (
+                            <>
+                              <Button 
+                                variant="ghost" 
+                                size="icon"
+                                onClick={() => handleApprove(commission)}
+                                disabled={approveMutation.isPending}
+                                className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                                data-testid={`button-approve-${commission.id}`}
+                                title="Approva"
+                              >
+                                <Check className="h-4 w-4" />
+                              </Button>
+                              <Button 
+                                variant="ghost" 
+                                size="icon"
+                                onClick={() => handleReject(commission)}
+                                disabled={rejectMutation.isPending}
+                                className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                data-testid={`button-reject-${commission.id}`}
+                                title="Rifiuta"
+                              >
+                                <X className="h-4 w-4" />
+                              </Button>
+                            </>
+                          )}
+                        </div>
+                      </TableCell>
                     </TableRow>
                   );
                 })}
@@ -258,6 +365,48 @@ export default function ResellerUtilityCommissions() {
           )}
         </CardContent>
       </Card>
+
+      <Dialog open={rejectDialogOpen} onOpenChange={setRejectDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Rifiuta Commissione</DialogTitle>
+            <DialogDescription>
+              Inserisci la motivazione del rifiuto per la commissione di{" "}
+              {rejectingCommission && formatCurrency(rejectingCommission.amountCents)}.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="rejectReason">Motivazione *</Label>
+              <Textarea
+                id="rejectReason"
+                value={rejectReason}
+                onChange={(e) => setRejectReason(e.target.value)}
+                placeholder="Inserisci il motivo del rifiuto..."
+                rows={3}
+                data-testid="input-reject-reason"
+              />
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button 
+                variant="outline" 
+                onClick={() => setRejectDialogOpen(false)}
+                data-testid="button-cancel-reject"
+              >
+                Annulla
+              </Button>
+              <Button 
+                variant="destructive"
+                onClick={handleRejectSubmit}
+                disabled={!rejectReason.trim() || rejectMutation.isPending}
+                data-testid="button-confirm-reject"
+              >
+                Rifiuta Commissione
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

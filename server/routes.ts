@@ -11443,6 +11443,27 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // GET /api/my-sub-resellers - List sub-resellers under current reseller
+  app.get("/api/my-sub-resellers", requireAuth, requireRole("reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const allUsers = await storage.listUsers();
+      // Get sub-resellers where parentResellerId matches current user's id
+      const mySubResellers = allUsers
+        .filter(u => u.role === 'reseller' && u.parentResellerId === req.user!.id && u.isActive)
+        .map(u => ({
+          id: u.id,
+          name: u.fullName || u.username,
+          username: u.username,
+          email: u.email,
+        }));
+      res.json(mySubResellers);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
   app.patch("/api/users/:id", requireAuth, async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
@@ -15861,23 +15882,16 @@ export function registerRoutes(app: Express): Server {
       const practice = await storage.getUtilityPractice(commission.practiceId);
       if (!practice) return res.status(404).send("Pratica non trovata");
       
-      // RBAC: Admin can approve all, Reseller can approve only sub-reseller/repair center commissions
+      // RBAC: Admin can approve all, Reseller can approve only sub-reseller commissions
       if (req.user.role === 'reseller') {
-        // Check if practice belongs to a sub-reseller under this reseller
+        // Check if practice belongs to a sub-reseller under this reseller (via parentResellerId)
         const allUsers = await storage.getUsers();
-        const subResellers = allUsers.filter(u => u.role === 'reseller' && u.resellerId === req.user!.id);
+        const subResellers = allUsers.filter(u => u.role === 'reseller' && u.parentResellerId === req.user!.id);
         const subResellerIds = subResellers.map(sr => sr.id);
         
-        // Check if practice belongs to a repair center under this reseller
-        const resellerRepairCenters = await storage.listRepairCenters();
-        const myRepairCenterIds = resellerRepairCenters
-          .filter(rc => rc.resellerId === req.user!.id)
-          .map(rc => rc.id);
-        
         const isSubResellerPractice = practice.resellerId && subResellerIds.includes(practice.resellerId);
-        const isMyRepairCenterPractice = practice.repairCenterId && myRepairCenterIds.includes(practice.repairCenterId);
         
-        if (!isSubResellerPractice && !isMyRepairCenterPractice) {
+        if (!isSubResellerPractice) {
           return res.status(403).send("Non hai i permessi per approvare questa commissione");
         }
       }
@@ -15924,23 +15938,16 @@ export function registerRoutes(app: Express): Server {
       const practice = await storage.getUtilityPractice(commission.practiceId);
       if (!practice) return res.status(404).send("Pratica non trovata");
       
-      // RBAC: Admin can reject all, Reseller can reject only sub-reseller/repair center commissions
+      // RBAC: Admin can reject all, Reseller can reject only sub-reseller commissions
       if (req.user.role === 'reseller') {
-        // Check if practice belongs to a sub-reseller under this reseller
+        // Check if practice belongs to a sub-reseller under this reseller (via parentResellerId)
         const allUsers = await storage.getUsers();
-        const subResellers = allUsers.filter(u => u.role === 'reseller' && u.resellerId === req.user!.id);
+        const subResellers = allUsers.filter(u => u.role === 'reseller' && u.parentResellerId === req.user!.id);
         const subResellerIds = subResellers.map(sr => sr.id);
         
-        // Check if practice belongs to a repair center under this reseller
-        const resellerRepairCenters = await storage.listRepairCenters();
-        const myRepairCenterIds = resellerRepairCenters
-          .filter(rc => rc.resellerId === req.user!.id)
-          .map(rc => rc.id);
-        
         const isSubResellerPractice = practice.resellerId && subResellerIds.includes(practice.resellerId);
-        const isMyRepairCenterPractice = practice.repairCenterId && myRepairCenterIds.includes(practice.repairCenterId);
         
-        if (!isSubResellerPractice && !isMyRepairCenterPractice) {
+        if (!isSubResellerPractice) {
           return res.status(403).send("Non hai i permessi per rifiutare questa commissione");
         }
       }
