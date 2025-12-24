@@ -14811,18 +14811,56 @@ export function registerRoutes(app: Express): Server {
       // Update the item
       const item = await storage.updateSupplierOrderItemReceived(req.params.id, quantityReceived);
       
-      // Create incremental inventory movement only if delta > 0 and product is linked
+      // Create incremental warehouse movement only if delta > 0 and product is linked
       if (delta > 0 && currentItem.product_id) {
         const order = await storage.getSupplierOrder(currentItem.supplier_order_id);
         if (order) {
-          await storage.createInventoryMovement({
-            productId: currentItem.product_id,
-            repairCenterId: order.repairCenterId,
-            movementType: 'in',
-            quantity: delta,
-            notes: `Ordine fornitore ${order.orderNumber} - Ricezione parziale (+${delta})`,
-            createdBy: req.user.id,
-          });
+          // Determine target warehouse: use targetWarehouseId if set, otherwise find owner's warehouse
+          let targetWarehouseId = order.targetWarehouseId;
+          
+          if (!targetWarehouseId) {
+            // Find warehouse based on owner type
+            let ownerWarehouse;
+            if (order.ownerType === 'admin') {
+              ownerWarehouse = await storage.getWarehouseByOwner('admin', order.ownerId || order.createdBy);
+            } else if (order.ownerType === 'reseller') {
+              ownerWarehouse = await storage.getWarehouseByOwner('reseller', order.ownerId!);
+            } else if (order.ownerType === 'sub_reseller') {
+              ownerWarehouse = await storage.getWarehouseByOwner('sub_reseller', order.ownerId!);
+            } else if (order.ownerType === 'repair_center' && order.repairCenterId) {
+              ownerWarehouse = await storage.getWarehouseByOwner('repair_center', order.repairCenterId);
+            }
+            targetWarehouseId = ownerWarehouse?.id;
+          }
+          
+          if (targetWarehouseId) {
+            // Create warehouse movement (new system)
+            await storage.createWarehouseMovement({
+              warehouseId: targetWarehouseId,
+              productId: currentItem.product_id,
+              movementType: 'in',
+              quantity: delta,
+              referenceType: 'carico_fornitore',
+              referenceId: order.id,
+              notes: `Ordine fornitore ${order.orderNumber} - Ricezione (+${delta})`,
+              createdBy: req.user.id,
+            });
+            
+            // Update warehouse stock
+            await storage.updateWarehouseStockQuantity(targetWarehouseId, currentItem.product_id, delta);
+          }
+          
+          // Also update legacy inventory if repair center exists (backward compatibility)
+          if (order.repairCenterId) {
+            await storage.createInventoryMovement({
+              productId: currentItem.product_id,
+              repairCenterId: order.repairCenterId,
+              movementType: 'in',
+              quantity: delta,
+              notes: `Ordine fornitore ${order.orderNumber} - Ricezione (+${delta})`,
+              createdBy: req.user.id,
+            });
+          }
         }
       }
       

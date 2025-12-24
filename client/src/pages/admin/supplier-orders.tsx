@@ -11,7 +11,8 @@ import type {
   SupplierOrderItem,
   RepairCenter,
   ProductSupplier,
-  SupplierOrderOwnerType
+  SupplierOrderOwnerType,
+  Warehouse
 } from "@shared/schema";
 
 // Types for reseller/sub-reseller lists returned by API
@@ -98,6 +99,7 @@ import {
   Users,
   Store,
   Wrench,
+  Warehouse as WarehouseIcon,
 } from "lucide-react";
 
 interface SupplierOrderWithDetails extends SupplierOrder {
@@ -188,9 +190,14 @@ export default function SupplierOrdersPage() {
     queryKey: ["/api/products"],
   });
 
+  const { data: warehouses = [] } = useQuery<Warehouse[]>({
+    queryKey: ["/api/warehouses"],
+  });
+
   // State for create dialog owner type
   const [newOrderOwnerType, setNewOrderOwnerType] = useState<SupplierOrderOwnerType>("repair_center");
   const [newOrderOwnerId, setNewOrderOwnerId] = useState<string>("");
+  const [newOrderWarehouseId, setNewOrderWarehouseId] = useState<string>("");
 
   // Order items for selected order
   const { data: orderItems = [], isLoading: isLoadingItems } = useQuery<OrderItemWithProduct[]>({
@@ -316,12 +323,14 @@ export default function SupplierOrdersPage() {
       ownerType: newOrderOwnerType,
       ownerId: newOrderOwnerType === "admin" ? null : newOrderOwnerId,
       repairCenterId: newOrderOwnerType === "repair_center" ? newOrderOwnerId : undefined,
+      targetWarehouseId: (newOrderWarehouseId && newOrderWarehouseId !== "__auto__") ? newOrderWarehouseId : undefined,
       notes: notes || undefined,
     });
     
     // Reset form state
     setNewOrderOwnerType("repair_center");
     setNewOrderOwnerId("");
+    setNewOrderWarehouseId("");
   };
 
   const handleStatusChange = async (orderId: string, newStatus: string) => {
@@ -796,6 +805,31 @@ export default function SupplierOrdersPage() {
                   ))}
                 </SelectContent>
               </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Magazzino Destinazione</Label>
+              <Select 
+                value={newOrderWarehouseId} 
+                onValueChange={setNewOrderWarehouseId}
+              >
+                <SelectTrigger data-testid="select-target-warehouse">
+                  <SelectValue placeholder="Seleziona magazzino (opzionale)..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__auto__">
+                    Automatico (magazzino del destinatario)
+                  </SelectItem>
+                  {warehouses.filter(w => w.isActive).map(w => (
+                    <SelectItem key={w.id} value={w.id}>
+                      {w.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                Se non selezionato, verrà usato il magazzino del destinatario
+              </p>
             </div>
             
             <div className="space-y-2">
