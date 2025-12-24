@@ -2343,6 +2343,9 @@ export const supplierOrders = pgTable("supplier_orders", {
   // Centro riparazione (opzionale, mantenuto per backward compatibility)
   repairCenterId: varchar("repair_center_id").references(() => repairCenters.id), // Centro associato (ora opzionale)
   
+  // Magazzino destinazione per ricezione prodotti
+  targetWarehouseId: varchar("target_warehouse_id").references(() => warehouses.id),
+  
   // Stato e tracking
   status: supplierOrderStatusEnum("status").notNull().default("draft"),
   
