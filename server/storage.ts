@@ -4072,8 +4072,17 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateSupplierOrder(id: string, updates: Partial<Omit<InsertSupplierOrder, 'orderNumber' | 'createdBy'>>): Promise<SupplierOrder> {
+    // Convert string dates to Date objects for Drizzle compatibility
+    const processedUpdates: any = { ...updates };
+    const dateFields = ['sentAt', 'confirmedAt', 'shippedAt', 'receivedAt', 'expectedDelivery'];
+    for (const field of dateFields) {
+      if (processedUpdates[field] && typeof processedUpdates[field] === 'string') {
+        processedUpdates[field] = new Date(processedUpdates[field]);
+      }
+    }
+    
     const [order] = await db.update(supplierOrders)
-      .set({ ...updates, updatedAt: new Date() })
+      .set({ ...processedUpdates, updatedAt: new Date() })
       .where(eq(supplierOrders.id, id))
       .returning();
     
