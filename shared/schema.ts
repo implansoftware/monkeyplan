@@ -285,6 +285,7 @@ export const utilityPracticeEventTypeEnum = pgEnum("utility_practice_event_type"
   "note_added",        // Nota aggiunta
   "assigned",          // Pratica assegnata
   "comment",           // Commento generico
+  "commissione_maturata", // Commissione maturata
 ]);
 
 // Categoria documento pratica utility

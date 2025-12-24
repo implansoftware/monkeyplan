@@ -16519,6 +16519,57 @@ export function registerRoutes(app: Express): Server {
       // Update practice
       const updated = await storage.updateUtilityPractice(req.params.id, { status });
       
+      // Auto-create commission when practice is completed
+      if (status === 'completata' && practice.status !== 'completata') {
+        // Check if commission already exists for this practice
+        const existingCommissions = await storage.listUtilityCommissions({ practiceId: req.params.id });
+        
+        if (existingCommissions.length === 0) {
+          // Calculate commission amount
+          let commissionAmount = practice.commissionAmountCents || 0;
+          
+          // If no commission on practice, try to get from service
+          if (commissionAmount === 0 && practice.serviceId) {
+            const service = await storage.getUtilityService(practice.serviceId);
+            if (service) {
+              // Use service commission (one-time activation or fixed)
+              if (service.commissionOneTime) {
+                commissionAmount = service.commissionOneTime;
+              } else if (service.commissionFixed) {
+                commissionAmount = service.commissionFixed;
+              } else if (service.commissionPercent && practice.monthlyPriceCents) {
+                // Calculate percentage on monthly price
+                commissionAmount = Math.round(practice.monthlyPriceCents * (service.commissionPercent / 100));
+              }
+            }
+          }
+          
+          // Create commission if amount > 0
+          if (commissionAmount > 0) {
+            const now = new Date();
+            const commission = await storage.createUtilityCommission({
+              practiceId: req.params.id,
+              periodMonth: now.getMonth() + 1, // 1-12
+              periodYear: now.getFullYear(),
+              amountCents: commissionAmount,
+              status: 'pending',
+              accruedAt: now,
+              notes: `Commissione automatica per pratica ${practice.practiceNumber}`,
+            });
+            
+            // Create timeline event for commission
+            await storage.createUtilityPracticeTimelineEvent({
+              practiceId: req.params.id,
+              eventType: 'commissione_maturata',
+              title: `Commissione maturata: €${(commissionAmount / 100).toFixed(2)}`,
+              description: `Commissione riconosciuta a ${practice.resellerId ? 'Reseller' : 'Repair Center'}`,
+              payload: { commissionId: commission.id, amountCents: commissionAmount },
+              createdBy: req.user.id,
+            });
+          }
+        }
+      }
+      
       res.json(updated);
     } catch (error: any) {
       res.status(400).send(error.message);
