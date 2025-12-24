@@ -16,7 +16,7 @@ import { Switch } from "@/components/ui/switch";
 import { Skeleton } from "@/components/ui/skeleton";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import type { AccessorySpecs, Product, DeviceModel, DeviceBrand, User, Warehouse as WarehouseType } from "@shared/schema";
+import type { AccessorySpecs, Product, DeviceModel, DeviceBrand, User, ProductPrice, Warehouse as WarehouseType } from "@shared/schema";
 import { ProductDetailDialog } from "@/components/product-detail-dialog";
 import { AccessoryWizard } from "@/components/AccessoryWizard";
 
@@ -45,6 +45,10 @@ interface WarehouseForStock {
     role: string;
   } | null;
 }
+
+type ProductPriceWithReseller = ProductPrice & {
+  reseller?: { id: string; username: string; fullName: string | null } | null;
+};
 
 type AccessoryWithSpecs = Product & {
   specs: AccessorySpecs | null;
@@ -102,6 +106,8 @@ export default function AdminAccessoryCatalog() {
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
   const [detailProductId, setDetailProductId] = useState<string | null>(null);
   const [selectedResellerId, setSelectedResellerId] = useState<string>("");
+  const [assignPrice, setAssignPrice] = useState<string>("");
+  const [assignCostPrice, setAssignCostPrice] = useState<string>("");
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
@@ -156,22 +162,75 @@ export default function AdminAccessoryCatalog() {
   });
 
   // Fetch resellers for assignment (use select to filter directly like smartphone-catalog)
-  const { data: resellers = [], isLoading: isLoadingResellers } = useQuery<User[]>({
+  const { data: resellers = [] } = useQuery<User[]>({
     queryKey: ["/api/admin/users"],
     select: (users) => users.filter((u) => u.role === "reseller"),
   });
 
-  // Assign accessory to reseller mutation
+  // Fetch all product assignments for displaying in the table
+  const { data: allProductAssignments = [] } = useQuery<ProductPriceWithReseller[]>({
+    queryKey: ["/api/admin/product-prices"],
+    queryFn: async () => {
+      const response = await fetch(`/api/admin/product-prices`, {
+        credentials: "include",
+      });
+      if (!response.ok) throw new Error("Failed to fetch assignments");
+      return response.json();
+    },
+  });
+
+  // Group assignments by product ID for quick lookup
+  const assignmentsByProductId = allProductAssignments.reduce((acc, assignment) => {
+    if (!acc[assignment.productId]) {
+      acc[assignment.productId] = [];
+    }
+    acc[assignment.productId].push(assignment);
+    return acc;
+  }, {} as Record<string, ProductPriceWithReseller[]>);
+
+  // Fetch assignments for the specific accessory being assigned
+  const { data: productAssignments = [], refetch: refetchAssignments } = useQuery<ProductPriceWithReseller[]>({
+    queryKey: ["/api/admin/product-prices", { productId: accessoryToAssign?.id }],
+    queryFn: async () => {
+      if (!accessoryToAssign?.id) return [];
+      const response = await fetch(`/api/admin/product-prices?productId=${accessoryToAssign.id}`, {
+        credentials: "include",
+      });
+      if (!response.ok) throw new Error("Failed to fetch assignments");
+      return response.json();
+    },
+    enabled: !!accessoryToAssign,
+  });
+
+  const currentProductAssignments = productAssignments;
+
+  // Assign accessory to reseller mutation (with price)
   const assignMutation = useMutation({
-    mutationFn: async ({ productId, resellerId }: { productId: string; resellerId: string | null }) => {
-      await apiRequest("PATCH", `/api/admin/accessories/${productId}/assign`, { resellerId });
+    mutationFn: async (data: { productId: string; resellerId: string; priceCents: number; costPriceCents?: number }) => {
+      return apiRequest("POST", "/api/admin/product-prices", data);
     },
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/product-prices"] });
       queryClient.invalidateQueries({ queryKey: ["/api/accessories"] });
-      setAssignDialogOpen(false);
-      setAccessoryToAssign(null);
+      refetchAssignments();
+      toast({ title: "Assegnato", description: "L'accessorio è stato assegnato al rivenditore." });
       setSelectedResellerId("");
-      toast({ title: "Accessorio assegnato", description: "L'accessorio è stato assegnato al rivenditore." });
+    },
+    onError: (error: any) => {
+      toast({ title: "Errore", description: error.message, variant: "destructive" });
+    },
+  });
+
+  // Unassign mutation
+  const unassignMutation = useMutation({
+    mutationFn: async (priceId: string) => {
+      return apiRequest("DELETE", `/api/admin/product-prices/${priceId}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/product-prices"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/accessories"] });
+      refetchAssignments();
+      toast({ title: "Rimosso", description: "L'assegnazione è stata rimossa." });
     },
     onError: (error: any) => {
       toast({ title: "Errore", description: error.message, variant: "destructive" });
@@ -771,10 +830,19 @@ export default function AdminAccessoryCatalog() {
                         </div>
                       </TableCell>
                       <TableCell>
-                        <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                          <Store className="h-4 w-4" />
-                          {accessory.reseller?.fullName || accessory.reseller?.username || "-"}
-                        </div>
+                        {assignmentsByProductId[accessory.id]?.length > 0 ? (
+                          <div className="flex flex-col gap-1">
+                            {assignmentsByProductId[accessory.id].map((assignment) => (
+                              <div key={assignment.id} className="flex items-center gap-1 text-sm">
+                                <Store className="h-3 w-3 text-muted-foreground" />
+                                <span>{assignment.reseller?.fullName || assignment.reseller?.username}</span>
+                                <span className="text-xs text-muted-foreground">€{(assignment.priceCents / 100).toFixed(2)}</span>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <span className="text-sm text-muted-foreground">-</span>
+                        )}
                       </TableCell>
                       <TableCell>
                         <Badge variant="outline">
@@ -833,7 +901,7 @@ export default function AdminAccessoryCatalog() {
                           <Button
                             variant="ghost"
                             size="icon"
-                            onClick={() => { setAccessoryToAssign(accessory); setSelectedResellerId(accessory.reseller?.id || ""); setAssignDialogOpen(true); }}
+                            onClick={() => { setAccessoryToAssign(accessory); setSelectedResellerId(""); setAssignPrice(""); setAssignCostPrice(""); setAssignDialogOpen(true); }}
                             title="Assegna a rivenditore"
                             data-testid={`button-assign-accessory-${accessory.id}`}
                           >
@@ -1533,61 +1601,119 @@ export default function AdminAccessoryCatalog() {
         </DialogContent>
       </Dialog>
 
-      {/* Dialog per assegnare accessorio a rivenditore */}
-      <Dialog open={assignDialogOpen} onOpenChange={setAssignDialogOpen}>
-        <DialogContent className="sm:max-w-md">
+      {/* Dialog per assegnare accessorio a rivenditore (con prezzi) */}
+      <Dialog open={assignDialogOpen} onOpenChange={(open) => { setAssignDialogOpen(open); if (!open) { setSelectedResellerId(""); setAssignPrice(""); setAssignCostPrice(""); } }}>
+        <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle>Assegna Accessorio</DialogTitle>
+            <DialogTitle className="flex items-center gap-2">
+              <UserPlus className="h-5 w-5" />
+              Assegna a Rivenditore
+            </DialogTitle>
             <DialogDescription>
-              Seleziona il rivenditore a cui assegnare "{accessoryToAssign?.name}"
+              Assegna "{accessoryToAssign?.name}" a uno o più rivenditori con prezzi personalizzati.
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label>Rivenditore</Label>
-              {isLoadingResellers ? (
-                <div className="flex items-center gap-2 py-2">
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  <span className="text-sm text-muted-foreground">Caricamento rivenditori...</span>
+
+          <div className="space-y-4 py-4">
+            {currentProductAssignments.length > 0 && (
+              <div className="space-y-2">
+                <Label>Rivenditori assegnati</Label>
+                <div className="space-y-2">
+                  {currentProductAssignments.map((assignment) => (
+                    <div key={assignment.id} className="flex items-center justify-between p-2 bg-muted rounded-md">
+                      <div>
+                        <span className="font-medium">{assignment.reseller?.fullName || assignment.reseller?.username || assignment.resellerId}</span>
+                        <span className="text-sm text-muted-foreground ml-2">
+                          €{(assignment.priceCents / 100).toFixed(2)}
+                        </span>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => unassignMutation.mutate(assignment.id)}
+                        disabled={unassignMutation.isPending}
+                        data-testid={`button-unassign-${assignment.id}`}
+                      >
+                        <X className="h-4 w-4 text-destructive" />
+                      </Button>
+                    </div>
+                  ))}
                 </div>
-              ) : resellers.length === 0 ? (
-                <p className="text-sm text-muted-foreground py-2">Nessun rivenditore disponibile</p>
-              ) : (
+              </div>
+            )}
+
+            <div className="border-t pt-4 space-y-4">
+              <Label>Aggiungi nuovo rivenditore</Label>
+              
+              <div className="space-y-2">
+                <Label htmlFor="reseller">Rivenditore</Label>
                 <Select value={selectedResellerId} onValueChange={setSelectedResellerId}>
                   <SelectTrigger data-testid="select-assign-reseller">
-                    <SelectValue placeholder="Seleziona rivenditore..." />
+                    <SelectValue placeholder="Seleziona rivenditore" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="__none__">Nessuno (rimuovi assegnazione)</SelectItem>
-                    {resellers.map((reseller) => (
-                      <SelectItem key={reseller.id} value={reseller.id}>
-                        {reseller.fullName || reseller.username}
-                      </SelectItem>
-                    ))}
+                    {resellers
+                      .filter((r) => !currentProductAssignments.some((a) => a.resellerId === r.id))
+                      .map((r) => (
+                        <SelectItem key={r.id} value={r.id}>
+                          {r.fullName || r.username}
+                        </SelectItem>
+                      ))}
                   </SelectContent>
                 </Select>
-              )}
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="assignPrice">Prezzo vendita (€) *</Label>
+                  <Input
+                    id="assignPrice"
+                    type="number"
+                    step="0.01"
+                    value={assignPrice}
+                    onChange={(e) => setAssignPrice(e.target.value)}
+                    placeholder={accessoryToAssign ? (accessoryToAssign.unitPrice / 100).toFixed(2) : "0.00"}
+                    data-testid="input-assign-price"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="assignCostPrice">Prezzo costo (€)</Label>
+                  <Input
+                    id="assignCostPrice"
+                    type="number"
+                    step="0.01"
+                    value={assignCostPrice}
+                    onChange={(e) => setAssignCostPrice(e.target.value)}
+                    placeholder={accessoryToAssign?.costPrice ? (accessoryToAssign.costPrice / 100).toFixed(2) : "0.00"}
+                    data-testid="input-assign-cost-price"
+                  />
+                </div>
+              </div>
+
+              <Button
+                onClick={() => {
+                  if (!accessoryToAssign || !selectedResellerId || !assignPrice) return;
+                  assignMutation.mutate({
+                    productId: accessoryToAssign.id,
+                    resellerId: selectedResellerId,
+                    priceCents: Math.round(parseFloat(assignPrice) * 100),
+                    costPriceCents: assignCostPrice ? Math.round(parseFloat(assignCostPrice) * 100) : undefined,
+                  });
+                }}
+                disabled={!selectedResellerId || !assignPrice || assignMutation.isPending}
+                className="w-full"
+                data-testid="button-confirm-assign"
+              >
+                {assignMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                <UserPlus className="mr-2 h-4 w-4" />
+                Assegna
+              </Button>
             </div>
-            {accessoryToAssign?.reseller && (
-              <p className="text-sm text-muted-foreground">
-                Attualmente assegnato a: <strong>{accessoryToAssign.reseller.fullName || accessoryToAssign.reseller.username}</strong>
-              </p>
-            )}
           </div>
+
           <DialogFooter>
-            <Button variant="outline" onClick={() => setAssignDialogOpen(false)}>
-              Annulla
-            </Button>
-            <Button
-              onClick={() => accessoryToAssign && assignMutation.mutate({ 
-                productId: accessoryToAssign.id, 
-                resellerId: selectedResellerId === "__none__" ? null : selectedResellerId 
-              })}
-              disabled={assignMutation.isPending}
-              data-testid="button-confirm-assign"
-            >
-              {assignMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Assegna
+            <Button variant="outline" onClick={() => setAssignDialogOpen(false)} data-testid="button-close-assign">
+              Chiudi
             </Button>
           </DialogFooter>
         </DialogContent>
