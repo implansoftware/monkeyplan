@@ -12,7 +12,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { 
   Plus, Search, Coins, Pencil, Trash2, 
-  ArrowLeft, CheckCircle2, Clock, XCircle, Calendar
+  ArrowLeft, CheckCircle2, Clock, XCircle, Calendar,
+  Check, X
 } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -61,6 +62,9 @@ export default function AdminUtilityCommissions() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingCommission, setEditingCommission] = useState<UtilityCommission | null>(null);
   const [selectedStatus, setSelectedStatus] = useState<CommissionStatus>("pending");
+  const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
+  const [rejectingCommission, setRejectingCommission] = useState<UtilityCommission | null>(null);
+  const [rejectReason, setRejectReason] = useState("");
   const { toast } = useToast();
 
   const { data: commissions = [], isLoading } = useQuery<UtilityCommission[]>({
@@ -120,6 +124,54 @@ export default function AdminUtilityCommissions() {
       toast({ title: "Errore", description: error.message, variant: "destructive" });
     },
   });
+
+  const approveMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const res = await apiRequest("POST", `/api/utility/commissions/${id}/approve`);
+      return await res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/utility/commissions"] });
+      toast({ title: "Commissione approvata", description: "La commissione è stata approvata con successo" });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Errore", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const rejectMutation = useMutation({
+    mutationFn: async ({ id, reason }: { id: string; reason: string }) => {
+      const res = await apiRequest("POST", `/api/utility/commissions/${id}/reject`, { reason });
+      return await res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/utility/commissions"] });
+      setRejectDialogOpen(false);
+      setRejectingCommission(null);
+      setRejectReason("");
+      toast({ title: "Commissione rifiutata", description: "La commissione è stata rifiutata" });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Errore", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const handleApprove = (commission: UtilityCommission) => {
+    if (confirm("Sei sicuro di voler approvare questa commissione?")) {
+      approveMutation.mutate(commission.id);
+    }
+  };
+
+  const handleReject = (commission: UtilityCommission) => {
+    setRejectingCommission(commission);
+    setRejectReason("");
+    setRejectDialogOpen(true);
+  };
+
+  const handleRejectSubmit = () => {
+    if (!rejectingCommission || !rejectReason.trim()) return;
+    rejectMutation.mutate({ id: rejectingCommission.id, reason: rejectReason });
+  };
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -344,6 +396,32 @@ export default function AdminUtilityCommissions() {
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex items-center justify-end gap-1">
+                          {commission.status === "pending" && (
+                            <>
+                              <Button 
+                                variant="ghost" 
+                                size="icon"
+                                onClick={() => handleApprove(commission)}
+                                disabled={approveMutation.isPending}
+                                className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                                data-testid={`button-approve-${commission.id}`}
+                                title="Approva"
+                              >
+                                <Check className="h-4 w-4" />
+                              </Button>
+                              <Button 
+                                variant="ghost" 
+                                size="icon"
+                                onClick={() => handleReject(commission)}
+                                disabled={rejectMutation.isPending}
+                                className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                data-testid={`button-reject-${commission.id}`}
+                                title="Rifiuta"
+                              >
+                                <X className="h-4 w-4" />
+                              </Button>
+                            </>
+                          )}
                           <Button 
                             variant="ghost" 
                             size="icon"
@@ -509,6 +587,48 @@ export default function AdminUtilityCommissions() {
               </Button>
             </div>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={rejectDialogOpen} onOpenChange={setRejectDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Rifiuta Commissione</DialogTitle>
+            <DialogDescription>
+              Inserisci la motivazione del rifiuto per la commissione di{" "}
+              {rejectingCommission && formatCurrency(rejectingCommission.amountCents)}.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="rejectReason">Motivazione *</Label>
+              <Textarea
+                id="rejectReason"
+                value={rejectReason}
+                onChange={(e) => setRejectReason(e.target.value)}
+                placeholder="Inserisci il motivo del rifiuto..."
+                rows={3}
+                data-testid="input-reject-reason"
+              />
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button 
+                variant="outline" 
+                onClick={() => setRejectDialogOpen(false)}
+                data-testid="button-cancel-reject"
+              >
+                Annulla
+              </Button>
+              <Button 
+                variant="destructive"
+                onClick={handleRejectSubmit}
+                disabled={!rejectReason.trim() || rejectMutation.isPending}
+                data-testid="button-confirm-reject"
+              >
+                Rifiuta Commissione
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

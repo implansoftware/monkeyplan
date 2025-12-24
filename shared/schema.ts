@@ -286,6 +286,8 @@ export const utilityPracticeEventTypeEnum = pgEnum("utility_practice_event_type"
   "assigned",          // Pratica assegnata
   "comment",           // Commento generico
   "commissione_maturata", // Commissione maturata
+  "commissione_approvata", // Commissione approvata
+  "commissione_rifiutata", // Commissione rifiutata
 ]);
 
 // Categoria documento pratica utility
@@ -2668,6 +2670,15 @@ export const utilityCommissions = pgTable("utility_commissions", {
   accruedAt: timestamp("accrued_at"), // Data maturazione
   invoicedAt: timestamp("invoiced_at"), // Data fatturazione
   paidAt: timestamp("paid_at"), // Data pagamento
+  
+  // Approvazione
+  approvedBy: varchar("approved_by").references(() => users.id), // Chi ha approvato
+  approvedAt: timestamp("approved_at"), // Data approvazione
+  
+  // Rifiuto
+  rejectedBy: varchar("rejected_by").references(() => users.id), // Chi ha rifiutato
+  rejectedAt: timestamp("rejected_at"), // Data rifiuto
+  rejectedReason: text("rejected_reason"), // Motivazione rifiuto
   
   // Riferimenti fattura
   invoiceNumber: text("invoice_number"), // Numero fattura emessa

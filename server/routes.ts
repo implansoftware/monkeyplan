@@ -15844,6 +15844,138 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // POST /api/utility/commissions/:id/approve - Approve utility commission
+  app.post("/api/utility/commissions/:id/approve", requireAuth, requireRole("admin", "reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const commission = await storage.getUtilityCommission(req.params.id);
+      if (!commission) return res.status(404).send("Commissione non trovata");
+      
+      // Check status - only pending can be approved
+      if (commission.status !== 'pending') {
+        return res.status(400).send("Solo le commissioni in attesa possono essere approvate");
+      }
+      
+      // Get practice to check beneficiary
+      const practice = await storage.getUtilityPractice(commission.practiceId);
+      if (!practice) return res.status(404).send("Pratica non trovata");
+      
+      // RBAC: Admin can approve all, Reseller can approve only sub-reseller/repair center commissions
+      if (req.user.role === 'reseller') {
+        // Check if practice belongs to a sub-reseller under this reseller
+        const allUsers = await storage.getUsers();
+        const subResellers = allUsers.filter(u => u.role === 'reseller' && u.resellerId === req.user!.id);
+        const subResellerIds = subResellers.map(sr => sr.id);
+        
+        // Check if practice belongs to a repair center under this reseller
+        const resellerRepairCenters = await storage.listRepairCenters();
+        const myRepairCenterIds = resellerRepairCenters
+          .filter(rc => rc.resellerId === req.user!.id)
+          .map(rc => rc.id);
+        
+        const isSubResellerPractice = practice.resellerId && subResellerIds.includes(practice.resellerId);
+        const isMyRepairCenterPractice = practice.repairCenterId && myRepairCenterIds.includes(practice.repairCenterId);
+        
+        if (!isSubResellerPractice && !isMyRepairCenterPractice) {
+          return res.status(403).send("Non hai i permessi per approvare questa commissione");
+        }
+      }
+      
+      // Approve commission
+      const now = new Date();
+      const updated = await storage.updateUtilityCommission(req.params.id, {
+        status: 'accrued',
+        approvedBy: req.user.id,
+        approvedAt: now,
+        accruedAt: now,
+      });
+      
+      // Create timeline event
+      await storage.createUtilityPracticeTimelineEvent({
+        practiceId: commission.practiceId,
+        eventType: 'commissione_approvata',
+        title: `Commissione approvata: €${(commission.amountCents / 100).toFixed(2)}`,
+        description: `Commissione approvata da ${req.user.username || 'Admin'}`,
+        payload: { commissionId: commission.id, approvedBy: req.user.id },
+        createdBy: req.user.id,
+      });
+      
+      res.json(updated);
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+
+  // POST /api/utility/commissions/:id/reject - Reject utility commission
+  app.post("/api/utility/commissions/:id/reject", requireAuth, requireRole("admin", "reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const commission = await storage.getUtilityCommission(req.params.id);
+      if (!commission) return res.status(404).send("Commissione non trovata");
+      
+      // Check status - only pending can be rejected
+      if (commission.status !== 'pending') {
+        return res.status(400).send("Solo le commissioni in attesa possono essere rifiutate");
+      }
+      
+      // Get practice to check beneficiary
+      const practice = await storage.getUtilityPractice(commission.practiceId);
+      if (!practice) return res.status(404).send("Pratica non trovata");
+      
+      // RBAC: Admin can reject all, Reseller can reject only sub-reseller/repair center commissions
+      if (req.user.role === 'reseller') {
+        // Check if practice belongs to a sub-reseller under this reseller
+        const allUsers = await storage.getUsers();
+        const subResellers = allUsers.filter(u => u.role === 'reseller' && u.resellerId === req.user!.id);
+        const subResellerIds = subResellers.map(sr => sr.id);
+        
+        // Check if practice belongs to a repair center under this reseller
+        const resellerRepairCenters = await storage.listRepairCenters();
+        const myRepairCenterIds = resellerRepairCenters
+          .filter(rc => rc.resellerId === req.user!.id)
+          .map(rc => rc.id);
+        
+        const isSubResellerPractice = practice.resellerId && subResellerIds.includes(practice.resellerId);
+        const isMyRepairCenterPractice = practice.repairCenterId && myRepairCenterIds.includes(practice.repairCenterId);
+        
+        if (!isSubResellerPractice && !isMyRepairCenterPractice) {
+          return res.status(403).send("Non hai i permessi per rifiutare questa commissione");
+        }
+      }
+      
+      // Require reason for rejection
+      const { reason } = req.body;
+      if (!reason || reason.trim() === '') {
+        return res.status(400).send("È necessario fornire una motivazione per il rifiuto");
+      }
+      
+      // Reject commission
+      const now = new Date();
+      const updated = await storage.updateUtilityCommission(req.params.id, {
+        status: 'cancelled',
+        rejectedBy: req.user.id,
+        rejectedAt: now,
+        rejectedReason: reason,
+      });
+      
+      // Create timeline event
+      await storage.createUtilityPracticeTimelineEvent({
+        practiceId: commission.practiceId,
+        eventType: 'commissione_rifiutata',
+        title: `Commissione rifiutata: €${(commission.amountCents / 100).toFixed(2)}`,
+        description: `Commissione rifiutata da ${req.user.username || 'Admin'}: ${reason}`,
+        payload: { commissionId: commission.id, rejectedBy: req.user.id, reason },
+        createdBy: req.user.id,
+      });
+      
+      res.json(updated);
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+
   // ----- UTILITY PRACTICE DOCUMENTS -----
 
   // GET /api/utility/practices/:id/documents - List practice documents
