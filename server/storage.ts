@@ -128,10 +128,12 @@ export interface IStorage {
   // Customer-RepairCenter Many-to-Many
   listRepairCentersForCustomer(customerId: string): Promise<RepairCenter[]>;
   setCustomerRepairCenters(customerId: string, repairCenterIds: string[]): Promise<void>;
+  listAllCustomerRepairCenters(): Promise<CustomerRepairCenter[]>;
   
   // Staff-RepairCenter Many-to-Many
   listRepairCentersForStaff(staffId: string): Promise<RepairCenter[]>;
   setStaffRepairCenters(staffId: string, repairCenterIds: string[]): Promise<void>;
+  listAllStaffRepairCenters(): Promise<StaffRepairCenter[]>;
   
   // Repair Centers
   listRepairCenters(): Promise<RepairCenter[]>;
@@ -1096,6 +1098,14 @@ export class DatabaseStorage implements IStorage {
         }))
       );
     }
+  }
+
+  async listAllCustomerRepairCenters(): Promise<CustomerRepairCenter[]> {
+    return await db.select().from(customerRepairCenters);
+  }
+
+  async listAllStaffRepairCenters(): Promise<StaffRepairCenter[]> {
+    return await db.select().from(staffRepairCenters);
   }
 
   // Repair Centers

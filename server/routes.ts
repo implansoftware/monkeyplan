@@ -2060,6 +2060,95 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Get repair center overview with all related entities (for admin detail view)
+  app.get("/api/admin/repair-centers/:id/overview", requireRole("admin"), async (req, res) => {
+    try {
+      const { id } = req.params;
+      
+      // Get repair center
+      const center = await storage.getRepairCenter(id);
+      if (!center) {
+        return res.status(404).send("Centro di riparazione non trovato");
+      }
+      
+      // Get all related data
+      const allUsers = await storage.listUsers();
+      const allRepairs = await storage.listRepairOrders();
+      const allB2bOrders = await storage.listRepairCenterPurchaseOrders();
+      
+      // Filter repairs for this center
+      const centerRepairs = allRepairs
+        .filter(r => r.repairCenterId === id)
+        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+        .slice(0, 100); // Last 100 repairs
+      
+      // Filter B2B orders for this center
+      const centerB2bOrders = allB2bOrders
+        .filter(o => o.repairCenterId === id)
+        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+        .slice(0, 50);
+      
+      // Get customers associated with this center
+      const customerRepairCentersData = await storage.listAllCustomerRepairCenters();
+      const customerIds = customerRepairCentersData
+        .filter(crc => crc.repairCenterId === id)
+        .map(crc => crc.customerId);
+      const customers = allUsers
+        .filter(u => customerIds.includes(u.id))
+        .map(({ password, ...u }) => u);
+      
+      // Get staff assigned to this center
+      const staffRepairCentersData = await storage.listAllStaffRepairCenters();
+      const staffIds = staffRepairCentersData
+        .filter(src => src.repairCenterId === id)
+        .map(src => src.staffId);
+      const staff = allUsers
+        .filter(u => staffIds.includes(u.id))
+        .map(({ password, ...u }) => u);
+      
+      // Get reseller info if exists
+      let reseller = null;
+      if (center.resellerId) {
+        const resellerData = await storage.getUser(center.resellerId);
+        if (resellerData) {
+          const { password, ...safeReseller } = resellerData;
+          reseller = safeReseller;
+        }
+      }
+      
+      // Calculate stats
+      const now = new Date();
+      const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+      const allCenterRepairs = allRepairs.filter(r => r.repairCenterId === id);
+      
+      const stats = {
+        totalRepairs: allCenterRepairs.length,
+        activeRepairs: allCenterRepairs.filter(r => 
+          !['consegnato', 'cancelled'].includes(r.status)
+        ).length,
+        completedRepairs: allCenterRepairs.filter(r => r.status === 'consegnato').length,
+        repairs30Days: allCenterRepairs.filter(r => 
+          new Date(r.createdAt) >= thirtyDaysAgo
+        ).length,
+        totalCustomers: customers.length,
+        totalStaff: staff.length,
+        totalB2bOrders: centerB2bOrders.length,
+      };
+      
+      res.json({
+        center,
+        reseller,
+        repairs: centerRepairs,
+        b2bOrders: centerB2bOrders,
+        customers,
+        staff,
+        stats,
+      });
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
   // Products
   app.get("/api/admin/products", requireRole("admin"), async (req, res) => {
     try {
