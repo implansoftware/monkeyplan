@@ -14306,20 +14306,38 @@ export function registerRoutes(app: Express): Server {
   // ============ SUPPLIER ORDERS (Ordini a Fornitori) ============
 
   // GET /api/supplier-orders - List supplier orders
-  app.get("/api/supplier-orders", requireAuth, requireRole("admin", "repair_center"), async (req, res) => {
+  app.get("/api/supplier-orders", requireAuth, requireRole("admin", "repair_center", "reseller"), async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
-      const filters: { supplierId?: string; repairCenterId?: string; status?: string } = {};
+      const filters: { supplierId?: string; repairCenterId?: string; status?: string; ownerType?: string; ownerId?: string } = {};
       
-      // Repair centers can only see their own orders
+      // Role-based filtering
       if (req.user.role === 'repair_center') {
         if (!req.user.repairCenterId) {
           return res.json([]);
         }
-        filters.repairCenterId = req.user.repairCenterId;
-      } else if (req.query.repairCenterId) {
-        filters.repairCenterId = req.query.repairCenterId as string;
+        // Repair centers see orders where they are the owner
+        filters.ownerType = 'repair_center';
+        filters.ownerId = req.user.repairCenterId;
+      } else if (req.user.role === 'reseller') {
+        if (!req.user.resellerId) {
+          return res.json([]);
+        }
+        // Resellers see their own orders
+        filters.ownerType = 'reseller';
+        filters.ownerId = req.user.resellerId;
+      } else {
+        // Admin can filter by query params
+        if (req.query.ownerType) {
+          filters.ownerType = req.query.ownerType as string;
+        }
+        if (req.query.ownerId) {
+          filters.ownerId = req.query.ownerId as string;
+        }
+        if (req.query.repairCenterId) {
+          filters.repairCenterId = req.query.repairCenterId as string;
+        }
       }
       
       if (req.query.supplierId) {
@@ -14331,11 +14349,40 @@ export function registerRoutes(app: Express): Server {
       
       const orders = await storage.listSupplierOrders(filters);
       
-      // Enrich with supplier names
+      // Enrich with supplier and owner names
       const enriched = await Promise.all(orders.map(async (order) => {
         const supplier = await storage.getSupplier(order.supplierId);
-        const repairCenter = await storage.getRepairCenter(order.repairCenterId);
-        return { ...order, supplierName: supplier?.name, repairCenterName: repairCenter?.name };
+        let ownerName = "";
+        
+        // Get owner name based on type
+        switch (order.ownerType) {
+          case 'admin':
+            const adminUser = await storage.getUser(order.ownerId);
+            ownerName = adminUser ? `Admin: ${adminUser.name}` : "Admin";
+            break;
+          case 'reseller':
+            const reseller = await storage.getReseller(order.ownerId);
+            ownerName = reseller?.name || "Reseller";
+            break;
+          case 'sub_reseller':
+            const subReseller = await storage.getSubReseller(order.ownerId);
+            ownerName = subReseller?.name || "Sub-Reseller";
+            break;
+          case 'repair_center':
+            const repairCenter = await storage.getRepairCenter(order.ownerId);
+            ownerName = repairCenter?.name || "Centro Riparazione";
+            break;
+        }
+        
+        // Legacy: also get repairCenterName if present
+        const repairCenter = order.repairCenterId ? await storage.getRepairCenter(order.repairCenterId) : null;
+        
+        return { 
+          ...order, 
+          supplierName: supplier?.name, 
+          ownerName,
+          repairCenterName: repairCenter?.name 
+        };
       }));
       
       res.json(enriched);
@@ -14345,7 +14392,7 @@ export function registerRoutes(app: Express): Server {
   });
 
   // GET /api/supplier-orders/:id - Get supplier order details
-  app.get("/api/supplier-orders/:id", requireAuth, requireRole("admin", "repair_center"), async (req, res) => {
+  app.get("/api/supplier-orders/:id", requireAuth, requireRole("admin", "repair_center", "reseller"), async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
@@ -14354,16 +14401,41 @@ export function registerRoutes(app: Express): Server {
         return res.status(404).send("Ordine non trovato");
       }
       
-      // Repair center access check
-      if (req.user.role === 'repair_center' && order.repairCenterId !== req.user.repairCenterId) {
-        return res.status(403).send("Accesso negato");
+      // Access check based on role and ownership
+      if (req.user.role === 'repair_center') {
+        if (order.ownerType !== 'repair_center' || order.ownerId !== req.user.repairCenterId) {
+          return res.status(403).send("Accesso negato");
+        }
+      } else if (req.user.role === 'reseller') {
+        if (order.ownerType !== 'reseller' || order.ownerId !== req.user.resellerId) {
+          return res.status(403).send("Accesso negato");
+        }
       }
       
-      const [supplier, repairCenter, items] = await Promise.all([
+      const [supplier, items] = await Promise.all([
         storage.getSupplier(order.supplierId),
-        storage.getRepairCenter(order.repairCenterId),
         storage.listSupplierOrderItems(order.id),
       ]);
+      
+      // Get owner info based on type
+      let owner = null;
+      switch (order.ownerType) {
+        case 'admin':
+          owner = await storage.getUser(order.ownerId);
+          break;
+        case 'reseller':
+          owner = await storage.getReseller(order.ownerId);
+          break;
+        case 'sub_reseller':
+          owner = await storage.getSubReseller(order.ownerId);
+          break;
+        case 'repair_center':
+          owner = await storage.getRepairCenter(order.ownerId);
+          break;
+      }
+      
+      // Legacy: get repair center if present
+      const repairCenter = order.repairCenterId ? await storage.getRepairCenter(order.repairCenterId) : null;
       
       // Enrich items with product info
       const enrichedItems = await Promise.all(items.map(async (item) => {
@@ -14371,14 +14443,14 @@ export function registerRoutes(app: Express): Server {
         return { ...item, productName: product?.name };
       }));
       
-      res.json({ ...order, supplier, repairCenter, items: enrichedItems });
+      res.json({ ...order, supplier, owner, repairCenter, items: enrichedItems });
     } catch (error: any) {
       res.status(500).send(error.message);
     }
   });
 
   // GET /api/supplier-orders/:id/items - Get items for a supplier order
-  app.get("/api/supplier-orders/:id/items", requireAuth, requireRole("admin", "repair_center"), async (req, res) => {
+  app.get("/api/supplier-orders/:id/items", requireAuth, requireRole("admin", "repair_center", "reseller"), async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
@@ -14387,9 +14459,15 @@ export function registerRoutes(app: Express): Server {
         return res.status(404).send("Ordine non trovato");
       }
       
-      // Repair center access check
-      if (req.user.role === 'repair_center' && order.repairCenterId !== req.user.repairCenterId) {
-        return res.status(403).send("Accesso negato");
+      // Access check based on role and ownership
+      if (req.user.role === 'repair_center') {
+        if (order.ownerType !== 'repair_center' || order.ownerId !== req.user.repairCenterId) {
+          return res.status(403).send("Accesso negato");
+        }
+      } else if (req.user.role === 'reseller') {
+        if (order.ownerType !== 'reseller' || order.ownerId !== req.user.resellerId) {
+          return res.status(403).send("Accesso negato");
+        }
       }
       
       const items = await storage.listSupplierOrderItems(order.id);
@@ -14407,22 +14485,41 @@ export function registerRoutes(app: Express): Server {
   });
 
   // POST /api/supplier-orders - Create supplier order
-  app.post("/api/supplier-orders", requireAuth, requireRole("admin", "repair_center"), async (req, res) => {
+  app.post("/api/supplier-orders", requireAuth, requireRole("admin", "repair_center", "reseller"), async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
-      // Determine repair center ID
+      // Determine owner type and ID based on role
+      let ownerType = req.body.ownerType;
+      let ownerId = req.body.ownerId;
       let repairCenterId = req.body.repairCenterId;
+      
       if (req.user.role === 'repair_center') {
         if (!req.user.repairCenterId) {
           return res.status(400).send("Centro riparazione non assegnato");
         }
+        ownerType = 'repair_center';
+        ownerId = req.user.repairCenterId;
         repairCenterId = req.user.repairCenterId;
+      } else if (req.user.role === 'reseller') {
+        if (!req.user.resellerId) {
+          return res.status(400).send("Reseller non assegnato");
+        }
+        ownerType = 'reseller';
+        ownerId = req.user.resellerId;
+      } else if (req.user.role === 'admin') {
+        // Admin can specify any owner type, or default to admin
+        if (!ownerType || !ownerId) {
+          ownerType = 'admin';
+          ownerId = req.user.id;
+        }
       }
       
       const validated = insertSupplierOrderSchema.parse({
         ...req.body,
-        repairCenterId,
+        ownerType,
+        ownerId,
+        repairCenterId: repairCenterId || null,
         createdBy: req.user.id,
       });
       
@@ -14434,7 +14531,7 @@ export function registerRoutes(app: Express): Server {
   });
 
   // PATCH /api/supplier-orders/:id - Update supplier order
-  app.patch("/api/supplier-orders/:id", requireAuth, requireRole("admin", "repair_center"), async (req, res) => {
+  app.patch("/api/supplier-orders/:id", requireAuth, requireRole("admin", "repair_center", "reseller"), async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
@@ -14443,9 +14540,15 @@ export function registerRoutes(app: Express): Server {
         return res.status(404).send("Ordine non trovato");
       }
       
-      // Repair center access check
-      if (req.user.role === 'repair_center' && order.repairCenterId !== req.user.repairCenterId) {
-        return res.status(403).send("Accesso negato");
+      // Access check based on role and ownership
+      if (req.user.role === 'repair_center') {
+        if (order.ownerType !== 'repair_center' || order.ownerId !== req.user.repairCenterId) {
+          return res.status(403).send("Accesso negato");
+        }
+      } else if (req.user.role === 'reseller') {
+        if (order.ownerType !== 'reseller' || order.ownerId !== req.user.resellerId) {
+          return res.status(403).send("Accesso negato");
+        }
       }
       
       // Don't allow editing after certain statuses
@@ -14461,7 +14564,7 @@ export function registerRoutes(app: Express): Server {
   });
 
   // POST /api/supplier-orders/:id/status - Update order status
-  app.post("/api/supplier-orders/:id/status", requireAuth, requireRole("admin", "repair_center"), async (req, res) => {
+  app.post("/api/supplier-orders/:id/status", requireAuth, requireRole("admin", "repair_center", "reseller"), async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
@@ -14470,9 +14573,15 @@ export function registerRoutes(app: Express): Server {
         return res.status(404).send("Ordine non trovato");
       }
       
-      // Repair center access check
-      if (req.user.role === 'repair_center' && order.repairCenterId !== req.user.repairCenterId) {
-        return res.status(403).send("Accesso negato");
+      // Access check based on role and ownership
+      if (req.user.role === 'repair_center') {
+        if (order.ownerType !== 'repair_center' || order.ownerId !== req.user.repairCenterId) {
+          return res.status(403).send("Accesso negato");
+        }
+      } else if (req.user.role === 'reseller') {
+        if (order.ownerType !== 'reseller' || order.ownerId !== req.user.resellerId) {
+          return res.status(403).send("Accesso negato");
+        }
       }
       
       const { status } = req.body;
@@ -14520,7 +14629,7 @@ export function registerRoutes(app: Express): Server {
   // ============ SUPPLIER ORDER ITEMS (Righe Ordine) ============
 
   // POST /api/supplier-orders/:id/items - Add item to order
-  app.post("/api/supplier-orders/:id/items", requireAuth, requireRole("admin", "repair_center"), async (req, res) => {
+  app.post("/api/supplier-orders/:id/items", requireAuth, requireRole("admin", "repair_center", "reseller"), async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
@@ -14529,9 +14638,15 @@ export function registerRoutes(app: Express): Server {
         return res.status(404).send("Ordine non trovato");
       }
       
-      // Repair center access check
-      if (req.user.role === 'repair_center' && order.repairCenterId !== req.user.repairCenterId) {
-        return res.status(403).send("Accesso negato");
+      // Access check based on role and ownership
+      if (req.user.role === 'repair_center') {
+        if (order.ownerType !== 'repair_center' || order.ownerId !== req.user.repairCenterId) {
+          return res.status(403).send("Accesso negato");
+        }
+      } else if (req.user.role === 'reseller') {
+        if (order.ownerType !== 'reseller' || order.ownerId !== req.user.resellerId) {
+          return res.status(403).send("Accesso negato");
+        }
       }
       
       // Only allow adding items to draft orders
