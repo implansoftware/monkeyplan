@@ -217,33 +217,6 @@ export const supplierPaymentTermsEnum = pgEnum("supplier_payment_terms", [
 ]);
 
 // ==========================================
-// PARTS LOAD (CARICO RICAMBI) ENUMS
-// ==========================================
-
-// Tipo documento carico
-export const partsLoadDocumentTypeEnum = pgEnum("parts_load_document_type", [
-  "ddt",               // Documento di Trasporto
-  "fattura",           // Fattura Fornitore
-]);
-
-// Stato documento carico
-export const partsLoadStatusEnum = pgEnum("parts_load_status", [
-  "draft",             // Bozza - inserimento righe
-  "processing",        // In elaborazione - abbinamento automatico
-  "completed",         // Completato - tutti i ricambi assegnati
-  "partial",           // Parziale - alcuni ricambi in eccedenza
-  "cancelled",         // Annullato
-]);
-
-// Stato riga carico
-export const partsLoadItemStatusEnum = pgEnum("parts_load_item_status", [
-  "pending",           // In attesa di elaborazione
-  "matched",           // Abbinato a ordine ricambi
-  "stock",             // Destinato a magazzino stock
-  "error",             // Errore abbinamento
-]);
-
-// ==========================================
 // UTILITY MODULE ENUMS
 // ==========================================
 
@@ -2509,98 +2482,6 @@ export const supplierCommunicationLogs = pgTable("supplier_communication_logs", 
 });
 
 // ==========================================
-// PARTS LOAD (CARICO RICAMBI) TABLES
-// ==========================================
-
-// Parts Load Documents (Documenti di carico - DDT/Fattura)
-export const partsLoadDocuments = pgTable("parts_load_documents", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  loadNumber: text("load_number").notNull().unique(), // Numero progressivo carico (es: "CAR-2024-0001")
-  
-  // Tipo e riferimento documento
-  documentType: partsLoadDocumentTypeEnum("document_type").notNull(),
-  documentNumber: text("document_number").notNull(), // Numero DDT o Fattura fornitore
-  documentDate: timestamp("document_date").notNull(), // Data documento
-  
-  // Fornitore
-  supplierId: varchar("supplier_id").notNull().references(() => suppliers.id),
-  supplierOrderId: varchar("supplier_order_id").references(() => supplierOrders.id), // Ordine fornitore collegato (opzionale)
-  
-  // Centro riparazione
-  repairCenterId: varchar("repair_center_id").notNull().references(() => repairCenters.id),
-  
-  // Stato
-  status: partsLoadStatusEnum("status").notNull().default("draft"),
-  
-  // Totali
-  totalItems: integer("total_items").notNull().default(0),
-  totalQuantity: integer("total_quantity").notNull().default(0),
-  totalAmount: integer("total_amount").notNull().default(0), // In centesimi
-  
-  // Statistiche abbinamento
-  matchedItems: integer("matched_items").notNull().default(0), // Righe abbinate a ordini
-  stockItems: integer("stock_items").notNull().default(0), // Righe destinate a stock
-  errorItems: integer("error_items").notNull().default(0), // Righe con errore
-  
-  // Date elaborazione
-  processedAt: timestamp("processed_at"), // Data elaborazione abbinamento
-  completedAt: timestamp("completed_at"), // Data completamento
-  
-  // Note
-  notes: text("notes"),
-  
-  // Import API (per carico automatico)
-  isAutoImport: boolean("is_auto_import").notNull().default(false),
-  importSource: text("import_source"), // "api", "email", "fattura_elettronica"
-  importMetadata: text("import_metadata"), // JSON con dati import
-  
-  // Sessione (per carichi consecutivi)
-  sessionId: varchar("session_id"), // ID sessione per carichi multipli
-  sessionSequence: integer("session_sequence"), // Numero progressivo in sessione
-  
-  // Audit
-  createdBy: varchar("created_by").notNull(),
-  createdAt: timestamp("created_at").notNull().defaultNow(),
-  updatedAt: timestamp("updated_at").notNull().defaultNow(),
-});
-
-// Parts Load Items (Righe documento carico)
-export const partsLoadItems = pgTable("parts_load_items", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  partsLoadDocumentId: varchar("parts_load_document_id").notNull().references(() => partsLoadDocuments.id, { onDelete: "cascade" }),
-  
-  // Dati articolo
-  partCode: text("part_code").notNull(), // Codice ricambio (SKU fornitore)
-  description: text("description").notNull(),
-  quantity: integer("quantity").notNull().default(1),
-  unitPrice: integer("unit_price").notNull(), // Prezzo unitario in centesimi
-  totalPrice: integer("total_price").notNull(), // Prezzo totale in centesimi
-  
-  // Stato elaborazione
-  status: partsLoadItemStatusEnum("status").notNull().default("pending"),
-  
-  // Abbinamento (se matched)
-  matchedPartsOrderId: varchar("matched_parts_order_id").references(() => partsOrders.id), // Ordine ricambi abbinato
-  matchedRepairOrderId: varchar("matched_repair_order_id").references(() => repairOrders.id), // Lavorazione abbinata
-  matchedProductId: varchar("matched_product_id").references(() => products.id), // Prodotto abbinato
-  
-  // Destinazione stock (se stock)
-  stockLocationSuggested: text("stock_location_suggested"), // Posizione suggerita (es: "Cassetto B3")
-  stockLocationConfirmed: text("stock_location_confirmed"), // Posizione confermata
-  addedToInventory: boolean("added_to_inventory").notNull().default(false), // Flag aggiunta inventario
-  inventoryMovementId: varchar("inventory_movement_id"), // ID movimento inventario creato
-  
-  // Errore (se error)
-  errorMessage: text("error_message"),
-  
-  // Note
-  notes: text("notes"),
-  
-  createdAt: timestamp("created_at").notNull().defaultNow(),
-  updatedAt: timestamp("updated_at").notNull().defaultNow(),
-});
-
-// ==========================================
 // UTILITY MODULE TABLES
 // ==========================================
 
@@ -4471,20 +4352,6 @@ export const insertMobilesentrixOrderSchema = createInsertSchema(mobilesentrixOr
   updatedAt: true,
 });
 
-// Parts Load Documents schemas
-export const insertPartsLoadDocumentSchema = createInsertSchema(partsLoadDocuments).omit({
-  id: true,
-  loadNumber: true,
-  createdAt: true,
-  updatedAt: true,
-});
-
-export const insertPartsLoadItemSchema = createInsertSchema(partsLoadItems).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
-
 // Utility Module Schemas
 export const insertUtilitySupplierSchema = createInsertSchema(utilitySuppliers).omit({
   id: true,
@@ -5089,12 +4956,6 @@ export type InsertMobilesentrixCredential = z.infer<typeof insertMobilesentrixCr
 
 export type MobilesentrixOrder = typeof mobilesentrixOrders.$inferSelect;
 export type InsertMobilesentrixOrder = z.infer<typeof insertMobilesentrixOrderSchema>;
-
-// Parts Load types
-export type PartsLoadDocument = typeof partsLoadDocuments.$inferSelect;
-export type InsertPartsLoadDocument = z.infer<typeof insertPartsLoadDocumentSchema>;
-export type PartsLoadItem = typeof partsLoadItems.$inferSelect;
-export type InsertPartsLoadItem = z.infer<typeof insertPartsLoadItemSchema>;
 
 // Utility Module Types
 export type UtilityCategory = "fisso" | "mobile" | "centralino" | "luce" | "gas" | "altro";

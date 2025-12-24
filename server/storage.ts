@@ -25,7 +25,6 @@ import {
   SupplierOrder, InsertSupplierOrder, SupplierOrderItem, InsertSupplierOrderItem,
   SupplierReturn, InsertSupplierReturn, SupplierReturnItem, InsertSupplierReturnItem,
   SupplierCommunicationLog, InsertSupplierCommunicationLog,
-  PartsLoadDocument, InsertPartsLoadDocument, PartsLoadItem, InsertPartsLoadItem,
   RepairOrderStateHistory, InsertRepairOrderStateHistory,
   SupplierReturnStateHistory, InsertSupplierReturnStateHistory,
   SlaThresholds, slaThresholdsSchema,
@@ -55,7 +54,6 @@ import {
   diagnosticFindings, damagedComponentTypes, estimatedRepairTimes, adminSettings,
   promotions, unrepairableReasons, externalLabs, dataRecoveryJobs, dataRecoveryEvents,
   suppliers, productSuppliers, supplierCatalogProducts, supplierSyncLogs, supplierOrders, supplierOrderItems, supplierReturns, supplierReturnItems, supplierCommunicationLogs,
-  partsLoadDocuments, partsLoadItems,
   repairOrderStateHistory, supplierReturnStateHistory,
   customerBranches,
   utilitySuppliers, utilityServices, utilityPractices, utilityPracticeProducts, utilityCommissions,
@@ -469,22 +467,6 @@ export interface IStorage {
   listSupplierCommunicationLogs(filters?: { supplierId?: string; entityType?: string; entityId?: string }): Promise<SupplierCommunicationLog[]>;
   createSupplierCommunicationLog(log: InsertSupplierCommunicationLog): Promise<SupplierCommunicationLog>;
   updateSupplierCommunicationLog(id: string, updates: Partial<InsertSupplierCommunicationLog>): Promise<SupplierCommunicationLog>;
-  
-  // Parts Load Documents (Carico Ricambi)
-  listPartsLoadDocuments(filters?: { repairCenterId?: string; supplierId?: string; status?: string }): Promise<PartsLoadDocument[]>;
-  listPartsLoadDocumentsByRepairCenters(repairCenterIds: string[]): Promise<PartsLoadDocument[]>;
-  getPartsLoadDocument(id: string): Promise<PartsLoadDocument | undefined>;
-  createPartsLoadDocument(doc: InsertPartsLoadDocument): Promise<PartsLoadDocument>;
-  updatePartsLoadDocument(id: string, updates: Partial<InsertPartsLoadDocument>): Promise<PartsLoadDocument>;
-  processPartsLoadDocument(id: string): Promise<{ matched: number; stock: number; errors: number }>;
-  
-  // Parts Load Items
-  listPartsLoadItems(documentId: string): Promise<PartsLoadItem[]>;
-  getPartsLoadItem(id: string): Promise<PartsLoadItem | undefined>;
-  createPartsLoadItem(item: InsertPartsLoadItem): Promise<PartsLoadItem>;
-  updatePartsLoadItem(id: string, updates: Partial<InsertPartsLoadItem>): Promise<PartsLoadItem>;
-  deletePartsLoadItem(id: string): Promise<void>;
-  matchPartsLoadItem(id: string, partsOrderId?: string, productId?: string): Promise<PartsLoadItem>;
   
   // SLA State History
   listRepairOrderStateHistory(repairOrderId: string): Promise<RepairOrderStateHistory[]>;
@@ -4315,237 +4297,6 @@ export class DatabaseStorage implements IStorage {
     }
     
     return log;
-  }
-
-  // Parts Load Documents (Carico Ricambi)
-  async listPartsLoadDocuments(filters?: { repairCenterId?: string; supplierId?: string; status?: string }): Promise<PartsLoadDocument[]> {
-    const conditions = [];
-    
-    if (filters?.repairCenterId) {
-      conditions.push(eq(partsLoadDocuments.repairCenterId, filters.repairCenterId));
-    }
-    if (filters?.supplierId) {
-      conditions.push(eq(partsLoadDocuments.supplierId, filters.supplierId));
-    }
-    if (filters?.status) {
-      conditions.push(sql`${partsLoadDocuments.status}::text = ${filters.status}`);
-    }
-    
-    if (conditions.length > 0) {
-      return await db.select().from(partsLoadDocuments)
-        .where(and(...conditions))
-        .orderBy(desc(partsLoadDocuments.createdAt));
-    }
-    
-    return await db.select().from(partsLoadDocuments).orderBy(desc(partsLoadDocuments.createdAt));
-  }
-
-  async listPartsLoadDocumentsByRepairCenters(repairCenterIds: string[]): Promise<PartsLoadDocument[]> {
-    if (repairCenterIds.length === 0) {
-      return [];
-    }
-    return await db.select().from(partsLoadDocuments)
-      .where(inArray(partsLoadDocuments.repairCenterId, repairCenterIds))
-      .orderBy(desc(partsLoadDocuments.createdAt));
-  }
-
-  async getPartsLoadDocument(id: string): Promise<PartsLoadDocument | undefined> {
-    const [doc] = await db.select().from(partsLoadDocuments).where(eq(partsLoadDocuments.id, id));
-    return doc || undefined;
-  }
-
-  async createPartsLoadDocument(insertDoc: InsertPartsLoadDocument): Promise<PartsLoadDocument> {
-    const count = await db.select().from(partsLoadDocuments);
-    const year = new Date().getFullYear();
-    const loadNumber = `CARICO-${year}-${String(count.length + 1).padStart(5, '0')}`;
-    
-    const [doc] = await db.insert(partsLoadDocuments).values({
-      ...insertDoc,
-      loadNumber,
-    }).returning();
-    return doc;
-  }
-
-  async updatePartsLoadDocument(id: string, updates: Partial<InsertPartsLoadDocument>): Promise<PartsLoadDocument> {
-    const [doc] = await db.update(partsLoadDocuments)
-      .set({ ...updates, updatedAt: new Date() })
-      .where(eq(partsLoadDocuments.id, id))
-      .returning();
-    
-    if (!doc) {
-      throw new Error("Documento di carico non trovato");
-    }
-    
-    return doc;
-  }
-
-  async processPartsLoadDocument(id: string): Promise<{ matched: number; stock: number; errors: number }> {
-    const doc = await this.getPartsLoadDocument(id);
-    if (!doc) {
-      throw new Error("Documento di carico non trovato");
-    }
-    
-    const items = await this.listPartsLoadItems(id);
-    let matched = 0;
-    let stock = 0;
-    let errors = 0;
-    
-    for (const item of items) {
-      if (item.status === 'pending') {
-        // Try to match with waiting parts orders by part number
-        const waitingOrders = await db.select().from(partsOrders)
-          .where(and(
-            eq(partsOrders.partNumber, item.partCode),
-            sql`${partsOrders.status}::text = 'ordered'`
-          ));
-        
-        if (waitingOrders.length > 0) {
-          // Match with first waiting order
-          const partsOrder = waitingOrders[0];
-          await this.updatePartsLoadItem(item.id, {
-            status: 'matched',
-            matchedPartsOrderId: partsOrder.id,
-            matchedRepairOrderId: partsOrder.repairOrderId,
-          });
-          
-          // Update parts order status
-          await this.updatePartsOrderStatus(partsOrder.id, 'received', new Date());
-          matched++;
-        } else {
-          // Try to find matching product for stock
-          const matchingProducts = await db.select().from(products)
-            .where(eq(products.sku, item.partCode));
-          
-          if (matchingProducts.length > 0) {
-            await this.updatePartsLoadItem(item.id, {
-              status: 'stock',
-              matchedProductId: matchingProducts[0].id,
-            });
-            stock++;
-          } else {
-            await this.updatePartsLoadItem(item.id, {
-              status: 'error',
-              errorMessage: 'Codice parte non riconosciuto - richiede abbinamento manuale',
-            });
-            errors++;
-          }
-        }
-      } else if (item.status === 'matched') {
-        matched++;
-      } else if (item.status === 'stock') {
-        stock++;
-      } else if (item.status === 'error') {
-        errors++;
-      }
-    }
-    
-    // Update document totals
-    const newStatus = errors > 0 ? 'partial' : 'completed';
-    await this.updatePartsLoadDocument(id, {
-      status: newStatus as any,
-      matchedItems: matched,
-      stockItems: stock,
-      errorItems: errors,
-      processedAt: new Date(),
-      completedAt: errors === 0 ? new Date() : undefined,
-    });
-    
-    return { matched, stock, errors };
-  }
-
-  // Parts Load Items
-  async listPartsLoadItems(documentId: string): Promise<PartsLoadItem[]> {
-    return await db.select()
-      .from(partsLoadItems)
-      .where(eq(partsLoadItems.partsLoadDocumentId, documentId))
-      .orderBy(partsLoadItems.createdAt);
-  }
-
-  async getPartsLoadItem(id: string): Promise<PartsLoadItem | undefined> {
-    const [item] = await db.select().from(partsLoadItems).where(eq(partsLoadItems.id, id));
-    return item || undefined;
-  }
-
-  async createPartsLoadItem(item: InsertPartsLoadItem): Promise<PartsLoadItem> {
-    const [created] = await db.insert(partsLoadItems).values(item).returning();
-    
-    // Update document totals
-    const doc = await this.getPartsLoadDocument(item.partsLoadDocumentId);
-    if (doc) {
-      await this.updatePartsLoadDocument(item.partsLoadDocumentId, {
-        totalItems: (doc.totalItems || 0) + 1,
-        totalQuantity: (doc.totalQuantity || 0) + (item.quantity || 1),
-        totalAmount: (doc.totalAmount || 0) + (item.totalPrice || 0),
-      });
-    }
-    
-    return created;
-  }
-
-  async updatePartsLoadItem(id: string, updates: Partial<InsertPartsLoadItem>): Promise<PartsLoadItem> {
-    const [item] = await db.update(partsLoadItems)
-      .set({ ...updates, updatedAt: new Date() })
-      .where(eq(partsLoadItems.id, id))
-      .returning();
-    
-    if (!item) {
-      throw new Error("Riga carico non trovata");
-    }
-    
-    return item;
-  }
-
-  async deletePartsLoadItem(id: string): Promise<void> {
-    const item = await this.getPartsLoadItem(id);
-    if (item) {
-      // Update document totals
-      const doc = await this.getPartsLoadDocument(item.partsLoadDocumentId);
-      if (doc) {
-        await this.updatePartsLoadDocument(item.partsLoadDocumentId, {
-          totalItems: Math.max(0, (doc.totalItems || 0) - 1),
-          totalQuantity: Math.max(0, (doc.totalQuantity || 0) - (item.quantity || 1)),
-          totalAmount: Math.max(0, (doc.totalAmount || 0) - (item.totalPrice || 0)),
-        });
-      }
-    }
-    
-    await db.delete(partsLoadItems).where(eq(partsLoadItems.id, id));
-  }
-
-  async matchPartsLoadItem(id: string, partsOrderId?: string, productId?: string): Promise<PartsLoadItem> {
-    const item = await this.getPartsLoadItem(id);
-    if (!item) {
-      throw new Error("Riga carico non trovata");
-    }
-    
-    if (partsOrderId) {
-      // Match with parts order (for repair)
-      const partsOrder = await this.getPartsOrder(partsOrderId);
-      if (!partsOrder) {
-        throw new Error("Ordine ricambio non trovato");
-      }
-      
-      await this.updatePartsOrderStatus(partsOrderId, 'received', new Date());
-      
-      return await this.updatePartsLoadItem(id, {
-        status: 'matched',
-        matchedPartsOrderId: partsOrderId,
-        matchedRepairOrderId: partsOrder.repairOrderId,
-      });
-    } else if (productId) {
-      // Match with product (for stock)
-      const product = await this.getProduct(productId);
-      if (!product) {
-        throw new Error("Prodotto non trovato");
-      }
-      
-      return await this.updatePartsLoadItem(id, {
-        status: 'stock',
-        matchedProductId: productId,
-      });
-    } else {
-      throw new Error("Specificare partsOrderId o productId");
-    }
   }
 
   // ==========================================
