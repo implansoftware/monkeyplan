@@ -2337,8 +2337,8 @@ export const supplierOrders = pgTable("supplier_orders", {
   supplierId: varchar("supplier_id").notNull().references(() => suppliers.id),
   
   // Proprietario ordine (chi effettua l'ordine)
-  ownerType: supplierOrderOwnerTypeEnum("owner_type").notNull().default("repair_center"), // Tipo entità proprietaria
-  ownerId: varchar("owner_id").notNull(), // ID dell'entità proprietaria (admin user ID, reseller ID, repair center ID)
+  ownerType: supplierOrderOwnerTypeEnum("owner_type").default("repair_center"), // Tipo entità proprietaria
+  ownerId: varchar("owner_id"), // ID dell'entità proprietaria (admin user ID, reseller ID, repair center ID)
   
   // Centro riparazione (opzionale, mantenuto per backward compatibility)
   repairCenterId: varchar("repair_center_id").references(() => repairCenters.id), // Centro associato (ora opzionale)
