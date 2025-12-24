@@ -2135,6 +2135,12 @@ export function registerRoutes(app: Express): Server {
         totalB2bOrders: centerB2bOrders.length,
       };
       
+      // Create users map for customer name lookup in repairs
+      const usersMap: Record<string, { id: string; fullName: string }> = {};
+      allUsers.forEach(u => {
+        usersMap[u.id] = { id: u.id, fullName: u.fullName };
+      });
+      
       res.json({
         center,
         reseller,
@@ -2143,6 +2149,7 @@ export function registerRoutes(app: Express): Server {
         customers,
         staff,
         stats,
+        usersMap,
       });
     } catch (error: any) {
       res.status(500).send(error.message);

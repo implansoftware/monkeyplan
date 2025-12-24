@@ -53,6 +53,7 @@ interface RepairCenterOverviewResponse {
     totalStaff: number;
     totalB2bOrders: number;
   };
+  usersMap: Record<string, { id: string; fullName: string }>;
 }
 
 const STATUS_LABELS: Record<string, string> = {
@@ -130,7 +131,7 @@ export default function AdminRepairCenterDetail() {
     );
   }
 
-  const { center, reseller, repairs, b2bOrders, customers, staff, stats } = data;
+  const { center, reseller, repairs, b2bOrders, customers, staff, stats, usersMap } = data;
 
   return (
     <div className="space-y-6" data-testid="page-repair-center-detail">
@@ -341,7 +342,7 @@ export default function AdminRepairCenterDetail() {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Numero</TableHead>
+                      <TableHead>Cliente</TableHead>
                       <TableHead>Dispositivo</TableHead>
                       <TableHead>Stato</TableHead>
                       <TableHead>Data Creazione</TableHead>
@@ -351,7 +352,9 @@ export default function AdminRepairCenterDetail() {
                   <TableBody>
                     {repairs.map((repair) => (
                       <TableRow key={repair.id} data-testid={`row-repair-${repair.id}`}>
-                        <TableCell className="font-mono text-sm">{repair.repairNumber}</TableCell>
+                        <TableCell className="font-medium">
+                          {usersMap[repair.customerId]?.fullName || "-"}
+                        </TableCell>
                         <TableCell>
                           {repair.deviceType} - {repair.deviceBrand} {repair.deviceModel}
                         </TableCell>
