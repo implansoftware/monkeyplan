@@ -14397,15 +14397,17 @@ export function registerRoutes(app: Express): Server {
           switch (order.ownerType) {
             case 'admin':
               const adminUser = await storage.getUser(order.ownerId);
-              ownerName = adminUser ? `Admin: ${adminUser.name}` : "Admin";
+              ownerName = adminUser ? `Admin: ${adminUser.fullName || adminUser.username}` : "Admin";
               break;
             case 'reseller':
-              const reseller = await storage.getReseller(order.ownerId);
-              ownerName = reseller?.name || "Reseller";
+              // Resellers are users with role='reseller'
+              const resellerUser = await storage.getUser(order.ownerId);
+              ownerName = resellerUser?.fullName || resellerUser?.username || "Reseller";
               break;
             case 'sub_reseller':
-              const subReseller = await storage.getSubReseller(order.ownerId);
-              ownerName = subReseller?.name || "Sub-Reseller";
+              // Sub-resellers are also users with parentResellerId set
+              const subResellerUser = await storage.getUser(order.ownerId);
+              ownerName = subResellerUser?.fullName || subResellerUser?.username || "Sub-Reseller";
               break;
             case 'repair_center':
               const repairCenter = await storage.getRepairCenter(order.ownerId);
