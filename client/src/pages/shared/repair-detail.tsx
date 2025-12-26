@@ -86,6 +86,7 @@ type RepairOrder = {
   skipDiagnosisReason: string | null;
   createdAt: string;
   updatedAt: string;
+  customer?: Customer | null;
 };
 
 type RepairAcceptance = {
@@ -106,13 +107,16 @@ type RepairAcceptance = {
 
 type Customer = {
   id: string;
-  username: string;
+  username?: string;
   email: string | null;
   fullName: string | null;
   phone: string | null;
   address: string | null;
   fiscalCode: string | null;
   vatNumber: string | null;
+  city?: string | null;
+  province?: string | null;
+  postalCode?: string | null;
 };
 
 type DeliveryAppointment = {
@@ -1757,34 +1761,71 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
             </Card>
           )}
 
-          {customer && (
-            <Card data-testid="card-customer">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <User className="h-4 w-4" />
-                  Cliente
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                <div>
-                  <span className="text-sm text-muted-foreground">Nome</span>
-                  <p className="font-medium">{customer.fullName || customer.username}</p>
-                </div>
-                {customer.email && (
+          {(() => {
+            // Use customer data from repair order response (preferred) or fallback to separate query
+            const customerData = repair?.customer || customer;
+            if (!customerData) return null;
+            return (
+              <Card data-testid="card-customer">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <User className="h-4 w-4" />
+                    Dati Cliente
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2">
                   <div>
-                    <span className="text-sm text-muted-foreground">Email</span>
-                    <p className="font-medium">{customer.email}</p>
+                    <span className="text-sm text-muted-foreground">Nome</span>
+                    <p className="font-medium" data-testid="text-customer-name">{customerData.fullName || customerData.username || '-'}</p>
                   </div>
-                )}
-                {customer.phone && (
-                  <div>
-                    <span className="text-sm text-muted-foreground">Telefono</span>
-                    <p className="font-medium">{customer.phone}</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          )}
+                  {customerData.email && (
+                    <div>
+                      <span className="text-sm text-muted-foreground">Email</span>
+                      <p className="font-medium">
+                        <a href={`mailto:${customerData.email}`} className="text-primary hover:underline" data-testid="link-customer-email">
+                          {customerData.email}
+                        </a>
+                      </p>
+                    </div>
+                  )}
+                  {customerData.phone && (
+                    <div>
+                      <span className="text-sm text-muted-foreground">Telefono</span>
+                      <p className="font-medium">
+                        <a href={`tel:${customerData.phone}`} className="text-primary hover:underline" data-testid="link-customer-phone">
+                          {customerData.phone}
+                        </a>
+                      </p>
+                    </div>
+                  )}
+                  {(customerData.address || customerData.city || customerData.province || customerData.postalCode) && (
+                    <div>
+                      <span className="text-sm text-muted-foreground">Indirizzo</span>
+                      <p className="font-medium" data-testid="text-customer-address">
+                        {[
+                          customerData.address,
+                          [customerData.postalCode, customerData.city].filter(Boolean).join(' '),
+                          customerData.province ? `(${customerData.province})` : null
+                        ].filter(Boolean).join(', ')}
+                      </p>
+                    </div>
+                  )}
+                  {customerData.fiscalCode && (
+                    <div>
+                      <span className="text-sm text-muted-foreground">Codice Fiscale</span>
+                      <p className="font-medium font-mono text-sm" data-testid="text-customer-fiscal-code">{customerData.fiscalCode}</p>
+                    </div>
+                  )}
+                  {customerData.vatNumber && (
+                    <div>
+                      <span className="text-sm text-muted-foreground">Partita IVA</span>
+                      <p className="font-medium font-mono text-sm" data-testid="text-customer-vat">{customerData.vatNumber}</p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            );
+          })()}
 
           {quote && (
             <Card data-testid="card-quote">

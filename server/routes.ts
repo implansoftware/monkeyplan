@@ -6298,12 +6298,33 @@ export function registerRoutes(app: Express): Server {
       const repairOrder = await storage.getRepairOrder(req.params.id);
       if (!repairOrder) return res.status(404).send("Repair order not found");
       
+      // Fetch customer data if customerId exists
+      let customer = null;
+      if (repairOrder.customerId) {
+        const customerData = await storage.getUser(repairOrder.customerId);
+        if (customerData) {
+          // Return only safe customer fields
+          customer = {
+            id: customerData.id,
+            fullName: customerData.fullName,
+            email: customerData.email,
+            phone: customerData.phone,
+            address: customerData.address,
+            fiscalCode: customerData.fiscalCode,
+            vatNumber: customerData.vatNumber,
+            city: customerData.city,
+            province: customerData.province,
+            postalCode: customerData.postalCode,
+          };
+        }
+      }
+      
       // For resellers, check if the order's customer belongs to them FIRST
       // This handles the case where order.resellerId is NULL but customer.resellerId matches
       if (req.user.role === 'reseller' && repairOrder.customerId) {
-        const customer = await storage.getUser(repairOrder.customerId);
-        if (customer && customer.resellerId === req.user.id) {
-          return res.json(repairOrder);
+        const customerCheck = await storage.getUser(repairOrder.customerId);
+        if (customerCheck && customerCheck.resellerId === req.user.id) {
+          return res.json({ ...repairOrder, customer });
         }
       }
       
@@ -6316,7 +6337,7 @@ export function registerRoutes(app: Express): Server {
       
       if (!hasAccess) return res.status(403).send("Forbidden");
       
-      res.json(repairOrder);
+      res.json({ ...repairOrder, customer });
     } catch (error: any) {
       res.status(500).send(error.message);
     }
