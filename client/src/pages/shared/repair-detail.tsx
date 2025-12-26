@@ -356,7 +356,7 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
     brand: string | null;
     model: string | null;
     imageUrl: string | null;
-    basePrice: number;
+    unitPrice: number;
   }>>({
     queryKey: ["/api/products/by-ids", suggestedDeviceIds],
     queryFn: async () => {
@@ -366,7 +366,9 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
         suggestedDeviceIds.map(async (id: string) => {
           const res = await fetch(`/api/products/${id}`, { credentials: "include" });
           if (!res.ok) return null;
-          return res.json();
+          const data = await res.json();
+          // The endpoint returns { product, inventory, attachments } - extract product
+          return data.product || data;
         })
       );
       return products.filter(Boolean);
@@ -1685,7 +1687,7 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
                         </div>
                       </div>
                       <div className="text-lg font-semibold text-green-600">
-                        €{(device.basePrice / 100).toFixed(2)}
+                        €{((device.unitPrice || 0) / 100).toFixed(2)}
                       </div>
                     </div>
                   ))}
