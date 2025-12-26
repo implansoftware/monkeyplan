@@ -8744,6 +8744,7 @@ export function registerRoutes(app: Express): Server {
         unrepairableReasonOther: req.body.unrepairableReasonOther || null,
         customerDataImportant: req.body.customerDataImportant || false,
         suggestedPromotionIds: req.body.suggestedPromotionIds || [],
+        suggestedDeviceIds: req.body.suggestedDeviceIds || [],
         dataRecoveryRequested: req.body.dataRecoveryRequested || false,
       });
       
@@ -8825,6 +8826,7 @@ export function registerRoutes(app: Express): Server {
       if (req.body.unrepairableReasonOther !== undefined) updates.unrepairableReasonOther = req.body.unrepairableReasonOther;
       if (req.body.customerDataImportant !== undefined) updates.customerDataImportant = req.body.customerDataImportant;
       if (req.body.suggestedPromotionIds !== undefined) updates.suggestedPromotionIds = req.body.suggestedPromotionIds;
+      if (req.body.suggestedDeviceIds !== undefined) updates.suggestedDeviceIds = req.body.suggestedDeviceIds;
       if (req.body.dataRecoveryRequested !== undefined) updates.dataRecoveryRequested = req.body.dataRecoveryRequested;
       
       const diagnostics = await storage.updateRepairDiagnostics(req.params.id, updates);

@@ -37,7 +37,7 @@ import {
   Wrench, Euro, FileText, Paperclip, Calendar, Package, ClipboardList,
   ClipboardCheck, PackageCheck, Play, CheckCircle, Stethoscope, Receipt,
   Download, User, ArrowRight, Circle, CheckCircle2, AlertCircle, AlertTriangle, Gift, Shield, SkipForward,
-  HardDrive, Building2, Clock, Truck, Loader2, XCircle, CalendarCheck, ArrowLeft, ShoppingBag
+  HardDrive, Building2, Clock, Truck, Loader2, XCircle, CalendarCheck, ArrowLeft, ShoppingBag, Smartphone
 } from "lucide-react";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
@@ -345,6 +345,33 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
       return response.json();
     },
     enabled: !!repairOrderId && repair?.status === 'pronto_ritiro',
+    staleTime: 60000,
+  });
+
+  // Suggested devices for replacement (when diagnosis outcome is irriparabile)
+  const suggestedDeviceIds = diagnosis?.suggestedDeviceIds || [];
+  const { data: suggestedDevices = [] } = useQuery<Array<{
+    id: string;
+    name: string;
+    brand: string | null;
+    model: string | null;
+    imageUrl: string | null;
+    basePrice: number;
+  }>>({
+    queryKey: ["/api/products/by-ids", suggestedDeviceIds],
+    queryFn: async () => {
+      if (!suggestedDeviceIds.length) return [];
+      // Fetch each product by ID
+      const products = await Promise.all(
+        suggestedDeviceIds.map(async (id: string) => {
+          const res = await fetch(`/api/products/${id}`, { credentials: "include" });
+          if (!res.ok) return null;
+          return res.json();
+        })
+      );
+      return products.filter(Boolean);
+    },
+    enabled: suggestedDeviceIds.length > 0,
     staleTime: 60000,
   });
 
@@ -1620,6 +1647,49 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
                     <p className="font-medium">{format(new Date(diagnosis.diagnosedAt), "dd/MM/yyyy HH:mm", { locale: it })}</p>
                   </div>
                 )}
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Suggested Devices Card - shown when diagnosis outcome is irriparabile */}
+          {diagnosis?.diagnosisOutcome === 'irriparabile' && suggestedDevices.length > 0 && (
+            <Card data-testid="card-suggested-devices">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Smartphone className="h-4 w-4 text-green-600" />
+                  Smartphone Consigliati
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground mb-3">
+                  Il dispositivo è stato diagnosticato come irriparabile. Ecco alcuni smartphone consigliati per la sostituzione:
+                </p>
+                <div className="space-y-2">
+                  {suggestedDevices.map((device) => (
+                    <div
+                      key={device.id}
+                      className="flex items-center gap-3 p-3 rounded-lg border bg-green-500/5 border-green-500/20"
+                      data-testid={`suggested-device-${device.id}`}
+                    >
+                      {device.imageUrl && (
+                        <img 
+                          src={device.imageUrl} 
+                          alt={device.name}
+                          className="w-12 h-12 object-cover rounded"
+                        />
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <div className="font-medium truncate">{device.name}</div>
+                        <div className="text-sm text-muted-foreground">
+                          {device.brand} {device.model && `- ${device.model}`}
+                        </div>
+                      </div>
+                      <div className="text-lg font-semibold text-green-600">
+                        €{(device.basePrice / 100).toFixed(2)}
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </CardContent>
             </Card>
           )}

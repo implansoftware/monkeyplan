@@ -94,6 +94,7 @@ interface ExistingDiagnosis {
   unrepairableReasonOther?: string | null;
   customerDataImportant?: boolean | null;
   suggestedPromotionIds?: string[] | null;
+  suggestedDeviceIds?: string[] | null;
   dataRecoveryRequested?: boolean | null;
 }
 
@@ -120,6 +121,7 @@ const diagnosisSchema = z.object({
   unrepairableReasonOther: z.string().optional(),
   customerDataImportant: z.boolean().default(false),
   suggestedPromotionIds: z.array(z.string()).default([]),
+  suggestedDeviceIds: z.array(z.string()).default([]),
   dataRecoveryRequested: z.boolean().default(false),
 }).refine((data) => {
   const hasOtherFinding = data.selectedFindingIds.some(id => id.includes("-other"));
@@ -331,12 +333,34 @@ export function DiagnosisFormDialog({
       unrepairableReasonOther: existingDiagnosis?.unrepairableReasonOther || "",
       customerDataImportant: existingDiagnosis?.customerDataImportant || false,
       suggestedPromotionIds: existingDiagnosis?.suggestedPromotionIds || [],
+      suggestedDeviceIds: existingDiagnosis?.suggestedDeviceIds || [],
       dataRecoveryRequested: existingDiagnosis?.dataRecoveryRequested || false,
     },
   });
 
   const diagnosisOutcome = form.watch("diagnosisOutcome");
   const customerDataImportant = form.watch("customerDataImportant");
+
+  // Load smartphone products for suggestions when device is unrepairable
+  const { data: smartphoneProducts = [] } = useQuery<Array<{
+    id: string;
+    name: string;
+    brand: string | null;
+    model: string | null;
+    sku: string | null;
+    imageUrl: string | null;
+    basePrice: number;
+    deviceType: string | null;
+  }>>({
+    queryKey: ["/api/reseller/products", { deviceType: "smartphone" }],
+    queryFn: async () => {
+      const res = await fetch("/api/reseller/products?deviceType=smartphone&status=active", { credentials: "include" });
+      if (!res.ok) return [];
+      const products = await res.json();
+      return products.filter((p: any) => p.deviceType === "smartphone" || p.deviceType === "Smartphone");
+    },
+    enabled: open && diagnosisOutcome === "irriparabile",
+  });
 
   // Reset form when existingDiagnosis changes or dialog opens
   const resetFormState = useCallback(() => {
@@ -355,6 +379,7 @@ export function DiagnosisFormDialog({
         unrepairableReasonOther: existingDiagnosis.unrepairableReasonOther || "",
         customerDataImportant: existingDiagnosis.customerDataImportant || false,
         suggestedPromotionIds: existingDiagnosis.suggestedPromotionIds || [],
+        suggestedDeviceIds: existingDiagnosis.suggestedDeviceIds || [],
         dataRecoveryRequested: existingDiagnosis.dataRecoveryRequested || false,
       });
       setUploadedPhotos(existingDiagnosis.photos || []);
@@ -373,6 +398,7 @@ export function DiagnosisFormDialog({
         unrepairableReasonOther: "",
         customerDataImportant: false,
         suggestedPromotionIds: [],
+        suggestedDeviceIds: [],
         dataRecoveryRequested: false,
       });
       setUploadedPhotos([]);
@@ -430,6 +456,7 @@ export function DiagnosisFormDialog({
       unrepairableReasonOther: data.unrepairableReasonOther || null,
       customerDataImportant: data.customerDataImportant,
       suggestedPromotionIds: data.suggestedPromotionIds,
+      suggestedDeviceIds: data.suggestedDeviceIds,
       dataRecoveryRequested: data.dataRecoveryRequested,
     };
   };
@@ -1162,6 +1189,87 @@ export function DiagnosisFormDialog({
                         )}
                       />
                     )}
+
+                    {/* Smartphone suggestions section */}
+                    <FormField
+                      control={form.control}
+                      name="suggestedDeviceIds"
+                      render={({ field }) => (
+                        <FormItem>
+                          <div className="bg-green-500/10 p-3 rounded-lg border border-green-500/30 mt-4">
+                            <div className="flex items-center gap-2 mb-2">
+                              <Smartphone className="h-5 w-5 text-green-600" />
+                              <FormLabel className="font-semibold text-green-700 dark:text-green-300">
+                                Suggerisci Smartphone Sostitutivi
+                              </FormLabel>
+                            </div>
+                            <FormDescription className="text-green-600 dark:text-green-400 mb-3">
+                              Seleziona smartphone dal tuo catalogo da proporre al cliente come sostituzione
+                            </FormDescription>
+                            
+                            {smartphoneProducts.length === 0 ? (
+                              <p className="text-sm text-muted-foreground italic">
+                                Nessuno smartphone disponibile nel catalogo
+                              </p>
+                            ) : (
+                              <div className="grid grid-cols-1 gap-2 max-h-[200px] overflow-y-auto">
+                                {smartphoneProducts.map((product) => {
+                                  const isSelected = field.value?.includes(product.id);
+                                  return (
+                                    <div
+                                      key={product.id}
+                                      className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all ${
+                                        isSelected
+                                          ? "border-green-500 bg-green-500/10"
+                                          : "border-muted hover:bg-muted/50"
+                                      }`}
+                                      onClick={() => {
+                                        const current = field.value || [];
+                                        if (isSelected) {
+                                          field.onChange(current.filter(id => id !== product.id));
+                                        } else {
+                                          field.onChange([...current, product.id]);
+                                        }
+                                      }}
+                                      data-testid={`suggested-device-${product.id}`}
+                                    >
+                                      <div className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 ${
+                                        isSelected ? "bg-green-500 border-green-500" : "border-muted-foreground"
+                                      }`}>
+                                        {isSelected && <span className="text-white text-xs">✓</span>}
+                                      </div>
+                                      {product.imageUrl && (
+                                        <img 
+                                          src={product.imageUrl} 
+                                          alt={product.name}
+                                          className="w-10 h-10 object-cover rounded"
+                                        />
+                                      )}
+                                      <div className="flex-1 min-w-0">
+                                        <div className="font-medium text-sm truncate">{product.name}</div>
+                                        <div className="text-xs text-muted-foreground">
+                                          {product.brand} {product.model && `- ${product.model}`}
+                                        </div>
+                                      </div>
+                                      <div className="text-sm font-semibold text-green-600">
+                                        €{(product.basePrice / 100).toFixed(2)}
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            )}
+                            
+                            {field.value && field.value.length > 0 && (
+                              <p className="text-xs text-green-600 mt-2">
+                                {field.value.length} smartphone selezionat{field.value.length === 1 ? 'o' : 'i'}
+                              </p>
+                            )}
+                          </div>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
                   </div>
                 )}
               </CardContent>
