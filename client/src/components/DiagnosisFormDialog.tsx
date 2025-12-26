@@ -350,14 +350,14 @@ export function DiagnosisFormDialog({
     sku: string | null;
     imageUrl: string | null;
     basePrice: number;
+    unitPrice: number;
     deviceType: string | null;
   }>>({
     queryKey: ["/api/reseller/products", { deviceType: "smartphone" }],
     queryFn: async () => {
-      const res = await fetch("/api/reseller/products?deviceType=smartphone&status=active", { credentials: "include" });
+      const res = await fetch("/api/reseller/products?deviceType=smartphone", { credentials: "include" });
       if (!res.ok) return [];
-      const products = await res.json();
-      return products.filter((p: any) => p.deviceType === "smartphone" || p.deviceType === "Smartphone");
+      return res.json();
     },
     enabled: open && diagnosisOutcome === "irriparabile",
   });
@@ -1252,7 +1252,7 @@ export function DiagnosisFormDialog({
                                         </div>
                                       </div>
                                       <div className="text-sm font-semibold text-green-600">
-                                        €{(product.basePrice / 100).toFixed(2)}
+                                        €{((product.unitPrice || product.basePrice || 0) / 100).toFixed(2)}
                                       </div>
                                     </div>
                                   );

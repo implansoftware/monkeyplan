@@ -4450,26 +4450,58 @@ export function registerRoutes(app: Express): Server {
       const context = getEffectiveContext(req);
       if (!context.resellerId) return res.status(400).send("Rivenditore non trovato");
       
+      const { deviceType, productType } = req.query;
+      
       // Ottieni tutti i prodotti (globali admin + propri del reseller)
       const allProducts = await storage.listProducts();
       
+      // Ottieni tutti i device types per arricchire i prodotti
+      const deviceTypes = await storage.listDeviceTypes();
+      const deviceTypeMap = new Map(deviceTypes.map(dt => [dt.id, dt.name]));
+      
       // Filtra: prodotti globali (createdBy null) + prodotti propri
-      const visibleProducts = allProducts.filter(p => 
+      let visibleProducts = allProducts.filter(p => 
         p.createdBy === null || p.createdBy === context.resellerId
       );
+      
+      // Filtra per deviceType se specificato
+      if (deviceType) {
+        const deviceTypeLower = String(deviceType).toLowerCase();
+        visibleProducts = visibleProducts.filter(p => {
+          // Check by device type name
+          if (p.deviceTypeId) {
+            const typeName = deviceTypeMap.get(p.deviceTypeId);
+            if (typeName && typeName.toLowerCase() === deviceTypeLower) {
+              return true;
+            }
+          }
+          // Per "smartphone", include anche tutti i prodotti di tipo "dispositivo" senza deviceTypeId
+          if (deviceTypeLower === 'smartphone' && p.productType === 'dispositivo') {
+            return true;
+          }
+          return false;
+        });
+      }
+      
+      // Filtra per productType se specificato
+      if (productType) {
+        visibleProducts = visibleProducts.filter(p => p.productType === productType);
+      }
       
       // Ottieni prezzi personalizzati per questo reseller
       const customPrices = await storage.listProductPrices({ resellerId: context.resellerId });
       const priceMap = new Map(customPrices.map(cp => [cp.productId, cp]));
       
-      // Arricchisci prodotti con prezzi effettivi
+      // Arricchisci prodotti con prezzi effettivi e device type name
       const enrichedProducts = visibleProducts.map(product => {
         const customPrice = priceMap.get(product.id);
         const isOwn = product.createdBy === context.resellerId;
+        const deviceTypeName = product.deviceTypeId ? deviceTypeMap.get(product.deviceTypeId) : null;
         
         return {
           ...product,
           isOwn, // true = prodotto creato dal reseller
+          deviceType: deviceTypeName || (product.productType === 'dispositivo' ? 'Smartphone' : null), // Fallback per dispositivi senza tipo
           customPrice: customPrice || null,
           effectivePrice: isOwn ? product.unitPrice : (customPrice?.priceCents ?? product.unitPrice),
           effectiveCostPrice: isOwn ? product.costPrice : (customPrice?.costPriceCents ?? product.costPrice),
