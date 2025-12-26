@@ -1445,6 +1445,7 @@ export const repairDiagnostics = pgTable("repair_diagnostics", {
   // Per esito "non_conveniente"
   customerDataImportant: boolean("customer_data_important").default(false), // Dati importanti? → attiva recupero dati
   suggestedPromotionIds: text("suggested_promotion_ids").array(), // IDs promozioni suggerite
+  suggestedDeviceIds: text("suggested_device_ids").array(), // IDs smartphone suggeriti per sostituzione (esito irriparabile)
   dataRecoveryRequested: boolean("data_recovery_requested").default(false), // Richiesto recupero dati
   diagnosedBy: varchar("diagnosed_by").notNull(), // ID tecnico che ha fatto la diagnosi
   diagnosedAt: timestamp("diagnosed_at").notNull().defaultNow(),
