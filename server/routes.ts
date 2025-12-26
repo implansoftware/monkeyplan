@@ -8738,6 +8738,13 @@ export function registerRoutes(app: Express): Server {
         componentIds: req.body.componentIds || [],
         estimatedRepairTimeId: req.body.estimatedRepairTimeId,
         diagnosedBy: req.user.id,
+        // Diagnosis outcome fields
+        diagnosisOutcome: req.body.diagnosisOutcome || "riparabile",
+        unrepairableReasonId: req.body.unrepairableReasonId || null,
+        unrepairableReasonOther: req.body.unrepairableReasonOther || null,
+        customerDataImportant: req.body.customerDataImportant || false,
+        suggestedPromotionIds: req.body.suggestedPromotionIds || [],
+        dataRecoveryRequested: req.body.dataRecoveryRequested || false,
       });
       
       if (!validationResult.success) {
@@ -8812,6 +8819,13 @@ export function registerRoutes(app: Express): Server {
       if (req.body.findingIds !== undefined) updates.findingIds = req.body.findingIds;
       if (req.body.componentIds !== undefined) updates.componentIds = req.body.componentIds;
       if (req.body.estimatedRepairTimeId !== undefined) updates.estimatedRepairTimeId = req.body.estimatedRepairTimeId;
+      // Diagnosis outcome fields
+      if (req.body.diagnosisOutcome !== undefined) updates.diagnosisOutcome = req.body.diagnosisOutcome;
+      if (req.body.unrepairableReasonId !== undefined) updates.unrepairableReasonId = req.body.unrepairableReasonId;
+      if (req.body.unrepairableReasonOther !== undefined) updates.unrepairableReasonOther = req.body.unrepairableReasonOther;
+      if (req.body.customerDataImportant !== undefined) updates.customerDataImportant = req.body.customerDataImportant;
+      if (req.body.suggestedPromotionIds !== undefined) updates.suggestedPromotionIds = req.body.suggestedPromotionIds;
+      if (req.body.dataRecoveryRequested !== undefined) updates.dataRecoveryRequested = req.body.dataRecoveryRequested;
       
       const diagnostics = await storage.updateRepairDiagnostics(req.params.id, updates);
       
