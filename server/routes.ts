@@ -9339,6 +9339,47 @@ export function registerRoutes(app: Express): Server {
         ? new Date(req.body.expectedArrival) 
         : undefined;
       
+      // If ordering an existing product and user is repair_center, also create a B2B order
+      let b2bOrderId: string | null = null;
+      if (req.body.productId && repairOrder.repairCenterId) {
+        const repairCenter = await storage.getRepairCenter(repairOrder.repairCenterId);
+        const product = await storage.getProduct(req.body.productId);
+        
+        if (repairCenter && repairCenter.resellerId && product) {
+          // Create B2B order for repair center -> reseller
+          const orderNumber = await storage.generateRepairCenterPurchaseOrderNumber();
+          const quantity = req.body.quantity || 1;
+          const unitPrice = product.costPrice || product.unitPrice || 0;
+          const subtotal = unitPrice * quantity;
+          
+          const b2bOrder = await storage.createRepairCenterPurchaseOrder({
+            orderNumber,
+            repairCenterId: repairOrder.repairCenterId,
+            resellerId: repairCenter.resellerId,
+            status: 'pending',
+            subtotal,
+            discountAmount: 0,
+            shippingCost: 0,
+            total: subtotal,
+            paymentMethod: 'bank_transfer',
+            notes: `Ordine ricambio per riparazione #${repairOrder.ticketNumber || repairOrder.id}`,
+          });
+          
+          b2bOrderId = b2bOrder.id;
+          
+          // Create order item
+          await storage.createRepairCenterPurchaseOrderItem({
+            orderId: b2bOrder.id,
+            productId: req.body.productId,
+            productName: product.name,
+            productSku: product.sku || null,
+            quantity,
+            unitPrice,
+            totalPrice: subtotal,
+          });
+        }
+      }
+      
       const partsOrder = await storage.createPartsOrder({
         repairOrderId: req.params.id,
         productId: req.body.productId || null,
@@ -9348,7 +9389,7 @@ export function registerRoutes(app: Express): Server {
         unitCost: req.body.unitCost,
         supplier: req.body.supplier,
         expectedArrival,
-        notes: req.body.notes,
+        notes: b2bOrderId ? `${req.body.notes || ''} [B2B: ${b2bOrderId}]`.trim() : req.body.notes,
         orderedBy: req.user.id,
       });
       
