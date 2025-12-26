@@ -9347,13 +9347,12 @@ export function registerRoutes(app: Express): Server {
         
         if (repairCenter && repairCenter.resellerId && product) {
           // Create B2B order for repair center -> reseller
-          const orderNumber = await storage.generateRepairCenterPurchaseOrderNumber();
+          // Note: orderNumber is generated automatically in createRepairCenterPurchaseOrder
           const quantity = req.body.quantity || 1;
           const unitPrice = product.costPrice || product.unitPrice || 0;
           const subtotal = unitPrice * quantity;
           
           const b2bOrder = await storage.createRepairCenterPurchaseOrder({
-            orderNumber,
             repairCenterId: repairOrder.repairCenterId,
             resellerId: repairCenter.resellerId,
             status: 'pending',
@@ -21249,12 +21248,9 @@ export function registerRoutes(app: Express): Server {
         });
       }
       
-      // Generate order number using RC B2B pattern
-      const orderNumber = await storage.generateRepairCenterPurchaseOrderNumber();
-      
       // Create order using repair_center_purchase_orders table (proper referential integrity)
+      // Note: orderNumber is generated automatically in createRepairCenterPurchaseOrder
       const order = await storage.createRepairCenterPurchaseOrder({
-        orderNumber,
         repairCenterId: req.user.repairCenterId,
         resellerId: sellerResellerId,
         status: 'pending',
