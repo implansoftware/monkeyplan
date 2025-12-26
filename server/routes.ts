@@ -9440,8 +9440,8 @@ export function registerRoutes(app: Express): Server {
             repairCenterId: repairOrder.repairCenterId,
             quantity: partsOrder.quantity,
             movementType: 'in',
-            reference: `Ricambio ricevuto - Ordine #${partsOrder.id}`,
-            performedBy: req.user.id,
+            notes: `Ricambio ricevuto - Ordine #${partsOrder.id}`,
+            createdBy: req.user.id,
           });
         }
         
