@@ -388,6 +388,10 @@ export function AcceptanceWizardDialog({
     address: string | null;
     phone: string | null;
     email: string | null;
+    resellerId: string | null;
+    ownerName: string | null;
+    isOwn: boolean;
+    isSubResellerCenter: boolean;
   }>>({
     queryKey: ["/api/repair-centers"],
     enabled: user?.role === "admin" || user?.role === "repair_center" || user?.role === "reseller",
@@ -1230,7 +1234,34 @@ export function AcceptanceWizardDialog({
                 </SelectTrigger>
               </FormControl>
               <SelectContent>
-                {repairCenters.map((center) => (
+                {/* Own centers first */}
+                {repairCenters.filter(c => c.isOwn).length > 0 && (
+                  <>
+                    <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground">
+                      I miei centri
+                    </div>
+                    {repairCenters.filter(c => c.isOwn).map((center) => (
+                      <SelectItem key={center.id} value={center.id}>
+                        {center.name} {center.address ? `- ${center.address}` : ''}
+                      </SelectItem>
+                    ))}
+                  </>
+                )}
+                {/* Sub-reseller centers */}
+                {repairCenters.filter(c => c.isSubResellerCenter).length > 0 && (
+                  <>
+                    <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground">
+                      Centri della Rete
+                    </div>
+                    {repairCenters.filter(c => c.isSubResellerCenter).map((center) => (
+                      <SelectItem key={center.id} value={center.id}>
+                        {center.name} {center.ownerName ? `(${center.ownerName})` : ''} {center.address ? `- ${center.address}` : ''}
+                      </SelectItem>
+                    ))}
+                  </>
+                )}
+                {/* Fallback for non-reseller roles or simple list */}
+                {repairCenters.filter(c => !c.isOwn && !c.isSubResellerCenter).map((center) => (
                   <SelectItem key={center.id} value={center.id}>
                     {center.name} {center.address ? `- ${center.address}` : ''}
                   </SelectItem>

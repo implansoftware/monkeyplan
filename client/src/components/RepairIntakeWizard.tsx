@@ -311,10 +311,16 @@ export function RepairIntakeWizard({
     enabled: !!selectedTypeId,
   });
 
-  const { data: repairCenters = [] } = useQuery<Array<{ id: string; name: string }>>({
-    queryKey: user?.role === "reseller" 
-      ? ["/api/reseller/repair-centers"]
-      : ["/api/repair-centers"],
+  const { data: repairCenters = [] } = useQuery<Array<{ 
+    id: string; 
+    name: string;
+    address: string | null;
+    resellerId: string | null;
+    ownerName: string | null;
+    isOwn: boolean;
+    isSubResellerCenter: boolean;
+  }>>({
+    queryKey: ["/api/repair-centers"],
     enabled: user?.role === "admin" || user?.role === "reseller",
   });
 
@@ -1305,7 +1311,34 @@ export function RepairIntakeWizard({
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            {repairCenters.map((rc) => (
+                            {/* Own centers first */}
+                            {repairCenters.filter(c => c.isOwn).length > 0 && (
+                              <>
+                                <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground">
+                                  I miei centri
+                                </div>
+                                {repairCenters.filter(c => c.isOwn).map((rc) => (
+                                  <SelectItem key={rc.id} value={rc.id}>
+                                    {rc.name}
+                                  </SelectItem>
+                                ))}
+                              </>
+                            )}
+                            {/* Sub-reseller centers */}
+                            {repairCenters.filter(c => c.isSubResellerCenter).length > 0 && (
+                              <>
+                                <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground">
+                                  Centri della Rete
+                                </div>
+                                {repairCenters.filter(c => c.isSubResellerCenter).map((rc) => (
+                                  <SelectItem key={rc.id} value={rc.id}>
+                                    {rc.name} {rc.ownerName ? `(${rc.ownerName})` : ''}
+                                  </SelectItem>
+                                ))}
+                              </>
+                            )}
+                            {/* Fallback for non-reseller roles or simple list */}
+                            {repairCenters.filter(c => !c.isOwn && !c.isSubResellerCenter).map((rc) => (
                               <SelectItem key={rc.id} value={rc.id}>
                                 {rc.name}
                               </SelectItem>

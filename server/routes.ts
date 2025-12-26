@@ -1959,17 +1959,44 @@ export function registerRoutes(app: Express): Server {
   });
 
   // Public endpoint to list repair centers (for dropdowns)
-  // Filters by role: resellers see only their centers, admins see all
+  // Filters by role: resellers see only their centers (+ sub-reseller centers for franchising/gdo), admins see all
   app.get("/api/repair-centers", requireAuth, async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
       let centers = await storage.listRepairCenters();
+      const allUsers = await storage.listUsers();
+      
+      // Build reseller name map for owner info
+      const resellerMap = new Map(
+        allUsers
+          .filter(u => u.role === 'reseller')
+          .map(u => [u.id, u.fullName])
+      );
       
       // Filter based on role
+      let subResellerIds: string[] = [];
       if (req.user.role === 'reseller') {
-        // Resellers see only their own repair centers
-        centers = centers.filter(c => c.resellerId === req.user!.id && c.isActive);
+        // Base: own centers
+        let allowedCenterIds = centers
+          .filter(c => c.resellerId === req.user!.id && c.isActive)
+          .map(c => c.id);
+        
+        // Franchising/GDO: also include sub-reseller centers
+        if (req.user.resellerCategory === 'franchising' || req.user.resellerCategory === 'gdo') {
+          const subResellers = allUsers.filter(
+            u => u.role === 'reseller' && u.parentResellerId === req.user!.id && u.isActive
+          );
+          subResellerIds = subResellers.map(s => s.id);
+          
+          const subResellerCenterIds = centers
+            .filter(c => subResellerIds.includes(c.resellerId || '') && c.isActive)
+            .map(c => c.id);
+          
+          allowedCenterIds = [...allowedCenterIds, ...subResellerCenterIds];
+        }
+        
+        centers = centers.filter(c => allowedCenterIds.includes(c.id));
       } else if (req.user.role === 'repair_center') {
         // Repair center users see only active centers (they typically work at one)
         centers = centers.filter(c => c.isActive);
@@ -1978,14 +2005,24 @@ export function registerRoutes(app: Express): Server {
         centers = centers.filter(c => c.isActive);
       }
       
-      // Return only essential fields for selection
-      res.json(centers.map(c => ({
-        id: c.id,
-        name: c.name,
-        address: c.address,
-        phone: c.phone,
-        email: c.email
-      })));
+      // Return fields for selection with owner info
+      res.json(centers.map(c => {
+        const isOwn = c.resellerId === req.user!.id;
+        const ownerName = c.resellerId ? resellerMap.get(c.resellerId) : null;
+        const isSubResellerCenter = subResellerIds.includes(c.resellerId || '');
+        
+        return {
+          id: c.id,
+          name: c.name,
+          address: c.address,
+          phone: c.phone,
+          email: c.email,
+          resellerId: c.resellerId,
+          ownerName: ownerName || null,
+          isOwn,
+          isSubResellerCenter
+        };
+      }));
     } catch (error: any) {
       res.status(500).send(error.message);
     }
@@ -3474,6 +3511,31 @@ export function registerRoutes(app: Express): Server {
         const customer = await storage.getUser(validatedData.customerId);
         if (!customer || customer.role !== 'customer') {
           return res.status(400).send("Invalid customer");
+        }
+      }
+
+      // Validate repair center ownership (own centers + sub-reseller centers for franchising/gdo)
+      if (validatedData.repairCenterId) {
+        const center = await storage.getRepairCenter(validatedData.repairCenterId);
+        if (!center || !center.isActive) {
+          return res.status(400).send("Centro di riparazione non valido o non attivo");
+        }
+        
+        // Check if center belongs to reseller
+        let isAllowed = center.resellerId === req.user.id;
+        
+        // Franchising/GDO can also use sub-reseller centers
+        if (!isAllowed && (req.user.resellerCategory === 'franchising' || req.user.resellerCategory === 'gdo')) {
+          const allUsers = await storage.listUsers();
+          const subResellerIds = allUsers
+            .filter(u => u.role === 'reseller' && u.parentResellerId === req.user!.id && u.isActive)
+            .map(u => u.id);
+          
+          isAllowed = subResellerIds.includes(center.resellerId || '');
+        }
+        
+        if (!isAllowed) {
+          return res.status(403).send("Non hai accesso a questo centro di riparazione");
         }
       }
 
