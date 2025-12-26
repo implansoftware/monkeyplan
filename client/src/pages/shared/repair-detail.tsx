@@ -131,6 +131,14 @@ type RepairCenter = {
   id: string;
   name: string;
   resellerId: string | null;
+  address: string | null;
+  city: string | null;
+  cap: string | null;
+  provincia: string | null;
+  phone: string | null;
+  email: string | null;
+  ownerName?: string;
+  isActive: boolean;
 };
 
 type SuggestedAccessory = {
@@ -290,9 +298,10 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
   });
 
   // Use unified endpoint that includes sub-reseller centers for franchising/GDO
+  // Also load for repair_center role so they can see their own center details
   const { data: repairCenters = [] } = useQuery<RepairCenter[]>({
     queryKey: ["/api/repair-centers"],
-    enabled: user?.role === 'reseller' || user?.role === 'admin',
+    enabled: user?.role === 'reseller' || user?.role === 'admin' || user?.role === 'repair_center',
   });
 
   const updateRepairCenterMutation = useMutation({
@@ -1364,35 +1373,113 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
             </CardContent>
           </Card>
 
-          {(user?.role === 'admin' || user?.role === 'reseller') && (
-            <Card data-testid="card-repair-center">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <Building2 className="h-4 w-4" />
-                  Centro di Riparazione
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <Select
-                  value={repair.repairCenterId || "unassigned"}
-                  onValueChange={(value) => updateRepairCenterMutation.mutate(value === "unassigned" ? null : value)}
-                  disabled={updateRepairCenterMutation.isPending}
-                >
-                  <SelectTrigger data-testid="select-repair-center">
-                    <SelectValue placeholder="Seleziona centro" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="unassigned">Non assegnato</SelectItem>
-                    {repairCenters.map((center) => (
-                      <SelectItem key={center.id} value={center.id}>
-                        {center.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </CardContent>
-            </Card>
-          )}
+          {/* Repair Center Card - visible to all roles */}
+          <Card data-testid="card-repair-center">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center gap-2">
+                <Building2 className="h-4 w-4" />
+                Centro di Riparazione
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {(() => {
+                const assignedCenter = repair.repairCenterId 
+                  ? repairCenters.find(c => c.id === repair.repairCenterId)
+                  : null;
+                
+                if (!repair.repairCenterId) {
+                  return (
+                    <p className="text-sm text-muted-foreground" data-testid="text-no-center">
+                      Nessun centro assegnato
+                    </p>
+                  );
+                }
+                
+                if (!assignedCenter) {
+                  return (
+                    <p className="text-sm text-muted-foreground" data-testid="text-center-loading">
+                      Caricamento centro...
+                    </p>
+                  );
+                }
+                
+                return (
+                  <div className="space-y-3" data-testid="repair-center-details">
+                    <div>
+                      <span className="text-sm text-muted-foreground">Nome</span>
+                      <p className="font-medium" data-testid="text-center-name">{assignedCenter.name}</p>
+                    </div>
+                    
+                    {(assignedCenter.address || assignedCenter.city) && (
+                      <div>
+                        <span className="text-sm text-muted-foreground">Indirizzo</span>
+                        <p className="font-medium" data-testid="text-center-address">
+                          {[
+                            assignedCenter.address,
+                            [assignedCenter.cap, assignedCenter.city].filter(Boolean).join(' '),
+                            assignedCenter.provincia ? `(${assignedCenter.provincia})` : null
+                          ].filter(Boolean).join(', ')}
+                        </p>
+                      </div>
+                    )}
+                    
+                    {assignedCenter.phone && (
+                      <div>
+                        <span className="text-sm text-muted-foreground">Telefono</span>
+                        <p className="font-medium" data-testid="text-center-phone">
+                          <a href={`tel:${assignedCenter.phone}`} className="text-primary hover:underline">
+                            {assignedCenter.phone}
+                          </a>
+                        </p>
+                      </div>
+                    )}
+                    
+                    {assignedCenter.email && (
+                      <div>
+                        <span className="text-sm text-muted-foreground">Email</span>
+                        <p className="font-medium" data-testid="text-center-email">
+                          <a href={`mailto:${assignedCenter.email}`} className="text-primary hover:underline">
+                            {assignedCenter.email}
+                          </a>
+                        </p>
+                      </div>
+                    )}
+                    
+                    {assignedCenter.ownerName && (
+                      <div>
+                        <span className="text-sm text-muted-foreground">Rivenditore</span>
+                        <p className="font-medium" data-testid="text-center-owner">{assignedCenter.ownerName}</p>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
+              
+              {/* Dropdown for changing center - only for admin/reseller */}
+              {(user?.role === 'admin' || user?.role === 'reseller') && (
+                <div className="pt-3 border-t">
+                  <span className="text-sm text-muted-foreground block mb-2">Cambia centro</span>
+                  <Select
+                    value={repair.repairCenterId || "unassigned"}
+                    onValueChange={(value) => updateRepairCenterMutation.mutate(value === "unassigned" ? null : value)}
+                    disabled={updateRepairCenterMutation.isPending}
+                  >
+                    <SelectTrigger data-testid="select-repair-center">
+                      <SelectValue placeholder="Seleziona centro" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="unassigned">Non assegnato</SelectItem>
+                      {repairCenters.map((center) => (
+                        <SelectItem key={center.id} value={center.id}>
+                          {center.name} {center.ownerName ? `(${center.ownerName})` : ''}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+            </CardContent>
+          </Card>
 
           {acceptance && (
             <Card data-testid="card-acceptance">
