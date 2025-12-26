@@ -9,7 +9,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Plus, Search, MapPin, Phone, Mail, Pencil, Trash2, Building, Clock, ChevronLeft, ChevronRight, Check, FileText, Settings } from "lucide-react";
+import { Plus, Search, MapPin, Phone, Mail, Pencil, Trash2, Building, Clock, ChevronLeft, ChevronRight, Check, FileText, Settings, Network, Users, Eye } from "lucide-react";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -24,6 +25,26 @@ const WIZARD_STEPS = [
   { id: 4, title: "Configurazione", icon: Settings },
 ];
 
+type SubResellerCenter = {
+  id: string;
+  name: string;
+  address: string;
+  city: string;
+  phone: string;
+  email: string;
+  isActive: boolean;
+};
+
+type SubResellerWithCenters = {
+  subReseller: {
+    id: string;
+    name: string;
+    username: string;
+    email: string;
+  };
+  repairCenters: SubResellerCenter[];
+};
+
 export default function ResellerRepairCenters() {
   const [searchQuery, setSearchQuery] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -32,6 +53,7 @@ export default function ResellerRepairCenters() {
   const [hourlyRateEuros, setHourlyRateEuros] = useState<string>("");
   const [useMyFiscalData, setUseMyFiscalData] = useState(false);
   const [wizardStep, setWizardStep] = useState(1);
+  const [expandedSubResellers, setExpandedSubResellers] = useState<Record<string, boolean>>({});
   const [formData, setFormData] = useState({
     name: "",
     phone: "",
@@ -49,6 +71,13 @@ export default function ResellerRepairCenters() {
   const { data: centers = [], isLoading } = useQuery<RepairCenter[]>({
     queryKey: ["/api/reseller/repair-centers"],
   });
+
+  const { data: subResellersCenters = [], isLoading: isLoadingSubResellers } = useQuery<SubResellerWithCenters[]>({
+    queryKey: ["/api/reseller/sub-resellers-repair-centers"],
+  });
+
+  const totalNetworkCenters = subResellersCenters.reduce((acc, sr) => acc + sr.repairCenters.length, 0);
+  const hasSubResellers = subResellersCenters.length > 0;
 
   const createCenterMutation = useMutation({
     mutationFn: async (data: Omit<InsertRepairCenter, 'resellerId'>) => {
@@ -652,6 +681,139 @@ export default function ResellerRepairCenters() {
           )}
         </CardContent>
       </Card>
+
+      {/* Sezione Centri della Rete - Solo se ci sono sub-reseller */}
+      {hasSubResellers && (
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between gap-4 flex-wrap">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
+                  <Network className="h-5 w-5 text-primary" />
+                </div>
+                <div>
+                  <h2 className="text-lg font-semibold">Centri della Rete</h2>
+                  <p className="text-sm text-muted-foreground">
+                    Centri di riparazione dei tuoi rivenditori
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <Badge variant="secondary" className="flex items-center gap-1">
+                  <Users className="h-3 w-3" />
+                  {subResellersCenters.length} Rivenditori
+                </Badge>
+                <Badge variant="outline" className="flex items-center gap-1">
+                  <Building className="h-3 w-3" />
+                  {totalNetworkCenters} Centri
+                </Badge>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {isLoadingSubResellers ? (
+              <div className="space-y-3">
+                <Skeleton className="h-16 w-full" />
+                <Skeleton className="h-16 w-full" />
+              </div>
+            ) : totalNetworkCenters === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <Network className="h-10 w-10 mx-auto mb-3 opacity-20" />
+                <p>I tuoi rivenditori non hanno ancora centri di riparazione</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {subResellersCenters.map((srData) => (
+                  <Collapsible
+                    key={srData.subReseller.id}
+                    open={expandedSubResellers[srData.subReseller.id] ?? false}
+                    onOpenChange={(open) => 
+                      setExpandedSubResellers(prev => ({ ...prev, [srData.subReseller.id]: open }))
+                    }
+                  >
+                    <div className="border rounded-lg">
+                      <CollapsibleTrigger asChild>
+                        <div className="flex items-center justify-between p-4 cursor-pointer hover-elevate rounded-lg" data-testid={`subreseller-toggle-${srData.subReseller.id}`}>
+                          <div className="flex items-center gap-3">
+                            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-muted">
+                              <Users className="h-4 w-4 text-muted-foreground" />
+                            </div>
+                            <div>
+                              <div className="font-medium">{srData.subReseller.name}</div>
+                              <div className="text-sm text-muted-foreground">{srData.subReseller.email}</div>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Badge variant="outline">
+                              {srData.repairCenters.length} {srData.repairCenters.length === 1 ? 'Centro' : 'Centri'}
+                            </Badge>
+                            <ChevronRight className={`h-4 w-4 transition-transform ${expandedSubResellers[srData.subReseller.id] ? 'rotate-90' : ''}`} />
+                          </div>
+                        </div>
+                      </CollapsibleTrigger>
+                      <CollapsibleContent>
+                        {srData.repairCenters.length === 0 ? (
+                          <div className="px-4 pb-4 text-sm text-muted-foreground">
+                            Nessun centro di riparazione
+                          </div>
+                        ) : (
+                          <div className="border-t">
+                            <Table>
+                              <TableHeader>
+                                <TableRow>
+                                  <TableHead>Nome Centro</TableHead>
+                                  <TableHead>Località</TableHead>
+                                  <TableHead>Contatti</TableHead>
+                                  <TableHead>Stato</TableHead>
+                                </TableRow>
+                              </TableHeader>
+                              <TableBody>
+                                {srData.repairCenters.map((center) => (
+                                  <TableRow key={center.id} data-testid={`row-network-center-${center.id}`}>
+                                    <TableCell className="font-medium">
+                                      {center.name}
+                                    </TableCell>
+                                    <TableCell>
+                                      <div className="flex items-center gap-2 text-sm">
+                                        <MapPin className="h-4 w-4 text-muted-foreground" />
+                                        <div>
+                                          <div>{center.city}</div>
+                                          <div className="text-xs text-muted-foreground">{center.address}</div>
+                                        </div>
+                                      </div>
+                                    </TableCell>
+                                    <TableCell>
+                                      <div className="text-sm space-y-1">
+                                        <div className="flex items-center gap-2">
+                                          <Phone className="h-3 w-3 text-muted-foreground" />
+                                          {center.phone}
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                          <Mail className="h-3 w-3 text-muted-foreground" />
+                                          {center.email}
+                                        </div>
+                                      </div>
+                                    </TableCell>
+                                    <TableCell>
+                                      <Badge variant={center.isActive ? "default" : "secondary"}>
+                                        {center.isActive ? "Attivo" : "Inattivo"}
+                                      </Badge>
+                                    </TableCell>
+                                  </TableRow>
+                                ))}
+                              </TableBody>
+                            </Table>
+                          </div>
+                        )}
+                      </CollapsibleContent>
+                    </div>
+                  </Collapsible>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

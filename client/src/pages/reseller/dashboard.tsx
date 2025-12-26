@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Link } from "wouter";
 import { 
   Plus, Wrench, Ticket, UserPlus, Building2, CalendarPlus, PackageOpen, 
-  Truck, Receipt, FileCheck, ListChecks, Boxes
+  Truck, Receipt, FileCheck, ListChecks, Boxes, Network
 } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 import { RepairOrder, Invoice } from "@shared/schema";
@@ -49,6 +49,18 @@ export default function ResellerDashboard() {
   const { data: invoices = [] } = useQuery<Invoice[]>({
     queryKey: ["/api/invoices"],
   });
+
+  type SubResellerWithCenters = {
+    subReseller: { id: string; name: string; };
+    repairCenters: { id: string; }[];
+  };
+
+  const { data: subResellersCenters = [] } = useQuery<SubResellerWithCenters[]>({
+    queryKey: ["/api/reseller/sub-resellers-repair-centers"],
+  });
+
+  const totalNetworkCenters = subResellersCenters.reduce((acc, sr) => acc + sr.repairCenters.length, 0);
+  const hasSubResellers = subResellersCenters.length > 0;
 
   const formatCurrency = (cents: number) => {
     return new Intl.NumberFormat("it-IT", {
@@ -162,6 +174,44 @@ export default function ResellerDashboard() {
           </Card>
         ))}
       </div>
+
+      {/* Network Stats - Solo se ci sono sub-reseller */}
+      {hasSubResellers && (
+        <Card data-testid="card-network-stats">
+          <CardHeader className="flex flex-row items-center justify-between gap-1 space-y-0 pb-2">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-violet-100 dark:bg-violet-900/30">
+                <Network className="h-5 w-5 text-violet-600" />
+              </div>
+              <div>
+                <CardTitle className="text-base">La Tua Rete</CardTitle>
+                <CardDescription>Panoramica dei tuoi rivenditori</CardDescription>
+              </div>
+            </div>
+            <Link href="/reseller/repair-centers">
+              <Button variant="outline" size="sm">
+                Vedi Dettagli
+              </Button>
+            </Link>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="text-center p-4 rounded-lg bg-muted/50">
+                <div className="text-2xl font-bold text-violet-600" data-testid="text-network-resellers">
+                  {subResellersCenters.length}
+                </div>
+                <p className="text-xs text-muted-foreground">Rivenditori</p>
+              </div>
+              <div className="text-center p-4 rounded-lg bg-muted/50">
+                <div className="text-2xl font-bold text-primary" data-testid="text-network-centers">
+                  {totalNetworkCenters}
+                </div>
+                <p className="text-xs text-muted-foreground">Centri Riparazione</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Quick Actions */}
       <Card>

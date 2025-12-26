@@ -11464,6 +11464,48 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // GET /api/reseller/sub-resellers-repair-centers - Get repair centers of sub-resellers
+  app.get("/api/reseller/sub-resellers-repair-centers", requireAuth, requireRole("reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const allUsers = await storage.listUsers();
+      const allRepairCenters = await storage.listRepairCenters();
+      
+      // Get sub-resellers where parentResellerId matches current user's id
+      const mySubResellers = allUsers
+        .filter(u => u.role === 'reseller' && u.parentResellerId === req.user!.id && u.isActive);
+      
+      // For each sub-reseller, get their repair centers (include inactive for full visibility)
+      const result = mySubResellers.map(subReseller => {
+        const subResellerCenters = allRepairCenters.filter(
+          rc => rc.resellerId === subReseller.id
+        );
+        return {
+          subReseller: {
+            id: subReseller.id,
+            name: subReseller.fullName || subReseller.username,
+            username: subReseller.username,
+            email: subReseller.email,
+          },
+          repairCenters: subResellerCenters.map(rc => ({
+            id: rc.id,
+            name: rc.name,
+            address: rc.address,
+            city: rc.city,
+            phone: rc.phone,
+            email: rc.email,
+            isActive: rc.isActive,
+          })),
+        };
+      });
+      
+      res.json(result);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
   app.patch("/api/users/:id", requireAuth, async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
