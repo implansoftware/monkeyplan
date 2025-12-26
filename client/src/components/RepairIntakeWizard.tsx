@@ -38,7 +38,7 @@ import {
   User, Smartphone, ClipboardCheck, CheckCircle2, 
   ChevronRight, ChevronLeft, Loader2, Plus, Search,
   Monitor, Tablet, Laptop, Tv, Gamepad2, Watch, Headphones, Printer,
-  AlertCircle, UserPlus, X, Mail, Phone
+  AlertCircle, UserPlus, X, Mail, Phone, Building
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -713,6 +713,63 @@ export function RepairIntakeWizard({
                     </CardContent>
                   </Card>
                 )}
+
+                {/* Repair Center Selection - show for resellers with centers */}
+                {(user?.role === "admin" || user?.role === "reseller") && repairCenters.length > 0 && !showNewCustomerForm && (
+                  <FormField
+                    control={form.control}
+                    name="repairCenterId"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Assegna a Centro Riparazione</FormLabel>
+                        <Select value={field.value} onValueChange={field.onChange}>
+                          <FormControl>
+                            <SelectTrigger data-testid="select-repair-center-step1">
+                              <SelectValue placeholder="Seleziona centro (opzionale)" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {/* Own centers first */}
+                            {repairCenters.filter(c => c.isOwn).length > 0 && (
+                              <>
+                                <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground">
+                                  I miei centri
+                                </div>
+                                {repairCenters.filter(c => c.isOwn).map((rc) => (
+                                  <SelectItem key={rc.id} value={rc.id}>
+                                    {rc.name}
+                                  </SelectItem>
+                                ))}
+                              </>
+                            )}
+                            {/* Sub-reseller centers */}
+                            {repairCenters.filter(c => c.isSubResellerCenter).length > 0 && (
+                              <>
+                                <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground">
+                                  Centri della Rete
+                                </div>
+                                {repairCenters.filter(c => c.isSubResellerCenter).map((rc) => (
+                                  <SelectItem key={rc.id} value={rc.id}>
+                                    {rc.name} {rc.ownerName ? `(${rc.ownerName})` : ''}
+                                  </SelectItem>
+                                ))}
+                              </>
+                            )}
+                            {/* Fallback for non-reseller roles or simple list */}
+                            {repairCenters.filter(c => !c.isOwn && !c.isSubResellerCenter).map((rc) => (
+                              <SelectItem key={rc.id} value={rc.id}>
+                                {rc.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <p className="text-xs text-muted-foreground">
+                          Scegli a quale centro affidare la lavorazione
+                        </p>
+                      </FormItem>
+                    )}
+                  />
+                )}
               </div>
             )}
 
@@ -1296,58 +1353,17 @@ export function RepairIntakeWizard({
                   </CardContent>
                 </Card>
 
-                {/* Repair Center Selection (if needed) */}
-                {(user?.role === "admin" || user?.role === "reseller") && repairCenters.length > 0 && (
-                  <FormField
-                    control={form.control}
-                    name="repairCenterId"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Centro Riparazione</FormLabel>
-                        <Select value={field.value} onValueChange={field.onChange}>
-                          <FormControl>
-                            <SelectTrigger data-testid="select-repair-center">
-                              <SelectValue placeholder="Seleziona centro (opzionale)" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {/* Own centers first */}
-                            {repairCenters.filter(c => c.isOwn).length > 0 && (
-                              <>
-                                <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground">
-                                  I miei centri
-                                </div>
-                                {repairCenters.filter(c => c.isOwn).map((rc) => (
-                                  <SelectItem key={rc.id} value={rc.id}>
-                                    {rc.name}
-                                  </SelectItem>
-                                ))}
-                              </>
-                            )}
-                            {/* Sub-reseller centers */}
-                            {repairCenters.filter(c => c.isSubResellerCenter).length > 0 && (
-                              <>
-                                <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground">
-                                  Centri della Rete
-                                </div>
-                                {repairCenters.filter(c => c.isSubResellerCenter).map((rc) => (
-                                  <SelectItem key={rc.id} value={rc.id}>
-                                    {rc.name} {rc.ownerName ? `(${rc.ownerName})` : ''}
-                                  </SelectItem>
-                                ))}
-                              </>
-                            )}
-                            {/* Fallback for non-reseller roles or simple list */}
-                            {repairCenters.filter(c => !c.isOwn && !c.isSubResellerCenter).map((rc) => (
-                              <SelectItem key={rc.id} value={rc.id}>
-                                {rc.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </FormItem>
-                    )}
-                  />
+                {/* Show selected Repair Center in summary */}
+                {form.watch("repairCenterId") && (
+                  <div className="flex items-start gap-3 p-3 bg-muted/50 rounded-lg">
+                    <Building className="h-5 w-5 text-muted-foreground mt-0.5" />
+                    <div>
+                      <p className="text-sm text-muted-foreground">Centro Riparazione</p>
+                      <p className="font-medium">
+                        {repairCenters.find(c => c.id === form.watch("repairCenterId"))?.name || "Non selezionato"}
+                      </p>
+                    </div>
+                  </div>
                 )}
               </div>
             )}
