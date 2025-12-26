@@ -21514,7 +21514,7 @@ export function registerRoutes(app: Express): Server {
       const status = req.query.status as string | undefined;
       
       // Get sub-resellers to include their orders too
-      const subResellers = await storage.listUsersByParentReseller(req.user.id);
+      const subResellers = await storage.getChildResellers(req.user.id);
       const resellerIds = [req.user.id, ...subResellers.map(sr => sr.id)];
       
       // Get orders for current reseller and all sub-resellers
