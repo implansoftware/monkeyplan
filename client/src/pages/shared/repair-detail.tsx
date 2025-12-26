@@ -289,11 +289,9 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
     retry: false,
   });
 
-  const repairCentersEndpoint = user?.role === 'reseller' 
-    ? "/api/reseller/repair-centers" 
-    : "/api/admin/repair-centers";
+  // Use unified endpoint that includes sub-reseller centers for franchising/GDO
   const { data: repairCenters = [] } = useQuery<RepairCenter[]>({
-    queryKey: [repairCentersEndpoint],
+    queryKey: ["/api/repair-centers"],
     enabled: user?.role === 'reseller' || user?.role === 'admin',
   });
 
