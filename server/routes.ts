@@ -21512,15 +21512,27 @@ export function registerRoutes(app: Express): Server {
       if (!req.user) return res.status(401).json({ error: "Non autenticato" });
       
       const status = req.query.status as string | undefined;
-      const orders = await storage.listRepairCenterPurchaseOrders({ 
-        resellerId: req.user.id,
-        ...(status && { status })
-      });
       
-      // Enrich orders with repair center info and items
+      // Get sub-resellers to include their orders too
+      const subResellers = await storage.listUsersByParentReseller(req.user.id);
+      const resellerIds = [req.user.id, ...subResellers.map(sr => sr.id)];
+      
+      // Get orders for current reseller and all sub-resellers
+      const allOrders = await Promise.all(
+        resellerIds.map(resellerId => 
+          storage.listRepairCenterPurchaseOrders({ 
+            resellerId,
+            ...(status && { status })
+          })
+        )
+      );
+      const orders = allOrders.flat();
+      
+      // Enrich orders with repair center, reseller info and items
       const enrichedOrders = await Promise.all(orders.map(async (order) => {
-        const [repairCenter, items] = await Promise.all([
+        const [repairCenter, reseller, items] = await Promise.all([
           storage.getRepairCenter(order.repairCenterId),
+          storage.getUser(order.resellerId),
           storage.listRepairCenterPurchaseOrderItems(order.id)
         ]);
         const enrichedItems = await Promise.all(items.map(async (item) => {
@@ -21529,10 +21541,14 @@ export function registerRoutes(app: Express): Server {
         }));
         return { 
           ...order, 
-          repairCenter: repairCenter ? { id: repairCenter.id, name: repairCenter.name } : null, 
+          repairCenter: repairCenter ? { id: repairCenter.id, name: repairCenter.name } : null,
+          reseller: reseller ? { id: reseller.id, fullName: reseller.fullName } : null,
           items: enrichedItems 
         };
       }));
+      
+      // Sort by createdAt descending
+      enrichedOrders.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
       
       res.json(enrichedOrders);
     } catch (error: any) {
