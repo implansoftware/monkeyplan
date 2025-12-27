@@ -459,6 +459,9 @@ export function UtilityPracticeWizard({ open, onOpenChange, onSuccess }: Utility
   const canProceed = (): boolean => {
     switch (currentStep) {
       case "type":
+        // Validate target selection for franchising/gdo resellers
+        if (targetType === "sub-reseller" && !selectedResellerId) return false;
+        if (targetType === "repair-center" && !selectedRepairCenterId) return false;
         return true;
       case "service":
         if (selectedItemType === "service" || selectedItemType === "service_with_products") {
