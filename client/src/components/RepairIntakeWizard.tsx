@@ -558,7 +558,7 @@ export function RepairIntakeWizard({
                     </div>
 
                     {/* Customer List */}
-                    <div className="max-h-64 overflow-y-auto space-y-2">
+                    <div className="max-h-64 overflow-y-auto space-y-2 p-1">
                       {filteredCustomers.length === 0 ? (
                         <div className="text-center py-8 text-muted-foreground">
                           <AlertCircle className="h-8 w-8 mx-auto mb-2" />
