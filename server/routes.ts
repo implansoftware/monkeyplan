@@ -19517,8 +19517,27 @@ export function registerRoutes(app: Express): Server {
 
   // ============ DEVICE SPECS (for Device Catalog products) ============
   
+  const deviceSpecsUpdateSchema = z.object({
+    imei: z.string().max(15).optional().nullable(),
+    imei2: z.string().max(15).optional().nullable(),
+    serialNumber: z.string().optional().nullable(),
+    storage: z.enum(["32GB", "64GB", "128GB", "256GB", "512GB", "1TB"]).optional(),
+    grade: z.enum(["A+", "A", "B", "C", "D"]).optional().nullable(),
+    batteryHealth: z.string().optional().nullable(),
+    networkLock: z.enum(["unlocked", "locked", "unknown"]).optional(),
+    originalBox: z.boolean().optional(),
+    accessories: z.array(z.string()).optional().nullable(),
+    notes: z.string().optional().nullable(),
+  });
+  
   app.get("/api/products/:productId/device-specs", requireAuth, async (req, res) => {
     try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      
+      if (!['admin', 'admin_staff', 'reseller', 'repair_center'].includes(req.user.role)) {
+        return res.status(403).json({ error: "Accesso non autorizzato" });
+      }
+      
       const specs = await storage.getSmartphoneSpecs(req.params.productId);
       res.json(specs || null);
     } catch (error: any) {
@@ -19530,19 +19549,28 @@ export function registerRoutes(app: Express): Server {
     try {
       if (!req.user) return res.status(401).json({ error: "Non autenticato" });
       
+      if (!['admin', 'admin_staff', 'reseller', 'repair_center'].includes(req.user.role)) {
+        return res.status(403).json({ error: "Solo admin, rivenditori e centri riparazione possono gestire le specifiche" });
+      }
+      
       const product = await storage.getProduct(req.params.productId);
       if (!product) return res.status(404).json({ error: "Prodotto non trovato" });
       
+      const parseResult = deviceSpecsUpdateSchema.safeParse(req.body);
+      if (!parseResult.success) {
+        return res.status(400).json({ error: "Dati non validi", details: parseResult.error.errors });
+      }
+      
       const existingSpecs = await storage.getSmartphoneSpecs(req.params.productId);
       if (existingSpecs) {
-        const updated = await storage.updateSmartphoneSpecs(req.params.productId, req.body);
+        const updated = await storage.updateSmartphoneSpecs(req.params.productId, parseResult.data);
         return res.json(updated);
       }
       
       const specs = await storage.createSmartphoneSpecs({
         productId: req.params.productId,
-        storage: req.body.storage || "128GB",
-        ...req.body,
+        storage: parseResult.data.storage || "128GB",
+        ...parseResult.data,
       });
       res.status(201).json(specs);
     } catch (error: any) {
@@ -19554,17 +19582,29 @@ export function registerRoutes(app: Express): Server {
     try {
       if (!req.user) return res.status(401).json({ error: "Non autenticato" });
       
+      if (!['admin', 'admin_staff', 'reseller', 'repair_center'].includes(req.user.role)) {
+        return res.status(403).json({ error: "Solo admin, rivenditori e centri riparazione possono gestire le specifiche" });
+      }
+      
+      const parseResult = deviceSpecsUpdateSchema.safeParse(req.body);
+      if (!parseResult.success) {
+        return res.status(400).json({ error: "Dati non validi", details: parseResult.error.errors });
+      }
+      
       const existingSpecs = await storage.getSmartphoneSpecs(req.params.productId);
       if (!existingSpecs) {
+        const product = await storage.getProduct(req.params.productId);
+        if (!product) return res.status(404).json({ error: "Prodotto non trovato" });
+        
         const specs = await storage.createSmartphoneSpecs({
           productId: req.params.productId,
-          storage: req.body.storage || "128GB",
-          ...req.body,
+          storage: parseResult.data.storage || "128GB",
+          ...parseResult.data,
         });
         return res.status(201).json(specs);
       }
       
-      const updated = await storage.updateSmartphoneSpecs(req.params.productId, req.body);
+      const updated = await storage.updateSmartphoneSpecs(req.params.productId, parseResult.data);
       res.json(updated);
     } catch (error: any) {
       res.status(500).json({ error: error.message });

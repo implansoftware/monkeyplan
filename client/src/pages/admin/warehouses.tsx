@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -232,8 +232,8 @@ export default function WarehousesPage() {
     setSpecsDialogOpen(true);
   };
 
-  // Effetto per popolare i dati quando le specifiche vengono caricate
-  const populateSpecsFromCurrent = () => {
+  // Auto-popola i dati quando le specifiche vengono caricate
+  useEffect(() => {
     if (currentSpecs && specsDialogOpen) {
       setSpecsData({
         imei: currentSpecs.imei || "",
@@ -248,7 +248,7 @@ export default function WarehousesPage() {
         notes: currentSpecs.notes || "",
       });
     }
-  };
+  }, [currentSpecs, specsDialogOpen]);
 
   const handleEditStock = (item: EnrichedStock) => {
     setEditingStockItem(item);
@@ -947,17 +947,11 @@ export default function WarehousesPage() {
                 />
               </div>
 
-              {/* Pulsante carica dati esistenti se presenti */}
+              {/* Indicatore specifiche esistenti */}
               {currentSpecs && (
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={populateSpecsFromCurrent}
-                  className="w-full"
-                  data-testid="button-load-existing-specs"
-                >
-                  Carica specifiche esistenti
-                </Button>
+                <div className="text-xs text-muted-foreground text-center p-2 bg-muted/50 rounded">
+                  Specifiche esistenti caricate automaticamente
+                </div>
               )}
             </div>
           )}
@@ -967,7 +961,18 @@ export default function WarehousesPage() {
               Annulla
             </Button>
             <Button
-              onClick={() => saveSpecsMutation.mutate(specsData)}
+              onClick={() => {
+                const cleanedData = {
+                  ...specsData,
+                  imei: specsData.imei || null,
+                  imei2: specsData.imei2 || null,
+                  serialNumber: specsData.serialNumber || null,
+                  grade: specsData.grade || null,
+                  batteryHealth: specsData.batteryHealth || null,
+                  notes: specsData.notes || null,
+                };
+                saveSpecsMutation.mutate(cleanedData);
+              }}
               disabled={saveSpecsMutation.isPending || loadingSpecs}
               data-testid="button-save-specs"
             >
