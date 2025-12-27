@@ -10,12 +10,13 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { 
   Warehouse, Package, ArrowLeftRight, Plus, Search, 
   TrendingUp, TrendingDown, RotateCcw, MapPin, Boxes,
-  ArrowRight, Clock, CheckCircle, XCircle, Pencil
+  ArrowRight, Clock, CheckCircle, XCircle, Pencil, Smartphone
 } from "lucide-react";
 import type { Warehouse as WarehouseType, WarehouseStock, WarehouseMovement, Product } from "@shared/schema";
 
@@ -26,7 +27,7 @@ type AccessibleWarehouse = {
   owner?: { id: string; username: string; fullName?: string | null } | null;
 };
 
-type EnrichedStock = WarehouseStock & { product: { id: string; name: string; sku: string; category: string; imageUrl?: string | null } | null };
+type EnrichedStock = WarehouseStock & { product: { id: string; name: string; sku: string; category: string; imageUrl?: string | null; isDeviceCatalogProduct?: boolean } | null };
 type EnrichedMovement = WarehouseMovement & { 
   product: { id: string; name: string; sku: string } | null;
   createdByUser: { id: string; fullName: string; username: string } | null;
@@ -37,6 +38,7 @@ export default function WarehousesPage() {
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("stock");
   const [searchTerm, setSearchTerm] = useState("");
+  const [showOnlyDevices, setShowOnlyDevices] = useState(false);
   const [showMovementDialog, setShowMovementDialog] = useState(false);
   const [showEditStockDialog, setShowEditStockDialog] = useState(false);
   const [editingStockItem, setEditingStockItem] = useState<EnrichedStock | null>(null);
@@ -177,10 +179,13 @@ export default function WarehousesPage() {
     setShowEditStockDialog(true);
   };
 
-  const filteredStock = stock.filter(item => 
-    item.product?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.product?.sku?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredStock = stock.filter(item => {
+    const matchesSearch = 
+      item.product?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.product?.sku?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesDeviceFilter = !showOnlyDevices || item.product?.isDeviceCatalogProduct;
+    return matchesSearch && matchesDeviceFilter;
+  });
 
   const movementTypeLabels: Record<string, { label: string; icon: any; color: string }> = {
     carico: { label: "Carico", icon: TrendingUp, color: "text-green-500" },
@@ -399,7 +404,7 @@ export default function WarehousesPage() {
         </TabsList>
 
         <TabsContent value="stock" className="space-y-4">
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-4 flex-wrap">
             <div className="relative flex-1 max-w-sm">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
@@ -409,6 +414,18 @@ export default function WarehousesPage() {
                 className="pl-10"
                 data-testid="input-search-stock"
               />
+            </div>
+            <div className="flex items-center gap-2">
+              <Switch 
+                id="device-filter"
+                checked={showOnlyDevices}
+                onCheckedChange={setShowOnlyDevices}
+                data-testid="switch-show-only-devices"
+              />
+              <Label htmlFor="device-filter" className="flex items-center gap-1 cursor-pointer">
+                <Smartphone className="h-4 w-4" />
+                Solo dispositivi
+              </Label>
             </div>
           </div>
 
@@ -459,7 +476,15 @@ export default function WarehousesPage() {
                           </td>
                           <td className="p-4 text-muted-foreground">{item.product?.sku || "N/D"}</td>
                           <td className="p-4">
-                            <Badge variant="outline">{item.product?.category || "N/D"}</Badge>
+                            <div className="flex items-center gap-1 flex-wrap">
+                              <Badge variant="outline">{item.product?.category || "N/D"}</Badge>
+                              {item.product?.isDeviceCatalogProduct && (
+                                <Badge variant="secondary" className="gap-1">
+                                  <Smartphone className="h-3 w-3" />
+                                  Catalogo
+                                </Badge>
+                              )}
+                            </div>
                           </td>
                           <td className="p-4 text-right">
                             <span className={item.minStock && item.quantity < item.minStock ? "text-red-500 font-bold" : ""}>
