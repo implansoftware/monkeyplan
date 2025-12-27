@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { UtilityPractice, InsertUtilityPractice, UtilitySupplier, UtilityService, User, Product } from "@shared/schema";
+import { UtilityPractice, InsertUtilityPractice, UtilitySupplier, UtilityService, User, Product, RepairCenter } from "@shared/schema";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -95,6 +95,9 @@ export default function AdminUtilityPractices() {
   const [showImportField, setShowImportField] = useState(false);
   const [importText, setImportText] = useState("");
   const [supplierReferenceValue, setSupplierReferenceValue] = useState("");
+  const [assigneeType, setAssigneeType] = useState<"admin" | "reseller" | "repair_center">("admin");
+  const [selectedResellerId, setSelectedResellerId] = useState<string>("");
+  const [selectedRepairCenterId, setSelectedRepairCenterId] = useState<string>("");
   const { toast } = useToast();
 
   const parseImportText = (text: string) => {
@@ -323,6 +326,14 @@ export default function AdminUtilityPractices() {
     queryKey: ["/api/products"],
   });
 
+  const { data: resellers = [] } = useQuery<User[]>({
+    queryKey: ["/api/resellers"],
+  });
+
+  const { data: repairCenters = [] } = useQuery<RepairCenter[]>({
+    queryKey: ["/api/repair-centers"],
+  });
+
   const createMutation = useMutation({
     mutationFn: async (data: InsertUtilityPractice) => {
       const res = await apiRequest("POST", "/api/utility/practices", data);
@@ -433,6 +444,19 @@ export default function AdminUtilityPractices() {
       data.temporaryCustomerPhone = null;
     }
 
+    // Handle assignee (reseller or repair center)
+    if (assigneeType === "reseller" && selectedResellerId) {
+      data.resellerId = selectedResellerId;
+      (data as any).repairCenterId = null;
+    } else if (assigneeType === "repair_center" && selectedRepairCenterId) {
+      data.resellerId = null;
+      (data as any).repairCenterId = selectedRepairCenterId;
+    } else {
+      // Admin-owned practice
+      data.resellerId = null;
+      (data as any).repairCenterId = null;
+    }
+
     if (selectedItemType === "service") {
       // Handle supplier (catalog or temporary)
       if (useTemporarySupplier) {
@@ -515,6 +539,21 @@ export default function AdminUtilityPractices() {
     setTemporaryCustomerEmail((practice as any).temporaryCustomerEmail || "");
     setTemporaryCustomerPhone((practice as any).temporaryCustomerPhone || "");
     
+    // Set assignee type
+    if ((practice as any).repairCenterId) {
+      setAssigneeType("repair_center");
+      setSelectedRepairCenterId((practice as any).repairCenterId);
+      setSelectedResellerId("");
+    } else if (practice.resellerId) {
+      setAssigneeType("reseller");
+      setSelectedResellerId(practice.resellerId);
+      setSelectedRepairCenterId("");
+    } else {
+      setAssigneeType("admin");
+      setSelectedResellerId("");
+      setSelectedRepairCenterId("");
+    }
+    
     // Load existing practice products
     if (practice.itemType === "product" || practice.itemType === "service_with_products") {
       try {
@@ -571,6 +610,9 @@ export default function AdminUtilityPractices() {
     setShowImportField(false);
     setImportText("");
     setSupplierReferenceValue("");
+    setAssigneeType("admin");
+    setSelectedResellerId("");
+    setSelectedRepairCenterId("");
     setDialogOpen(true);
   };
 
@@ -677,6 +719,7 @@ export default function AdminUtilityPractices() {
                 <TableRow>
                   <TableHead>N. Pratica</TableHead>
                   <TableHead>Cliente</TableHead>
+                  <TableHead>Assegnatario</TableHead>
                   <TableHead>Tipo</TableHead>
                   <TableHead>Servizio/Prodotto</TableHead>
                   <TableHead>Prezzo</TableHead>
@@ -691,6 +734,8 @@ export default function AdminUtilityPractices() {
                   const product = products.find(p => p.id === practice.productId);
                   const customer = customers.find(c => c.id === practice.customerId);
                   const itemType = practice.itemType || "service";
+                  const assignedReseller = practice.resellerId ? resellers.find(r => r.id === practice.resellerId) : null;
+                  const assignedCenter = (practice as any).repairCenterId ? repairCenters.find(c => c.id === (practice as any).repairCenterId) : null;
                   return (
                     <TableRow key={practice.id} data-testid={`row-practice-${practice.id}`}>
                       <TableCell className="font-medium">
@@ -703,6 +748,24 @@ export default function AdminUtilityPractices() {
                             {customer.fullName}
                           </div>
                         ) : "-"}
+                      </TableCell>
+                      <TableCell>
+                        {assignedCenter ? (
+                          <div className="flex items-center gap-1">
+                            <Building2 className="h-3 w-3 text-muted-foreground" />
+                            <span className="text-sm">{assignedCenter.name}</span>
+                          </div>
+                        ) : assignedReseller ? (
+                          <div className="flex items-center gap-1">
+                            <UserIcon className="h-3 w-3 text-muted-foreground" />
+                            <span className="text-sm">{assignedReseller.fullName || assignedReseller.username}</span>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-1">
+                            <User2 className="h-3 w-3 text-muted-foreground" />
+                            <span className="text-sm text-muted-foreground">Admin</span>
+                          </div>
+                        )}
                       </TableCell>
                       <TableCell>
                         <Badge variant="outline">
@@ -930,6 +993,95 @@ export default function AdminUtilityPractices() {
                   Servizio + Prodotti
                 </Button>
               </div>
+            </div>
+
+            {/* Assignee Selection */}
+            <div className="space-y-2">
+              <Label>Assegna a</Label>
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  type="button"
+                  variant={assigneeType === "admin" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => {
+                    setAssigneeType("admin");
+                    setSelectedResellerId("");
+                    setSelectedRepairCenterId("");
+                  }}
+                  className="flex-1"
+                  data-testid="button-assignee-admin"
+                >
+                  <User2 className="h-4 w-4 mr-2" />
+                  Admin
+                </Button>
+                <Button
+                  type="button"
+                  variant={assigneeType === "reseller" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => {
+                    setAssigneeType("reseller");
+                    setSelectedRepairCenterId("");
+                  }}
+                  className="flex-1"
+                  data-testid="button-assignee-reseller"
+                >
+                  <UserIcon className="h-4 w-4 mr-2" />
+                  Rivenditore
+                </Button>
+                <Button
+                  type="button"
+                  variant={assigneeType === "repair_center" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => {
+                    setAssigneeType("repair_center");
+                    setSelectedResellerId("");
+                  }}
+                  className="flex-1"
+                  data-testid="button-assignee-repair-center"
+                >
+                  <Building2 className="h-4 w-4 mr-2" />
+                  Centro Ripar.
+                </Button>
+              </div>
+              
+              {assigneeType === "reseller" && (
+                <Select
+                  value={selectedResellerId}
+                  onValueChange={setSelectedResellerId}
+                >
+                  <SelectTrigger data-testid="select-reseller">
+                    <SelectValue placeholder="Seleziona rivenditore" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {resellers.map((reseller) => (
+                      <SelectItem key={reseller.id} value={reseller.id}>
+                        {reseller.fullName || reseller.username}
+                        {(reseller as any).parentResellerId && (
+                          <span className="text-xs text-muted-foreground ml-1">(Sub)</span>
+                        )}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+              
+              {assigneeType === "repair_center" && (
+                <Select
+                  value={selectedRepairCenterId}
+                  onValueChange={setSelectedRepairCenterId}
+                >
+                  <SelectTrigger data-testid="select-repair-center">
+                    <SelectValue placeholder="Seleziona centro riparazione" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {repairCenters.map((center) => (
+                      <SelectItem key={center.id} value={center.id}>
+                        {center.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
             </div>
 
             {(selectedItemType === "service" || selectedItemType === "service_with_products") && (
@@ -1464,7 +1616,12 @@ export default function AdminUtilityPractices() {
               </Button>
               <Button 
                 type="submit"
-                disabled={createMutation.isPending || updateMutation.isPending}
+                disabled={
+                  createMutation.isPending || 
+                  updateMutation.isPending ||
+                  (assigneeType === "reseller" && !selectedResellerId) ||
+                  (assigneeType === "repair_center" && !selectedRepairCenterId)
+                }
                 data-testid="button-save"
               >
                 {editingPractice ? "Salva Modifiche" : "Crea Pratica"}

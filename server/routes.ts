@@ -15686,6 +15686,31 @@ export function registerRoutes(app: Express): Server {
       
       const { products: productsArray, ...practiceData } = req.body;
       
+      // If admin, validate optional resellerId and repairCenterId (mutual exclusivity enforced)
+      if (req.user.role === 'admin') {
+        // Enforce mutual exclusivity: cannot have both resellerId and repairCenterId
+        if (practiceData.resellerId && practiceData.repairCenterId) {
+          return res.status(400).send("Non è possibile assegnare la pratica sia a un rivenditore che a un centro riparazione");
+        }
+        
+        if (practiceData.resellerId) {
+          const reseller = await storage.getUser(practiceData.resellerId);
+          if (!reseller || (reseller.role !== 'reseller' && reseller.role !== 'sub_reseller')) {
+            return res.status(400).send("Rivenditore non valido");
+          }
+          // Clear repairCenterId to ensure clean state
+          practiceData.repairCenterId = null;
+        } else if (practiceData.repairCenterId) {
+          const repairCenter = await storage.getRepairCenter(practiceData.repairCenterId);
+          if (!repairCenter) {
+            return res.status(400).send("Centro riparazione non valido");
+          }
+          // Clear resellerId to ensure clean state
+          practiceData.resellerId = null;
+        }
+        // If neither is specified, both remain null (admin-owned practice)
+      }
+      
       // If reseller, handle resellerId or repairCenterId (can be self, sub-reseller, or repair center)
       if (req.user.role === 'reseller') {
         if (practiceData.repairCenterId) {
@@ -15771,6 +15796,37 @@ export function registerRoutes(app: Express): Server {
       }
       
       const { products: productsArray, ...practiceData } = req.body;
+      
+      // If admin, validate resellerId and repairCenterId assignments (mutual exclusivity enforced)
+      if (req.user.role === 'admin') {
+        const finalResellerId = practiceData.resellerId !== undefined ? practiceData.resellerId : practice.resellerId;
+        const finalRepairCenterId = practiceData.repairCenterId !== undefined ? practiceData.repairCenterId : practice.repairCenterId;
+        
+        // Enforce mutual exclusivity: cannot have both
+        if (finalResellerId && finalRepairCenterId) {
+          return res.status(400).send("Non è possibile assegnare la pratica sia a un rivenditore che a un centro riparazione");
+        }
+        
+        // Validate resellerId if being set
+        if (practiceData.resellerId) {
+          const reseller = await storage.getUser(practiceData.resellerId);
+          if (!reseller || (reseller.role !== 'reseller' && reseller.role !== 'sub_reseller')) {
+            return res.status(400).send("Rivenditore non valido");
+          }
+          // Clear repairCenterId if assigning to reseller
+          practiceData.repairCenterId = null;
+        }
+        
+        // Validate repairCenterId if being set
+        if (practiceData.repairCenterId) {
+          const repairCenter = await storage.getRepairCenter(practiceData.repairCenterId);
+          if (!repairCenter) {
+            return res.status(400).send("Centro riparazione non valido");
+          }
+          // Clear resellerId if assigning to repair center
+          practiceData.resellerId = null;
+        }
+      }
       
       // XOR validation for service fields on update
       const finalItemType = practiceData.itemType || practice.itemType;
