@@ -14,7 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { 
   Smartphone, Tablet, Laptop, Monitor, Tv, Watch, Gamepad2, Headphones, Printer,
-  Plus, Pencil, Trash2, Loader2, Search, ChevronRight, ChevronDown, Building2, Package
+  Plus, Pencil, Trash2, Loader2, Search, ChevronRight, ChevronDown, Building2, Package, Warehouse, CheckCircle2
 } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -232,6 +232,32 @@ export default function AdminDeviceCatalog() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/device-models"] });
+    },
+  });
+
+  // Query for products to check which models are already provisioned
+  const { data: products = [] } = useQuery<Array<{ id: string; deviceModelId?: string | null }>>({
+    queryKey: ["/api/products"],
+  });
+
+  // Set of device model IDs that have been provisioned
+  const provisionedModelIds = new Set(products.filter(p => p.deviceModelId).map(p => p.deviceModelId));
+
+  // Mutation for provisioning a device model as warehouse product
+  const provisionModelMutation = useMutation({
+    mutationFn: async (modelId: string) => {
+      const response = await apiRequest("POST", `/api/admin/device-models/${modelId}/provision`);
+      return response.json();
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/products"] });
+      toast({ 
+        title: "Modello attivato a magazzino", 
+        description: data.message || `Prodotto creato con ${data.warehousesSeeded} magazzini inizializzati`
+      });
+    },
+    onError: (error: any) => {
+      toast({ title: "Errore", description: error.message, variant: "destructive" });
     },
   });
 
@@ -534,6 +560,7 @@ export default function AdminDeviceCatalog() {
                         <TableHead>Marca</TableHead>
                         <TableHead>Tipo</TableHead>
                         <TableHead>Codice</TableHead>
+                        <TableHead>Magazzino</TableHead>
                         <TableHead>Stato</TableHead>
                         <TableHead className="text-right">Azioni</TableHead>
                       </TableRow>
@@ -555,6 +582,31 @@ export default function AdminDeviceCatalog() {
                             </TableCell>
                             <TableCell className="text-muted-foreground">
                               {model.marketCode || "-"}
+                            </TableCell>
+                            <TableCell>
+                              {provisionedModelIds.has(model.id) ? (
+                                <Badge variant="secondary" className="gap-1">
+                                  <CheckCircle2 className="h-3 w-3" />
+                                  Attivo
+                                </Badge>
+                              ) : (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => provisionModelMutation.mutate(model.id)}
+                                  disabled={provisionModelMutation.isPending}
+                                  data-testid={`button-provision-model-${model.id}`}
+                                >
+                                  {provisionModelMutation.isPending ? (
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                  ) : (
+                                    <>
+                                      <Warehouse className="h-4 w-4 mr-1" />
+                                      Attiva
+                                    </>
+                                  )}
+                                </Button>
+                              )}
                             </TableCell>
                             <TableCell>
                               <Switch
@@ -593,7 +645,7 @@ export default function AdminDeviceCatalog() {
                       })}
                       {filteredModels.length === 0 && (
                         <TableRow>
-                          <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                          <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
                             Nessun modello trovato
                           </TableCell>
                         </TableRow>
