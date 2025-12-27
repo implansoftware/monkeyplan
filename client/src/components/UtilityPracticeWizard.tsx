@@ -157,8 +157,12 @@ export function UtilityPracticeWizard({ open, onOpenChange, onSuccess }: Utility
       if (selectedService.flatPriceCents) {
         setFlatPrice((selectedService.flatPriceCents / 100).toFixed(2));
       }
-      if (selectedService.commissionValueCents) {
-        setCommission((selectedService.commissionValueCents / 100).toFixed(2));
+      // Calcolo commissione: priorità a commissionFixed, altrimenti calcola da percentuale
+      if (selectedService.commissionFixed) {
+        setCommission((selectedService.commissionFixed / 100).toFixed(2));
+      } else if (selectedService.commissionPercent && selectedService.monthlyPriceCents) {
+        const commissionCents = (selectedService.monthlyPriceCents * selectedService.commissionPercent) / 100;
+        setCommission((commissionCents / 100).toFixed(2));
       }
     }
   }, [selectedServiceId, selectedService, useCustomService]);
