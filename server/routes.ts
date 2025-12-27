@@ -15822,9 +15822,20 @@ export function registerRoutes(app: Express): Server {
       
       const { products: productsArray, ...practiceData } = req.body;
       
-      // If reseller, set resellerId automatically
+      // If reseller, handle resellerId (can be self or sub-reseller)
       if (req.user.role === 'reseller') {
-        practiceData.resellerId = req.user.id;
+        if (practiceData.resellerId && practiceData.resellerId !== req.user.id) {
+          // Validate that the specified resellerId is a sub-reseller of the current user
+          const childResellers = await storage.getChildResellers(req.user.id);
+          const isValidSubReseller = childResellers.some(r => r.id === practiceData.resellerId);
+          if (!isValidSubReseller) {
+            return res.status(403).send("Puoi creare pratiche solo per te stesso o per i tuoi sub-rivenditori");
+          }
+          // Keep the specified resellerId for sub-reseller
+        } else {
+          // Default to current user
+          practiceData.resellerId = req.user.id;
+        }
       }
       
       const validated = insertUtilityPracticeSchema.parse(practiceData);

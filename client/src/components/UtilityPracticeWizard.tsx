@@ -116,6 +116,24 @@ export function UtilityPracticeWizard({ open, onOpenChange, onSuccess }: Utility
   
   const [showImportField, setShowImportField] = useState(false);
   const [importText, setImportText] = useState("");
+  
+  // Sub-reseller selection (for franchising/gdo resellers)
+  const [selectedResellerId, setSelectedResellerId] = useState("");
+
+  // Query sub-resellers for franchising/gdo resellers
+  const { data: subResellers = [] } = useQuery<UserType[]>({
+    queryKey: ["/api/reseller/sub-resellers"],
+    enabled: open && user?.role === 'reseller' && 
+             (user?.resellerCategory === 'franchising' || user?.resellerCategory === 'gdo'),
+    select: (data: any) => data || [],
+  });
+
+  // Set default resellerId to current user when wizard opens
+  useEffect(() => {
+    if (open && user?.id && !selectedResellerId) {
+      setSelectedResellerId(user.id);
+    }
+  }, [open, user?.id]);
 
   const { data: suppliers = [] } = useQuery<UtilitySupplier[]>({
     queryKey: ["/api/utility/suppliers"],
@@ -191,6 +209,7 @@ export function UtilityPracticeWizard({ open, onOpenChange, onSuccess }: Utility
     setNotes("");
     setShowImportField(false);
     setImportText("");
+    setSelectedResellerId(user?.id || "");
   };
 
   useEffect(() => {
@@ -477,6 +496,11 @@ export function UtilityPracticeWizard({ open, onOpenChange, onSuccess }: Utility
       priceType: selectedPriceType,
     };
 
+    // Include resellerId if selecting for a sub-reseller
+    if (selectedResellerId && selectedResellerId !== user?.id) {
+      data.resellerId = selectedResellerId;
+    }
+
     if (selectedItemType === "service" || selectedItemType === "service_with_products") {
       if (useTemporarySupplier && temporarySupplierName.trim()) {
         data.temporarySupplierName = temporarySupplierName.trim();
@@ -581,6 +605,41 @@ export function UtilityPracticeWizard({ open, onOpenChange, onSuccess }: Utility
 
   const renderTypeStep = () => (
     <div className="space-y-6">
+      {/* Sub-reseller selection for franchising/gdo resellers */}
+      {user?.role === 'reseller' && 
+       (user?.resellerCategory === 'franchising' || user?.resellerCategory === 'gdo') && 
+       subResellers.length > 0 && (
+        <Card className="mb-4">
+          <CardContent className="p-4">
+            <Label className="text-sm font-medium mb-2 block">Per quale rivenditore stai creando la pratica?</Label>
+            <Select
+              value={selectedResellerId}
+              onValueChange={setSelectedResellerId}
+            >
+              <SelectTrigger data-testid="select-reseller">
+                <SelectValue placeholder="Seleziona rivenditore" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={user.id} data-testid="select-reseller-self">
+                  <div className="flex items-center gap-2">
+                    <User2 className="h-4 w-4" />
+                    <span>Per me stesso</span>
+                  </div>
+                </SelectItem>
+                {subResellers.map((sub: any) => (
+                  <SelectItem key={sub.id} value={sub.id} data-testid={`select-reseller-${sub.id}`}>
+                    <div className="flex items-center gap-2">
+                      <Building2 className="h-4 w-4" />
+                      <span>{sub.fullName || sub.username}</span>
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </CardContent>
+        </Card>
+      )}
+
       <div className="text-center mb-6">
         <h3 className="text-lg font-medium">Che tipo di pratica vuoi creare?</h3>
         <p className="text-sm text-muted-foreground">Seleziona una delle opzioni seguenti</p>
