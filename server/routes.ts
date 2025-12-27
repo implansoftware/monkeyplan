@@ -15822,9 +15822,18 @@ export function registerRoutes(app: Express): Server {
       
       const { products: productsArray, ...practiceData } = req.body;
       
-      // If reseller, handle resellerId (can be self or sub-reseller)
+      // If reseller, handle resellerId or repairCenterId (can be self, sub-reseller, or repair center)
       if (req.user.role === 'reseller') {
-        if (practiceData.resellerId && practiceData.resellerId !== req.user.id) {
+        if (practiceData.repairCenterId) {
+          // Validate that the specified repairCenterId belongs to the current reseller
+          const resellerCenters = await storage.getRepairCentersForReseller(req.user.id);
+          const isValidCenter = resellerCenters.some(c => c.id === practiceData.repairCenterId);
+          if (!isValidCenter) {
+            return res.status(403).send("Puoi creare pratiche solo per i tuoi centri di riparazione");
+          }
+          // Set repairCenterId and leave resellerId null for repair center practices
+          practiceData.resellerId = null;
+        } else if (practiceData.resellerId && practiceData.resellerId !== req.user.id) {
           // Validate that the specified resellerId is a sub-reseller of the current user
           const childResellers = await storage.getChildResellers(req.user.id);
           const isValidSubReseller = childResellers.some(r => r.id === practiceData.resellerId);

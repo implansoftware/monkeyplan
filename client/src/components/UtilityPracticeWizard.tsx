@@ -117,8 +117,10 @@ export function UtilityPracticeWizard({ open, onOpenChange, onSuccess }: Utility
   const [showImportField, setShowImportField] = useState(false);
   const [importText, setImportText] = useState("");
   
-  // Sub-reseller selection (for franchising/gdo resellers)
+  // Sub-reseller and repair center selection (for franchising/gdo resellers)
   const [selectedResellerId, setSelectedResellerId] = useState("");
+  const [selectedRepairCenterId, setSelectedRepairCenterId] = useState("");
+  const [targetType, setTargetType] = useState<"self" | "sub-reseller" | "repair-center">("self");
 
   // Query sub-resellers for franchising/gdo resellers
   const { data: subResellers = [] } = useQuery<UserType[]>({
@@ -128,10 +130,20 @@ export function UtilityPracticeWizard({ open, onOpenChange, onSuccess }: Utility
     select: (data: any) => data || [],
   });
 
-  // Set default resellerId to current user when wizard opens
+  // Query repair centers for franchising/gdo resellers
+  const { data: repairCenters = [] } = useQuery<any[]>({
+    queryKey: ["/api/reseller/repair-centers"],
+    enabled: open && user?.role === 'reseller' && 
+             (user?.resellerCategory === 'franchising' || user?.resellerCategory === 'gdo'),
+    select: (data: any) => data || [],
+  });
+
+  // Set default to self when wizard opens
   useEffect(() => {
-    if (open && user?.id && !selectedResellerId) {
-      setSelectedResellerId(user.id);
+    if (open && user?.id) {
+      setTargetType("self");
+      setSelectedResellerId("");
+      setSelectedRepairCenterId("");
     }
   }, [open, user?.id]);
 
@@ -209,7 +221,9 @@ export function UtilityPracticeWizard({ open, onOpenChange, onSuccess }: Utility
     setNotes("");
     setShowImportField(false);
     setImportText("");
-    setSelectedResellerId(user?.id || "");
+    setTargetType("self");
+    setSelectedResellerId("");
+    setSelectedRepairCenterId("");
   };
 
   useEffect(() => {
@@ -496,9 +510,11 @@ export function UtilityPracticeWizard({ open, onOpenChange, onSuccess }: Utility
       priceType: selectedPriceType,
     };
 
-    // Include resellerId if selecting for a sub-reseller
-    if (selectedResellerId && selectedResellerId !== user?.id) {
+    // Include resellerId or repairCenterId based on target selection
+    if (targetType === "sub-reseller" && selectedResellerId) {
       data.resellerId = selectedResellerId;
+    } else if (targetType === "repair-center" && selectedRepairCenterId) {
+      data.repairCenterId = selectedRepairCenterId;
     }
 
     if (selectedItemType === "service" || selectedItemType === "service_with_products") {
@@ -605,37 +621,105 @@ export function UtilityPracticeWizard({ open, onOpenChange, onSuccess }: Utility
 
   const renderTypeStep = () => (
     <div className="space-y-6">
-      {/* Sub-reseller selection for franchising/gdo resellers */}
+      {/* Target selection for franchising/gdo resellers */}
       {user?.role === 'reseller' && 
        (user?.resellerCategory === 'franchising' || user?.resellerCategory === 'gdo') && 
-       subResellers.length > 0 && (
+       (subResellers.length > 0 || repairCenters.length > 0) && (
         <Card className="mb-4">
-          <CardContent className="p-4">
-            <Label className="text-sm font-medium mb-2 block">Per quale rivenditore stai creando la pratica?</Label>
-            <Select
-              value={selectedResellerId}
-              onValueChange={setSelectedResellerId}
-            >
-              <SelectTrigger data-testid="select-reseller">
-                <SelectValue placeholder="Seleziona rivenditore" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value={user.id} data-testid="select-reseller-self">
-                  <div className="flex items-center gap-2">
-                    <User2 className="h-4 w-4" />
-                    <span>Per me stesso</span>
-                  </div>
-                </SelectItem>
-                {subResellers.map((sub: any) => (
-                  <SelectItem key={sub.id} value={sub.id} data-testid={`select-reseller-${sub.id}`}>
-                    <div className="flex items-center gap-2">
-                      <Building2 className="h-4 w-4" />
-                      <span>{sub.fullName || sub.username}</span>
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          <CardContent className="p-4 space-y-4">
+            <Label className="text-sm font-medium block">Per chi stai creando la pratica?</Label>
+            
+            {/* Target type selection */}
+            <div className="grid grid-cols-3 gap-2">
+              <Button
+                type="button"
+                variant={targetType === "self" ? "default" : "outline"}
+                size="sm"
+                onClick={() => {
+                  setTargetType("self");
+                  setSelectedResellerId("");
+                  setSelectedRepairCenterId("");
+                }}
+                data-testid="button-target-self"
+              >
+                <User2 className="h-4 w-4 mr-1" />
+                Me stesso
+              </Button>
+              {subResellers.length > 0 && (
+                <Button
+                  type="button"
+                  variant={targetType === "sub-reseller" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => {
+                    setTargetType("sub-reseller");
+                    setSelectedRepairCenterId("");
+                  }}
+                  data-testid="button-target-subreseller"
+                >
+                  <Building2 className="h-4 w-4 mr-1" />
+                  Sub-Rivenditore
+                </Button>
+              )}
+              {repairCenters.length > 0 && (
+                <Button
+                  type="button"
+                  variant={targetType === "repair-center" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => {
+                    setTargetType("repair-center");
+                    setSelectedResellerId("");
+                  }}
+                  data-testid="button-target-repaircenter"
+                >
+                  <Loader2 className="h-4 w-4 mr-1" />
+                  Centro Riparazione
+                </Button>
+              )}
+            </div>
+
+            {/* Sub-reseller selection dropdown */}
+            {targetType === "sub-reseller" && subResellers.length > 0 && (
+              <Select
+                value={selectedResellerId}
+                onValueChange={setSelectedResellerId}
+              >
+                <SelectTrigger data-testid="select-subreseller">
+                  <SelectValue placeholder="Seleziona sub-rivenditore" />
+                </SelectTrigger>
+                <SelectContent>
+                  {subResellers.map((sub: any) => (
+                    <SelectItem key={sub.id} value={sub.id} data-testid={`select-subreseller-${sub.id}`}>
+                      <div className="flex items-center gap-2">
+                        <Building2 className="h-4 w-4" />
+                        <span>{sub.fullName || sub.username}</span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+
+            {/* Repair center selection dropdown */}
+            {targetType === "repair-center" && repairCenters.length > 0 && (
+              <Select
+                value={selectedRepairCenterId}
+                onValueChange={setSelectedRepairCenterId}
+              >
+                <SelectTrigger data-testid="select-repaircenter">
+                  <SelectValue placeholder="Seleziona centro riparazione" />
+                </SelectTrigger>
+                <SelectContent>
+                  {repairCenters.map((center: any) => (
+                    <SelectItem key={center.id} value={center.id} data-testid={`select-repaircenter-${center.id}`}>
+                      <div className="flex items-center gap-2">
+                        <Building2 className="h-4 w-4" />
+                        <span>{center.name}</span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
           </CardContent>
         </Card>
       )}
