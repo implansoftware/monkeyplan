@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery } from "@tanstack/react-query";
@@ -6,6 +6,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { z } from "zod";
 import { useToast } from "@/hooks/use-toast";
 import { useUser } from "@/hooks/use-user";
+import type { DeviceBrand, DeviceModel } from "@shared/schema";
 import {
   Dialog,
   DialogContent,
@@ -36,8 +37,10 @@ import {
 } from "@/components/ui/select";
 import { 
   Wrench, Link2, Euro, CheckCircle2, 
-  ChevronRight, ChevronLeft, Loader2, ImagePlus, X, Warehouse
+  ChevronRight, ChevronLeft, Loader2, ImagePlus, X, Warehouse,
+  Smartphone, Search, Check
 } from "lucide-react";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 
 interface SparePartWizardProps {
@@ -54,7 +57,6 @@ const wizardSchema = z.object({
   description: z.string().optional(),
   partType: z.string().min(1, "Seleziona il tipo"),
   quality: z.string().min(1, "Seleziona la qualità"),
-  compatibleBrands: z.array(z.string()).default([]),
   compatibleModels: z.string().optional(),
   notes: z.string().optional(),
   warrantyMonths: z.string().default("3"),
@@ -101,7 +103,6 @@ const QUALITY_OPTIONS = [
   { value: "aftermarket", label: "Aftermarket" },
 ];
 
-const DEVICE_BRANDS = ["Apple", "Samsung", "Xiaomi", "Huawei", "OPPO", "OnePlus", "Google", "Motorola", "Sony", "Nokia"];
 
 export function SparePartWizard({ 
   open, 
@@ -112,6 +113,9 @@ export function SparePartWizard({
   const [currentStep, setCurrentStep] = useState(1);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [selectedDeviceIds, setSelectedDeviceIds] = useState<Set<string>>(new Set());
+  const [deviceSearchQuery, setDeviceSearchQuery] = useState("");
+  const [selectedBrandFilter, setSelectedBrandFilter] = useState<string>("all");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   const { user } = useUser();
@@ -128,7 +132,6 @@ export function SparePartWizard({
       description: "",
       partType: "display",
       quality: "compatibile_alta",
-      compatibleBrands: [],
       compatibleModels: "",
       notes: "",
       warrantyMonths: "3",
@@ -137,6 +140,54 @@ export function SparePartWizard({
       initialStock: [],
     },
   });
+
+  const { data: deviceBrands = [] } = useQuery<DeviceBrand[]>({
+    queryKey: ["/api/device-brands"],
+    enabled: open,
+  });
+
+  const { data: deviceModels = [] } = useQuery<DeviceModel[]>({
+    queryKey: ["/api/device-models", { activeOnly: true }],
+    enabled: open,
+  });
+
+  const enrichedModels = useMemo(() => {
+    return deviceModels.map((model) => {
+      const brand = deviceBrands.find((b) => b.id === model.brandId);
+      return { ...model, brandName: brand?.name || model.brand || "Sconosciuto" };
+    });
+  }, [deviceModels, deviceBrands]);
+
+  const filteredDeviceModels = useMemo(() => {
+    let result = enrichedModels;
+    if (selectedBrandFilter !== "all") {
+      result = result.filter((m) => m.brandId === selectedBrandFilter);
+    }
+    if (deviceSearchQuery.trim()) {
+      const query = deviceSearchQuery.toLowerCase();
+      result = result.filter((m) =>
+        m.modelName.toLowerCase().includes(query) ||
+        m.brandName?.toLowerCase().includes(query)
+      );
+    }
+    return result.slice(0, 30);
+  }, [enrichedModels, selectedBrandFilter, deviceSearchQuery]);
+
+  const toggleDeviceModel = (modelId: string) => {
+    const newSet = new Set(selectedDeviceIds);
+    if (newSet.has(modelId)) {
+      newSet.delete(modelId);
+    } else {
+      newSet.add(modelId);
+    }
+    setSelectedDeviceIds(newSet);
+  };
+
+  const selectedModelsDisplay = useMemo(() => {
+    return Array.from(selectedDeviceIds)
+      .map((id) => enrichedModels.find((m) => m.id === id))
+      .filter(Boolean) as (DeviceModel & { brandName: string })[];
+  }, [selectedDeviceIds, enrichedModels]);
 
   const warehouseEndpoint = isAdmin 
     ? "/api/admin/all-warehouses" 
@@ -163,11 +214,11 @@ export function SparePartWizard({
       const specsData = {
         partType: data.partType,
         quality: data.quality,
-        compatibleBrands: data.compatibleBrands,
         compatibleModels: data.compatibleModels,
         notes: data.notes,
       };
 
+      let createdProduct;
       if (imageFile) {
         const formDataUpload = new FormData();
         formDataUpload.append("product", JSON.stringify(productData));
@@ -182,14 +233,31 @@ export function SparePartWizard({
           credentials: "include",
         });
         if (!response.ok) throw new Error("Errore creazione ricambio");
-        return response.json();
+        createdProduct = await response.json();
       } else {
-        return apiRequest("POST", "/api/spare-parts", {
+        const response = await apiRequest("POST", "/api/spare-parts", {
           product: productData,
           specs: specsData,
           initialStock: data.initialStock.length > 0 ? data.initialStock : undefined,
-        }).then(res => res.json());
+        });
+        createdProduct = await response.json();
       }
+
+      if (selectedDeviceIds.size > 0 && createdProduct?.id) {
+        const compatibilities = Array.from(selectedDeviceIds).map((modelId) => {
+          const model = enrichedModels.find((m) => m.id === modelId);
+          return {
+            deviceBrandId: model?.brandId || "",
+            deviceModelId: modelId,
+          };
+        }).filter((c) => c.deviceBrandId);
+
+        if (compatibilities.length > 0) {
+          await apiRequest("PUT", `/api/products/${createdProduct.id}/compatibilities`, { compatibilities });
+        }
+      }
+
+      return createdProduct;
     },
     onSuccess: (newProduct) => {
       queryClient.invalidateQueries({ queryKey: ["/api/spare-parts"] });
@@ -207,6 +275,9 @@ export function SparePartWizard({
     setCurrentStep(1);
     setImageFile(null);
     setImagePreview(null);
+    setSelectedDeviceIds(new Set());
+    setDeviceSearchQuery("");
+    setSelectedBrandFilter("all");
     form.reset();
     onOpenChange(false);
   };
@@ -453,39 +524,81 @@ export function SparePartWizard({
                   <p className="text-sm text-muted-foreground">Seleziona i dispositivi compatibili</p>
                 </div>
 
-                <FormField
-                  control={form.control}
-                  name="compatibleBrands"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Marche Compatibili</FormLabel>
-                      <div className="grid grid-cols-2 gap-2">
-                        {DEVICE_BRANDS.map(brand => (
-                          <Card
-                            key={brand}
-                            className={cn(
-                              "cursor-pointer transition-all hover-elevate",
-                              field.value?.includes(brand) && "ring-2 ring-primary bg-primary/5"
-                            )}
-                            onClick={() => {
-                              if (field.value?.includes(brand)) {
-                                field.onChange(field.value.filter((b: string) => b !== brand));
-                              } else {
-                                field.onChange([...(field.value || []), brand]);
-                              }
-                            }}
-                          >
-                            <CardContent className="p-3 flex items-center gap-2">
-                              <Checkbox checked={field.value?.includes(brand)} />
-                              <span className="text-sm font-medium">{brand}</span>
-                            </CardContent>
-                          </Card>
+                <div className="space-y-3">
+                  <Label>Dispositivi Compatibili</Label>
+                  
+                  <div className="flex gap-2">
+                    <div className="relative flex-1">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        placeholder="Cerca modello..."
+                        value={deviceSearchQuery}
+                        onChange={(e) => setDeviceSearchQuery(e.target.value)}
+                        className="pl-10"
+                        data-testid="input-device-search"
+                      />
+                    </div>
+                    <Select value={selectedBrandFilter} onValueChange={setSelectedBrandFilter}>
+                      <SelectTrigger className="w-40" data-testid="select-device-brand-filter">
+                        <SelectValue placeholder="Marca" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Tutte</SelectItem>
+                        {deviceBrands.map((brand) => (
+                          <SelectItem key={brand.id} value={brand.id}>{brand.name}</SelectItem>
                         ))}
-                      </div>
-                      <FormMessage />
-                    </FormItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {selectedModelsDisplay.length > 0 && (
+                    <div className="flex flex-wrap gap-1 p-2 bg-muted/50 rounded-md">
+                      {selectedModelsDisplay.map((m) => (
+                        <Badge
+                          key={m.id}
+                          variant="secondary"
+                          className="cursor-pointer gap-1"
+                          onClick={() => toggleDeviceModel(m.id)}
+                        >
+                          {m.brandName} {m.modelName}
+                          <X className="h-3 w-3" />
+                        </Badge>
+                      ))}
+                    </div>
                   )}
-                />
+
+                  <ScrollArea className="h-48 border rounded-md p-1">
+                    <div className="space-y-1">
+                      {filteredDeviceModels.length === 0 ? (
+                        <div className="text-center py-6 text-muted-foreground">
+                          <Smartphone className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                          <p className="text-sm">Nessun dispositivo trovato</p>
+                        </div>
+                      ) : (
+                        filteredDeviceModels.map((model) => (
+                          <div
+                            key={model.id}
+                            className={cn(
+                              "flex items-center gap-2 p-2 rounded cursor-pointer hover-elevate",
+                              selectedDeviceIds.has(model.id) && "bg-primary/10"
+                            )}
+                            onClick={() => toggleDeviceModel(model.id)}
+                            data-testid={`device-model-${model.id}`}
+                          >
+                            <Checkbox checked={selectedDeviceIds.has(model.id)} />
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium truncate">{model.modelName}</p>
+                              <p className="text-xs text-muted-foreground">{model.brandName}</p>
+                            </div>
+                            {selectedDeviceIds.has(model.id) && (
+                              <Check className="h-4 w-4 text-primary" />
+                            )}
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </ScrollArea>
+                </div>
 
                 <FormField
                   control={form.control}
@@ -714,10 +827,10 @@ export function SparePartWizard({
 
                     <div className="pt-4 border-t">
                       <Label className="text-xs text-muted-foreground">Compatibilità</Label>
-                      {values.compatibleBrands.length > 0 ? (
+                      {selectedModelsDisplay.length > 0 ? (
                         <div className="flex flex-wrap gap-1 mt-1">
-                          {values.compatibleBrands.map(brand => (
-                            <Badge key={brand} variant="outline">{brand}</Badge>
+                          {selectedModelsDisplay.map(model => (
+                            <Badge key={model.id} variant="outline">{model.brandName} {model.modelName}</Badge>
                           ))}
                         </div>
                       ) : (

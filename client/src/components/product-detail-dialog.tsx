@@ -12,7 +12,7 @@ import {
   Battery, HardDrive, CheckCircle, XCircle, Info, Tag, Users, Settings2
 } from "lucide-react";
 import { SmartphoneCompatibilityManager } from "./SmartphoneCompatibilityManager";
-import { useAuth } from "@/hooks/useAuth";
+import { useUser } from "@/hooks/use-user";
 import type { Product, SmartphoneSpecs, AccessorySpecs } from "@shared/schema";
 
 type ProductDetails = {
@@ -76,7 +76,7 @@ interface ProductDetailDialogProps {
 }
 
 export function ProductDetailDialog({ open, onOpenChange, productId }: ProductDetailDialogProps) {
-  const { user } = useAuth();
+  const { user } = useUser();
   const [compatibilityManagerOpen, setCompatibilityManagerOpen] = useState(false);
 
   const { data, isLoading, refetch } = useQuery<ProductDetails>({
