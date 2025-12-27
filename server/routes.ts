@@ -2387,16 +2387,121 @@ export function registerRoutes(app: Express): Server {
         })
       );
 
+      // Get device compatibilities for this product
+      const rawCompatibilities = await storage.listProductCompatibilities(product.id);
+      const compatibilities = await Promise.all(
+        rawCompatibilities.map(async (c) => {
+          const brand = await storage.getDeviceBrand(c.deviceBrandId);
+          const model = c.deviceModelId ? await storage.getDeviceModel(c.deviceModelId) : null;
+          return {
+            id: c.id,
+            deviceBrandId: c.deviceBrandId,
+            deviceBrandName: brand?.name || null,
+            deviceModelId: c.deviceModelId,
+            deviceModelName: model?.modelName || null,
+          };
+        })
+      );
+
       res.json({
         product,
         specs,
         prices: pricesWithReseller,
         assignments: assignmentsWithReseller,
         stock: stockByWarehouse,
+        compatibilities,
       });
     } catch (error: any) {
       console.error("Error fetching product details:", error);
       res.status(500).send(error.message);
+    }
+  });
+
+  // GET /api/products/:id/compatibilities - Get device compatibilities for a product
+  app.get("/api/products/:id/compatibilities", requireAuth, async (req, res) => {
+    try {
+      const product = await storage.getProduct(req.params.id);
+      if (!product) {
+        return res.status(404).send("Prodotto non trovato");
+      }
+
+      const rawCompatibilities = await storage.listProductCompatibilities(req.params.id);
+      const compatibilities = await Promise.all(
+        rawCompatibilities.map(async (c) => {
+          const brand = await storage.getDeviceBrand(c.deviceBrandId);
+          const model = c.deviceModelId ? await storage.getDeviceModel(c.deviceModelId) : null;
+          return {
+            id: c.id,
+            deviceBrandId: c.deviceBrandId,
+            deviceBrandName: brand?.name || null,
+            deviceModelId: c.deviceModelId,
+            deviceModelName: model?.modelName || null,
+          };
+        })
+      );
+
+      res.json(compatibilities);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // PUT /api/products/:id/compatibilities - Set device compatibilities for a product (replace all)
+  app.put("/api/products/:id/compatibilities", requireAuth, requireRole("admin"), async (req, res) => {
+    try {
+      const product = await storage.getProduct(req.params.id);
+      if (!product) {
+        return res.status(404).send("Prodotto non trovato");
+      }
+
+      const { compatibilities } = req.body;
+      if (!Array.isArray(compatibilities)) {
+        return res.status(400).send("compatibilities deve essere un array");
+      }
+
+      // Validate each compatibility entry
+      const validCompatibilities: { deviceBrandId: string; deviceModelId: string | null }[] = [];
+      for (const c of compatibilities) {
+        if (!c.deviceBrandId) {
+          return res.status(400).send("deviceBrandId è obbligatorio per ogni compatibilità");
+        }
+        const brand = await storage.getDeviceBrand(c.deviceBrandId);
+        if (!brand) {
+          return res.status(400).send(`Brand dispositivo non trovato: ${c.deviceBrandId}`);
+        }
+        if (c.deviceModelId) {
+          const model = await storage.getDeviceModel(c.deviceModelId);
+          if (!model) {
+            return res.status(400).send(`Modello dispositivo non trovato: ${c.deviceModelId}`);
+          }
+        }
+        validCompatibilities.push({
+          deviceBrandId: c.deviceBrandId,
+          deviceModelId: c.deviceModelId || null,
+        });
+      }
+
+      // Set all compatibilities (replaces existing)
+      const result = await storage.setProductCompatibilities(req.params.id, validCompatibilities);
+      
+      // Return enriched result
+      const enriched = await Promise.all(
+        result.map(async (c) => {
+          const brand = await storage.getDeviceBrand(c.deviceBrandId);
+          const model = c.deviceModelId ? await storage.getDeviceModel(c.deviceModelId) : null;
+          return {
+            id: c.id,
+            deviceBrandId: c.deviceBrandId,
+            deviceBrandName: brand?.name || null,
+            deviceModelId: c.deviceModelId,
+            deviceModelName: model?.modelName || null,
+          };
+        })
+      );
+
+      res.json(enriched);
+    } catch (error: any) {
+      res.status(400).send(error.message);
     }
   });
 

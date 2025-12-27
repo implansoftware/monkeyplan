@@ -36,8 +36,9 @@ import {
 } from "@/components/ui/select";
 import { 
   Smartphone, Package, Euro, CheckCircle2, 
-  ChevronRight, ChevronLeft, Loader2, ImagePlus, X, Warehouse
+  ChevronRight, ChevronLeft, Loader2, ImagePlus, X, Warehouse, Link2, Plus, Trash2
 } from "lucide-react";
+import type { DeviceBrand, DeviceModel } from "@shared/schema";
 import { cn } from "@/lib/utils";
 
 interface SmartphoneWizardProps {
@@ -80,8 +81,14 @@ const STEPS = [
   { id: 1, name: "Info Base", icon: Smartphone },
   { id: 2, name: "Specifiche", icon: Package },
   { id: 3, name: "Prezzo & Stock", icon: Euro },
-  { id: 4, name: "Conferma", icon: CheckCircle2 },
+  { id: 4, name: "Compatibilità", icon: Link2 },
+  { id: 5, name: "Conferma", icon: CheckCircle2 },
 ];
+
+interface CompatibilityEntry {
+  deviceBrandId: string;
+  deviceModelId: string | null;
+}
 
 const STORAGE_OPTIONS = ["16GB", "32GB", "64GB", "128GB", "256GB", "512GB", "1TB", "2TB"];
 const BRANDS = ["Apple", "Samsung", "Xiaomi", "Huawei", "OPPO", "OnePlus", "Google", "Motorola", "Sony", "Nokia", "Altro"];
@@ -178,6 +185,55 @@ export function SmartphoneWizard({
     queryKey: [warehouseEndpoint],
   });
 
+  // Device compatibility state and queries
+  const [compatibilities, setCompatibilities] = useState<CompatibilityEntry[]>([]);
+  const [selectedBrandId, setSelectedBrandId] = useState<string>("");
+
+  const { data: deviceBrands = [] } = useQuery<DeviceBrand[]>({
+    queryKey: ["/api/device-brands"],
+  });
+
+  const { data: deviceModels = [] } = useQuery<DeviceModel[]>({
+    queryKey: ["/api/device-models", selectedBrandId],
+    queryFn: async () => {
+      if (!selectedBrandId) return [];
+      const res = await fetch(`/api/device-models?brandId=${selectedBrandId}`);
+      if (!res.ok) throw new Error("Failed to fetch models");
+      return res.json();
+    },
+    enabled: !!selectedBrandId,
+  });
+
+  const addCompatibility = () => {
+    if (!selectedBrandId) return;
+    // Check if already exists
+    const exists = compatibilities.some(c => 
+      c.deviceBrandId === selectedBrandId && c.deviceModelId === null
+    );
+    if (exists) {
+      toast({ title: "Compatibilità già aggiunta", variant: "destructive" });
+      return;
+    }
+    setCompatibilities([...compatibilities, { deviceBrandId: selectedBrandId, deviceModelId: null }]);
+    setSelectedBrandId("");
+  };
+
+  const addModelCompatibility = (modelId: string) => {
+    if (!selectedBrandId || !modelId) return;
+    const exists = compatibilities.some(c => 
+      c.deviceBrandId === selectedBrandId && c.deviceModelId === modelId
+    );
+    if (exists) {
+      toast({ title: "Compatibilità già aggiunta", variant: "destructive" });
+      return;
+    }
+    setCompatibilities([...compatibilities, { deviceBrandId: selectedBrandId, deviceModelId: modelId }]);
+  };
+
+  const removeCompatibility = (index: number) => {
+    setCompatibilities(compatibilities.filter((_, i) => i !== index));
+  };
+
   const createMutation = useMutation({
     mutationFn: async (data: WizardData) => {
       const productData = {
@@ -228,7 +284,17 @@ export function SmartphoneWizard({
         }).then(res => res.json());
       }
     },
-    onSuccess: (newProduct) => {
+    onSuccess: async (newProduct) => {
+      // Save device compatibilities if any were selected
+      if (compatibilities.length > 0 && newProduct?.id) {
+        try {
+          await apiRequest("PUT", `/api/products/${newProduct.id}/compatibilities`, {
+            compatibilities: compatibilities,
+          });
+        } catch (err) {
+          console.error("Failed to save compatibilities:", err);
+        }
+      }
       queryClient.invalidateQueries({ queryKey: ["/api/smartphones"] });
       toast({ title: "Smartphone creato", description: `${form.getValues("name")} aggiunto al catalogo` });
       handleClose();
@@ -243,6 +309,8 @@ export function SmartphoneWizard({
     setCurrentStep(1);
     setImageFile(null);
     setImagePreview(null);
+    setCompatibilities([]);
+    setSelectedBrandId("");
     form.reset();
     onOpenChange(false);
   };
@@ -267,10 +335,11 @@ export function SmartphoneWizard({
     } else if (currentStep === 3) {
       fieldsToValidate = ["unitPrice"];
     }
+    // Step 4 (compatibilità) has no required fields
 
-    const isValid = await form.trigger(fieldsToValidate);
+    const isValid = fieldsToValidate.length === 0 || await form.trigger(fieldsToValidate);
     if (isValid) {
-      setCurrentStep(prev => Math.min(prev + 1, 4));
+      setCurrentStep(prev => Math.min(prev + 1, 5));
     }
   };
 
@@ -838,6 +907,118 @@ export function SmartphoneWizard({
             {currentStep === 4 && (
               <div className="space-y-6">
                 <div className="text-center mb-4">
+                  <Link2 className="h-12 w-12 mx-auto text-blue-500 mb-2" />
+                  <h3 className="text-lg font-medium">Compatibilità Dispositivi</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Seleziona i dispositivi compatibili con questo prodotto (opzionale)
+                  </p>
+                </div>
+
+                <Card>
+                  <CardContent className="p-4 space-y-4">
+                    <div className="flex gap-2 flex-wrap">
+                      <div className="flex-1 min-w-[200px]">
+                        <Label className="text-xs mb-1 block">Marca Dispositivo</Label>
+                        <Select value={selectedBrandId} onValueChange={setSelectedBrandId}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Seleziona marca" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {deviceBrands.map((brand) => (
+                              <SelectItem key={brand.id} value={brand.id}>
+                                {brand.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="flex items-end gap-1">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={addCompatibility}
+                          disabled={!selectedBrandId}
+                          data-testid="button-add-brand-compat"
+                        >
+                          <Plus className="h-4 w-4 mr-1" />
+                          Tutti i modelli
+                        </Button>
+                      </div>
+                    </div>
+
+                    {selectedBrandId && deviceModels.length > 0 && (
+                      <div>
+                        <Label className="text-xs mb-2 block">Oppure seleziona modelli specifici:</Label>
+                        <div className="flex flex-wrap gap-1 max-h-32 overflow-y-auto">
+                          {deviceModels.map((model) => {
+                            const isSelected = compatibilities.some(
+                              c => c.deviceBrandId === selectedBrandId && c.deviceModelId === model.id
+                            );
+                            return (
+                              <Badge
+                                key={model.id}
+                                variant={isSelected ? "default" : "outline"}
+                                className="cursor-pointer"
+                                onClick={() => !isSelected && addModelCompatibility(model.id)}
+                                data-testid={`badge-model-${model.id}`}
+                              >
+                                {model.name}
+                                {isSelected && " ✓"}
+                              </Badge>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+
+                    {compatibilities.length > 0 && (
+                      <div className="pt-4 border-t">
+                        <Label className="text-xs text-muted-foreground mb-2 block">
+                          Compatibilità selezionate ({compatibilities.length})
+                        </Label>
+                        <div className="flex flex-wrap gap-2">
+                          {compatibilities.map((compat, index) => {
+                            const brand = deviceBrands.find(b => b.id === compat.deviceBrandId);
+                            let label = brand?.name || "Marca";
+                            if (compat.deviceModelId) {
+                              const allModels = deviceModels.filter(m => m.brandId === compat.deviceBrandId);
+                              const model = allModels.find(m => m.id === compat.deviceModelId);
+                              label = `${brand?.name || ""} ${model?.name || "Modello"}`;
+                            } else {
+                              label = `${brand?.name || "Marca"} (tutti)`;
+                            }
+                            return (
+                              <Badge key={index} variant="secondary" className="gap-1">
+                                {label}
+                                <button
+                                  type="button"
+                                  onClick={() => removeCompatibility(index)}
+                                  className="ml-1 hover:text-destructive"
+                                  data-testid={`button-remove-compat-${index}`}
+                                >
+                                  <X className="h-3 w-3" />
+                                </button>
+                              </Badge>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+
+                    {compatibilities.length === 0 && (
+                      <p className="text-sm text-muted-foreground text-center py-4">
+                        Nessuna compatibilità selezionata. Puoi saltare questo passaggio.
+                      </p>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
+            )}
+
+            {currentStep === 5 && (
+              <div className="space-y-6">
+                <div className="text-center mb-4">
                   <CheckCircle2 className="h-12 w-12 mx-auto text-green-500 mb-2" />
                   <h3 className="text-lg font-medium">Riepilogo</h3>
                   <p className="text-sm text-muted-foreground">Verifica i dati prima di salvare</p>
@@ -916,6 +1097,26 @@ export function SmartphoneWizard({
                         </div>
                       </div>
                     )}
+
+                    {compatibilities.length > 0 && (
+                      <div className="pt-4 border-t">
+                        <Label className="text-xs text-muted-foreground">Compatibilità Dispositivi</Label>
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {compatibilities.map((compat, index) => {
+                            const brand = deviceBrands.find(b => b.id === compat.deviceBrandId);
+                            let label = brand?.name || "Marca";
+                            if (!compat.deviceModelId) {
+                              label = `${brand?.name || "Marca"} (tutti)`;
+                            }
+                            return (
+                              <Badge key={index} variant="secondary" className="text-xs">
+                                {label}
+                              </Badge>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               </div>
@@ -932,7 +1133,7 @@ export function SmartphoneWizard({
                 {currentStep === 1 ? "Annulla" : "Indietro"}
               </Button>
 
-              {currentStep < 4 ? (
+              {currentStep < 5 ? (
                 <Button type="button" onClick={handleNext} data-testid="button-wizard-next">
                   Avanti
                   <ChevronRight className="h-4 w-4 ml-1" />

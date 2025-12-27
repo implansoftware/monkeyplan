@@ -7,7 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { 
   Smartphone, Headphones, Wrench, Warehouse, MapPin, 
-  Battery, HardDrive, CheckCircle, XCircle, Info, Tag, Users
+  Battery, HardDrive, CheckCircle, XCircle, Info, Tag, Users, Link2
 } from "lucide-react";
 import type { Product, SmartphoneSpecs, AccessorySpecs } from "@shared/schema";
 
@@ -31,6 +31,13 @@ type ProductDetails = {
     quantity: number;
     minStock: number | null;
     location: string | null;
+  }>;
+  compatibilities?: Array<{
+    id: string;
+    deviceBrandId: string;
+    deviceBrandName: string | null;
+    deviceModelId: string | null;
+    deviceModelName: string | null;
   }>;
 };
 
@@ -341,6 +348,30 @@ export function ProductDetailDialog({ open, onOpenChange, productId }: ProductDe
                   <p className="text-sm text-muted-foreground">Nessuno stock registrato per questo prodotto.</p>
                 )}
               </div>
+
+              {data.compatibilities && data.compatibilities.length > 0 && (
+                <>
+                  <Separator />
+                  <div>
+                    <h3 className="font-medium flex items-center gap-2 mb-3">
+                      <Link2 className="h-4 w-4" />
+                      Compatibilità Dispositivi
+                    </h3>
+                    <div className="flex flex-wrap gap-2">
+                      {data.compatibilities.map((c) => {
+                        const label = c.deviceModelName 
+                          ? `${c.deviceBrandName || ''} ${c.deviceModelName}`
+                          : `${c.deviceBrandName || 'Marca'} (tutti i modelli)`;
+                        return (
+                          <Badge key={c.id} variant="secondary">
+                            {label}
+                          </Badge>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </>
+              )}
 
               {data.prices && data.prices.length > 0 && (
                 <>
