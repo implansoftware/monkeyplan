@@ -19455,6 +19455,74 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Endpoint per centri riparazione: ottiene lo stock dispositivi del proprio reseller
+  app.get("/api/reseller-device-stock", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      
+      // Solo i centri riparazione possono accedere
+      if (req.user.role !== 'repair_center') {
+        return res.status(403).json({ error: "Solo i centri riparazione possono accedere a questa risorsa" });
+      }
+      
+      // Trova il centro riparazione dell'utente
+      const repairCenterId = req.user.repairCenterId;
+      if (!repairCenterId) {
+        return res.status(400).json({ error: "Centro riparazione non associato" });
+      }
+      
+      const repairCenter = await storage.getRepairCenter(repairCenterId);
+      if (!repairCenter) {
+        return res.status(404).json({ error: "Centro riparazione non trovato" });
+      }
+      
+      // Trova il reseller del centro riparazione
+      const resellerId = repairCenter.resellerId;
+      if (!resellerId) {
+        return res.status(400).json({ error: "Nessun reseller associato al centro riparazione" });
+      }
+      
+      // Trova il magazzino del reseller
+      const resellerWarehouse = await storage.getWarehouseByOwner('reseller', resellerId);
+      if (!resellerWarehouse) {
+        return res.json([]); // Nessun magazzino trovato, ritorna array vuoto
+      }
+      
+      // Ottieni lo stock del reseller e tutti i prodotti in batch
+      const [stock, allProducts] = await Promise.all([
+        storage.listWarehouseStock(resellerWarehouse.id),
+        storage.listProducts()
+      ]);
+      
+      // Crea una mappa prodotti per lookup O(1)
+      const productMap = new Map(allProducts.map(p => [p.id, p]));
+      
+      // Filtra e arricchisci solo prodotti del catalogo dispositivi
+      const deviceStock = stock
+        .map(item => {
+          const product = productMap.get(item.productId);
+          if (!product || !product.isDeviceCatalogProduct) return null;
+          return { 
+            ...item, 
+            product: { 
+              id: product.id, 
+              name: product.name, 
+              sku: product.sku, 
+              category: product.category, 
+              imageUrl: product.imageUrl,
+              isDeviceCatalogProduct: product.isDeviceCatalogProduct 
+            },
+            resellerWarehouseName: resellerWarehouse.name
+          };
+        })
+        .filter(item => item !== null);
+      
+      res.json(deviceStock);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   // Immediate transfer between warehouses (executes stock movement right away)
   app.post("/api/warehouses/transfer-immediate", requireAuth, async (req, res) => {
     try {

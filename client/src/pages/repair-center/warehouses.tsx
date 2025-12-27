@@ -13,15 +13,19 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { 
   Warehouse, Package, ArrowLeftRight, Plus, Search, 
-  TrendingUp, TrendingDown, RotateCcw, MapPin, Boxes, Pencil
+  TrendingUp, TrendingDown, RotateCcw, MapPin, Boxes, Pencil, Smartphone, Store
 } from "lucide-react";
 import type { Warehouse as WarehouseType, WarehouseStock, WarehouseMovement, Product } from "@shared/schema";
 
-type EnrichedStock = WarehouseStock & { product: { id: string; name: string; sku: string; category: string; imageUrl?: string | null } | null };
+type EnrichedStock = WarehouseStock & { product: { id: string; name: string; sku: string; category: string; imageUrl?: string | null; isDeviceCatalogProduct?: boolean } | null };
 type EnrichedMovement = WarehouseMovement & { 
   product: { id: string; name: string; sku: string } | null;
   createdByUser: { id: string; fullName: string; username: string } | null;
   relatedWarehouse?: { id: string; name: string } | null;
+};
+type ResellerDeviceStock = WarehouseStock & { 
+  product: { id: string; name: string; sku: string; category: string; imageUrl?: string | null; isDeviceCatalogProduct?: boolean } | null;
+  resellerWarehouseName?: string;
 };
 
 export default function RepairCenterWarehousesPage() {
@@ -67,6 +71,11 @@ export default function RepairCenterWarehousesPage() {
 
   const { data: products = [] } = useQuery<Product[]>({
     queryKey: ["/api/products"],
+  });
+
+  // Query per lo stock dispositivi del reseller
+  const { data: resellerDeviceStock = [], isLoading: loadingResellerStock } = useQuery<ResellerDeviceStock[]>({
+    queryKey: ["/api/reseller-device-stock"],
   });
 
   const createMovementMutation = useMutation({
@@ -325,6 +334,10 @@ export default function RepairCenterWarehousesPage() {
             <Package className="h-4 w-4 mr-2" />
             Stock
           </TabsTrigger>
+          <TabsTrigger value="reseller-stock" data-testid="tab-reseller-stock">
+            <Store className="h-4 w-4 mr-2" />
+            Dispositivi Reseller
+          </TabsTrigger>
           <TabsTrigger value="movements" data-testid="tab-movements">
             <ArrowLeftRight className="h-4 w-4 mr-2" />
             Movimenti
@@ -411,6 +424,70 @@ export default function RepairCenterWarehousesPage() {
                             >
                               <Pencil className="h-4 w-4" />
                             </Button>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="reseller-stock" className="space-y-4">
+          <div className="flex items-center gap-2 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+            <Store className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+            <p className="text-sm text-blue-800 dark:text-blue-300">
+              Qui puoi visualizzare la disponibilità dei dispositivi nel magazzino del tuo Reseller
+            </p>
+          </div>
+
+          <Card>
+            <CardContent className="p-0">
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="border-b">
+                    <tr>
+                      <th className="text-left p-4 font-medium">Dispositivo</th>
+                      <th className="text-left p-4 font-medium">SKU</th>
+                      <th className="text-left p-4 font-medium">Categoria</th>
+                      <th className="text-right p-4 font-medium">Disponibilità</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {loadingResellerStock ? (
+                      <tr>
+                        <td colSpan={4} className="text-center p-8">Caricamento...</td>
+                      </tr>
+                    ) : resellerDeviceStock.length === 0 ? (
+                      <tr>
+                        <td colSpan={4} className="text-center p-8 text-muted-foreground">
+                          Nessun dispositivo disponibile nel magazzino del Reseller
+                        </td>
+                      </tr>
+                    ) : (
+                      resellerDeviceStock.map((item) => (
+                        <tr key={item.id} className="border-b last:border-0 hover:bg-muted/50" data-testid={`row-reseller-stock-${item.id}`}>
+                          <td className="p-4">
+                            <div className="flex items-center gap-3">
+                              <div className="w-10 h-10 bg-muted rounded flex items-center justify-center flex-shrink-0">
+                                <Smartphone className="h-5 w-5 text-muted-foreground" />
+                              </div>
+                              <span className="font-medium">{item.product?.name || "N/D"}</span>
+                            </div>
+                          </td>
+                          <td className="p-4 text-muted-foreground">{item.product?.sku || "N/D"}</td>
+                          <td className="p-4">
+                            <Badge variant="outline">{item.product?.category || "N/D"}</Badge>
+                          </td>
+                          <td className="p-4 text-right">
+                            <Badge 
+                              variant={item.quantity > 0 ? "default" : "secondary"}
+                              className={item.quantity > 0 ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200" : ""}
+                            >
+                              {item.quantity} disponibili
+                            </Badge>
                           </td>
                         </tr>
                       ))
