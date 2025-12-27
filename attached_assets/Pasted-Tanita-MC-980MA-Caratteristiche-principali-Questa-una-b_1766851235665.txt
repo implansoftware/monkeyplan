@@ -1,0 +1,41 @@
+Tanita MC-980MA
+
+Caratteristiche principali: Questa è una bilancia multifunzione di alta gamma che misura la composizione corporea in modo dettagliato. È utilizzata in ambito medico e professionale.
+
+Funzionalità di integrazione: Supporta la connessione a sistemi di gestione dei dati attraverso la porta USB. Potrebbe essere compatibile con software esterni per l'analisi dei dati, anche se l'integrazione API specifica dipende dal sistema software in uso.
+
+2. Tanita BC-601
+
+Caratteristiche principali: Un dispositivo per uso domestico avanzato che misura vari parametri della composizione corporea, tra cui percentuale di grasso corporeo, massa muscolare e metabolismo basale.
+
+Funzionalità di integrazione: È compatibile con l'app Tanita per smartphone, che raccoglie i dati e permette di monitorare i progressi nel tempo. Per l'integrazione API, è necessario verificare se esistono opzioni di esportazione dei dati tramite altre piattaforme, ma generalmente le app mobili non offrono un accesso completo tramite API.
+
+3. Tanita RD-953
+
+Caratteristiche principali: Una bilancia intelligente con connettività Bluetooth che consente la raccolta dei dati tramite l'app Tanita su smartphone. Perfetta per l'uso domestico o in ambito sportivo.
+
+Funzionalità di integrazione: Supporta la sincronizzazione con l'app Tanita e altre app di fitness tramite Bluetooth. L'integrazione API potrebbe non essere diretta, ma i dati raccolti potrebbero essere esportati tramite l'app.
+
+4. Tanita DC-430U
+
+Caratteristiche principali: Bilancia professionale per uso clinico, che misura numerosi parametri della composizione corporea. È molto utilizzata in ambienti medici e sportivi.
+
+Funzionalità di integrazione: Ha la capacità di essere collegata a un software per il monitoraggio dei dati e per l'analisi approfondita. Alcuni modelli DC-430U potrebbero supportare l'integrazione via USB, ma per l'accesso tramite API potrebbe essere necessaria una soluzione software di terze parti.
+
+5. Tanita Health Monitoring System (HM-2000)
+
+Caratteristiche principali: Sistema avanzato per il monitoraggio della salute e della composizione corporea, usato spesso da medici e specialisti.
+
+Funzionalità di integrazione: Supporta la connessione con sistemi esterni e software per l'analisi dei dati. Sebbene non tutte le versioni abbiano API dirette, il sistema offre opzioni avanzate di monitoraggio dei dati che potrebbero essere esportabili tramite software esterni.
+
+6. Tanita 360° Body Composition Analyzer (MC-780U)
+
+Caratteristiche principali: Bilancia professionale che fornisce misurazioni avanzate della composizione corporea, ideale per centri fitness, studi medici e cliniche.
+
+Funzionalità di integrazione: Supporta il collegamento con un software tramite USB e permette di raccogliere dati per l'analisi. Potresti essere in grado di integrare i dati con altri software per monitorare e analizzare i progressi.
+
+7. Tanita FITSCAN BC-1000
+
+Caratteristiche principali: Bilancia avanzata con supporto Bluetooth per il monitoraggio della composizione corporea, dotata di un'app mobile.
+
+Funzionalità di integrazione: I dati possono essere sincronizzati con applicazioni come MyTanita, ma l'integrazione via API potrebbe non essere direttamente supportata. Tuttavia, l'uso delle app mobili consente un certo livello di monitoraggio dei dati.
