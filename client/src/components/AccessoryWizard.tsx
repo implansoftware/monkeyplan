@@ -1,4 +1,4 @@
-import { useState, useRef, useMemo } from "react";
+import { useState, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery } from "@tanstack/react-query";
@@ -6,7 +6,6 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { z } from "zod";
 import { useToast } from "@/hooks/use-toast";
 import { useUser } from "@/hooks/use-user";
-import type { DeviceBrand, DeviceModel } from "@shared/schema";
 import {
   Dialog,
   DialogContent,
@@ -36,11 +35,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { 
-  ShoppingBag, Link2, Euro, CheckCircle2, 
-  ChevronRight, ChevronLeft, Loader2, ImagePlus, X, Warehouse, ChevronDown,
-  Smartphone, Search, Check
+  ShoppingBag, Euro, CheckCircle2, 
+  ChevronRight, ChevronLeft, Loader2, ImagePlus, X, Warehouse, ChevronDown
 } from "lucide-react";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 
 interface AccessoryWizardProps {
@@ -75,9 +72,8 @@ type WizardData = z.infer<typeof wizardSchema>;
 
 const STEPS = [
   { id: 1, name: "Info Base", icon: ShoppingBag },
-  { id: 2, name: "Compatibilità", icon: Link2 },
-  { id: 3, name: "Prezzo & Stock", icon: Euro },
-  { id: 4, name: "Conferma", icon: CheckCircle2 },
+  { id: 2, name: "Prezzo & Stock", icon: Euro },
+  { id: 3, name: "Conferma", icon: CheckCircle2 },
 ];
 
 const ACCESSORY_TYPES = [
@@ -111,8 +107,6 @@ const MATERIAL_OPTIONS = [
   "Vetro temperato", "Metallo", "Alluminio", "Tessuto", "Legno", "Carbonio", "Altro"
 ];
 
-const DEVICE_BRANDS = ["Apple", "Samsung", "Xiaomi", "Huawei", "OPPO", "OnePlus", "Google", "Motorola", "Sony", "Nokia"];
-
 export function AccessoryWizard({ 
   open, 
   onOpenChange, 
@@ -122,9 +116,6 @@ export function AccessoryWizard({
   const [currentStep, setCurrentStep] = useState(1);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
-  const [selectedDeviceIds, setSelectedDeviceIds] = useState<Set<string>>(new Set());
-  const [deviceSearchQuery, setDeviceSearchQuery] = useState("");
-  const [selectedBrandFilter, setSelectedBrandFilter] = useState<string>("all");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   const { user } = useUser();
@@ -151,54 +142,6 @@ export function AccessoryWizard({
       initialStock: [],
     },
   });
-
-  const { data: deviceBrands = [] } = useQuery<DeviceBrand[]>({
-    queryKey: ["/api/device-brands"],
-    enabled: open,
-  });
-
-  const { data: deviceModels = [] } = useQuery<DeviceModel[]>({
-    queryKey: ["/api/device-models", { activeOnly: true }],
-    enabled: open,
-  });
-
-  const enrichedModels = useMemo(() => {
-    return deviceModels.map((model) => {
-      const brand = deviceBrands.find((b) => b.id === model.brandId);
-      return { ...model, brandName: brand?.name || model.brand || "Sconosciuto" };
-    });
-  }, [deviceModels, deviceBrands]);
-
-  const filteredDeviceModels = useMemo(() => {
-    let result = enrichedModels;
-    if (selectedBrandFilter !== "all") {
-      result = result.filter((m) => m.brandId === selectedBrandFilter);
-    }
-    if (deviceSearchQuery.trim()) {
-      const query = deviceSearchQuery.toLowerCase();
-      result = result.filter((m) =>
-        m.modelName.toLowerCase().includes(query) ||
-        m.brandName?.toLowerCase().includes(query)
-      );
-    }
-    return result.slice(0, 30);
-  }, [enrichedModels, selectedBrandFilter, deviceSearchQuery]);
-
-  const toggleDeviceModel = (modelId: string) => {
-    const newSet = new Set(selectedDeviceIds);
-    if (newSet.has(modelId)) {
-      newSet.delete(modelId);
-    } else {
-      newSet.add(modelId);
-    }
-    setSelectedDeviceIds(newSet);
-  };
-
-  const selectedModelsDisplay = useMemo(() => {
-    return Array.from(selectedDeviceIds)
-      .map((id) => enrichedModels.find((m) => m.id === id))
-      .filter(Boolean) as (DeviceModel & { brandName: string })[];
-  }, [selectedDeviceIds, enrichedModels]);
 
   const warehouseEndpoint = isAdmin 
     ? "/api/admin/all-warehouses" 
@@ -256,20 +199,6 @@ export function AccessoryWizard({
         createdProduct = await response.json();
       }
 
-      if (!data.isUniversal && selectedDeviceIds.size > 0 && createdProduct?.id) {
-        const compatibilities = Array.from(selectedDeviceIds).map((modelId) => {
-          const model = enrichedModels.find((m) => m.id === modelId);
-          return {
-            deviceBrandId: model?.brandId || "",
-            deviceModelId: modelId,
-          };
-        }).filter((c) => c.deviceBrandId);
-
-        if (compatibilities.length > 0) {
-          await apiRequest("PUT", `/api/products/${createdProduct.id}/compatibilities`, { compatibilities });
-        }
-      }
-
       return createdProduct;
     },
     onSuccess: (newProduct) => {
@@ -307,13 +236,13 @@ export function AccessoryWizard({
     
     if (currentStep === 1) {
       fieldsToValidate = ["name", "brand", "accessoryType", "condition"];
-    } else if (currentStep === 3) {
+    } else if (currentStep === 2) {
       fieldsToValidate = ["unitPrice"];
     }
 
     const isValid = await form.trigger(fieldsToValidate);
     if (isValid) {
-      setCurrentStep(prev => Math.min(prev + 1, 4));
+      setCurrentStep(prev => Math.min(prev + 1, 3));
     }
   };
 
@@ -582,137 +511,6 @@ export function AccessoryWizard({
             {currentStep === 2 && (
               <div className="space-y-6">
                 <div className="text-center mb-4">
-                  <Link2 className="h-12 w-12 mx-auto text-primary mb-2" />
-                  <h3 className="text-lg font-medium">Compatibilità</h3>
-                  <p className="text-sm text-muted-foreground">Seleziona i dispositivi compatibili</p>
-                </div>
-
-                <FormField
-                  control={form.control}
-                  name="isUniversal"
-                  render={({ field }) => (
-                    <FormItem>
-                      <Card className={cn(
-                        "cursor-pointer transition-all hover-elevate",
-                        field.value && "ring-2 ring-primary bg-primary/5"
-                      )}
-                      onClick={() => field.onChange(!field.value)}
-                      >
-                        <CardContent className="p-4 flex items-center gap-3">
-                          <Checkbox checked={field.value} onCheckedChange={field.onChange} />
-                          <div>
-                            <p className="font-medium">Accessorio Universale</p>
-                            <p className="text-sm text-muted-foreground">
-                              Compatibile con tutti i dispositivi
-                            </p>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    </FormItem>
-                  )}
-                />
-
-                {!values.isUniversal && (
-                  <div className="space-y-3">
-                    <Label>Dispositivi Compatibili</Label>
-                    
-                    <div className="flex gap-2">
-                      <div className="relative flex-1">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                        <Input
-                          placeholder="Cerca modello..."
-                          value={deviceSearchQuery}
-                          onChange={(e) => setDeviceSearchQuery(e.target.value)}
-                          className="pl-10"
-                          data-testid="input-device-search"
-                        />
-                      </div>
-                      <Select value={selectedBrandFilter} onValueChange={setSelectedBrandFilter}>
-                        <SelectTrigger className="w-40" data-testid="select-device-brand-filter">
-                          <SelectValue placeholder="Marca" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="all">Tutte</SelectItem>
-                          {deviceBrands.map((brand) => (
-                            <SelectItem key={brand.id} value={brand.id}>{brand.name}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    {selectedModelsDisplay.length > 0 && (
-                      <div className="flex flex-wrap gap-1 p-2 bg-muted/50 rounded-md">
-                        {selectedModelsDisplay.map((m) => (
-                          <Badge
-                            key={m.id}
-                            variant="secondary"
-                            className="cursor-pointer gap-1"
-                            onClick={() => toggleDeviceModel(m.id)}
-                          >
-                            {m.brandName} {m.modelName}
-                            <X className="h-3 w-3" />
-                          </Badge>
-                        ))}
-                      </div>
-                    )}
-
-                    <ScrollArea className="h-48 border rounded-md p-1">
-                      <div className="space-y-1">
-                        {filteredDeviceModels.length === 0 ? (
-                          <div className="text-center py-6 text-muted-foreground">
-                            <Smartphone className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                            <p className="text-sm">Nessun dispositivo trovato</p>
-                          </div>
-                        ) : (
-                          filteredDeviceModels.map((model) => (
-                            <div
-                              key={model.id}
-                              className={cn(
-                                "flex items-center gap-2 p-2 rounded cursor-pointer hover-elevate",
-                                selectedDeviceIds.has(model.id) && "bg-primary/10"
-                              )}
-                              onClick={() => toggleDeviceModel(model.id)}
-                              data-testid={`device-model-${model.id}`}
-                            >
-                              <Checkbox checked={selectedDeviceIds.has(model.id)} />
-                              <div className="flex-1 min-w-0">
-                                <p className="text-sm font-medium truncate">{model.modelName}</p>
-                                <p className="text-xs text-muted-foreground">{model.brandName}</p>
-                              </div>
-                              {selectedDeviceIds.has(model.id) && (
-                                <Check className="h-4 w-4 text-primary" />
-                              )}
-                            </div>
-                          ))
-                        )}
-                      </div>
-                    </ScrollArea>
-                  </div>
-                )}
-
-                <FormField
-                  control={form.control}
-                  name="description"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Descrizione / Note Compatibilità</FormLabel>
-                      <FormControl>
-                        <Textarea 
-                          placeholder="es. Compatibile con iPhone 12, 13, 14 (tutte le versioni)..." 
-                          {...field} 
-                          data-testid="textarea-accessory-description"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-            )}
-
-            {currentStep === 3 && (
-              <div className="space-y-6">
-                <div className="text-center mb-4">
                   <Euro className="h-12 w-12 mx-auto text-primary mb-2" />
                   <h3 className="text-lg font-medium">Prezzo & Magazzino</h3>
                   <p className="text-sm text-muted-foreground">Configura prezzi e disponibilità</p>
@@ -859,7 +657,7 @@ export function AccessoryWizard({
               </div>
             )}
 
-            {currentStep === 4 && (
+            {currentStep === 3 && (
               <div className="space-y-6">
                 <div className="text-center mb-4">
                   <CheckCircle2 className="h-12 w-12 mx-auto text-green-500 mb-2" />
@@ -897,18 +695,8 @@ export function AccessoryWizard({
                     </div>
 
                     <div className="pt-4 border-t">
-                      <Label className="text-xs text-muted-foreground">Compatibilità</Label>
-                      {values.isUniversal ? (
-                        <Badge className="mt-1">Universale</Badge>
-                      ) : selectedModelsDisplay.length > 0 ? (
-                        <div className="flex flex-wrap gap-1 mt-1">
-                          {selectedModelsDisplay.map(model => (
-                            <Badge key={model.id} variant="outline">{model.brandName} {model.modelName}</Badge>
-                          ))}
-                        </div>
-                      ) : (
-                        <p className="text-sm text-muted-foreground">Non specificata</p>
-                      )}
+                      <Label className="text-xs text-muted-foreground">Universale</Label>
+                      <Badge className="mt-1">{values.isUniversal ? "Sì" : "No"}</Badge>
                     </div>
 
                     <div className="grid grid-cols-2 gap-4 pt-4 border-t">
@@ -954,7 +742,7 @@ export function AccessoryWizard({
                 {currentStep === 1 ? "Annulla" : "Indietro"}
               </Button>
 
-              {currentStep < 4 ? (
+              {currentStep < 3 ? (
                 <Button type="button" onClick={handleNext} data-testid="button-wizard-next">
                   Avanti
                   <ChevronRight className="h-4 w-4 ml-1" />
