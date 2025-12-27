@@ -16868,8 +16868,20 @@ export function registerRoutes(app: Express): Server {
         createdBy: req.user.id,
       });
       
-      // Update practice
-      const updated = await storage.updateUtilityPractice(req.params.id, { status });
+      // Update practice with auto-populated dates based on status
+      const updateData: any = { status };
+      
+      // Auto-populate submittedAt when status changes to "inviata"
+      if (status === 'inviata' && !practice.submittedAt) {
+        updateData.submittedAt = new Date();
+      }
+      
+      // Auto-populate activatedAt when status changes to "completata"
+      if (status === 'completata' && !practice.activatedAt) {
+        updateData.activatedAt = new Date();
+      }
+      
+      const updated = await storage.updateUtilityPractice(req.params.id, updateData);
       
       // Auto-create commission when practice is completed
       if (status === 'completata' && practice.status !== 'completata') {
