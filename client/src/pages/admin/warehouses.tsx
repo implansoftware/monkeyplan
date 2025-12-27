@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,16 +10,14 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { 
   Warehouse, Package, ArrowLeftRight, Plus, Search, 
   TrendingUp, TrendingDown, RotateCcw, MapPin, Boxes,
-  ArrowRight, Clock, CheckCircle, XCircle, Pencil, Smartphone, Settings2, Battery, HardDrive, Hash
+  ArrowRight, Clock, CheckCircle, XCircle, Pencil
 } from "lucide-react";
-import { Checkbox } from "@/components/ui/checkbox";
-import type { Warehouse as WarehouseType, WarehouseStock, WarehouseMovement, Product, SmartphoneSpecs } from "@shared/schema";
+import type { Warehouse as WarehouseType, WarehouseStock, WarehouseMovement, Product } from "@shared/schema";
 
 type AccessibleWarehouse = {
   id: string;
@@ -28,7 +26,7 @@ type AccessibleWarehouse = {
   owner?: { id: string; username: string; fullName?: string | null } | null;
 };
 
-type EnrichedStock = WarehouseStock & { product: { id: string; name: string; sku: string; category: string; imageUrl?: string | null; isDeviceCatalogProduct?: boolean } | null };
+type EnrichedStock = WarehouseStock & { product: { id: string; name: string; sku: string; category: string; imageUrl?: string | null } | null };
 type EnrichedMovement = WarehouseMovement & { 
   product: { id: string; name: string; sku: string } | null;
   createdByUser: { id: string; fullName: string; username: string } | null;
@@ -39,7 +37,6 @@ export default function WarehousesPage() {
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("stock");
   const [searchTerm, setSearchTerm] = useState("");
-  const [showOnlyDevices, setShowOnlyDevices] = useState(false);
   const [showMovementDialog, setShowMovementDialog] = useState(false);
   const [showEditStockDialog, setShowEditStockDialog] = useState(false);
   const [editingStockItem, setEditingStockItem] = useState<EnrichedStock | null>(null);
@@ -56,22 +53,6 @@ export default function WarehousesPage() {
   const [transferItem, setTransferItem] = useState<EnrichedStock | null>(null);
   const [transferDestWarehouseId, setTransferDestWarehouseId] = useState<string>("");
   const [transferQuantity, setTransferQuantity] = useState<number>(1);
-  
-  // Stati per specifiche dispositivo
-  const [specsDialogOpen, setSpecsDialogOpen] = useState(false);
-  const [specsItem, setSpecsItem] = useState<EnrichedStock | null>(null);
-  const [specsData, setSpecsData] = useState({
-    imei: "",
-    imei2: "",
-    serialNumber: "",
-    storage: "128GB" as string,
-    grade: "" as string,
-    batteryHealth: "",
-    networkLock: "unlocked" as string,
-    originalBox: false,
-    accessories: [] as string[],
-    notes: "",
-  });
 
   const { data: myWarehouse, isLoading: loadingWarehouse } = useQuery<WarehouseType>({
     queryKey: ["/api/my-warehouse"],
@@ -187,69 +168,6 @@ export default function WarehousesPage() {
   // Magazzini destinazione (escluso il proprio)
   const destinationWarehouses = accessibleWarehouses.filter(wh => wh.id !== warehouseId);
 
-  // Query per specifiche dispositivo
-  const { data: currentSpecs, isLoading: loadingSpecs, refetch: refetchSpecs } = useQuery<SmartphoneSpecs | null>({
-    queryKey: ["/api/products", specsItem?.productId, "device-specs"],
-    queryFn: async () => {
-      if (!specsItem?.productId) return null;
-      const res = await fetch(`/api/products/${specsItem.productId}/device-specs`, { credentials: "include" });
-      if (!res.ok) return null;
-      return res.json();
-    },
-    enabled: !!specsItem?.productId && specsDialogOpen,
-  });
-
-  // Mutation per salvare specifiche
-  const saveSpecsMutation = useMutation({
-    mutationFn: async (data: typeof specsData) => {
-      return apiRequest("PATCH", `/api/products/${specsItem?.productId}/device-specs`, data);
-    },
-    onSuccess: () => {
-      toast({ title: "Specifiche salvate", description: "Le specifiche del dispositivo sono state aggiornate" });
-      queryClient.invalidateQueries({ queryKey: ["/api/products", specsItem?.productId, "device-specs"] });
-      setSpecsDialogOpen(false);
-      setSpecsItem(null);
-    },
-    onError: (error: any) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
-    },
-  });
-
-  const openSpecsDialog = async (item: EnrichedStock) => {
-    setSpecsItem(item);
-    setSpecsData({
-      imei: "",
-      imei2: "",
-      serialNumber: "",
-      storage: "128GB",
-      grade: "",
-      batteryHealth: "",
-      networkLock: "unlocked",
-      originalBox: false,
-      accessories: [],
-      notes: "",
-    });
-    setSpecsDialogOpen(true);
-  };
-
-  // Auto-popola i dati quando le specifiche vengono caricate
-  useEffect(() => {
-    if (currentSpecs && specsDialogOpen) {
-      setSpecsData({
-        imei: currentSpecs.imei || "",
-        imei2: currentSpecs.imei2 || "",
-        serialNumber: currentSpecs.serialNumber || "",
-        storage: currentSpecs.storage || "128GB",
-        grade: currentSpecs.grade || "",
-        batteryHealth: currentSpecs.batteryHealth || "",
-        networkLock: currentSpecs.networkLock || "unlocked",
-        originalBox: currentSpecs.originalBox || false,
-        accessories: currentSpecs.accessories || [],
-        notes: currentSpecs.notes || "",
-      });
-    }
-  }, [currentSpecs, specsDialogOpen]);
-
   const handleEditStock = (item: EnrichedStock) => {
     setEditingStockItem(item);
     setEditStockData({ 
@@ -259,13 +177,10 @@ export default function WarehousesPage() {
     setShowEditStockDialog(true);
   };
 
-  const filteredStock = stock.filter(item => {
-    const matchesSearch = 
-      item.product?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.product?.sku?.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesDeviceFilter = !showOnlyDevices || item.product?.isDeviceCatalogProduct;
-    return matchesSearch && matchesDeviceFilter;
-  });
+  const filteredStock = stock.filter(item => 
+    item.product?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    item.product?.sku?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   const movementTypeLabels: Record<string, { label: string; icon: any; color: string }> = {
     carico: { label: "Carico", icon: TrendingUp, color: "text-green-500" },
@@ -484,7 +399,7 @@ export default function WarehousesPage() {
         </TabsList>
 
         <TabsContent value="stock" className="space-y-4">
-          <div className="flex items-center gap-4 flex-wrap">
+          <div className="flex items-center gap-4">
             <div className="relative flex-1 max-w-sm">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
@@ -494,18 +409,6 @@ export default function WarehousesPage() {
                 className="pl-10"
                 data-testid="input-search-stock"
               />
-            </div>
-            <div className="flex items-center gap-2">
-              <Switch 
-                id="device-filter"
-                checked={showOnlyDevices}
-                onCheckedChange={setShowOnlyDevices}
-                data-testid="switch-show-only-devices"
-              />
-              <Label htmlFor="device-filter" className="flex items-center gap-1 cursor-pointer">
-                <Smartphone className="h-4 w-4" />
-                Solo dispositivi
-              </Label>
             </div>
           </div>
 
@@ -556,15 +459,7 @@ export default function WarehousesPage() {
                           </td>
                           <td className="p-4 text-muted-foreground">{item.product?.sku || "N/D"}</td>
                           <td className="p-4">
-                            <div className="flex items-center gap-1 flex-wrap">
-                              <Badge variant="outline">{item.product?.category || "N/D"}</Badge>
-                              {item.product?.isDeviceCatalogProduct && (
-                                <Badge variant="secondary" className="gap-1">
-                                  <Smartphone className="h-3 w-3" />
-                                  Catalogo
-                                </Badge>
-                              )}
-                            </div>
+                            <Badge variant="outline">{item.product?.category || "N/D"}</Badge>
                           </td>
                           <td className="p-4 text-right">
                             <span className={item.minStock && item.quantity < item.minStock ? "text-red-500 font-bold" : ""}>
@@ -575,17 +470,6 @@ export default function WarehousesPage() {
                           <td className="p-4">{item.location || "-"}</td>
                           <td className="p-4 text-center">
                             <div className="flex items-center justify-center gap-1">
-                              {item.product?.isDeviceCatalogProduct && (
-                                <Button 
-                                  size="icon" 
-                                  variant="ghost" 
-                                  onClick={() => openSpecsDialog(item)}
-                                  title="Specifiche unità"
-                                  data-testid={`button-specs-${item.id}`}
-                                >
-                                  <Settings2 className="h-4 w-4" />
-                                </Button>
-                              )}
                               {item.quantity > 0 && (
                                 <Button 
                                   size="icon" 
@@ -753,230 +637,6 @@ export default function WarehousesPage() {
               data-testid="button-confirm-transfer"
             >
               {transferMutation.isPending ? "Trasferimento..." : "Conferma Trasferimento"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Dialog Specifiche Dispositivo */}
-      <Dialog 
-        open={specsDialogOpen} 
-        onOpenChange={(open) => {
-          setSpecsDialogOpen(open);
-          if (!open) setSpecsItem(null);
-        }}
-      >
-        <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Settings2 className="h-5 w-5" />
-              Specifiche Dispositivo
-            </DialogTitle>
-          </DialogHeader>
-          
-          {loadingSpecs ? (
-            <div className="flex items-center justify-center p-8">
-              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              <div className="p-3 bg-muted rounded-lg">
-                <p className="font-medium">{specsItem?.product?.name}</p>
-                <p className="text-sm text-muted-foreground">SKU: {specsItem?.product?.sku}</p>
-              </div>
-
-              {/* Sezione IMEI e Identificativi */}
-              <div className="space-y-3">
-                <h4 className="text-sm font-semibold flex items-center gap-2">
-                  <Hash className="h-4 w-4" />
-                  Identificativi
-                </h4>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1">
-                    <Label className="text-xs">IMEI</Label>
-                    <Input 
-                      value={specsData.imei}
-                      onChange={(e) => setSpecsData(prev => ({ ...prev, imei: e.target.value }))}
-                      placeholder="15 cifre"
-                      maxLength={15}
-                      data-testid="input-imei"
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <Label className="text-xs">IMEI 2 (dual SIM)</Label>
-                    <Input 
-                      value={specsData.imei2}
-                      onChange={(e) => setSpecsData(prev => ({ ...prev, imei2: e.target.value }))}
-                      placeholder="Opzionale"
-                      maxLength={15}
-                      data-testid="input-imei2"
-                    />
-                  </div>
-                </div>
-                <div className="space-y-1">
-                  <Label className="text-xs">Numero di Serie</Label>
-                  <Input 
-                    value={specsData.serialNumber}
-                    onChange={(e) => setSpecsData(prev => ({ ...prev, serialNumber: e.target.value }))}
-                    placeholder="Numero seriale dispositivo"
-                    data-testid="input-serial-number"
-                  />
-                </div>
-              </div>
-
-              {/* Sezione Memoria */}
-              <div className="space-y-3">
-                <h4 className="text-sm font-semibold flex items-center gap-2">
-                  <HardDrive className="h-4 w-4" />
-                  Memoria
-                </h4>
-                <div className="space-y-1">
-                  <Label className="text-xs">Storage</Label>
-                  <Select 
-                    value={specsData.storage} 
-                    onValueChange={(v) => setSpecsData(prev => ({ ...prev, storage: v }))}
-                  >
-                    <SelectTrigger data-testid="select-storage">
-                      <SelectValue placeholder="Seleziona capacità" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="32GB">32GB</SelectItem>
-                      <SelectItem value="64GB">64GB</SelectItem>
-                      <SelectItem value="128GB">128GB</SelectItem>
-                      <SelectItem value="256GB">256GB</SelectItem>
-                      <SelectItem value="512GB">512GB</SelectItem>
-                      <SelectItem value="1TB">1TB</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              {/* Sezione Condizione */}
-              <div className="space-y-3">
-                <h4 className="text-sm font-semibold">Condizione</h4>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1">
-                    <Label className="text-xs">Grado</Label>
-                    <Select 
-                      value={specsData.grade} 
-                      onValueChange={(v) => setSpecsData(prev => ({ ...prev, grade: v }))}
-                    >
-                      <SelectTrigger data-testid="select-grade">
-                        <SelectValue placeholder="Seleziona grado" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="A+">A+ (Come nuovo)</SelectItem>
-                        <SelectItem value="A">A (Ottimo)</SelectItem>
-                        <SelectItem value="B">B (Buono)</SelectItem>
-                        <SelectItem value="C">C (Discreto)</SelectItem>
-                        <SelectItem value="D">D (Usato)</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-1">
-                    <Label className="text-xs">Blocco Rete</Label>
-                    <Select 
-                      value={specsData.networkLock} 
-                      onValueChange={(v) => setSpecsData(prev => ({ ...prev, networkLock: v }))}
-                    >
-                      <SelectTrigger data-testid="select-network-lock">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="unlocked">Sbloccato</SelectItem>
-                        <SelectItem value="locked">Bloccato</SelectItem>
-                        <SelectItem value="unknown">Sconosciuto</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-              </div>
-
-              {/* Sezione Batteria */}
-              <div className="space-y-3">
-                <h4 className="text-sm font-semibold flex items-center gap-2">
-                  <Battery className="h-4 w-4" />
-                  Batteria
-                </h4>
-                <div className="space-y-1">
-                  <Label className="text-xs">Salute Batteria</Label>
-                  <Select 
-                    value={specsData.batteryHealth} 
-                    onValueChange={(v) => setSpecsData(prev => ({ ...prev, batteryHealth: v }))}
-                  >
-                    <SelectTrigger data-testid="select-battery-health">
-                      <SelectValue placeholder="Seleziona stato batteria" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="100">100%</SelectItem>
-                      <SelectItem value="95-99">95-99%</SelectItem>
-                      <SelectItem value="90-94">90-94%</SelectItem>
-                      <SelectItem value="85-89">85-89%</SelectItem>
-                      <SelectItem value="80-84">80-84%</SelectItem>
-                      <SelectItem value="<80">{"<80%"}</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              {/* Sezione Extra */}
-              <div className="space-y-3">
-                <div className="flex items-center gap-2">
-                  <Checkbox 
-                    id="original-box"
-                    checked={specsData.originalBox}
-                    onCheckedChange={(checked) => setSpecsData(prev => ({ ...prev, originalBox: !!checked }))}
-                    data-testid="checkbox-original-box"
-                  />
-                  <Label htmlFor="original-box" className="text-sm cursor-pointer">
-                    Include scatola originale
-                  </Label>
-                </div>
-              </div>
-
-              {/* Note */}
-              <div className="space-y-1">
-                <Label className="text-xs">Note aggiuntive</Label>
-                <Textarea 
-                  value={specsData.notes}
-                  onChange={(e) => setSpecsData(prev => ({ ...prev, notes: e.target.value }))}
-                  placeholder="Eventuali note sul dispositivo..."
-                  className="resize-none"
-                  rows={2}
-                  data-testid="textarea-specs-notes"
-                />
-              </div>
-
-              {/* Indicatore specifiche esistenti */}
-              {currentSpecs && (
-                <div className="text-xs text-muted-foreground text-center p-2 bg-muted/50 rounded">
-                  Specifiche esistenti caricate automaticamente
-                </div>
-              )}
-            </div>
-          )}
-          
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setSpecsDialogOpen(false)}>
-              Annulla
-            </Button>
-            <Button
-              onClick={() => {
-                const cleanedData = {
-                  ...specsData,
-                  imei: specsData.imei || null,
-                  imei2: specsData.imei2 || null,
-                  serialNumber: specsData.serialNumber || null,
-                  grade: specsData.grade || null,
-                  batteryHealth: specsData.batteryHealth || null,
-                  notes: specsData.notes || null,
-                };
-                saveSpecsMutation.mutate(cleanedData);
-              }}
-              disabled={saveSpecsMutation.isPending || loadingSpecs}
-              data-testid="button-save-specs"
-            >
-              {saveSpecsMutation.isPending ? "Salvataggio..." : "Salva Specifiche"}
             </Button>
           </DialogFooter>
         </DialogContent>

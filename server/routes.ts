@@ -7712,6 +7712,299 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // ============ SMARTPHONES (Dispositivi) ============
+  
+  // List smartphones with specs (reseller sees own, admin sees all)
+  app.get("/api/smartphones", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const filters: { resellerId?: string; brand?: string; condition?: string } = {};
+      let effectiveResellerId: string | null = null;
+      
+      if (req.user.role === 'reseller' || req.user.role === 'reseller_collaborator' || req.user.role === 'reseller_staff') {
+        effectiveResellerId = (req.user.role === 'reseller_collaborator' || req.user.role === 'reseller_staff') ? req.user.resellerId : req.user.id;
+        if (effectiveResellerId) filters.resellerId = effectiveResellerId;
+      } else if (req.user.role !== 'admin') {
+        return res.status(403).send("Access denied");
+      }
+      
+      if (req.query.brand) filters.brand = req.query.brand as string;
+      if (req.query.condition) filters.condition = req.query.condition as string;
+      
+      const smartphones = await storage.listSmartphones(filters);
+      
+      // Add isOwn flag to each smartphone
+      const smartphonesWithOwnership = smartphones.map(smartphone => ({
+        ...smartphone,
+        isOwn: effectiveResellerId ? smartphone.createdBy === effectiveResellerId : false,
+      }));
+      
+      res.json(smartphonesWithOwnership);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+  
+  // Get smartphone specs for a product
+  app.get("/api/smartphones/:productId/specs", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const specs = await storage.getSmartphoneSpecs(req.params.productId);
+      if (!specs) return res.status(404).send("Smartphone specs not found");
+      
+      res.json(specs);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+  
+  // Create smartphone with specs (reseller or admin) - supports multipart/form-data for image upload
+  app.post("/api/smartphones", requireAuth, requireRole("admin", "reseller", "reseller_collaborator"), upload.single("image"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      // Parse product and specs - support both JSON body and FormData (stringified JSON)
+      let product, specs, initialStock: any[] = [];
+      let legacyInitialQuantity = 0, legacyWarehouseId: string | null = null;
+      if (typeof req.body.product === 'string') {
+        product = JSON.parse(req.body.product);
+        specs = JSON.parse(req.body.specs);
+        if (req.body.initialStock) {
+          initialStock = typeof req.body.initialStock === 'string' 
+            ? JSON.parse(req.body.initialStock) 
+            : req.body.initialStock;
+        }
+        // Legacy support
+        if (req.body.initialQuantity) legacyInitialQuantity = parseInt(req.body.initialQuantity) || 0;
+        if (req.body.warehouseId) legacyWarehouseId = req.body.warehouseId;
+      } else {
+        product = req.body.product;
+        specs = req.body.specs;
+        initialStock = req.body.initialStock || [];
+        // Legacy support
+        legacyInitialQuantity = req.body.initialQuantity || 0;
+        legacyWarehouseId = req.body.warehouseId || null;
+      }
+      
+      // Convert legacy format to initialStock if needed
+      if (initialStock.length === 0 && legacyInitialQuantity > 0 && legacyWarehouseId) {
+        initialStock = [{ warehouseId: legacyWarehouseId, quantity: legacyInitialQuantity, location: null }];
+      }
+      
+      if (!product || !specs) {
+        return res.status(400).send("Product and specs are required");
+      }
+      
+      // Set product type to 'dispositivo'
+      product.productType = 'dispositivo';
+      product.createdBy = req.user.role === 'reseller_collaborator' ? req.user.resellerId : req.user.id;
+      
+      // Create product first
+      const createdProduct = await storage.createProduct(product);
+      
+      // Create initial warehouse stock for each entry
+      if (initialStock && Array.isArray(initialStock)) {
+        for (const stockEntry of initialStock) {
+          if (stockEntry.warehouseId && stockEntry.quantity > 0) {
+            const warehouse = await storage.getWarehouse(stockEntry.warehouseId);
+            if (!warehouse) {
+              console.warn(`Warehouse ${stockEntry.warehouseId} not found, skipping stock entry`);
+              continue;
+            }
+            await storage.createWarehouseMovement({
+              warehouseId: stockEntry.warehouseId,
+              productId: createdProduct.id,
+              movementType: 'carico',
+              quantity: stockEntry.quantity,
+              referenceType: 'initial_stock',
+              notes: 'Quantità iniziale alla creazione prodotto',
+              createdBy: req.user.id,
+            });
+            const stockLocation = typeof stockEntry.location === 'string' && stockEntry.location.trim() 
+              ? stockEntry.location.trim() 
+              : null;
+            await storage.updateWarehouseStockQuantity(
+              stockEntry.warehouseId, 
+              createdProduct.id, 
+              stockEntry.quantity,
+              stockLocation
+            );
+          }
+        }
+      }
+      
+      // Create specs linked to product
+      specs.productId = createdProduct.id;
+      const createdSpecs = await storage.createSmartphoneSpecs(specs);
+      
+      // Handle image upload if file is provided
+      let imageUrl = null;
+      if (req.file) {
+        const allowedMimeTypes = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+        if (!allowedMimeTypes.includes(req.file.mimetype)) {
+          return res.status(400).send("Formato immagine non supportato. Usa JPEG, PNG, WebP o GIF.");
+        }
+        
+        const maxSize = 10 * 1024 * 1024;
+        if (req.file.size > maxSize) {
+          return res.status(400).send("Immagine troppo grande. Massimo 10MB.");
+        }
+        
+        const ext = req.file.originalname.split(".").pop() || "jpg";
+        const objectPath = `products/${createdProduct.id}/${Date.now()}.${ext}`;
+        
+        const privateObjectDir = objectStorage.getPrivateObjectDir();
+        const fullPath = `${privateObjectDir}/${objectPath}`;
+        const { bucketName, objectName } = parseObjectPath(fullPath);
+        const bucket = objectStorageClient.bucket(bucketName);
+        const file = bucket.file(objectName);
+        
+        await file.save(req.file.buffer, {
+          metadata: { contentType: req.file.mimetype }
+        });
+        
+        imageUrl = `/objects/${objectPath}`;
+        await storage.updateProduct(createdProduct.id, { imageUrl });
+      }
+      
+      res.json({ ...createdProduct, imageUrl: imageUrl || createdProduct.imageUrl, specs: createdSpecs });
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+  
+  // Update smartphone (product and specs together) - Admin or owner reseller only
+  app.patch("/api/smartphones/:productId", requireAuth, requireRole("admin", "reseller", "reseller_collaborator"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const product = await storage.getProduct(req.params.productId);
+      if (!product) return res.status(404).send("Product not found");
+      
+      // Resellers can only modify products they created, not assigned products
+      if (req.user.role === 'reseller') {
+        if (product.createdBy !== req.user.id) {
+          return res.status(403).send("Puoi modificare solo i prodotti che hai creato. Per i prodotti assegnati usa le impostazioni di vendita.");
+        }
+      }
+      if (req.user.role === 'reseller_collaborator') {
+        const resellerId = req.user.resellerId;
+        if (!resellerId || product.createdBy !== resellerId) {
+          return res.status(403).send("Puoi modificare solo i prodotti creati dal tuo rivenditore.");
+        }
+      }
+      
+      const { product: productData, specs: specsData } = req.body;
+      
+      // Update product if provided
+      if (productData) {
+        await storage.updateProduct(req.params.productId, productData);
+      }
+      
+      // Update specs if provided
+      if (specsData) {
+        await storage.updateSmartphoneSpecs(req.params.productId, specsData);
+      }
+      
+      // Return updated data
+      const updatedProduct = await storage.getProduct(req.params.productId);
+      const updatedSpecs = await storage.getSmartphoneSpecs(req.params.productId);
+      
+      res.json({ ...updatedProduct, specs: updatedSpecs });
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+  
+  // Update smartphone specs - Admin or owner reseller only
+  app.patch("/api/smartphones/:productId/specs", requireAuth, requireRole("admin", "reseller", "reseller_collaborator"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const product = await storage.getProduct(req.params.productId);
+      if (!product) return res.status(404).send("Product not found");
+      
+      // Resellers can only modify specs for products they created
+      if (req.user.role === 'reseller') {
+        if (product.createdBy !== req.user.id) {
+          return res.status(403).send("Puoi modificare solo le specifiche dei prodotti che hai creato.");
+        }
+      }
+      if (req.user.role === 'reseller_collaborator') {
+        const resellerId = req.user.resellerId;
+        if (!resellerId || product.createdBy !== resellerId) {
+          return res.status(403).send("Puoi modificare solo le specifiche dei prodotti creati dal tuo rivenditore.");
+        }
+      }
+      
+      const updatedSpecs = await storage.updateSmartphoneSpecs(req.params.productId, req.body);
+      res.json(updatedSpecs);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+  
+  // Delete smartphone (deletes product and specs) - Admin or owner reseller only
+  app.delete("/api/smartphones/:productId", requireAuth, requireRole("admin", "reseller", "reseller_collaborator"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const product = await storage.getProduct(req.params.productId);
+      if (!product) return res.status(404).send("Product not found");
+      
+      // Resellers can only delete products they created
+      if (req.user.role === 'reseller') {
+        if (product.createdBy !== req.user.id) {
+          return res.status(403).send("Puoi eliminare solo i prodotti che hai creato.");
+        }
+      }
+      if (req.user.role === 'reseller_collaborator') {
+        const resellerId = req.user.resellerId;
+        if (!resellerId || product.createdBy !== resellerId) {
+          return res.status(403).send("Puoi eliminare solo i prodotti creati dal tuo rivenditore.");
+        }
+      }
+      
+      // Delete specs first, then product
+      await storage.deleteSmartphoneSpecs(req.params.productId);
+      await storage.deleteProduct(req.params.productId);
+      
+      res.json({ success: true });
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // Update smartphone marketplace settings
+  app.patch("/api/smartphones/:productId/marketplace", requireAuth, requireRole("reseller", "reseller_collaborator"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const product = await storage.getProduct(req.params.productId);
+      if (!product) return res.status(404).send("Product not found");
+      
+      // Verify ownership
+      const effectiveResellerId = req.user.role === 'reseller_collaborator' ? req.user.resellerId : req.user.id;
+      if (product.createdBy !== effectiveResellerId) {
+        return res.status(403).send("Puoi modificare solo i prodotti che hai creato.");
+      }
+      
+      const { enabled, priceCents, minQuantity } = req.body;
+      
+      const updatedProduct = await storage.updateProduct(req.params.productId, {
+        isMarketplaceEnabled: enabled ?? false,
+        marketplacePriceCents: priceCents ?? null,
+        marketplaceMinQuantity: minQuantity ?? 1,
+      });
+      
+      res.json(updatedProduct);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
   // ============ ACCESSORIES (Accessori) ============
   
   // List accessories with specs and device compatibilities
@@ -12420,97 +12713,6 @@ export function registerRoutes(app: Express): Server {
       res.status(204).send();
     } catch (error: any) {
       res.status(400).send(error.message);
-    }
-  });
-
-  // Provision device model as warehouse product (admin only)
-  // Creates a product linked to the device model and seeds all warehouses with stock=0
-  app.post("/api/admin/device-models/:id/provision", requireRole("admin"), async (req, res) => {
-    try {
-      const deviceModelId = req.params.id;
-      
-      // Get the device model
-      const deviceModel = await storage.getDeviceModel(deviceModelId);
-      if (!deviceModel) {
-        return res.status(404).send("Modello dispositivo non trovato");
-      }
-      
-      // Check if already provisioned
-      const existingProducts = await storage.listProducts();
-      const alreadyProvisioned = existingProducts.find(p => p.deviceModelId === deviceModelId);
-      if (alreadyProvisioned) {
-        return res.status(400).send("Questo modello è già stato attivato a magazzino");
-      }
-      
-      // Get device brand for the product name
-      const deviceBrand = await storage.getDeviceBrand(deviceModel.brandId);
-      const brandName = deviceBrand?.name || "Sconosciuto";
-      
-      // Get device type for product linking
-      const deviceType = await storage.getDeviceType(deviceModel.deviceTypeId);
-      
-      // Generate unique SKU
-      const sku = `DEV-${brandName.substring(0, 3).toUpperCase()}-${deviceModel.modelName.replace(/\s+/g, '-').substring(0, 10).toUpperCase()}-${Date.now().toString(36).toUpperCase()}`;
-      
-      // Create the product
-      const product = await storage.createProduct({
-        name: `${brandName} ${deviceModel.modelName}`,
-        sku: sku,
-        category: "dispositivo",
-        productType: "dispositivo",
-        description: `Dispositivo ${brandName} ${deviceModel.modelName}`,
-        deviceTypeId: deviceModel.deviceTypeId,
-        brand: brandName,
-        compatibleModels: [deviceModel.modelName],
-        unitPrice: 0, // Price to be set by admin
-        costPrice: 0,
-        condition: "nuovo",
-        warrantyMonths: 12,
-        minStock: 1,
-        isActive: true,
-        isVisibleInShop: true,
-        deviceModelId: deviceModelId,
-        isDeviceCatalogProduct: true,
-        createdBy: null, // Global product created by admin
-      });
-      
-      // Seed all active warehouses with stock=0
-      const allWarehouses = await storage.listWarehouses({ isActive: true });
-      for (const warehouse of allWarehouses) {
-        await storage.upsertWarehouseStock({
-          warehouseId: warehouse.id,
-          productId: product.id,
-          quantity: 0,
-          minStock: 1,
-          location: null,
-        });
-      }
-      
-      res.status(201).json({
-        product,
-        warehousesSeeded: allWarehouses.length,
-        message: `Prodotto creato e ${allWarehouses.length} magazzini inizializzati`
-      });
-    } catch (error: any) {
-      console.error("Error provisioning device model:", error);
-      res.status(500).send(error.message);
-    }
-  });
-
-  // Get provisioned product for a device model (admin/reseller)
-  app.get("/api/device-models/:id/product", requireAuth, async (req, res) => {
-    try {
-      const deviceModelId = req.params.id;
-      const products = await storage.listProducts();
-      const product = products.find(p => p.deviceModelId === deviceModelId);
-      
-      if (!product) {
-        return res.status(404).json({ provisioned: false });
-      }
-      
-      res.json({ provisioned: true, product });
-    } catch (error: any) {
-      res.status(500).send(error.message);
     }
   });
 
@@ -19162,74 +19364,6 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  // Endpoint per centri riparazione: ottiene lo stock dispositivi del proprio reseller
-  app.get("/api/reseller-device-stock", requireAuth, async (req, res) => {
-    try {
-      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
-      
-      // Solo i centri riparazione possono accedere
-      if (req.user.role !== 'repair_center') {
-        return res.status(403).json({ error: "Solo i centri riparazione possono accedere a questa risorsa" });
-      }
-      
-      // Trova il centro riparazione dell'utente
-      const repairCenterId = req.user.repairCenterId;
-      if (!repairCenterId) {
-        return res.status(400).json({ error: "Centro riparazione non associato" });
-      }
-      
-      const repairCenter = await storage.getRepairCenter(repairCenterId);
-      if (!repairCenter) {
-        return res.status(404).json({ error: "Centro riparazione non trovato" });
-      }
-      
-      // Trova il reseller del centro riparazione
-      const resellerId = repairCenter.resellerId;
-      if (!resellerId) {
-        return res.status(400).json({ error: "Nessun reseller associato al centro riparazione" });
-      }
-      
-      // Trova il magazzino del reseller
-      const resellerWarehouse = await storage.getWarehouseByOwner('reseller', resellerId);
-      if (!resellerWarehouse) {
-        return res.json([]); // Nessun magazzino trovato, ritorna array vuoto
-      }
-      
-      // Ottieni lo stock del reseller e tutti i prodotti in batch
-      const [stock, allProducts] = await Promise.all([
-        storage.listWarehouseStock(resellerWarehouse.id),
-        storage.listProducts()
-      ]);
-      
-      // Crea una mappa prodotti per lookup O(1)
-      const productMap = new Map(allProducts.map(p => [p.id, p]));
-      
-      // Filtra e arricchisci solo prodotti del catalogo dispositivi
-      const deviceStock = stock
-        .map(item => {
-          const product = productMap.get(item.productId);
-          if (!product || !product.isDeviceCatalogProduct) return null;
-          return { 
-            ...item, 
-            product: { 
-              id: product.id, 
-              name: product.name, 
-              sku: product.sku, 
-              category: product.category, 
-              imageUrl: product.imageUrl,
-              isDeviceCatalogProduct: product.isDeviceCatalogProduct 
-            },
-            resellerWarehouseName: resellerWarehouse.name
-          };
-        })
-        .filter(item => item !== null);
-      
-      res.json(deviceStock);
-    } catch (error: any) {
-      res.status(500).json({ error: error.message });
-    }
-  });
-
   // Immediate transfer between warehouses (executes stock movement right away)
   app.post("/api/warehouses/transfer-immediate", requireAuth, async (req, res) => {
     try {
@@ -19408,14 +19542,7 @@ export function registerRoutes(app: Express): Server {
       const stock = await storage.listWarehouseStock(req.params.warehouseId);
       const enrichedStock = await Promise.all(stock.map(async (item) => {
         const product = await storage.getProduct(item.productId);
-        return { ...item, product: product ? { 
-          id: product.id, 
-          name: product.name, 
-          sku: product.sku, 
-          category: product.category, 
-          imageUrl: product.imageUrl,
-          isDeviceCatalogProduct: product.isDeviceCatalogProduct 
-        } : null };
+        return { ...item, product: product ? { id: product.id, name: product.name, sku: product.sku, category: product.category, imageUrl: product.imageUrl } : null };
       }));
       res.json(enrichedStock);
     } catch (error: any) {
@@ -19509,102 +19636,6 @@ export function registerRoutes(app: Express): Server {
       if (!req.user) return res.status(401).json({ error: "Non autenticato" });
       const { minStock, location } = req.body;
       const updated = await storage.updateWarehouseStock(req.params.stockId, { minStock, location });
-      res.json(updated);
-    } catch (error: any) {
-      res.status(500).json({ error: error.message });
-    }
-  });
-
-  // ============ DEVICE SPECS (for Device Catalog products) ============
-  
-  const deviceSpecsUpdateSchema = z.object({
-    imei: z.string().max(15).optional().nullable(),
-    imei2: z.string().max(15).optional().nullable(),
-    serialNumber: z.string().optional().nullable(),
-    storage: z.enum(["32GB", "64GB", "128GB", "256GB", "512GB", "1TB"]).optional(),
-    grade: z.enum(["A+", "A", "B", "C", "D"]).optional().nullable(),
-    batteryHealth: z.string().optional().nullable(),
-    networkLock: z.enum(["unlocked", "locked", "unknown"]).optional(),
-    originalBox: z.boolean().optional(),
-    accessories: z.array(z.string()).optional().nullable(),
-    notes: z.string().optional().nullable(),
-  });
-  
-  app.get("/api/products/:productId/device-specs", requireAuth, async (req, res) => {
-    try {
-      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
-      
-      if (!['admin', 'admin_staff', 'reseller', 'repair_center'].includes(req.user.role)) {
-        return res.status(403).json({ error: "Accesso non autorizzato" });
-      }
-      
-      const specs = await storage.getSmartphoneSpecs(req.params.productId);
-      res.json(specs || null);
-    } catch (error: any) {
-      res.status(500).json({ error: error.message });
-    }
-  });
-
-  app.post("/api/products/:productId/device-specs", requireAuth, async (req, res) => {
-    try {
-      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
-      
-      if (!['admin', 'admin_staff', 'reseller', 'repair_center'].includes(req.user.role)) {
-        return res.status(403).json({ error: "Solo admin, rivenditori e centri riparazione possono gestire le specifiche" });
-      }
-      
-      const product = await storage.getProduct(req.params.productId);
-      if (!product) return res.status(404).json({ error: "Prodotto non trovato" });
-      
-      const parseResult = deviceSpecsUpdateSchema.safeParse(req.body);
-      if (!parseResult.success) {
-        return res.status(400).json({ error: "Dati non validi", details: parseResult.error.errors });
-      }
-      
-      const existingSpecs = await storage.getSmartphoneSpecs(req.params.productId);
-      if (existingSpecs) {
-        const updated = await storage.updateSmartphoneSpecs(req.params.productId, parseResult.data);
-        return res.json(updated);
-      }
-      
-      const specs = await storage.createSmartphoneSpecs({
-        productId: req.params.productId,
-        storage: parseResult.data.storage || "128GB",
-        ...parseResult.data,
-      });
-      res.status(201).json(specs);
-    } catch (error: any) {
-      res.status(500).json({ error: error.message });
-    }
-  });
-
-  app.patch("/api/products/:productId/device-specs", requireAuth, async (req, res) => {
-    try {
-      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
-      
-      if (!['admin', 'admin_staff', 'reseller', 'repair_center'].includes(req.user.role)) {
-        return res.status(403).json({ error: "Solo admin, rivenditori e centri riparazione possono gestire le specifiche" });
-      }
-      
-      const parseResult = deviceSpecsUpdateSchema.safeParse(req.body);
-      if (!parseResult.success) {
-        return res.status(400).json({ error: "Dati non validi", details: parseResult.error.errors });
-      }
-      
-      const existingSpecs = await storage.getSmartphoneSpecs(req.params.productId);
-      if (!existingSpecs) {
-        const product = await storage.getProduct(req.params.productId);
-        if (!product) return res.status(404).json({ error: "Prodotto non trovato" });
-        
-        const specs = await storage.createSmartphoneSpecs({
-          productId: req.params.productId,
-          storage: parseResult.data.storage || "128GB",
-          ...parseResult.data,
-        });
-        return res.status(201).json(specs);
-      }
-      
-      const updated = await storage.updateSmartphoneSpecs(req.params.productId, parseResult.data);
       res.json(updated);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
@@ -21902,6 +21933,42 @@ export function registerRoutes(app: Express): Server {
   // ==========================================
   // REPAIR CENTER PRODUCT CATALOGS (READ-ONLY FROM RESELLER)
   // ==========================================
+
+  // Repair Center: Get smartphone catalog from reseller (devices available for B2B purchase)
+  app.get("/api/repair-center/smartphone-catalog", requireRole("repair_center"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      
+      const repairCenter = await storage.getRepairCenter(req.user.repairCenterId!);
+      if (!repairCenter || !repairCenter.resellerId) {
+        return res.status(400).json({ error: "Centro riparazione non associato a un rivenditore" });
+      }
+      
+      // Get reseller's smartphones
+      const smartphones = await storage.listSmartphones({ resellerId: repairCenter.resellerId });
+      
+      // Get reseller warehouse stock
+      const resellerWarehouse = await storage.ensureDefaultWarehouse('reseller', repairCenter.resellerId, 'Reseller');
+      const stock = await storage.listWarehouseStock(resellerWarehouse.id);
+      const stockMap = new Map(stock.map(s => [s.productId, s.quantity]));
+      
+      // Enrich with stock and B2B price
+      const catalog = smartphones.map(phone => {
+        const resellerStock = stockMap.get(phone.id) || 0;
+        const b2bPrice = phone.costPrice || Math.round((phone.unitPrice || 0) * 0.8);
+        return {
+          ...phone,
+          resellerStock,
+          b2bPrice,
+          availableForPurchase: resellerStock > 0,
+        };
+      });
+      
+      res.json(catalog);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
 
   // Repair Center: Get accessory catalog from reseller
   app.get("/api/repair-center/accessory-catalog", requireRole("repair_center"), async (req, res) => {

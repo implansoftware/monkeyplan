@@ -44,6 +44,7 @@ import AdminCustomers from "@/pages/admin/customers";
 import AdminCustomerDetail from "@/pages/admin/customer-detail";
 import AdminRepairDetail from "@/pages/admin/repair-detail";
 import AdminTeam from "@/pages/admin/team";
+import AdminSmartphoneCatalog from "@/pages/admin/smartphone-catalog";
 import AdminAccessoryCatalog from "@/pages/admin/accessory-catalog";
 import AdminDeviceCatalog from "@/pages/admin/device-catalog";
 import AdminSalesOrders from "@/pages/admin/sales-orders";
@@ -114,6 +115,7 @@ import ResellerTeam from "@/pages/reseller/team";
 import ResellerSubResellers from "@/pages/reseller/sub-resellers";
 import ResellerDeviceCatalog from "@/pages/reseller/device-catalog";
 import ResellerRepairDetail from "@/pages/reseller/repair-detail";
+import ResellerSmartphoneCatalog from "@/pages/reseller/smartphone-catalog";
 import ResellerAccessoryCatalog from "@/pages/reseller/accessory-catalog";
 
 // Repair Center pages
@@ -127,6 +129,7 @@ import RepairCenterWarehouses from "@/pages/repair-center/warehouses";
 import RepairCenterProducts from "@/pages/repair-center/products";
 import RepairCenterB2BCatalog from "@/pages/repair-center/b2b-catalog";
 import RepairCenterB2BOrders from "@/pages/repair-center/b2b-orders";
+import RepairCenterSmartphoneCatalog from "@/pages/repair-center/smartphone-catalog";
 import RepairCenterAccessoryCatalog from "@/pages/repair-center/accessory-catalog";
 import RepairCenterSparePartsCatalog from "@/pages/repair-center/spare-parts-catalog";
 import RepairCenterCustomers from "@/pages/repair-center/customers";
@@ -232,6 +235,7 @@ function Router() {
       <ProtectedRoute path="/admin/utility/reports" component={AdminUtilityReports} />
       <ProtectedRoute path="/admin/settings" component={AdminSettings} />
       <ProtectedRoute path="/admin/service-catalog" component={AdminServiceCatalog} />
+      <ProtectedRoute path="/admin/smartphone-catalog" component={AdminSmartphoneCatalog} />
       <ProtectedRoute path="/admin/accessory-catalog" component={AdminAccessoryCatalog} />
       <ProtectedRoute path="/admin/device-catalog" component={AdminDeviceCatalog} />
       <ProtectedRoute path="/admin/team" component={AdminTeam} />
@@ -281,6 +285,7 @@ function Router() {
       <ProtectedRoute path="/reseller/team" component={ResellerTeam} />
       <ProtectedRoute path="/reseller/sub-resellers" component={ResellerSubResellers} />
       <ProtectedRoute path="/reseller/device-catalog" component={ResellerDeviceCatalog} />
+      <ProtectedRoute path="/reseller/smartphone-catalog" component={ResellerSmartphoneCatalog} />
       <ProtectedRoute path="/reseller/accessory-catalog" component={ResellerAccessoryCatalog} />
       <ProtectedRoute path="/reseller/shop-catalog" component={ResellerShopCatalog} />
       <ProtectedRoute path="/reseller/sales-orders/:id" component={ResellerSalesOrders} />
@@ -306,6 +311,7 @@ function Router() {
       <ProtectedRoute path="/repair-center/products" component={RepairCenterProducts} />
       <ProtectedRoute path="/repair-center/b2b-catalog" component={RepairCenterB2BCatalog} />
       <ProtectedRoute path="/repair-center/b2b-orders" component={RepairCenterB2BOrders} />
+      <ProtectedRoute path="/repair-center/smartphone-catalog" component={RepairCenterSmartphoneCatalog} />
       <ProtectedRoute path="/repair-center/accessory-catalog" component={RepairCenterAccessoryCatalog} />
       <ProtectedRoute path="/repair-center/spare-parts-catalog" component={RepairCenterSparePartsCatalog} />
       <ProtectedRoute path="/repair-center/customers" component={RepairCenterCustomers} />

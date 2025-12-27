@@ -704,10 +704,6 @@ export const products = pgTable("products", {
   marketplacePriceCents: integer("marketplace_price_cents"), // Prezzo B2B per marketplace (null = usa unitPrice)
   marketplaceMinQuantity: integer("marketplace_min_quantity").default(1), // Quantità minima ordine
   
-  // Device Catalog Integration - Link to device_models for catalog-based products
-  deviceModelId: varchar("device_model_id").references(() => deviceModels.id), // FK to device catalog model
-  isDeviceCatalogProduct: boolean("is_device_catalog_product").notNull().default(false), // True if auto-generated from catalog
-  
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
@@ -1387,6 +1383,15 @@ export const resellerDeviceModels = pgTable("reseller_device_models", {
   isActive: boolean("is_active").notNull().default(true),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+// Product Device Compatibilities (Many-to-Many: Products <-> Device Brand/Model)
+export const productDeviceCompatibilities = pgTable("product_device_compatibilities", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  productId: varchar("product_id").notNull().references(() => products.id, { onDelete: "cascade" }),
+  deviceBrandId: varchar("device_brand_id").notNull().references(() => deviceBrands.id),
+  deviceModelId: varchar("device_model_id").references(() => deviceModels.id), // Nullable: null = all models of brand
+  createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
 // Repair Acceptance Data (Check di accettazione)
@@ -3963,6 +3968,11 @@ export const insertResellerDeviceModelSchema = createInsertSchema(resellerDevice
   updatedAt: true,
 });
 
+export const insertProductDeviceCompatibilitySchema = createInsertSchema(productDeviceCompatibilities).omit({
+  id: true,
+  createdAt: true,
+});
+
 export const insertRepairAcceptanceSchema = createInsertSchema(repairAcceptance).omit({
   id: true,
   acceptedAt: true,
@@ -4687,6 +4697,9 @@ export type InsertResellerDeviceBrand = z.infer<typeof insertResellerDeviceBrand
 
 export type ResellerDeviceModel = typeof resellerDeviceModels.$inferSelect;
 export type InsertResellerDeviceModel = z.infer<typeof insertResellerDeviceModelSchema>;
+
+export type ProductDeviceCompatibility = typeof productDeviceCompatibilities.$inferSelect;
+export type InsertProductDeviceCompatibility = z.infer<typeof insertProductDeviceCompatibilitySchema>;
 
 export type RepairAcceptance = typeof repairAcceptance.$inferSelect;
 export type InsertRepairAcceptance = z.infer<typeof insertRepairAcceptanceSchema>;
