@@ -19515,6 +19515,62 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // ============ DEVICE SPECS (for Device Catalog products) ============
+  
+  app.get("/api/products/:productId/device-specs", requireAuth, async (req, res) => {
+    try {
+      const specs = await storage.getSmartphoneSpecs(req.params.productId);
+      res.json(specs || null);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post("/api/products/:productId/device-specs", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      
+      const product = await storage.getProduct(req.params.productId);
+      if (!product) return res.status(404).json({ error: "Prodotto non trovato" });
+      
+      const existingSpecs = await storage.getSmartphoneSpecs(req.params.productId);
+      if (existingSpecs) {
+        const updated = await storage.updateSmartphoneSpecs(req.params.productId, req.body);
+        return res.json(updated);
+      }
+      
+      const specs = await storage.createSmartphoneSpecs({
+        productId: req.params.productId,
+        storage: req.body.storage || "128GB",
+        ...req.body,
+      });
+      res.status(201).json(specs);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.patch("/api/products/:productId/device-specs", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      
+      const existingSpecs = await storage.getSmartphoneSpecs(req.params.productId);
+      if (!existingSpecs) {
+        const specs = await storage.createSmartphoneSpecs({
+          productId: req.params.productId,
+          storage: req.body.storage || "128GB",
+          ...req.body,
+        });
+        return res.status(201).json(specs);
+      }
+      
+      const updated = await storage.updateSmartphoneSpecs(req.params.productId, req.body);
+      res.json(updated);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   app.get("/api/warehouse-transfers", requireAuth, async (req, res) => {
     try {
       if (!req.user) return res.status(401).json({ error: "Non autenticato" });
