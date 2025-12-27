@@ -8,12 +8,11 @@ import { Separator } from "@/components/ui/separator";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { ArrowLeft, Package, Smartphone, Headphones, Tag, Users, Settings, Euro, CheckCircle, XCircle, Eye, EyeOff } from "lucide-react";
-import type { Product, SmartphoneSpecs, AccessorySpecs, ProductPrice, ProductDeviceCompatibility, ResellerProduct } from "@shared/schema";
+import type { Product, SmartphoneSpecs, AccessorySpecs, ProductPrice, ResellerProduct } from "@shared/schema";
 
 interface ProductDetailResponse {
   product: Product;
   specs: SmartphoneSpecs | AccessorySpecs | null;
-  compatibilities: Array<ProductDeviceCompatibility & { brandName: string; modelName: string }>;
   prices: Array<ProductPrice & { reseller: { id: string; username: string; fullName: string | null } | null }>;
   assignments: Array<ResellerProduct & { reseller: { id: string; username: string; fullName: string | null } | null }>;
 }
@@ -107,7 +106,7 @@ export default function ProductDetail() {
     );
   }
 
-  const { product, specs, compatibilities, prices, assignments } = data;
+  const { product, specs, prices, assignments } = data;
 
   const getBackPath = () => {
     switch (product.productType) {
@@ -216,9 +215,8 @@ export default function ProductDetail() {
           </Card>
 
           <Tabs defaultValue="specs" className="w-full">
-            <TabsList className="grid w-full grid-cols-3">
+            <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="specs" data-testid="tab-specs">Specifiche</TabsTrigger>
-              <TabsTrigger value="compatibilities" data-testid="tab-compatibilities">Compatibilità</TabsTrigger>
               <TabsTrigger value="resellers" data-testid="tab-resellers">Rivenditori</TabsTrigger>
             </TabsList>
 
@@ -315,38 +313,6 @@ export default function ProductDetail() {
                     </div>
                   ) : (
                     <p className="text-muted-foreground">Nessuna specifica tecnica disponibile</p>
-                  )}
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            <TabsContent value="compatibilities">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Dispositivi Compatibili</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {compatibilities.length > 0 ? (
-                    <ScrollArea className="h-[300px]">
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead>Marca</TableHead>
-                            <TableHead>Modello</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {compatibilities.map((c) => (
-                            <TableRow key={c.id} data-testid={`row-compatibility-${c.id}`}>
-                              <TableCell>{c.brandName}</TableCell>
-                              <TableCell>{c.modelName}</TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
-                    </ScrollArea>
-                  ) : (
-                    <p className="text-muted-foreground">Nessuna compatibilità configurata</p>
                   )}
                 </CardContent>
               </Card>

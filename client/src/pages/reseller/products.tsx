@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
@@ -12,25 +12,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Package, Search, Tag, Plus, Pencil, Trash2, User, Globe, Warehouse, Save, Loader2, X, ImageIcon, Upload, Smartphone, ChevronDown, ChevronRight, Store } from "lucide-react";
+import { Package, Search, Tag, Plus, Pencil, Trash2, User, Globe, Warehouse, Save, Loader2, X, ImageIcon, Upload, Store } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { DeviceBrand, DeviceModel } from "@shared/schema";
-
-interface DeviceCompatibilityEntry {
-  deviceBrandId: string;
-  deviceModelId?: string | null;
-}
-
-interface DeviceCompatibilityWithNames extends DeviceCompatibilityEntry {
-  id: string;
-  brandName?: string;
-  modelName?: string | null;
-}
 
 type StockByCenter = {
   repairCenterId: string;
@@ -71,13 +58,6 @@ type EnrichedProduct = {
   imageUrl: string | null;
 };
 
-type ProductCompatibility = {
-  brandId: string;
-  brandName: string;
-  modelId: string | null;
-  modelName: string | null;
-};
-
 const CATEGORIES = [
   { value: "display", label: "Display/Schermo" },
   { value: "batteria", label: "Batteria" },
@@ -112,13 +92,6 @@ export default function ResellerProducts() {
   const [stockByCenters, setStockByCenters] = useState<StockByCenter[]>([]);
   const [loadingStock, setLoadingStock] = useState(false);
   const [initialStock, setInitialStock] = useState<Array<{ repairCenterId: string; quantity: number }>>([]);
-  const [deviceCompatibilities, setDeviceCompatibilities] = useState<DeviceCompatibilityEntry[]>([]);
-  const [editDeviceCompatibilities, setEditDeviceCompatibilities] = useState<DeviceCompatibilityWithNames[]>([]);
-  const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set());
-  const [isLoadingCompatibilities, setIsLoadingCompatibilities] = useState(false);
-  const [deviceSearchQuery, setDeviceSearchQuery] = useState("");
-  const [editDeviceSearchQuery, setEditDeviceSearchQuery] = useState("");
-  const [productCompatibilitiesMap, setProductCompatibilitiesMap] = useState<Map<string, ProductCompatibility[]>>(new Map());
   const [marketplaceDialogOpen, setMarketplaceDialogOpen] = useState(false);
   const [marketplaceProduct, setMarketplaceProduct] = useState<EnrichedProduct | null>(null);
   const [marketplaceEnabled, setMarketplaceEnabled] = useState(false);
@@ -138,75 +111,20 @@ export default function ResellerProducts() {
     queryKey: ["/api/reseller/repair-centers"],
   });
 
-  const { data: deviceBrands = [] } = useQuery<DeviceBrand[]>({
-    queryKey: ["/api/device-brands"],
-  });
-
-  const { data: deviceModels = [] } = useQuery<DeviceModel[]>({
-    queryKey: ["/api/device-models"],
-  });
-
   const stockMap = new Map<string, { totalStock: number; stockByCenter: StockByCenter[] }>();
   productsWithStock.forEach(item => {
     stockMap.set(item.product.id, { totalStock: item.totalStock, stockByCenter: item.stockByCenter });
   });
 
-  // Load compatibilities for all products
-  useEffect(() => {
-    const loadAllCompatibilities = async () => {
-      if (products.length === 0) return;
-      
-      const newMap = new Map<string, ProductCompatibility[]>();
-      
-      // Fetch compatibilities for each product in parallel
-      const promises = products.map(async (product) => {
-        try {
-          const res = await fetch(`/api/products/${product.id}/compatibilities`, { credentials: 'include' });
-          if (res.ok) {
-            const data = await res.json();
-            return { id: product.id, compatibilities: data };
-          }
-        } catch {
-          // Ignore errors
-        }
-        return { id: product.id, compatibilities: [] };
-      });
-      
-      const results = await Promise.all(promises);
-      results.forEach(({ id, compatibilities }) => {
-        newMap.set(id, compatibilities.map((c: any) => ({
-          brandId: c.deviceBrandId || c.brandId,
-          brandName: c.brandName,
-          modelId: c.deviceModelId || c.modelId,
-          modelName: c.modelName
-        })));
-      });
-      
-      setProductCompatibilitiesMap(newMap);
-    };
-    
-    loadAllCompatibilities();
-  }, [products]);
-
   const createProductMutation = useMutation({
-    mutationFn: async (data: any & { deviceCompatibilities?: DeviceCompatibilityEntry[] }) => {
-      const { deviceCompatibilities: compatibilities, ...productData } = data;
-      const res = await apiRequest("POST", "/api/reseller/products", productData);
+    mutationFn: async (data: any) => {
+      const res = await apiRequest("POST", "/api/reseller/products", data);
       const product = await res.json();
-      
-      // Save device compatibilities if any
-      if (compatibilities && compatibilities.length > 0) {
-        await apiRequest("PUT", `/api/products/${product.id}/compatibilities`, { 
-          compatibilities 
-        });
-      }
-      
       return product;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/reseller/products"] });
       setDialogOpen(false);
-      setDeviceCompatibilities([]);
       toast({ title: "Prodotto creato con successo" });
     },
     onError: (error: Error) => {
@@ -215,22 +133,13 @@ export default function ResellerProducts() {
   });
 
   const updateProductMutation = useMutation({
-    mutationFn: async ({ id, data, deviceCompatibilities: compatibilities }: { id: string; data: any; deviceCompatibilities?: DeviceCompatibilityEntry[] }) => {
+    mutationFn: async ({ id, data }: { id: string; data: any }) => {
       const res = await apiRequest("PATCH", `/api/reseller/products/${id}`, data);
       const product = await res.json();
-      
-      // Save device compatibilities (including empty array to clear them)
-      if (compatibilities !== undefined) {
-        await apiRequest("PUT", `/api/products/${id}/compatibilities`, { 
-          compatibilities 
-        });
-      }
-      
       return product;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/reseller/products"] });
-      setEditDeviceCompatibilities([]);
       toast({ title: "Prodotto aggiornato con successo" });
     },
     onError: (error: Error) => {
@@ -368,123 +277,6 @@ export default function ResellerProducts() {
     });
   };
 
-  // Device compatibility helper functions
-  const getModelsForBrand = (brandId: string) => {
-    return deviceModels.filter(m => m.brandId === brandId);
-  };
-
-  const getFilteredBrands = (searchTerm: string) => {
-    if (!searchTerm.trim()) return deviceBrands;
-    const lowerSearch = searchTerm.toLowerCase();
-    return deviceBrands.filter(brand => {
-      const brandMatch = brand.name.toLowerCase().includes(lowerSearch);
-      const models = getModelsForBrand(brand.id);
-      const modelMatch = models.some(m => m.modelName.toLowerCase().includes(lowerSearch));
-      return brandMatch || modelMatch;
-    });
-  };
-
-  const getFilteredModelsForBrand = (brandId: string, searchTerm: string) => {
-    const models = getModelsForBrand(brandId);
-    if (!searchTerm.trim()) return models;
-    const lowerSearch = searchTerm.toLowerCase();
-    const brand = deviceBrands.find(b => b.id === brandId);
-    if (brand?.name.toLowerCase().includes(lowerSearch)) return models;
-    return models.filter(m => m.modelName.toLowerCase().includes(lowerSearch));
-  };
-
-  const toggleBrandExpansion = (brandId: string) => {
-    const newExpanded = new Set(expandedBrands);
-    if (newExpanded.has(brandId)) {
-      newExpanded.delete(brandId);
-    } else {
-      newExpanded.add(brandId);
-    }
-    setExpandedBrands(newExpanded);
-  };
-
-  const toggleBrandCompatibility = (brandId: string, isEdit: boolean) => {
-    if (isEdit) {
-      const hasAnyFromBrand = editDeviceCompatibilities.some(c => c.deviceBrandId === brandId);
-      if (hasAnyFromBrand) {
-        setEditDeviceCompatibilities(editDeviceCompatibilities.filter(c => c.deviceBrandId !== brandId));
-      } else {
-        const brand = deviceBrands.find(b => b.id === brandId);
-        setEditDeviceCompatibilities([...editDeviceCompatibilities, {
-          id: `temp-${Date.now()}`,
-          deviceBrandId: brandId,
-          deviceModelId: null,
-          brandName: brand?.name,
-          modelName: null
-        }]);
-      }
-    } else {
-      const hasAnyFromBrand = deviceCompatibilities.some(c => c.deviceBrandId === brandId);
-      if (hasAnyFromBrand) {
-        setDeviceCompatibilities(deviceCompatibilities.filter(c => c.deviceBrandId !== brandId));
-      } else {
-        setDeviceCompatibilities([...deviceCompatibilities, { deviceBrandId: brandId, deviceModelId: null }]);
-      }
-    }
-  };
-
-  const toggleModelCompatibility = (brandId: string, modelId: string, isEdit: boolean) => {
-    if (isEdit) {
-      const exists = editDeviceCompatibilities.some(c => c.deviceBrandId === brandId && c.deviceModelId === modelId);
-      if (exists) {
-        setEditDeviceCompatibilities(editDeviceCompatibilities.filter(c => !(c.deviceBrandId === brandId && c.deviceModelId === modelId)));
-      } else {
-        const brandOnly = editDeviceCompatibilities.find(c => c.deviceBrandId === brandId && !c.deviceModelId);
-        if (brandOnly) {
-          setEditDeviceCompatibilities(editDeviceCompatibilities.filter(c => !(c.deviceBrandId === brandId && !c.deviceModelId)));
-        }
-        const brand = deviceBrands.find(b => b.id === brandId);
-        const model = deviceModels.find(m => m.id === modelId);
-        setEditDeviceCompatibilities([...editDeviceCompatibilities.filter(c => !(c.deviceBrandId === brandId && !c.deviceModelId)), {
-          id: `temp-${Date.now()}`,
-          deviceBrandId: brandId,
-          deviceModelId: modelId,
-          brandName: brand?.name,
-          modelName: model?.modelName
-        }]);
-      }
-    } else {
-      const exists = deviceCompatibilities.some(c => c.deviceBrandId === brandId && c.deviceModelId === modelId);
-      if (exists) {
-        setDeviceCompatibilities(deviceCompatibilities.filter(c => !(c.deviceBrandId === brandId && c.deviceModelId === modelId)));
-      } else {
-        const brandOnly = deviceCompatibilities.find(c => c.deviceBrandId === brandId && !c.deviceModelId);
-        if (brandOnly) {
-          setDeviceCompatibilities(deviceCompatibilities.filter(c => !(c.deviceBrandId === brandId && !c.deviceModelId)));
-        }
-        setDeviceCompatibilities([...deviceCompatibilities.filter(c => !(c.deviceBrandId === brandId && !c.deviceModelId)), { deviceBrandId: brandId, deviceModelId: modelId }]);
-      }
-    }
-  };
-
-  const loadDeviceCompatibilities = async (productId: string) => {
-    setIsLoadingCompatibilities(true);
-    try {
-      const res = await fetch(`/api/products/${productId}/compatibilities`, { credentials: 'include' });
-      if (res.ok) {
-        const data = await res.json();
-        setEditDeviceCompatibilities(data.map((c: any) => ({
-          id: c.id,
-          deviceBrandId: c.deviceBrandId,
-          deviceModelId: c.deviceModelId,
-          brandName: c.brandName,
-          modelName: c.modelName
-        })));
-      } else {
-        setEditDeviceCompatibilities([]);
-      }
-    } catch {
-      setEditDeviceCompatibilities([]);
-    } finally {
-      setIsLoadingCompatibilities(false);
-    }
-  };
-
   const openStockDialog = async (product: EnrichedProduct) => {
     setStockProduct(product);
     setLoadingStock(true);
@@ -594,8 +386,6 @@ export default function ResellerProducts() {
     setEditingProduct(product);
     setEditDialogOpen(true);
     setLoadingEditStock(true);
-    setExpandedBrands(new Set());
-    setEditDeviceSearchQuery("");
     
     try {
       const res = await fetch(`/api/reseller/products/${product.id}/stock`, {
@@ -616,9 +406,6 @@ export default function ResellerProducts() {
     } finally {
       setLoadingEditStock(false);
     }
-    
-    // Load device compatibilities
-    loadDeviceCompatibilities(product.id);
   };
 
   const addEditStock = (repairCenterId: string) => {
@@ -656,7 +443,6 @@ export default function ResellerProducts() {
       costPrice: formData.get("costPrice") ? Math.round(parseFloat(formData.get("costPrice") as string) * 100) : null,
       warrantyMonths: formData.get("warrantyMonths") ? parseInt(formData.get("warrantyMonths") as string) : null,
       initialStock: initialStock.filter(s => s.quantity > 0),
-      deviceCompatibilities: deviceCompatibilities.length > 0 ? deviceCompatibilities : undefined,
     };
     
     createProductMutation.mutate(data);
@@ -689,17 +475,10 @@ export default function ResellerProducts() {
       location: formData.get("location") as string || null,
     };
     
-    // Map editDeviceCompatibilities to simplified format for API
-    const deviceCompatibilitiesForApi: DeviceCompatibilityEntry[] = editDeviceCompatibilities.map(c => ({
-      deviceBrandId: c.deviceBrandId,
-      deviceModelId: c.deviceModelId || null
-    }));
-    
     try {
       await updateProductMutation.mutateAsync({ 
         id: productId, 
-        data,
-        deviceCompatibilities: deviceCompatibilitiesForApi
+        data
       });
       
       // Update stock for each center that changed (using captured productId)
@@ -842,7 +621,6 @@ export default function ResellerProducts() {
                   <TableHead>Condizione</TableHead>
                   <TableHead className="text-right">Prezzo</TableHead>
                   <TableHead className="text-center">Stock</TableHead>
-                  <TableHead>Compatibilità</TableHead>
                   <TableHead className="text-center">Marketplace</TableHead>
                   <TableHead className="text-right">Azioni</TableHead>
                 </TableRow>
@@ -936,61 +714,6 @@ export default function ResellerProducts() {
                       ) : (
                         <span className="text-muted-foreground">-</span>
                       )}
-                    </TableCell>
-                    <TableCell>
-                      {(() => {
-                        const compatibilities = productCompatibilitiesMap.get(product.id) || [];
-                        if (compatibilities.length === 0) return <span className="text-xs text-muted-foreground">-</span>;
-                        
-                        // Group by brand
-                        const brandMap = new Map<string, string[]>();
-                        compatibilities.forEach(c => {
-                          if (!brandMap.has(c.brandName)) {
-                            brandMap.set(c.brandName, []);
-                          }
-                          if (c.modelName) {
-                            brandMap.get(c.brandName)!.push(c.modelName);
-                          }
-                        });
-                        
-                        const uniqueBrands = Array.from(brandMap.keys());
-                        const modelCount = compatibilities.filter(c => c.modelId).length;
-                        
-                        return (
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <div className="cursor-help">
-                                <Badge variant="secondary" className="text-xs">
-                                  {(() => {
-                                    if (uniqueBrands.length === 1 && modelCount === 0) {
-                                      return uniqueBrands[0];
-                                    } else if (uniqueBrands.length === 1) {
-                                      return `${uniqueBrands[0]} (${modelCount} modelli)`;
-                                    } else {
-                                      return `${uniqueBrands.length} brand`;
-                                    }
-                                  })()}
-                                </Badge>
-                              </div>
-                            </TooltipTrigger>
-                            <TooltipContent className="max-w-xs">
-                              <div className="space-y-1">
-                                <div className="font-semibold mb-2">Dispositivi Compatibili:</div>
-                                {Array.from(brandMap.entries()).map(([brandName, models]) => (
-                                  <div key={brandName} className="text-sm">
-                                    <span className="font-medium">{brandName}</span>
-                                    {models.length > 0 ? (
-                                      <span className="text-muted-foreground">: {models.join(", ")}</span>
-                                    ) : (
-                                      <span className="text-muted-foreground"> (tutti i modelli)</span>
-                                    )}
-                                  </div>
-                                ))}
-                              </div>
-                            </TooltipContent>
-                          </Tooltip>
-                        );
-                      })()}
                     </TableCell>
                     <TableCell className="text-center">
                       {product.isOwn ? (
@@ -1109,11 +832,10 @@ export default function ResellerProducts() {
           <ScrollArea className="max-h-[70vh] pr-4">
             <form onSubmit={handleCreateSubmit} className="space-y-6">
               <Tabs defaultValue="info" className="w-full">
-                <TabsList className="grid w-full grid-cols-4">
+                <TabsList className="grid w-full grid-cols-3">
                   <TabsTrigger value="info">Info</TabsTrigger>
                   <TabsTrigger value="pricing">Prezzi</TabsTrigger>
                   <TabsTrigger value="inventory">Magazzino</TabsTrigger>
-                  <TabsTrigger value="compatibility">Compatibilità</TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="info" className="space-y-4 mt-4 data-[state=inactive]:hidden" forceMount>
@@ -1289,112 +1011,12 @@ export default function ResellerProducts() {
                     </p>
                   </div>
                 </TabsContent>
-
-                <TabsContent value="compatibility" className="space-y-4 mt-4 data-[state=inactive]:hidden" forceMount>
-                  <div className="space-y-3">
-                    <Label>Dispositivi Compatibili</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Seleziona i brand e modelli di dispositivi con cui questo prodotto è compatibile
-                    </p>
-                    
-                    {deviceCompatibilities.length > 0 && (
-                      <div className="flex flex-wrap gap-2 p-3 bg-muted rounded-md">
-                        {deviceCompatibilities.map((c, idx) => {
-                          const brand = deviceBrands.find(b => b.id === c.deviceBrandId);
-                          const model = c.deviceModelId ? deviceModels.find(m => m.id === c.deviceModelId) : null;
-                          return (
-                            <Badge key={idx} variant="secondary" className="gap-1">
-                              <Smartphone className="h-3 w-3" />
-                              {brand?.name}{model ? ` - ${model.modelName}` : " (Tutti)"}
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="icon"
-                                className="h-4 w-4 ml-1"
-                                onClick={() => {
-                                  setDeviceCompatibilities(deviceCompatibilities.filter((_, i) => i !== idx));
-                                }}
-                              >
-                                <X className="h-3 w-3" />
-                              </Button>
-                            </Badge>
-                          );
-                        })}
-                      </div>
-                    )}
-                    
-                    <div className="relative">
-                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        placeholder="Cerca brand o modello..."
-                        value={deviceSearchQuery}
-                        onChange={(e) => setDeviceSearchQuery(e.target.value)}
-                        className="pl-9"
-                        data-testid="input-search-devices"
-                      />
-                    </div>
-                    
-                    <div className="border rounded-md max-h-64 overflow-y-auto">
-                      {getFilteredBrands(deviceSearchQuery).map(brand => {
-                        const models = getFilteredModelsForBrand(brand.id, deviceSearchQuery);
-                        const isExpanded = expandedBrands.has(brand.id);
-                        const hasBrandCompat = deviceCompatibilities.some(c => c.deviceBrandId === brand.id);
-                        const hasAllModels = deviceCompatibilities.some(c => c.deviceBrandId === brand.id && !c.deviceModelId);
-                        
-                        return (
-                          <div key={brand.id} className="border-b last:border-b-0">
-                            <div className="flex items-center gap-2 p-2 hover:bg-muted/50">
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="icon"
-                                className="h-6 w-6"
-                                onClick={() => toggleBrandExpansion(brand.id)}
-                              >
-                                {isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-                              </Button>
-                              <Checkbox
-                                checked={hasAllModels}
-                                onCheckedChange={() => toggleBrandCompatibility(brand.id, false)}
-                                data-testid={`checkbox-create-brand-${brand.id}`}
-                              />
-                              <span className="font-medium flex-1">{brand.name}</span>
-                              {hasBrandCompat && (
-                                <Badge variant="outline" className="text-xs">
-                                  {hasAllModels ? "Tutti" : deviceCompatibilities.filter(c => c.deviceBrandId === brand.id).length}
-                                </Badge>
-                              )}
-                            </div>
-                            {isExpanded && models.length > 0 && (
-                              <div className="pl-10 pb-2 space-y-1">
-                                {models.map(model => {
-                                  const isChecked = deviceCompatibilities.some(c => c.deviceBrandId === brand.id && c.deviceModelId === model.id);
-                                  return (
-                                    <div key={model.id} className="flex items-center gap-2 py-1">
-                                      <Checkbox
-                                        checked={isChecked || hasAllModels}
-                                        disabled={hasAllModels}
-                                        onCheckedChange={() => toggleModelCompatibility(brand.id, model.id, false)}
-                                        data-testid={`checkbox-create-model-${model.id}`}
-                                      />
-                                      <span className="text-sm">{model.modelName}</span>
-                                    </div>
-                                  );
-                                })}
-                              </div>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                </TabsContent>
               </Tabs>
 
               <Separator />
 
               <div className="flex justify-end gap-2">
-                <Button type="button" variant="outline" onClick={() => { setDialogOpen(false); setInitialStock([]); setDeviceCompatibilities([]); setDeviceSearchQuery(""); }}>
+                <Button type="button" variant="outline" onClick={() => { setDialogOpen(false); setInitialStock([]); }}>
                   Annulla
                 </Button>
                 <Button type="submit" disabled={createProductMutation.isPending} data-testid="button-submit-create">
@@ -1428,11 +1050,10 @@ export default function ResellerProducts() {
             <ScrollArea className="max-h-[70vh] pr-4">
               <form onSubmit={handleEditSubmit} className="space-y-6">
                 <Tabs defaultValue="info" className="w-full">
-                  <TabsList className="grid w-full grid-cols-4">
+                  <TabsList className="grid w-full grid-cols-3">
                     <TabsTrigger value="info">Info</TabsTrigger>
                     <TabsTrigger value="pricing">Prezzi</TabsTrigger>
                     <TabsTrigger value="inventory">Magazzino</TabsTrigger>
-                    <TabsTrigger value="compatibility">Compatibilità</TabsTrigger>
                   </TabsList>
 
                   <TabsContent value="info" className="space-y-4 mt-4 data-[state=inactive]:hidden" forceMount>
@@ -1744,112 +1365,6 @@ export default function ResellerProducts() {
                       </div>
                     )}
                   </TabsContent>
-
-                  <TabsContent value="compatibility" className="space-y-4 mt-4 data-[state=inactive]:hidden" forceMount>
-                    {isLoadingCompatibilities ? (
-                      <div className="flex items-center justify-center py-8">
-                        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-                        <span className="ml-2 text-muted-foreground">Caricamento compatibilità...</span>
-                      </div>
-                    ) : (
-                      <div className="space-y-3">
-                        <Label>Dispositivi Compatibili</Label>
-                        <p className="text-sm text-muted-foreground">
-                          Seleziona i brand e modelli di dispositivi con cui questo prodotto è compatibile
-                        </p>
-                        
-                        {editDeviceCompatibilities.length > 0 && (
-                          <div className="flex flex-wrap gap-2 p-3 bg-muted rounded-md">
-                            {editDeviceCompatibilities.map((c, idx) => (
-                              <Badge key={c.id || idx} variant="secondary" className="gap-1">
-                                <Smartphone className="h-3 w-3" />
-                                {c.brandName || deviceBrands.find(b => b.id === c.deviceBrandId)?.name}
-                                {c.modelName || (c.deviceModelId ? deviceModels.find(m => m.id === c.deviceModelId)?.modelName : null) 
-                                  ? ` - ${c.modelName || deviceModels.find(m => m.id === c.deviceModelId)?.modelName}` 
-                                  : " (Tutti)"}
-                                <Button
-                                  type="button"
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-4 w-4 ml-1"
-                                  onClick={() => {
-                                    setEditDeviceCompatibilities(editDeviceCompatibilities.filter((_, i) => i !== idx));
-                                  }}
-                                >
-                                  <X className="h-3 w-3" />
-                                </Button>
-                              </Badge>
-                            ))}
-                          </div>
-                        )}
-                        
-                        <div className="relative">
-                          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                          <Input
-                            placeholder="Cerca brand o modello..."
-                            value={editDeviceSearchQuery}
-                            onChange={(e) => setEditDeviceSearchQuery(e.target.value)}
-                            className="pl-9"
-                            data-testid="input-search-edit-devices"
-                          />
-                        </div>
-                        
-                        <div className="border rounded-md max-h-64 overflow-y-auto">
-                          {getFilteredBrands(editDeviceSearchQuery).map(brand => {
-                            const models = getFilteredModelsForBrand(brand.id, editDeviceSearchQuery);
-                            const isExpanded = expandedBrands.has(brand.id);
-                            const hasBrandCompat = editDeviceCompatibilities.some(c => c.deviceBrandId === brand.id);
-                            const hasAllModels = editDeviceCompatibilities.some(c => c.deviceBrandId === brand.id && !c.deviceModelId);
-                            
-                            return (
-                              <div key={brand.id} className="border-b last:border-b-0">
-                                <div className="flex items-center gap-2 p-2 hover:bg-muted/50">
-                                  <Button
-                                    type="button"
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-6 w-6"
-                                    onClick={() => toggleBrandExpansion(brand.id)}
-                                  >
-                                    {isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-                                  </Button>
-                                  <Checkbox
-                                    checked={hasAllModels}
-                                    onCheckedChange={() => toggleBrandCompatibility(brand.id, true)}
-                                    data-testid={`checkbox-edit-brand-${brand.id}`}
-                                  />
-                                  <span className="font-medium flex-1">{brand.name}</span>
-                                  {hasBrandCompat && (
-                                    <Badge variant="outline" className="text-xs">
-                                      {hasAllModels ? "Tutti" : editDeviceCompatibilities.filter(c => c.deviceBrandId === brand.id).length}
-                                    </Badge>
-                                  )}
-                                </div>
-                                {isExpanded && models.length > 0 && (
-                                  <div className="pl-10 pb-2 space-y-1">
-                                    {models.map(model => {
-                                      const isChecked = editDeviceCompatibilities.some(c => c.deviceBrandId === brand.id && c.deviceModelId === model.id);
-                                      return (
-                                        <div key={model.id} className="flex items-center gap-2 py-1">
-                                          <Checkbox
-                                            checked={isChecked || hasAllModels}
-                                            disabled={hasAllModels}
-                                            onCheckedChange={() => toggleModelCompatibility(brand.id, model.id, true)}
-                                            data-testid={`checkbox-edit-model-${model.id}`}
-                                          />
-                                          <span className="text-sm">{model.modelName}</span>
-                                        </div>
-                                      );
-                                    })}
-                                  </div>
-                                )}
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    )}
-                  </TabsContent>
                 </Tabs>
 
                 <Separator />
@@ -1862,8 +1377,6 @@ export default function ResellerProducts() {
                       setEditDialogOpen(false); 
                       setEditingProduct(null); 
                       setEditStock([]); 
-                      setEditDeviceCompatibilities([]);
-                      setEditDeviceSearchQuery("");
                     }}
                   >
                     Annulla

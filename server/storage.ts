@@ -44,7 +44,6 @@ import {
   MobilesentrixCredential, InsertMobilesentrixCredential, MobilesentrixOrder, InsertMobilesentrixOrder,
   ExternalIntegration, InsertExternalIntegration, externalIntegrations,
   ServiceItem, InsertServiceItem, ServiceItemPrice, InsertServiceItemPrice,
-  ProductDeviceCompatibility, InsertProductDeviceCompatibility, productDeviceCompatibilities,
   users, repairCenters, products, repairOrders, tickets, ticketMessages,
   invoices, billingData, chatMessages, inventoryMovements, inventoryStock, activityLogs, analyticsCache,
   notifications, notificationPreferences, repairAttachments, repairAcceptance, repairDiagnostics,
@@ -148,12 +147,6 @@ export interface IStorage {
   listProductsByReseller(resellerId: string): Promise<Product[]>;
   updateProduct(id: string, updates: Partial<InsertProduct>): Promise<Product>;
   
-  // Product Device Compatibilities
-  listProductCompatibilities(productId: string): Promise<ProductDeviceCompatibility[]>;
-  addProductCompatibility(compatibility: InsertProductDeviceCompatibility): Promise<ProductDeviceCompatibility>;
-  removeProductCompatibility(id: string): Promise<void>;
-  setProductCompatibilities(productId: string, compatibilities: Omit<InsertProductDeviceCompatibility, 'productId'>[]): Promise<ProductDeviceCompatibility[]>;
-  
   // Product Prices (prezzi personalizzati per reseller - gestiti da admin)
   listProductPrices(filters?: { productId?: string; resellerId?: string }): Promise<ProductPrice[]>;
   getProductPrice(id: string): Promise<ProductPrice | undefined>;
@@ -186,7 +179,6 @@ export interface IStorage {
   updateAccessorySpecs(productId: string, updates: Partial<InsertAccessorySpecs>): Promise<AccessorySpecs>;
   deleteAccessorySpecs(productId: string): Promise<void>;
   listAccessories(filters?: { resellerId?: string; accessoryType?: string }): Promise<Array<Product & { specs: AccessorySpecs | null }>>;
-  listAccessoriesCompatibleWithDevice(deviceModelId: string | null, deviceBrandId?: string): Promise<Array<Product & { specs: AccessorySpecs | null }>>;
   
   // Repair Orders
   listRepairOrders(filters?: { customerId?: string; resellerId?: string; repairCenterId?: string; status?: string }): Promise<RepairOrder[]>;
@@ -231,7 +223,7 @@ export interface IStorage {
   createInventoryMovement(movement: InsertInventoryMovement): Promise<InventoryMovement>;
   listInventoryMovements(filters?: { repairCenterId?: string; productId?: string }): Promise<InventoryMovement[]>;
   getProductStockByCenter(productId: string): Promise<Array<{ repairCenterId: string; repairCenterName: string; quantity: number }>>;
-  getAllProductsWithStock(): Promise<Array<{ product: Product; stockByWarehouse: Array<{ warehouseId: string; warehouseName: string; ownerType: string; ownerName: string; quantity: number }>; totalStock: number; compatibilities: Array<{ brandId: string; brandName: string; modelId: string | null; modelName: string | null }> }>>;
+  getAllProductsWithStock(): Promise<Array<{ product: Product; stockByWarehouse: Array<{ warehouseId: string; warehouseName: string; ownerType: string; ownerName: string; quantity: number }>; totalStock: number }>>;
   updateProduct(id: string, updates: Partial<Omit<Product, 'id' | 'createdAt'>>): Promise<Product>;
   
   // Reseller Inventory (for own products in own centers)
@@ -1151,35 +1143,6 @@ export class DatabaseStorage implements IStorage {
     return product;
   }
 
-  // Product Device Compatibilities
-  async listProductCompatibilities(productId: string): Promise<ProductDeviceCompatibility[]> {
-    return await db.select().from(productDeviceCompatibilities)
-      .where(eq(productDeviceCompatibilities.productId, productId));
-  }
-
-  async addProductCompatibility(compatibility: InsertProductDeviceCompatibility): Promise<ProductDeviceCompatibility> {
-    const [result] = await db.insert(productDeviceCompatibilities).values(compatibility).returning();
-    return result;
-  }
-
-  async removeProductCompatibility(id: string): Promise<void> {
-    await db.delete(productDeviceCompatibilities).where(eq(productDeviceCompatibilities.id, id));
-  }
-
-  async setProductCompatibilities(productId: string, compatibilities: Omit<InsertProductDeviceCompatibility, 'productId'>[]): Promise<ProductDeviceCompatibility[]> {
-    // Delete existing compatibilities for this product
-    await db.delete(productDeviceCompatibilities).where(eq(productDeviceCompatibilities.productId, productId));
-    
-    if (compatibilities.length === 0) {
-      return [];
-    }
-    
-    // Insert new compatibilities
-    const toInsert = compatibilities.map(c => ({ ...c, productId }));
-    const results = await db.insert(productDeviceCompatibilities).values(toInsert).returning();
-    return results;
-  }
-
   // Product Prices (prezzi personalizzati per reseller - gestiti da admin)
   async listProductPrices(filters?: { productId?: string; resellerId?: string }): Promise<ProductPrice[]> {
     let query = db.select().from(productPrices);
@@ -1604,58 +1567,6 @@ export class DatabaseStorage implements IStorage {
     }
     
     return filtered.map(r => ({
-      ...r.products,
-      specs: r.accessory_specs || null
-    }));
-  }
-
-  async listAccessoriesCompatibleWithDevice(deviceModelId: string | null, deviceBrandId?: string): Promise<Array<Product & { specs: AccessorySpecs | null }>> {
-    // Build conditions for device compatibility matching
-    const conditions: any[] = [];
-    
-    if (deviceModelId) {
-      // Match accessories compatible with specific model OR all models of the brand
-      conditions.push(
-        or(
-          eq(productDeviceCompatibilities.deviceModelId, deviceModelId),
-          and(
-            deviceBrandId ? eq(productDeviceCompatibilities.deviceBrandId, deviceBrandId) : undefined,
-            isNull(productDeviceCompatibilities.deviceModelId)
-          )
-        )
-      );
-    } else if (deviceBrandId) {
-      // Match accessories compatible with brand (all models)
-      conditions.push(eq(productDeviceCompatibilities.deviceBrandId, deviceBrandId));
-    }
-    
-    if (conditions.length === 0) {
-      return [];
-    }
-    
-    // Query products with accessory specs that have matching device compatibility
-    const compatibleProductIds = await db.selectDistinct({ productId: productDeviceCompatibilities.productId })
-      .from(productDeviceCompatibilities)
-      .where(and(...conditions));
-    
-    if (compatibleProductIds.length === 0) {
-      return [];
-    }
-    
-    const productIdList = compatibleProductIds.map(p => p.productId);
-    
-    // Fetch accessories with their specs
-    const results = await db.select()
-      .from(products)
-      .leftJoin(accessorySpecs, eq(products.id, accessorySpecs.productId))
-      .where(and(
-        inArray(products.id, productIdList),
-        eq(products.productType, 'accessorio' as any),
-        eq(products.isActive, true)
-      ))
-      .orderBy(desc(products.createdAt));
-    
-    return results.map(r => ({
       ...r.products,
       specs: r.accessory_specs || null
     }));
@@ -2149,7 +2060,6 @@ export class DatabaseStorage implements IStorage {
     product: Product; 
     stockByWarehouse: Array<{ warehouseId: string; warehouseName: string; ownerType: string; ownerName: string; quantity: number }>;
     totalStock: number;
-    compatibilities: Array<{ brandId: string; brandName: string; modelId: string | null; modelName: string | null }>;
   }>> {
     const allProducts = await this.listProducts();
     
@@ -2173,32 +2083,6 @@ export class DatabaseStorage implements IStorage {
           .where(inArray(users.id, ownerIds))
       : [];
     const ownerMap = new Map(owners.map(o => [o.id, o.fullName || o.username]));
-    
-    // Fetch all compatibilities with brand/model names
-    const allCompatibilities = await db.select({
-      productId: productDeviceCompatibilities.productId,
-      brandId: productDeviceCompatibilities.deviceBrandId,
-      brandName: deviceBrands.name,
-      modelId: productDeviceCompatibilities.deviceModelId,
-      modelName: deviceModels.modelName,
-    })
-    .from(productDeviceCompatibilities)
-    .innerJoin(deviceBrands, eq(productDeviceCompatibilities.deviceBrandId, deviceBrands.id))
-    .leftJoin(deviceModels, eq(productDeviceCompatibilities.deviceModelId, deviceModels.id));
-    
-    // Build compatibility map by productId
-    const compatibilityMap = new Map<string, Array<{ brandId: string; brandName: string; modelId: string | null; modelName: string | null }>>();
-    for (const compat of allCompatibilities) {
-      if (!compatibilityMap.has(compat.productId)) {
-        compatibilityMap.set(compat.productId, []);
-      }
-      compatibilityMap.get(compat.productId)!.push({
-        brandId: compat.brandId,
-        brandName: compat.brandName,
-        modelId: compat.modelId,
-        modelName: compat.modelName,
-      });
-    }
     
     // Aggregate stock by product and warehouse
     const stockMap = new Map<string, Map<string, { warehouseId: string; warehouseName: string; ownerType: string; ownerName: string; quantity: number }>>();
@@ -2229,8 +2113,7 @@ export class DatabaseStorage implements IStorage {
       const warehouseMap = stockMap.get(product.id);
       const stockByWarehouse = warehouseMap ? Array.from(warehouseMap.values()) : [];
       const totalStock = stockByWarehouse.reduce((sum, s) => sum + s.quantity, 0);
-      const compatibilities = compatibilityMap.get(product.id) || [];
-      return { product, stockByWarehouse, totalStock, compatibilities };
+      return { product, stockByWarehouse, totalStock };
     });
   }
 
