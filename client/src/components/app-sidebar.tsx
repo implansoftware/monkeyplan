@@ -71,7 +71,7 @@ const menuItems = {
     { title: "Il Mio Magazzino", url: "/admin/warehouses", icon: Warehouse, group: "Magazzino" },
     { title: "Tutti i Magazzini", url: "/admin/all-warehouses", icon: Building2, group: "Magazzino" },
     { title: "Ricambi", url: "/admin/products", icon: Package, group: "Magazzino" },
-    { title: "Smartphone", url: "/admin/smartphone-catalog", icon: Smartphone, group: "Magazzino" },
+
     { title: "Accessori", url: "/admin/accessory-catalog", icon: ShoppingCart, group: "Magazzino" },
     { title: "Anagrafica Fornitori", url: "/admin/suppliers", icon: Truck, group: "Fornitori" },
     { title: "Ordini a Fornitori", url: "/admin/supplier-orders", icon: ShoppingCart, group: "Fornitori" },
@@ -117,7 +117,7 @@ const menuItems = {
     { title: "Il Mio Magazzino", url: "/admin/warehouses", icon: Warehouse, group: "Magazzino" },
     { title: "Tutti i Magazzini", url: "/admin/all-warehouses", icon: Building2, group: "Magazzino" },
     { title: "Ricambi", url: "/admin/products", icon: Package, group: "Magazzino" },
-    { title: "Smartphone", url: "/admin/smartphone-catalog", icon: Smartphone, group: "Magazzino" },
+
     { title: "Accessori", url: "/admin/accessory-catalog", icon: ShoppingCart, group: "Magazzino" },
     { title: "Anagrafica Fornitori", url: "/admin/suppliers", icon: Truck, group: "Fornitori" },
     { title: "Ordini a Fornitori", url: "/admin/supplier-orders", icon: ShoppingCart, group: "Fornitori" },
@@ -155,7 +155,6 @@ const menuItems = {
     { title: "Magazzino", url: "/reseller/warehouses", icon: Warehouse, group: "Magazzino" },
     { title: "Magazzini Rete", url: "/reseller/network-warehouses", icon: Building2, group: "Magazzino" },
     { title: "Ricambi", url: "/reseller/products", icon: Package, group: "Magazzino" },
-    { title: "Smartphone", url: "/reseller/smartphone-catalog", icon: Smartphone, group: "Magazzino" },
     { title: "Accessori", url: "/reseller/accessory-catalog", icon: ShoppingCart, group: "Magazzino" },
     { title: "Anagrafica Fornitori", url: "/reseller/suppliers", icon: Truck, group: "Fornitori" },
     { title: "Ordini a Fornitori", url: "/reseller/supplier-orders", icon: ShoppingCart, group: "Fornitori" },
@@ -192,7 +191,6 @@ const menuItems = {
     { title: "Appuntamenti", url: "/repair-center/appointments", icon: CalendarCheck, group: "Principale" },
     { title: "Magazzino", url: "/repair-center/warehouses", icon: Warehouse, group: "Magazzino" },
     { title: "Prodotti", url: "/repair-center/products", icon: Package, group: "Magazzino" },
-    { title: "Smartphone", url: "/repair-center/smartphone-catalog", icon: Smartphone, group: "Cataloghi" },
     { title: "Accessori", url: "/repair-center/accessory-catalog", icon: ShoppingCart, group: "Cataloghi" },
     { title: "Ricambi", url: "/repair-center/spare-parts-catalog", icon: Wrench, group: "Cataloghi" },
     { title: "Clienti", url: "/repair-center/customers", icon: Users, group: "Gestione" },
