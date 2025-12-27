@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -140,6 +140,28 @@ export function UtilityPracticeWizard({ open, onOpenChange, onSuccess }: Utility
   const services = selectedSupplierId
     ? allServices.filter((s) => s.supplierId === selectedSupplierId)
     : allServices;
+
+  const selectedService = useMemo(() => 
+    allServices.find(s => s.id === selectedServiceId),
+    [allServices, selectedServiceId]
+  );
+
+  useEffect(() => {
+    if (selectedServiceId && selectedService && !useCustomService) {
+      if (selectedService.priceType) {
+        setSelectedPriceType(selectedService.priceType as PriceType);
+      }
+      if (selectedService.monthlyPriceCents) {
+        setMonthlyPrice((selectedService.monthlyPriceCents / 100).toFixed(2));
+      }
+      if (selectedService.flatPriceCents) {
+        setFlatPrice((selectedService.flatPriceCents / 100).toFixed(2));
+      }
+      if (selectedService.commissionValueCents) {
+        setCommission((selectedService.commissionValueCents / 100).toFixed(2));
+      }
+    }
+  }, [selectedServiceId, selectedService, useCustomService]);
 
   const resetForm = () => {
     setCurrentStep("type");
