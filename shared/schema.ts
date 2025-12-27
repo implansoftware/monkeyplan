@@ -2596,6 +2596,7 @@ export const utilityPractices = pgTable("utility_practices", {
   temporaryCustomerEmail: text("temporary_customer_email"), // Email cliente temporaneo
   temporaryCustomerPhone: text("temporary_customer_phone"), // Telefono cliente temporaneo
   resellerId: varchar("reseller_id").references(() => users.id), // Reseller che ha gestito la pratica
+  repairCenterId: varchar("repair_center_id").references(() => repairCenters.id), // Centro riparazione che ha gestito la pratica
   
   // Stato pratica
   status: utilityPracticeStatusEnum("status").notNull().default("bozza"),
