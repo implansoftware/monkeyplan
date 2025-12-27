@@ -1,28 +1,19 @@
-import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { 
-  Package, Smartphone, Headphones, Wrench, Warehouse, MapPin, 
-  Battery, HardDrive, CheckCircle, XCircle, Info, Tag, Users, Settings2
+  Smartphone, Headphones, Wrench, Warehouse, MapPin, 
+  Battery, HardDrive, CheckCircle, XCircle, Info, Tag, Users
 } from "lucide-react";
-import { SmartphoneCompatibilityManager } from "./SmartphoneCompatibilityManager";
-import { useUser } from "@/hooks/use-user";
 import type { Product, SmartphoneSpecs, AccessorySpecs } from "@shared/schema";
 
 type ProductDetails = {
   product: Product;
   specs: SmartphoneSpecs | AccessorySpecs | null;
-  compatibilities: Array<{
-    id: string;
-    brandName: string;
-    modelName: string;
-  }>;
   prices: Array<{
     id: string;
     priceCents: number;
@@ -76,10 +67,7 @@ interface ProductDetailDialogProps {
 }
 
 export function ProductDetailDialog({ open, onOpenChange, productId }: ProductDetailDialogProps) {
-  const { user } = useUser();
-  const [compatibilityManagerOpen, setCompatibilityManagerOpen] = useState(false);
-
-  const { data, isLoading, refetch } = useQuery<ProductDetails>({
+  const { data, isLoading } = useQuery<ProductDetails>({
     queryKey: ["/api/products", productId, "details"],
     queryFn: async () => {
       const res = await fetch(`/api/products/${productId}`);
@@ -90,7 +78,6 @@ export function ProductDetailDialog({ open, onOpenChange, productId }: ProductDe
   });
 
   const totalStock = data?.stock?.reduce((sum, s) => sum + s.quantity, 0) || 0;
-  const canManageCompatibilities = user?.role === "admin" || user?.role === "reseller";
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -304,42 +291,6 @@ export function ProductDetailDialog({ open, onOpenChange, productId }: ProductDe
                 </>
               )}
 
-              {(data.product.productType === 'accessorio' || data.product.productType === 'ricambio') && (
-                <>
-                  <Separator />
-                  <div>
-                    <div className="flex items-center justify-between mb-3">
-                      <h3 className="font-medium flex items-center gap-2">
-                        <Package className="h-4 w-4" />
-                        Compatibilità Dispositivi
-                      </h3>
-                      {canManageCompatibilities && productId && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setCompatibilityManagerOpen(true)}
-                          data-testid="button-manage-compatibilities"
-                        >
-                          <Settings2 className="h-4 w-4 mr-1" />
-                          Gestisci
-                        </Button>
-                      )}
-                    </div>
-                    {data.compatibilities && data.compatibilities.length > 0 ? (
-                      <div className="flex flex-wrap gap-2">
-                        {data.compatibilities.map((c, i) => (
-                          <Badge key={i} variant="secondary">
-                            {c.brandName} {c.modelName !== 'Tutti i modelli' ? `- ${c.modelName}` : ''}
-                          </Badge>
-                        ))}
-                      </div>
-                    ) : (
-                      <p className="text-sm text-muted-foreground">Nessuna compatibilità definita</p>
-                    )}
-                  </div>
-                </>
-              )}
-
               <Separator />
               <div>
                 <h3 className="font-medium flex items-center gap-2 mb-3">
@@ -428,15 +379,6 @@ export function ProductDetailDialog({ open, onOpenChange, productId }: ProductDe
           )}
         </ScrollArea>
       </DialogContent>
-
-      {productId && (
-        <SmartphoneCompatibilityManager
-          productId={productId}
-          open={compatibilityManagerOpen}
-          onOpenChange={setCompatibilityManagerOpen}
-          onSuccess={() => refetch()}
-        />
-      )}
     </Dialog>
   );
 }

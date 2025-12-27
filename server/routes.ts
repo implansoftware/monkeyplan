@@ -1090,28 +1090,7 @@ export function registerRoutes(app: Express): Server {
         deviceBrandId
       );
       
-      // Enrich with device compatibility info
-      const enrichedAccessories = await Promise.all(accessories.map(async (accessory) => {
-        const compatibilities = await storage.listProductCompatibilities(accessory.id);
-        
-        // Get brand/model names for each compatibility
-        const enrichedCompatibilities = await Promise.all(compatibilities.map(async (c) => {
-          const brand = await storage.getDeviceBrand(c.deviceBrandId);
-          const model = c.deviceModelId ? await storage.getDeviceModel(c.deviceModelId) : null;
-          return {
-            ...c,
-            brandName: brand?.name,
-            modelName: model?.modelName || "Tutti i modelli"
-          };
-        }));
-        
-        return {
-          ...accessory,
-          deviceCompatibilities: enrichedCompatibilities
-        };
-      }));
-      
-      res.json(enrichedAccessories);
+      res.json(accessories);
     } catch (error: any) {
       res.status(500).send(error.message);
     }
@@ -2360,22 +2339,6 @@ export function registerRoutes(app: Express): Server {
         specs = await storage.getAccessorySpecs(product.id);
       }
 
-      // Get device compatibilities
-      const compatibilities = await storage.listProductCompatibilities(product.id);
-      
-      // Enrich compatibilities with brand and model names
-      const enrichedCompatibilities = await Promise.all(
-        compatibilities.map(async (c) => {
-          const brand = await storage.getDeviceBrand(c.deviceBrandId);
-          const model = c.deviceModelId ? await storage.getDeviceModel(c.deviceModelId) : null;
-          return {
-            ...c,
-            brandName: brand?.name || 'Sconosciuto',
-            modelName: model?.name || 'Tutti i modelli',
-          };
-        })
-      );
-
       // Get reseller prices and assignments
       const prices = await storage.listProductPrices({ productId: product.id });
       const pricesWithReseller = await Promise.all(
@@ -2427,7 +2390,6 @@ export function registerRoutes(app: Express): Server {
       res.json({
         product,
         specs,
-        compatibilities: enrichedCompatibilities,
         prices: pricesWithReseller,
         assignments: assignmentsWithReseller,
         stock: stockByWarehouse,
@@ -8064,19 +8026,13 @@ export function registerRoutes(app: Express): Server {
       
       const accessories = await storage.listAccessories(filters);
       
-      // Fetch device compatibilities for each accessory and add isOwn flag
-      const accessoriesWithCompatibilities = await Promise.all(
-        accessories.map(async (accessory) => {
-          const deviceCompatibilities = await storage.listProductCompatibilities(accessory.id);
-          return { 
-            ...accessory, 
-            deviceCompatibilities,
-            isOwn: effectiveResellerId ? accessory.createdBy === effectiveResellerId : false,
-          };
-        })
-      );
+      // Add isOwn flag for each accessory
+      const accessoriesWithFlags = accessories.map((accessory) => ({ 
+        ...accessory, 
+        isOwn: effectiveResellerId ? accessory.createdBy === effectiveResellerId : false,
+      }));
       
-      res.json(accessoriesWithCompatibilities);
+      res.json(accessoriesWithFlags);
     } catch (error: any) {
       res.status(500).send(error.message);
     }
@@ -8103,15 +8059,11 @@ export function registerRoutes(app: Express): Server {
       
       // Parse product and specs - support both JSON body and FormData (stringified JSON)
       let product, specs;
-      let deviceCompatibilities: Array<{ deviceBrandId: string; deviceModelId?: string | null }> = [];
       let initialStock: any[] = [];
       let legacyInitialQuantity = 0, legacyWarehouseId: string | null = null;
       if (typeof req.body.product === 'string') {
         product = JSON.parse(req.body.product);
         specs = JSON.parse(req.body.specs);
-        if (req.body.deviceCompatibilities) {
-          deviceCompatibilities = JSON.parse(req.body.deviceCompatibilities);
-        }
         if (req.body.initialStock) {
           initialStock = typeof req.body.initialStock === 'string' 
             ? JSON.parse(req.body.initialStock) 
@@ -8123,7 +8075,6 @@ export function registerRoutes(app: Express): Server {
       } else {
         product = req.body.product;
         specs = req.body.specs;
-        deviceCompatibilities = req.body.deviceCompatibilities || [];
         initialStock = req.body.initialStock || [];
         // Legacy support
         legacyInitialQuantity = req.body.initialQuantity || 0;
@@ -8181,11 +8132,6 @@ export function registerRoutes(app: Express): Server {
       specs.productId = createdProduct.id;
       const createdSpecs = await storage.createAccessorySpecs(specs);
       
-      // Handle device compatibilities (supports brand-only and brand+model)
-      if (deviceCompatibilities && deviceCompatibilities.length > 0) {
-        await storage.setProductCompatibilities(createdProduct.id, deviceCompatibilities);
-      }
-      
       // Handle image upload if file is provided
       let imageUrl = null;
       if (req.file) {
@@ -8216,16 +8162,13 @@ export function registerRoutes(app: Express): Server {
         await storage.updateProduct(createdProduct.id, { imageUrl });
       }
       
-      // Fetch device compatibilities to include in response
-      const savedCompatibilities = await storage.listProductCompatibilities(createdProduct.id);
-      
-      res.json({ ...createdProduct, imageUrl: imageUrl || createdProduct.imageUrl, specs: createdSpecs, deviceCompatibilities: savedCompatibilities });
+      res.json({ ...createdProduct, imageUrl: imageUrl || createdProduct.imageUrl, specs: createdSpecs });
     } catch (error: any) {
       res.status(500).send(error.message);
     }
   });
   
-  // Update accessory (product, specs, and device compatibilities)
+  // Update accessory (product and specs)
   app.patch("/api/accessories/:productId", requireAuth, requireRole("admin", "reseller", "reseller_collaborator"), async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
@@ -8247,7 +8190,7 @@ export function registerRoutes(app: Express): Server {
         }
       }
       
-      const { product, specs, deviceCompatibilities: incomingCompatibilities } = req.body;
+      const { product, specs } = req.body;
       
       // Update product fields if provided
       if (product) {
@@ -8260,16 +8203,10 @@ export function registerRoutes(app: Express): Server {
         updatedSpecs = await storage.updateAccessorySpecs(req.params.productId, specs);
       }
       
-      // Update device compatibilities if provided (supports brand-only and brand+model)
-      if (incomingCompatibilities !== undefined) {
-        await storage.setProductCompatibilities(req.params.productId, incomingCompatibilities);
-      }
-      
       // Fetch updated data
       const updatedProduct = await storage.getProduct(req.params.productId);
-      const deviceCompatibilities = await storage.listProductCompatibilities(req.params.productId);
       
-      res.json({ ...updatedProduct, specs: updatedSpecs, deviceCompatibilities });
+      res.json({ ...updatedProduct, specs: updatedSpecs });
     } catch (error: any) {
       res.status(500).send(error.message);
     }
@@ -14497,79 +14434,6 @@ export function registerRoutes(app: Express): Server {
     try {
       await storage.setPreferredSupplier(req.params.productId, req.params.supplierId);
       res.json({ success: true });
-    } catch (error: any) {
-      res.status(400).send(error.message);
-    }
-  });
-
-  // ============ PRODUCT DEVICE COMPATIBILITIES ============
-
-  // GET /api/products/:id/compatibilities - List device compatibilities for a product
-  app.get("/api/products/:id/compatibilities", requireAuth, async (req, res) => {
-    try {
-      const compatibilities = await storage.listProductCompatibilities(req.params.id);
-      
-      // Enrich with brand and model names
-      const enriched = await Promise.all(compatibilities.map(async (c) => {
-        const brand = await storage.getDeviceBrand(c.deviceBrandId);
-        const model = c.deviceModelId ? await storage.getDeviceModel(c.deviceModelId) : null;
-        return {
-          ...c,
-          brandName: brand?.name,
-          modelName: model?.name
-        };
-      }));
-      
-      res.json(enriched);
-    } catch (error: any) {
-      res.status(500).send(error.message);
-    }
-  });
-
-  // PUT /api/products/:id/compatibilities - Set all compatibilities for a product (replace)
-  app.put("/api/products/:id/compatibilities", requireAuth, requireRole("admin", "reseller"), async (req, res) => {
-    try {
-      const { compatibilities } = req.body as { 
-        compatibilities: { deviceBrandId: string; deviceModelId?: string | null }[] 
-      };
-      
-      if (!Array.isArray(compatibilities)) {
-        return res.status(400).send("Il campo 'compatibilities' deve essere un array");
-      }
-      
-      const result = await storage.setProductCompatibilities(req.params.id, compatibilities);
-      res.json(result);
-    } catch (error: any) {
-      res.status(400).send(error.message);
-    }
-  });
-
-  // POST /api/products/:id/compatibilities - Add a single compatibility
-  app.post("/api/products/:id/compatibilities", requireAuth, requireRole("admin", "reseller"), async (req, res) => {
-    try {
-      const { deviceBrandId, deviceModelId } = req.body;
-      
-      if (!deviceBrandId) {
-        return res.status(400).send("deviceBrandId è obbligatorio");
-      }
-      
-      const compatibility = await storage.addProductCompatibility({
-        productId: req.params.id,
-        deviceBrandId,
-        deviceModelId: deviceModelId || null
-      });
-      
-      res.status(201).json(compatibility);
-    } catch (error: any) {
-      res.status(400).send(error.message);
-    }
-  });
-
-  // DELETE /api/product-compatibilities/:id - Remove a single compatibility
-  app.delete("/api/product-compatibilities/:id", requireAuth, requireRole("admin", "reseller"), async (req, res) => {
-    try {
-      await storage.removeProductCompatibility(req.params.id);
-      res.status(204).send();
     } catch (error: any) {
       res.status(400).send(error.message);
     }
@@ -22124,19 +21988,17 @@ export function registerRoutes(app: Express): Server {
       const stock = await storage.listWarehouseStock(resellerWarehouse.id);
       const stockMap = new Map(stock.map(s => [s.productId, s.quantity]));
       
-      // Enrich with stock, B2B price, and compatibilities
-      const catalog = await Promise.all(accessories.map(async (accessory) => {
+      // Enrich with stock and B2B price
+      const catalog = accessories.map((accessory) => {
         const resellerStock = stockMap.get(accessory.id) || 0;
         const b2bPrice = accessory.costPrice || Math.round((accessory.unitPrice || 0) * 0.8);
-        const deviceCompatibilities = await storage.listProductCompatibilities(accessory.id);
         return {
           ...accessory,
           resellerStock,
           b2bPrice,
           availableForPurchase: resellerStock > 0,
-          deviceCompatibilities,
         };
-      }));
+      });
       
       res.json(catalog);
     } catch (error: any) {
@@ -22167,18 +22029,16 @@ export function registerRoutes(app: Express): Server {
       const stockMap = new Map(stock.map(s => [s.productId, s.quantity]));
       
       // Enrich with stock and B2B price
-      const catalog = await Promise.all(spareParts.map(async (part) => {
+      const catalog = spareParts.map((part) => {
         const resellerStock = stockMap.get(part.id) || 0;
         const b2bPrice = part.costPrice || Math.round((part.unitPrice || 0) * 0.8);
-        const deviceCompatibilities = await storage.listProductCompatibilities(part.id);
         return {
           ...part,
           resellerStock,
           b2bPrice,
           availableForPurchase: resellerStock > 0,
-          deviceCompatibilities,
         };
-      }));
+      });
       
       res.json(catalog);
     } catch (error: any) {
