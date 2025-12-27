@@ -12716,6 +12716,97 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Provision device model as warehouse product (admin only)
+  // Creates a product linked to the device model and seeds all warehouses with stock=0
+  app.post("/api/admin/device-models/:id/provision", requireRole("admin"), async (req, res) => {
+    try {
+      const deviceModelId = req.params.id;
+      
+      // Get the device model
+      const deviceModel = await storage.getDeviceModel(deviceModelId);
+      if (!deviceModel) {
+        return res.status(404).send("Modello dispositivo non trovato");
+      }
+      
+      // Check if already provisioned
+      const existingProducts = await storage.listProducts();
+      const alreadyProvisioned = existingProducts.find(p => p.deviceModelId === deviceModelId);
+      if (alreadyProvisioned) {
+        return res.status(400).send("Questo modello è già stato attivato a magazzino");
+      }
+      
+      // Get device brand for the product name
+      const deviceBrand = await storage.getDeviceBrand(deviceModel.brandId);
+      const brandName = deviceBrand?.name || "Sconosciuto";
+      
+      // Get device type for product linking
+      const deviceType = await storage.getDeviceType(deviceModel.deviceTypeId);
+      
+      // Generate unique SKU
+      const sku = `DEV-${brandName.substring(0, 3).toUpperCase()}-${deviceModel.modelName.replace(/\s+/g, '-').substring(0, 10).toUpperCase()}-${Date.now().toString(36).toUpperCase()}`;
+      
+      // Create the product
+      const product = await storage.createProduct({
+        name: `${brandName} ${deviceModel.modelName}`,
+        sku: sku,
+        category: "dispositivo",
+        productType: "dispositivo",
+        description: `Dispositivo ${brandName} ${deviceModel.modelName}`,
+        deviceTypeId: deviceModel.deviceTypeId,
+        brand: brandName,
+        compatibleModels: [deviceModel.modelName],
+        unitPrice: 0, // Price to be set by admin
+        costPrice: 0,
+        condition: "nuovo",
+        warrantyMonths: 12,
+        minStock: 1,
+        isActive: true,
+        isVisibleInShop: true,
+        deviceModelId: deviceModelId,
+        isDeviceCatalogProduct: true,
+        createdBy: null, // Global product created by admin
+      });
+      
+      // Seed all active warehouses with stock=0
+      const allWarehouses = await storage.listWarehouses({ isActive: true });
+      for (const warehouse of allWarehouses) {
+        await storage.upsertWarehouseStock({
+          warehouseId: warehouse.id,
+          productId: product.id,
+          quantity: 0,
+          minStock: 1,
+          location: null,
+        });
+      }
+      
+      res.status(201).json({
+        product,
+        warehousesSeeded: allWarehouses.length,
+        message: `Prodotto creato e ${allWarehouses.length} magazzini inizializzati`
+      });
+    } catch (error: any) {
+      console.error("Error provisioning device model:", error);
+      res.status(500).send(error.message);
+    }
+  });
+
+  // Get provisioned product for a device model (admin/reseller)
+  app.get("/api/device-models/:id/product", requireAuth, async (req, res) => {
+    try {
+      const deviceModelId = req.params.id;
+      const products = await storage.listProducts();
+      const product = products.find(p => p.deviceModelId === deviceModelId);
+      
+      if (!product) {
+        return res.status(404).json({ provisioned: false });
+      }
+      
+      res.json({ provisioned: true, product });
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
   // ============ ISSUE TYPES ============
 
   // Get issue types (filtered by device type, includes "Altro" option)
