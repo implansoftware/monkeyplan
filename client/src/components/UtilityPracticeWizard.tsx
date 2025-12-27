@@ -133,9 +133,8 @@ export function UtilityPracticeWizard({ open, onOpenChange, onSuccess }: Utility
   });
 
   const { data: customerUsers = [] } = useQuery<UserType[]>({
-    queryKey: ["/api/users"],
+    queryKey: ["/api/customers"],
     enabled: open,
-    select: (data) => data.filter((u) => u.role === "customer"),
   });
 
   const services = selectedSupplierId
