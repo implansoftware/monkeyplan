@@ -1246,7 +1246,7 @@ export function UtilityPracticeWizard({ open, onOpenChange, onSuccess }: Utility
               </CardContent>
             </Card>
           ) : (
-            <div className="max-h-64 overflow-y-auto space-y-2">
+            <div className="max-h-64 overflow-y-auto space-y-2 p-1">
               {customerUsers.slice(0, 10).map((customer) => (
                 <Card
                   key={customer.id}
