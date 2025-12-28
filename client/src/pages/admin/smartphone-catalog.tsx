@@ -103,6 +103,14 @@ const CATEGORY_OPTIONS = [
   { value: "altro", label: "Altro" },
 ];
 
+const ACCESSORY_OPTIONS = [
+  "Caricatore originale",
+  "Cavo USB",
+  "Auricolari",
+  "Cover",
+  "Pellicola",
+];
+
 export default function AdminSmartphoneCatalog() {
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
@@ -134,6 +142,7 @@ export default function AdminSmartphoneCatalog() {
   const [formData, setFormData] = useState({
     name: "",
     sku: "",
+    category: "smartphone",
     brand: "",
     color: "",
     description: "",
@@ -499,6 +508,7 @@ export default function AdminSmartphoneCatalog() {
     setFormData({
       name: "",
       sku: "",
+      category: "smartphone",
       brand: "",
       color: "",
       description: "",
@@ -524,6 +534,7 @@ export default function AdminSmartphoneCatalog() {
     setFormData({
       name: smartphone.name,
       sku: smartphone.sku,
+      category: smartphone.category || "smartphone",
       brand: smartphone.brand || "",
       color: smartphone.color || "",
       description: smartphone.description || "",
@@ -636,7 +647,7 @@ export default function AdminSmartphoneCatalog() {
     const product = {
       name: formData.name,
       sku: formData.sku,
-      category: "smartphone",
+      category: formData.category,
       brand: formData.brand,
       color: formData.color,
       description: formData.description,
@@ -981,7 +992,7 @@ export default function AdminSmartphoneCatalog() {
           </DialogHeader>
 
           <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-3 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="name">Nome dispositivo *</Label>
                 <Input
@@ -1001,6 +1012,19 @@ export default function AdminSmartphoneCatalog() {
                   placeholder="es. IP14PM-256-BLK"
                   data-testid="input-smartphone-sku"
                 />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="category">Categoria *</Label>
+                <Select value={formData.category} onValueChange={(v) => setFormData({ ...formData, category: v })}>
+                  <SelectTrigger data-testid="select-smartphone-category">
+                    <SelectValue placeholder="Seleziona categoria" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {CATEGORY_OPTIONS.map((c) => (
+                      <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
 
@@ -1369,6 +1393,29 @@ export default function AdminSmartphoneCatalog() {
                 data-testid="checkbox-original-box"
               />
               <Label htmlFor="originalBox">Scatola originale inclusa</Label>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Accessori Inclusi</Label>
+              <div className="flex flex-wrap gap-4">
+                {ACCESSORY_OPTIONS.map((acc) => (
+                  <div key={acc} className="flex items-center gap-2">
+                    <Checkbox
+                      id={`acc-${acc}`}
+                      checked={formData.accessories.includes(acc)}
+                      onCheckedChange={(checked) => {
+                        if (checked) {
+                          setFormData({ ...formData, accessories: [...formData.accessories, acc] });
+                        } else {
+                          setFormData({ ...formData, accessories: formData.accessories.filter(a => a !== acc) });
+                        }
+                      }}
+                      data-testid={`checkbox-accessory-${acc.replace(/\s/g, '-').toLowerCase()}`}
+                    />
+                    <Label htmlFor={`acc-${acc}`} className="text-sm">{acc}</Label>
+                  </div>
+                ))}
+              </div>
             </div>
 
             <div className="space-y-2">

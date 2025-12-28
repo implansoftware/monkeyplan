@@ -92,6 +92,14 @@ const BATTERY_OPTIONS = [
   { value: "<80", label: "Meno di 80%" },
 ];
 
+const ACCESSORY_OPTIONS = [
+  "Caricatore originale",
+  "Cavo USB",
+  "Auricolari",
+  "Cover",
+  "Pellicola",
+];
+
 export default function SmartphoneCatalog() {
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
@@ -776,7 +784,7 @@ export default function SmartphoneCatalog() {
           </DialogHeader>
 
           <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-3 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="name">Nome dispositivo *</Label>
                 <Input
@@ -796,6 +804,19 @@ export default function SmartphoneCatalog() {
                   placeholder="es. IP14PM-256-BLK"
                   data-testid="input-smartphone-sku"
                 />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="category">Categoria *</Label>
+                <Select value={formData.category} onValueChange={(v) => setFormData({ ...formData, category: v })}>
+                  <SelectTrigger data-testid="select-smartphone-category">
+                    <SelectValue placeholder="Seleziona categoria" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {DEVICE_CATEGORIES.map((c) => (
+                      <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
 
@@ -980,6 +1001,41 @@ export default function SmartphoneCatalog() {
               <Label htmlFor="originalBox" className="text-sm cursor-pointer">
                 Include scatola originale
               </Label>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Accessori Inclusi</Label>
+              <div className="flex flex-wrap gap-4">
+                {ACCESSORY_OPTIONS.map((acc) => (
+                  <div key={acc} className="flex items-center gap-2">
+                    <Checkbox
+                      id={`acc-${acc}`}
+                      checked={formData.accessories.includes(acc)}
+                      onCheckedChange={(checked) => {
+                        if (checked) {
+                          setFormData({ ...formData, accessories: [...formData.accessories, acc] });
+                        } else {
+                          setFormData({ ...formData, accessories: formData.accessories.filter(a => a !== acc) });
+                        }
+                      }}
+                      data-testid={`checkbox-accessory-${acc.replace(/\s/g, '-').toLowerCase()}`}
+                    />
+                    <Label htmlFor={`acc-${acc}`} className="text-sm">{acc}</Label>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="description">Descrizione</Label>
+              <Textarea
+                id="description"
+                value={formData.description}
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                placeholder="Descrizione del dispositivo..."
+                rows={2}
+                data-testid="textarea-smartphone-description"
+              />
             </div>
 
             <div className="space-y-2">

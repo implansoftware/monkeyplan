@@ -112,7 +112,7 @@ export default function ProductDetail() {
   const getBackPath = () => {
     switch (product.productType) {
       case "dispositivo":
-        return "/admin/smartphone-catalog";
+        return "/admin/dispositivi";
       case "accessorio":
         return "/admin/accessory-catalog";
       default:
