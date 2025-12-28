@@ -113,7 +113,7 @@ export function PartsOrderDialog({
   });
 
   const { data: warehouses = [] } = useQuery<WarehouseType[]>({
-    queryKey: ["/api/warehouses"],
+    queryKey: ["/api/warehouses/accessible"],
     enabled: open,
   });
 
