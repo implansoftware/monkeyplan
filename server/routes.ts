@@ -2447,7 +2447,7 @@ export function registerRoutes(app: Express): Server {
   });
 
   // PUT /api/products/:id/compatibilities - Set device compatibilities for a product (replace all)
-  app.put("/api/products/:id/compatibilities", requireAuth, requireRole("admin"), async (req, res) => {
+  app.put("/api/products/:id/compatibilities", requireAuth, requireRole("admin", "reseller", "reseller_collaborator"), async (req, res) => {
     try {
       const product = await storage.getProduct(req.params.id);
       if (!product) {
