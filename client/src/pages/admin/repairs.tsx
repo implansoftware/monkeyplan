@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { RepairOrder, RepairCenter } from "@shared/schema";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Search, Wrench, Download, CalendarIcon, Plus, Stethoscope, Receipt, ClipboardCheck, Package, Play, TestTube, Truck, Eye, Clock, AlertTriangle, AlertCircle, LayoutGrid, TableIcon, Building } from "lucide-react";
+import { Search, Wrench, Download, CalendarIcon, Plus, Stethoscope, Receipt, ClipboardCheck, Package, Play, TestTube, Truck, Eye, Clock, AlertTriangle, AlertCircle, LayoutGrid, TableIcon, Building, Store } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -38,6 +38,7 @@ export default function AdminRepairs() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [slaFilter, setSlaFilter] = useState<string>("all");
   const [repairCenterFilter, setRepairCenterFilter] = useState<string>("all");
+  const [resellerFilter, setResellerFilter] = useState<string>("all");
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
   const [isExporting, setIsExporting] = useState(false);
   const [wizardOpen, setWizardOpen] = useState(false);
@@ -59,6 +60,17 @@ export default function AdminRepairs() {
       return res.json();
     },
   });
+
+  // Derive unique resellers from repairs data
+  const resellers = useMemo(() => {
+    const resellerMap = new Map<string, string>();
+    repairs.forEach((repair) => {
+      if (repair.resellerId && repair.resellerName) {
+        resellerMap.set(repair.resellerId, repair.resellerName);
+      }
+    });
+    return Array.from(resellerMap.entries()).map(([id, name]) => ({ id, name })).sort((a, b) => a.name.localeCompare(b.name));
+  }, [repairs]);
 
   const handleExport = async () => {
     try {
@@ -118,6 +130,7 @@ export default function AdminRepairs() {
       (repair.resellerName && repair.resellerName.toLowerCase().includes(searchLower));
     const matchesStatus = statusFilter === "all" || repair.status === statusFilter;
     const matchesRepairCenter = repairCenterFilter === "all" || repair.repairCenterId === repairCenterFilter;
+    const matchesReseller = resellerFilter === "all" || repair.resellerId === resellerFilter;
     
     let matchesDate = true;
     if (dateRange?.from) {
@@ -128,7 +141,7 @@ export default function AdminRepairs() {
       }
     }
     
-    return matchesSearch && matchesStatus && matchesRepairCenter && matchesDate;
+    return matchesSearch && matchesStatus && matchesRepairCenter && matchesReseller && matchesDate;
   });
 
   const getStatusBadge = (status: string) => {
@@ -322,6 +335,20 @@ export default function AdminRepairs() {
                 {repairCenters.map((center) => (
                   <SelectItem key={center.id} value={center.id}>
                     {center.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={resellerFilter} onValueChange={setResellerFilter}>
+              <SelectTrigger className="w-full sm:w-44" data-testid="select-filter-reseller">
+                <Store className="h-4 w-4 shrink-0" />
+                <SelectValue placeholder="Rivenditore" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tutti i rivenditori</SelectItem>
+                {resellers.map((reseller) => (
+                  <SelectItem key={reseller.id} value={reseller.id}>
+                    {reseller.name}
                   </SelectItem>
                 ))}
               </SelectContent>
