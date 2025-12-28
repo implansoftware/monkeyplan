@@ -29,6 +29,7 @@ interface RepairOrderWithSLA extends RepairOrder {
   slaEnteredAt: string | null;
   customerName: string | null;
   repairCenterName: string | null;
+  resellerName: string | null;
   quoteTotalAmount: number | null;
 }
 
@@ -392,6 +393,7 @@ export default function AdminRepairs() {
                 <TableRow>
                   <TableHead>Ordine</TableHead>
                   <TableHead>Cliente</TableHead>
+                  <TableHead>Rivenditore</TableHead>
                   <TableHead>Centro</TableHead>
                   <TableHead>Dispositivo</TableHead>
                   <TableHead>Stato</TableHead>
@@ -427,6 +429,16 @@ export default function AdminRepairs() {
                       >
                         <span className="truncate block" title={repair.customerName || "—"}>
                           {repair.customerName || "—"}
+                        </span>
+                      </TableCell>
+                      <TableCell
+                        className="cursor-pointer max-w-[150px]"
+                        onClick={() => {
+                          openRepairDetail(repair.id);
+                        }}
+                      >
+                        <span className="truncate block" title={repair.resellerName || "—"}>
+                          {repair.resellerName || "—"}
                         </span>
                       </TableCell>
                       <TableCell
