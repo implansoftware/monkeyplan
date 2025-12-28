@@ -100,8 +100,11 @@ export function SearchableProductCombobox({
             onValueChange={setSearch}
             data-testid="input-product-search"
           />
-          <div className="max-h-[300px] overflow-y-auto overscroll-contain">
-            <CommandList>
+          <div 
+            className="max-h-[300px] overflow-y-auto overscroll-contain"
+            onWheel={(e) => e.stopPropagation()}
+          >
+            <CommandList tabIndex={-1}>
               {isLoading && (
                 <div className="flex items-center justify-center py-6">
                   <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
