@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
@@ -119,6 +119,7 @@ export function RepairIntakeWizard({
   const [newBrandName, setNewBrandName] = useState("");
   const [showNewModelForm, setShowNewModelForm] = useState(false);
   const [newModelName, setNewModelName] = useState("");
+  const dialogContentRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { user } = useUser();
@@ -161,6 +162,13 @@ export function RepairIntakeWizard({
       form.reset();
     }
   }, [open, form]);
+
+  // Scroll to top when step changes
+  useEffect(() => {
+    if (dialogContentRef.current) {
+      dialogContentRef.current.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }, [currentStep]);
 
   // Queries
   const customerEndpoint = user?.role === "reseller" ? "/api/reseller/customers" : "/api/customers";
@@ -467,7 +475,7 @@ export function RepairIntakeWizard({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent ref={dialogContentRef} className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-xl">Nuova Riparazione</DialogTitle>
         </DialogHeader>
