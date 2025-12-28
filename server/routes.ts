@@ -2802,13 +2802,13 @@ export function registerRoutes(app: Express): Server {
         status: 'in_diagnosi' as any,
       });
       
-      // Log the state transition
+      // Log the state transition - close previous state and create new one
+      await storage.closeRepairOrderStateHistory(req.params.id, req.user.id);
       await storage.createRepairOrderStateHistory({
         repairOrderId: req.params.id,
-        fromStatus: 'ingressato',
-        toStatus: 'in_diagnosi',
+        status: 'in_diagnosi' as any,
+        enteredAt: new Date(),
         changedBy: req.user.id,
-        notes: reason ? `Diagnosi saltata: ${reason}` : 'Diagnosi saltata',
       });
       
       setActivityEntity(res, { type: 'repairs', id: req.params.id });
@@ -3743,13 +3743,13 @@ export function registerRoutes(app: Express): Server {
         status: 'in_diagnosi' as any,
       });
       
-      // Log the state transition
+      // Log the state transition - close previous state and create new one
+      await storage.closeRepairOrderStateHistory(req.params.id, req.user.id);
       await storage.createRepairOrderStateHistory({
         repairOrderId: req.params.id,
-        fromStatus: 'ingressato',
-        toStatus: 'in_diagnosi',
+        status: 'in_diagnosi' as any,
+        enteredAt: new Date(),
         changedBy: req.user.id,
-        notes: reason ? `Diagnosi saltata: ${reason}` : 'Diagnosi saltata',
       });
       
       setActivityEntity(res, { type: 'repairs', id: req.params.id });
@@ -6134,13 +6134,13 @@ export function registerRoutes(app: Express): Server {
         status: 'in_diagnosi' as any,
       });
       
-      // Log the state transition
+      // Log the state transition - close previous state and create new one
+      await storage.closeRepairOrderStateHistory(req.params.id, req.user.id);
       await storage.createRepairOrderStateHistory({
         repairOrderId: req.params.id,
-        fromStatus: 'ingressato',
-        toStatus: 'in_diagnosi',
+        status: 'in_diagnosi' as any,
+        enteredAt: new Date(),
         changedBy: req.user.id,
-        notes: reason ? `Diagnosi saltata: ${reason}` : 'Diagnosi saltata',
       });
       
       setActivityEntity(res, { type: 'repairs', id: req.params.id });
