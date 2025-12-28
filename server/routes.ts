@@ -4607,18 +4607,39 @@ export function registerRoutes(app: Express): Server {
       
       // Handle initial stock if provided
       if (initialStock && Array.isArray(initialStock) && initialStock.length > 0) {
-        // Get reseller's centers to verify ownership
+        // Build set of accessible warehouse IDs for this reseller
+        const accessibleWarehouseIds = new Set<string>();
+        
+        // 1. Reseller's own warehouse
+        const ownWarehouse = await storage.getWarehouseByOwner('reseller', req.user.id);
+        if (ownWarehouse) accessibleWarehouseIds.add(ownWarehouse.id);
+        
+        // 2. Sub-resellers' warehouses
+        const allUsers = await storage.listUsers();
+        const subResellers = allUsers.filter(u => u.parentResellerId === req.user.id);
+        for (const sub of subResellers) {
+          const subWarehouse = await storage.getWarehouseByOwner('sub_reseller', sub.id);
+          if (subWarehouse) accessibleWarehouseIds.add(subWarehouse.id);
+        }
+        
+        // 3. Repair centers' warehouses
         const resellerCenters = await storage.listRepairCenters({ resellerId: req.user.id });
-        const resellerCenterIds = new Set(resellerCenters.map(c => c.id));
+        for (const rc of resellerCenters) {
+          const rcWarehouse = await storage.getWarehouseByOwner('repair_center', rc.id);
+          if (rcWarehouse) accessibleWarehouseIds.add(rcWarehouse.id);
+        }
         
         for (const stock of initialStock) {
-          if (stock.repairCenterId && stock.quantity > 0 && resellerCenterIds.has(stock.repairCenterId)) {
-            await storage.createInventoryMovement({
+          const warehouseId = stock.warehouseId;
+          if (warehouseId && stock.quantity > 0 && accessibleWarehouseIds.has(warehouseId)) {
+            // Use warehouse stock system
+            await storage.updateWarehouseStockQuantity(warehouseId, product.id, stock.quantity);
+            await storage.createWarehouseMovement({
+              warehouseId,
               productId: product.id,
-              repairCenterId: stock.repairCenterId,
+              movementType: 'carico',
               quantity: stock.quantity,
-              movementType: "in",
-              notes: "Quantità iniziale alla creazione del prodotto",
+              notes: 'Quantità iniziale alla creazione del prodotto',
               createdBy: req.user.id,
             });
           }

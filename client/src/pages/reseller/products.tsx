@@ -38,6 +38,15 @@ type StockByCenter = {
   quantity: number;
 };
 
+type AccessibleWarehouse = {
+  id: string;
+  name: string;
+  ownerType: string;
+  ownerId: string;
+  isActive: boolean;
+  owner?: { id: string; username: string; fullName: string | null } | null;
+};
+
 type ProductWithStock = {
   product: EnrichedProduct;
   stockByCenter: StockByCenter[];
@@ -111,7 +120,7 @@ export default function ResellerProducts() {
   const [stockValues, setStockValues] = useState<Record<string, number>>({});
   const [stockByCenters, setStockByCenters] = useState<StockByCenter[]>([]);
   const [loadingStock, setLoadingStock] = useState(false);
-  const [initialStock, setInitialStock] = useState<Array<{ repairCenterId: string; quantity: number }>>([]);
+  const [initialStock, setInitialStock] = useState<Array<{ warehouseId: string; quantity: number }>>([]);
   const [deviceCompatibilities, setDeviceCompatibilities] = useState<DeviceCompatibilityEntry[]>([]);
   const [editDeviceCompatibilities, setEditDeviceCompatibilities] = useState<DeviceCompatibilityWithNames[]>([]);
   const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set());
@@ -144,6 +153,10 @@ export default function ResellerProducts() {
 
   const { data: deviceModels = [] } = useQuery<DeviceModel[]>({
     queryKey: ["/api/device-models"],
+  });
+
+  const { data: accessibleWarehouses = [] } = useQuery<AccessibleWarehouse[]>({
+    queryKey: ["/api/warehouses/accessible"],
   });
 
   const stockMap = new Map<string, { totalStock: number; stockByCenter: StockByCenter[] }>();
@@ -574,20 +587,27 @@ export default function ResellerProducts() {
     }
   };
 
-  const addInitialStock = (repairCenterId: string) => {
-    if (repairCenterId && !initialStock.find(s => s.repairCenterId === repairCenterId)) {
-      setInitialStock([...initialStock, { repairCenterId, quantity: 0 }]);
+  const addInitialStock = (warehouseId: string) => {
+    if (warehouseId && !initialStock.find(s => s.warehouseId === warehouseId)) {
+      setInitialStock([...initialStock, { warehouseId, quantity: 0 }]);
     }
   };
 
-  const updateInitialStock = (repairCenterId: string, quantity: number) => {
+  const updateInitialStock = (warehouseId: string, quantity: number) => {
     setInitialStock(initialStock.map(s => 
-      s.repairCenterId === repairCenterId ? { ...s, quantity } : s
+      s.warehouseId === warehouseId ? { ...s, quantity } : s
     ));
   };
 
-  const removeInitialStock = (repairCenterId: string) => {
-    setInitialStock(initialStock.filter(s => s.repairCenterId !== repairCenterId));
+  const removeInitialStock = (warehouseId: string) => {
+    setInitialStock(initialStock.filter(s => s.warehouseId !== warehouseId));
+  };
+
+  // Group warehouses by type for display
+  const groupedWarehouses = {
+    reseller: accessibleWarehouses.filter(w => w.ownerType === 'reseller'),
+    sub_reseller: accessibleWarehouses.filter(w => w.ownerType === 'sub_reseller'),
+    repair_center: accessibleWarehouses.filter(w => w.ownerType === 'repair_center'),
   };
 
   const openEditDialog = async (product: EnrichedProduct) => {
@@ -1234,16 +1254,43 @@ export default function ResellerProducts() {
                     <div className="flex items-center justify-between">
                       <Label>Quantità Iniziali per Magazzino</Label>
                       <Select onValueChange={addInitialStock}>
-                        <SelectTrigger className="w-48" data-testid="select-add-stock-center">
-                          <SelectValue placeholder="Aggiungi centro..." />
+                        <SelectTrigger className="w-56" data-testid="select-add-stock-warehouse">
+                          <SelectValue placeholder="Aggiungi magazzino..." />
                         </SelectTrigger>
                         <SelectContent>
-                          {repairCenters
-                            .filter(rc => rc.isActive && !initialStock.find(s => s.repairCenterId === rc.id))
-                            .map(rc => (
-                              <SelectItem key={rc.id} value={rc.id}>{rc.name}</SelectItem>
-                            ))
-                          }
+                          {groupedWarehouses.reseller.length > 0 && (
+                            <>
+                              <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">Proprio</div>
+                              {groupedWarehouses.reseller
+                                .filter(w => w.isActive && !initialStock.find(s => s.warehouseId === w.id))
+                                .map(w => (
+                                  <SelectItem key={w.id} value={w.id}>{w.name}</SelectItem>
+                                ))
+                              }
+                            </>
+                          )}
+                          {groupedWarehouses.sub_reseller.length > 0 && (
+                            <>
+                              <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">Sub-Reseller</div>
+                              {groupedWarehouses.sub_reseller
+                                .filter(w => w.isActive && !initialStock.find(s => s.warehouseId === w.id))
+                                .map(w => (
+                                  <SelectItem key={w.id} value={w.id}>{w.name}</SelectItem>
+                                ))
+                              }
+                            </>
+                          )}
+                          {groupedWarehouses.repair_center.length > 0 && (
+                            <>
+                              <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">Centri Riparazione</div>
+                              {groupedWarehouses.repair_center
+                                .filter(w => w.isActive && !initialStock.find(s => s.warehouseId === w.id))
+                                .map(w => (
+                                  <SelectItem key={w.id} value={w.id}>{w.name}</SelectItem>
+                                ))
+                              }
+                            </>
+                          )}
                         </SelectContent>
                       </Select>
                     </div>
@@ -1252,30 +1299,30 @@ export default function ResellerProducts() {
                       <div className="text-center py-6 text-muted-foreground">
                         <Warehouse className="h-10 w-10 mx-auto mb-2 opacity-50" />
                         <p className="text-sm">Nessuna quantità iniziale.</p>
-                        <p className="text-xs">Seleziona un centro riparazioni per aggiungere stock iniziale.</p>
+                        <p className="text-xs">Seleziona un magazzino per aggiungere stock iniziale.</p>
                       </div>
                     ) : (
                       <div className="space-y-2">
                         {initialStock.map(stock => {
-                          const center = repairCenters.find(rc => rc.id === stock.repairCenterId);
+                          const warehouse = accessibleWarehouses.find(w => w.id === stock.warehouseId);
                           return (
-                            <div key={stock.repairCenterId} className="flex items-center gap-3 p-3 border rounded-md">
+                            <div key={stock.warehouseId} className="flex items-center gap-3 p-3 border rounded-md">
                               <Warehouse className="h-4 w-4 text-muted-foreground" />
-                              <span className="flex-1 font-medium">{center?.name || "Centro"}</span>
+                              <span className="flex-1 font-medium">{warehouse?.name || "Magazzino"}</span>
                               <Input
                                 type="number"
                                 min="0"
                                 value={stock.quantity}
-                                onChange={(e) => updateInitialStock(stock.repairCenterId, parseInt(e.target.value) || 0)}
+                                onChange={(e) => updateInitialStock(stock.warehouseId, parseInt(e.target.value) || 0)}
                                 className="w-24"
-                                data-testid={`input-initial-stock-${stock.repairCenterId}`}
+                                data-testid={`input-initial-stock-${stock.warehouseId}`}
                               />
                               <Button
                                 type="button"
                                 variant="ghost"
                                 size="icon"
-                                onClick={() => removeInitialStock(stock.repairCenterId)}
-                                data-testid={`button-remove-stock-${stock.repairCenterId}`}
+                                onClick={() => removeInitialStock(stock.warehouseId)}
+                                data-testid={`button-remove-stock-${stock.warehouseId}`}
                               >
                                 <X className="h-4 w-4" />
                               </Button>
@@ -1285,7 +1332,7 @@ export default function ResellerProducts() {
                       </div>
                     )}
                     <p className="text-xs text-muted-foreground">
-                      Puoi assegnare quantità iniziali ai magazzini dei tuoi centri riparazione
+                      Puoi assegnare quantità iniziali ai magazzini del tuo negozio, sub-reseller e centri riparazione
                     </p>
                   </div>
                 </TabsContent>
