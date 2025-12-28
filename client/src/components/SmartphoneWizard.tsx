@@ -404,8 +404,7 @@ export function SmartphoneWizard({
     setCurrentStep(prev => Math.max(prev - 1, 1));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = () => {
     // Only submit if we're on the final step (step 5)
     if (currentStep !== 5) return;
     form.handleSubmit((data) => {
@@ -471,7 +470,7 @@ export function SmartphoneWizard({
         </div>
 
         <Form {...form}>
-          <form onSubmit={handleSubmit}>
+          <form onSubmit={(e) => e.preventDefault()}>
             {currentStep === 1 && (
               <div className="space-y-6">
                 <div className="text-center mb-4">
@@ -1227,7 +1226,8 @@ export function SmartphoneWizard({
                 </Button>
               ) : (
                 <Button 
-                  type="submit" 
+                  type="button"
+                  onClick={handleSubmit}
                   disabled={createMutation.isPending}
                   data-testid="button-wizard-submit"
                 >
