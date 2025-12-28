@@ -27,10 +27,31 @@ const GRADE_OPTIONS = [
   { value: "C", label: "C - Discreto" },
   { value: "D", label: "D - Danneggiato" },
 ];
-const BRANDS = ["Apple", "Samsung", "Xiaomi", "Huawei", "OPPO", "OnePlus", "Google", "Motorola", "Sony", "Nokia", "Altro"];
+
+// Categorie dispositivi
+const DEVICE_CATEGORIES = [
+  { value: "smartphone", label: "Smartphone" },
+  { value: "tablet", label: "Tablet" },
+  { value: "portatile", label: "Portatile" },
+  { value: "pc_fisso", label: "PC Fisso" },
+  { value: "display", label: "Display" },
+  { value: "batteria", label: "Batteria" },
+  { value: "accessorio", label: "Accessorio" },
+  { value: "altro", label: "Altro" },
+];
+
+// Brand per dispositivi mobili
+const MOBILE_BRANDS = ["Apple", "Samsung", "Xiaomi", "Huawei", "OPPO", "OnePlus", "Google", "Motorola", "Sony", "Nokia", "Realme", "Vivo", "Honor", "Nothing", "Asus ROG", "Altro"];
+
+// Brand per PC/Laptop
+const PC_BRANDS = ["Dell", "HP", "Lenovo", "ASUS", "Acer", "Apple", "MSI", "Microsoft", "Razer", "Samsung", "LG", "Toshiba", "Fujitsu", "Altro"];
+
+// Tutti i brand combinati per il filtro
+const ALL_BRANDS = Array.from(new Set([...MOBILE_BRANDS, ...PC_BRANDS]));
 
 export default function RepairCenterSmartphoneCatalog() {
   const [searchQuery, setSearchQuery] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [brandFilter, setBrandFilter] = useState<string>("all");
   const [gradeFilter, setGradeFilter] = useState<string>("all");
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
@@ -53,9 +74,10 @@ export default function RepairCenterSmartphoneCatalog() {
       phone.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       phone.sku?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       phone.specs?.imei?.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesCategory = categoryFilter === "all" || phone.category === categoryFilter;
     const matchesBrand = brandFilter === "all" || phone.brand === brandFilter;
     const matchesGrade = gradeFilter === "all" || phone.specs?.grade === gradeFilter;
-    return matchesSearch && matchesBrand && matchesGrade;
+    return matchesSearch && matchesCategory && matchesBrand && matchesGrade;
   });
 
   const addToCart = (phone: SmartphoneWithSpecs, quantity: number) => {
@@ -106,8 +128,8 @@ export default function RepairCenterSmartphoneCatalog() {
         <div className="flex items-center gap-3">
           <Smartphone className="h-8 w-8 text-primary" />
           <div>
-            <h1 className="text-2xl font-bold" data-testid="text-page-title">Catalogo Smartphone</h1>
-            <p className="text-muted-foreground">Smartphone disponibili dal tuo rivenditore</p>
+            <h1 className="text-2xl font-bold" data-testid="text-page-title">Catalogo Dispositivi</h1>
+            <p className="text-muted-foreground">Dispositivi disponibili dal tuo rivenditore</p>
           </div>
         </div>
         {cartItemCount > 0 && (
@@ -131,13 +153,24 @@ export default function RepairCenterSmartphoneCatalog() {
                 data-testid="input-search"
               />
             </div>
+            <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+              <SelectTrigger className="w-[180px]" data-testid="select-category-filter">
+                <SelectValue placeholder="Categoria" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tutte le categorie</SelectItem>
+                {DEVICE_CATEGORIES.map(cat => (
+                  <SelectItem key={cat.value} value={cat.value}>{cat.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             <Select value={brandFilter} onValueChange={setBrandFilter}>
               <SelectTrigger className="w-[180px]" data-testid="select-brand-filter">
                 <SelectValue placeholder="Marca" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Tutte le marche</SelectItem>
-                {BRANDS.map(brand => (
+                {ALL_BRANDS.map(brand => (
                   <SelectItem key={brand} value={brand}>{brand}</SelectItem>
                 ))}
               </SelectContent>
@@ -165,7 +198,7 @@ export default function RepairCenterSmartphoneCatalog() {
           ) : filteredSmartphones.length === 0 ? (
             <div className="text-center py-12 text-muted-foreground">
               <Smartphone className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p>Nessuno smartphone trovato</p>
+              <p>Nessun dispositivo trovato</p>
             </div>
           ) : (
             <ScrollArea className="h-[600px]">

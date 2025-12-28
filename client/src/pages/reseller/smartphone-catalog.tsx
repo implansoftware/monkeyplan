@@ -45,7 +45,37 @@ const CONDITION_OPTIONS = [
   { value: "usato", label: "Usato" },
   { value: "difettoso", label: "Difettoso" },
 ];
-const BRANDS = ["Apple", "Samsung", "Xiaomi", "Huawei", "OPPO", "OnePlus", "Google", "Motorola", "Sony", "Nokia", "Altro"];
+// Categorie dispositivi
+const DEVICE_CATEGORIES = [
+  { value: "smartphone", label: "Smartphone" },
+  { value: "tablet", label: "Tablet" },
+  { value: "portatile", label: "Portatile" },
+  { value: "pc_fisso", label: "PC Fisso" },
+  { value: "display", label: "Display" },
+  { value: "batteria", label: "Batteria" },
+  { value: "accessorio", label: "Accessorio" },
+  { value: "altro", label: "Altro" },
+];
+
+// Brand per dispositivi mobili
+const MOBILE_BRANDS = ["Apple", "Samsung", "Xiaomi", "Huawei", "OPPO", "OnePlus", "Google", "Motorola", "Sony", "Nokia", "Realme", "Vivo", "Honor", "Nothing", "Asus ROG", "Altro"];
+
+// Brand per PC/Laptop
+const PC_BRANDS = ["Dell", "HP", "Lenovo", "ASUS", "Acer", "Apple", "MSI", "Microsoft", "Razer", "Samsung", "LG", "Toshiba", "Fujitsu", "Altro"];
+
+// Funzione per ottenere i brand in base alla categoria
+const getBrandsForCategory = (category: string) => {
+  if (category === "smartphone" || category === "tablet") {
+    return MOBILE_BRANDS;
+  }
+  if (category === "portatile" || category === "pc_fisso") {
+    return PC_BRANDS;
+  }
+  return Array.from(new Set([...MOBILE_BRANDS, ...PC_BRANDS]));
+};
+
+// Tutti i brand combinati per il filtro
+const ALL_BRANDS = Array.from(new Set([...MOBILE_BRANDS, ...PC_BRANDS]));
 
 const COLOR_OPTIONS = [
   "Nero", "Bianco", "Argento", "Grigio", "Oro", "Oro Rosa", "Blu", "Blu Notte", 
@@ -64,6 +94,7 @@ const BATTERY_OPTIONS = [
 
 export default function SmartphoneCatalog() {
   const [searchQuery, setSearchQuery] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [brandFilter, setBrandFilter] = useState<string>("all");
   const [gradeFilter, setGradeFilter] = useState<string>("all");
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -103,6 +134,7 @@ export default function SmartphoneCatalog() {
   const [formData, setFormData] = useState({
     name: "",
     sku: "",
+    category: "smartphone",
     brand: "",
     color: "",
     description: "",
@@ -121,6 +153,9 @@ export default function SmartphoneCatalog() {
     accessories: [] as string[],
     notes: "",
   });
+
+  // Brand dinamici basati sulla categoria selezionata
+  const availableBrands = getBrandsForCategory(formData.category);
 
   const { data: smartphones = [], isLoading } = useQuery<SmartphoneWithSpecs[]>({
     queryKey: ["/api/smartphones"],
@@ -346,6 +381,7 @@ export default function SmartphoneCatalog() {
     setFormData({
       name: "",
       sku: "",
+      category: "smartphone",
       brand: "",
       color: "",
       description: "",
@@ -373,6 +409,7 @@ export default function SmartphoneCatalog() {
     setFormData({
       name: smartphone.name,
       sku: smartphone.sku,
+      category: smartphone.category || "smartphone",
       brand: smartphone.brand || "",
       color: smartphone.color || "",
       description: smartphone.description || "",
@@ -398,7 +435,7 @@ export default function SmartphoneCatalog() {
     const product = {
       name: formData.name,
       sku: formData.sku,
-      category: "smartphone",
+      category: formData.category,
       brand: formData.brand,
       color: formData.color,
       description: formData.description,
@@ -433,9 +470,10 @@ export default function SmartphoneCatalog() {
       s.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       s.sku.toLowerCase().includes(searchQuery.toLowerCase()) ||
       s.specs?.imei?.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesCategory = categoryFilter === "all" || s.category === categoryFilter;
     const matchesBrand = brandFilter === "all" || s.brand === brandFilter;
     const matchesGrade = gradeFilter === "all" || s.specs?.grade === gradeFilter;
-    return matchesSearch && matchesBrand && matchesGrade;
+    return matchesSearch && matchesCategory && matchesBrand && matchesGrade;
   });
 
   const getGradeColor = (grade: string | null | undefined) => {
@@ -464,21 +502,21 @@ export default function SmartphoneCatalog() {
         <div>
           <h1 className="text-2xl font-bold flex items-center gap-2">
             <Smartphone className="h-6 w-6" />
-            Catalogo Smartphone
+            Catalogo Dispositivi
           </h1>
           <p className="text-muted-foreground">
-            Gestisci il tuo catalogo di smartphone nuovi, ricondizionati e usati
+            Gestisci il tuo catalogo di dispositivi nuovi, ricondizionati e usati
           </p>
         </div>
-        <Button onClick={() => setWizardOpen(true)} data-testid="button-add-smartphone">
+        <Button onClick={() => setWizardOpen(true)} data-testid="button-add-device">
           <Plus className="mr-2 h-4 w-4" />
-          Aggiungi Smartphone
+          Aggiungi Dispositivo
         </Button>
       </div>
 
       <Card>
         <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-4">
-          <CardTitle>Lista Smartphone ({filteredSmartphones.length})</CardTitle>
+          <CardTitle>Lista Dispositivi ({filteredSmartphones.length})</CardTitle>
           <div className="flex items-center gap-2 flex-wrap">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -487,16 +525,27 @@ export default function SmartphoneCatalog() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-9 w-64"
-                data-testid="input-search-smartphones"
+                data-testid="input-search-devices"
               />
             </div>
+            <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+              <SelectTrigger className="w-36" data-testid="select-category-filter">
+                <SelectValue placeholder="Categoria" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tutte le categorie</SelectItem>
+                {DEVICE_CATEGORIES.map((c) => (
+                  <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             <Select value={brandFilter} onValueChange={setBrandFilter}>
               <SelectTrigger className="w-36" data-testid="select-brand-filter">
                 <SelectValue placeholder="Marca" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Tutte le marche</SelectItem>
-                {BRANDS.map((b) => (
+                {ALL_BRANDS.map((b) => (
                   <SelectItem key={b} value={b}>{b}</SelectItem>
                 ))}
               </SelectContent>
@@ -758,7 +807,7 @@ export default function SmartphoneCatalog() {
                     <SelectValue placeholder="Seleziona marca" />
                   </SelectTrigger>
                   <SelectContent>
-                    {BRANDS.map((b) => (
+                    {availableBrands.map((b) => (
                       <SelectItem key={b} value={b}>{b}</SelectItem>
                     ))}
                   </SelectContent>
@@ -1325,9 +1374,8 @@ export default function SmartphoneCatalog() {
       <SmartphoneWizard
         open={wizardOpen}
         onOpenChange={setWizardOpen}
-        userRole="reseller"
         onSuccess={() => {
-          queryClient.invalidateQueries({ queryKey: ["/api/reseller/smartphones"] });
+          queryClient.invalidateQueries({ queryKey: ["/api/smartphones"] });
         }}
       />
     </div>
