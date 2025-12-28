@@ -25,6 +25,7 @@ interface SearchableProductComboboxProps {
   onSelect: (product: ProductWithStock) => void;
   placeholder?: string;
   warehouseId?: string;
+  productType?: string;
 }
 
 function useDebounce<T>(value: T, delay: number): T {
@@ -54,6 +55,7 @@ export function SearchableProductCombobox({
   onSelect,
   placeholder = "Cerca prodotto...",
   warehouseId,
+  productType,
 }: SearchableProductComboboxProps) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
@@ -61,11 +63,12 @@ export function SearchableProductCombobox({
 
   const { data: products = [], isLoading } = useQuery<ProductWithStock[]>({
     queryKey: warehouseId 
-      ? ["/api/warehouses", warehouseId, "products", { search: debouncedSearch, limit: 20 }]
-      : ["/api/products", { search: debouncedSearch, limit: 20 }],
+      ? ["/api/warehouses", warehouseId, "products", { search: debouncedSearch, productType, limit: 20 }]
+      : ["/api/products", { search: debouncedSearch, productType, limit: 20 }],
     queryFn: async () => {
       const params = new URLSearchParams();
       if (debouncedSearch) params.set("search", debouncedSearch);
+      if (productType) params.set("productType", productType);
       params.set("limit", "20");
       
       const url = warehouseId 

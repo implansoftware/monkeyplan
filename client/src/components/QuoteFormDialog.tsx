@@ -314,6 +314,7 @@ export function QuoteFormDialog({
                       });
                     }}
                     warehouseId={selectedWarehouseId || undefined}
+                    productType="ricambio"
                   />
                   <SearchableServiceCombobox
                     onSelect={(service) => {

@@ -762,7 +762,7 @@ export interface IStorage {
   upsertWarehouseStock(data: InsertWarehouseStock): Promise<WarehouseStock>;
   updateWarehouseStock(id: string, updates: { minStock?: number | null; location?: string | null }): Promise<WarehouseStock>;
   updateWarehouseStockQuantity(warehouseId: string, productId: string, quantityDelta: number, location?: string | null): Promise<WarehouseStock>;
-  listWarehouseProductsWithStock(warehouseId: string, search?: string): Promise<Array<Product & { availableQuantity: number }>>;
+  listWarehouseProductsWithStock(warehouseId: string, search?: string, productType?: string): Promise<Array<Product & { availableQuantity: number }>>;
   listAccessibleWarehouses(resellerId: string): Promise<Warehouse[]>;
   
   // Warehouse Movements
@@ -6534,15 +6534,21 @@ export class DatabaseStorage implements IStorage {
     return updated;
   }
 
-  async listWarehouseProductsWithStock(warehouseId: string, search?: string): Promise<Array<Product & { availableQuantity: number }>> {
+  async listWarehouseProductsWithStock(warehouseId: string, search?: string, productType?: string): Promise<Array<Product & { availableQuantity: number }>> {
+    const conditions = [
+      eq(warehouseStock.warehouseId, warehouseId),
+      sql`${warehouseStock.quantity} > 0`,
+      eq(products.isActive, true)
+    ];
+    
+    if (productType) {
+      conditions.push(eq(products.productType, productType as any));
+    }
+    
     const stockItems = await db.select()
       .from(warehouseStock)
       .innerJoin(products, eq(warehouseStock.productId, products.id))
-      .where(and(
-        eq(warehouseStock.warehouseId, warehouseId),
-        sql`${warehouseStock.quantity} > 0`,
-        eq(products.isActive, true)
-      ));
+      .where(and(...conditions));
     
     let result = stockItems.map(item => ({
       ...item.products,

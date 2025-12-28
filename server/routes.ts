@@ -19934,11 +19934,13 @@ export function registerRoutes(app: Express): Server {
   app.get("/api/warehouses/:warehouseId/products", requireAuth, async (req, res) => {
     try {
       const search = req.query.search as string | undefined;
+      const productType = req.query.productType as string | undefined;
       const limit = req.query.limit ? parseInt(req.query.limit as string) : 20;
       
       let productsWithStock = await storage.listWarehouseProductsWithStock(
         req.params.warehouseId,
-        search
+        search,
+        productType
       );
       
       if (limit > 0) {
