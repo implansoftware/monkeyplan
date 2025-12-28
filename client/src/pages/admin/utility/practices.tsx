@@ -913,7 +913,7 @@ export default function AdminUtilityPractices() {
                   className="w-full"
                   data-testid="button-show-import"
                 >
-                  <ClipboardPaste className="h-4 w-4 mr-2" />
+                  <ClipboardList className="h-4 w-4 mr-2" />
                   Importa da testo (copia/incolla)
                 </Button>
               ) : (
@@ -949,7 +949,7 @@ export default function AdminUtilityPractices() {
                     className="w-full"
                     data-testid="button-import-text"
                   >
-                    <ClipboardPaste className="h-4 w-4 mr-2" />
+                    <ClipboardList className="h-4 w-4 mr-2" />
                     Analizza e Importa
                   </Button>
                 </div>
