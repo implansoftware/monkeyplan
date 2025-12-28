@@ -762,6 +762,8 @@ export interface IStorage {
   upsertWarehouseStock(data: InsertWarehouseStock): Promise<WarehouseStock>;
   updateWarehouseStock(id: string, updates: { minStock?: number | null; location?: string | null }): Promise<WarehouseStock>;
   updateWarehouseStockQuantity(warehouseId: string, productId: string, quantityDelta: number, location?: string | null): Promise<WarehouseStock>;
+  listWarehouseProductsWithStock(warehouseId: string, search?: string): Promise<Array<Product & { availableQuantity: number }>>;
+  listAccessibleWarehouses(resellerId: string): Promise<Warehouse[]>;
   
   // Warehouse Movements
   listWarehouseMovements(filters?: { warehouseId?: string; productId?: string }): Promise<WarehouseMovement[]>;
@@ -6530,6 +6532,62 @@ export class DatabaseStorage implements IStorage {
       .where(eq(warehouseStock.id, existing.id))
       .returning();
     return updated;
+  }
+
+  async listWarehouseProductsWithStock(warehouseId: string, search?: string): Promise<Array<Product & { availableQuantity: number }>> {
+    const stockItems = await db.select()
+      .from(warehouseStock)
+      .innerJoin(products, eq(warehouseStock.productId, products.id))
+      .where(and(
+        eq(warehouseStock.warehouseId, warehouseId),
+        sql`${warehouseStock.quantity} > 0`,
+        eq(products.isActive, true)
+      ));
+    
+    let result = stockItems.map(item => ({
+      ...item.products,
+      availableQuantity: item.warehouse_stock.quantity,
+    }));
+    
+    if (search && search.trim()) {
+      const searchLower = search.toLowerCase().trim();
+      result = result.filter(p =>
+        p.name.toLowerCase().includes(searchLower) ||
+        p.sku.toLowerCase().includes(searchLower) ||
+        (p.brand && p.brand.toLowerCase().includes(searchLower))
+      );
+    }
+    
+    return result;
+  }
+
+  async listAccessibleWarehouses(resellerId: string): Promise<Warehouse[]> {
+    const result: Warehouse[] = [];
+    
+    // 1. Magazzino del reseller stesso
+    const resellerWarehouse = await this.getWarehouseByOwner('reseller', resellerId);
+    if (resellerWarehouse) result.push(resellerWarehouse);
+    
+    // 2. Magazzini dei sub-reseller del reseller
+    const subResellers = await db.select().from(users)
+      .where(and(
+        eq(users.role, 'reseller'),
+        eq(users.resellerId, resellerId)
+      ));
+    for (const subReseller of subResellers) {
+      const subWarehouse = await this.getWarehouseByOwner('sub_reseller', subReseller.id);
+      if (subWarehouse) result.push(subWarehouse);
+    }
+    
+    // 3. Magazzini dei repair center del reseller
+    const centers = await db.select().from(repairCenters)
+      .where(eq(repairCenters.resellerId, resellerId));
+    for (const rc of centers) {
+      const rcWarehouse = await this.getWarehouseByOwner('repair_center', rc.id);
+      if (rcWarehouse) result.push(rcWarehouse);
+    }
+    
+    return result;
   }
 
   // Warehouse Movements
