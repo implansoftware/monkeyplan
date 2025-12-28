@@ -143,16 +143,15 @@ const BATTERY_OPTIONS = [
 const CATEGORY_OPTIONS = [
   { value: "smartphone", label: "Smartphone" },
   { value: "tablet", label: "Tablet" },
-  { value: "portatile", label: "PC Portatile / Laptop" },
-  { value: "pc_fisso", label: "PC Fisso / Desktop" },
-  { value: "display", label: "Display/Schermo" },
-  { value: "batteria", label: "Batteria" },
-  { value: "accessorio", label: "Accessorio" },
+  { value: "portatile", label: "PC Portatile" },
+  { value: "pc_fisso", label: "PC Fisso" },
+  { value: "smartwatch", label: "Smartwatch" },
+  { value: "console", label: "Console" },
   { value: "altro", label: "Altro" },
 ];
 
 // Categorie che sono dispositivi (hanno specs tecniche)
-const DEVICE_CATEGORIES = ["smartphone", "tablet", "portatile", "pc_fisso"];
+const DEVICE_CATEGORIES = ["smartphone", "tablet", "portatile", "pc_fisso", "smartwatch", "console"];
 const isDeviceCategory = (category: string) => DEVICE_CATEGORIES.includes(category);
 const ACCESSORY_OPTIONS = [
   "Caricatore originale",
