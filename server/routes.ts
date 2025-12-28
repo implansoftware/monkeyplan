@@ -7390,9 +7390,17 @@ export function registerRoutes(app: Express): Server {
         status: hasAcceptance ? 'ingressato' : 'pending',
       };
       
-      // Set resellerId if user is reseller
+      // Set resellerId based on role
       if (req.user.role === 'reseller') {
         orderData.resellerId = req.user.id;
+      } else if (req.user.role === 'admin' && req.body.resellerId) {
+        // Admin can optionally assign a reseller
+        orderData.resellerId = req.body.resellerId;
+      }
+      
+      // Set subResellerId if admin provides it
+      if (req.user.role === 'admin' && req.body.subResellerId) {
+        orderData.subResellerId = req.body.subResellerId;
       }
       
       // Set repairCenterId if provided in body, or from user's associated repair center
