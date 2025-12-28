@@ -6764,7 +6764,7 @@ export class DatabaseStorage implements IStorage {
     await db.delete(resellerPurchaseOrderItems).where(eq(resellerPurchaseOrderItems.id, id));
   }
 
-  // B2B Catalog - prodotti admin con stock disponibile per reseller
+  // B2B Catalog - tutti i prodotti con stock nel magazzino centrale admin disponibili per reseller
   async getAdminCatalogForReseller(resellerId: string): Promise<Array<{
     product: Product;
     adminStock: number;
@@ -6775,23 +6775,30 @@ export class DatabaseStorage implements IStorage {
     const adminWarehouse = await this.getWarehouseByOwner('admin', 'system');
     if (!adminWarehouse) return [];
     
-    // Get admin warehouse stock
+    // Get admin warehouse stock with quantity > 0
     const adminStock = await this.listWarehouseStock(adminWarehouse.id);
-    const stockMap = new Map(adminStock.map(s => [s.productId, s.quantity]));
+    const stockWithQuantity = adminStock.filter(s => s.quantity > 0);
     
-    // Get all global products (created by admin, createdBy = null)
-    const globalProducts = await db.select().from(products)
+    // Get all products that have stock in admin warehouse
+    const productIds = stockWithQuantity.map(s => s.productId);
+    if (productIds.length === 0) return [];
+    
+    // Fetch all active products that have stock
+    const productsWithStock = await db.select().from(products)
       .where(and(
-        isNull(products.createdBy),
-        eq(products.isActive, true)
+        eq(products.isActive, true),
+        inArray(products.id, productIds)
       ));
+    
+    // Create stock map
+    const stockMap = new Map(stockWithQuantity.map(s => [s.productId, s.quantity]));
     
     // Get reseller-specific assignments/prices
     const assignments = await db.select().from(resellerProducts)
       .where(eq(resellerProducts.resellerId, resellerId));
     const assignmentMap = new Map(assignments.map(a => [a.productId, a]));
     
-    // Build catalog with available products (stock > 0)
+    // Build catalog with available products
     const catalog: Array<{
       product: Product;
       adminStock: number;
@@ -6799,9 +6806,8 @@ export class DatabaseStorage implements IStorage {
       minimumOrderQuantity: number;
     }> = [];
     
-    for (const product of globalProducts) {
+    for (const product of productsWithStock) {
       const stock = stockMap.get(product.id) || 0;
-      if (stock <= 0) continue; // Skip products without stock
       
       const assignment = assignmentMap.get(product.id);
       
