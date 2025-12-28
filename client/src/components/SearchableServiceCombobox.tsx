@@ -113,53 +113,55 @@ export function SearchableServiceCombobox({
             onValueChange={setSearch}
             data-testid="input-service-search"
           />
-          <CommandList className="max-h-[300px] overflow-y-auto">
-            {isLoading && (
-              <div className="flex items-center justify-center py-6">
-                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-              </div>
-            )}
-            {!isLoading && services.length === 0 && (
-              <CommandEmpty>
-                {search ? "Nessun servizio trovato" : "Digita per cercare..."}
-              </CommandEmpty>
-            )}
-            {!isLoading && services.length > 0 && (
-              <CommandGroup heading="Servizi">
-                {services.map((service) => (
-                  <CommandItem
-                    key={service.id}
-                    value={service.id}
-                    onSelect={() => handleSelect(service)}
-                    className="cursor-pointer"
-                    data-testid={`service-item-${service.id}`}
-                  >
-                    <div className="flex flex-col w-full">
-                      <span className="font-medium">{service.name}</span>
-                      <span className="text-xs text-muted-foreground">
-                        {service.code} -{" "}
-                        {formatCurrency(service.effectivePriceCents / 100)}
-                        {service.effectiveLaborMinutes > 0 && (
-                          <span className="ml-1">
-                            ({service.effectiveLaborMinutes} min)
-                          </span>
-                        )}
-                        {service.priceSource !== "base" && (
-                          <span className="ml-1 text-primary">
-                            (
-                            {service.priceSource === "reseller"
-                              ? "Reseller"
-                              : "Centro"}
-                            )
-                          </span>
-                        )}
-                      </span>
-                    </div>
-                  </CommandItem>
-                ))}
-              </CommandGroup>
-            )}
-          </CommandList>
+          <div className="max-h-[300px] overflow-y-auto overscroll-contain">
+            <CommandList>
+              {isLoading && (
+                <div className="flex items-center justify-center py-6">
+                  <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                </div>
+              )}
+              {!isLoading && services.length === 0 && (
+                <CommandEmpty>
+                  {search ? "Nessun servizio trovato" : "Digita per cercare..."}
+                </CommandEmpty>
+              )}
+              {!isLoading && services.length > 0 && (
+                <CommandGroup heading="Servizi">
+                  {services.map((service) => (
+                    <CommandItem
+                      key={service.id}
+                      value={service.id}
+                      onSelect={() => handleSelect(service)}
+                      className="cursor-pointer"
+                      data-testid={`service-item-${service.id}`}
+                    >
+                      <div className="flex flex-col w-full">
+                        <span className="font-medium">{service.name}</span>
+                        <span className="text-xs text-muted-foreground">
+                          {service.code} -{" "}
+                          {formatCurrency(service.effectivePriceCents / 100)}
+                          {service.effectiveLaborMinutes > 0 && (
+                            <span className="ml-1">
+                              ({service.effectiveLaborMinutes} min)
+                            </span>
+                          )}
+                          {service.priceSource !== "base" && (
+                            <span className="ml-1 text-primary">
+                              (
+                              {service.priceSource === "reseller"
+                                ? "Reseller"
+                                : "Centro"}
+                              )
+                            </span>
+                          )}
+                        </span>
+                      </div>
+                    </CommandItem>
+                  ))}
+                </CommandGroup>
+              )}
+            </CommandList>
+          </div>
         </Command>
       </PopoverContent>
     </Popover>

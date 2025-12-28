@@ -100,55 +100,57 @@ export function SearchableProductCombobox({
             onValueChange={setSearch}
             data-testid="input-product-search"
           />
-          <CommandList className="max-h-[300px] overflow-y-auto">
-            {isLoading && (
-              <div className="flex items-center justify-center py-6">
-                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-              </div>
-            )}
-            {!isLoading && activeProducts.length === 0 && (
-              <CommandEmpty>
-                {search ? "Nessun prodotto trovato" : "Digita per cercare..."}
-              </CommandEmpty>
-            )}
-            {!isLoading && activeProducts.length > 0 && (
-              <CommandGroup heading="Prodotti">
-                {activeProducts.map((product) => (
-                  <CommandItem
-                    key={product.id}
-                    value={product.id}
-                    onSelect={() => handleSelect(product)}
-                    className="cursor-pointer"
-                    data-testid={`product-item-${product.id}`}
-                  >
-                    <div className="flex items-center gap-2 w-full">
-                      <div className="w-8 h-8 flex-shrink-0 rounded border overflow-hidden">
-                        {product.imageUrl ? (
-                          <img
-                            src={product.imageUrl}
-                            alt={product.name}
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          <div className="w-full h-full bg-muted flex items-center justify-center">
-                            <Package className="h-3 w-3 text-muted-foreground" />
-                          </div>
-                        )}
+          <div className="max-h-[300px] overflow-y-auto overscroll-contain">
+            <CommandList>
+              {isLoading && (
+                <div className="flex items-center justify-center py-6">
+                  <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                </div>
+              )}
+              {!isLoading && activeProducts.length === 0 && (
+                <CommandEmpty>
+                  {search ? "Nessun prodotto trovato" : "Digita per cercare..."}
+                </CommandEmpty>
+              )}
+              {!isLoading && activeProducts.length > 0 && (
+                <CommandGroup heading="Prodotti">
+                  {activeProducts.map((product) => (
+                    <CommandItem
+                      key={product.id}
+                      value={product.id}
+                      onSelect={() => handleSelect(product)}
+                      className="cursor-pointer"
+                      data-testid={`product-item-${product.id}`}
+                    >
+                      <div className="flex items-center gap-2 w-full">
+                        <div className="w-8 h-8 flex-shrink-0 rounded border overflow-hidden">
+                          {product.imageUrl ? (
+                            <img
+                              src={product.imageUrl}
+                              alt={product.name}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <div className="w-full h-full bg-muted flex items-center justify-center">
+                              <Package className="h-3 w-3 text-muted-foreground" />
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex flex-col flex-1 min-w-0">
+                          <span className="truncate font-medium">
+                            {product.name}
+                          </span>
+                          <span className="text-xs text-muted-foreground truncate">
+                            {product.sku} - {formatCurrency((product.unitPrice || 0) / 100)}
+                          </span>
+                        </div>
                       </div>
-                      <div className="flex flex-col flex-1 min-w-0">
-                        <span className="truncate font-medium">
-                          {product.name}
-                        </span>
-                        <span className="text-xs text-muted-foreground truncate">
-                          {product.sku} - {formatCurrency((product.unitPrice || 0) / 100)}
-                        </span>
-                      </div>
-                    </div>
-                  </CommandItem>
-                ))}
-              </CommandGroup>
-            )}
-          </CommandList>
+                    </CommandItem>
+                  ))}
+                </CommandGroup>
+              )}
+            </CommandList>
+          </div>
         </Command>
       </PopoverContent>
     </Popover>
