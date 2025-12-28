@@ -16,6 +16,7 @@ interface RepairOrderWithSLA extends RepairOrder {
   slaPhase?: string | null;
   slaEnteredAt?: string | null;
   customerName?: string | null;
+  resellerName?: string | null;
   totalQuoteCents?: number | null;
 }
 
@@ -160,6 +161,12 @@ function KanbanCard({ repair, onClick, formatCurrency }: KanbanCardProps) {
         {repair.customerName && (
           <div className="text-xs text-muted-foreground truncate">
             {repair.customerName}
+          </div>
+        )}
+
+        {repair.resellerName && (
+          <div className="text-xs text-muted-foreground truncate opacity-70">
+            {repair.resellerName}
           </div>
         )}
 
