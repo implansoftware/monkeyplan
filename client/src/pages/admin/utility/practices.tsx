@@ -957,131 +957,129 @@ export default function AdminUtilityPractices() {
             </div>
           )}
           
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label>Tipo Pratica *</Label>
-              <div className="flex flex-wrap gap-2">
+          <form onSubmit={handleSubmit} className="space-y-5">
+            {/* SEZIONE 1: Tipo e Assegnazione */}
+            <div className="space-y-3 p-3 bg-muted/30 rounded-lg">
+              <h4 className="text-sm font-semibold flex items-center gap-2">
+                <ClipboardList className="h-4 w-4" />
+                Tipo Pratica
+              </h4>
+              <div className="grid grid-cols-3 gap-2">
                 <Button
                   type="button"
                   variant={selectedItemType === "service" ? "default" : "outline"}
+                  size="sm"
                   onClick={() => setSelectedItemType("service")}
-                  className="flex-1"
                   data-testid="button-item-type-service"
                 >
-                  <FileCheck className="h-4 w-4 mr-2" />
+                  <FileCheck className="h-4 w-4 mr-1" />
                   Servizio
                 </Button>
                 <Button
                   type="button"
                   variant={selectedItemType === "product" ? "default" : "outline"}
+                  size="sm"
                   onClick={() => setSelectedItemType("product")}
-                  className="flex-1"
                   data-testid="button-item-type-product"
                 >
-                  <Package className="h-4 w-4 mr-2" />
+                  <Package className="h-4 w-4 mr-1" />
                   Prodotto
                 </Button>
                 <Button
                   type="button"
                   variant={selectedItemType === "service_with_products" ? "default" : "outline"}
+                  size="sm"
                   onClick={() => setSelectedItemType("service_with_products")}
-                  className="flex-1"
                   data-testid="button-item-type-service-with-products"
                 >
-                  <FileCheck className="h-4 w-4 mr-1" />
-                  <Package className="h-4 w-4 mr-2" />
-                  Servizio + Prodotti
-                </Button>
-              </div>
-            </div>
-
-            {/* Assignee Selection */}
-            <div className="space-y-2">
-              <Label>Assegna a</Label>
-              <div className="flex flex-wrap gap-2">
-                <Button
-                  type="button"
-                  variant={assigneeType === "admin" ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => {
-                    setAssigneeType("admin");
-                    setSelectedResellerId("");
-                    setSelectedRepairCenterId("");
-                  }}
-                  className="flex-1"
-                  data-testid="button-assignee-admin"
-                >
-                  <User2 className="h-4 w-4 mr-2" />
-                  Admin
-                </Button>
-                <Button
-                  type="button"
-                  variant={assigneeType === "reseller" ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => {
-                    setAssigneeType("reseller");
-                    setSelectedRepairCenterId("");
-                  }}
-                  className="flex-1"
-                  data-testid="button-assignee-reseller"
-                >
-                  <UserIcon className="h-4 w-4 mr-2" />
-                  Rivenditore
-                </Button>
-                <Button
-                  type="button"
-                  variant={assigneeType === "repair_center" ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => {
-                    setAssigneeType("repair_center");
-                    setSelectedResellerId("");
-                  }}
-                  className="flex-1"
-                  data-testid="button-assignee-repair-center"
-                >
-                  <Building2 className="h-4 w-4 mr-2" />
-                  Centro Ripar.
+                  Serv.+Prod.
                 </Button>
               </div>
               
-              {assigneeType === "reseller" && (
-                <Select
-                  value={selectedResellerId}
-                  onValueChange={setSelectedResellerId}
-                >
-                  <SelectTrigger data-testid="select-reseller">
-                    <SelectValue placeholder="Seleziona rivenditore" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {resellers.map((reseller) => (
-                      <SelectItem key={reseller.id} value={reseller.id}>
-                        {reseller.fullName || reseller.username}
-                        {(reseller as any).parentResellerId && (
-                          <span className="text-xs text-muted-foreground ml-1">(Sub)</span>
-                        )}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              )}
-              
-              {assigneeType === "repair_center" && (
-                <Select
-                  value={selectedRepairCenterId}
-                  onValueChange={setSelectedRepairCenterId}
-                >
-                  <SelectTrigger data-testid="select-repair-center">
-                    <SelectValue placeholder="Seleziona centro riparazione" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {repairCenters.map((center) => (
-                      <SelectItem key={center.id} value={center.id}>
-                        {center.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              )}
+              <div className="pt-2 border-t border-border/50">
+                <Label className="text-xs text-muted-foreground mb-2 block">Assegna a</Label>
+                <div className="grid grid-cols-3 gap-2">
+                  <Button
+                    type="button"
+                    variant={assigneeType === "admin" ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => {
+                      setAssigneeType("admin");
+                      setSelectedResellerId("");
+                      setSelectedRepairCenterId("");
+                    }}
+                    data-testid="button-assignee-admin"
+                  >
+                    <User2 className="h-4 w-4 mr-1" />
+                    Admin
+                  </Button>
+                  <Button
+                    type="button"
+                    variant={assigneeType === "reseller" ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => {
+                      setAssigneeType("reseller");
+                      setSelectedRepairCenterId("");
+                    }}
+                    data-testid="button-assignee-reseller"
+                  >
+                    <UserIcon className="h-4 w-4 mr-1" />
+                    Rivenditore
+                  </Button>
+                  <Button
+                    type="button"
+                    variant={assigneeType === "repair_center" ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => {
+                      setAssigneeType("repair_center");
+                      setSelectedResellerId("");
+                    }}
+                    data-testid="button-assignee-repair-center"
+                  >
+                    <Building2 className="h-4 w-4 mr-1" />
+                    Centro
+                  </Button>
+                </div>
+                
+                {assigneeType === "reseller" && (
+                  <Select
+                    value={selectedResellerId}
+                    onValueChange={setSelectedResellerId}
+                  >
+                    <SelectTrigger className="mt-2" data-testid="select-reseller">
+                      <SelectValue placeholder="Seleziona rivenditore" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {resellers.map((reseller) => (
+                        <SelectItem key={reseller.id} value={reseller.id}>
+                          {reseller.fullName || reseller.username}
+                          {(reseller as any).parentResellerId && (
+                            <span className="text-xs text-muted-foreground ml-1">(Sub)</span>
+                          )}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+                
+                {assigneeType === "repair_center" && (
+                  <Select
+                    value={selectedRepairCenterId}
+                    onValueChange={setSelectedRepairCenterId}
+                  >
+                    <SelectTrigger className="mt-2" data-testid="select-repair-center">
+                      <SelectValue placeholder="Seleziona centro riparazione" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {repairCenters.map((center) => (
+                        <SelectItem key={center.id} value={center.id}>
+                          {center.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              </div>
             </div>
 
             {(selectedItemType === "service" || selectedItemType === "service_with_products") && (
