@@ -97,9 +97,8 @@ const CATEGORY_OPTIONS = [
   { value: "tablet", label: "Tablet" },
   { value: "portatile", label: "PC Portatile" },
   { value: "pc_fisso", label: "PC Fisso" },
-  { value: "display", label: "Display" },
-  { value: "batteria", label: "Batteria" },
-  { value: "accessorio", label: "Accessorio" },
+  { value: "smartwatch", label: "Smartwatch" },
+  { value: "console", label: "Console" },
   { value: "altro", label: "Altro" },
 ];
 

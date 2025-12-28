@@ -241,10 +241,11 @@ export default function RepairCenterSmartphoneCatalog() {
                           <Badge variant="outline" className="text-xs">
                             {phone.category === 'smartphone' ? 'Smartphone' : 
                              phone.category === 'tablet' ? 'Tablet' :
-                             phone.category === 'laptop' ? 'Laptop' :
+                             phone.category === 'portatile' ? 'PC Portatile' :
+                             phone.category === 'pc_fisso' ? 'PC Fisso' :
                              phone.category === 'smartwatch' ? 'Smartwatch' :
                              phone.category === 'console' ? 'Console' :
-                             phone.category === 'accessorio' ? 'Accessorio' : phone.category}
+                             phone.category === 'altro' ? 'Altro' : phone.category}
                           </Badge>
                         ) : (
                           <span className="text-muted-foreground text-sm">-</span>
