@@ -121,6 +121,7 @@ export default function ResellerProducts() {
   const [stockByCenters, setStockByCenters] = useState<StockByCenter[]>([]);
   const [loadingStock, setLoadingStock] = useState(false);
   const [initialStock, setInitialStock] = useState<Array<{ warehouseId: string; quantity: number }>>([]);
+  const [wizardStep, setWizardStep] = useState<"info" | "pricing" | "inventory" | "compatibility">("info");
   const [deviceCompatibilities, setDeviceCompatibilities] = useState<DeviceCompatibilityEntry[]>([]);
   const [editDeviceCompatibilities, setEditDeviceCompatibilities] = useState<DeviceCompatibilityWithNames[]>([]);
   const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set());
@@ -1114,7 +1115,10 @@ export default function ResellerProducts() {
       {/* Dialog Nuovo Prodotto */}
       <Dialog open={dialogOpen} onOpenChange={(open) => {
         setDialogOpen(open);
-        if (!open) setInitialStock([]);
+        if (!open) {
+          setInitialStock([]);
+          setWizardStep("info");
+        }
       }}>
         <DialogContent className="max-w-2xl max-h-[90vh]">
           <DialogHeader>
@@ -1128,12 +1132,20 @@ export default function ResellerProducts() {
           </DialogHeader>
           <ScrollArea className="max-h-[70vh] pr-4">
             <form onSubmit={handleCreateSubmit} className="space-y-6">
-              <Tabs defaultValue="info" className="w-full">
+              <Tabs value={wizardStep} onValueChange={(v) => setWizardStep(v as typeof wizardStep)} className="w-full">
                 <TabsList className="grid w-full grid-cols-4">
-                  <TabsTrigger value="info">Info</TabsTrigger>
-                  <TabsTrigger value="pricing">Prezzi</TabsTrigger>
-                  <TabsTrigger value="inventory">Magazzino</TabsTrigger>
-                  <TabsTrigger value="compatibility">Compatibilità</TabsTrigger>
+                  <TabsTrigger value="info" className="gap-1">
+                    <span className="hidden sm:inline">1.</span> Info
+                  </TabsTrigger>
+                  <TabsTrigger value="pricing" className="gap-1">
+                    <span className="hidden sm:inline">2.</span> Prezzi
+                  </TabsTrigger>
+                  <TabsTrigger value="inventory" className="gap-1">
+                    <span className="hidden sm:inline">3.</span> Magazzino
+                  </TabsTrigger>
+                  <TabsTrigger value="compatibility" className="gap-1">
+                    <span className="hidden sm:inline">4.</span> Compatibilità
+                  </TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="info" className="space-y-4 mt-4 data-[state=inactive]:hidden" forceMount>
@@ -1440,13 +1452,45 @@ export default function ResellerProducts() {
 
               <Separator />
 
-              <div className="flex justify-end gap-2">
-                <Button type="button" variant="outline" onClick={() => { setDialogOpen(false); setInitialStock([]); setDeviceCompatibilities([]); setDeviceSearchQuery(""); }}>
-                  Annulla
-                </Button>
-                <Button type="submit" disabled={createProductMutation.isPending} data-testid="button-submit-create">
-                  {createProductMutation.isPending ? "Creazione..." : "Crea Prodotto"}
-                </Button>
+              <div className="flex justify-between gap-2">
+                <div>
+                  {wizardStep !== "info" && (
+                    <Button 
+                      type="button" 
+                      variant="outline" 
+                      onClick={() => {
+                        const steps: typeof wizardStep[] = ["info", "pricing", "inventory", "compatibility"];
+                        const currentIndex = steps.indexOf(wizardStep);
+                        if (currentIndex > 0) setWizardStep(steps[currentIndex - 1]);
+                      }}
+                      data-testid="button-wizard-back"
+                    >
+                      Indietro
+                    </Button>
+                  )}
+                </div>
+                <div className="flex gap-2">
+                  <Button type="button" variant="outline" onClick={() => { setDialogOpen(false); setInitialStock([]); setDeviceCompatibilities([]); setDeviceSearchQuery(""); setWizardStep("info"); }}>
+                    Annulla
+                  </Button>
+                  {wizardStep !== "compatibility" ? (
+                    <Button 
+                      type="button"
+                      onClick={() => {
+                        const steps: typeof wizardStep[] = ["info", "pricing", "inventory", "compatibility"];
+                        const currentIndex = steps.indexOf(wizardStep);
+                        if (currentIndex < steps.length - 1) setWizardStep(steps[currentIndex + 1]);
+                      }}
+                      data-testid="button-wizard-next"
+                    >
+                      Avanti
+                    </Button>
+                  ) : (
+                    <Button type="submit" disabled={createProductMutation.isPending} data-testid="button-submit-create">
+                      {createProductMutation.isPending ? "Creazione..." : "Crea Prodotto"}
+                    </Button>
+                  )}
+                </div>
               </div>
             </form>
           </ScrollArea>
