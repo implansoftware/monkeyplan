@@ -33,7 +33,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Package, Truck, CheckCircle, Clock, Search, Warehouse, FileText, Plus } from "lucide-react";
+import { Package, Truck, CheckCircle, Clock, Search, Warehouse, FileText, Plus, Loader2 } from "lucide-react";
 import type { PartsOrder, Product, RepairQuote } from "@shared/schema";
 
 interface QuotePart {
@@ -73,6 +73,7 @@ export function PartsOrderDialog({
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState("");
+  const [addingQuotePartIndex, setAddingQuotePartIndex] = useState<number | null>(null);
 
   const { data: existingParts = [] } = useQuery<PartsOrder[]>({
     queryKey: ["/api/repair-orders", repairOrderId, "parts"],
@@ -128,13 +129,50 @@ export function PartsOrderDialog({
     );
   });
 
-  const selectQuotePart = (part: QuotePart) => {
-    form.setValue("productId", part.productId || "");
-    form.setValue("partName", part.name);
-    form.setValue("partNumber", "");
-    form.setValue("quantity", part.quantity);
-    // unitPrice from quote is in cents, form expects euros
-    form.setValue("unitCost", part.unitPrice / 100);
+  // Direct add quote part to order (instead of just populating the form)
+  const addQuotePartToOrder = async (part: QuotePart, index: number) => {
+    setAddingQuotePartIndex(index);
+    try {
+      // Build the payload directly - unitPrice from quote is in cents
+      const payload = {
+        productId: part.productId || null,
+        partName: part.name,
+        partNumber: null,
+        quantity: part.quantity,
+        unitCost: part.unitPrice, // Already in cents
+        supplier: null,
+        expectedArrival: null,
+        notes: "Aggiunto da preventivo",
+      };
+      
+      await apiRequest(
+        "POST",
+        `/api/repair-orders/${repairOrderId}/parts`,
+        payload
+      );
+      
+      toast({
+        title: "Ricambio aggiunto",
+        description: `${part.name} è stato aggiunto all'ordine`,
+      });
+      
+      // Invalidate queries to refresh the lists
+      queryClient.invalidateQueries({ queryKey: ["/api/repair-orders", repairOrderId, "parts"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/repair-orders", repairOrderId, "quote"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/repair-orders"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/products"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/warehouses"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/my-warehouse"] });
+      
+    } catch (error: any) {
+      toast({
+        title: "Errore",
+        description: error.message || "Impossibile aggiungere il ricambio",
+        variant: "destructive",
+      });
+    } finally {
+      setAddingQuotePartIndex(null);
+    }
   };
 
   const filteredProducts = products.filter(
@@ -340,8 +378,7 @@ export function PartsOrderDialog({
               {availableQuoteParts.map((part, index) => (
                 <div
                   key={`quote-part-${index}`}
-                  className="flex items-center justify-between p-3 border rounded-lg bg-background hover-elevate cursor-pointer"
-                  onClick={() => selectQuotePart(part)}
+                  className="flex items-center justify-between p-3 border rounded-lg bg-background"
                   data-testid={`quote-part-${index}`}
                 >
                   <div className="flex items-center gap-3">
@@ -363,9 +400,22 @@ export function PartsOrderDialog({
                       </span>
                     </div>
                   </div>
-                  <Button size="sm" variant="outline" className="flex-shrink-0">
-                    <Plus className="h-4 w-4 mr-1" />
-                    Aggiungi
+                  <Button 
+                    size="sm" 
+                    variant="outline" 
+                    className="flex-shrink-0"
+                    onClick={() => addQuotePartToOrder(part, index)}
+                    disabled={addingQuotePartIndex !== null}
+                    data-testid={`button-add-quote-part-${index}`}
+                  >
+                    {addingQuotePartIndex === index ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <>
+                        <Plus className="h-4 w-4 mr-1" />
+                        Aggiungi
+                      </>
+                    )}
                   </Button>
                 </div>
               ))}
