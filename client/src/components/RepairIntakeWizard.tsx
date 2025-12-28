@@ -38,7 +38,7 @@ import {
   User, Smartphone, ClipboardCheck, CheckCircle2, 
   ChevronRight, ChevronLeft, Loader2, Plus, Search,
   Monitor, Tablet, Laptop, Tv, Gamepad2, Watch, Headphones, Printer,
-  AlertCircle, UserPlus, X, Mail, Phone, Building
+  AlertCircle, UserPlus, X, Mail, Phone, Building, Store
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -50,8 +50,11 @@ interface RepairIntakeWizardProps {
 
 // Wizard schema - includes acceptance flow fields
 const wizardSchema = z.object({
-  // Step 1: Customer
+  // Step 1: Customer & Assignment
   customerId: z.string().min(1, "Seleziona un cliente"),
+  resellerId: z.string().optional(),
+  subResellerId: z.string().optional(),
+  repairCenterId: z.string().optional(),
   
   // Step 2: Device
   deviceType: z.string().min(1, "Seleziona il tipo di dispositivo"),
@@ -71,9 +74,6 @@ const wizardSchema = z.object({
   aestheticCondition: z.string().optional(),
   accessories: z.array(z.string()).default([]),
   notes: z.string().optional(),
-  
-  // Step 4: Confirm
-  repairCenterId: z.string().optional(),
 });
 
 type WizardData = z.infer<typeof wizardSchema>;
@@ -119,6 +119,8 @@ export function RepairIntakeWizard({
   const [newBrandName, setNewBrandName] = useState("");
   const [showNewModelForm, setShowNewModelForm] = useState(false);
   const [newModelName, setNewModelName] = useState("");
+  const [selectedResellerId, setSelectedResellerId] = useState("");
+  const [selectedSubResellerId, setSelectedSubResellerId] = useState("");
   const dialogContentRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -128,6 +130,9 @@ export function RepairIntakeWizard({
     resolver: zodResolver(wizardSchema),
     defaultValues: {
       customerId: "",
+      resellerId: "",
+      subResellerId: "",
+      repairCenterId: "",
       deviceType: "",
       deviceBrandId: "",
       deviceModelId: "",
@@ -142,7 +147,6 @@ export function RepairIntakeWizard({
       aestheticCondition: "",
       accessories: [],
       notes: "",
-      repairCenterId: "",
     },
   });
 
@@ -153,6 +157,8 @@ export function RepairIntakeWizard({
       setCustomerSearch("");
       setSelectedTypeId("");
       setSelectedBrandId("");
+      setSelectedResellerId("");
+      setSelectedSubResellerId("");
       setShowNewCustomerForm(false);
       setNewCustomerForm({ fullName: "", email: "", phone: "" });
       setShowNewBrandForm(false);
@@ -332,6 +338,40 @@ export function RepairIntakeWizard({
     enabled: user?.role === "admin" || user?.role === "reseller",
   });
 
+  // Query for resellers (admin only)
+  const { data: resellers = [] } = useQuery<Array<{ 
+    id: string; 
+    username: string;
+    fullName: string | null;
+    email: string | null;
+  }>>({
+    queryKey: ["/api/resellers"],
+    queryFn: async () => {
+      const res = await fetch("/api/resellers");
+      if (!res.ok) throw new Error("Failed");
+      return res.json();
+    },
+    enabled: user?.role === "admin",
+  });
+
+  // Query for sub-resellers (filtered by selected reseller)
+  const { data: subResellers = [] } = useQuery<Array<{ 
+    id: string; 
+    username: string;
+    fullName: string | null;
+    email: string | null;
+    parentResellerId: string | null;
+  }>>({
+    queryKey: ["/api/admin/sub-resellers", selectedResellerId],
+    queryFn: async () => {
+      const res = await fetch(`/api/users?role=reseller&parentResellerId=${selectedResellerId}`);
+      if (!res.ok) throw new Error("Failed");
+      const users = await res.json();
+      return users.filter((u: any) => u.parentResellerId === selectedResellerId);
+    },
+    enabled: user?.role === "admin" && !!selectedResellerId,
+  });
+
   const { data: accessoryTypes = [] } = useQuery<Array<{ id: string; name: string }>>({
     queryKey: ["/api/accessory-types", { deviceTypeId: selectedTypeId }],
     queryFn: async () => {
@@ -356,6 +396,21 @@ export function RepairIntakeWizard({
   const filteredModels = selectedBrandId 
     ? deviceModels.filter(m => m.brandId === selectedBrandId)
     : deviceModels;
+
+  // Filter repair centers based on selected reseller/sub-reseller (admin only)
+  const filteredRepairCenters = user?.role === "admin" 
+    ? repairCenters.filter(rc => {
+        if (selectedSubResellerId) {
+          // Filter by sub-reseller
+          return rc.resellerId === selectedSubResellerId;
+        } else if (selectedResellerId) {
+          // Filter by reseller (include direct centers and sub-reseller centers)
+          return rc.resellerId === selectedResellerId || 
+                 subResellers.some(sr => sr.id === rc.resellerId);
+        }
+        return true; // No filter - show all
+      })
+    : repairCenters;
 
   // Create mutation
   const createMutation = useMutation({
@@ -395,6 +450,13 @@ export function RepairIntakeWizard({
       }
       if (data.repairCenterId || user?.repairCenterId) {
         payload.repairCenterId = data.repairCenterId || user?.repairCenterId;
+      }
+      // Add reseller/sub-reseller assignment (admin only)
+      if (data.resellerId) {
+        payload.resellerId = data.resellerId;
+      }
+      if (data.subResellerId) {
+        payload.subResellerId = data.subResellerId;
       }
 
       // Build acceptance object with structured data and required defaults
@@ -722,8 +784,86 @@ export function RepairIntakeWizard({
                   </Card>
                 )}
 
-                {/* Repair Center Selection - show for resellers with centers */}
-                {(user?.role === "admin" || user?.role === "reseller") && repairCenters.length > 0 && !showNewCustomerForm && (
+                {/* Reseller Selection - admin only */}
+                {user?.role === "admin" && resellers.length > 0 && !showNewCustomerForm && (
+                  <FormField
+                    control={form.control}
+                    name="resellerId"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Assegna a Rivenditore</FormLabel>
+                        <Select 
+                          value={field.value} 
+                          onValueChange={(val) => {
+                            field.onChange(val);
+                            setSelectedResellerId(val);
+                            // Reset sub-reseller and repair center when reseller changes
+                            form.setValue("subResellerId", "");
+                            form.setValue("repairCenterId", "");
+                            setSelectedSubResellerId("");
+                          }}
+                        >
+                          <FormControl>
+                            <SelectTrigger data-testid="select-reseller-step1">
+                              <SelectValue placeholder="Seleziona rivenditore (opzionale)" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {resellers.map((reseller) => (
+                              <SelectItem key={reseller.id} value={reseller.id}>
+                                {reseller.fullName || reseller.username}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <p className="text-xs text-muted-foreground">
+                          Scegli a quale rivenditore assegnare la lavorazione
+                        </p>
+                      </FormItem>
+                    )}
+                  />
+                )}
+
+                {/* Sub-Reseller Selection - admin only, when reseller is selected */}
+                {user?.role === "admin" && selectedResellerId && subResellers.length > 0 && !showNewCustomerForm && (
+                  <FormField
+                    control={form.control}
+                    name="subResellerId"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Assegna a Sub-Rivenditore</FormLabel>
+                        <Select 
+                          value={field.value} 
+                          onValueChange={(val) => {
+                            field.onChange(val);
+                            setSelectedSubResellerId(val);
+                            // Reset repair center when sub-reseller changes
+                            form.setValue("repairCenterId", "");
+                          }}
+                        >
+                          <FormControl>
+                            <SelectTrigger data-testid="select-sub-reseller-step1">
+                              <SelectValue placeholder="Seleziona sub-rivenditore (opzionale)" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {subResellers.map((subReseller) => (
+                              <SelectItem key={subReseller.id} value={subReseller.id}>
+                                {subReseller.fullName || subReseller.username}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <p className="text-xs text-muted-foreground">
+                          Scegli a quale sub-rivenditore assegnare la lavorazione
+                        </p>
+                      </FormItem>
+                    )}
+                  />
+                )}
+
+                {/* Repair Center Selection - show for admin/reseller with filtered centers */}
+                {(user?.role === "admin" || user?.role === "reseller") && filteredRepairCenters.length > 0 && !showNewCustomerForm && (
                   <FormField
                     control={form.control}
                     name="repairCenterId"
@@ -737,38 +877,49 @@ export function RepairIntakeWizard({
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            {/* Own centers first */}
-                            {repairCenters.filter(c => c.isOwn).length > 0 && (
+                            {/* For admin: show filtered centers */}
+                            {user?.role === "admin" && filteredRepairCenters.map((rc) => (
+                              <SelectItem key={rc.id} value={rc.id}>
+                                {rc.name} {rc.ownerName ? `(${rc.ownerName})` : ''}
+                              </SelectItem>
+                            ))}
+                            {/* For reseller: show categorized centers */}
+                            {user?.role === "reseller" && (
                               <>
-                                <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground">
-                                  I miei centri
-                                </div>
-                                {repairCenters.filter(c => c.isOwn).map((rc) => (
+                                {/* Own centers first */}
+                                {filteredRepairCenters.filter(c => c.isOwn).length > 0 && (
+                                  <>
+                                    <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground">
+                                      I miei centri
+                                    </div>
+                                    {filteredRepairCenters.filter(c => c.isOwn).map((rc) => (
+                                      <SelectItem key={rc.id} value={rc.id}>
+                                        {rc.name}
+                                      </SelectItem>
+                                    ))}
+                                  </>
+                                )}
+                                {/* Sub-reseller centers */}
+                                {filteredRepairCenters.filter(c => c.isSubResellerCenter).length > 0 && (
+                                  <>
+                                    <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground">
+                                      Centri della Rete
+                                    </div>
+                                    {filteredRepairCenters.filter(c => c.isSubResellerCenter).map((rc) => (
+                                      <SelectItem key={rc.id} value={rc.id}>
+                                        {rc.name} {rc.ownerName ? `(${rc.ownerName})` : ''}
+                                      </SelectItem>
+                                    ))}
+                                  </>
+                                )}
+                                {/* Fallback for non-reseller roles or simple list */}
+                                {filteredRepairCenters.filter(c => !c.isOwn && !c.isSubResellerCenter).map((rc) => (
                                   <SelectItem key={rc.id} value={rc.id}>
                                     {rc.name}
                                   </SelectItem>
                                 ))}
                               </>
                             )}
-                            {/* Sub-reseller centers */}
-                            {repairCenters.filter(c => c.isSubResellerCenter).length > 0 && (
-                              <>
-                                <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground">
-                                  Centri della Rete
-                                </div>
-                                {repairCenters.filter(c => c.isSubResellerCenter).map((rc) => (
-                                  <SelectItem key={rc.id} value={rc.id}>
-                                    {rc.name} {rc.ownerName ? `(${rc.ownerName})` : ''}
-                                  </SelectItem>
-                                ))}
-                              </>
-                            )}
-                            {/* Fallback for non-reseller roles or simple list */}
-                            {repairCenters.filter(c => !c.isOwn && !c.isSubResellerCenter).map((rc) => (
-                              <SelectItem key={rc.id} value={rc.id}>
-                                {rc.name}
-                              </SelectItem>
-                            ))}
                           </SelectContent>
                         </Select>
                         <p className="text-xs text-muted-foreground">
@@ -1360,6 +1511,34 @@ export function RepairIntakeWizard({
                     )}
                   </CardContent>
                 </Card>
+
+                {/* Show selected Reseller in summary */}
+                {form.watch("resellerId") && (
+                  <div className="flex items-start gap-3 p-3 bg-muted/50 rounded-lg">
+                    <Store className="h-5 w-5 text-muted-foreground mt-0.5" />
+                    <div>
+                      <p className="text-sm text-muted-foreground">Rivenditore</p>
+                      <p className="font-medium">
+                        {resellers.find(r => r.id === form.watch("resellerId"))?.fullName || 
+                         resellers.find(r => r.id === form.watch("resellerId"))?.username || "Non selezionato"}
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Show selected Sub-Reseller in summary */}
+                {form.watch("subResellerId") && (
+                  <div className="flex items-start gap-3 p-3 bg-muted/50 rounded-lg">
+                    <Store className="h-5 w-5 text-muted-foreground mt-0.5" />
+                    <div>
+                      <p className="text-sm text-muted-foreground">Sub-Rivenditore</p>
+                      <p className="font-medium">
+                        {subResellers.find(sr => sr.id === form.watch("subResellerId"))?.fullName || 
+                         subResellers.find(sr => sr.id === form.watch("subResellerId"))?.username || "Non selezionato"}
+                      </p>
+                    </div>
+                  </div>
+                )}
 
                 {/* Show selected Repair Center in summary */}
                 {form.watch("repairCenterId") && (
