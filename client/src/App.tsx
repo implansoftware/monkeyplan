@@ -235,7 +235,7 @@ function Router() {
       <ProtectedRoute path="/admin/utility/reports" component={AdminUtilityReports} />
       <ProtectedRoute path="/admin/settings" component={AdminSettings} />
       <ProtectedRoute path="/admin/service-catalog" component={AdminServiceCatalog} />
-      <ProtectedRoute path="/admin/smartphone-catalog" component={AdminSmartphoneCatalog} />
+      <ProtectedRoute path="/admin/dispositivi" component={AdminSmartphoneCatalog} />
       <ProtectedRoute path="/admin/accessory-catalog" component={AdminAccessoryCatalog} />
       <ProtectedRoute path="/admin/device-catalog" component={AdminDeviceCatalog} />
       <ProtectedRoute path="/admin/team" component={AdminTeam} />
@@ -285,7 +285,7 @@ function Router() {
       <ProtectedRoute path="/reseller/team" component={ResellerTeam} />
       <ProtectedRoute path="/reseller/sub-resellers" component={ResellerSubResellers} />
       <ProtectedRoute path="/reseller/device-catalog" component={ResellerDeviceCatalog} />
-      <ProtectedRoute path="/reseller/smartphone-catalog" component={ResellerSmartphoneCatalog} />
+      <ProtectedRoute path="/reseller/dispositivi" component={ResellerSmartphoneCatalog} />
       <ProtectedRoute path="/reseller/accessory-catalog" component={ResellerAccessoryCatalog} />
       <ProtectedRoute path="/reseller/shop-catalog" component={ResellerShopCatalog} />
       <ProtectedRoute path="/reseller/sales-orders/:id" component={ResellerSalesOrders} />
@@ -311,7 +311,7 @@ function Router() {
       <ProtectedRoute path="/repair-center/products" component={RepairCenterProducts} />
       <ProtectedRoute path="/repair-center/b2b-catalog" component={RepairCenterB2BCatalog} />
       <ProtectedRoute path="/repair-center/b2b-orders" component={RepairCenterB2BOrders} />
-      <ProtectedRoute path="/repair-center/smartphone-catalog" component={RepairCenterSmartphoneCatalog} />
+      <ProtectedRoute path="/repair-center/dispositivi" component={RepairCenterSmartphoneCatalog} />
       <ProtectedRoute path="/repair-center/accessory-catalog" component={RepairCenterAccessoryCatalog} />
       <ProtectedRoute path="/repair-center/spare-parts-catalog" component={RepairCenterSparePartsCatalog} />
       <ProtectedRoute path="/repair-center/customers" component={RepairCenterCustomers} />
