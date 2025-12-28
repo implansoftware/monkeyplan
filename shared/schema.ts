@@ -55,6 +55,23 @@ export const notificationTypeEnum = pgEnum("notification_type", ["repair_update"
 export const quoteStatusEnum = pgEnum("quote_status", ["draft", "sent", "accepted", "rejected"]);
 export const repairPriorityEnum = pgEnum("repair_priority", ["low", "medium", "high", "urgent"]);
 export const partsOrderStatusEnum = pgEnum("parts_order_status", ["ordered", "in_transit", "received", "cancelled"]);
+
+// Parts Purchase Order Status - Stato ordine raggruppato ricambi
+export const partsPurchaseOrderStatusEnum = pgEnum("parts_purchase_order_status", [
+  "draft",             // Bozza (carrello)
+  "submitted",         // Inviato/Confermato
+  "processing",        // In elaborazione
+  "shipped",           // Spedito
+  "partial_received",  // Parzialmente ricevuto
+  "received",          // Ricevuto completamente
+  "cancelled",         // Annullato
+]);
+
+// Parts Purchase Order Destination Type - Tipo destinatario ordine
+export const partsPurchaseDestinationEnum = pgEnum("parts_purchase_destination", [
+  "external_supplier", // Fornitore esterno
+  "internal_warehouse", // Magazzino interno (trasferimento)
+]);
 export const repairLogTypeEnum = pgEnum("repair_log_type", ["status_change", "technician_note", "parts_installed", "test_result", "customer_contact"]);
 export const quoteBypassReasonEnum = pgEnum("quote_bypass_reason", ["garanzia", "omaggio"]);
 
@@ -1468,10 +1485,31 @@ export const repairQuotes = pgTable("repair_quotes", {
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 
-// Parts Orders (Ordini ricambi - FASE 5)
+// Parts Purchase Orders (Ordini raggruppati ricambi - header)
+export const partsPurchaseOrders = pgTable("parts_purchase_orders", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  repairOrderId: varchar("repair_order_id").notNull().references(() => repairOrders.id),
+  orderNumber: text("order_number").notNull().unique(), // Numero progressivo es. ORD-2024-001
+  destinationType: partsPurchaseDestinationEnum("destination_type").notNull(), // Fornitore esterno o magazzino interno
+  supplierName: text("supplier_name"), // Nome fornitore (se esterno)
+  supplierId: varchar("supplier_id").references(() => suppliers.id), // Collegamento fornitore (opzionale)
+  sourceWarehouseId: varchar("source_warehouse_id").references(() => warehouses.id), // Magazzino sorgente (se interno)
+  totalAmount: integer("total_amount").notNull().default(0), // Totale ordine in cents
+  status: partsPurchaseOrderStatusEnum("status").notNull().default("draft"),
+  expectedArrival: timestamp("expected_arrival"), // Data arrivo prevista
+  shippedAt: timestamp("shipped_at"), // Data spedizione
+  receivedAt: timestamp("received_at"), // Data ricezione completa
+  notes: text("notes"),
+  createdBy: varchar("created_by").notNull(), // ID utente che ha creato
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+// Parts Orders (Ordini ricambi - FASE 5) - ora collegabili a un ordine raggruppato
 export const partsOrders = pgTable("parts_orders", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   repairOrderId: varchar("repair_order_id").notNull().references(() => repairOrders.id),
+  purchaseOrderId: varchar("purchase_order_id").references(() => partsPurchaseOrders.id), // Collegamento ordine raggruppato (opzionale)
   productId: varchar("product_id").references(() => products.id), // Collegamento opzionale al prodotto in magazzino
   partName: text("part_name").notNull(), // Nome ricambio
   partNumber: text("part_number"), // Codice ricambio fornitore
@@ -3504,10 +3542,35 @@ export const repairQuotesRelations = relations(repairQuotes, ({ one }) => ({
   }),
 }));
 
+// Parts Purchase Orders Relations (Ordini raggruppati)
+export const partsPurchaseOrdersRelations = relations(partsPurchaseOrders, ({ one, many }) => ({
+  repairOrder: one(repairOrders, {
+    fields: [partsPurchaseOrders.repairOrderId],
+    references: [repairOrders.id],
+  }),
+  supplier: one(suppliers, {
+    fields: [partsPurchaseOrders.supplierId],
+    references: [suppliers.id],
+  }),
+  sourceWarehouse: one(warehouses, {
+    fields: [partsPurchaseOrders.sourceWarehouseId],
+    references: [warehouses.id],
+  }),
+  createdByUser: one(users, {
+    fields: [partsPurchaseOrders.createdBy],
+    references: [users.id],
+  }),
+  items: many(partsOrders), // Righe dell'ordine
+}));
+
 export const partsOrdersRelations = relations(partsOrders, ({ one }) => ({
   repairOrder: one(repairOrders, {
     fields: [partsOrders.repairOrderId],
     references: [repairOrders.id],
+  }),
+  purchaseOrder: one(partsPurchaseOrders, {
+    fields: [partsOrders.purchaseOrderId],
+    references: [partsPurchaseOrders.id],
   }),
   orderedByUser: one(users, {
     fields: [partsOrders.orderedBy],
@@ -4092,6 +4155,12 @@ export const insertNotificationPreferencesSchema = createInsertSchema(notificati
 export const insertRepairAttachmentSchema = createInsertSchema(repairAttachments).omit({
   id: true,
   uploadedAt: true,
+});
+
+export const insertPartsPurchaseOrderSchema = createInsertSchema(partsPurchaseOrders).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
 });
 
 export const insertPartsOrderSchema = createInsertSchema(partsOrders).omit({
@@ -4750,6 +4819,9 @@ export type InsertNotificationPreferences = z.infer<typeof insertNotificationPre
 
 export type RepairAttachment = typeof repairAttachments.$inferSelect;
 export type InsertRepairAttachment = z.infer<typeof insertRepairAttachmentSchema>;
+
+export type PartsPurchaseOrder = typeof partsPurchaseOrders.$inferSelect;
+export type InsertPartsPurchaseOrder = z.infer<typeof insertPartsPurchaseOrderSchema>;
 
 export type PartsOrder = typeof partsOrders.$inferSelect;
 export type InsertPartsOrder = z.infer<typeof insertPartsOrderSchema>;
