@@ -206,6 +206,7 @@ export default function RepairCenterSmartphoneCatalog() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Prodotto</TableHead>
+                    <TableHead>Categoria</TableHead>
                     <TableHead>Specifiche</TableHead>
                     <TableHead>Grado</TableHead>
                     <TableHead className="text-right">Prezzo B2B</TableHead>
@@ -234,6 +235,20 @@ export default function RepairCenterSmartphoneCatalog() {
                             <div className="text-sm text-muted-foreground">{phone.brand} - {phone.sku}</div>
                           </div>
                         </div>
+                      </TableCell>
+                      <TableCell>
+                        {phone.category ? (
+                          <Badge variant="outline" className="text-xs">
+                            {phone.category === 'smartphone' ? 'Smartphone' : 
+                             phone.category === 'tablet' ? 'Tablet' :
+                             phone.category === 'laptop' ? 'Laptop' :
+                             phone.category === 'smartwatch' ? 'Smartwatch' :
+                             phone.category === 'console' ? 'Console' :
+                             phone.category === 'accessorio' ? 'Accessorio' : phone.category}
+                          </Badge>
+                        ) : (
+                          <span className="text-muted-foreground text-sm">-</span>
+                        )}
                       </TableCell>
                       <TableCell>
                         <div className="flex flex-wrap gap-1">

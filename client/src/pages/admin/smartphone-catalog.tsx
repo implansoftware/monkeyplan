@@ -824,6 +824,7 @@ export default function AdminSmartphoneCatalog() {
                   <TableRow>
                     <TableHead>Foto</TableHead>
                     <TableHead>Dispositivo</TableHead>
+                    <TableHead>Categoria</TableHead>
                     <TableHead>Rivenditore</TableHead>
                     <TableHead>Storage</TableHead>
                     <TableHead>Grado</TableHead>
@@ -859,6 +860,15 @@ export default function AdminSmartphoneCatalog() {
                           </div>
                           <div className="text-xs text-muted-foreground">SKU: {smartphone.sku}</div>
                         </div>
+                      </TableCell>
+                      <TableCell>
+                        {smartphone.category ? (
+                          <Badge variant="outline" className="text-xs">
+                            {CATEGORY_OPTIONS.find(c => c.value === smartphone.category)?.label || smartphone.category}
+                          </Badge>
+                        ) : (
+                          <span className="text-muted-foreground text-sm">-</span>
+                        )}
                       </TableCell>
                       <TableCell>
                         {(() => {

@@ -591,6 +591,7 @@ export default function SmartphoneCatalog() {
                   <TableRow>
                     <TableHead className="w-16">Foto</TableHead>
                     <TableHead>Dispositivo</TableHead>
+                    <TableHead>Categoria</TableHead>
                     <TableHead>Tipo</TableHead>
                     <TableHead>Storage</TableHead>
                     <TableHead>Grado</TableHead>
@@ -624,6 +625,15 @@ export default function SmartphoneCatalog() {
                           </div>
                           <div className="text-xs text-muted-foreground">SKU: {smartphone.sku}</div>
                         </div>
+                      </TableCell>
+                      <TableCell>
+                        {smartphone.category ? (
+                          <Badge variant="outline" className="text-xs">
+                            {DEVICE_CATEGORIES.find(c => c.value === smartphone.category)?.label || smartphone.category}
+                          </Badge>
+                        ) : (
+                          <span className="text-muted-foreground text-sm">-</span>
+                        )}
                       </TableCell>
                       <TableCell>
                         {(smartphone as any).isOwn ? (
