@@ -51,6 +51,7 @@ interface SmartphoneWizardProps {
 const wizardSchema = z.object({
   name: z.string().min(1, "Nome obbligatorio"),
   sku: z.string().optional(),
+  category: z.string().min(1, "Seleziona la categoria"),
   brand: z.string().min(1, "Seleziona la marca"),
   color: z.string().optional(),
   description: z.string().optional(),
@@ -123,6 +124,13 @@ const BATTERY_OPTIONS = [
   { value: "80-84", label: "80-84%" },
   { value: "<80", label: "Meno di 80%" },
 ];
+const CATEGORY_OPTIONS = [
+  { value: "smartphone", label: "Smartphone" },
+  { value: "display", label: "Display/Schermo" },
+  { value: "batteria", label: "Batteria" },
+  { value: "accessorio", label: "Accessorio" },
+  { value: "altro", label: "Altro" },
+];
 const ACCESSORY_OPTIONS = [
   "Caricatore originale",
   "Cavo USB",
@@ -154,6 +162,7 @@ export function SmartphoneWizard({
     defaultValues: {
       name: "",
       sku: "",
+      category: "smartphone",
       brand: "",
       color: "",
       description: "",
@@ -255,6 +264,7 @@ export function SmartphoneWizard({
       const productData = {
         name: data.name,
         sku: sku,
+        category: data.category,
         description: data.description,
         type: "smartphone",
         unitPriceCents: Math.round(parseFloat(data.unitPrice) * 100),
@@ -345,7 +355,7 @@ export function SmartphoneWizard({
     let fieldsToValidate: (keyof WizardData)[] = [];
     
     if (currentStep === 1) {
-      fieldsToValidate = ["name", "brand", "condition"];
+      fieldsToValidate = ["name", "category", "brand", "condition"];
     } else if (currentStep === 2) {
       fieldsToValidate = ["storage", "grade"];
     } else if (currentStep === 3) {
@@ -468,19 +478,44 @@ export function SmartphoneWizard({
                   )}
                 </div>
 
-                <FormField
-                  control={form.control}
-                  name="name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Nome Prodotto *</FormLabel>
-                      <FormControl>
-                        <Input placeholder="es. iPhone 14 Pro 128GB" {...field} data-testid="input-smartphone-name" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="name"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Nome Prodotto *</FormLabel>
+                        <FormControl>
+                          <Input placeholder="es. iPhone 14 Pro 128GB" {...field} data-testid="input-smartphone-name" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="category"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Categoria *</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <FormControl>
+                            <SelectTrigger data-testid="select-product-category">
+                              <SelectValue placeholder="Seleziona categoria" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {CATEGORY_OPTIONS.map(opt => (
+                              <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <FormField

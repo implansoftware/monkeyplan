@@ -7902,9 +7902,11 @@ export function registerRoutes(app: Express): Server {
         return res.status(400).send("Product and specs are required");
       }
       
-      // Set product type and category for smartphones
+      // Set product type for smartphones, use category from client or default to 'smartphone'
       product.productType = 'dispositivo';
-      product.category = 'smartphone';
+      if (!product.category || product.category.trim() === '') {
+        product.category = 'smartphone';
+      }
       product.createdBy = req.user.role === 'reseller_collaborator' ? req.user.resellerId : req.user.id;
       
       // Convert unitPriceCents to unitPrice (database uses cents as unitPrice)
