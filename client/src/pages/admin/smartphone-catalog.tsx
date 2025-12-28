@@ -92,8 +92,20 @@ const BATTERY_OPTIONS = [
   { value: "<80", label: "Meno di 80%" },
 ];
 
+const CATEGORY_OPTIONS = [
+  { value: "smartphone", label: "Smartphone" },
+  { value: "tablet", label: "Tablet" },
+  { value: "portatile", label: "PC Portatile" },
+  { value: "pc_fisso", label: "PC Fisso" },
+  { value: "display", label: "Display" },
+  { value: "batteria", label: "Batteria" },
+  { value: "accessorio", label: "Accessorio" },
+  { value: "altro", label: "Altro" },
+];
+
 export default function AdminSmartphoneCatalog() {
   const [searchQuery, setSearchQuery] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [brandFilter, setBrandFilter] = useState<string>("all");
   const [gradeFilter, setGradeFilter] = useState<string>("all");
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -688,9 +700,10 @@ export default function AdminSmartphoneCatalog() {
       s.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       s.sku.toLowerCase().includes(searchQuery.toLowerCase()) ||
       s.specs?.imei?.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesCategory = categoryFilter === "all" || s.category === categoryFilter;
     const matchesBrand = brandFilter === "all" || s.brand === brandFilter;
     const matchesGrade = gradeFilter === "all" || s.specs?.grade === gradeFilter;
-    return matchesSearch && matchesBrand && matchesGrade;
+    return matchesSearch && matchesCategory && matchesBrand && matchesGrade;
   });
 
   const getGradeColor = (grade: string | null | undefined) => {
@@ -719,21 +732,21 @@ export default function AdminSmartphoneCatalog() {
         <div>
           <h1 className="text-2xl font-bold flex items-center gap-2">
             <Smartphone className="h-6 w-6" />
-            Catalogo Smartphone (Admin)
+            Catalogo Dispositivi (Admin)
           </h1>
           <p className="text-muted-foreground">
-            Visualizza e gestisci tutti gli smartphone di tutti i rivenditori
+            Visualizza e gestisci tutti i dispositivi di tutti i rivenditori
           </p>
         </div>
-        <Button onClick={() => setWizardOpen(true)} data-testid="button-add-smartphone">
+        <Button onClick={() => setWizardOpen(true)} data-testid="button-add-device">
           <Plus className="mr-2 h-4 w-4" />
-          Aggiungi Smartphone
+          Aggiungi Dispositivo
         </Button>
       </div>
 
       <Card>
         <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-4">
-          <CardTitle>Lista Smartphone ({filteredSmartphones.length})</CardTitle>
+          <CardTitle>Lista Dispositivi ({filteredSmartphones.length})</CardTitle>
           <div className="flex items-center gap-2 flex-wrap">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -745,6 +758,17 @@ export default function AdminSmartphoneCatalog() {
                 data-testid="input-search-smartphones"
               />
             </div>
+            <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+              <SelectTrigger className="w-36" data-testid="select-category-filter">
+                <SelectValue placeholder="Categoria" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tutte le categorie</SelectItem>
+                {CATEGORY_OPTIONS.map((c) => (
+                  <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             <Select value={brandFilter} onValueChange={setBrandFilter}>
               <SelectTrigger className="w-36" data-testid="select-brand-filter">
                 <SelectValue placeholder="Marca" />
@@ -779,7 +803,7 @@ export default function AdminSmartphoneCatalog() {
           ) : filteredSmartphones.length === 0 ? (
             <div className="text-center py-12 text-muted-foreground">
               <Smartphone className="mx-auto h-12 w-12 mb-4 opacity-50" />
-              <p>Nessuno smartphone nel catalogo</p>
+              <p>Nessun dispositivo nel catalogo</p>
             </div>
           ) : (
             <ScrollArea className="h-[500px]">

@@ -92,7 +92,23 @@ interface CompatibilityEntry {
 }
 
 const STORAGE_OPTIONS = ["16GB", "32GB", "64GB", "128GB", "256GB", "512GB", "1TB", "2TB"];
-const BRANDS = ["Apple", "Samsung", "Xiaomi", "Huawei", "OPPO", "OnePlus", "Google", "Motorola", "Sony", "Nokia", "Altro"];
+// Marche per dispositivi mobili (smartphone, tablet)
+const MOBILE_BRANDS = ["Apple", "Samsung", "Xiaomi", "Huawei", "OPPO", "OnePlus", "Google", "Motorola", "Sony", "Nokia", "Lenovo", "Altro"];
+// Marche per computer (PC fissi, portatili)
+const PC_BRANDS = ["Apple", "Dell", "HP", "Lenovo", "ASUS", "Acer", "MSI", "Microsoft", "Razer", "Samsung", "Huawei", "Altro"];
+// Funzione per ottenere le marche in base alla categoria
+const getBrandsForCategory = (category: string): string[] => {
+  switch (category) {
+    case "smartphone":
+    case "tablet":
+      return MOBILE_BRANDS;
+    case "pc_fisso":
+    case "portatile":
+      return PC_BRANDS;
+    default:
+      return Array.from(new Set([...MOBILE_BRANDS, ...PC_BRANDS])); // Tutte le marche per altre categorie
+  }
+};
 const COLOR_OPTIONS = [
   "Nero", "Bianco", "Argento", "Grigio", "Oro", "Oro Rosa", "Blu", "Blu Notte", 
   "Verde", "Verde Alpino", "Viola", "Rosso", "Giallo", "Arancione", "Rosa", "Titanio Nero", 
@@ -126,11 +142,18 @@ const BATTERY_OPTIONS = [
 ];
 const CATEGORY_OPTIONS = [
   { value: "smartphone", label: "Smartphone" },
+  { value: "tablet", label: "Tablet" },
+  { value: "portatile", label: "PC Portatile / Laptop" },
+  { value: "pc_fisso", label: "PC Fisso / Desktop" },
   { value: "display", label: "Display/Schermo" },
   { value: "batteria", label: "Batteria" },
   { value: "accessorio", label: "Accessorio" },
   { value: "altro", label: "Altro" },
 ];
+
+// Categorie che sono dispositivi (hanno specs tecniche)
+const DEVICE_CATEGORIES = ["smartphone", "tablet", "portatile", "pc_fisso"];
+const isDeviceCategory = (category: string) => DEVICE_CATEGORIES.includes(category);
 const ACCESSORY_OPTIONS = [
   "Caricatore originale",
   "Cavo USB",
@@ -266,7 +289,7 @@ export function SmartphoneWizard({
         sku: sku,
         category: data.category,
         description: data.description,
-        type: "smartphone",
+        type: data.category,
         unitPriceCents: Math.round(parseFloat(data.unitPrice) * 100),
         costPriceCents: data.costPrice ? Math.round(parseFloat(data.costPrice) * 100) : undefined,
         condition: data.condition,
@@ -322,7 +345,7 @@ export function SmartphoneWizard({
         }
       }
       queryClient.invalidateQueries({ queryKey: ["/api/smartphones"] });
-      toast({ title: "Smartphone creato", description: `${form.getValues("name")} aggiunto al catalogo` });
+      toast({ title: "Dispositivo creato", description: `${form.getValues("name")} aggiunto al catalogo` });
       handleClose();
       onSuccess?.(newProduct);
     },
@@ -394,7 +417,7 @@ export function SmartphoneWizard({
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-xl font-semibold">
-            {editingProduct ? "Modifica Smartphone" : "Nuovo Smartphone"}
+            {editingProduct ? "Modifica Dispositivo" : "Nuovo Dispositivo"}
           </DialogTitle>
         </DialogHeader>
 
@@ -441,7 +464,7 @@ export function SmartphoneWizard({
                 <div className="text-center mb-4">
                   <Smartphone className="h-12 w-12 mx-auto text-primary mb-2" />
                   <h3 className="text-lg font-medium">Informazioni Base</h3>
-                  <p className="text-sm text-muted-foreground">Inserisci i dati principali dello smartphone</p>
+                  <p className="text-sm text-muted-foreground">Inserisci i dati principali del dispositivo</p>
                 </div>
 
                 <div className="flex justify-center mb-4">
@@ -531,7 +554,7 @@ export function SmartphoneWizard({
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            {BRANDS.map(brand => (
+                            {getBrandsForCategory(form.watch("category")).map(brand => (
                               <SelectItem key={brand} value={brand}>{brand}</SelectItem>
                             ))}
                           </SelectContent>
@@ -1196,7 +1219,7 @@ export function SmartphoneWizard({
                   data-testid="button-wizard-submit"
                 >
                   {createMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                  Salva Smartphone
+                  Salva Dispositivo
                 </Button>
               )}
             </div>
