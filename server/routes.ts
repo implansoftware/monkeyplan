@@ -2802,7 +2802,21 @@ export function registerRoutes(app: Express): Server {
   app.get("/api/admin/repairs", requireRole("admin"), async (req, res) => {
     try {
       const repairs = await storage.listRepairOrders();
-      res.json(repairs);
+      
+      // Get all resellers to populate resellerName
+      const allUsers = await storage.listUsers();
+      const resellersMap = new Map<string, string>();
+      allUsers.filter(u => u.role === 'reseller').forEach(r => {
+        resellersMap.set(r.id, r.fullName || r.ragioneSociale || r.username);
+      });
+      
+      // Enrich repairs with resellerName
+      const enrichedRepairs = repairs.map(repair => ({
+        ...repair,
+        resellerName: repair.resellerId ? resellersMap.get(repair.resellerId) || null : null,
+      }));
+      
+      res.json(enrichedRepairs);
     } catch (error: any) {
       res.status(500).send(error.message);
     }
