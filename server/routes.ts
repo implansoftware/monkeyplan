@@ -7906,6 +7906,14 @@ export function registerRoutes(app: Express): Server {
       product.productType = 'dispositivo';
       product.createdBy = req.user.role === 'reseller_collaborator' ? req.user.resellerId : req.user.id;
       
+      // Generate SKU if not provided or empty
+      if (!product.sku || product.sku.trim() === '') {
+        const brandCode = (specs.brand || 'SM').toUpperCase().replace(/[^A-Z0-9]/g, '').substring(0, 4);
+        const conditionCode = (product.condition || 'NEW').toUpperCase().substring(0, 3);
+        const timestamp = Date.now().toString(36).toUpperCase();
+        product.sku = `SM-${brandCode}-${conditionCode}-${timestamp}`;
+      }
+      
       // Create product first
       const createdProduct = await storage.createProduct(product);
       

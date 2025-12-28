@@ -239,11 +239,22 @@ export function SmartphoneWizard({
     setCompatibilities(compatibilities.filter((_, i) => i !== index));
   };
 
+  // Generate automatic SKU from brand, condition and timestamp
+  const generateSku = (brand: string, condition: string): string => {
+    const brandCode = brand.toUpperCase().replace(/[^A-Z0-9]/g, "").substring(0, 4);
+    const conditionCode = condition.toUpperCase().substring(0, 3);
+    const timestamp = Date.now().toString(36).toUpperCase();
+    return `SM-${brandCode}-${conditionCode}-${timestamp}`;
+  };
+
   const createMutation = useMutation({
     mutationFn: async (data: WizardData) => {
+      // Generate SKU if not provided
+      const sku = data.sku?.trim() || generateSku(data.brand, data.condition);
+      
       const productData = {
         name: data.name,
-        sku: data.sku || undefined,
+        sku: sku,
         description: data.description,
         type: "smartphone",
         unitPriceCents: Math.round(parseFloat(data.unitPrice) * 100),
