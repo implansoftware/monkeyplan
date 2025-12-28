@@ -19676,11 +19676,20 @@ export function registerRoutes(app: Express): Server {
       if (!req.user) return res.status(401).json({ error: "Non autenticato" });
       
       let accessibleWarehouses: any[] = [];
+      const actingAs = (req.session as any).actingAs;
       
-      if (['admin', 'admin_staff'].includes(req.user.role)) {
+      // Admin/admin_staff SENZA actingAs: vede tutti i magazzini
+      if (['admin', 'admin_staff'].includes(req.user.role) && !actingAs) {
         accessibleWarehouses = await storage.listWarehouses({});
-      } else if (req.user.role === 'reseller' || req.user.role === 'reseller_staff' || req.user.role === 'reseller_collaborator') {
-        const resellerId = req.user.resellerId || req.user.id;
+      } 
+      // Admin che agisce come reseller, OPPURE reseller nativo
+      else if (
+        (actingAs && actingAs.type === 'reseller') ||
+        req.user.role === 'reseller' || 
+        req.user.role === 'reseller_staff' || 
+        req.user.role === 'reseller_collaborator'
+      ) {
+        const resellerId = actingAs?.id || req.user.resellerId || req.user.id;
         
         // 1. Proprio magazzino
         const ownWarehouse = await storage.getWarehouseByOwner('reseller', resellerId);
@@ -19701,8 +19710,13 @@ export function registerRoutes(app: Express): Server {
           const rcWarehouse = await storage.getWarehouseByOwner('repair_center', rc.id);
           if (rcWarehouse) accessibleWarehouses.push(rcWarehouse);
         }
-      } else if (req.user.role === 'repair_center') {
-        const rcId = req.user.repairCenterId || req.user.id;
+      } 
+      // Admin che agisce come repair_center, OPPURE repair_center nativo
+      else if (
+        (actingAs && actingAs.type === 'repair_center') ||
+        req.user.role === 'repair_center'
+      ) {
+        const rcId = actingAs?.id || req.user.repairCenterId || req.user.id;
         const ownWarehouse = await storage.getWarehouseByOwner('repair_center', rcId);
         if (ownWarehouse) accessibleWarehouses.push(ownWarehouse);
       }
