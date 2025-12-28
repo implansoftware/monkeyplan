@@ -612,7 +612,7 @@ export default function AdminSmartphoneCatalog() {
       deviceBrandId: selectedDeviceBrandId, 
       deviceBrandName: brand?.name,
       deviceModelId: modelId,
-      deviceModelName: model?.name
+      deviceModelName: model?.modelName
     }]);
   };
 
@@ -1499,7 +1499,7 @@ export default function AdminSmartphoneCatalog() {
                             onClick={() => !isSelected && addModelCompatibility(model.id)}
                             data-testid={`badge-compat-model-${model.id}`}
                           >
-                            {model.name}
+                            {model.modelName}
                             {isSelected && " ✓"}
                           </Badge>
                         );
