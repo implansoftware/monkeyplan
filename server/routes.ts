@@ -19931,6 +19931,26 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  app.get("/api/warehouses/:warehouseId/products", requireAuth, async (req, res) => {
+    try {
+      const search = req.query.search as string | undefined;
+      const limit = req.query.limit ? parseInt(req.query.limit as string) : 20;
+      
+      let productsWithStock = await storage.listWarehouseProductsWithStock(
+        req.params.warehouseId,
+        search
+      );
+      
+      if (limit > 0) {
+        productsWithStock = productsWithStock.slice(0, limit);
+      }
+      
+      res.json(productsWithStock);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   app.post("/api/warehouses/:warehouseId/stock", requireAuth, async (req, res) => {
     try {
       if (!req.user) return res.status(401).json({ error: "Non autenticato" });
