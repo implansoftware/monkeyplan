@@ -271,11 +271,14 @@ export function QuoteFormDialog({
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             <Card>
               <CardHeader className="space-y-3">
-                <div className="flex flex-row items-center justify-between gap-2">
-                  <CardTitle className="text-base">Ricambi e Servizi</CardTitle>
+                <CardTitle className="text-base">Ricambi e Servizi</CardTitle>
+                <div className="flex flex-col gap-2">
+                  <p className="text-sm text-muted-foreground">
+                    Seleziona prima il magazzino di riferimento per cercare i prodotti disponibili:
+                  </p>
                   <div className="flex items-center gap-2">
                     <Select value={selectedWarehouseId} onValueChange={setSelectedWarehouseId}>
-                      <SelectTrigger className="w-[180px]" data-testid="select-warehouse">
+                      <SelectTrigger className="w-[220px]" data-testid="select-warehouse">
                         <Warehouse className="h-4 w-4 mr-2" />
                         <SelectValue placeholder="Seleziona magazzino" />
                       </SelectTrigger>
