@@ -147,7 +147,7 @@ export function SmartphoneWizard({
   const { user } = useUser();
 
   const isAdmin = user?.role === "admin";
-  const isReseller = user?.role === "reseller" || user?.role === "reseller_staff";
+  const isReseller = user?.role === "reseller";
 
   const form = useForm<WizardData>({
     resolver: zodResolver(wizardSchema),
@@ -175,14 +175,19 @@ export function SmartphoneWizard({
     },
   });
 
+  // Use /api/warehouses/accessible for all non-admin roles - it handles all roles internally
+  // and returns own + sub-reseller + repair center warehouses for resellers
   const warehouseEndpoint = isAdmin 
     ? "/api/admin/all-warehouses" 
-    : isReseller 
-      ? "/api/reseller/warehouses" 
-      : "/api/repair-center/warehouses";
+    : "/api/warehouses/accessible";
 
   const { data: warehouses = [] } = useQuery<any[]>({
     queryKey: [warehouseEndpoint],
+    queryFn: async () => {
+      const res = await fetch(warehouseEndpoint, { credentials: "include" });
+      if (!res.ok) throw new Error("Failed to fetch warehouses");
+      return res.json();
+    },
   });
 
   // Device compatibility state and queries
@@ -963,7 +968,7 @@ export function SmartphoneWizard({
                                 onClick={() => !isSelected && addModelCompatibility(model.id)}
                                 data-testid={`badge-model-${model.id}`}
                               >
-                                {model.name}
+                                {model.modelName}
                                 {isSelected && " ✓"}
                               </Badge>
                             );
@@ -984,7 +989,7 @@ export function SmartphoneWizard({
                             if (compat.deviceModelId) {
                               const allModels = deviceModels.filter(m => m.brandId === compat.deviceBrandId);
                               const model = allModels.find(m => m.id === compat.deviceModelId);
-                              label = `${brand?.name || ""} ${model?.name || "Modello"}`;
+                              label = `${brand?.name || ""} ${model?.modelName || "Modello"}`;
                             } else {
                               label = `${brand?.name || "Marca"} (tutti)`;
                             }

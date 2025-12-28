@@ -1445,7 +1445,7 @@ export default function AdminSmartphoneCatalog() {
                 </div>
               </div>
 
-            {editingSmartphone && (
+              {editingSmartphone && (
               <div className="space-y-3 border-t pt-4">
                 <Label className="flex items-center gap-2">
                   <Link2 className="h-4 w-4" />
