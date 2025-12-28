@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { 
   Plus, Search, FileCheck, Pencil, Trash2, 
-  ArrowLeft, User as UserIcon, Eye, Package, Calendar, Euro, ClipboardPaste, X, Building2, User2
+  ArrowLeft, User as UserIcon, Eye, Package, Calendar, Euro, ClipboardList, X, Building2, User2
 } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
