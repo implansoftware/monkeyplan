@@ -11,13 +11,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectGr
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Smartphone, Search, Plus, Pencil, Trash2, Battery, HardDrive, Loader2, Store, ImagePlus, X, Image, Users, UserPlus, Eye, EyeOff, Warehouse } from "lucide-react";
+import { Smartphone, Search, Plus, Pencil, Trash2, Battery, HardDrive, Loader2, Store, ImagePlus, X, Image, Users, UserPlus, Eye, EyeOff, Warehouse, Link2 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Skeleton } from "@/components/ui/skeleton";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useRef } from "react";
-import type { SmartphoneSpecs, Product, User, ProductPrice, Warehouse as WarehouseType } from "@shared/schema";
+import type { SmartphoneSpecs, Product, User, ProductPrice, Warehouse as WarehouseType, DeviceBrand, DeviceModel } from "@shared/schema";
 import { ProductDetailDialog } from "@/components/product-detail-dialog";
 import { SmartphoneWizard } from "@/components/SmartphoneWizard";
 
@@ -47,6 +47,13 @@ interface WarehouseForStock {
     fullName: string | null;
     role: string;
   } | null;
+}
+
+interface CompatibilityEntry {
+  deviceBrandId: string;
+  deviceBrandName?: string;
+  deviceModelId: string | null;
+  deviceModelName?: string | null;
 }
 
 const STORAGE_OPTIONS = ["16GB", "32GB", "64GB", "128GB", "256GB", "512GB", "1TB", "2TB"];
@@ -107,6 +114,8 @@ export default function AdminSmartphoneCatalog() {
   const [initialStock, setInitialStock] = useState<InitialStockEntry[]>([]);
   const [editStock, setEditStock] = useState<Array<{ warehouseId: string; warehouseName: string; ownerType: string; ownerName: string; quantity: number; originalQuantity: number; location: string; originalLocation: string }>>([]);
   const [isLoadingStock, setIsLoadingStock] = useState(false);
+  const [editCompatibilities, setEditCompatibilities] = useState<CompatibilityEntry[]>([]);
+  const [selectedDeviceBrandId, setSelectedDeviceBrandId] = useState<string>("");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
@@ -143,6 +152,27 @@ export default function AdminSmartphoneCatalog() {
   const { data: resellers = [] } = useQuery<User[]>({
     queryKey: ["/api/admin/users"],
     select: (users) => users.filter((u) => u.role === "reseller"),
+  });
+
+  // Device compatibility queries
+  const { data: deviceBrands = [] } = useQuery<DeviceBrand[]>({
+    queryKey: ["/api/device-brands"],
+    queryFn: async () => {
+      const res = await fetch("/api/device-brands", { credentials: "include" });
+      if (!res.ok) throw new Error("Failed to fetch brands");
+      return res.json();
+    },
+  });
+
+  const { data: deviceModels = [] } = useQuery<DeviceModel[]>({
+    queryKey: ["/api/device-models", selectedDeviceBrandId],
+    queryFn: async () => {
+      if (!selectedDeviceBrandId) return [];
+      const res = await fetch(`/api/device-models?brandId=${selectedDeviceBrandId}`, { credentials: "include" });
+      if (!res.ok) throw new Error("Failed to fetch models");
+      return res.json();
+    },
+    enabled: !!selectedDeviceBrandId,
   });
 
   // Fetch all product assignments for displaying in the table
@@ -256,18 +286,7 @@ export default function AdminSmartphoneCatalog() {
       // Stock changes are handled separately via updateStockMutation (per-row save buttons)
       await apiRequest("PATCH", `/api/smartphones/${productId}`, { product: data.product, specs: data.specs });
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/smartphones"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/warehouses"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/all-warehouses"] });
-      setDialogOpen(false);
-      setEditingSmartphone(null);
-      resetForm();
-      toast({ title: "Smartphone aggiornato", description: "Le modifiche sono state salvate." });
-    },
-    onError: (error: any) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
-    },
+    // Note: onSuccess moved to handleSubmit to allow sequential compatibility save
   });
 
   const updateStockMutation = useMutation({
@@ -463,6 +482,8 @@ export default function AdminSmartphoneCatalog() {
     setImagePreview(null);
     setInitialStock([]);
     setEditStock([]);
+    setEditCompatibilities([]);
+    setSelectedDeviceBrandId("");
     setFormData({
       name: "",
       sku: "",
@@ -536,9 +557,70 @@ export default function AdminSmartphoneCatalog() {
     } finally {
       setIsLoadingStock(false);
     }
+
+    // Load existing device compatibilities
+    try {
+      const compatResponse = await fetch(`/api/products/${smartphone.id}/compatibilities`, {
+        credentials: "include",
+      });
+      if (compatResponse.ok) {
+        const compatData = await compatResponse.json();
+        setEditCompatibilities(compatData.map((c: any) => ({
+          deviceBrandId: c.deviceBrandId,
+          deviceBrandName: c.deviceBrandName,
+          deviceModelId: c.deviceModelId,
+          deviceModelName: c.deviceModelName,
+        })));
+      }
+    } catch (error) {
+      console.error("Error loading compatibilities:", error);
+    }
   };
 
-  const handleSubmit = () => {
+  // Compatibility management functions
+  const addBrandCompatibility = () => {
+    if (!selectedDeviceBrandId) return;
+    const exists = editCompatibilities.some(c => 
+      c.deviceBrandId === selectedDeviceBrandId && c.deviceModelId === null
+    );
+    if (exists) {
+      toast({ title: "Compatibilità già presente", variant: "destructive" });
+      return;
+    }
+    const brand = deviceBrands.find(b => b.id === selectedDeviceBrandId);
+    setEditCompatibilities([...editCompatibilities, { 
+      deviceBrandId: selectedDeviceBrandId, 
+      deviceBrandName: brand?.name,
+      deviceModelId: null,
+      deviceModelName: null
+    }]);
+    setSelectedDeviceBrandId("");
+  };
+
+  const addModelCompatibility = (modelId: string) => {
+    if (!selectedDeviceBrandId || !modelId) return;
+    const exists = editCompatibilities.some(c => 
+      c.deviceBrandId === selectedDeviceBrandId && c.deviceModelId === modelId
+    );
+    if (exists) {
+      toast({ title: "Compatibilità già presente", variant: "destructive" });
+      return;
+    }
+    const brand = deviceBrands.find(b => b.id === selectedDeviceBrandId);
+    const model = deviceModels.find(m => m.id === modelId);
+    setEditCompatibilities([...editCompatibilities, { 
+      deviceBrandId: selectedDeviceBrandId, 
+      deviceBrandName: brand?.name,
+      deviceModelId: modelId,
+      deviceModelName: model?.name
+    }]);
+  };
+
+  const removeCompatibility = (index: number) => {
+    setEditCompatibilities(editCompatibilities.filter((_, i) => i !== index));
+  };
+
+  const handleSubmit = async () => {
     const product = {
       name: formData.name,
       sku: formData.sku,
@@ -567,7 +649,34 @@ export default function AdminSmartphoneCatalog() {
 
     if (editingSmartphone) {
       // Stock changes are saved individually via saveStockChange, not via handleSubmit
-      updateMutation.mutate({ productId: editingSmartphone.id, data: { product, specs } });
+      try {
+        await updateMutation.mutateAsync({ productId: editingSmartphone.id, data: { product, specs } });
+        
+        // Save compatibilities after product update succeeds
+        await apiRequest("PUT", `/api/products/${editingSmartphone.id}/compatibilities`, {
+          compatibilities: editCompatibilities.map(c => ({
+            deviceBrandId: c.deviceBrandId,
+            deviceModelId: c.deviceModelId,
+          })),
+        });
+        
+        // Success - invalidate queries, close dialog, reset form
+        queryClient.invalidateQueries({ queryKey: ["/api/smartphones"] });
+        queryClient.invalidateQueries({ queryKey: ["/api/warehouses"] });
+        queryClient.invalidateQueries({ queryKey: ["/api/admin/all-warehouses"] });
+        setDialogOpen(false);
+        setEditingSmartphone(null);
+        resetForm();
+        toast({ title: "Smartphone aggiornato", description: "Le modifiche sono state salvate." });
+      } catch (err: any) {
+        console.error("Failed to save product/compatibilities:", err);
+        // If error occurs, dialog stays open so user can retry
+        toast({ 
+          title: "Errore durante il salvataggio", 
+          description: "Riprova a salvare le modifiche. " + (err.message || ""), 
+          variant: "destructive" 
+        });
+      }
     } else {
       const stockEntries = initialStock.filter(s => s.quantity > 0);
       createMutation.mutate({ product, specs, imageFile, initialStock: stockEntries });
@@ -1335,6 +1444,105 @@ export default function AdminSmartphoneCatalog() {
                   </div>
                 </div>
               </div>
+
+            {editingSmartphone && (
+              <div className="space-y-3 border-t pt-4">
+                <Label className="flex items-center gap-2">
+                  <Link2 className="h-4 w-4" />
+                  Compatibilità Dispositivi
+                </Label>
+                <p className="text-xs text-muted-foreground">
+                  Seleziona i dispositivi con cui questo smartphone è compatibile (es. cover, accessori)
+                </p>
+                
+                <div className="flex gap-2 flex-wrap">
+                  <div className="flex-1 min-w-[180px]">
+                    <Select value={selectedDeviceBrandId} onValueChange={setSelectedDeviceBrandId}>
+                      <SelectTrigger data-testid="select-compat-brand">
+                        <SelectValue placeholder="Seleziona marca dispositivo" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {deviceBrands.map((brand) => (
+                          <SelectItem key={brand.id} value={brand.id}>
+                            {brand.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={addBrandCompatibility}
+                    disabled={!selectedDeviceBrandId}
+                    data-testid="button-add-brand-compat"
+                  >
+                    <Plus className="h-4 w-4 mr-1" />
+                    Tutti i modelli
+                  </Button>
+                </div>
+
+                {selectedDeviceBrandId && deviceModels.length > 0 && (
+                  <div>
+                    <Label className="text-xs mb-2 block">Oppure seleziona modelli specifici:</Label>
+                    <div className="flex flex-wrap gap-1 max-h-24 overflow-y-auto">
+                      {deviceModels.map((model) => {
+                        const isSelected = editCompatibilities.some(
+                          c => c.deviceBrandId === selectedDeviceBrandId && c.deviceModelId === model.id
+                        );
+                        return (
+                          <Badge
+                            key={model.id}
+                            variant={isSelected ? "default" : "outline"}
+                            className="cursor-pointer"
+                            onClick={() => !isSelected && addModelCompatibility(model.id)}
+                            data-testid={`badge-compat-model-${model.id}`}
+                          >
+                            {model.name}
+                            {isSelected && " ✓"}
+                          </Badge>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {editCompatibilities.length > 0 && (
+                  <div className="pt-2 border-t">
+                    <Label className="text-xs text-muted-foreground mb-2 block">
+                      Compatibilità selezionate ({editCompatibilities.length})
+                    </Label>
+                    <div className="flex flex-wrap gap-2">
+                      {editCompatibilities.map((compat, index) => {
+                        const label = compat.deviceModelName 
+                          ? `${compat.deviceBrandName || ''} ${compat.deviceModelName}`
+                          : `${compat.deviceBrandName || 'Marca'} (tutti)`;
+                        return (
+                          <Badge key={index} variant="secondary" className="gap-1">
+                            {label}
+                            <button
+                              type="button"
+                              onClick={() => removeCompatibility(index)}
+                              className="ml-1 hover:text-destructive"
+                              data-testid={`button-remove-compat-${index}`}
+                            >
+                              <X className="h-3 w-3" />
+                            </button>
+                          </Badge>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {editCompatibilities.length === 0 && (
+                  <p className="text-xs text-muted-foreground text-center py-2">
+                    Nessuna compatibilità selezionata
+                  </p>
+                )}
+              </div>
+            )}
           </div>
 
           <DialogFooter>
