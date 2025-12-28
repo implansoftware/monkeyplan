@@ -1117,7 +1117,10 @@ export function SmartphoneWizard({
                         <img src={imagePreview} alt="Preview" className="w-20 h-20 object-cover rounded-lg" />
                       )}
                       <div>
-                        <h4 className="font-semibold text-lg">{values.name || "Nome non inserito"}</h4>
+                        <h4 className="font-semibold text-lg" data-testid="text-summary-name">{values.name || "Nome non inserito"}</h4>
+                        {values.sku && (
+                          <p className="text-xs text-muted-foreground" data-testid="text-summary-sku">SKU: {values.sku}</p>
+                        )}
                         <div className="flex gap-2 mt-1">
                           <Badge variant="secondary">{values.brand}</Badge>
                           <Badge variant="outline">{values.condition}</Badge>
@@ -1125,6 +1128,23 @@ export function SmartphoneWizard({
                         </div>
                       </div>
                     </div>
+
+                    {(values.imei || values.imei2) && (
+                      <div className="grid grid-cols-2 gap-4 pt-4 border-t">
+                        {values.imei && (
+                          <div>
+                            <Label className="text-xs text-muted-foreground">IMEI</Label>
+                            <p className="font-medium font-mono text-sm" data-testid="text-summary-imei">{values.imei}</p>
+                          </div>
+                        )}
+                        {values.imei2 && (
+                          <div>
+                            <Label className="text-xs text-muted-foreground">IMEI 2</Label>
+                            <p className="font-medium font-mono text-sm" data-testid="text-summary-imei2">{values.imei2}</p>
+                          </div>
+                        )}
+                      </div>
+                    )}
 
                     <div className="grid grid-cols-2 gap-4 pt-4 border-t">
                       <div>
