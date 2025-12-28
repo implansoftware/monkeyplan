@@ -9587,6 +9587,180 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // ============ PARTS PURCHASE ORDERS (Ordini Raggruppati) ============
+
+  // GET /api/repair-orders/:id/purchase-orders - List grouped purchase orders
+  app.get("/api/repair-orders/:id/purchase-orders", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const repairOrder = await storage.getRepairOrder(req.params.id);
+      if (!repairOrder) {
+        return res.status(404).send("Repair order not found");
+      }
+      
+      // Basic RBAC check
+      if (req.user.role === 'customer' && repairOrder.customerId !== req.user.id) {
+        return res.status(403).send("Access denied");
+      }
+      
+      const purchaseOrders = await storage.listPartsPurchaseOrders(req.params.id);
+      
+      // For each purchase order, get its items
+      const ordersWithItems = await Promise.all(purchaseOrders.map(async (po) => {
+        const items = await storage.listPartsOrders(req.params.id);
+        const poItems = items.filter(item => item.purchaseOrderId === po.id);
+        return { ...po, items: poItems };
+      }));
+      
+      res.json(ordersWithItems);
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+
+  // POST /api/repair-orders/:id/purchase-orders - Create grouped purchase order with items
+  app.post("/api/repair-orders/:id/purchase-orders", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const repairOrder = await storage.getRepairOrder(req.params.id);
+      if (!repairOrder) {
+        return res.status(404).send("Repair order not found");
+      }
+      
+      // Role-based access control
+      if (req.user.role === 'admin') {
+        // Admin can create for any order
+      } else if (req.user.role === 'repair_center') {
+        if (repairOrder.repairCenterId !== req.user.repairCenterId) {
+          return res.status(403).send("Access denied");
+        }
+      } else if (req.user.role === 'reseller') {
+        const canManage = await canResellerManageOrder(req.user.id, repairOrder);
+        if (!canManage) {
+          return res.status(403).send("Access denied");
+        }
+      } else {
+        return res.status(403).send("Only admins, repair centers and resellers can create purchase orders");
+      }
+      
+      const { destinationType, supplierName, supplierId, sourceWarehouseId, items, notes, expectedArrival } = req.body;
+      
+      if (!items || !Array.isArray(items) || items.length === 0) {
+        return res.status(400).send("At least one item is required");
+      }
+      
+      // Generate order number
+      const orderNumber = await storage.generatePartsPurchaseOrderNumber();
+      
+      // Calculate total amount
+      const totalAmount = items.reduce((sum: number, item: any) => {
+        return sum + (item.unitCost || 0) * (item.quantity || 1);
+      }, 0);
+      
+      // Create purchase order header
+      const purchaseOrder = await storage.createPartsPurchaseOrder({
+        repairOrderId: req.params.id,
+        orderNumber,
+        destinationType,
+        supplierName: supplierName || null,
+        supplierId: supplierId || null,
+        sourceWarehouseId: sourceWarehouseId || null,
+        totalAmount,
+        status: 'submitted',
+        expectedArrival: expectedArrival ? new Date(expectedArrival) : null,
+        notes: notes || null,
+        createdBy: req.user.id,
+      });
+      
+      // Create individual parts order items linked to this purchase order
+      const createdItems = await Promise.all(items.map(async (item: any) => {
+        return await storage.createPartsOrder({
+          repairOrderId: req.params.id,
+          purchaseOrderId: purchaseOrder.id,
+          productId: item.productId || null,
+          partName: item.partName,
+          partNumber: item.partNumber || null,
+          quantity: item.quantity || 1,
+          unitCost: item.unitCost,
+          supplier: supplierName || null,
+          expectedArrival: expectedArrival ? new Date(expectedArrival) : null,
+          notes: item.notes || null,
+          orderedBy: req.user.id,
+        });
+      }));
+      
+      // Transition repair status to attesa_ricambi if not already
+      if (repairOrder.status === 'preventivo_accettato') {
+        await storage.updateRepairOrder(req.params.id, {
+          status: 'attesa_ricambi' as any,
+        });
+      }
+      
+      res.status(201).json({ ...purchaseOrder, items: createdItems });
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+
+  // PATCH /api/purchase-orders/:id/status - Update purchase order status
+  app.patch("/api/purchase-orders/:id/status", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const purchaseOrder = await storage.getPartsPurchaseOrder(req.params.id);
+      if (!purchaseOrder) {
+        return res.status(404).send("Purchase order not found");
+      }
+      
+      const repairOrder = await storage.getRepairOrder(purchaseOrder.repairOrderId);
+      if (!repairOrder) {
+        return res.status(404).send("Repair order not found");
+      }
+      
+      // RBAC check
+      if (req.user.role === 'admin') {
+        // Admin can update any
+      } else if (req.user.role === 'repair_center') {
+        if (repairOrder.repairCenterId !== req.user.repairCenterId) {
+          return res.status(403).send("Access denied");
+        }
+      } else if (req.user.role === 'reseller') {
+        const canManage = await canResellerManageOrder(req.user.id, repairOrder);
+        if (!canManage) {
+          return res.status(403).send("Access denied");
+        }
+      } else {
+        return res.status(403).send("Access denied");
+      }
+      
+      const updates: any = { status: req.body.status };
+      if (req.body.status === 'shipped') {
+        updates.shippedAt = new Date();
+      }
+      if (req.body.status === 'received') {
+        updates.receivedAt = new Date();
+      }
+      
+      const updated = await storage.updatePartsPurchaseOrder(req.params.id, updates);
+      res.json(updated);
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+
+  // GET /api/suppliers/list - Get list of suppliers for dropdown
+  app.get("/api/suppliers/list", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      const suppliers = await storage.listSuppliers();
+      res.json(suppliers);
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+
   // ============ FASE 6: REPAIR LOGS ============
 
   // GET /api/repair-orders/:id/logs - List repair logs

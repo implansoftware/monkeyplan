@@ -11,6 +11,7 @@ import {
   ResellerDeviceBrand, InsertResellerDeviceBrand, ResellerDeviceModel, InsertResellerDeviceModel,
   IssueType, InsertIssueType, AestheticDefect, InsertAestheticDefect, AccessoryType, InsertAccessoryType,
   DiagnosticFinding, DamagedComponentType, EstimatedRepairTime,
+  PartsPurchaseOrder, InsertPartsPurchaseOrder, partsPurchaseOrders,
   PartsOrder, InsertPartsOrder, RepairLog, InsertRepairLog,
   RepairTestChecklist, InsertRepairTestChecklist, RepairDelivery, InsertRepairDelivery,
   RepairCenterAvailability, InsertRepairCenterAvailability,
@@ -335,6 +336,13 @@ export interface IStorage {
   createDeviceModel(insertDeviceModel: InsertDeviceModel): Promise<DeviceModel>;
   updateDeviceModel(id: string, updates: Partial<InsertDeviceModel>): Promise<DeviceModel>;
   deleteDeviceModel(id: string): Promise<void>;
+  
+  // Parts Purchase Orders (Ordini raggruppati ricambi)
+  createPartsPurchaseOrder(order: InsertPartsPurchaseOrder): Promise<PartsPurchaseOrder>;
+  getPartsPurchaseOrder(id: string): Promise<PartsPurchaseOrder | undefined>;
+  listPartsPurchaseOrders(repairOrderId: string): Promise<PartsPurchaseOrder[]>;
+  updatePartsPurchaseOrder(id: string, updates: Partial<InsertPartsPurchaseOrder>): Promise<PartsPurchaseOrder>;
+  generatePartsPurchaseOrderNumber(): Promise<string>;
   
   // Parts Orders (FASE 5)
   createPartsOrder(order: InsertPartsOrder): Promise<PartsOrder>;
@@ -3252,6 +3260,57 @@ export class DatabaseStorage implements IStorage {
 
   async deleteDeviceModel(id: string): Promise<void> {
     await db.delete(deviceModels).where(eq(deviceModels.id, id));
+  }
+
+  // Parts Purchase Orders (Ordini raggruppati ricambi)
+  async generatePartsPurchaseOrderNumber(): Promise<string> {
+    const year = new Date().getFullYear();
+    const prefix = `ORD-${year}-`;
+    
+    // Get the latest order number for this year
+    const lastOrder = await db.select({ orderNumber: partsPurchaseOrders.orderNumber })
+      .from(partsPurchaseOrders)
+      .where(sql`${partsPurchaseOrders.orderNumber} LIKE ${prefix + '%'}`)
+      .orderBy(desc(partsPurchaseOrders.createdAt))
+      .limit(1);
+    
+    let nextNumber = 1;
+    if (lastOrder.length > 0) {
+      const lastNum = parseInt(lastOrder[0].orderNumber.replace(prefix, ''), 10);
+      if (!isNaN(lastNum)) {
+        nextNumber = lastNum + 1;
+      }
+    }
+    
+    return `${prefix}${String(nextNumber).padStart(5, '0')}`;
+  }
+
+  async createPartsPurchaseOrder(order: InsertPartsPurchaseOrder): Promise<PartsPurchaseOrder> {
+    const [created] = await db.insert(partsPurchaseOrders).values(order).returning();
+    return created;
+  }
+
+  async getPartsPurchaseOrder(id: string): Promise<PartsPurchaseOrder | undefined> {
+    const [order] = await db.select().from(partsPurchaseOrders).where(eq(partsPurchaseOrders.id, id));
+    return order || undefined;
+  }
+
+  async listPartsPurchaseOrders(repairOrderId: string): Promise<PartsPurchaseOrder[]> {
+    return await db.select()
+      .from(partsPurchaseOrders)
+      .where(eq(partsPurchaseOrders.repairOrderId, repairOrderId))
+      .orderBy(desc(partsPurchaseOrders.createdAt));
+  }
+
+  async updatePartsPurchaseOrder(id: string, updates: Partial<InsertPartsPurchaseOrder>): Promise<PartsPurchaseOrder> {
+    const [updated] = await db.update(partsPurchaseOrders)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(partsPurchaseOrders.id, id))
+      .returning();
+    if (!updated) {
+      throw new Error("Parts purchase order not found");
+    }
+    return updated;
   }
 
   // Parts Orders (FASE 5)
