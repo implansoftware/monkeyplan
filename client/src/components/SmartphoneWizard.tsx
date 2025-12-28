@@ -421,20 +421,43 @@ export function SmartphoneWizard({
         condition: data.condition,
         warrantyMonths: parseInt(data.warrantyMonths),
       };
-      const specsData = {
+      
+      // Costruisci specsData solo con i campi visibili per questa categoria
+      const specsConfig = getSpecsConfig(data.category);
+      const specsData: Record<string, any> = {
         brand: data.brand,
         color: data.color,
-        storage: data.storage,
-        batteryHealth: data.batteryHealth,
-        grade: data.grade,
-        networkLock: data.networkLock,
-        imei: data.imei,
-        imei2: data.imei2,
-        serialNumber: data.serialNumber,
-        originalBox: data.originalBox,
-        accessories: data.accessories,
         notes: data.notes,
       };
+      
+      // Aggiungi solo i campi visibili per questa categoria
+      if (specsConfig.storage && data.storage) {
+        specsData.storage = data.storage;
+      }
+      if (specsConfig.grade) {
+        specsData.grade = data.grade;
+      }
+      if (specsConfig.batteryHealth && data.batteryHealth) {
+        specsData.batteryHealth = data.batteryHealth;
+      }
+      if (specsConfig.networkLock) {
+        specsData.networkLock = data.networkLock;
+      }
+      if (specsConfig.imei && data.imei) {
+        specsData.imei = data.imei;
+      }
+      if (data.imei2) {
+        specsData.imei2 = data.imei2;
+      }
+      if (specsConfig.serialNumber && data.serialNumber) {
+        specsData.serialNumber = data.serialNumber;
+      }
+      if (specsConfig.originalBox) {
+        specsData.originalBox = data.originalBox;
+      }
+      if (specsConfig.accessories) {
+        specsData.accessories = data.accessories;
+      }
 
       if (imageFile) {
         const formDataUpload = new FormData();

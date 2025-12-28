@@ -785,15 +785,15 @@ export const smartphoneSpecs = pgTable("smartphone_specs", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   productId: varchar("product_id").notNull().references(() => products.id, { onDelete: "cascade" }).unique(),
   
-  // Specifiche tecniche
-  storage: smartphoneStorageEnum("storage").notNull(),
+  // Specifiche tecniche (ora opzionali per supportare diverse categorie dispositivi)
+  storage: smartphoneStorageEnum("storage"), // Nullable per smartwatch, console, altro
   ram: text("ram"), // es. "8GB" - deprecated, kept for backward compatibility
   screenSize: text("screen_size"), // es. "6.1 pollici" - deprecated, kept for backward compatibility
   batteryHealth: text("battery_health"), // Range batteria: "100", "95-99", "90-94", "85-89", "80-84", "<80"
   
   // Condizione e grading
   grade: smartphoneGradeEnum("grade"),
-  networkLock: networkLockEnum("network_lock").notNull().default("unlocked"),
+  networkLock: networkLockEnum("network_lock").default("unlocked"), // Nullable per PC, smartwatch, console
   
   // Identificativi
   imei: text("imei"),
