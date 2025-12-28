@@ -121,13 +121,43 @@ export function PartsOrderDialog({
     }
   })();
 
-  // Filter out quote parts that are already ordered
-  const availableQuoteParts = quoteParts.filter(qp => {
-    return !existingParts.some(ep => 
-      ep.partName === qp.name || 
-      (qp.productId && ep.productId === qp.productId)
-    );
-  });
+  // Calculate remaining quantities for quote parts (subtract already ordered)
+  const availableQuoteParts = (() => {
+    // Build a map of ordered quantities by key (productId or name+unitCost)
+    const orderedQuantities = new Map<string, number>();
+    existingParts.forEach(ep => {
+      // Use productId as key if available, otherwise name+unitCost
+      const key = ep.productId 
+        ? `pid:${ep.productId}` 
+        : `name:${ep.partName}:${ep.unitCost}`;
+      orderedQuantities.set(key, (orderedQuantities.get(key) || 0) + (ep.quantity || 1));
+    });
+
+    // Track consumed quantities as we iterate through quote parts
+    const consumedQuantities = new Map<string, number>();
+
+    return quoteParts
+      .map((qp, originalIndex) => {
+        // Use productId as key if available, otherwise name+unitPrice
+        const key = qp.productId 
+          ? `pid:${qp.productId}` 
+          : `name:${qp.name}:${qp.unitPrice}`;
+        
+        const totalOrdered = orderedQuantities.get(key) || 0;
+        const alreadyConsumed = consumedQuantities.get(key) || 0;
+        const remainingOrdered = Math.max(0, totalOrdered - alreadyConsumed);
+        const remainingQuantity = qp.quantity - remainingOrdered;
+
+        // Mark this quote part's quantity as consumed for next iterations
+        consumedQuantities.set(key, alreadyConsumed + qp.quantity);
+
+        if (remainingQuantity > 0) {
+          return { ...qp, quantity: remainingQuantity, originalIndex };
+        }
+        return null;
+      })
+      .filter((qp): qp is QuotePart & { originalIndex: number } => qp !== null);
+  })();
 
   // Direct add quote part to order (instead of just populating the form)
   const addQuotePartToOrder = async (part: QuotePart, index: number) => {
