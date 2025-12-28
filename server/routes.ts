@@ -7164,6 +7164,10 @@ export function registerRoutes(app: Express): Server {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
+      // DEBUG: Log incoming repairCenterId
+      console.log('[DEBUG] POST /api/repair-orders - req.body.repairCenterId:', req.body.repairCenterId);
+      console.log('[DEBUG] POST /api/repair-orders - user role:', req.user.role);
+      
       // Check if this is an acceptance wizard submission (has acceptance data)
       const hasAcceptance = req.body.acceptance && Object.keys(req.body.acceptance).length > 0;
       
@@ -7281,6 +7285,9 @@ export function registerRoutes(app: Express): Server {
       } else if (req.user.role === 'repair_center' && req.user.repairCenterId) {
         orderData.repairCenterId = req.user.repairCenterId;
       }
+      
+      // DEBUG: Log final orderData
+      console.log('[DEBUG] orderData.repairCenterId:', orderData.repairCenterId);
       
       // Create order with or without acceptance data
       if (hasAcceptance) {
