@@ -9651,6 +9651,31 @@ export function registerRoutes(app: Express): Server {
         return res.status(400).send("At least one item is required");
       }
       
+      // Check inventory for internal warehouse transfers
+      if (destinationType === 'internal_warehouse' && sourceWarehouseId) {
+        const insufficientStock: string[] = [];
+        
+        for (const item of items) {
+          if (item.productId) {
+            const stockItem = await storage.getWarehouseStockItem(sourceWarehouseId, item.productId);
+            const availableQty = stockItem?.quantity || 0;
+            const requestedQty = item.quantity || 1;
+            
+            if (availableQty < requestedQty) {
+              insufficientStock.push(
+                `${item.partName}: richiesti ${requestedQty}, disponibili ${availableQty}`
+              );
+            }
+          }
+        }
+        
+        if (insufficientStock.length > 0) {
+          return res.status(400).send(
+            `Stock insufficiente nel magazzino selezionato:\n${insufficientStock.join('\n')}`
+          );
+        }
+      }
+      
       // Generate order number
       const orderNumber = await storage.generatePartsPurchaseOrderNumber();
       

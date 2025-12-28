@@ -66,6 +66,23 @@ interface PartsOrderDialogProps {
 
 type DestinationType = "external_supplier" | "internal_warehouse";
 
+interface PurchaseOrderWithItems {
+  id: string;
+  orderNumber: string;
+  repairOrderId: string;
+  destinationType: string;
+  supplierName: string | null;
+  supplierId: string | null;
+  sourceWarehouseId: string | null;
+  totalAmount: number;
+  status: string;
+  expectedArrival: string | null;
+  notes: string | null;
+  createdBy: string;
+  createdAt: string;
+  items: PartsOrder[];
+}
+
 export function PartsOrderDialog({
   open,
   onOpenChange,
@@ -114,6 +131,18 @@ export function PartsOrderDialog({
 
   const { data: warehouses = [] } = useQuery<WarehouseType[]>({
     queryKey: ["/api/warehouses/accessible"],
+    enabled: open,
+  });
+
+  const { data: purchaseOrders = [] } = useQuery<PurchaseOrderWithItems[]>({
+    queryKey: ["/api/repair-orders", repairOrderId, "purchase-orders"],
+    queryFn: async () => {
+      const res = await fetch(`/api/repair-orders/${repairOrderId}/purchase-orders`, {
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("Failed to fetch purchase orders");
+      return res.json();
+    },
     enabled: open,
   });
 
@@ -265,6 +294,7 @@ export function PartsOrderDialog({
     onSuccess: () => {
       toast({ title: "Stato aggiornato" });
       queryClient.invalidateQueries({ queryKey: ["/api/repair-orders", repairOrderId, "parts"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/repair-orders", repairOrderId, "purchase-orders"] });
       queryClient.invalidateQueries({ queryKey: ["/api/repair-orders"] });
     },
     onError: (error: Error) => {
@@ -320,8 +350,8 @@ export function PartsOrderDialog({
             <TabsTrigger value="existing" className="flex items-center gap-2" data-testid="tab-existing">
               <FileText className="h-4 w-4" />
               Ordini Esistenti
-              {existingParts.length > 0 && (
-                <Badge variant="outline" className="ml-1">{existingParts.length}</Badge>
+              {purchaseOrders.length > 0 && (
+                <Badge variant="outline" className="ml-1">{purchaseOrders.length}</Badge>
               )}
             </TabsTrigger>
           </TabsList>
@@ -598,68 +628,93 @@ export function PartsOrderDialog({
           </TabsContent>
 
           <TabsContent value="existing" className="space-y-4 mt-4">
-            {existingParts.length > 0 ? (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-base">Ordini Ricambi Esistenti</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  {existingParts.map((part) => (
-                    <div
-                      key={part.id}
-                      className="flex items-center justify-between p-3 border rounded-lg"
-                      data-testid={`part-order-${part.id}`}
-                    >
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-2">
-                          <span className="font-medium">{part.partName}</span>
-                          {part.productId && (
+            {purchaseOrders.length > 0 ? (
+              <div className="space-y-4">
+                {purchaseOrders.map((po) => (
+                  <Card key={po.id} data-testid={`purchase-order-${po.id}`}>
+                    <CardHeader className="pb-3">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <CardTitle className="text-base font-semibold">
+                            {po.orderNumber}
+                          </CardTitle>
+                          {po.destinationType === "internal_warehouse" ? (
                             <Badge variant="outline" className="text-xs">
                               <Warehouse className="h-3 w-3 mr-1" />
-                              Da magazzino
+                              Magazzino Interno
                             </Badge>
-                          )}
-                          {part.purchaseOrderId && (
+                          ) : (
                             <Badge variant="secondary" className="text-xs">
-                              Ordine Raggruppato
+                              <Building className="h-3 w-3 mr-1" />
+                              {po.supplierName || "Fornitore"}
                             </Badge>
                           )}
                         </div>
-                        <div className="text-sm text-muted-foreground">
-                          {part.partNumber && <span>#{part.partNumber} - </span>}
-                          Qtà: {part.quantity} - {formatCurrency(part.unitCost)}
-                          {part.supplier && <span> - {part.supplier}</span>}
-                        </div>
+                        <Badge 
+                          variant={po.status === "received" ? "default" : po.status === "shipped" ? "secondary" : "outline"}
+                        >
+                          {po.status === "submitted" && <Clock className="h-3 w-3 mr-1" />}
+                          {po.status === "processing" && <Package className="h-3 w-3 mr-1" />}
+                          {po.status === "shipped" && <Truck className="h-3 w-3 mr-1" />}
+                          {po.status === "received" && <CheckCircle className="h-3 w-3 mr-1" />}
+                          {po.status === "submitted" ? "Inviato" : 
+                           po.status === "processing" ? "In Elaborazione" :
+                           po.status === "shipped" ? "Spedito" :
+                           po.status === "received" ? "Ricevuto" : po.status}
+                        </Badge>
                       </div>
-                      <div className="flex items-center gap-2">
-                        {getStatusBadge(part.status)}
-                        {part.status === "ordered" && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => updateStatusMutation.mutate({ id: part.id, status: "in_transit" })}
-                            disabled={updateStatusMutation.isPending}
-                            data-testid={`button-transit-${part.id}`}
-                          >
-                            <Truck className="h-3 w-3" />
-                          </Button>
-                        )}
-                        {part.status === "in_transit" && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => updateStatusMutation.mutate({ id: part.id, status: "received" })}
-                            disabled={updateStatusMutation.isPending}
-                            data-testid={`button-receive-${part.id}`}
-                          >
-                            <CheckCircle className="h-3 w-3" />
-                          </Button>
-                        )}
+                      <div className="text-sm text-muted-foreground">
+                        Totale: {formatCurrency(po.totalAmount)} - {po.items.length} articoli
                       </div>
-                    </div>
-                  ))}
-                </CardContent>
-              </Card>
+                    </CardHeader>
+                    <CardContent className="pt-0">
+                      <div className="space-y-2">
+                        {po.items.map((item) => (
+                          <div
+                            key={item.id}
+                            className="flex items-center justify-between py-2 px-3 bg-muted/50 rounded-md"
+                            data-testid={`part-order-${item.id}`}
+                          >
+                            <div className="flex items-center gap-2">
+                              <Package className="h-4 w-4 text-muted-foreground" />
+                              <span className="font-medium">{item.partName}</span>
+                              <span className="text-sm text-muted-foreground">
+                                x{item.quantity}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm">{formatCurrency(item.unitCost)}</span>
+                              {getStatusBadge(item.status)}
+                              {item.status === "ordered" && (
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={() => updateStatusMutation.mutate({ id: item.id, status: "in_transit" })}
+                                  disabled={updateStatusMutation.isPending}
+                                  data-testid={`button-transit-${item.id}`}
+                                >
+                                  <Truck className="h-3 w-3" />
+                                </Button>
+                              )}
+                              {item.status === "in_transit" && (
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={() => updateStatusMutation.mutate({ id: item.id, status: "received" })}
+                                  disabled={updateStatusMutation.isPending}
+                                  data-testid={`button-receive-${item.id}`}
+                                >
+                                  <CheckCircle className="h-3 w-3" />
+                                </Button>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
             ) : (
               <Card>
                 <CardContent className="py-8 text-center text-muted-foreground">
