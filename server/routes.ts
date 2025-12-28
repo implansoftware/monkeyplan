@@ -7109,12 +7109,14 @@ export function registerRoutes(app: Express): Server {
       const slaConfig = await loadSLAConfig();
       const slaSeverityFilter = req.query.slaSeverity as string | undefined;
       
-      // Build maps for customer and repair center names
+      // Build maps for customer, repair center and reseller names
       const customerIds = [...new Set(orders.map(o => o.customerId).filter(Boolean))];
       const repairCenterIds = [...new Set(orders.map(o => o.repairCenterId).filter(Boolean))];
+      const resellerIds = [...new Set(orders.map(o => o.resellerId).filter(Boolean))];
       
       const customersMap = new Map<string, { fullName: string | null; ragioneSociale: string | null }>();
       const repairCentersMap = new Map<string, string>();
+      const resellersMap = new Map<string, string>();
       
       // Fetch customers
       for (const customerId of customerIds) {
@@ -7135,6 +7137,16 @@ export function registerRoutes(app: Express): Server {
         }
       }
       
+      // Fetch resellers (for admin view)
+      if (['admin', 'admin_staff'].includes(req.user.role)) {
+        for (const resellerId of resellerIds) {
+          const reseller = await storage.getUser(resellerId);
+          if (reseller) {
+            resellersMap.set(resellerId, reseller.ragioneSociale || reseller.fullName || reseller.username);
+          }
+        }
+      }
+      
       // Fetch quotes for all orders to get totalAmount
       const quotesMap = new Map<string, number>();
       for (const order of orders) {
@@ -7152,6 +7164,7 @@ export function registerRoutes(app: Express): Server {
         const customer = order.customerId ? customersMap.get(order.customerId) : null;
         const customerName = customer?.ragioneSociale || customer?.fullName || null;
         const repairCenterName = order.repairCenterId ? repairCentersMap.get(order.repairCenterId) || null : null;
+        const resellerName = order.resellerId ? resellersMap.get(order.resellerId) || null : null;
         
         // Get quote totalAmount if available
         const quoteTotalAmount = quotesMap.get(order.id) || null;
@@ -7160,6 +7173,7 @@ export function registerRoutes(app: Express): Server {
           ...order,
           customerName,
           repairCenterName,
+          resellerName,
           quoteTotalAmount,
           slaSeverity: severity,
           slaMinutesInState: minutesInState,
