@@ -258,9 +258,14 @@ export function AccessoryWizard({
     setCurrentStep(prev => Math.max(prev - 1, 1));
   };
 
-  const handleSubmit = form.handleSubmit((data) => {
-    createMutation.mutate(data);
-  });
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    // Only submit if we're on the final step (step 3)
+    if (currentStep !== 3) return;
+    form.handleSubmit((data) => {
+      createMutation.mutate(data);
+    })();
+  };
 
   const addWarehouseStock = () => {
     const current = form.getValues("initialStock");
