@@ -82,7 +82,6 @@ const menuItems = {
     { title: "Compensi", url: "/admin/utility/commissions", icon: Coins, group: "Utility" },
     { title: "Report Utility", url: "/admin/utility/reports", icon: PieChart, group: "Utility" },
     // E-commerce - Catalogo
-    { title: "Shop", url: "/shop/admin", icon: Package, group: "E-commerce" },
     { title: "Assegnazione Reseller", url: "/admin/product-assignments", icon: Store, group: "E-commerce" },
     { title: "Marketplace", url: "/marketplace", icon: Store, group: "E-commerce" },
     // E-commerce - Ordini
@@ -128,7 +127,6 @@ const menuItems = {
     { title: "Compensi", url: "/admin/utility/commissions", icon: Coins, group: "Utility" },
     { title: "Report Utility", url: "/admin/utility/reports", icon: PieChart, group: "Utility" },
     // E-commerce - Catalogo
-    { title: "Shop", url: "/shop/admin", icon: Package, group: "E-commerce" },
     { title: "Assegnazione Reseller", url: "/admin/product-assignments", icon: Store, group: "E-commerce" },
     { title: "Marketplace", url: "/marketplace", icon: Store, group: "E-commerce" },
     // E-commerce - Ordini
