@@ -27,10 +27,21 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { FileText, Plus, Trash2, Package, Calculator, Info } from "lucide-react";
-import type { RepairDiagnostics, RepairOrder, RepairCenter } from "@shared/schema";
+import { FileText, Plus, Trash2, Package, Calculator, Info, Warehouse } from "lucide-react";
+import type { RepairDiagnostics, RepairOrder, RepairCenter, Warehouse as WarehouseType } from "@shared/schema";
 import { SearchableProductCombobox } from "@/components/SearchableProductCombobox";
 import { SearchableServiceCombobox } from "@/components/SearchableServiceCombobox";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+
+interface WarehouseWithOwner extends WarehouseType {
+  owner?: { id: string; username: string; fullName: string | null } | null;
+}
 
 interface HourlyRateResponse {
   hourlyRateCents: number;
@@ -69,11 +80,17 @@ export function QuoteFormDialog({
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [totalAmount, setTotalAmount] = useState(0);
+  const [selectedWarehouseId, setSelectedWarehouseId] = useState<string>("");
   const [laborCalculation, setLaborCalculation] = useState<{
     hourlyRate: number;
     estimatedHours: number;
     calculatedCost: number;
   } | null>(null);
+
+  const { data: accessibleWarehouses = [] } = useQuery<WarehouseWithOwner[]>({
+    queryKey: ["/api/warehouses/accessible"],
+    enabled: open,
+  });
 
   // Fetch repair order to get the assigned repair center
   const { data: repairOrder } = useQuery<RepairOrder>({
@@ -253,9 +270,26 @@ export function QuoteFormDialog({
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             <Card>
-              <CardHeader className="flex flex-row items-center justify-between gap-2">
-                <CardTitle className="text-base">Ricambi e Servizi</CardTitle>
-                <div className="flex gap-2">
+              <CardHeader className="space-y-3">
+                <div className="flex flex-row items-center justify-between gap-2">
+                  <CardTitle className="text-base">Ricambi e Servizi</CardTitle>
+                  <div className="flex items-center gap-2">
+                    <Select value={selectedWarehouseId} onValueChange={setSelectedWarehouseId}>
+                      <SelectTrigger className="w-[180px]" data-testid="select-warehouse">
+                        <Warehouse className="h-4 w-4 mr-2" />
+                        <SelectValue placeholder="Seleziona magazzino" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {accessibleWarehouses.map((wh) => (
+                          <SelectItem key={wh.id} value={wh.id}>
+                            {wh.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <div className="flex gap-2 flex-wrap">
                   <Button
                     type="button"
                     variant="outline"
@@ -276,6 +310,7 @@ export function QuoteFormDialog({
                         imageUrl: product.imageUrl || undefined,
                       });
                     }}
+                    warehouseId={selectedWarehouseId || undefined}
                   />
                   <SearchableServiceCombobox
                     onSelect={(service) => {

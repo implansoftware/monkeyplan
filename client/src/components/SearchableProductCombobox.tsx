@@ -17,9 +17,14 @@ import {
 import { Package, Loader2 } from "lucide-react";
 import type { Product } from "@shared/schema";
 
+interface ProductWithStock extends Product {
+  availableQuantity?: number;
+}
+
 interface SearchableProductComboboxProps {
-  onSelect: (product: Product) => void;
+  onSelect: (product: ProductWithStock) => void;
   placeholder?: string;
+  warehouseId?: string;
 }
 
 function useDebounce<T>(value: T, delay: number): T {
@@ -48,18 +53,26 @@ function formatCurrency(amount: number): string {
 export function SearchableProductCombobox({
   onSelect,
   placeholder = "Cerca prodotto...",
+  warehouseId,
 }: SearchableProductComboboxProps) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search, 250);
 
-  const { data: products = [], isLoading } = useQuery<Product[]>({
-    queryKey: ["/api/products", { search: debouncedSearch, limit: 20 }],
+  const { data: products = [], isLoading } = useQuery<ProductWithStock[]>({
+    queryKey: warehouseId 
+      ? ["/api/warehouses", warehouseId, "products", { search: debouncedSearch, limit: 20 }]
+      : ["/api/products", { search: debouncedSearch, limit: 20 }],
     queryFn: async () => {
       const params = new URLSearchParams();
       if (debouncedSearch) params.set("search", debouncedSearch);
       params.set("limit", "20");
-      const res = await fetch(`/api/products?${params.toString()}`, {
+      
+      const url = warehouseId 
+        ? `/api/warehouses/${warehouseId}/products?${params.toString()}`
+        : `/api/products?${params.toString()}`;
+        
+      const res = await fetch(url, {
         credentials: "include",
       });
       if (!res.ok) throw new Error(`${res.status}: ${await res.text()}`);
@@ -68,10 +81,12 @@ export function SearchableProductCombobox({
     enabled: open,
   });
 
-  const activeProducts = products.filter((p) => p.isActive);
+  const activeProducts = warehouseId 
+    ? products 
+    : products.filter((p) => p.isActive);
 
   const handleSelect = useCallback(
-    (product: Product) => {
+    (product: ProductWithStock) => {
       onSelect(product);
       setOpen(false);
       setSearch("");
@@ -145,6 +160,11 @@ export function SearchableProductCombobox({
                           </span>
                           <span className="text-xs text-muted-foreground truncate">
                             {product.sku} - {formatCurrency((product.unitPrice || 0) / 100)}
+                            {product.availableQuantity !== undefined && (
+                              <span className="ml-2 text-green-600 dark:text-green-400">
+                                (Disp: {product.availableQuantity})
+                              </span>
+                            )}
                           </span>
                         </div>
                       </div>
