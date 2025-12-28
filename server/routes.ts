@@ -7412,9 +7412,15 @@ export function registerRoutes(app: Express): Server {
   app.get("/api/products", requireAuth, async (req, res) => {
     try {
       const search = req.query.search as string | undefined;
+      const productType = req.query.productType as string | undefined;
       const limit = req.query.limit ? parseInt(req.query.limit as string) : undefined;
       
       let products = await storage.listProducts();
+      
+      // Filter by productType if provided
+      if (productType) {
+        products = products.filter(p => p.productType === productType);
+      }
       
       // Filter by search term if provided (case-insensitive on name, sku, brand)
       if (search && search.trim()) {
