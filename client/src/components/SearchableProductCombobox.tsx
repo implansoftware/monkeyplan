@@ -100,7 +100,7 @@ export function SearchableProductCombobox({
             onValueChange={setSearch}
             data-testid="input-product-search"
           />
-          <CommandList>
+          <CommandList className="max-h-[300px] overflow-y-auto">
             {isLoading && (
               <div className="flex items-center justify-center py-6">
                 <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
