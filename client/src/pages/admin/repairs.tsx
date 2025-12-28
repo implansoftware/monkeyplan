@@ -111,9 +111,11 @@ export default function AdminRepairs() {
   });
 
   const filteredRepairs = repairs.filter((repair) => {
-    const matchesSearch = repair.orderNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      repair.deviceModel.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (repair.customerName && repair.customerName.toLowerCase().includes(searchQuery.toLowerCase()));
+    const searchLower = searchQuery.toLowerCase();
+    const matchesSearch = repair.orderNumber.toLowerCase().includes(searchLower) ||
+      repair.deviceModel.toLowerCase().includes(searchLower) ||
+      (repair.customerName && repair.customerName.toLowerCase().includes(searchLower)) ||
+      (repair.resellerName && repair.resellerName.toLowerCase().includes(searchLower));
     const matchesStatus = statusFilter === "all" || repair.status === statusFilter;
     const matchesRepairCenter = repairCenterFilter === "all" || repair.repairCenterId === repairCenterFilter;
     

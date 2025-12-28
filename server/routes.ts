@@ -3008,28 +3008,55 @@ export function registerRoutes(app: Express): Server {
 
         case 'repairs':
           const repairs = await storage.listRepairOrders();
-          data = repairs
-            .filter(rep => {
-              if (startDate && new Date(rep.createdAt) < new Date(startDate as string)) return false;
-              if (endDate && new Date(rep.createdAt) > new Date(endDate as string)) return false;
-              if (status && rep.status !== status) return false;
-              return true;
-            })
-            .map(rep => ({
-              'Order Number': rep.orderNumber,
-              'Customer ID': rep.customerId,
-              'Reseller ID': rep.resellerId,
-              'Repair Center ID': rep.repairCenterId,
-              'Device Type': rep.deviceType,
-              'Issue Description': rep.issueDescription,
-              'Status': rep.status,
-              'Estimated Cost': rep.estimatedCost,
-              'Final Cost': rep.finalCost,
-              'Created At': new Date(rep.createdAt).toLocaleString(),
-              'Updated At': new Date(rep.updatedAt).toLocaleString(),
-            }));
+          const filteredRepairs = repairs.filter(rep => {
+            if (startDate && new Date(rep.createdAt) < new Date(startDate as string)) return false;
+            if (endDate && new Date(rep.createdAt) > new Date(endDate as string)) return false;
+            if (status && rep.status !== status) return false;
+            return true;
+          });
+          
+          // Build maps for names (parallel fetch)
+          const exportCustomerIds = [...new Set(filteredRepairs.map(r => r.customerId).filter(Boolean))];
+          const exportResellerIds = [...new Set(filteredRepairs.map(r => r.resellerId).filter(Boolean))];
+          const exportRepairCenterIds = [...new Set(filteredRepairs.map(r => r.repairCenterId).filter(Boolean))];
+          
+          const exportCustomersMap = new Map<string, string>();
+          const exportResellersMap = new Map<string, string>();
+          const exportRepairCentersMap = new Map<string, string>();
+          
+          // Fetch all entities in parallel
+          const [customerResults, resellerResults, repairCenterResults] = await Promise.all([
+            Promise.all(exportCustomerIds.map(id => storage.getUser(id))),
+            Promise.all(exportResellerIds.map(id => storage.getUser(id))),
+            Promise.all(exportRepairCenterIds.map(id => storage.getRepairCenter(id))),
+          ]);
+          
+          customerResults.forEach((user, idx) => {
+            if (user) exportCustomersMap.set(exportCustomerIds[idx], user.ragioneSociale || user.fullName || user.username);
+          });
+          resellerResults.forEach((user, idx) => {
+            if (user) exportResellersMap.set(exportResellerIds[idx], user.ragioneSociale || user.fullName || user.username);
+          });
+          repairCenterResults.forEach((rc, idx) => {
+            if (rc) exportRepairCentersMap.set(exportRepairCenterIds[idx], rc.name);
+          });
+          
+          data = filteredRepairs.map(rep => ({
+            'Numero Ordine': rep.orderNumber,
+            'Cliente': rep.customerId ? exportCustomersMap.get(rep.customerId) || '' : '',
+            'Rivenditore': rep.resellerId ? exportResellersMap.get(rep.resellerId) || '' : '',
+            'Centro Riparazione': rep.repairCenterId ? exportRepairCentersMap.get(rep.repairCenterId) || '' : '',
+            'Tipo Dispositivo': rep.deviceType,
+            'Modello': rep.deviceModel || '',
+            'Problema': rep.issueDescription,
+            'Stato': rep.status,
+            'Costo Stimato': rep.estimatedCost ? (rep.estimatedCost / 100).toFixed(2) : '',
+            'Costo Finale': rep.finalCost ? (rep.finalCost / 100).toFixed(2) : '',
+            'Creato Il': new Date(rep.createdAt).toLocaleString('it-IT'),
+            'Aggiornato Il': new Date(rep.updatedAt).toLocaleString('it-IT'),
+          }));
           fileName = 'repairs_export.xlsx';
-          sheetName = 'Repairs';
+          sheetName = 'Lavorazioni';
           break;
 
         case 'users':
