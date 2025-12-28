@@ -1082,37 +1082,31 @@ export default function AdminUtilityPractices() {
               </div>
             </div>
 
+            {/* SEZIONE 2: Fornitore e Servizio */}
             {(selectedItemType === "service" || selectedItemType === "service_with_products") && (
-              <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-3 p-3 bg-muted/30 rounded-lg">
+                <h4 className="text-sm font-semibold flex items-center gap-2">
+                  <Building2 className="h-4 w-4" />
+                  Fornitore e Servizio
+                </h4>
+                
+                <div className="space-y-3">
                   <div className="space-y-2">
-                    <Label>Fornitore *</Label>
-                    <div className="flex gap-2 mb-2">
+                    <div className="flex items-center justify-between">
+                      <Label className="text-xs">Fornitore *</Label>
                       <Button
                         type="button"
-                        variant={!useTemporarySupplier ? "default" : "outline"}
+                        variant="ghost"
                         size="sm"
+                        className="h-6 text-xs"
                         onClick={() => {
-                          setUseTemporarySupplier(false);
-                          setTemporarySupplierName("");
+                          setUseTemporarySupplier(!useTemporarySupplier);
+                          if (!useTemporarySupplier) setSelectedSupplierId("");
+                          else setTemporarySupplierName("");
                         }}
-                        className="flex-1"
-                        data-testid="button-supplier-catalog"
+                        data-testid="button-toggle-supplier-mode"
                       >
-                        Da Catalogo
-                      </Button>
-                      <Button
-                        type="button"
-                        variant={useTemporarySupplier ? "default" : "outline"}
-                        size="sm"
-                        onClick={() => {
-                          setUseTemporarySupplier(true);
-                          setSelectedSupplierId("");
-                        }}
-                        className="flex-1"
-                        data-testid="button-supplier-temporary"
-                      >
-                        Temporaneo
+                        {useTemporarySupplier ? "Da Catalogo" : "Temporaneo"}
                       </Button>
                     </div>
                     {useTemporarySupplier ? (
@@ -1120,7 +1114,7 @@ export default function AdminUtilityPractices() {
                         <Input
                           value={temporarySupplierName}
                           onChange={(e) => setTemporarySupplierName(e.target.value)}
-                          placeholder="Nome fornitore temporaneo"
+                          placeholder="Nome fornitore (es: TIM, Vodafone...)"
                           required
                           data-testid="input-temporary-supplier-name"
                         />
@@ -1177,58 +1171,34 @@ export default function AdminUtilityPractices() {
                       </Select>
                     )}
                   </div>
+                  
                   <div className="space-y-2">
-                    <Label>Tipo Servizio</Label>
-                    <div className="flex gap-2">
+                    <div className="flex items-center justify-between">
+                      <Label className="text-xs">Servizio *</Label>
                       <Button
                         type="button"
-                        variant={!useCustomService ? "default" : "outline"}
+                        variant="ghost"
                         size="sm"
+                        className="h-6 text-xs"
                         onClick={() => {
-                          setUseCustomService(false);
-                          setCustomServiceName("");
+                          setUseCustomService(!useCustomService);
+                          if (!useCustomService) setSelectedServiceId("");
+                          else setCustomServiceName("");
                         }}
-                        className="flex-1"
-                        data-testid="button-service-catalog"
+                        data-testid="button-toggle-service-mode"
                       >
-                        Da Catalogo
-                      </Button>
-                      <Button
-                        type="button"
-                        variant={useCustomService ? "default" : "outline"}
-                        size="sm"
-                        onClick={() => {
-                          setUseCustomService(true);
-                          setSelectedServiceId("");
-                        }}
-                        className="flex-1"
-                        data-testid="button-service-custom"
-                      >
-                        Temporaneo
+                        {useCustomService ? "Da Catalogo" : "Temporaneo"}
                       </Button>
                     </div>
-                  </div>
-                </div>
-                
-                <div className="space-y-2">
-                  {useCustomService ? (
-                    <>
-                      <Label htmlFor="customServiceName">Nome Servizio Temporaneo *</Label>
+                    {useCustomService ? (
                       <Input
-                        id="customServiceName"
                         value={customServiceName}
                         onChange={(e) => setCustomServiceName(e.target.value)}
-                        placeholder="Es: Contratto speciale fibra 1Gbps"
+                        placeholder="Nome servizio (es: Fibra 1Gbps)"
                         required
                         data-testid="input-custom-service-name"
                       />
-                      <p className="text-xs text-muted-foreground">
-                        Inserisci una descrizione del servizio non presente nel catalogo
-                      </p>
-                    </>
-                  ) : (
-                    <>
-                      <Label htmlFor="serviceId">Servizio *</Label>
+                    ) : (
                       <Select 
                         name="serviceId" 
                         value={selectedServiceId}
@@ -1237,7 +1207,7 @@ export default function AdminUtilityPractices() {
                         required
                       >
                         <SelectTrigger data-testid="select-service">
-                          <SelectValue placeholder="Seleziona servizio" />
+                          <SelectValue placeholder={selectedSupplierId ? "Seleziona servizio" : "Prima seleziona fornitore"} />
                         </SelectTrigger>
                         <SelectContent>
                           {services.filter(s => s.isActive).map((service) => (
@@ -1247,8 +1217,8 @@ export default function AdminUtilityPractices() {
                           ))}
                         </SelectContent>
                       </Select>
-                    </>
-                  )}
+                    )}
+                  </div>
                 </div>
               </div>
             )}
@@ -1355,36 +1325,31 @@ export default function AdminUtilityPractices() {
               </div>
             )}
 
-            <div className="space-y-2">
-              <Label>Cliente *</Label>
-              <div className="flex gap-2 mb-2">
+            {/* SEZIONE 3: Cliente */}
+            <div className="space-y-3 p-3 bg-muted/30 rounded-lg">
+              <div className="flex items-center justify-between">
+                <h4 className="text-sm font-semibold flex items-center gap-2">
+                  <User2 className="h-4 w-4" />
+                  Cliente
+                </h4>
                 <Button
                   type="button"
-                  variant={!useTemporaryCustomer ? "default" : "outline"}
+                  variant="ghost"
                   size="sm"
+                  className="h-6 text-xs"
                   onClick={() => {
-                    setUseTemporaryCustomer(false);
-                    setTemporaryCustomerName("");
-                    setTemporaryCustomerEmail("");
-                    setTemporaryCustomerPhone("");
+                    setUseTemporaryCustomer(!useTemporaryCustomer);
+                    if (!useTemporaryCustomer) {
+                      setSelectedCustomerId("");
+                    } else {
+                      setTemporaryCustomerName("");
+                      setTemporaryCustomerEmail("");
+                      setTemporaryCustomerPhone("");
+                    }
                   }}
-                  className="flex-1"
-                  data-testid="button-customer-catalog"
+                  data-testid="button-toggle-customer-mode"
                 >
-                  Da Anagrafica
-                </Button>
-                <Button
-                  type="button"
-                  variant={useTemporaryCustomer ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => {
-                    setUseTemporaryCustomer(true);
-                    setSelectedCustomerId("");
-                  }}
-                  className="flex-1"
-                  data-testid="button-customer-temporary"
-                >
-                  Temporaneo
+                  {useTemporaryCustomer ? "Da Anagrafica" : "Nuovo Temporaneo"}
                 </Button>
               </div>
               {useTemporaryCustomer ? (
@@ -1489,118 +1454,131 @@ export default function AdminUtilityPractices() {
               )}
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="supplierReference">Riferimento Fornitore</Label>
-                <Input
-                  id="supplierReference"
-                  name="supplierReference"
-                  value={supplierReferenceValue}
-                  onChange={(e) => setSupplierReferenceValue(e.target.value)}
-                  placeholder="Codice pratica fornitore"
-                  data-testid="input-supplier-reference"
+            {/* SEZIONE 4: Prezzi e Stato */}
+            <div className="space-y-3 p-3 bg-muted/30 rounded-lg">
+              <h4 className="text-sm font-semibold flex items-center gap-2">
+                <Euro className="h-4 w-4" />
+                Prezzi e Stato
+              </h4>
+              
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  <Label className="text-xs">Tipo Prezzo</Label>
+                  <div className="flex gap-1">
+                    <Button
+                      type="button"
+                      variant={selectedPriceType === "mensile" ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setSelectedPriceType("mensile")}
+                      className="flex-1"
+                      data-testid="button-price-mensile"
+                    >
+                      <Calendar className="h-3 w-3 mr-1" />
+                      Mensile
+                    </Button>
+                    <Button
+                      type="button"
+                      variant={selectedPriceType === "forfait" ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setSelectedPriceType("forfait")}
+                      className="flex-1"
+                      data-testid="button-price-forfait"
+                    >
+                      <Euro className="h-3 w-3 mr-1" />
+                      Forfait
+                    </Button>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs">Stato</Label>
+                  <Select 
+                    value={selectedStatus}
+                    onValueChange={(v) => setSelectedStatus(v as PracticeStatus)}
+                  >
+                    <SelectTrigger data-testid="select-status">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Object.entries(statusLabels).map(([value, label]) => (
+                        <SelectItem key={value} value={value}>{label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-3">
+                <div className="space-y-1">
+                  {selectedPriceType === "mensile" ? (
+                    <>
+                      <Label className="text-xs">Prezzo Mensile (€)</Label>
+                      <Input
+                        id="monthlyPriceCents"
+                        name="monthlyPriceCents"
+                        type="number"
+                        step="0.01"
+                        placeholder="0.00"
+                        defaultValue={editingPractice?.monthlyPriceCents 
+                          ? (editingPractice.monthlyPriceCents / 100).toFixed(2) 
+                          : ""}
+                        data-testid="input-monthly-price"
+                      />
+                    </>
+                  ) : (
+                    <>
+                      <Label className="text-xs">Prezzo Forfait (€)</Label>
+                      <Input
+                        id="flatPriceCents"
+                        name="flatPriceCents"
+                        type="number"
+                        step="0.01"
+                        placeholder="0.00"
+                        defaultValue={editingPractice?.flatPriceCents 
+                          ? (editingPractice.flatPriceCents / 100).toFixed(2) 
+                          : ""}
+                        data-testid="input-flat-price"
+                      />
+                    </>
+                  )}
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">Commissione (€)</Label>
+                  <Input
+                    id="commissionAmountCents"
+                    name="commissionAmountCents"
+                    type="number"
+                    step="0.01"
+                    placeholder="0.00"
+                    defaultValue={editingPractice?.commissionAmountCents 
+                      ? (editingPractice.commissionAmountCents / 100).toFixed(2) 
+                      : ""}
+                    data-testid="input-commission"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">Rif. Fornitore</Label>
+                  <Input
+                    id="supplierReference"
+                    name="supplierReference"
+                    value={supplierReferenceValue}
+                    onChange={(e) => setSupplierReferenceValue(e.target.value)}
+                    placeholder="Codice pratica"
+                    data-testid="input-supplier-reference"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <Label className="text-xs">Note (opzionale)</Label>
+                <Textarea
+                  id="notes"
+                  name="notes"
+                  rows={2}
+                  placeholder="Note aggiuntive..."
+                  defaultValue={editingPractice?.notes || ""}
+                  data-testid="input-notes"
                 />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="status">Stato</Label>
-                <Select 
-                  value={selectedStatus}
-                  onValueChange={(v) => setSelectedStatus(v as PracticeStatus)}
-                >
-                  <SelectTrigger data-testid="select-status">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {Object.entries(statusLabels).map(([value, label]) => (
-                      <SelectItem key={value} value={value}>{label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label>Tipo Prezzo *</Label>
-              <div className="flex gap-2">
-                <Button
-                  type="button"
-                  variant={selectedPriceType === "mensile" ? "default" : "outline"}
-                  onClick={() => setSelectedPriceType("mensile")}
-                  className="flex-1"
-                  data-testid="button-price-mensile"
-                >
-                  <Calendar className="h-4 w-4 mr-2" />
-                  Mensile
-                </Button>
-                <Button
-                  type="button"
-                  variant={selectedPriceType === "forfait" ? "default" : "outline"}
-                  onClick={() => setSelectedPriceType("forfait")}
-                  className="flex-1"
-                  data-testid="button-price-forfait"
-                >
-                  <Euro className="h-4 w-4 mr-2" />
-                  Forfait
-                </Button>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                {selectedPriceType === "mensile" ? (
-                  <>
-                    <Label htmlFor="monthlyPriceCents">Prezzo Mensile (EUR)</Label>
-                    <Input
-                      id="monthlyPriceCents"
-                      name="monthlyPriceCents"
-                      type="number"
-                      step="0.01"
-                      defaultValue={editingPractice?.monthlyPriceCents 
-                        ? (editingPractice.monthlyPriceCents / 100).toFixed(2) 
-                        : ""}
-                      data-testid="input-monthly-price"
-                    />
-                  </>
-                ) : (
-                  <>
-                    <Label htmlFor="flatPriceCents">Prezzo Forfait (EUR)</Label>
-                    <Input
-                      id="flatPriceCents"
-                      name="flatPriceCents"
-                      type="number"
-                      step="0.01"
-                      defaultValue={editingPractice?.flatPriceCents 
-                        ? (editingPractice.flatPriceCents / 100).toFixed(2) 
-                        : ""}
-                      data-testid="input-flat-price"
-                    />
-                  </>
-                )}
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="commissionAmountCents">Commissione (EUR)</Label>
-                <Input
-                  id="commissionAmountCents"
-                  name="commissionAmountCents"
-                  type="number"
-                  step="0.01"
-                  defaultValue={editingPractice?.commissionAmountCents 
-                    ? (editingPractice.commissionAmountCents / 100).toFixed(2) 
-                    : ""}
-                  data-testid="input-commission"
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="notes">Note</Label>
-              <Textarea
-                id="notes"
-                name="notes"
-                rows={3}
-                defaultValue={editingPractice?.notes || ""}
-                data-testid="input-notes"
-              />
             </div>
 
             <div className="flex justify-end gap-2 pt-4">
