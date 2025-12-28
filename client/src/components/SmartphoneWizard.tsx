@@ -278,6 +278,7 @@ export function SmartphoneWizard({
       dialogContentRef.current.scrollTo({ top: 0, behavior: 'smooth' });
     }
   }, [currentStep]);
+
   const { user } = useUser();
 
   const isAdmin = user?.role === "admin";
@@ -309,6 +310,28 @@ export function SmartphoneWizard({
       initialStock: [],
     },
   });
+
+  // Reset hidden fields when category changes
+  const watchedCategory = form.watch("category");
+  useEffect(() => {
+    const specsConfig = getSpecsConfig(watchedCategory);
+    // Reset fields that are not visible for this category
+    if (!specsConfig.storage) {
+      form.setValue("storage", "");
+    }
+    if (!specsConfig.batteryHealth) {
+      form.setValue("batteryHealth", "");
+    }
+    if (!specsConfig.networkLock) {
+      form.setValue("networkLock", "unlocked");
+    }
+    if (!specsConfig.imei) {
+      form.setValue("imei", "");
+    }
+    if (!specsConfig.accessories) {
+      form.setValue("accessories", []);
+    }
+  }, [watchedCategory, form]);
 
   // Use /api/warehouses/accessible for all non-admin roles - it handles all roles internally
   // and returns own + sub-reseller + repair center warehouses for resellers
@@ -483,7 +506,15 @@ export function SmartphoneWizard({
     if (currentStep === 1) {
       fieldsToValidate = ["name", "category", "brand", "condition"];
     } else if (currentStep === 2) {
-      fieldsToValidate = ["storage", "grade"];
+      // Valida solo i campi visibili in base alla categoria
+      const specsConfig = getSpecsConfig(form.getValues("category"));
+      fieldsToValidate = [];
+      if (specsConfig.grade) {
+        fieldsToValidate.push("grade");
+      }
+      if (specsConfig.storage) {
+        fieldsToValidate.push("storage");
+      }
     } else if (currentStep === 3) {
       fieldsToValidate = ["unitPrice"];
     }
@@ -738,7 +769,9 @@ export function SmartphoneWizard({
               </div>
             )}
 
-            {currentStep === 2 && (
+            {currentStep === 2 && (() => {
+              const specsConfig = getSpecsConfig(form.watch("category"));
+              return (
               <div className="space-y-6">
                 <div className="text-center mb-4">
                   <Package className="h-12 w-12 mx-auto text-primary mb-2" />
@@ -747,194 +780,214 @@ export function SmartphoneWizard({
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="storage"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Memoria *</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
-                          <FormControl>
-                            <SelectTrigger data-testid="select-smartphone-storage">
-                              <SelectValue placeholder="Seleziona" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {STORAGE_OPTIONS.map(opt => (
-                              <SelectItem key={opt} value={opt}>{opt}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                  {specsConfig.storage && (
+                    <FormField
+                      control={form.control}
+                      name="storage"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Memoria *</FormLabel>
+                          <Select onValueChange={field.onChange} value={field.value}>
+                            <FormControl>
+                              <SelectTrigger data-testid="select-smartphone-storage">
+                                <SelectValue placeholder="Seleziona" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {STORAGE_OPTIONS.map(opt => (
+                                <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  )}
 
-                  <FormField
-                    control={form.control}
-                    name="grade"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Grado Estetico *</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
-                          <FormControl>
-                            <SelectTrigger data-testid="select-smartphone-grade">
-                              <SelectValue placeholder="Seleziona" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {GRADE_OPTIONS.map(opt => (
-                              <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                  {specsConfig.grade && (
+                    <FormField
+                      control={form.control}
+                      name="grade"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Grado Estetico *</FormLabel>
+                          <Select onValueChange={field.onChange} value={field.value}>
+                            <FormControl>
+                              <SelectTrigger data-testid="select-smartphone-grade">
+                                <SelectValue placeholder="Seleziona" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {GRADE_OPTIONS.map(opt => (
+                                <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  )}
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="batteryHealth"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Batteria</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
-                          <FormControl>
-                            <SelectTrigger data-testid="select-smartphone-battery">
-                              <SelectValue placeholder="Salute batteria" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {BATTERY_OPTIONS.map(opt => (
-                              <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
+                {(specsConfig.batteryHealth || specsConfig.networkLock) && (
+                  <div className="grid grid-cols-2 gap-4">
+                    {specsConfig.batteryHealth && (
+                      <FormField
+                        control={form.control}
+                        name="batteryHealth"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Batteria</FormLabel>
+                            <Select onValueChange={field.onChange} value={field.value}>
+                              <FormControl>
+                                <SelectTrigger data-testid="select-smartphone-battery">
+                                  <SelectValue placeholder="Salute batteria" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                {BATTERY_OPTIONS.map(opt => (
+                                  <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
                     )}
-                  />
 
-                  <FormField
-                    control={form.control}
-                    name="networkLock"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Blocco Rete</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
-                          <FormControl>
-                            <SelectTrigger data-testid="select-smartphone-network">
-                              <SelectValue />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {NETWORK_LOCK_OPTIONS.map(opt => (
-                              <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
+                    {specsConfig.networkLock && (
+                      <FormField
+                        control={form.control}
+                        name="networkLock"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Blocco Rete</FormLabel>
+                            <Select onValueChange={field.onChange} value={field.value}>
+                              <FormControl>
+                                <SelectTrigger data-testid="select-smartphone-network">
+                                  <SelectValue />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                {NETWORK_LOCK_OPTIONS.map(opt => (
+                                  <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
                     )}
-                  />
+                  </div>
+                )}
+
+                <div className="grid grid-cols-2 gap-4">
+                  {specsConfig.imei && (
+                    <FormField
+                      control={form.control}
+                      name="imei"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>IMEI</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Codice IMEI" {...field} data-testid="input-smartphone-imei" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  )}
+
+                  {specsConfig.serialNumber && (
+                    <FormField
+                      control={form.control}
+                      name="serialNumber"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Numero di Serie</FormLabel>
+                          <FormControl>
+                            <Input placeholder="S/N" {...field} data-testid="input-smartphone-serial" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  )}
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                {specsConfig.originalBox && (
                   <FormField
                     control={form.control}
-                    name="imei"
+                    name="originalBox"
                     render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>IMEI</FormLabel>
+                      <FormItem className="flex items-center gap-2">
                         <FormControl>
-                          <Input placeholder="Codice IMEI" {...field} data-testid="input-smartphone-imei" />
+                          <Checkbox 
+                            checked={field.value} 
+                            onCheckedChange={field.onChange}
+                            data-testid="checkbox-original-box"
+                          />
+                        </FormControl>
+                        <FormLabel className="!mt-0">Scatola originale inclusa</FormLabel>
+                      </FormItem>
+                    )}
+                  />
+                )}
+
+                {specsConfig.accessories && (
+                  <FormField
+                    control={form.control}
+                    name="accessories"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Accessori Inclusi</FormLabel>
+                        <div className="grid grid-cols-2 gap-2">
+                          {ACCESSORY_OPTIONS.map(acc => (
+                            <div key={acc} className="flex items-center gap-2">
+                              <Checkbox
+                                checked={field.value?.includes(acc)}
+                                onCheckedChange={(checked) => {
+                                  if (checked) {
+                                    field.onChange([...field.value, acc]);
+                                  } else {
+                                    field.onChange(field.value.filter((v: string) => v !== acc));
+                                  }
+                                }}
+                              />
+                              <Label className="text-sm">{acc}</Label>
+                            </div>
+                          ))}
+                        </div>
+                      </FormItem>
+                    )}
+                  />
+                )}
+
+                {specsConfig.description && (
+                  <FormField
+                    control={form.control}
+                    name="description"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Descrizione</FormLabel>
+                        <FormControl>
+                          <Textarea 
+                            placeholder="Note aggiuntive sul prodotto..." 
+                            {...field} 
+                            data-testid="textarea-smartphone-description"
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
-
-                  <FormField
-                    control={form.control}
-                    name="serialNumber"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Numero di Serie</FormLabel>
-                        <FormControl>
-                          <Input placeholder="S/N" {...field} data-testid="input-smartphone-serial" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
-                <FormField
-                  control={form.control}
-                  name="originalBox"
-                  render={({ field }) => (
-                    <FormItem className="flex items-center gap-2">
-                      <FormControl>
-                        <Checkbox 
-                          checked={field.value} 
-                          onCheckedChange={field.onChange}
-                          data-testid="checkbox-original-box"
-                        />
-                      </FormControl>
-                      <FormLabel className="!mt-0">Scatola originale inclusa</FormLabel>
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="accessories"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Accessori Inclusi</FormLabel>
-                      <div className="grid grid-cols-2 gap-2">
-                        {ACCESSORY_OPTIONS.map(acc => (
-                          <div key={acc} className="flex items-center gap-2">
-                            <Checkbox
-                              checked={field.value?.includes(acc)}
-                              onCheckedChange={(checked) => {
-                                if (checked) {
-                                  field.onChange([...field.value, acc]);
-                                } else {
-                                  field.onChange(field.value.filter((v: string) => v !== acc));
-                                }
-                              }}
-                            />
-                            <Label className="text-sm">{acc}</Label>
-                          </div>
-                        ))}
-                      </div>
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="description"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Descrizione</FormLabel>
-                      <FormControl>
-                        <Textarea 
-                          placeholder="Note aggiuntive sul prodotto..." 
-                          {...field} 
-                          data-testid="textarea-smartphone-description"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                )}
               </div>
-            )}
+            );})()}
 
             {currentStep === 3 && (
               <div className="space-y-6">
