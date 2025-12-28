@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -16,7 +16,6 @@ import { Button } from "@/components/ui/button";
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -24,7 +23,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
   Select,
@@ -33,8 +32,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Package, Truck, CheckCircle, Clock, Search, Warehouse, FileText, Plus, Loader2 } from "lucide-react";
-import type { PartsOrder, Product, RepairQuote } from "@shared/schema";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { 
+  Package, Truck, CheckCircle, Clock, Warehouse, FileText, Plus, 
+  Loader2, ShoppingCart, Trash2, Building, X, Send, Calendar 
+} from "lucide-react";
+import type { PartsOrder, Product, RepairQuote, Supplier, Warehouse as WarehouseType } from "@shared/schema";
 
 interface QuotePart {
   productId?: string;
@@ -44,6 +47,16 @@ interface QuotePart {
   imageUrl?: string;
 }
 
+interface CartItem {
+  id: string;
+  productId?: string;
+  partName: string;
+  partNumber?: string;
+  quantity: number;
+  unitCost: number;
+  notes?: string;
+}
+
 interface PartsOrderDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -51,18 +64,7 @@ interface PartsOrderDialogProps {
   onSuccess?: () => void;
 }
 
-const partsOrderSchema = z.object({
-  productId: z.string().optional(),
-  partName: z.string().min(1, "Il nome del ricambio è obbligatorio"),
-  partNumber: z.string().optional(),
-  quantity: z.coerce.number().min(1, "La quantità deve essere almeno 1"),
-  unitCost: z.coerce.number().min(0, "Il costo deve essere positivo"),
-  supplier: z.string().optional(),
-  expectedArrival: z.string().optional(),
-  notes: z.string().optional(),
-});
-
-type PartsOrderFormData = z.infer<typeof partsOrderSchema>;
+type DestinationType = "external_supplier" | "internal_warehouse";
 
 export function PartsOrderDialog({
   open,
@@ -72,8 +74,26 @@ export function PartsOrderDialog({
 }: PartsOrderDialogProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [searchTerm, setSearchTerm] = useState("");
-  const [addingQuotePartIndex, setAddingQuotePartIndex] = useState<number | null>(null);
+  const [activeTab, setActiveTab] = useState<"order" | "existing">("order");
+  const [cart, setCart] = useState<CartItem[]>([]);
+  const [destinationType, setDestinationType] = useState<DestinationType>("external_supplier");
+  const [selectedSupplierId, setSelectedSupplierId] = useState<string>("");
+  const [supplierName, setSupplierName] = useState<string>("");
+  const [sourceWarehouseId, setSourceWarehouseId] = useState<string>("");
+  const [expectedArrival, setExpectedArrival] = useState<string>("");
+  const [orderNotes, setOrderNotes] = useState<string>("");
+
+  useEffect(() => {
+    if (!open) {
+      setCart([]);
+      setDestinationType("external_supplier");
+      setSelectedSupplierId("");
+      setSupplierName("");
+      setSourceWarehouseId("");
+      setExpectedArrival("");
+      setOrderNotes("");
+    }
+  }, [open]);
 
   const { data: existingParts = [] } = useQuery<PartsOrder[]>({
     queryKey: ["/api/repair-orders", repairOrderId, "parts"],
@@ -87,14 +107,16 @@ export function PartsOrderDialog({
     enabled: open,
   });
 
-  const { data: products = [], isLoading: productsLoading } = useQuery<Product[]>({
-    queryKey: ["/api/products"],
+  const { data: suppliers = [] } = useQuery<Supplier[]>({
+    queryKey: ["/api/suppliers/list"],
     enabled: open,
-    staleTime: 0,
-    refetchOnMount: "always",
   });
 
-  // Fetch quote to get products from preventivo
+  const { data: warehouses = [] } = useQuery<WarehouseType[]>({
+    queryKey: ["/api/warehouses"],
+    enabled: open,
+  });
+
   const { data: quote } = useQuery<RepairQuote>({
     queryKey: ["/api/repair-orders", repairOrderId, "quote"],
     queryFn: async () => {
@@ -110,7 +132,6 @@ export function PartsOrderDialog({
     enabled: open,
   });
 
-  // Parse quote parts from JSON
   const quoteParts: QuotePart[] = (() => {
     if (!quote?.parts) return [];
     try {
@@ -121,24 +142,26 @@ export function PartsOrderDialog({
     }
   })();
 
-  // Calculate remaining quantities for quote parts (subtract already ordered)
   const availableQuoteParts = (() => {
-    // Build a map of ordered quantities by key (productId or name+unitCost)
     const orderedQuantities = new Map<string, number>();
     existingParts.forEach(ep => {
-      // Use productId as key if available, otherwise name+unitCost
       const key = ep.productId 
         ? `pid:${ep.productId}` 
         : `name:${ep.partName}:${ep.unitCost}`;
       orderedQuantities.set(key, (orderedQuantities.get(key) || 0) + (ep.quantity || 1));
     });
 
-    // Track consumed quantities as we iterate through quote parts
+    cart.forEach(ci => {
+      const key = ci.productId 
+        ? `pid:${ci.productId}` 
+        : `name:${ci.partName}:${ci.unitCost}`;
+      orderedQuantities.set(key, (orderedQuantities.get(key) || 0) + ci.quantity);
+    });
+
     const consumedQuantities = new Map<string, number>();
 
     return quoteParts
       .map((qp, originalIndex) => {
-        // Use productId as key if available, otherwise name+unitPrice
         const key = qp.productId 
           ? `pid:${qp.productId}` 
           : `name:${qp.name}:${qp.unitPrice}`;
@@ -148,7 +171,6 @@ export function PartsOrderDialog({
         const remainingOrdered = Math.max(0, totalOrdered - alreadyConsumed);
         const remainingQuantity = qp.quantity - remainingOrdered;
 
-        // Mark this quote part's quantity as consumed for next iterations
         consumedQuantities.set(key, alreadyConsumed + qp.quantity);
 
         if (remainingQuantity > 0) {
@@ -159,113 +181,73 @@ export function PartsOrderDialog({
       .filter((qp): qp is QuotePart & { originalIndex: number } => qp !== null);
   })();
 
-  // Direct add quote part to order (instead of just populating the form)
-  const addQuotePartToOrder = async (part: QuotePart, index: number) => {
-    setAddingQuotePartIndex(index);
-    try {
-      // Build the payload directly - unitPrice from quote is in cents
-      const payload = {
-        productId: part.productId || null,
-        partName: part.name,
-        partNumber: null,
-        quantity: part.quantity,
-        unitCost: part.unitPrice, // Already in cents
-        supplier: null,
-        expectedArrival: null,
-        notes: "Aggiunto da preventivo",
-      };
-      
-      await apiRequest(
-        "POST",
-        `/api/repair-orders/${repairOrderId}/parts`,
-        payload
-      );
-      
-      toast({
-        title: "Ricambio aggiunto",
-        description: `${part.name} è stato aggiunto all'ordine`,
-      });
-      
-      // Invalidate queries to refresh the lists
-      queryClient.invalidateQueries({ queryKey: ["/api/repair-orders", repairOrderId, "parts"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/repair-orders", repairOrderId, "quote"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/repair-orders"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/products"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/warehouses"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/my-warehouse"] });
-      
-    } catch (error: any) {
-      toast({
-        title: "Errore",
-        description: error.message || "Impossibile aggiungere il ricambio",
-        variant: "destructive",
-      });
-    } finally {
-      setAddingQuotePartIndex(null);
-    }
+  const addToCart = (part: QuotePart) => {
+    const newItem: CartItem = {
+      id: `cart-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      productId: part.productId,
+      partName: part.name,
+      quantity: part.quantity,
+      unitCost: part.unitPrice,
+    };
+    setCart(prev => [...prev, newItem]);
+    toast({
+      title: "Aggiunto al carrello",
+      description: `${part.name} (${part.quantity}x)`,
+    });
   };
 
-  const filteredProducts = products.filter(
-    (p) =>
-      p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      p.sku.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
-  const form = useForm<PartsOrderFormData>({
-    resolver: zodResolver(partsOrderSchema),
-    defaultValues: {
-      productId: "",
-      partName: "",
-      partNumber: "",
-      quantity: 1,
-      unitCost: 0,
-      supplier: "",
-      expectedArrival: "",
-      notes: "",
-    },
-  });
-
-  const selectProduct = (productId: string) => {
-    const product = products.find((p) => p.id === productId);
-    if (product) {
-      form.setValue("productId", product.id);
-      form.setValue("partName", product.name);
-      form.setValue("partNumber", product.sku);
-      form.setValue("unitCost", product.unitPrice / 100);
-    }
+  const removeFromCart = (itemId: string) => {
+    setCart(prev => prev.filter(item => item.id !== itemId));
   };
 
-  const createPartMutation = useMutation({
-    mutationFn: async (data: PartsOrderFormData) => {
+  const cartTotal = cart.reduce((sum, item) => sum + (item.unitCost * item.quantity), 0);
+
+  const createPurchaseOrderMutation = useMutation({
+    mutationFn: async () => {
+      if (cart.length === 0) {
+        throw new Error("Il carrello è vuoto");
+      }
+
+      const resolvedSupplierName = destinationType === "external_supplier"
+        ? (selectedSupplierId 
+            ? suppliers.find(s => s.id === selectedSupplierId)?.name || supplierName
+            : supplierName)
+        : null;
+
       const payload = {
-        productId: data.productId || null,
-        partName: data.partName,
-        partNumber: data.partNumber || null,
-        quantity: data.quantity,
-        unitCost: Math.round(data.unitCost * 100),
-        supplier: data.supplier || null,
-        expectedArrival: data.expectedArrival || null,
-        notes: data.notes || null,
+        destinationType,
+        supplierName: resolvedSupplierName,
+        supplierId: destinationType === "external_supplier" ? selectedSupplierId || null : null,
+        sourceWarehouseId: destinationType === "internal_warehouse" ? sourceWarehouseId || null : null,
+        expectedArrival: expectedArrival || null,
+        notes: orderNotes || null,
+        items: cart.map(item => ({
+          productId: item.productId || null,
+          partName: item.partName,
+          partNumber: item.partNumber || null,
+          quantity: item.quantity,
+          unitCost: item.unitCost,
+          notes: item.notes || null,
+        })),
       };
+
       return await apiRequest(
         "POST",
-        `/api/repair-orders/${repairOrderId}/parts`,
+        `/api/repair-orders/${repairOrderId}/purchase-orders`,
         payload
       );
     },
     onSuccess: () => {
       toast({
-        title: "Ricambio ordinato",
-        description: "L'ordine del ricambio è stato creato con successo",
+        title: "Ordine creato",
+        description: `Ordine con ${cart.length} articoli creato con successo`,
       });
       queryClient.invalidateQueries({ queryKey: ["/api/repair-orders", repairOrderId, "parts"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/repair-orders", repairOrderId, "purchase-orders"] });
       queryClient.invalidateQueries({ queryKey: ["/api/repair-orders"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/products"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/warehouses"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/my-warehouse"] });
-      form.reset();
-      setSearchTerm("");
+      setCart([]);
       onSuccess?.();
+      onOpenChange(false);
     },
     onError: (error: Error) => {
       toast({
@@ -284,18 +266,11 @@ export function PartsOrderDialog({
       toast({ title: "Stato aggiornato" });
       queryClient.invalidateQueries({ queryKey: ["/api/repair-orders", repairOrderId, "parts"] });
       queryClient.invalidateQueries({ queryKey: ["/api/repair-orders"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/products"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/warehouses"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/my-warehouse"] });
     },
     onError: (error: Error) => {
       toast({ title: "Errore", description: error.message, variant: "destructive" });
     },
   });
-
-  const onSubmit = (data: PartsOrderFormData) => {
-    createPartMutation.mutate(data);
-  };
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -313,7 +288,7 @@ export function PartsOrderDialog({
   };
 
   const formatCurrency = (cents: number | null) => {
-    if (!cents) return "-";
+    if (!cents && cents !== 0) return "-";
     return new Intl.NumberFormat("it-IT", {
       style: "currency",
       currency: "EUR",
@@ -322,174 +297,59 @@ export function PartsOrderDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Package className="h-5 w-5" />
-            Gestione Ricambi
+            Gestione Ordini Ricambi
           </DialogTitle>
           <DialogDescription>
-            Ordina e traccia i ricambi per questa riparazione
+            Crea ordini raggruppati per i ricambi della riparazione
           </DialogDescription>
         </DialogHeader>
 
-        {existingParts.length > 0 && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Ordini Ricambi Esistenti</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {existingParts.map((part) => (
-                <div
-                  key={part.id}
-                  className="flex items-center justify-between p-3 border rounded-lg"
-                  data-testid={`part-order-${part.id}`}
-                >
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium">{part.partName}</span>
-                      {part.productId && (
-                        <Badge variant="outline" className="text-xs">
-                          <Warehouse className="h-3 w-3 mr-1" />
-                          Da magazzino
-                        </Badge>
-                      )}
-                    </div>
-                    <div className="text-sm text-muted-foreground">
-                      {part.partNumber && <span>#{part.partNumber} - </span>}
-                      Qtà: {part.quantity} - {formatCurrency(part.unitCost)}
-                      {part.supplier && <span> - {part.supplier}</span>}
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    {getStatusBadge(part.status)}
-                    {part.status === "ordered" && (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => updateStatusMutation.mutate({ id: part.id, status: "in_transit" })}
-                        disabled={updateStatusMutation.isPending}
-                        data-testid={`button-transit-${part.id}`}
-                      >
-                        <Truck className="h-3 w-3" />
-                      </Button>
-                    )}
-                    {part.status === "in_transit" && (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => updateStatusMutation.mutate({ id: part.id, status: "received" })}
-                        disabled={updateStatusMutation.isPending}
-                        data-testid={`button-receive-${part.id}`}
-                      >
-                        <CheckCircle className="h-3 w-3" />
-                      </Button>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </CardContent>
-          </Card>
-        )}
+        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "order" | "existing")}>
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="order" className="flex items-center gap-2" data-testid="tab-new-order">
+              <ShoppingCart className="h-4 w-4" />
+              Nuovo Ordine
+              {cart.length > 0 && (
+                <Badge variant="secondary" className="ml-1">{cart.length}</Badge>
+              )}
+            </TabsTrigger>
+            <TabsTrigger value="existing" className="flex items-center gap-2" data-testid="tab-existing">
+              <FileText className="h-4 w-4" />
+              Ordini Esistenti
+              {existingParts.length > 0 && (
+                <Badge variant="outline" className="ml-1">{existingParts.length}</Badge>
+              )}
+            </TabsTrigger>
+          </TabsList>
 
-        {/* Prodotti dal Preventivo */}
-        {availableQuoteParts.length > 0 && (
-          <Card className="border-primary/30 bg-primary/5">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base flex items-center gap-2">
-                <FileText className="h-4 w-4 text-primary" />
-                Prodotti dal Preventivo
-              </CardTitle>
-              <p className="text-sm text-muted-foreground">
-                Clicca su un prodotto per aggiungerlo rapidamente all'ordine
-              </p>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              {availableQuoteParts.map((part, index) => (
-                <div
-                  key={`quote-part-${index}`}
-                  className="flex items-center justify-between p-3 border rounded-lg bg-background"
-                  data-testid={`quote-part-${index}`}
-                >
-                  <div className="flex items-center gap-3">
-                    {part.imageUrl ? (
-                      <img 
-                        src={part.imageUrl} 
-                        alt={part.name}
-                        className="w-10 h-10 object-cover rounded-md flex-shrink-0"
-                      />
-                    ) : (
-                      <div className="w-10 h-10 bg-muted rounded-md flex items-center justify-center flex-shrink-0">
-                        <Package className="h-5 w-5 text-muted-foreground" />
-                      </div>
-                    )}
-                    <div className="flex flex-col">
-                      <span className="font-medium">{part.name}</span>
-                      <span className="text-sm text-muted-foreground">
-                        Qtà: {part.quantity} - {formatCurrency(part.unitPrice)}
-                      </span>
-                    </div>
-                  </div>
-                  <Button 
-                    size="sm" 
-                    variant="outline" 
-                    className="flex-shrink-0"
-                    onClick={() => addQuotePartToOrder(part, index)}
-                    disabled={addingQuotePartIndex !== null}
-                    data-testid={`button-add-quote-part-${index}`}
-                  >
-                    {addingQuotePartIndex === index ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <>
-                        <Plus className="h-4 w-4 mr-1" />
-                        Aggiungi
-                      </>
-                    )}
-                  </Button>
-                </div>
-              ))}
-            </CardContent>
-          </Card>
-        )}
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base flex items-center gap-2">
-              <Warehouse className="h-4 w-4" />
-              Ordina Nuovo Ricambio
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Cerca prodotto per nome o SKU..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-9"
-                  data-testid="input-search-product"
-                />
-              </div>
-
-              {searchTerm && filteredProducts.length > 0 && (
-                <div className="border rounded-lg max-h-48 overflow-y-auto">
-                  {filteredProducts.map((product) => (
+          <TabsContent value="order" className="space-y-4 mt-4">
+            {availableQuoteParts.length > 0 && (
+              <Card className="border-primary/30 bg-primary/5">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <FileText className="h-4 w-4 text-primary" />
+                    Ricambi dal Preventivo
+                  </CardTitle>
+                  <p className="text-sm text-muted-foreground">
+                    Seleziona i ricambi da aggiungere al carrello
+                  </p>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  {availableQuoteParts.map((part, index) => (
                     <div
-                      key={product.id}
-                      className="p-3 hover-elevate cursor-pointer border-b last:border-b-0"
-                      onClick={() => {
-                        selectProduct(product.id);
-                        setSearchTerm("");
-                      }}
-                      data-testid={`product-option-${product.id}`}
+                      key={`quote-part-${index}`}
+                      className="flex items-center justify-between p-3 border rounded-lg bg-background"
+                      data-testid={`quote-part-${index}`}
                     >
                       <div className="flex items-center gap-3">
-                        {product.imageUrl ? (
+                        {part.imageUrl ? (
                           <img 
-                            src={product.imageUrl} 
-                            alt={product.name}
+                            src={part.imageUrl} 
+                            alt={part.name}
                             className="w-10 h-10 object-cover rounded-md flex-shrink-0"
                           />
                         ) : (
@@ -497,143 +357,325 @@ export function PartsOrderDialog({
                             <Package className="h-5 w-5 text-muted-foreground" />
                           </div>
                         )}
-                        <div className="flex-1 min-w-0">
-                          <div className="font-medium truncate">{product.name}</div>
-                          <div className="text-sm text-muted-foreground">
-                            SKU: {product.sku} | {product.category}
-                          </div>
+                        <div className="flex flex-col">
+                          <span className="font-medium">{part.name}</span>
+                          <span className="text-sm text-muted-foreground">
+                            Qtà: {part.quantity} - {formatCurrency(part.unitPrice)}
+                          </span>
                         </div>
-                        <div className="font-medium text-primary flex-shrink-0">
-                          {formatCurrency(product.unitPrice)}
+                      </div>
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
+                        className="flex-shrink-0"
+                        onClick={() => addToCart(part)}
+                        data-testid={`button-add-to-cart-${index}`}
+                      >
+                        <Plus className="h-4 w-4 mr-1" />
+                        Aggiungi
+                      </Button>
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+            )}
+
+            {availableQuoteParts.length === 0 && cart.length === 0 && (
+              <Card>
+                <CardContent className="py-8 text-center text-muted-foreground">
+                  <Package className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <p>Nessun ricambio disponibile dal preventivo.</p>
+                  <p className="text-sm mt-2">Tutti i ricambi sono già stati ordinati.</p>
+                </CardContent>
+              </Card>
+            )}
+
+            {cart.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <ShoppingCart className="h-4 w-4" />
+                    Carrello ({cart.length} articoli)
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  {cart.map((item) => (
+                    <div
+                      key={item.id}
+                      className="flex items-center justify-between p-3 border rounded-lg"
+                      data-testid={`cart-item-${item.id}`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-muted rounded-md flex items-center justify-center flex-shrink-0">
+                          <Package className="h-5 w-5 text-muted-foreground" />
                         </div>
+                        <div className="flex flex-col">
+                          <span className="font-medium">{item.partName}</span>
+                          <span className="text-sm text-muted-foreground">
+                            Qtà: {item.quantity} - {formatCurrency(item.unitCost)}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium">
+                          {formatCurrency(item.unitCost * item.quantity)}
+                        </span>
+                        <Button 
+                          size="icon" 
+                          variant="ghost" 
+                          className="h-8 w-8 text-destructive"
+                          onClick={() => removeFromCart(item.id)}
+                          data-testid={`button-remove-${item.id}`}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
                       </div>
                     </div>
                   ))}
-                </div>
-              )}
+                </CardContent>
+                <CardFooter className="flex justify-between border-t pt-4">
+                  <span className="font-medium">Totale:</span>
+                  <span className="text-lg font-bold">{formatCurrency(cartTotal)}</span>
+                </CardFooter>
+              </Card>
+            )}
 
-              {productsLoading && (
-                <div className="text-center text-muted-foreground py-4">
-                  Caricamento prodotti...
-                </div>
-              )}
+            {cart.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <Building className="h-4 w-4" />
+                    Destinatario Ordine
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <Card 
+                      className={`cursor-pointer transition-all ${
+                        destinationType === "external_supplier" 
+                          ? "border-primary ring-2 ring-primary/20" 
+                          : "hover-elevate"
+                      }`}
+                      onClick={() => setDestinationType("external_supplier")}
+                      data-testid="option-external-supplier"
+                    >
+                      <CardContent className="p-4 text-center">
+                        <Truck className="h-8 w-8 mx-auto mb-2 text-primary" />
+                        <h4 className="font-medium">Fornitore Esterno</h4>
+                        <p className="text-xs text-muted-foreground">Ordina da un fornitore</p>
+                      </CardContent>
+                    </Card>
+                    <Card 
+                      className={`cursor-pointer transition-all ${
+                        destinationType === "internal_warehouse" 
+                          ? "border-primary ring-2 ring-primary/20" 
+                          : "hover-elevate"
+                      }`}
+                      onClick={() => setDestinationType("internal_warehouse")}
+                      data-testid="option-internal-warehouse"
+                    >
+                      <CardContent className="p-4 text-center">
+                        <Warehouse className="h-8 w-8 mx-auto mb-2 text-primary" />
+                        <h4 className="font-medium">Magazzino Interno</h4>
+                        <p className="text-xs text-muted-foreground">Trasferimento da magazzino</p>
+                      </CardContent>
+                    </Card>
+                  </div>
 
-              {!productsLoading && searchTerm && filteredProducts.length === 0 && (
-                <div className="text-center text-muted-foreground py-4">
-                  Nessun prodotto trovato nel catalogo.
-                </div>
-              )}
-
-              {form.watch("productId") && (() => {
-                const selectedProduct = products.find(p => p.id === form.watch("productId"));
-                return (
-                  <div className="p-3 bg-muted rounded-lg">
-                    <div className="text-sm text-muted-foreground mb-2">Prodotto selezionato:</div>
-                    <div className="flex items-center gap-3">
-                      {selectedProduct?.imageUrl ? (
-                        <img 
-                          src={selectedProduct.imageUrl} 
-                          alt={selectedProduct.name}
-                          className="w-12 h-12 object-cover rounded-md"
-                        />
-                      ) : (
-                        <div className="w-12 h-12 bg-background rounded-md flex items-center justify-center">
-                          <Package className="h-6 w-6 text-muted-foreground" />
+                  {destinationType === "external_supplier" && (
+                    <div className="space-y-4">
+                      <div>
+                        <label className="text-sm font-medium">Fornitore</label>
+                        {suppliers.length > 0 ? (
+                          <Select value={selectedSupplierId} onValueChange={setSelectedSupplierId}>
+                            <SelectTrigger data-testid="select-supplier">
+                              <SelectValue placeholder="Seleziona fornitore" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="custom">Altro (inserisci nome)</SelectItem>
+                              {suppliers.map((supplier) => (
+                                <SelectItem key={supplier.id} value={supplier.id}>
+                                  {supplier.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        ) : (
+                          <Input
+                            placeholder="Nome fornitore"
+                            value={supplierName}
+                            onChange={(e) => setSupplierName(e.target.value)}
+                            data-testid="input-supplier-name"
+                          />
+                        )}
+                      </div>
+                      {selectedSupplierId === "custom" && (
+                        <div>
+                          <label className="text-sm font-medium">Nome Fornitore</label>
+                          <Input
+                            placeholder="Inserisci nome fornitore"
+                            value={supplierName}
+                            onChange={(e) => setSupplierName(e.target.value)}
+                            data-testid="input-custom-supplier-name"
+                          />
                         </div>
                       )}
-                      <div>
-                        <div className="font-medium">{form.watch("partName")}</div>
-                        <div className="text-sm text-muted-foreground">
-                          SKU: {form.watch("partNumber")} | {formatCurrency((form.watch("unitCost") || 0) * 100)}
-                        </div>
-                      </div>
+                    </div>
+                  )}
+
+                  {destinationType === "internal_warehouse" && warehouses.length > 0 && (
+                    <div>
+                      <label className="text-sm font-medium">Magazzino Origine</label>
+                      <Select value={sourceWarehouseId} onValueChange={setSourceWarehouseId}>
+                        <SelectTrigger data-testid="select-warehouse">
+                          <SelectValue placeholder="Seleziona magazzino" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {warehouses.map((wh) => (
+                            <SelectItem key={wh.id} value={wh.id}>
+                              {wh.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-sm font-medium flex items-center gap-1">
+                        <Calendar className="h-4 w-4" />
+                        Data Arrivo Prevista
+                      </label>
+                      <Input
+                        type="date"
+                        value={expectedArrival}
+                        onChange={(e) => setExpectedArrival(e.target.value)}
+                        data-testid="input-expected-arrival"
+                      />
                     </div>
                   </div>
-                );
-              })()}
-            </div>
 
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 mt-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="quantity"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Quantità *</FormLabel>
-                        <FormControl>
-                          <Input {...field} type="number" min="1" data-testid="input-quantity" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="unitCost"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Costo Unitario (EUR)</FormLabel>
-                        <FormControl>
-                          <Input {...field} type="number" min="0" step="0.01" data-testid="input-unit-cost" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
-                <FormField
-                  control={form.control}
-                  name="expectedArrival"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Data Arrivo Prevista</FormLabel>
-                      <FormControl>
-                        <Input {...field} type="date" data-testid="input-expected-arrival" />
-                      </FormControl>
-                      <FormDescription>Quando è previsto l'arrivo del ricambio</FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="notes"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Note</FormLabel>
-                      <FormControl>
-                        <Textarea {...field} placeholder="Note aggiuntive..." rows={2} data-testid="input-notes" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <div className="flex justify-end gap-3">
+                  <div>
+                    <label className="text-sm font-medium">Note Ordine</label>
+                    <Textarea
+                      placeholder="Note aggiuntive per l'ordine..."
+                      value={orderNotes}
+                      onChange={(e) => setOrderNotes(e.target.value)}
+                      rows={2}
+                      data-testid="input-order-notes"
+                    />
+                  </div>
+                </CardContent>
+                <CardFooter className="flex justify-end gap-3 border-t pt-4">
                   <Button
-                    type="button"
                     variant="outline"
-                    onClick={() => onOpenChange(false)}
-                    data-testid="button-close"
+                    onClick={() => setCart([])}
+                    data-testid="button-clear-cart"
                   >
-                    Chiudi
+                    Svuota Carrello
                   </Button>
                   <Button
-                    type="submit"
-                    disabled={createPartMutation.isPending || !form.watch("partName")}
-                    data-testid="button-order-part"
+                    onClick={() => createPurchaseOrderMutation.mutate()}
+                    disabled={createPurchaseOrderMutation.isPending || cart.length === 0}
+                    data-testid="button-confirm-order"
                   >
-                    {createPartMutation.isPending ? "Ordinando..." : "Ordina Ricambio"}
+                    {createPurchaseOrderMutation.isPending ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Creazione...
+                      </>
+                    ) : (
+                      <>
+                        <Send className="h-4 w-4 mr-2" />
+                        Conferma Ordine
+                      </>
+                    )}
                   </Button>
-                </div>
-              </form>
-            </Form>
-          </CardContent>
-        </Card>
+                </CardFooter>
+              </Card>
+            )}
+          </TabsContent>
+
+          <TabsContent value="existing" className="space-y-4 mt-4">
+            {existingParts.length > 0 ? (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base">Ordini Ricambi Esistenti</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  {existingParts.map((part) => (
+                    <div
+                      key={part.id}
+                      className="flex items-center justify-between p-3 border rounded-lg"
+                      data-testid={`part-order-${part.id}`}
+                    >
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium">{part.partName}</span>
+                          {part.productId && (
+                            <Badge variant="outline" className="text-xs">
+                              <Warehouse className="h-3 w-3 mr-1" />
+                              Da magazzino
+                            </Badge>
+                          )}
+                          {part.purchaseOrderId && (
+                            <Badge variant="secondary" className="text-xs">
+                              Ordine Raggruppato
+                            </Badge>
+                          )}
+                        </div>
+                        <div className="text-sm text-muted-foreground">
+                          {part.partNumber && <span>#{part.partNumber} - </span>}
+                          Qtà: {part.quantity} - {formatCurrency(part.unitCost)}
+                          {part.supplier && <span> - {part.supplier}</span>}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {getStatusBadge(part.status)}
+                        {part.status === "ordered" && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => updateStatusMutation.mutate({ id: part.id, status: "in_transit" })}
+                            disabled={updateStatusMutation.isPending}
+                            data-testid={`button-transit-${part.id}`}
+                          >
+                            <Truck className="h-3 w-3" />
+                          </Button>
+                        )}
+                        {part.status === "in_transit" && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => updateStatusMutation.mutate({ id: part.id, status: "received" })}
+                            disabled={updateStatusMutation.isPending}
+                            data-testid={`button-receive-${part.id}`}
+                          >
+                            <CheckCircle className="h-3 w-3" />
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+            ) : (
+              <Card>
+                <CardContent className="py-8 text-center text-muted-foreground">
+                  <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <p>Nessun ordine ricambi per questa riparazione.</p>
+                </CardContent>
+              </Card>
+            )}
+          </TabsContent>
+        </Tabs>
+
+        <div className="flex justify-end pt-4 border-t">
+          <Button variant="outline" onClick={() => onOpenChange(false)} data-testid="button-close">
+            Chiudi
+          </Button>
+        </div>
       </DialogContent>
     </Dialog>
   );
