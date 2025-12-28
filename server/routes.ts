@@ -468,6 +468,50 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Backfill missing warehouses for resellers
+  app.post("/api/admin/backfill-reseller-warehouses", requireRole("admin"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      // Get all resellers
+      const allUsers = await storage.listUsers();
+      const resellers = allUsers.filter(u => u.role === 'reseller' && u.isActive);
+      
+      const results = {
+        total: resellers.length,
+        created: 0,
+        existing: 0,
+        errors: [] as string[],
+      };
+      
+      for (const reseller of resellers) {
+        try {
+          // Check if warehouse already exists
+          const existingWarehouse = await storage.getWarehouseByOwner('reseller', reseller.id);
+          if (existingWarehouse) {
+            results.existing++;
+          } else {
+            // Create warehouse
+            await storage.ensureDefaultWarehouse('reseller', reseller.id, reseller.fullName || reseller.username);
+            results.created++;
+            console.log(`[WAREHOUSE BACKFILL] Created warehouse for reseller: ${reseller.id} (${reseller.fullName || reseller.username})`);
+          }
+        } catch (err: any) {
+          results.errors.push(`${reseller.id}: ${err.message}`);
+          console.error(`[WAREHOUSE BACKFILL] Error for reseller ${reseller.id}:`, err);
+        }
+      }
+      
+      res.json({
+        message: `Backfill completato: ${results.created} magazzini creati, ${results.existing} già esistenti`,
+        ...results,
+      });
+    } catch (error: any) {
+      console.error("[WAREHOUSE BACKFILL] Error:", error);
+      res.status(500).send(error.message);
+    }
+  });
+
   // ==========================================
   // SERVICE CATALOG (CATALOGO INTERVENTI) - Admin Only
   // ==========================================
@@ -12078,6 +12122,17 @@ export function registerRoutes(app: Express): Server {
       }
       
       const updatedUser = await storage.updateUser(req.params.id, updates);
+      
+      // Auto-create warehouse when a reseller is activated
+      if (updates.isActive === true && user.role === 'reseller' && !user.isActive) {
+        try {
+          await storage.ensureDefaultWarehouse('reseller', user.id, user.fullName || user.username);
+          console.log(`[WAREHOUSE] Auto-created warehouse for newly activated reseller: ${user.id}`);
+        } catch (warehouseError) {
+          console.error(`[WAREHOUSE] Failed to create warehouse for reseller ${user.id}:`, warehouseError);
+          // Don't fail the user update, just log the error
+        }
+      }
       
       setActivityEntity(res, { type: 'user', id: updatedUser.id });
       res.json(updatedUser);
