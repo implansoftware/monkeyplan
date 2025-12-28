@@ -7902,9 +7902,20 @@ export function registerRoutes(app: Express): Server {
         return res.status(400).send("Product and specs are required");
       }
       
-      // Set product type to 'dispositivo'
+      // Set product type and category for smartphones
       product.productType = 'dispositivo';
+      product.category = 'smartphone';
       product.createdBy = req.user.role === 'reseller_collaborator' ? req.user.resellerId : req.user.id;
+      
+      // Convert unitPriceCents to unitPrice (database uses cents as unitPrice)
+      if (product.unitPriceCents !== undefined && product.unitPrice === undefined) {
+        product.unitPrice = product.unitPriceCents;
+        delete product.unitPriceCents;
+      }
+      if (product.costPriceCents !== undefined && product.costPrice === undefined) {
+        product.costPrice = product.costPriceCents;
+        delete product.costPriceCents;
+      }
       
       // Generate SKU if not provided or empty
       if (!product.sku || product.sku.trim() === '') {
