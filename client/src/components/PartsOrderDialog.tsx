@@ -33,8 +33,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Package, Truck, CheckCircle, Clock, Search, Warehouse } from "lucide-react";
-import type { PartsOrder, Product } from "@shared/schema";
+import { Package, Truck, CheckCircle, Clock, Search, Warehouse, FileText, Plus } from "lucide-react";
+import type { PartsOrder, Product, RepairQuote } from "@shared/schema";
+
+interface QuotePart {
+  productId?: string;
+  name: string;
+  quantity: number;
+  unitPrice: number;
+  imageUrl?: string;
+}
 
 interface PartsOrderDialogProps {
   open: boolean;
@@ -84,6 +92,50 @@ export function PartsOrderDialog({
     staleTime: 0,
     refetchOnMount: "always",
   });
+
+  // Fetch quote to get products from preventivo
+  const { data: quote } = useQuery<RepairQuote>({
+    queryKey: ["/api/repair-orders", repairOrderId, "quote"],
+    queryFn: async () => {
+      const res = await fetch(`/api/repair-orders/${repairOrderId}/quote`, {
+        credentials: "include",
+      });
+      if (!res.ok) {
+        if (res.status === 404) return null;
+        throw new Error("Failed to fetch quote");
+      }
+      return res.json();
+    },
+    enabled: open,
+  });
+
+  // Parse quote parts from JSON
+  const quoteParts: QuotePart[] = (() => {
+    if (!quote?.parts) return [];
+    try {
+      const parsed = typeof quote.parts === 'string' ? JSON.parse(quote.parts) : quote.parts;
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  })();
+
+  // Filter out quote parts that are already ordered
+  const availableQuoteParts = quoteParts.filter(qp => {
+    return !existingParts.some(ep => 
+      ep.partName === qp.name || 
+      (qp.productId && ep.productId === qp.productId)
+    );
+  });
+
+  const selectQuotePart = (part: QuotePart) => {
+    form.setValue("productId", part.productId || "");
+    form.setValue("partName", part.name);
+    form.setValue("partNumber", "");
+    form.setValue("quantity", part.quantity);
+    // unitPrice from quote is in cents, form expects euros
+    form.setValue("unitCost", part.unitPrice / 100);
+  };
 
   const filteredProducts = products.filter(
     (p) =>
@@ -266,6 +318,55 @@ export function PartsOrderDialog({
                       </Button>
                     )}
                   </div>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Prodotti dal Preventivo */}
+        {availableQuoteParts.length > 0 && (
+          <Card className="border-primary/30 bg-primary/5">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center gap-2">
+                <FileText className="h-4 w-4 text-primary" />
+                Prodotti dal Preventivo
+              </CardTitle>
+              <p className="text-sm text-muted-foreground">
+                Clicca su un prodotto per aggiungerlo rapidamente all'ordine
+              </p>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              {availableQuoteParts.map((part, index) => (
+                <div
+                  key={`quote-part-${index}`}
+                  className="flex items-center justify-between p-3 border rounded-lg bg-background hover-elevate cursor-pointer"
+                  onClick={() => selectQuotePart(part)}
+                  data-testid={`quote-part-${index}`}
+                >
+                  <div className="flex items-center gap-3">
+                    {part.imageUrl ? (
+                      <img 
+                        src={part.imageUrl} 
+                        alt={part.name}
+                        className="w-10 h-10 object-cover rounded-md flex-shrink-0"
+                      />
+                    ) : (
+                      <div className="w-10 h-10 bg-muted rounded-md flex items-center justify-center flex-shrink-0">
+                        <Package className="h-5 w-5 text-muted-foreground" />
+                      </div>
+                    )}
+                    <div className="flex flex-col">
+                      <span className="font-medium">{part.name}</span>
+                      <span className="text-sm text-muted-foreground">
+                        Qtà: {part.quantity} - {formatCurrency(part.unitPrice)}
+                      </span>
+                    </div>
+                  </div>
+                  <Button size="sm" variant="outline" className="flex-shrink-0">
+                    <Plus className="h-4 w-4 mr-1" />
+                    Aggiungi
+                  </Button>
                 </div>
               ))}
             </CardContent>
