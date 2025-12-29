@@ -117,6 +117,7 @@ import ResellerDeviceCatalog from "@/pages/reseller/device-catalog";
 import ResellerRepairDetail from "@/pages/reseller/repair-detail";
 import ResellerSmartphoneCatalog from "@/pages/reseller/smartphone-catalog";
 import ResellerAccessoryCatalog from "@/pages/reseller/accessory-catalog";
+import ResellerGuide from "@/pages/reseller/guide";
 
 // Repair Center pages
 import RepairCenterDashboard from "@/pages/repair-center/dashboard";
@@ -264,6 +265,7 @@ function Router() {
       <ProtectedRoute path="/reseller/supplier-returns" component={ResellerSupplierReturns} />
       <ProtectedRoute path="/reseller/tickets" component={ResellerTickets} />
       <ProtectedRoute path="/reseller/tickets/:id" component={ResellerTicketDetail} />
+      <ProtectedRoute path="/reseller/guide" component={ResellerGuide} />
       <ProtectedRoute path="/reseller/utility" component={ResellerUtility} />
       <ProtectedRoute path="/reseller/utility/suppliers" component={ResellerUtilitySuppliers} />
       <ProtectedRoute path="/reseller/utility/services" component={ResellerUtilityServices} />
