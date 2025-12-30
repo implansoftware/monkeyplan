@@ -4641,6 +4641,8 @@ const baseCustomerSchema = z.object({
   iban: z.string().optional(),
   showAddress: z.boolean().optional().default(false),
   showIban: z.boolean().optional().default(false),
+  showFiscalCode: z.boolean().optional().default(false),
+  fiscalCode: z.string().optional(),
 });
 
 export const privateCustomerSchema = baseCustomerSchema.extend({

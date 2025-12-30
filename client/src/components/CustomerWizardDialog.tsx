@@ -100,11 +100,13 @@ export function CustomerWizardDialog({ open, onOpenChange, onSuccess }: Customer
       country: "IT",
       showAddress: false,
       showIban: false,
+      showFiscalCode: false,
     },
   });
 
   const showAddress = form.watch("showAddress");
   const showIban = form.watch("showIban");
+  const showFiscalCode = form.watch("showFiscalCode");
 
   const createCustomerMutation = useMutation({
     mutationFn: async (data: InsertCustomerWizard) => {
@@ -516,6 +518,52 @@ export function CustomerWizardDialog({ open, onOpenChange, onSuccess }: Customer
             />
           )}
 
+          <Separator />
+
+          {/* Checkbox per Codice Fiscale (solo per privati) */}
+          {customerType === "private" && (
+            <FormField
+              control={form.control as any}
+              name="showFiscalCode"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                  <FormControl>
+                    <Checkbox
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                      data-testid="checkbox-show-fiscal-code"
+                    />
+                  </FormControl>
+                  <div className="space-y-1 leading-none">
+                    <FormLabel className="text-sm font-normal">
+                      Voglio inserire il Codice Fiscale
+                    </FormLabel>
+                    <FormDescription>
+                      Spunta per inserire il Codice Fiscale ora
+                    </FormDescription>
+                  </div>
+                </FormItem>
+              )}
+            />
+          )}
+
+          {showFiscalCode && (
+            <FormField
+              control={form.control as any}
+              name="fiscalCode"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Codice Fiscale</FormLabel>
+                  <FormControl>
+                    <Input {...field} value={field.value || ""} data-testid="input-fiscal-code" placeholder="RSSMRA85M01H501Z" />
+                  </FormControl>
+                  <FormDescription>Opzionale - per fatturazione</FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          )}
+
           {/* Selezione rivenditore solo per admin */}
           {isAdmin && resellers.length > 0 && (
             <>
@@ -773,6 +821,19 @@ export function CustomerWizardDialog({ open, onOpenChange, onSuccess }: Customer
                 <p className="text-sm" data-testid="text-review-iban">{values.iban}</p>
               )}
             </div>
+
+            {values.customerType === "private" && (
+              <div>
+                <h4 className="font-medium mb-2">Codice Fiscale</h4>
+                {!values.showFiscalCode || !values.fiscalCode ? (
+                  <p className="text-sm text-muted-foreground italic" data-testid="text-review-fiscal-code">
+                    Non inserito
+                  </p>
+                ) : (
+                  <p className="text-sm" data-testid="text-review-fiscal-code">{values.fiscalCode}</p>
+                )}
+              </div>
+            )}
 
             {isAdmin && selectedResellerId && (
               <div>

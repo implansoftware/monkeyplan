@@ -12570,7 +12570,7 @@ export function registerRoutes(app: Express): Server {
         customerType: validatedData.customerType,
         companyName: validatedData.customerType === 'company' ? validatedData.companyName : null,
         vatNumber: validatedData.customerType === 'company' ? (validatedData.vatNumber || null) : null,
-        fiscalCode: validatedData.customerType === 'company' ? (validatedData.fiscalCode || null) : null,
+        fiscalCode: validatedData.fiscalCode || null,
         pec: validatedData.customerType === 'company' ? (validatedData.pec || null) : null,
         codiceUnivoco: validatedData.customerType === 'company' ? (validatedData.codiceUnivoco || null) : null,
         iban: validatedData.iban || null,
