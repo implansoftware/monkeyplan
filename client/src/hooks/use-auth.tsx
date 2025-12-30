@@ -39,6 +39,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return await res.json();
     },
     onSuccess: (user: User) => {
+      // Clear all cached data from previous user session
+      queryClient.clear();
       queryClient.setQueryData(["/api/user"], user);
       toast({
         title: "Login effettuato",
@@ -80,6 +82,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await apiRequest("POST", "/api/logout");
     },
     onSuccess: () => {
+      // Clear all cached data from the session
+      queryClient.clear();
       queryClient.setQueryData(["/api/user"], null);
       toast({
         title: "Logout effettuato",
