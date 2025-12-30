@@ -10,7 +10,8 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
-import { Users, Plus, Search, Mail, Building2, Wrench, Pencil, X, Check, Trash2, Phone, MapPin, FileText, UserCheck } from "lucide-react";
+import { Users, Plus, Search, Mail, Building2, Wrench, Pencil, X, Check, Trash2, Phone, MapPin, FileText, UserCheck, Eye } from "lucide-react";
+import { Link } from "wouter";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
@@ -319,14 +320,16 @@ export default function ResellerCustomers() {
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setSelectedCustomer(customer)}
-                            data-testid={`button-view-${customer.id}`}
-                          >
-                            Dettagli
-                          </Button>
+                          <Link href={`/reseller/customers/${customer.id}`}>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              data-testid={`button-view-${customer.id}`}
+                            >
+                              <Eye className="h-4 w-4 mr-1" />
+                              Dettagli
+                            </Button>
+                          </Link>
                           <Button
                             variant="destructive"
                             size="icon"
@@ -503,70 +506,6 @@ export default function ResellerCustomers() {
                       </div>
                     )}
                   </div>
-
-                  {selectedCustomer.customerType === "company" && (
-                    <div className="pt-4 border-t">
-                      <Label className="flex items-center gap-2 mb-3">
-                        <FileText className="h-4 w-4" />
-                        Dati Aziendali
-                      </Label>
-                      <div className="grid grid-cols-2 gap-4">
-                        {selectedCustomer.companyName && (
-                          <div>
-                            <Label className="text-xs text-muted-foreground">Ragione Sociale</Label>
-                            <p className="text-sm">{selectedCustomer.companyName}</p>
-                          </div>
-                        )}
-                        {selectedCustomer.vatNumber && (
-                          <div>
-                            <Label className="text-xs text-muted-foreground">P.IVA</Label>
-                            <p className="text-sm font-mono">{selectedCustomer.vatNumber}</p>
-                          </div>
-                        )}
-                        {selectedCustomer.fiscalCode && (
-                          <div>
-                            <Label className="text-xs text-muted-foreground">Codice Fiscale</Label>
-                            <p className="text-sm font-mono">{selectedCustomer.fiscalCode}</p>
-                          </div>
-                        )}
-                        {selectedCustomer.pec && (
-                          <div>
-                            <Label className="text-xs text-muted-foreground">PEC</Label>
-                            <p className="text-sm">{selectedCustomer.pec}</p>
-                          </div>
-                        )}
-                        {selectedCustomer.codiceUnivoco && (
-                          <div>
-                            <Label className="text-xs text-muted-foreground">Codice Univoco (SDI)</Label>
-                            <p className="text-sm font-mono">{selectedCustomer.codiceUnivoco}</p>
-                          </div>
-                        )}
-                        {selectedCustomer.iban && (
-                          <div className="col-span-2">
-                            <Label className="text-xs text-muted-foreground">IBAN</Label>
-                            <p className="text-sm font-mono">{selectedCustomer.iban}</p>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  )}
-
-                  {(selectedCustomer.address || selectedCustomer.city) && (
-                    <div className="pt-4 border-t">
-                      <Label className="flex items-center gap-2 mb-3">
-                        <MapPin className="h-4 w-4" />
-                        Indirizzo
-                      </Label>
-                      <p className="text-sm text-muted-foreground">
-                        {[
-                          selectedCustomer.address,
-                          selectedCustomer.zipCode,
-                          selectedCustomer.city,
-                          selectedCustomer.country
-                        ].filter(Boolean).join(", ")}
-                      </p>
-                    </div>
-                  )}
 
                   <div className="pt-4 border-t">
                     <Label className="flex items-center gap-2 mb-2">
