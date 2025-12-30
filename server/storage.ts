@@ -7188,31 +7188,54 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getResellerStats(): Promise<{ total: number; active: number; withCenters: number; withCustomers: number }> {
-    const allUsers = await db.select().from(users);
-    const resellers = allUsers.filter(u => u.role === 'reseller');
-    const customers = allUsers.filter(u => u.role === 'customer');
-    const centers = await db.select().from(repairCenters);
+    const resellerCounts = await db.execute(sql`
+      SELECT 
+        COUNT(*) as total,
+        COUNT(CASE WHEN is_active = true THEN 1 END) as active
+      FROM ${users}
+      WHERE role = 'reseller'
+    `);
     
-    const resellersWithCenters = new Set(centers.map(c => c.resellerId).filter(Boolean));
-    const resellersWithCustomers = new Set(customers.map(c => c.resellerId).filter(Boolean));
+    const withCentersResult = await db.execute(sql`
+      SELECT COUNT(DISTINCT reseller_id) as count
+      FROM ${repairCenters}
+      WHERE reseller_id IS NOT NULL
+    `);
     
+    const withCustomersResult = await db.execute(sql`
+      SELECT COUNT(DISTINCT reseller_id) as count
+      FROM ${users}
+      WHERE role = 'customer' AND reseller_id IS NOT NULL
+    `);
+    
+    const row = resellerCounts.rows[0] as any;
     return {
-      total: resellers.length,
-      active: resellers.filter(r => r.isActive).length,
-      withCenters: resellersWithCenters.size,
-      withCustomers: resellersWithCustomers.size,
+      total: parseInt(row?.total) || 0,
+      active: parseInt(row?.active) || 0,
+      withCenters: parseInt((withCentersResult.rows[0] as any)?.count) || 0,
+      withCustomers: parseInt((withCustomersResult.rows[0] as any)?.count) || 0,
     };
   }
 
   async getRepairCenterGlobalStats(): Promise<{ total: number; active: number; totalRepairs: number; avgRepairsPerCenter: number }> {
-    const centers = await db.select().from(repairCenters);
-    const repairs = await db.select().from(repairOrders);
+    const centerCounts = await db.execute(sql`
+      SELECT 
+        COUNT(*) as total,
+        COUNT(CASE WHEN is_active = true THEN 1 END) as active
+      FROM ${repairCenters}
+    `);
     
-    const activeCenters = centers.filter(c => c.isActive).length;
-    const totalRepairs = repairs.length;
+    const repairCount = await db.execute(sql`
+      SELECT COUNT(*) as total FROM ${repairOrders}
+    `);
+    
+    const row = centerCounts.rows[0] as any;
+    const totalCenters = parseInt(row?.total) || 0;
+    const activeCenters = parseInt(row?.active) || 0;
+    const totalRepairs = parseInt((repairCount.rows[0] as any)?.total) || 0;
     
     return {
-      total: centers.length,
+      total: totalCenters,
       active: activeCenters,
       totalRepairs,
       avgRepairsPerCenter: activeCenters > 0 ? Math.round(totalRepairs / activeCenters * 10) / 10 : 0,
@@ -7220,67 +7243,77 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getUtilityPracticesStats(): Promise<{ total: number; byStatus: Record<string, number>; totalCommissions: number; pendingCommissions: number }> {
-    const practices = await db.select().from(utilityPractices);
-    const commissions = await db.select().from(utilityCommissions);
+    const practicesByStatus = await db.execute(sql`
+      SELECT status, COUNT(*) as count
+      FROM ${utilityPractices}
+      GROUP BY status
+    `);
+    
+    const commissionStats = await db.execute(sql`
+      SELECT 
+        COALESCE(SUM(amount_cents), 0) as total,
+        COALESCE(SUM(CASE WHEN status = 'pending' THEN amount_cents ELSE 0 END), 0) as pending
+      FROM ${utilityCommissions}
+    `);
     
     const byStatus: Record<string, number> = {};
-    practices.forEach(p => {
-      byStatus[p.status] = (byStatus[p.status] || 0) + 1;
+    let totalPractices = 0;
+    practicesByStatus.rows.forEach((row: any) => {
+      byStatus[row.status] = parseInt(row.count) || 0;
+      totalPractices += parseInt(row.count) || 0;
     });
     
-    const totalCommissions = commissions.reduce((sum, c) => sum + (c.amountCents || 0), 0);
-    const pendingCommissions = commissions.filter(c => c.status === 'pending').reduce((sum, c) => sum + (c.amountCents || 0), 0);
-    
+    const commRow = commissionStats.rows[0] as any;
     return {
-      total: practices.length,
+      total: totalPractices,
       byStatus,
-      totalCommissions,
-      pendingCommissions,
+      totalCommissions: parseInt(commRow?.total) || 0,
+      pendingCommissions: parseInt(commRow?.pending) || 0,
     };
   }
 
   async getWarehouseGlobalStats(): Promise<{ totalWarehouses: number; totalStock: number; totalValue: number; lowStockItems: number }> {
-    const allWarehouses = await db.select().from(warehouses);
-    const allStock = await db.select().from(inventoryStock);
-    const allProducts = await db.select().from(products);
+    const warehouseCount = await db.execute(sql`
+      SELECT COUNT(*) as total FROM ${warehouses}
+    `);
     
-    const productMap = new Map(allProducts.map(p => [p.id, p]));
+    const stockStats = await db.execute(sql`
+      SELECT 
+        COALESCE(SUM(COALESCE(i.quantity, 0)), 0) as total_stock,
+        COALESCE(SUM(COALESCE(i.quantity, 0) * COALESCE(p.cost_price, 0)), 0) as total_value,
+        COUNT(CASE WHEN COALESCE(i.quantity, 0) < 5 THEN 1 END) as low_stock
+      FROM ${inventoryStock} i
+      LEFT JOIN ${products} p ON i.product_id = p.id
+    `);
     
-    let totalValue = 0;
-    let lowStockItems = 0;
-    let totalStock = 0;
-    
-    allStock.forEach(s => {
-      totalStock += s.quantity || 0;
-      const product = productMap.get(s.productId);
-      if (product) {
-        totalValue += (s.quantity || 0) * (product.costPrice || 0);
-      }
-      if ((s.quantity || 0) < 5) {
-        lowStockItems++;
-      }
-    });
-    
+    const row = stockStats.rows[0] as any;
     return {
-      totalWarehouses: allWarehouses.length,
-      totalStock,
-      totalValue,
-      lowStockItems,
+      totalWarehouses: parseInt((warehouseCount.rows[0] as any)?.total) || 0,
+      totalStock: parseInt(row?.total_stock) || 0,
+      totalValue: parseInt(row?.total_value) || 0,
+      lowStockItems: parseInt(row?.low_stock) || 0,
     };
   }
 
   async getEcommerceStats(): Promise<{ totalOrders: number; totalRevenue: number; pendingOrders: number; activeCartItems: number }> {
-    const orders = await db.select().from(salesOrders);
-    const carts = await db.select().from(cartItems);
+    const orderStats = await db.execute(sql`
+      SELECT 
+        COUNT(*) as total_orders,
+        COALESCE(SUM(CASE WHEN status IN ('completed', 'delivered') THEN COALESCE(total, 0) ELSE 0 END), 0) as total_revenue,
+        COUNT(CASE WHEN status IN ('pending', 'processing') THEN 1 END) as pending_orders
+      FROM ${salesOrders}
+    `);
     
-    const totalRevenue = orders.filter(o => o.status === 'completed' || o.status === 'delivered').reduce((sum, o) => sum + (o.total || 0), 0);
-    const pendingOrders = orders.filter(o => o.status === 'pending' || o.status === 'processing').length;
+    const cartCount = await db.execute(sql`
+      SELECT COUNT(*) as total FROM ${cartItems}
+    `);
     
+    const row = orderStats.rows[0] as any;
     return {
-      totalOrders: orders.length,
-      totalRevenue,
-      pendingOrders,
-      activeCartItems: carts.length,
+      totalOrders: parseInt(row?.total_orders) || 0,
+      totalRevenue: parseInt(row?.total_revenue) || 0,
+      pendingOrders: parseInt(row?.pending_orders) || 0,
+      activeCartItems: parseInt((cartCount.rows[0] as any)?.total) || 0,
     };
   }
 }
