@@ -41,6 +41,7 @@ interface RepairCenterPurchaseOrder {
 interface RepairCenterOverviewResponse {
   center: RepairCenter;
   reseller: SafeUser | null;
+  subReseller: SafeUser | null;
   repairs: RepairOrder[];
   b2bOrders: RepairCenterPurchaseOrder[];
   customers: SafeUser[];
@@ -164,7 +165,7 @@ export default function AdminRepairCenterDetail() {
     );
   }
 
-  const { center, reseller, repairs, b2bOrders, customers, staff, stats, usersMap, utilityPractices, suppliersMap, servicesMap } = data;
+  const { center, reseller, subReseller, repairs, b2bOrders, customers, staff, stats, usersMap, utilityPractices, suppliersMap, servicesMap } = data;
 
   return (
     <div className="space-y-6" data-testid="page-repair-center-detail">
@@ -296,6 +297,22 @@ export default function AdminRepairCenterDetail() {
                       {reseller.fullName}
                     </span>
                   </Link>
+                </div>
+              </div>
+            )}
+            {subReseller && (
+              <div className="pt-4 border-t">
+                <p className="text-sm text-muted-foreground mb-2">Sub-Reseller di riferimento</p>
+                <div className="flex items-center gap-2">
+                  <Users className="h-4 w-4 text-muted-foreground" />
+                  <Link href={`/admin/resellers/${subReseller.id}`}>
+                    <span className="font-medium text-primary hover:underline cursor-pointer" data-testid="link-sub-reseller">
+                      {subReseller.fullName}
+                    </span>
+                  </Link>
+                  {subReseller.email && (
+                    <span className="text-sm text-muted-foreground">({subReseller.email})</span>
+                  )}
                 </div>
               </div>
             )}

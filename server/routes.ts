@@ -2223,6 +2223,16 @@ export function registerRoutes(app: Express): Server {
         }
       }
       
+      // Get sub-reseller info if exists
+      let subReseller = null;
+      if (center.subResellerId) {
+        const subResellerData = await storage.getUser(center.subResellerId);
+        if (subResellerData) {
+          const { password, ...safeSubReseller } = subResellerData;
+          subReseller = safeSubReseller;
+        }
+      }
+      
       // Calculate stats
       const now = new Date();
       const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
@@ -2272,6 +2282,7 @@ export function registerRoutes(app: Express): Server {
       res.json({
         center,
         reseller,
+        subReseller,
         repairs: centerRepairs,
         b2bOrders: centerB2bOrders,
         customers,
