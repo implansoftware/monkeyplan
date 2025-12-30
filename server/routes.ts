@@ -12771,7 +12771,7 @@ export function registerRoutes(app: Express): Server {
       
       const stats: any = {};
       
-      if (req.user.role === 'admin') {
+      if (req.user.role === 'admin' || req.user.role === 'admin_staff') {
         // Admin sees comprehensive dashboard stats
         const overviewKPIs = await storage.getOverviewKPIs();
         const topProducts = await storage.getTopProducts(5);
@@ -12794,11 +12794,27 @@ export function registerRoutes(app: Express): Server {
           cancelled: allRepairs.filter(r => r.status === 'cancelled').length,
         };
         
+        // Extended dashboard stats
+        const latestCustomers = await storage.getLatestCustomers(5);
+        const latestResellers = await storage.getLatestResellers(5);
+        const resellerStats = await storage.getResellerStats();
+        const repairCenterGlobalStats = await storage.getRepairCenterGlobalStats();
+        const utilityStats = await storage.getUtilityPracticesStats();
+        const warehouseStats = await storage.getWarehouseGlobalStats();
+        const ecommerceStats = await storage.getEcommerceStats();
+        
         stats.overview = overviewKPIs;
         stats.ticketsByStatus = ticketsByStatus;
         stats.repairsByStatus = repairsByStatus;
         stats.topProducts = topProducts;
         stats.repairCenterPerformance = repairCenterPerformance;
+        stats.latestCustomers = latestCustomers;
+        stats.latestResellers = latestResellers;
+        stats.resellerStats = resellerStats;
+        stats.repairCenterGlobalStats = repairCenterGlobalStats;
+        stats.utilityStats = utilityStats;
+        stats.warehouseStats = warehouseStats;
+        stats.ecommerceStats = ecommerceStats;
         
       } else if (req.user.role === 'repair_center') {
         // Repair center sees own stats

@@ -254,6 +254,15 @@ export interface IStorage {
   getTopProducts(limit: number, period?: { start: Date; end: Date }): Promise<any[]>;
   getOverviewKPIs(period?: { start: Date; end: Date }): Promise<any>;
   
+  // Admin Dashboard Extended Stats
+  getLatestCustomers(limit: number): Promise<any[]>;
+  getLatestResellers(limit: number): Promise<any[]>;
+  getResellerStats(): Promise<{ total: number; active: number; withCenters: number; withCustomers: number }>;
+  getRepairCenterGlobalStats(): Promise<{ total: number; active: number; totalRepairs: number; avgRepairsPerCenter: number }>;
+  getUtilityPracticesStats(): Promise<{ total: number; byStatus: Record<string, number>; totalCommissions: number; pendingCommissions: number }>;
+  getWarehouseGlobalStats(): Promise<{ totalWarehouses: number; totalStock: number; totalValue: number; lowStockItems: number }>;
+  getEcommerceStats(): Promise<{ totalOrders: number; totalRevenue: number; pendingOrders: number; activeCartItems: number }>;
+  
   // Notifications
   createNotification(notification: InsertNotification): Promise<Notification>;
   listNotifications(userId: string, filters?: { isRead?: boolean; limit?: number }): Promise<Notification[]>;
@@ -7141,6 +7150,138 @@ export class DatabaseStorage implements IStorage {
   async createMarketplaceOrderItem(data: InsertMarketplaceOrderItem): Promise<MarketplaceOrderItem> {
     const [created] = await db.insert(marketplaceOrderItems).values(data).returning();
     return created;
+  }
+
+  // Admin Dashboard Extended Stats
+  async getLatestCustomers(limit: number): Promise<any[]> {
+    const result = await db.select({
+      id: users.id,
+      username: users.username,
+      email: users.email,
+      fullName: users.fullName,
+      phone: users.phone,
+      createdAt: users.createdAt,
+      resellerId: users.resellerId,
+    })
+    .from(users)
+    .where(eq(users.role, 'customer'))
+    .orderBy(desc(users.createdAt))
+    .limit(limit);
+    return result;
+  }
+
+  async getLatestResellers(limit: number): Promise<any[]> {
+    const result = await db.select({
+      id: users.id,
+      username: users.username,
+      email: users.email,
+      fullName: users.fullName,
+      phone: users.phone,
+      createdAt: users.createdAt,
+      isActive: users.isActive,
+    })
+    .from(users)
+    .where(eq(users.role, 'reseller'))
+    .orderBy(desc(users.createdAt))
+    .limit(limit);
+    return result;
+  }
+
+  async getResellerStats(): Promise<{ total: number; active: number; withCenters: number; withCustomers: number }> {
+    const allUsers = await db.select().from(users);
+    const resellers = allUsers.filter(u => u.role === 'reseller');
+    const customers = allUsers.filter(u => u.role === 'customer');
+    const centers = await db.select().from(repairCenters);
+    
+    const resellersWithCenters = new Set(centers.map(c => c.resellerId).filter(Boolean));
+    const resellersWithCustomers = new Set(customers.map(c => c.resellerId).filter(Boolean));
+    
+    return {
+      total: resellers.length,
+      active: resellers.filter(r => r.isActive).length,
+      withCenters: resellersWithCenters.size,
+      withCustomers: resellersWithCustomers.size,
+    };
+  }
+
+  async getRepairCenterGlobalStats(): Promise<{ total: number; active: number; totalRepairs: number; avgRepairsPerCenter: number }> {
+    const centers = await db.select().from(repairCenters);
+    const repairs = await db.select().from(repairOrders);
+    
+    const activeCenters = centers.filter(c => c.isActive).length;
+    const totalRepairs = repairs.length;
+    
+    return {
+      total: centers.length,
+      active: activeCenters,
+      totalRepairs,
+      avgRepairsPerCenter: activeCenters > 0 ? Math.round(totalRepairs / activeCenters * 10) / 10 : 0,
+    };
+  }
+
+  async getUtilityPracticesStats(): Promise<{ total: number; byStatus: Record<string, number>; totalCommissions: number; pendingCommissions: number }> {
+    const practices = await db.select().from(utilityPractices);
+    const commissions = await db.select().from(utilityCommissions);
+    
+    const byStatus: Record<string, number> = {};
+    practices.forEach(p => {
+      byStatus[p.status] = (byStatus[p.status] || 0) + 1;
+    });
+    
+    const totalCommissions = commissions.reduce((sum, c) => sum + (c.amountCents || 0), 0);
+    const pendingCommissions = commissions.filter(c => c.status === 'pending').reduce((sum, c) => sum + (c.amountCents || 0), 0);
+    
+    return {
+      total: practices.length,
+      byStatus,
+      totalCommissions,
+      pendingCommissions,
+    };
+  }
+
+  async getWarehouseGlobalStats(): Promise<{ totalWarehouses: number; totalStock: number; totalValue: number; lowStockItems: number }> {
+    const allWarehouses = await db.select().from(warehouses);
+    const allStock = await db.select().from(inventoryStock);
+    const allProducts = await db.select().from(products);
+    
+    const productMap = new Map(allProducts.map(p => [p.id, p]));
+    
+    let totalValue = 0;
+    let lowStockItems = 0;
+    let totalStock = 0;
+    
+    allStock.forEach(s => {
+      totalStock += s.quantity || 0;
+      const product = productMap.get(s.productId);
+      if (product) {
+        totalValue += (s.quantity || 0) * (product.costPrice || 0);
+      }
+      if ((s.quantity || 0) < 5) {
+        lowStockItems++;
+      }
+    });
+    
+    return {
+      totalWarehouses: allWarehouses.length,
+      totalStock,
+      totalValue,
+      lowStockItems,
+    };
+  }
+
+  async getEcommerceStats(): Promise<{ totalOrders: number; totalRevenue: number; pendingOrders: number; activeCartItems: number }> {
+    const orders = await db.select().from(salesOrders);
+    const carts = await db.select().from(cartItems);
+    
+    const totalRevenue = orders.filter(o => o.status === 'completed' || o.status === 'delivered').reduce((sum, o) => sum + (o.total || 0), 0);
+    const pendingOrders = orders.filter(o => o.status === 'pending' || o.status === 'processing').length;
+    
+    return {
+      totalOrders: orders.length,
+      totalRevenue,
+      pendingOrders,
+      activeCartItems: carts.length,
+    };
   }
 }
 
