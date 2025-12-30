@@ -102,13 +102,21 @@ export default function ResellerUtilityServices() {
     return { avgCommission, maxCommission, totalServices, categoriesCount };
   }, [activeServices]);
 
+  const topServiceIds = useMemo(() => 
+    new Set(topCommissionServices.map(s => s.id)), 
+    [topCommissionServices]
+  );
+
+  const hasActiveFilters = searchQuery || supplierFilter !== "all" || categoryFilter !== "all";
+
   const filteredServices = activeServices.filter((service) => {
     const matchesSearch = 
       service.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       service.code.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesSupplier = supplierFilter === "all" || service.supplierId === supplierFilter;
     const matchesCategory = categoryFilter === "all" || service.category === categoryFilter;
-    return matchesSearch && matchesSupplier && matchesCategory;
+    const notInTopSection = hasActiveFilters || !topServiceIds.has(service.id);
+    return matchesSearch && matchesSupplier && matchesCategory && notInTopSection;
   });
 
   const ServiceCard = ({ service, featured = false }: { service: UtilityService; featured?: boolean }) => {
