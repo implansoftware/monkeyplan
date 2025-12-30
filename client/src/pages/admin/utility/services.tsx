@@ -13,7 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { 
   Plus, Search, Package, Pencil, Trash2, 
-  ArrowLeft, Building2, Euro, Percent, Clock
+  ArrowLeft, Building2, Euro, Clock
 } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -254,6 +254,7 @@ export default function AdminUtilityServices() {
                   <TableHead>Fornitore</TableHead>
                   <TableHead>Categoria</TableHead>
                   <TableHead>Prezzo Mensile</TableHead>
+                  <TableHead>Costo Attivazione</TableHead>
                   <TableHead>Commissione</TableHead>
                   <TableHead>Stato</TableHead>
                   <TableHead className="text-right">Azioni</TableHead>
@@ -287,12 +288,12 @@ export default function AdminUtilityServices() {
                         {formatCurrency(service.monthlyPriceCents)}
                       </TableCell>
                       <TableCell>
+                        {formatCurrency(service.activationFeeCents)}
+                      </TableCell>
+                      <TableCell>
                         <div className="flex flex-col gap-0.5 text-sm">
                           {service.commissionPercent && (
-                            <span className="flex items-center gap-1">
-                              <Percent className="h-3 w-3" />
-                              {service.commissionPercent}%
-                            </span>
+                            <span>{service.commissionPercent}%</span>
                           )}
                           {service.commissionFixed && (
                             <span className="flex items-center gap-1">
