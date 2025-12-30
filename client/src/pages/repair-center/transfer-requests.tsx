@@ -328,7 +328,7 @@ export default function RepairCenterTransferRequestsPage() {
                   )}
 
                   {!isSearching && searchResults.length > 0 && (
-                    <div className="grid gap-2 max-h-[40vh] overflow-y-auto">
+                    <div className="grid gap-2 max-h-[40vh] overflow-y-auto p-1 -m-1">
                       {searchResults.map((item) => {
                         const typeIcon = item.productType === 'dispositivo' ? Smartphone 
                           : item.productType === 'accessorio' ? ShoppingBag : Wrench;
