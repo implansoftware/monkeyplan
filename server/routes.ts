@@ -12431,7 +12431,7 @@ export function registerRoutes(app: Express): Server {
         // If sub-reseller is specified, validate it belongs to this reseller
         if (validatedData.subResellerId) {
           const subReseller = await storage.getUser(validatedData.subResellerId);
-          if (!subReseller || subReseller.role !== 'sub_reseller' || subReseller.parentResellerId !== req.user.id) {
+          if (!subReseller || subReseller.role !== 'reseller' || subReseller.parentResellerId !== req.user.id) {
             return res.status(400).send("Sub-reseller non valido o non appartenente a questo rivenditore");
           }
           assignedSubResellerId = validatedData.subResellerId;
@@ -12444,7 +12444,7 @@ export function registerRoutes(app: Express): Server {
             return res.status(400).send("Seleziona un rivenditore prima di assegnare un sub-reseller");
           }
           const subReseller = await storage.getUser(validatedData.subResellerId);
-          if (!subReseller || subReseller.role !== 'sub_reseller' || subReseller.parentResellerId !== assignedResellerId) {
+          if (!subReseller || subReseller.role !== 'reseller' || subReseller.parentResellerId !== assignedResellerId) {
             return res.status(400).send("Sub-reseller non valido o non appartenente al rivenditore selezionato");
           }
           assignedSubResellerId = validatedData.subResellerId;
@@ -12518,7 +12518,7 @@ export function registerRoutes(app: Express): Server {
         // Validate sub-reseller belongs to this reseller
         if (subResellerIdFromBody) {
           const subReseller = await storage.getUser(subResellerIdFromBody);
-          if (!subReseller || subReseller.role !== 'sub_reseller' || subReseller.parentResellerId !== req.user.id) {
+          if (!subReseller || subReseller.role !== 'reseller' || subReseller.parentResellerId !== req.user.id) {
             return res.status(400).send("Sub-reseller non valido o non appartenente a questo rivenditore");
           }
           assignedSubResellerId = subResellerIdFromBody;
@@ -12538,7 +12538,7 @@ export function registerRoutes(app: Express): Server {
             return res.status(400).send("Seleziona un rivenditore prima di assegnare un sub-reseller");
           }
           const subReseller = await storage.getUser(subResellerIdFromBody);
-          if (!subReseller || subReseller.role !== 'sub_reseller' || subReseller.parentResellerId !== assignedResellerId) {
+          if (!subReseller || subReseller.role !== 'reseller' || subReseller.parentResellerId !== assignedResellerId) {
             return res.status(400).send("Sub-reseller non valido o non appartenente al rivenditore selezionato");
           }
           assignedSubResellerId = subResellerIdFromBody;
