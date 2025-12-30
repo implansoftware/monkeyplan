@@ -565,7 +565,8 @@ export default function ResellerProducts() {
     const matchesOwnership = ownershipFilter === "all" || 
       (ownershipFilter === "own" && product.isOwn) ||
       (ownershipFilter === "global" && !product.isOwn);
-    return matchesSearch && matchesCategory && matchesBrand && matchesOwnership && product.isActive;
+    const isRicambio = product.productType === "ricambio";
+    return matchesSearch && matchesCategory && matchesBrand && matchesOwnership && product.isActive && isRicambio;
   });
 
   const formatCurrency = (cents: number) => {
