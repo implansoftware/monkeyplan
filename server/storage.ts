@@ -788,6 +788,24 @@ export interface IStorage {
   listWarehouseProductsWithStock(warehouseId: string, search?: string, productType?: string): Promise<Array<Product & { availableQuantity: number }>>;
   listAccessibleWarehouses(resellerId: string): Promise<Warehouse[]>;
   
+  // Product Search with Stock Availability
+  searchProductsWithStock(filters: {
+    query?: string;
+    productType?: string;
+    warehouseIds: string[];
+  }): Promise<Array<{
+    product: Product;
+    productType: string;
+    warehouses: Array<{
+      warehouseId: string;
+      warehouseName: string;
+      ownerType: string;
+      ownerId: string;
+      ownerName: string;
+      quantity: number;
+    }>;
+  }>>;
+  
   // Warehouse Movements
   listWarehouseMovements(filters?: { warehouseId?: string; productId?: string }): Promise<WarehouseMovement[]>;
   createWarehouseMovement(data: InsertWarehouseMovement): Promise<WarehouseMovement>;
@@ -6853,6 +6871,116 @@ export class DatabaseStorage implements IStorage {
       if (rcWarehouse) result.push(rcWarehouse);
     }
     
+    return result;
+  }
+
+  async searchProductsWithStock(filters: {
+    query?: string;
+    productType?: string;
+    warehouseIds: string[];
+  }): Promise<Array<{
+    product: Product;
+    productType: string;
+    warehouses: Array<{
+      warehouseId: string;
+      warehouseName: string;
+      ownerType: string;
+      ownerId: string;
+      ownerName: string;
+      quantity: number;
+    }>;
+  }>> {
+    if (filters.warehouseIds.length === 0) return [];
+
+    const conditions = [eq(products.isActive, true)];
+    
+    if (filters.query) {
+      const searchTerm = `%${filters.query.toLowerCase()}%`;
+      conditions.push(
+        or(
+          sql`LOWER(${products.name}) LIKE ${searchTerm}`,
+          sql`LOWER(${products.sku}) LIKE ${searchTerm}`,
+          sql`LOWER(${products.brand}) LIKE ${searchTerm}`
+        ) as any
+      );
+    }
+    
+    if (filters.productType) {
+      conditions.push(eq(products.productType, filters.productType as any));
+    }
+
+    const matchingProducts = await db.select().from(products)
+      .where(and(...conditions))
+      .limit(50);
+
+    if (matchingProducts.length === 0) return [];
+
+    const productIds = matchingProducts.map(p => p.id);
+    
+    const stockEntries = await db.select({
+      productId: warehouseStock.productId,
+      warehouseId: warehouseStock.warehouseId,
+      quantity: warehouseStock.quantity,
+      warehouseName: warehouses.name,
+      ownerType: warehouses.ownerType,
+      ownerId: warehouses.ownerId,
+    })
+    .from(warehouseStock)
+    .innerJoin(warehouses, eq(warehouseStock.warehouseId, warehouses.id))
+    .where(and(
+      sql`${warehouseStock.productId} IN ${productIds}`,
+      sql`${warehouseStock.warehouseId} IN ${filters.warehouseIds}`,
+      sql`${warehouseStock.quantity} > 0`
+    ));
+
+    const ownerIds = [...new Set(stockEntries.map(s => s.ownerId))];
+    const ownerNames: Record<string, string> = {};
+    
+    for (const entry of stockEntries) {
+      if (ownerNames[entry.ownerId]) continue;
+      
+      if (entry.ownerType === 'admin') {
+        ownerNames[entry.ownerId] = 'Admin';
+      } else if (entry.ownerType === 'reseller' || entry.ownerType === 'sub_reseller') {
+        const user = await this.getUser(entry.ownerId);
+        ownerNames[entry.ownerId] = user?.companyName || user?.username || 'Sconosciuto';
+      } else if (entry.ownerType === 'repair_center') {
+        const rc = await this.getRepairCenter(entry.ownerId);
+        ownerNames[entry.ownerId] = rc?.name || 'Sconosciuto';
+      }
+    }
+
+    const result: Array<{
+      product: Product;
+      productType: string;
+      warehouses: Array<{
+        warehouseId: string;
+        warehouseName: string;
+        ownerType: string;
+        ownerId: string;
+        ownerName: string;
+        quantity: number;
+      }>;
+    }> = [];
+
+    for (const product of matchingProducts) {
+      const productStocks = stockEntries.filter(s => s.productId === product.id);
+      if (productStocks.length === 0) continue;
+      
+      result.push({
+        product,
+        productType: product.productType,
+        warehouses: productStocks.map(s => ({
+          warehouseId: s.warehouseId,
+          warehouseName: s.warehouseName,
+          ownerType: s.ownerType,
+          ownerId: s.ownerId,
+          ownerName: ownerNames[s.ownerId] || 'Sconosciuto',
+          quantity: s.quantity,
+        })),
+      });
+    }
+
     return result;
   }
 
