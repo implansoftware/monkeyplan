@@ -12785,13 +12785,20 @@ export function registerRoutes(app: Express): Server {
           closed: allTickets.filter(t => t.status === 'closed').length,
         };
         
-        // Get repair orders by status
+        // Get repair orders by status - using real Italian status enum values
         const allRepairs = await storage.listRepairOrders();
         const repairsByStatus = {
           pending: allRepairs.filter(r => r.status === 'pending').length,
-          in_progress: allRepairs.filter(r => r.status === 'in_progress').length,
-          completed: allRepairs.filter(r => r.status === 'completed').length,
-          cancelled: allRepairs.filter(r => r.status === 'cancelled').length,
+          ingressato: allRepairs.filter(r => r.status === 'ingressato').length,
+          in_diagnosi: allRepairs.filter(r => r.status === 'in_diagnosi').length,
+          preventivo_emesso: allRepairs.filter(r => r.status === 'preventivo_emesso').length,
+          preventivo_accettato: allRepairs.filter(r => r.status === 'preventivo_accettato').length,
+          preventivo_rifiutato: allRepairs.filter(r => r.status === 'preventivo_rifiutato').length,
+          attesa_ricambi: allRepairs.filter(r => r.status === 'attesa_ricambi').length,
+          in_riparazione: allRepairs.filter(r => r.status === 'in_riparazione').length,
+          pronto_ritiro: allRepairs.filter(r => r.status === 'pronto_ritiro').length,
+          consegnato: allRepairs.filter(r => r.status === 'consegnato').length,
+          annullato: allRepairs.filter(r => r.status === 'annullato').length,
         };
         
         // Extended dashboard stats

@@ -30,9 +30,16 @@ type AdminStats = {
   };
   repairsByStatus: {
     pending: number;
-    in_progress: number;
-    completed: number;
-    cancelled: number;
+    ingressato: number;
+    in_diagnosi: number;
+    preventivo_emesso: number;
+    preventivo_accettato: number;
+    preventivo_rifiutato: number;
+    attesa_ricambi: number;
+    in_riparazione: number;
+    pronto_ritiro: number;
+    consegnato: number;
+    annullato: number;
   };
   topProducts: Array<{
     id: string;
@@ -131,11 +138,18 @@ export default function AdminDashboard() {
   ] : [];
 
   const repairsChartData = stats?.repairsByStatus ? [
-    { name: "Pendenti", value: stats.repairsByStatus.pending || 0 },
-    { name: "In Corso", value: stats.repairsByStatus.in_progress || 0 },
-    { name: "Completate", value: stats.repairsByStatus.completed || 0 },
-    { name: "Annullate", value: stats.repairsByStatus.cancelled || 0 },
-  ] : [];
+    { name: "In Attesa", value: stats.repairsByStatus.pending || 0, fill: COLORS[0] },
+    { name: "Ingressato", value: stats.repairsByStatus.ingressato || 0, fill: COLORS[1] },
+    { name: "In Diagnosi", value: stats.repairsByStatus.in_diagnosi || 0, fill: COLORS[2] },
+    { name: "Prev. Emesso", value: stats.repairsByStatus.preventivo_emesso || 0, fill: COLORS[3] },
+    { name: "Prev. Accettato", value: stats.repairsByStatus.preventivo_accettato || 0, fill: COLORS[0] },
+    { name: "Prev. Rifiutato", value: stats.repairsByStatus.preventivo_rifiutato || 0, fill: COLORS[1] },
+    { name: "Attesa Ricambi", value: stats.repairsByStatus.attesa_ricambi || 0, fill: COLORS[2] },
+    { name: "In Riparazione", value: stats.repairsByStatus.in_riparazione || 0, fill: COLORS[3] },
+    { name: "Pronto Ritiro", value: stats.repairsByStatus.pronto_ritiro || 0, fill: COLORS[0] },
+    { name: "Consegnato", value: stats.repairsByStatus.consegnato || 0, fill: COLORS[1] },
+    { name: "Annullato", value: stats.repairsByStatus.annullato || 0, fill: COLORS[2] },
+  ].filter(item => item.value > 0) : []; // Mostra solo stati con valori > 0
 
   const utilityChartData = stats?.utilityStats?.byStatus ? 
     Object.entries(stats.utilityStats.byStatus).map(([status, count], index) => ({
