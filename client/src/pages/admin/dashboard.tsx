@@ -11,7 +11,6 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
 
@@ -124,7 +123,6 @@ type AdminStats = {
   };
 };
 
-const COLORS = ['hsl(var(--chart-1))', 'hsl(var(--chart-2))', 'hsl(var(--chart-3))', 'hsl(var(--chart-4))'];
 
 export default function AdminDashboard() {
   const [selectedResellerId, setSelectedResellerId] = useState<string>("");
@@ -176,32 +174,6 @@ export default function AdminDashboard() {
     }
   };
 
-  const ticketsChartData = stats?.ticketsByStatus ? [
-    { name: "Aperti", value: stats.ticketsByStatus.open || 0, fill: COLORS[0] },
-    { name: "In Corso", value: stats.ticketsByStatus.in_progress || 0, fill: COLORS[1] },
-    { name: "Chiusi", value: stats.ticketsByStatus.closed || 0, fill: COLORS[2] },
-  ] : [];
-
-  const repairsChartData = stats?.repairsByStatus ? [
-    { name: "In Attesa", value: stats.repairsByStatus.pending || 0, fill: COLORS[0] },
-    { name: "Ingressato", value: stats.repairsByStatus.ingressato || 0, fill: COLORS[1] },
-    { name: "In Diagnosi", value: stats.repairsByStatus.in_diagnosi || 0, fill: COLORS[2] },
-    { name: "Prev. Emesso", value: stats.repairsByStatus.preventivo_emesso || 0, fill: COLORS[3] },
-    { name: "Prev. Accettato", value: stats.repairsByStatus.preventivo_accettato || 0, fill: COLORS[0] },
-    { name: "Prev. Rifiutato", value: stats.repairsByStatus.preventivo_rifiutato || 0, fill: COLORS[1] },
-    { name: "Attesa Ricambi", value: stats.repairsByStatus.attesa_ricambi || 0, fill: COLORS[2] },
-    { name: "In Riparazione", value: stats.repairsByStatus.in_riparazione || 0, fill: COLORS[3] },
-    { name: "Pronto Ritiro", value: stats.repairsByStatus.pronto_ritiro || 0, fill: COLORS[0] },
-    { name: "Consegnato", value: stats.repairsByStatus.consegnato || 0, fill: COLORS[1] },
-    { name: "Annullato", value: stats.repairsByStatus.annullato || 0, fill: COLORS[2] },
-  ].filter(item => item.value > 0) : []; // Mostra solo stati con valori > 0
-
-  const utilityChartData = stats?.utilityStats?.byStatus ? 
-    Object.entries(stats.utilityStats.byStatus).map(([status, count], index) => ({
-      name: status.charAt(0).toUpperCase() + status.slice(1).replace('_', ' '),
-      value: count,
-      fill: COLORS[index % COLORS.length]
-    })) : [];
 
   return (
     <div className="space-y-6">
@@ -631,109 +603,6 @@ export default function AdminDashboard() {
         </Card>
       </div>
 
-      {/* Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Ticket className="h-5 w-5" />
-              Tickets per Stato
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {isLoading ? (
-              <Skeleton className="h-64 w-full" />
-            ) : ticketsChartData.reduce((sum, item) => sum + item.value, 0) === 0 ? (
-              <div className="flex flex-col items-center justify-center h-[250px] text-muted-foreground">
-                <Ticket className="h-12 w-12 mb-4 opacity-40" />
-                <p className="text-sm text-center">
-                  Nessun ticket trovato
-                </p>
-              </div>
-            ) : (
-              <ResponsiveContainer width="100%" height={250}>
-                <PieChart>
-                  <Pie
-                    data={ticketsChartData}
-                    cx="50%"
-                    cy="50%"
-                    labelLine={false}
-                    label={(entry) => `${entry.name}: ${entry.value}`}
-                    outerRadius={80}
-                    dataKey="value"
-                  >
-                    {ticketsChartData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.fill} />
-                    ))}
-                  </Pie>
-                  <Tooltip />
-                </PieChart>
-              </ResponsiveContainer>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Riparazioni per Stato</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {isLoading ? (
-              <Skeleton className="h-64 w-full" />
-            ) : (
-              <ResponsiveContainer width="100%" height={250}>
-                <BarChart data={repairsChartData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" tick={{ fontSize: 11 }} />
-                  <YAxis />
-                  <Tooltip 
-                    contentStyle={{ 
-                      backgroundColor: 'hsl(var(--background))', 
-                      border: '1px solid hsl(var(--border))',
-                      borderRadius: '6px',
-                      padding: '8px 12px'
-                    }}
-                    formatter={(value: number, name: string) => [value, 'Riparazioni']}
-                    labelFormatter={(label) => label}
-                  />
-                  <Bar dataKey="value" fill="hsl(var(--primary))">
-                    {repairsChartData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.fill} />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Utility Practices Chart */}
-      {utilityChartData.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <FileCheck className="h-5 w-5" />
-              Pratiche Utility per Stato
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {isLoading ? (
-              <Skeleton className="h-64 w-full" />
-            ) : (
-              <ResponsiveContainer width="100%" height={250}>
-                <BarChart data={utilityChartData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" />
-                  <YAxis />
-                  <Tooltip />
-                  <Bar dataKey="value" fill="hsl(var(--chart-3))" />
-                </BarChart>
-              </ResponsiveContainer>
-            )}
-          </CardContent>
-        </Card>
-      )}
 
       {/* Top Products */}
       <Card>
