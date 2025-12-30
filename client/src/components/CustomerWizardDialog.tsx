@@ -359,36 +359,37 @@ export function CustomerWizardDialog({ open, onOpenChange, onSuccess }: Customer
             />
           </div>
 
-          <Separator />
-
           {/* Checkbox per saltare l'indirizzo (solo per privati) */}
           {customerType === "private" && (
-            <FormField
-              control={form.control as any}
-              name="showAddress"
-              render={({ field }) => (
-                <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-                  <FormControl>
-                    <Checkbox
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
-                      data-testid="checkbox-show-address"
-                    />
-                  </FormControl>
-                  <div className="space-y-1 leading-none">
-                    <FormLabel className="text-sm font-normal">
-                      Voglio inserire l'indirizzo
-                    </FormLabel>
-                    <FormDescription>
-                      Spunta per inserire l'indirizzo ora
-                    </FormDescription>
-                  </div>
-                </FormItem>
-              )}
-            />
+            <>
+              <Separator />
+              <FormField
+                control={form.control as any}
+                name="showAddress"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                    <FormControl>
+                      <Checkbox
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                        data-testid="checkbox-show-address"
+                      />
+                    </FormControl>
+                    <div className="space-y-1 leading-none">
+                      <FormLabel className="text-sm font-normal">
+                        Voglio inserire l'indirizzo
+                      </FormLabel>
+                      <FormDescription>
+                        Spunta per inserire l'indirizzo ora
+                      </FormDescription>
+                    </div>
+                  </FormItem>
+                )}
+              />
+            </>
           )}
 
-          {showAddress && (
+          {(customerType === "company" || showAddress) && (
             <>
               <FormField
                 control={form.control as any}
@@ -472,96 +473,96 @@ export function CustomerWizardDialog({ open, onOpenChange, onSuccess }: Customer
             </>
           )}
 
-          <Separator />
-
-          {/* Checkbox per saltare l'IBAN (solo per privati) */}
+          {/* Checkbox e campo IBAN (solo per privati) */}
           {customerType === "private" && (
-            <FormField
-              control={form.control as any}
-              name="showIban"
-              render={({ field }) => (
-                <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-                  <FormControl>
-                    <Checkbox
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
-                      data-testid="checkbox-show-iban"
-                    />
-                  </FormControl>
-                  <div className="space-y-1 leading-none">
-                    <FormLabel className="text-sm font-normal">
-                      Voglio inserire l'IBAN
-                    </FormLabel>
-                    <FormDescription>
-                      Spunta per inserire l'IBAN ora
-                    </FormDescription>
-                  </div>
-                </FormItem>
+            <>
+              <Separator />
+              <FormField
+                control={form.control as any}
+                name="showIban"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                    <FormControl>
+                      <Checkbox
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                        data-testid="checkbox-show-iban"
+                      />
+                    </FormControl>
+                    <div className="space-y-1 leading-none">
+                      <FormLabel className="text-sm font-normal">
+                        Voglio inserire l'IBAN
+                      </FormLabel>
+                      <FormDescription>
+                        Spunta per inserire l'IBAN ora
+                      </FormDescription>
+                    </div>
+                  </FormItem>
+                )}
+              />
+              {showIban && (
+                <FormField
+                  control={form.control as any}
+                  name="iban"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>IBAN</FormLabel>
+                      <FormControl>
+                        <Input {...field} value={field.value || ""} data-testid="input-iban" />
+                      </FormControl>
+                      <FormDescription>Opzionale - per addebito diretto</FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               )}
-            />
+            </>
           )}
 
-          {showIban && (
-            <FormField
-              control={form.control as any}
-              name="iban"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>IBAN</FormLabel>
-                  <FormControl>
-                    <Input {...field} value={field.value || ""} data-testid="input-iban" />
-                  </FormControl>
-                  <FormDescription>Opzionale - per addebito diretto</FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          )}
-
-          <Separator />
-
-          {/* Checkbox per Codice Fiscale (solo per privati) */}
+          {/* Checkbox e campo Codice Fiscale (solo per privati) */}
           {customerType === "private" && (
-            <FormField
-              control={form.control as any}
-              name="showFiscalCode"
-              render={({ field }) => (
-                <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-                  <FormControl>
-                    <Checkbox
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
-                      data-testid="checkbox-show-fiscal-code"
-                    />
-                  </FormControl>
-                  <div className="space-y-1 leading-none">
-                    <FormLabel className="text-sm font-normal">
-                      Voglio inserire il Codice Fiscale
-                    </FormLabel>
-                    <FormDescription>
-                      Spunta per inserire il Codice Fiscale ora
-                    </FormDescription>
-                  </div>
-                </FormItem>
+            <>
+              <Separator />
+              <FormField
+                control={form.control as any}
+                name="showFiscalCode"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                    <FormControl>
+                      <Checkbox
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                        data-testid="checkbox-show-fiscal-code"
+                      />
+                    </FormControl>
+                    <div className="space-y-1 leading-none">
+                      <FormLabel className="text-sm font-normal">
+                        Voglio inserire il Codice Fiscale
+                      </FormLabel>
+                      <FormDescription>
+                        Spunta per inserire il Codice Fiscale ora
+                      </FormDescription>
+                    </div>
+                  </FormItem>
+                )}
+              />
+              {showFiscalCode && (
+                <FormField
+                  control={form.control as any}
+                  name="fiscalCode"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Codice Fiscale</FormLabel>
+                      <FormControl>
+                        <Input {...field} value={field.value || ""} data-testid="input-fiscal-code" placeholder="RSSMRA85M01H501Z" />
+                      </FormControl>
+                      <FormDescription>Opzionale - per fatturazione</FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               )}
-            />
-          )}
-
-          {showFiscalCode && (
-            <FormField
-              control={form.control as any}
-              name="fiscalCode"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Codice Fiscale</FormLabel>
-                  <FormControl>
-                    <Input {...field} value={field.value || ""} data-testid="input-fiscal-code" placeholder="RSSMRA85M01H501Z" />
-                  </FormControl>
-                  <FormDescription>Opzionale - per fatturazione</FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            </>
           )}
 
           {/* Selezione rivenditore solo per admin */}
