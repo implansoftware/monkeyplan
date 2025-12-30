@@ -2882,6 +2882,83 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Paginated Repair Orders (Admin) - for performance with large datasets
+  app.get("/api/admin/repairs/paginated", requireRole("admin", "admin_staff"), async (req, res) => {
+    try {
+      const page = parseInt(req.query.page as string) || 1;
+      const pageSize = Math.min(parseInt(req.query.pageSize as string) || 25, 100);
+      
+      const filters: any = {};
+      if (req.query.status && req.query.status !== 'all') filters.status = req.query.status;
+      if (req.query.priority && req.query.priority !== 'all') filters.priority = req.query.priority;
+      if (req.query.repairCenterId && req.query.repairCenterId !== 'all') filters.repairCenterId = req.query.repairCenterId;
+      if (req.query.resellerId && req.query.resellerId !== 'all') filters.resellerId = req.query.resellerId;
+      if (req.query.search) filters.search = req.query.search;
+      if (req.query.startDate) filters.startDate = req.query.startDate;
+      if (req.query.endDate) filters.endDate = req.query.endDate;
+      
+      const result = await storage.listRepairOrdersPaginated({ page, pageSize, filters });
+      
+      // Enrich with names for display
+      const allUsers = await storage.listUsers();
+      const resellersMap = new Map<string, string>();
+      const customersMap = new Map<string, { fullName: string | null; ragioneSociale: string | null }>();
+      
+      allUsers.forEach(u => {
+        if (u.role === 'reseller') {
+          resellersMap.set(u.id, u.ragioneSociale || u.fullName || u.username);
+        }
+        if (u.role === 'customer') {
+          customersMap.set(u.id, { fullName: u.fullName, ragioneSociale: u.ragioneSociale });
+        }
+      });
+      
+      const allRepairCenters = await storage.listRepairCenters();
+      const repairCentersMap = new Map<string, string>();
+      allRepairCenters.forEach(rc => repairCentersMap.set(rc.id, rc.name));
+      
+      // Compute SLA for each order
+      const { loadSLAConfig, computeSLASeverity } = await import("./sla-utils");
+      const slaConfig = await loadSLAConfig();
+      
+      const enrichedData = await Promise.all(result.data.map(async (repair) => {
+        const currentState = await storage.getCurrentRepairOrderState(repair.id);
+        const stateEnteredAt = currentState?.enteredAt || repair.createdAt;
+        const { severity, minutesInState, phase } = computeSLASeverity(repair.status, stateEnteredAt, slaConfig);
+        
+        const customer = repair.customerId ? customersMap.get(repair.customerId) : null;
+        const customerName = customer?.ragioneSociale || customer?.fullName || null;
+        
+        return {
+          ...repair,
+          customerName,
+          repairCenterName: repair.repairCenterId ? repairCentersMap.get(repair.repairCenterId) || null : null,
+          resellerName: repair.resellerId ? resellersMap.get(repair.resellerId) || null : null,
+          slaSeverity: severity,
+          slaMinutesInState: minutesInState,
+          slaPhase: phase,
+          slaEnteredAt: stateEnteredAt.toISOString(),
+        };
+      }));
+      
+      // Apply SLA filter client-side (could be optimized later)
+      let filteredData = enrichedData;
+      if (req.query.slaSeverity && req.query.slaSeverity !== 'all') {
+        filteredData = enrichedData.filter(r => r.slaSeverity === req.query.slaSeverity);
+      }
+      
+      res.json({
+        data: filteredData,
+        page: result.page,
+        pageSize: result.pageSize,
+        total: result.total,
+        totalPages: result.totalPages,
+      });
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
   app.patch("/api/admin/repairs/:id/status", requireRole("admin"), async (req, res) => {
     try {
       // Validate with Zod schema
