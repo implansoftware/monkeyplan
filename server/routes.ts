@@ -5666,9 +5666,9 @@ export function registerRoutes(app: Express): Server {
         if (validated.subResellerId === null || validated.subResellerId === "") {
           updates.subResellerId = null;
         } else {
-          // Verify sub-reseller belongs to this reseller
+          // Verify sub-reseller belongs to this reseller (sub-resellers are resellers with parentResellerId set)
           const subReseller = await storage.getUser(validated.subResellerId);
-          if (!subReseller || subReseller.role !== "sub_reseller" || subReseller.resellerId !== req.user.id) {
+          if (!subReseller || subReseller.role !== "reseller" || subReseller.parentResellerId !== req.user.id) {
             return res.status(403).send("Sub-reseller non valido o non autorizzato");
           }
           updates.subResellerId = validated.subResellerId;
