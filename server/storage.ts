@@ -203,6 +203,7 @@ export interface IStorage {
   
   // Tickets
   listTickets(filters?: { customerId?: string; assignedTo?: string; status?: string }): Promise<Ticket[]>;
+  listInternalTickets(filters: { userId: string; userRole: string; targetType?: string; ticketType?: string }): Promise<Ticket[]>;
   getTicket(id: string): Promise<Ticket | undefined>;
   createTicket(ticket: InsertTicket): Promise<Ticket>;
   updateTicketStatus(id: string, status: string): Promise<Ticket>;
@@ -1978,6 +1979,68 @@ export class DatabaseStorage implements IStorage {
     
     let query = db.select().from(tickets);
     
+    if (conditions.length > 0) {
+      query = query.where(and(...conditions)) as any;
+    }
+    
+    return await query.orderBy(desc(tickets.createdAt));
+  }
+
+  // List internal tickets (for multi-role ticket system)
+  async listInternalTickets(filters: { userId: string; userRole: string; targetType?: string; ticketType?: string }): Promise<Ticket[]> {
+    const conditions: any[] = [];
+    
+    // Filter by ticket type
+    if (filters.ticketType) {
+      conditions.push(eq(tickets.ticketType, filters.ticketType as any));
+    } else {
+      // Default to internal tickets
+      conditions.push(eq(tickets.ticketType, 'internal'));
+    }
+    
+    // User can see tickets where:
+    // 1. They are the initiator (created the ticket)
+    // 2. They are the target (ticket addressed to them)
+    // 3. They are an admin (can see all internal tickets with targetType=admin)
+    
+    if (filters.userRole === 'admin' || filters.userRole === 'admin_staff') {
+      // Admin sees all internal tickets where targetType is 'admin' OR they initiated
+      conditions.push(
+        or(
+          eq(tickets.targetType, 'admin'),
+          eq(tickets.initiatorId, filters.userId)
+        )
+      );
+    } else if (filters.userRole === 'reseller' || filters.userRole === 'reseller_staff') {
+      // Reseller sees tickets where they are initiator or target
+      conditions.push(
+        or(
+          eq(tickets.initiatorId, filters.userId),
+          and(
+            eq(tickets.targetType, 'reseller'),
+            eq(tickets.targetId, filters.userId)
+          )
+        )
+      );
+    } else if (filters.userRole === 'repair_center') {
+      // Repair center sees tickets where they are initiator or target
+      conditions.push(
+        or(
+          eq(tickets.initiatorId, filters.userId),
+          and(
+            eq(tickets.targetType, 'repair_center'),
+            eq(tickets.targetId, filters.userId)
+          )
+        )
+      );
+    }
+    
+    // Filter by target type if specified
+    if (filters.targetType) {
+      conditions.push(eq(tickets.targetType, filters.targetType as any));
+    }
+    
+    let query = db.select().from(tickets);
     if (conditions.length > 0) {
       query = query.where(and(...conditions)) as any;
     }

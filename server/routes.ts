@@ -7109,14 +7109,14 @@ export function registerRoutes(app: Express): Server {
     }
   });
   
-  // Create new ticket (customers only)
+  // Create new ticket (customers only - for support tickets)
   app.post("/api/tickets", requireAuth, async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
-      // Only customers can create tickets
+      // Only customers can create support tickets
       if (req.user.role !== 'customer') {
-        return res.status(403).send("Only customers can create tickets");
+        return res.status(403).send("Only customers can create support tickets");
       }
       
       const ticketSchema = insertTicketSchema.pick({
@@ -7134,6 +7134,8 @@ export function registerRoutes(app: Express): Server {
         description: validatedData.description,
         priority: validatedData.priority,
         status: 'open',
+        ticketType: 'support',
+        targetType: 'admin',
       });
       
       setActivityEntity(res, { type: 'ticket', id: ticket.id });
@@ -7142,6 +7144,118 @@ export function registerRoutes(app: Express): Server {
       res.status(400).send(error.message);
     }
   });
+  
+  // ============ INTERNAL TICKETS (Multi-role system) ============
+  
+  // List internal tickets for current user
+  app.get("/api/internal-tickets", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      // Only business entities can access internal tickets
+      if (!['admin', 'admin_staff', 'reseller', 'reseller_staff', 'repair_center'].includes(req.user.role)) {
+        return res.status(403).send("Accesso non autorizzato ai ticket interni");
+      }
+      
+      const filters: { userId: string; userRole: string; targetType?: string; ticketType?: string } = {
+        userId: req.user.id,
+        userRole: req.user.role,
+      };
+      
+      if (req.query.targetType && typeof req.query.targetType === 'string') {
+        filters.targetType = req.query.targetType;
+      }
+      
+      const tickets = await storage.listInternalTickets(filters);
+      res.json(tickets);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+  
+  // Create internal ticket (for business entities)
+  app.post("/api/internal-tickets", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      // Only business entities can create internal tickets
+      if (!['admin', 'admin_staff', 'reseller', 'reseller_staff', 'repair_center'].includes(req.user.role)) {
+        return res.status(403).send("Solo rivenditori, centri riparazione e admin possono creare ticket interni");
+      }
+      
+      const { subject, description, priority, targetType, targetId } = req.body;
+      
+      // Validate required fields
+      if (!subject || !description) {
+        return res.status(400).send("Oggetto e descrizione sono obbligatori");
+      }
+      
+      // Validate target type based on user role
+      const validTargets = getValidTargetTypes(req.user.role);
+      if (!targetType || !validTargets.includes(targetType)) {
+        return res.status(400).send("Tipo destinatario non valido");
+      }
+      
+      // For non-admin targets, targetId is required
+      if (targetType !== 'admin' && !targetId) {
+        return res.status(400).send("ID destinatario obbligatorio");
+      }
+      
+      const ticket = await storage.createTicket({
+        customerId: req.user.id, // For backward compatibility
+        subject,
+        description,
+        priority: priority || 'medium',
+        status: 'open',
+        ticketType: 'internal',
+        initiatorId: req.user.id,
+        initiatorRole: req.user.role,
+        targetType,
+        targetId: targetType === 'admin' ? null : targetId,
+      });
+      
+      setActivityEntity(res, { type: 'ticket', id: ticket.id });
+      
+      // Broadcast notification to target
+      if (targetType === 'admin') {
+        // Notify all admins
+        const admins = await storage.listUsers({ role: 'admin' });
+        for (const admin of admins) {
+          broadcastNotification(admin.id, {
+            type: 'new_internal_ticket',
+            ticketId: ticket.id,
+            from: req.user.username,
+          });
+        }
+      } else if (targetId) {
+        broadcastNotification(targetId, {
+          type: 'new_internal_ticket',
+          ticketId: ticket.id,
+          from: req.user.username,
+        });
+      }
+      
+      res.json(ticket);
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+  
+  // Helper function to determine valid target types based on user role
+  function getValidTargetTypes(role: string): string[] {
+    switch (role) {
+      case 'admin':
+      case 'admin_staff':
+        return ['reseller', 'repair_center'];
+      case 'reseller':
+      case 'reseller_staff':
+        return ['admin', 'repair_center'];
+      case 'repair_center':
+        return ['admin', 'reseller'];
+      default:
+        return [];
+    }
+  }
   
   // Update ticket status (admin and assigned users)
   app.patch("/api/tickets/:id/status", requireAuth, async (req, res) => {
