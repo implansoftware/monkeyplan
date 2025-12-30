@@ -32,6 +32,7 @@ type EnrichedUtilityPractice = UtilityPractice & {
 interface CustomerDetailResponse {
   customer: User;
   reseller: { id: string; fullName: string } | null;
+  subReseller: { id: string; fullName: string } | null;
   repairOrders: RepairOrder[];
   salesOrders: SalesOrder[];
   billingData: BillingData | null;
@@ -76,7 +77,7 @@ export default function AdminCustomerDetail() {
     );
   }
 
-  const { customer, reseller, repairOrders, salesOrders, billingData, utilityPractices = [] } = data;
+  const { customer, reseller, subReseller, repairOrders, salesOrders, billingData, utilityPractices = [] } = data;
 
   return (
     <div className="space-y-6" data-testid="page-customer-detail">
@@ -139,9 +140,18 @@ export default function AdminCustomerDetail() {
             {reseller && (
               <div className="pt-4 border-t">
                 <p className="text-sm text-muted-foreground">Rivenditore Assegnato</p>
-                <p className="font-medium flex items-center gap-2">
+                <p className="font-medium flex items-center gap-2" data-testid="text-customer-reseller">
                   <Building2 className="h-4 w-4 text-muted-foreground" />
                   {reseller.fullName}
+                </p>
+              </div>
+            )}
+            {subReseller && (
+              <div className="pt-4 border-t">
+                <p className="text-sm text-muted-foreground">Sub-Reseller Assegnato</p>
+                <p className="font-medium flex items-center gap-2" data-testid="text-customer-sub-reseller">
+                  <Building2 className="h-4 w-4 text-muted-foreground" />
+                  {subReseller.fullName}
                 </p>
               </div>
             )}

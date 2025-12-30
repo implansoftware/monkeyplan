@@ -12261,6 +12261,12 @@ export function registerRoutes(app: Express): Server {
         reseller = await storage.getUser(customer.resellerId);
       }
       
+      // Get sub-reseller info if available
+      let subReseller = null;
+      if (customer.subResellerId) {
+        subReseller = await storage.getUser(customer.subResellerId);
+      }
+      
       // Enrich utility practices with supplier and service names
       const enrichedUtilityPractices = await Promise.all(
         utilityPractices.map(async (practice) => {
@@ -12283,6 +12289,7 @@ export function registerRoutes(app: Express): Server {
       res.json({
         customer,
         reseller: reseller ? { id: reseller.id, fullName: reseller.fullName } : null,
+        subReseller: subReseller ? { id: subReseller.id, fullName: subReseller.fullName } : null,
         repairOrders,
         salesOrders,
         billingData,
