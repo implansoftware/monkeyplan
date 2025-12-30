@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,21 +9,106 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { 
-  FolderOpen, Plus, Pencil, Trash2, Loader2, GripVertical,
-  Phone, Smartphone, Building2, Lightbulb, Flame, Zap
+  FolderOpen, Plus, Pencil, Trash2, Loader2, GripVertical, Check, ChevronsUpDown,
+  Phone, Smartphone, Building2, Lightbulb, Flame, Zap,
+  Wifi, Router, Globe, Server, Monitor, Laptop, Tablet, Watch,
+  Tv, Radio, Headphones, Speaker, Camera, Printer, HardDrive,
+  Cpu, Database, Cloud, Signal, Antenna, Cable, Plug,
+  Battery, BatteryCharging, Power, Sun, Moon, Thermometer,
+  Droplet, Wind, Snowflake, CloudRain, Umbrella,
+  Home, Building, Factory, Store, Warehouse, Hospital, School, Church,
+  Car, Truck, Bus, Train, Plane, Ship, Bike, Fuel,
+  CreditCard, Wallet, Coins, DollarSign, Euro, Banknote, Receipt,
+  FileText, File, Folder, Archive, Package, Box, Gift,
+  ShoppingCart, ShoppingBag, Tag, Percent, BarChart, PieChart, TrendingUp,
+  Clock, Calendar, Timer, Bell, BellRing,
+  Mail, MessageSquare, MessageCircle, Send, Inbox, AtSign,
+  Lock, Unlock, Key, Shield, Eye, EyeOff,
+  User, Users, UserPlus, UserCheck, Contact, Briefcase,
+  Heart, Star, Award, Trophy, Medal, Flag,
+  Wrench, Hammer, Scissors, Paintbrush, Palette,
+  Music, Play, Pause, Square, Circle, Triangle,
+  MapPin, Map, Compass, Navigation, Globe2, Earth,
+  Coffee, Utensils, Pizza, Apple, Leaf, Trees, Flower,
+  Book, BookOpen, GraduationCap, Lightbulb as LightbulbIcon, Pencil as PencilIcon,
+  Settings, Cog, Sliders, ToggleLeft, RefreshCw, RotateCcw,
+  Link, ExternalLink, Share, Download, Upload, Save,
+  Search, ZoomIn, ZoomOut, Filter, List, Grid,
+  CheckCircle, XCircle, AlertCircle, Info, HelpCircle, AlertTriangle,
+  type LucideIcon
 } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import type { UtilityCategory } from "@shared/schema";
 
-const ICON_OPTIONS = [
-  { value: "Phone", label: "Telefono", icon: Phone },
-  { value: "Smartphone", label: "Smartphone", icon: Smartphone },
-  { value: "Building2", label: "Edificio", icon: Building2 },
-  { value: "Lightbulb", label: "Lampadina", icon: Lightbulb },
-  { value: "Flame", label: "Fiamma", icon: Flame },
-  { value: "Zap", label: "Fulmine", icon: Zap },
+const ICON_OPTIONS: { value: string; label: string; icon: LucideIcon; tags: string[] }[] = [
+  { value: "Phone", label: "Telefono", icon: Phone, tags: ["telefono", "fisso", "chiamata"] },
+  { value: "Smartphone", label: "Smartphone", icon: Smartphone, tags: ["cellulare", "mobile", "telefono"] },
+  { value: "Building2", label: "Edificio", icon: Building2, tags: ["palazzo", "ufficio", "centralino"] },
+  { value: "Lightbulb", label: "Lampadina", icon: Lightbulb, tags: ["luce", "energia", "elettrico"] },
+  { value: "Flame", label: "Fiamma", icon: Flame, tags: ["gas", "fuoco", "riscaldamento"] },
+  { value: "Zap", label: "Fulmine", icon: Zap, tags: ["elettricità", "energia", "luce"] },
+  { value: "Wifi", label: "WiFi", icon: Wifi, tags: ["internet", "wireless", "rete"] },
+  { value: "Router", label: "Router", icon: Router, tags: ["internet", "rete", "modem"] },
+  { value: "Globe", label: "Globo", icon: Globe, tags: ["internet", "mondo", "web"] },
+  { value: "Server", label: "Server", icon: Server, tags: ["hosting", "cloud", "dati"] },
+  { value: "Monitor", label: "Monitor", icon: Monitor, tags: ["schermo", "computer", "display"] },
+  { value: "Laptop", label: "Laptop", icon: Laptop, tags: ["portatile", "computer", "notebook"] },
+  { value: "Tablet", label: "Tablet", icon: Tablet, tags: ["ipad", "tavoletta", "mobile"] },
+  { value: "Tv", label: "TV", icon: Tv, tags: ["televisione", "schermo", "video"] },
+  { value: "Radio", label: "Radio", icon: Radio, tags: ["audio", "musica", "onde"] },
+  { value: "Headphones", label: "Cuffie", icon: Headphones, tags: ["audio", "musica", "ascolto"] },
+  { value: "Camera", label: "Fotocamera", icon: Camera, tags: ["foto", "video", "sicurezza"] },
+  { value: "Printer", label: "Stampante", icon: Printer, tags: ["stampa", "ufficio", "documento"] },
+  { value: "HardDrive", label: "Hard Disk", icon: HardDrive, tags: ["memoria", "storage", "dati"] },
+  { value: "Cloud", label: "Cloud", icon: Cloud, tags: ["nuvola", "storage", "online"] },
+  { value: "Signal", label: "Segnale", icon: Signal, tags: ["rete", "copertura", "mobile"] },
+  { value: "Cable", label: "Cavo", icon: Cable, tags: ["fibra", "connessione", "ethernet"] },
+  { value: "Plug", label: "Spina", icon: Plug, tags: ["corrente", "elettricità", "presa"] },
+  { value: "Battery", label: "Batteria", icon: Battery, tags: ["energia", "autonomia", "carica"] },
+  { value: "Power", label: "Accensione", icon: Power, tags: ["on", "off", "alimentazione"] },
+  { value: "Sun", label: "Sole", icon: Sun, tags: ["solare", "fotovoltaico", "energia"] },
+  { value: "Thermometer", label: "Termometro", icon: Thermometer, tags: ["temperatura", "clima", "riscaldamento"] },
+  { value: "Droplet", label: "Goccia", icon: Droplet, tags: ["acqua", "idrico", "liquido"] },
+  { value: "Wind", label: "Vento", icon: Wind, tags: ["eolico", "aria", "ventilazione"] },
+  { value: "Snowflake", label: "Fiocco Neve", icon: Snowflake, tags: ["freddo", "climatizzazione", "aria"] },
+  { value: "Home", label: "Casa", icon: Home, tags: ["abitazione", "domestico", "residenziale"] },
+  { value: "Building", label: "Palazzo", icon: Building, tags: ["condominio", "ufficio", "commerciale"] },
+  { value: "Factory", label: "Fabbrica", icon: Factory, tags: ["industria", "produzione", "manifattura"] },
+  { value: "Store", label: "Negozio", icon: Store, tags: ["commercio", "retail", "vendita"] },
+  { value: "Warehouse", label: "Magazzino", icon: Warehouse, tags: ["deposito", "logistica", "stoccaggio"] },
+  { value: "Hospital", label: "Ospedale", icon: Hospital, tags: ["sanità", "medico", "salute"] },
+  { value: "Car", label: "Auto", icon: Car, tags: ["veicolo", "trasporto", "mobilità"] },
+  { value: "Fuel", label: "Carburante", icon: Fuel, tags: ["benzina", "diesel", "rifornimento"] },
+  { value: "CreditCard", label: "Carta Credito", icon: CreditCard, tags: ["pagamento", "banca", "finanza"] },
+  { value: "Wallet", label: "Portafoglio", icon: Wallet, tags: ["soldi", "pagamento", "finanza"] },
+  { value: "Coins", label: "Monete", icon: Coins, tags: ["soldi", "denaro", "risparmio"] },
+  { value: "Receipt", label: "Ricevuta", icon: Receipt, tags: ["fattura", "bolletta", "pagamento"] },
+  { value: "FileText", label: "Documento", icon: FileText, tags: ["contratto", "pratica", "testo"] },
+  { value: "Package", label: "Pacco", icon: Package, tags: ["spedizione", "consegna", "prodotto"] },
+  { value: "ShoppingCart", label: "Carrello", icon: ShoppingCart, tags: ["acquisto", "spesa", "ecommerce"] },
+  { value: "Clock", label: "Orologio", icon: Clock, tags: ["tempo", "orario", "durata"] },
+  { value: "Calendar", label: "Calendario", icon: Calendar, tags: ["data", "appuntamento", "scadenza"] },
+  { value: "Bell", label: "Campanella", icon: Bell, tags: ["notifica", "avviso", "allarme"] },
+  { value: "Mail", label: "Email", icon: Mail, tags: ["posta", "messaggio", "comunicazione"] },
+  { value: "MessageSquare", label: "Messaggio", icon: MessageSquare, tags: ["chat", "sms", "comunicazione"] },
+  { value: "Lock", label: "Lucchetto", icon: Lock, tags: ["sicurezza", "protezione", "accesso"] },
+  { value: "Shield", label: "Scudo", icon: Shield, tags: ["sicurezza", "protezione", "difesa"] },
+  { value: "User", label: "Utente", icon: User, tags: ["persona", "account", "profilo"] },
+  { value: "Users", label: "Utenti", icon: Users, tags: ["gruppo", "team", "persone"] },
+  { value: "Briefcase", label: "Valigetta", icon: Briefcase, tags: ["lavoro", "business", "ufficio"] },
+  { value: "Wrench", label: "Chiave Inglese", icon: Wrench, tags: ["riparazione", "manutenzione", "tecnico", "attrezzo"] },
+  { value: "Hammer", label: "Martello", icon: Hammer, tags: ["riparazione", "costruzione", "lavoro"] },
+  { value: "Settings", label: "Impostazioni", icon: Settings, tags: ["configurazione", "opzioni", "sistema"] },
+  { value: "Link", label: "Link", icon: Link, tags: ["collegamento", "connessione", "url"] },
+  { value: "CheckCircle", label: "Spunta", icon: CheckCircle, tags: ["conferma", "ok", "approvato"] },
+  { value: "AlertCircle", label: "Attenzione", icon: AlertCircle, tags: ["avviso", "errore", "problema"] },
+  { value: "Info", label: "Info", icon: Info, tags: ["informazione", "aiuto", "dettagli"] },
+  { value: "HelpCircle", label: "Aiuto", icon: HelpCircle, tags: ["domanda", "supporto", "assistenza"] },
 ];
 
 const COLOR_OPTIONS = [
@@ -40,6 +125,89 @@ const COLOR_OPTIONS = [
 function getIconComponent(iconName: string | null) {
   const option = ICON_OPTIONS.find(o => o.value === iconName);
   return option?.icon || Zap;
+}
+
+function IconPicker({ value, onChange }: { value: string; onChange: (value: string) => void }) {
+  const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState("");
+  
+  const filteredIcons = useMemo(() => {
+    if (!search.trim()) return ICON_OPTIONS;
+    const searchLower = search.toLowerCase();
+    return ICON_OPTIONS.filter(
+      (opt) =>
+        opt.label.toLowerCase().includes(searchLower) ||
+        opt.value.toLowerCase().includes(searchLower) ||
+        opt.tags.some((tag) => tag.includes(searchLower))
+    );
+  }, [search]);
+  
+  const selectedOption = ICON_OPTIONS.find((o) => o.value === value);
+  const SelectedIcon = selectedOption?.icon || Zap;
+  
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          variant="outline"
+          role="combobox"
+          aria-expanded={open}
+          className="w-full justify-between"
+          data-testid="button-icon-picker"
+        >
+          <div className="flex items-center gap-2">
+            <SelectedIcon className="h-4 w-4" />
+            <span>{selectedOption?.label || "Seleziona icona"}</span>
+          </div>
+          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-[300px] p-0" align="start">
+        <Command shouldFilter={false}>
+          <CommandInput 
+            placeholder="Cerca icona..." 
+            value={search}
+            onValueChange={setSearch}
+            data-testid="input-search-icon"
+          />
+          <CommandList>
+            <CommandEmpty>Nessuna icona trovata.</CommandEmpty>
+            <CommandGroup>
+              <ScrollArea className="h-[250px]">
+                <div className="grid grid-cols-4 gap-1 p-2">
+                  {filteredIcons.map((option) => {
+                    const IconComp = option.icon;
+                    const isSelected = value === option.value;
+                    return (
+                      <Button
+                        key={option.value}
+                        type="button"
+                        variant={isSelected ? "default" : "ghost"}
+                        size="icon"
+                        className="relative"
+                        onClick={() => {
+                          onChange(option.value);
+                          setOpen(false);
+                          setSearch("");
+                        }}
+                        title={option.label}
+                        data-testid={`button-icon-${option.value}`}
+                      >
+                        <IconComp className="h-4 w-4" />
+                        {isSelected && (
+                          <Check className="h-3 w-3 absolute -top-1 -right-1 text-primary-foreground bg-primary rounded-full p-0.5" />
+                        )}
+                      </Button>
+                    );
+                  })}
+                </div>
+              </ScrollArea>
+            </CommandGroup>
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
+  );
 }
 
 export default function AdminUtilityCategories() {
@@ -353,24 +521,10 @@ export default function AdminUtilityCategories() {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Icona</Label>
-                <div className="flex flex-wrap gap-2">
-                  {ICON_OPTIONS.map((option) => {
-                    const IconComp = option.icon;
-                    return (
-                      <Button
-                        key={option.value}
-                        type="button"
-                        variant={form.icon === option.value ? "default" : "outline"}
-                        size="icon"
-                        onClick={() => setForm({ ...form, icon: option.value })}
-                        title={option.label}
-                        data-testid={`button-icon-${option.value}`}
-                      >
-                        <IconComp className="h-4 w-4" />
-                      </Button>
-                    );
-                  })}
-                </div>
+                <IconPicker 
+                  value={form.icon} 
+                  onChange={(icon) => setForm({ ...form, icon })} 
+                />
               </div>
               
               <div className="space-y-2">
