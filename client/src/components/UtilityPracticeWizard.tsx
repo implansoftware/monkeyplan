@@ -1327,7 +1327,11 @@ export function UtilityPracticeWizard({ open, onOpenChange, onSuccess }: Utility
                 onChange={(e) => setMonthlyPrice(e.target.value)}
                 placeholder="0.00"
                 data-testid="input-monthly-price"
+                disabled={!!selectedServiceId && !useCustomService}
               />
+              {selectedServiceId && !useCustomService && (
+                <p className="text-xs text-muted-foreground">Prezzo definito dal listino</p>
+              )}
             </div>
           ) : (
             <div className="space-y-2">
@@ -1340,7 +1344,11 @@ export function UtilityPracticeWizard({ open, onOpenChange, onSuccess }: Utility
                 onChange={(e) => setFlatPrice(e.target.value)}
                 placeholder="0.00"
                 data-testid="input-flat-price"
+                disabled={!!selectedServiceId && !useCustomService}
               />
+              {selectedServiceId && !useCustomService && (
+                <p className="text-xs text-muted-foreground">Prezzo definito dal listino</p>
+              )}
             </div>
           )}
           <div className="space-y-2">
@@ -1353,7 +1361,11 @@ export function UtilityPracticeWizard({ open, onOpenChange, onSuccess }: Utility
               onChange={(e) => setCommission(e.target.value)}
               placeholder="0.00"
               data-testid="input-commission"
+              disabled={!!selectedServiceId && !useCustomService}
             />
+            {selectedServiceId && !useCustomService && (
+              <p className="text-xs text-muted-foreground">Commissione definita dal listino</p>
+            )}
           </div>
         </div>
 
