@@ -20912,6 +20912,359 @@ export function registerRoutes(app: Express): Server {
   });
 
   // ==========================================
+  // TRANSFER REQUESTS (da repair_center/sub_reseller)
+  // ==========================================
+
+  // Repair Center: List own transfer requests
+  app.get("/api/repair-center/transfer-requests", requireRole("repair_center"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      const requests = await storage.listTransferRequests({ 
+        requesterId: req.user.id,
+        requesterType: 'repair_center'
+      });
+      
+      const enriched = await Promise.all(requests.map(async (r) => {
+        const items = await storage.listTransferRequestItems(r.id);
+        const enrichedItems = await Promise.all(items.map(async (item) => {
+          const product = await storage.getProduct(item.productId);
+          return { ...item, product };
+        }));
+        const sourceWarehouse = await storage.getWarehouse(r.sourceWarehouseId);
+        const requesterWarehouse = await storage.getWarehouse(r.requesterWarehouseId);
+        return { ...r, items: enrichedItems, sourceWarehouse, requesterWarehouse };
+      }));
+      
+      res.json(enriched);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Repair Center: Get single transfer request
+  app.get("/api/repair-center/transfer-requests/:id", requireRole("repair_center"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      const request = await storage.getTransferRequest(req.params.id);
+      if (!request) return res.status(404).json({ error: "Richiesta non trovata" });
+      if (request.requesterId !== req.user.id) return res.status(403).json({ error: "Accesso negato" });
+      
+      const items = await storage.listTransferRequestItems(request.id);
+      const enrichedItems = await Promise.all(items.map(async (item) => {
+        const product = await storage.getProduct(item.productId);
+        return { ...item, product };
+      }));
+      const sourceWarehouse = await storage.getWarehouse(request.sourceWarehouseId);
+      const requesterWarehouse = await storage.getWarehouse(request.requesterWarehouseId);
+      
+      res.json({ ...request, items: enrichedItems, sourceWarehouse, requesterWarehouse });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Repair Center: Create transfer request
+  app.post("/api/repair-center/transfer-requests", requireRole("repair_center"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      
+      // Get repair center's own warehouse
+      const repairCenter = await storage.getRepairCenterByUserId(req.user.id);
+      if (!repairCenter) return res.status(404).json({ error: "Centro di riparazione non trovato" });
+      
+      const requesterWarehouse = await storage.getWarehouseForOwner(req.user.id, 'repair_center');
+      if (!requesterWarehouse) return res.status(404).json({ error: "Magazzino richiedente non trovato" });
+      
+      // Target is the reseller's warehouse
+      const resellerWarehouse = await storage.getWarehouseForOwner(repairCenter.resellerId, 'reseller');
+      if (!resellerWarehouse) return res.status(404).json({ error: "Magazzino fornitore non trovato" });
+      
+      const { notes, items } = req.body;
+      
+      const request = await storage.createTransferRequest({
+        requesterType: 'repair_center',
+        requesterId: req.user.id,
+        requesterWarehouseId: requesterWarehouse.id,
+        sourceWarehouseId: resellerWarehouse.id,
+        targetResellerId: repairCenter.resellerId,
+        status: 'pending',
+        notes,
+      });
+      
+      if (items && Array.isArray(items)) {
+        for (const item of items) {
+          await storage.createTransferRequestItem({
+            requestId: request.id,
+            productId: item.productId,
+            requestedQuantity: item.quantity,
+          });
+        }
+      }
+      res.status(201).json(request);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Repair Center: Cancel own transfer request (if still pending)
+  app.patch("/api/repair-center/transfer-requests/:id/cancel", requireRole("repair_center"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      const request = await storage.getTransferRequest(req.params.id);
+      if (!request) return res.status(404).json({ error: "Richiesta non trovata" });
+      if (request.requesterId !== req.user.id) return res.status(403).json({ error: "Accesso negato" });
+      if (request.status !== 'pending') return res.status(400).json({ error: "Solo le richieste in attesa possono essere annullate" });
+      
+      const updated = await storage.updateTransferRequest(req.params.id, { status: 'cancelled' });
+      res.json(updated);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Repair Center: Confirm receipt of shipped items
+  app.patch("/api/repair-center/transfer-requests/:id/receive", requireRole("repair_center"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      const request = await storage.getTransferRequest(req.params.id);
+      if (!request) return res.status(404).json({ error: "Richiesta non trovata" });
+      if (request.requesterId !== req.user.id) return res.status(403).json({ error: "Accesso negato" });
+      if (request.status !== 'shipped') return res.status(400).json({ error: "Solo le richieste spedite possono essere confermate" });
+      
+      const { items } = req.body;
+      
+      // Update received quantities and add stock to requester warehouse
+      if (items && Array.isArray(items)) {
+        for (const item of items) {
+          await storage.updateTransferRequestItem(item.id, { receivedQuantity: item.receivedQuantity });
+          await storage.updateWarehouseStockQuantity(request.requesterWarehouseId, item.productId, item.receivedQuantity);
+          await storage.createWarehouseMovement({
+            warehouseId: request.requesterWarehouseId,
+            productId: item.productId,
+            movementType: 'trasferimento_in',
+            quantity: item.receivedQuantity,
+            referenceType: 'transfer_request',
+            referenceId: request.id,
+            createdBy: req.user.id,
+          });
+        }
+      }
+      
+      const updated = await storage.updateTransferRequest(req.params.id, { 
+        status: 'received',
+        receivedAt: new Date()
+      });
+      res.json(updated);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Sub-reseller: List own transfer requests  
+  app.get("/api/reseller/sub-reseller/transfer-requests", requireRole("reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      // Check if this is a sub-reseller (has parentResellerId)
+      const user = await storage.getUser(req.user.id);
+      if (!user?.parentResellerId) return res.status(403).json({ error: "Solo sub-reseller possono accedere" });
+      
+      const requests = await storage.listTransferRequests({ 
+        requesterId: req.user.id,
+        requesterType: 'sub_reseller'
+      });
+      
+      const enriched = await Promise.all(requests.map(async (r) => {
+        const items = await storage.listTransferRequestItems(r.id);
+        const enrichedItems = await Promise.all(items.map(async (item) => {
+          const product = await storage.getProduct(item.productId);
+          return { ...item, product };
+        }));
+        const sourceWarehouse = await storage.getWarehouse(r.sourceWarehouseId);
+        const requesterWarehouse = await storage.getWarehouse(r.requesterWarehouseId);
+        return { ...r, items: enrichedItems, sourceWarehouse, requesterWarehouse };
+      }));
+      
+      res.json(enriched);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Sub-reseller: Create transfer request to parent reseller
+  app.post("/api/reseller/sub-reseller/transfer-requests", requireRole("reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      const user = await storage.getUser(req.user.id);
+      if (!user?.parentResellerId) return res.status(403).json({ error: "Solo sub-reseller possono creare richieste" });
+      
+      // Get sub-reseller's own warehouse
+      const requesterWarehouse = await storage.getWarehouseForOwner(req.user.id, 'reseller');
+      if (!requesterWarehouse) return res.status(404).json({ error: "Magazzino richiedente non trovato" });
+      
+      // Target is the parent reseller's warehouse
+      const parentWarehouse = await storage.getWarehouseForOwner(user.parentResellerId, 'reseller');
+      if (!parentWarehouse) return res.status(404).json({ error: "Magazzino fornitore non trovato" });
+      
+      const { notes, items } = req.body;
+      
+      const request = await storage.createTransferRequest({
+        requesterType: 'sub_reseller',
+        requesterId: req.user.id,
+        requesterWarehouseId: requesterWarehouse.id,
+        sourceWarehouseId: parentWarehouse.id,
+        targetResellerId: user.parentResellerId,
+        status: 'pending',
+        notes,
+      });
+      
+      if (items && Array.isArray(items)) {
+        for (const item of items) {
+          await storage.createTransferRequestItem({
+            requestId: request.id,
+            productId: item.productId,
+            requestedQuantity: item.quantity,
+          });
+        }
+      }
+      res.status(201).json(request);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Reseller: List incoming transfer requests (from repair centers and sub-resellers)
+  app.get("/api/reseller/incoming-transfer-requests", requireRole("reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      
+      // Get all requests where this reseller is the target
+      const requests = await storage.listTransferRequests({ 
+        targetResellerId: req.user.id 
+      });
+      
+      const enriched = await Promise.all(requests.map(async (r) => {
+        const items = await storage.listTransferRequestItems(r.id);
+        const enrichedItems = await Promise.all(items.map(async (item) => {
+          const product = await storage.getProduct(item.productId);
+          return { ...item, product };
+        }));
+        const sourceWarehouse = await storage.getWarehouse(r.sourceWarehouseId);
+        const requesterWarehouse = await storage.getWarehouse(r.requesterWarehouseId);
+        const requester = await storage.getUser(r.requesterId);
+        return { ...r, items: enrichedItems, sourceWarehouse, requesterWarehouse, requester };
+      }));
+      
+      res.json(enriched);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Reseller: Get single incoming transfer request
+  app.get("/api/reseller/incoming-transfer-requests/:id", requireRole("reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      const request = await storage.getTransferRequest(req.params.id);
+      if (!request) return res.status(404).json({ error: "Richiesta non trovata" });
+      if (request.targetResellerId !== req.user.id) return res.status(403).json({ error: "Accesso negato" });
+      
+      const items = await storage.listTransferRequestItems(request.id);
+      const enrichedItems = await Promise.all(items.map(async (item) => {
+        const product = await storage.getProduct(item.productId);
+        // Get stock in source warehouse
+        const stock = await storage.getWarehouseStockItem(request.sourceWarehouseId, item.productId);
+        return { ...item, product, availableStock: stock?.quantity || 0 };
+      }));
+      const sourceWarehouse = await storage.getWarehouse(request.sourceWarehouseId);
+      const requesterWarehouse = await storage.getWarehouse(request.requesterWarehouseId);
+      const requester = await storage.getUser(request.requesterId);
+      
+      res.json({ ...request, items: enrichedItems, sourceWarehouse, requesterWarehouse, requester });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Reseller: Approve/Reject transfer request
+  app.patch("/api/reseller/incoming-transfer-requests/:id/decide", requireRole("reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      const request = await storage.getTransferRequest(req.params.id);
+      if (!request) return res.status(404).json({ error: "Richiesta non trovata" });
+      if (request.targetResellerId !== req.user.id) return res.status(403).json({ error: "Accesso negato" });
+      if (request.status !== 'pending') return res.status(400).json({ error: "Solo le richieste in attesa possono essere elaborate" });
+      
+      const { decision, rejectionReason, items } = req.body;
+      
+      if (decision === 'approve') {
+        // Update approved quantities
+        if (items && Array.isArray(items)) {
+          for (const item of items) {
+            await storage.updateTransferRequestItem(item.id, { approvedQuantity: item.approvedQuantity });
+          }
+        }
+        const updated = await storage.updateTransferRequest(req.params.id, {
+          status: 'approved',
+          approvedBy: req.user.id,
+          approvedAt: new Date()
+        });
+        res.json(updated);
+      } else if (decision === 'reject') {
+        const updated = await storage.updateTransferRequest(req.params.id, {
+          status: 'rejected',
+          rejectedBy: req.user.id,
+          rejectedAt: new Date(),
+          rejectionReason
+        });
+        res.json(updated);
+      } else {
+        res.status(400).json({ error: "Decisione non valida" });
+      }
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Reseller: Ship approved transfer request
+  app.patch("/api/reseller/incoming-transfer-requests/:id/ship", requireRole("reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      const request = await storage.getTransferRequest(req.params.id);
+      if (!request) return res.status(404).json({ error: "Richiesta non trovata" });
+      if (request.targetResellerId !== req.user.id) return res.status(403).json({ error: "Accesso negato" });
+      if (request.status !== 'approved') return res.status(400).json({ error: "Solo le richieste approvate possono essere spedite" });
+      
+      const { items } = req.body;
+      
+      // Update shipped quantities and deduct from source warehouse
+      if (items && Array.isArray(items)) {
+        for (const item of items) {
+          await storage.updateTransferRequestItem(item.id, { shippedQuantity: item.shippedQuantity });
+          await storage.updateWarehouseStockQuantity(request.sourceWarehouseId, item.productId, -item.shippedQuantity);
+          await storage.createWarehouseMovement({
+            warehouseId: request.sourceWarehouseId,
+            productId: item.productId,
+            movementType: 'trasferimento_out',
+            quantity: item.shippedQuantity,
+            referenceType: 'transfer_request',
+            referenceId: request.id,
+            createdBy: req.user.id,
+          });
+        }
+      }
+      
+      const updated = await storage.updateTransferRequest(req.params.id, {
+        status: 'shipped',
+        shippedAt: new Date(),
+        shippedBy: req.user.id
+      });
+      res.json(updated);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // ==========================================
   // B2B RESELLER PURCHASE ORDERS
   // ==========================================
 
