@@ -35,6 +35,7 @@ import {
   Network,
   Warehouse,
   TrendingUp,
+  FolderOpen,
 } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useState, Fragment, useMemo } from "react";
@@ -95,6 +96,7 @@ const menuItems = {
     { title: "Pagamenti", url: "/admin/payments", icon: CreditCard, group: "E-commerce" },
     { title: "Catalogo Dispositivi", url: "/admin/device-catalog", icon: Package, group: "Sistema" },
     { title: "Catalogo Interventi", url: "/admin/service-catalog", icon: Receipt, group: "Sistema" },
+    { title: "Categorie Utility", url: "/admin/utility-categories", icon: FolderOpen, group: "Sistema" },
     { title: "Integrazioni API", url: "/admin/external-integrations", icon: Plug, group: "Sistema" },
     { title: "Activity Logs", url: "/admin/activity-logs", icon: Shield, group: "Sistema" },
     { title: "Impostazioni", url: "/admin/settings", icon: Settings, group: "Sistema" },

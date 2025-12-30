@@ -29,6 +29,7 @@ import {
   insertUtilityServiceSchema,
   insertUtilityPracticeSchema,
   insertUtilityCommissionSchema,
+  insertUtilityCategorySchema,
   insertSupplierReturnItemSchema,
   insertSupplierCommunicationLogSchema,
   insertCustomerBranchSchema,
@@ -16045,6 +16046,70 @@ export function registerRoutes(app: Express): Server {
   // ==========================================
   // UTILITY MODULE API
   // ==========================================
+
+  // ----- UTILITY CATEGORIES -----
+
+  // GET /api/utility/categories - List utility categories
+  app.get("/api/utility/categories", requireAuth, async (req, res) => {
+    try {
+      const activeOnly = req.query.activeOnly === 'true';
+      const categories = await storage.listUtilityCategories(activeOnly);
+      res.json(categories);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // GET /api/utility/categories/:id - Get utility category
+  app.get("/api/utility/categories/:id", requireAuth, async (req, res) => {
+    try {
+      const category = await storage.getUtilityCategory(req.params.id);
+      if (!category) {
+        return res.status(404).send("Categoria utility non trovata");
+      }
+      res.json(category);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // POST /api/admin/utility/categories - Create utility category (admin only)
+  app.post("/api/admin/utility/categories", requireAuth, requireRole("admin"), async (req, res) => {
+    try {
+      const validatedData = insertUtilityCategorySchema.parse(req.body);
+      const category = await storage.createUtilityCategory(validatedData);
+      res.status(201).json(category);
+    } catch (error: any) {
+      if (error.name === 'ZodError') {
+        return res.status(422).json({ error: 'Dati non validi', details: error.errors });
+      }
+      res.status(400).send(error.message);
+    }
+  });
+
+  // PATCH /api/admin/utility/categories/:id - Update utility category (admin only)
+  app.patch("/api/admin/utility/categories/:id", requireAuth, requireRole("admin"), async (req, res) => {
+    try {
+      const validatedData = insertUtilityCategorySchema.partial().parse(req.body);
+      const category = await storage.updateUtilityCategory(req.params.id, validatedData);
+      res.json(category);
+    } catch (error: any) {
+      if (error.name === 'ZodError') {
+        return res.status(422).json({ error: 'Dati non validi', details: error.errors });
+      }
+      res.status(400).send(error.message);
+    }
+  });
+
+  // DELETE /api/admin/utility/categories/:id - Delete utility category (admin only)
+  app.delete("/api/admin/utility/categories/:id", requireAuth, requireRole("admin"), async (req, res) => {
+    try {
+      await storage.deleteUtilityCategory(req.params.id);
+      res.status(204).send();
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
 
   // ----- UTILITY SUPPLIERS -----
 

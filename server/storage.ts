@@ -31,6 +31,7 @@ import {
   SupplierReturnStateHistory, InsertSupplierReturnStateHistory,
   SlaThresholds, slaThresholdsSchema,
   CustomerBranch, InsertCustomerBranch,
+  UtilityCategory, InsertUtilityCategory,
   UtilitySupplier, InsertUtilitySupplier, UtilityService, InsertUtilityService,
   UtilityPractice, InsertUtilityPractice, UtilityPracticeProduct, InsertUtilityPracticeProduct,
   UtilityCommission, InsertUtilityCommission,
@@ -58,7 +59,7 @@ import {
   suppliers, productSuppliers, supplierCatalogProducts, supplierSyncLogs, supplierOrders, supplierOrderItems, supplierReturns, supplierReturnItems, supplierCommunicationLogs,
   repairOrderStateHistory, supplierReturnStateHistory,
   customerBranches,
-  utilitySuppliers, utilityServices, utilityPractices, utilityPracticeProducts, utilityCommissions,
+  utilityCategories, utilitySuppliers, utilityServices, utilityPractices, utilityPracticeProducts, utilityCommissions,
   utilityPracticeDocuments, utilityPracticeTasks, utilityPracticeNotes,
   utilityPracticeTimeline, utilityPracticeStateHistory,
   sifarCredentials, sifarStores,
@@ -510,6 +511,14 @@ export interface IStorage {
   updateCustomerBranch(id: string, updates: Partial<InsertCustomerBranch>): Promise<CustomerBranch>;
   deleteCustomerBranch(id: string): Promise<void>;
   getBranchByCode(parentCustomerId: string, branchCode: string): Promise<CustomerBranch | undefined>;
+  
+  // Utility Categories
+  listUtilityCategories(activeOnly?: boolean): Promise<UtilityCategory[]>;
+  getUtilityCategory(id: string): Promise<UtilityCategory | undefined>;
+  getUtilityCategoryBySlug(slug: string): Promise<UtilityCategory | undefined>;
+  createUtilityCategory(category: InsertUtilityCategory): Promise<UtilityCategory>;
+  updateUtilityCategory(id: string, updates: Partial<InsertUtilityCategory>): Promise<UtilityCategory>;
+  deleteUtilityCategory(id: string): Promise<void>;
   
   // Utility Suppliers
   listUtilitySuppliers(filters?: { resellerId?: string }): Promise<UtilitySupplier[]>;
@@ -4701,6 +4710,58 @@ export class DatabaseStorage implements IStorage {
   // ==========================================
   // UTILITY MODULE
   // ==========================================
+
+  // Utility Categories
+  async listUtilityCategories(activeOnly?: boolean): Promise<UtilityCategory[]> {
+    if (activeOnly) {
+      return await db.select()
+        .from(utilityCategories)
+        .where(eq(utilityCategories.isActive, true))
+        .orderBy(utilityCategories.sortOrder, utilityCategories.name);
+    }
+    return await db.select()
+      .from(utilityCategories)
+      .orderBy(utilityCategories.sortOrder, utilityCategories.name);
+  }
+
+  async getUtilityCategory(id: string): Promise<UtilityCategory | undefined> {
+    const [category] = await db.select()
+      .from(utilityCategories)
+      .where(eq(utilityCategories.id, id));
+    return category || undefined;
+  }
+
+  async getUtilityCategoryBySlug(slug: string): Promise<UtilityCategory | undefined> {
+    const [category] = await db.select()
+      .from(utilityCategories)
+      .where(eq(utilityCategories.slug, slug));
+    return category || undefined;
+  }
+
+  async createUtilityCategory(category: InsertUtilityCategory): Promise<UtilityCategory> {
+    const [created] = await db.insert(utilityCategories)
+      .values(category)
+      .returning();
+    return created;
+  }
+
+  async updateUtilityCategory(id: string, updates: Partial<InsertUtilityCategory>): Promise<UtilityCategory> {
+    const [updated] = await db.update(utilityCategories)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(utilityCategories.id, id))
+      .returning();
+    
+    if (!updated) {
+      throw new Error("Categoria utility non trovata");
+    }
+    
+    return updated;
+  }
+
+  async deleteUtilityCategory(id: string): Promise<void> {
+    await db.delete(utilityCategories)
+      .where(eq(utilityCategories.id, id));
+  }
 
   // Utility Suppliers
   async listUtilitySuppliers(filters?: { resellerId?: string }): Promise<UtilitySupplier[]> {

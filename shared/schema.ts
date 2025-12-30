@@ -2546,6 +2546,28 @@ export const supplierCommunicationLogs = pgTable("supplier_communication_logs", 
 // UTILITY MODULE TABLES
 // ==========================================
 
+// Utility Categories (Categorie Utility gestite dinamicamente)
+export const utilityCategories = pgTable("utility_categories", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  slug: text("slug").notNull().unique(), // Identificatore univoco (es: "fisso", "mobile")
+  name: text("name").notNull(), // Nome visualizzato (es: "Telefonia Fissa")
+  description: text("description"), // Descrizione opzionale
+  icon: text("icon"), // Nome icona Lucide (es: "Phone", "Lightbulb")
+  color: text("color"), // Colore associato (es: "#0088FE")
+  sortOrder: integer("sort_order").notNull().default(0), // Ordine di visualizzazione
+  isActive: boolean("is_active").notNull().default(true),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export const insertUtilityCategorySchema = createInsertSchema(utilityCategories).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export type InsertUtilityCategory = z.infer<typeof insertUtilityCategorySchema>;
+export type UtilityCategory = typeof utilityCategories.$inferSelect;
+
 // Utility Suppliers (Fornitori Utility - TIM, Vodafone, Enel, etc.)
 export const utilitySuppliers = pgTable("utility_suppliers", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
