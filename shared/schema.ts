@@ -5175,3 +5175,29 @@ export type InsertMarketplaceOrder = z.infer<typeof insertMarketplaceOrderSchema
 export type MarketplaceOrderItem = typeof marketplaceOrderItems.$inferSelect;
 export type InsertMarketplaceOrderItem = z.infer<typeof insertMarketplaceOrderItemSchema>;
 export type MarketplaceOrderStatus = "pending" | "approved" | "rejected" | "processing" | "shipped" | "received" | "cancelled";
+
+// Pagination Types
+export interface PaginatedResult<T> {
+  data: T[];
+  page: number;
+  pageSize: number;
+  total: number;
+  totalPages: number;
+}
+
+export interface RepairOrderFilters {
+  status?: string;
+  priority?: string;
+  repairCenterId?: string;
+  resellerId?: string;
+  customerId?: string;
+  search?: string;
+  startDate?: string;
+  endDate?: string;
+  slaSeverity?: string;
+}
+
+export interface PaginationParams {
+  page: number;
+  pageSize: number;
+}
