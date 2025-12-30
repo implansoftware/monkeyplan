@@ -1,6 +1,7 @@
 import {
   User, InsertUser, RepairCenter, InsertRepairCenter, Product, InsertProduct, ProductPrice, InsertProductPrice,
-  RepairOrder, InsertRepairOrder, Ticket, InsertTicket, TicketMessage, InsertTicketMessage,
+  RepairOrder, InsertRepairOrder, PaginatedResult, RepairOrderFilters,
+  Ticket, InsertTicket, TicketMessage, InsertTicketMessage,
   Invoice, InsertInvoice, BillingData, InsertBillingData, ChatMessage, InsertChatMessage,
   InventoryMovement, InsertInventoryMovement, InventoryStock, ActivityLog, InsertActivityLog,
   AnalyticsCache, InsertAnalyticsCache, Notification, InsertNotification,
@@ -100,7 +101,7 @@ import {
   marketplaceOrderItems, MarketplaceOrderItem, InsertMarketplaceOrderItem
 } from "@shared/schema";
 import { db, pool } from "./db";
-import { eq, and, or, desc, lt, sql, not, inArray, isNull } from "drizzle-orm";
+import { eq, and, or, desc, lt, gte, lte, sql, not, inArray, isNull, ilike } from "drizzle-orm";
 import session from "express-session";
 import connectPg from "connect-pg-simple";
 
@@ -191,6 +192,7 @@ export interface IStorage {
   
   // Repair Orders
   listRepairOrders(filters?: { customerId?: string; resellerId?: string; repairCenterId?: string; status?: string }): Promise<RepairOrder[]>;
+  listRepairOrdersPaginated(params: { page: number; pageSize: number; filters?: RepairOrderFilters }): Promise<PaginatedResult<RepairOrder>>;
   getRepairOrder(id: string): Promise<RepairOrder | undefined>;
   createRepairOrder(order: InsertRepairOrder): Promise<RepairOrder>;
   createRepairWithAcceptance(order: InsertRepairOrder, acceptance: InsertRepairAcceptance): Promise<{ order: RepairOrder; acceptance: RepairAcceptance }>;
@@ -1722,6 +1724,77 @@ export class DatabaseStorage implements IStorage {
     }
     
     return await query.orderBy(desc(repairOrders.createdAt));
+  }
+
+  async listRepairOrdersPaginated(params: { page: number; pageSize: number; filters?: RepairOrderFilters }): Promise<PaginatedResult<RepairOrder>> {
+    const { page, pageSize, filters } = params;
+    const offset = (page - 1) * pageSize;
+    
+    const conditions: any[] = [];
+    
+    if (filters) {
+      if (filters.status && filters.status !== 'all') {
+        conditions.push(eq(repairOrders.status, filters.status as any));
+      }
+      if (filters.priority && filters.priority !== 'all') {
+        conditions.push(eq(repairOrders.priority, filters.priority as any));
+      }
+      if (filters.repairCenterId && filters.repairCenterId !== 'all') {
+        conditions.push(eq(repairOrders.repairCenterId, filters.repairCenterId));
+      }
+      if (filters.resellerId && filters.resellerId !== 'all') {
+        conditions.push(eq(repairOrders.resellerId, filters.resellerId));
+      }
+      if (filters.customerId) {
+        conditions.push(eq(repairOrders.customerId, filters.customerId));
+      }
+      if (filters.startDate) {
+        conditions.push(gte(repairOrders.createdAt, new Date(filters.startDate)));
+      }
+      if (filters.endDate) {
+        const endDate = new Date(filters.endDate);
+        endDate.setHours(23, 59, 59, 999);
+        conditions.push(lte(repairOrders.createdAt, endDate));
+      }
+      if (filters.search) {
+        const searchTerm = `%${filters.search.toLowerCase()}%`;
+        conditions.push(
+          or(
+            ilike(repairOrders.orderNumber, searchTerm),
+            ilike(repairOrders.deviceModel, searchTerm),
+            ilike(repairOrders.brand, searchTerm),
+            ilike(repairOrders.serial, searchTerm),
+            ilike(repairOrders.imei, searchTerm)
+          )
+        );
+      }
+    }
+    
+    const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+    
+    const [countResult] = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(repairOrders)
+      .where(whereClause);
+    
+    const total = Number(countResult?.count || 0);
+    const totalPages = Math.ceil(total / pageSize);
+    
+    const data = await db
+      .select()
+      .from(repairOrders)
+      .where(whereClause)
+      .orderBy(desc(repairOrders.createdAt))
+      .limit(pageSize)
+      .offset(offset);
+    
+    return {
+      data,
+      page,
+      pageSize,
+      total,
+      totalPages,
+    };
   }
 
   async getRepairOrder(id: string): Promise<RepairOrder | undefined> {
