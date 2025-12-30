@@ -4637,26 +4637,46 @@ export function registerRoutes(app: Express): Server {
       const brandId = req.query.brandId as string | undefined;
       const typeId = req.query.typeId as string | undefined;
       
-      // Get all models from unified device_models table
-      const allModels = await storage.listDeviceModels({ brandId, typeId, activeOnly, resellerId });
-      
       if (includeGlobal) {
-        // Return all models with isGlobal/isCustom flags
-        const mergedModels = allModels.map(m => ({
+        // Get global + reseller's custom models from unified device_models table
+        const allModels = await storage.listDeviceModelsForReseller(resellerId, { brandId, typeId, activeOnly });
+        
+        // Also get legacy custom models from reseller_device_models for backwards compat
+        const legacyCustomModels = await storage.listResellerDeviceModels(resellerId, brandId, typeId, activeOnly);
+        
+        // Merge: unified models + legacy custom models (normalized)
+        const unifiedWithFlags = allModels.map(m => ({
           ...m,
           isGlobal: m.resellerId === null,
           isCustom: m.resellerId !== null
         }));
-        return res.json(mergedModels);
+        
+        const legacyNormalized = legacyCustomModels.map(m => ({ 
+          ...m, 
+          brandId: m.brandId || m.resellerBrandId,
+          isGlobal: false, 
+          isCustom: true 
+        }));
+        
+        // Combine, avoiding duplicates (legacy models have different IDs)
+        return res.json([...unifiedWithFlags, ...legacyNormalized]);
       }
       
-      // Only return reseller's custom models
-      const customModels = allModels.filter(m => m.resellerId === resellerId);
-      res.json(customModels.map(m => ({ 
+      // Only return reseller's custom models (from both tables)
+      const unifiedCustom = await storage.listDeviceModelsForReseller(resellerId, { brandId, typeId, activeOnly });
+      const resellerOnlyModels = unifiedCustom.filter(m => m.resellerId === resellerId);
+      
+      const legacyCustomModels = await storage.listResellerDeviceModels(resellerId, brandId, typeId, activeOnly);
+      
+      const unified = resellerOnlyModels.map(m => ({ ...m, isGlobal: false, isCustom: true }));
+      const legacy = legacyCustomModels.map(m => ({ 
         ...m, 
+        brandId: m.brandId || m.resellerBrandId,
         isGlobal: false, 
         isCustom: true 
-      })));
+      }));
+      
+      res.json([...unified, ...legacy]);
     } catch (error: any) {
       res.status(500).send(error.message);
     }

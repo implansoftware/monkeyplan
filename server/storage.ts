@@ -346,7 +346,8 @@ export interface IStorage {
   listEstimatedRepairTimes(deviceTypeId?: string, activeOnly?: boolean): Promise<EstimatedRepairTime[]>;
   
   // Device Models (Cascading dropdown catalog)
-  listDeviceModels(filters?: { typeId?: string; brandId?: string; activeOnly?: boolean; resellerId?: string }): Promise<DeviceModel[]>;
+  listDeviceModels(filters?: { typeId?: string; brandId?: string; activeOnly?: boolean }): Promise<DeviceModel[]>;
+  listDeviceModelsForReseller(resellerId: string, filters?: { typeId?: string; brandId?: string; activeOnly?: boolean }): Promise<DeviceModel[]>;
   getDeviceModel(id: string): Promise<DeviceModel | undefined>;
   createDeviceModel(insertDeviceModel: InsertDeviceModel): Promise<DeviceModel>;
   updateDeviceModel(id: string, updates: Partial<InsertDeviceModel>): Promise<DeviceModel>;
@@ -3437,8 +3438,8 @@ export class DatabaseStorage implements IStorage {
     return await query.orderBy(estimatedRepairTimes.sortOrder, estimatedRepairTimes.name);
   }
 
-  // Device Models (Cascading dropdown)
-  async listDeviceModels(filters?: { typeId?: string; brandId?: string; activeOnly?: boolean; resellerId?: string }): Promise<DeviceModel[]> {
+  // Device Models (Cascading dropdown) - Returns all models (global + any with resellerId)
+  async listDeviceModels(filters?: { typeId?: string; brandId?: string; activeOnly?: boolean }): Promise<DeviceModel[]> {
     let query = db.select().from(deviceModels);
     
     const conditions = [];
@@ -3455,13 +3456,36 @@ export class DatabaseStorage implements IStorage {
       conditions.push(eq(deviceModels.isActive, true));
     }
     
-    // If resellerId is provided, include both global models (resellerId = null) and reseller's custom models
-    if (filters?.resellerId) {
-      conditions.push(or(
-        sql`${deviceModels.resellerId} IS NULL`,
-        eq(deviceModels.resellerId, filters.resellerId)
-      ));
+    if (conditions.length > 0) {
+      query = query.where(and(...conditions)) as any;
     }
+    
+    return await query.orderBy(deviceModels.modelName);
+  }
+  
+  // List device models for a specific reseller (global + reseller's custom models)
+  async listDeviceModelsForReseller(resellerId: string, filters?: { typeId?: string; brandId?: string; activeOnly?: boolean }): Promise<DeviceModel[]> {
+    let query = db.select().from(deviceModels);
+    
+    const conditions = [];
+    
+    if (filters?.typeId) {
+      conditions.push(eq(deviceModels.typeId, filters.typeId));
+    }
+    
+    if (filters?.brandId) {
+      conditions.push(eq(deviceModels.brandId, filters.brandId));
+    }
+    
+    if (filters?.activeOnly !== false) {
+      conditions.push(eq(deviceModels.isActive, true));
+    }
+    
+    // Include both global models (resellerId IS NULL) and reseller's own models
+    conditions.push(or(
+      sql`${deviceModels.resellerId} IS NULL`,
+      eq(deviceModels.resellerId, resellerId)
+    ));
     
     if (conditions.length > 0) {
       query = query.where(and(...conditions)) as any;
