@@ -29,6 +29,7 @@ export default function AdminRepairCenters() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingCenter, setEditingCenter] = useState<RepairCenter | null>(null);
   const [selectedResellerId, setSelectedResellerId] = useState<string>("");
+  const [selectedSubResellerId, setSelectedSubResellerId] = useState<string>("");
   const [addressData, setAddressData] = useState({ address: "", city: "", cap: "", provincia: "" });
   const [hourlyRateEuros, setHourlyRateEuros] = useState<string>("");
   const [wizardStep, setWizardStep] = useState(1);
@@ -53,6 +54,12 @@ export default function AdminRepairCenters() {
     queryKey: ["/api/admin/resellers"],
   });
 
+  // Query per sub-reseller del rivenditore selezionato
+  const { data: subResellers = [] } = useQuery<User[]>({
+    queryKey: ["/api/admin/resellers", selectedResellerId, "sub-resellers"],
+    enabled: !!selectedResellerId,
+  });
+
   const createCenterMutation = useMutation({
     mutationFn: async (data: InsertRepairCenter) => {
       const res = await apiRequest("POST", "/api/admin/repair-centers", data);
@@ -63,6 +70,7 @@ export default function AdminRepairCenters() {
       setDialogOpen(false);
       setEditingCenter(null);
       setSelectedResellerId("");
+      setSelectedSubResellerId("");
       toast({ title: "Centro di riparazione creato" });
     },
     onError: (error: Error) => {
@@ -80,6 +88,7 @@ export default function AdminRepairCenters() {
       setDialogOpen(false);
       setEditingCenter(null);
       setSelectedResellerId("");
+      setSelectedSubResellerId("");
       toast({ title: "Centro aggiornato" });
     },
     onError: (error: Error) => {
@@ -112,6 +121,7 @@ export default function AdminRepairCenters() {
     });
     setAddressData({ address: "", city: "", cap: "", provincia: "" });
     setSelectedResellerId("");
+    setSelectedSubResellerId("");
     setHourlyRateEuros("");
   };
 
@@ -171,6 +181,7 @@ export default function AdminRepairCenters() {
         phone: formData.phone,
         email: formData.email,
         resellerId: selectedResellerId || null,
+        subResellerId: selectedSubResellerId || null,
         hourlyRateCents: hourlyRateCentsValue,
         ...fiscalData,
       };
@@ -185,6 +196,7 @@ export default function AdminRepairCenters() {
         phone: formData.phone,
         email: formData.email,
         resellerId: selectedResellerId || null,
+        subResellerId: selectedSubResellerId || null,
         isActive: true,
         hourlyRateCents: hourlyRateCentsValue,
         ...fiscalData,
@@ -415,7 +427,13 @@ export default function AdminRepairCenters() {
                     <p className="text-sm text-muted-foreground">Configurazione affiliazione e tariffe.</p>
                     <div className="space-y-2">
                       <Label htmlFor="resellerId">Rivenditore di Appartenenza</Label>
-                      <Select value={selectedResellerId} onValueChange={setSelectedResellerId}>
+                      <Select 
+                        value={selectedResellerId} 
+                        onValueChange={(value) => {
+                          setSelectedResellerId(value);
+                          setSelectedSubResellerId("");
+                        }}
+                      >
                         <SelectTrigger id="resellerId" data-testid="select-reseller-id">
                           <SelectValue placeholder="Seleziona un rivenditore" />
                         </SelectTrigger>
@@ -431,6 +449,28 @@ export default function AdminRepairCenters() {
                         Il rivenditore a cui il centro è affiliato potrà gestire questo centro e visualizzare le sue attività.
                       </p>
                     </div>
+                    
+                    {selectedResellerId && subResellers.length > 0 && (
+                      <div className="space-y-2">
+                        <Label htmlFor="subResellerId">Sub-Reseller di Riferimento</Label>
+                        <Select value={selectedSubResellerId} onValueChange={setSelectedSubResellerId}>
+                          <SelectTrigger id="subResellerId" data-testid="select-sub-reseller-id">
+                            <SelectValue placeholder="Seleziona un sub-reseller (opzionale)" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="">Nessun sub-reseller</SelectItem>
+                            {subResellers.map((subReseller) => (
+                              <SelectItem key={subReseller.id} value={subReseller.id}>
+                                {subReseller.fullName} ({subReseller.email})
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <p className="text-xs text-muted-foreground">
+                          Assegna questo centro a un sub-reseller specifico del rivenditore selezionato.
+                        </p>
+                      </div>
+                    )}
                     
                     <div className="border-t pt-4 mt-4">
                       <h4 className="font-medium text-sm text-muted-foreground mb-3 flex items-center gap-2">
@@ -613,6 +653,7 @@ export default function AdminRepairCenters() {
                               provincia: center.provincia || "",
                             });
                             setSelectedResellerId(center.resellerId || "");
+                            setSelectedSubResellerId(center.subResellerId || "");
                             setHourlyRateEuros(center.hourlyRateCents ? (center.hourlyRateCents / 100).toFixed(2) : "");
                             setDialogOpen(true);
                           }}
