@@ -21,6 +21,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useRef } from "react";
 import type { SmartphoneSpecs, Product, ResellerProduct } from "@shared/schema";
 import { SmartphoneWizard } from "@/components/SmartphoneWizard";
+import { getSpecsConfig } from "@/lib/device-category-config";
 
 type SmartphoneWithSpecs = Product & {
   specs: SmartphoneSpecs | null;
@@ -847,96 +848,118 @@ export default function SmartphoneCatalog() {
               </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="storage">Storage *</Label>
-                <Select value={formData.storage} onValueChange={(v) => setFormData({ ...formData, storage: v })}>
-                  <SelectTrigger data-testid="select-smartphone-storage">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {STORAGE_OPTIONS.map((s) => (
-                      <SelectItem key={s} value={s}>{s}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="grade">Grado</Label>
-                <Select value={formData.grade} onValueChange={(v) => setFormData({ ...formData, grade: v })}>
-                  <SelectTrigger data-testid="select-smartphone-grade">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {GRADE_OPTIONS.map((g) => (
-                      <SelectItem key={g.value} value={g.value}>{g.label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="networkLock">Stato Rete</Label>
-                <Select value={formData.networkLock} onValueChange={(v) => setFormData({ ...formData, networkLock: v })}>
-                  <SelectTrigger data-testid="select-smartphone-network">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {NETWORK_LOCK_OPTIONS.map((n) => (
-                      <SelectItem key={n.value} value={n.value}>{n.label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
+            {/* Specifiche dinamiche in base alla categoria */}
+            {(() => {
+              const specsConfig = getSpecsConfig(formData.category);
+              return (
+                <>
+                  <div className="grid grid-cols-3 gap-4">
+                    {specsConfig.storage && (
+                      <div className="space-y-2">
+                        <Label htmlFor="storage">Storage *</Label>
+                        <Select value={formData.storage} onValueChange={(v) => setFormData({ ...formData, storage: v })}>
+                          <SelectTrigger data-testid="select-smartphone-storage">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {STORAGE_OPTIONS.map((s) => (
+                              <SelectItem key={s} value={s}>{s}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
+                    {specsConfig.grade && (
+                      <div className="space-y-2">
+                        <Label htmlFor="grade">Grado</Label>
+                        <Select value={formData.grade} onValueChange={(v) => setFormData({ ...formData, grade: v })}>
+                          <SelectTrigger data-testid="select-smartphone-grade">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {GRADE_OPTIONS.map((g) => (
+                              <SelectItem key={g.value} value={g.value}>{g.label}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
+                    {specsConfig.networkLock && (
+                      <div className="space-y-2">
+                        <Label htmlFor="networkLock">Stato Rete</Label>
+                        <Select value={formData.networkLock} onValueChange={(v) => setFormData({ ...formData, networkLock: v })}>
+                          <SelectTrigger data-testid="select-smartphone-network">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {NETWORK_LOCK_OPTIONS.map((n) => (
+                              <SelectItem key={n.value} value={n.value}>{n.label}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
+                  </div>
 
-            <div className="grid grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="batteryHealth">Batteria %</Label>
-                <Select value={formData.batteryHealth} onValueChange={(v) => setFormData({ ...formData, batteryHealth: v })}>
-                  <SelectTrigger data-testid="select-smartphone-battery">
-                    <SelectValue placeholder="Seleziona batteria" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {BATTERY_OPTIONS.map((b) => (
-                      <SelectItem key={b.value} value={b.value}>{b.label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
+                  {specsConfig.batteryHealth && (
+                    <div className="grid grid-cols-3 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="batteryHealth">Batteria %</Label>
+                        <Select value={formData.batteryHealth} onValueChange={(v) => setFormData({ ...formData, batteryHealth: v })}>
+                          <SelectTrigger data-testid="select-smartphone-battery">
+                            <SelectValue placeholder="Seleziona batteria" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {BATTERY_OPTIONS.map((b) => (
+                              <SelectItem key={b.value} value={b.value}>{b.label}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                  )}
 
-            <div className="grid grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="imei">IMEI</Label>
-                <Input
-                  id="imei"
-                  value={formData.imei}
-                  onChange={(e) => setFormData({ ...formData, imei: e.target.value })}
-                  placeholder="es. 353012345678901"
-                  data-testid="input-smartphone-imei"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="imei2">IMEI 2 (Dual SIM)</Label>
-                <Input
-                  id="imei2"
-                  value={formData.imei2}
-                  onChange={(e) => setFormData({ ...formData, imei2: e.target.value })}
-                  placeholder="Opzionale"
-                  data-testid="input-smartphone-imei2"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="serialNumber">Seriale</Label>
-                <Input
-                  id="serialNumber"
-                  value={formData.serialNumber}
-                  onChange={(e) => setFormData({ ...formData, serialNumber: e.target.value })}
-                  placeholder="es. DNPX12345678"
-                  data-testid="input-smartphone-serial"
-                />
-              </div>
-            </div>
+                  <div className="grid grid-cols-3 gap-4">
+                    {specsConfig.imei && (
+                      <>
+                        <div className="space-y-2">
+                          <Label htmlFor="imei">IMEI</Label>
+                          <Input
+                            id="imei"
+                            value={formData.imei}
+                            onChange={(e) => setFormData({ ...formData, imei: e.target.value })}
+                            placeholder="es. 353012345678901"
+                            data-testid="input-smartphone-imei"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="imei2">IMEI 2 (Dual SIM)</Label>
+                          <Input
+                            id="imei2"
+                            value={formData.imei2}
+                            onChange={(e) => setFormData({ ...formData, imei2: e.target.value })}
+                            placeholder="Opzionale"
+                            data-testid="input-smartphone-imei2"
+                          />
+                        </div>
+                      </>
+                    )}
+                    {specsConfig.serialNumber && (
+                      <div className="space-y-2">
+                        <Label htmlFor="serialNumber">Seriale</Label>
+                        <Input
+                          id="serialNumber"
+                          value={formData.serialNumber}
+                          onChange={(e) => setFormData({ ...formData, serialNumber: e.target.value })}
+                          placeholder="es. DNPX12345678"
+                          data-testid="input-smartphone-serial"
+                        />
+                      </div>
+                    )}
+                  </div>
+                </>
+              );
+            })()}
 
             <div className="grid grid-cols-3 gap-4">
               <div className="space-y-2">
@@ -976,52 +999,66 @@ export default function SmartphoneCatalog() {
               </div>
             </div>
 
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="originalBox"
-                checked={formData.originalBox}
-                onCheckedChange={(checked) => setFormData({ ...formData, originalBox: checked as boolean })}
-                data-testid="checkbox-smartphone-box"
-              />
-              <Label htmlFor="originalBox" className="text-sm cursor-pointer">
-                Include scatola originale
-              </Label>
-            </div>
+            {/* Campi opzionali dinamici in base alla categoria */}
+            {(() => {
+              const specsConfig = getSpecsConfig(formData.category);
+              return (
+                <>
+                  {specsConfig.originalBox && (
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="originalBox"
+                        checked={formData.originalBox}
+                        onCheckedChange={(checked) => setFormData({ ...formData, originalBox: checked as boolean })}
+                        data-testid="checkbox-smartphone-box"
+                      />
+                      <Label htmlFor="originalBox" className="text-sm cursor-pointer">
+                        Include scatola originale
+                      </Label>
+                    </div>
+                  )}
 
-            <div className="space-y-2">
-              <Label>Accessori Inclusi</Label>
-              <div className="flex flex-wrap gap-4">
-                {ACCESSORY_OPTIONS.map((acc) => (
-                  <div key={acc} className="flex items-center gap-2">
-                    <Checkbox
-                      id={`acc-${acc}`}
-                      checked={formData.accessories.includes(acc)}
-                      onCheckedChange={(checked) => {
-                        if (checked) {
-                          setFormData({ ...formData, accessories: [...formData.accessories, acc] });
-                        } else {
-                          setFormData({ ...formData, accessories: formData.accessories.filter(a => a !== acc) });
-                        }
-                      }}
-                      data-testid={`checkbox-accessory-${acc.replace(/\s/g, '-').toLowerCase()}`}
-                    />
-                    <Label htmlFor={`acc-${acc}`} className="text-sm">{acc}</Label>
-                  </div>
-                ))}
-              </div>
-            </div>
+                  {specsConfig.accessories && (
+                    <div className="space-y-2">
+                      <Label>Accessori Inclusi</Label>
+                      <div className="flex flex-wrap gap-4">
+                        {ACCESSORY_OPTIONS.map((acc) => (
+                          <div key={acc} className="flex items-center gap-2">
+                            <Checkbox
+                              id={`acc-${acc}`}
+                              checked={formData.accessories.includes(acc)}
+                              onCheckedChange={(checked) => {
+                                if (checked) {
+                                  setFormData({ ...formData, accessories: [...formData.accessories, acc] });
+                                } else {
+                                  setFormData({ ...formData, accessories: formData.accessories.filter(a => a !== acc) });
+                                }
+                              }}
+                              data-testid={`checkbox-accessory-${acc.replace(/\s/g, '-').toLowerCase()}`}
+                            />
+                            <Label htmlFor={`acc-${acc}`} className="text-sm">{acc}</Label>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
 
-            <div className="space-y-2">
-              <Label htmlFor="description">Descrizione</Label>
-              <Textarea
-                id="description"
-                value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                placeholder="Descrizione del dispositivo..."
-                rows={2}
-                data-testid="textarea-smartphone-description"
-              />
-            </div>
+                  {specsConfig.description && (
+                    <div className="space-y-2">
+                      <Label htmlFor="description">Descrizione</Label>
+                      <Textarea
+                        id="description"
+                        value={formData.description}
+                        onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                        placeholder="Descrizione del dispositivo..."
+                        rows={2}
+                        data-testid="textarea-smartphone-description"
+                      />
+                    </div>
+                  )}
+                </>
+              );
+            })()}
 
             <div className="space-y-2">
               <Label htmlFor="notes">Note</Label>
