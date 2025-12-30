@@ -1,10 +1,10 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -12,9 +12,23 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { 
   Send, Package, Plus, Search, Clock, CheckCircle, XCircle, 
-  Truck, Ban, Eye, Trash2, PackageCheck
+  Truck, Ban, Eye, Trash2, PackageCheck, ArrowRight, ArrowLeft,
+  Smartphone, Wrench, ShoppingBag, Warehouse
 } from "lucide-react";
 import type { Product } from "@shared/schema";
+
+type ProductWithStock = {
+  product: Product;
+  productType: string;
+  warehouses: Array<{
+    warehouseId: string;
+    warehouseName: string;
+    ownerType: string;
+    ownerId: string;
+    ownerName: string;
+    quantity: number;
+  }>;
+};
 
 type TransferRequestItem = {
   id: string;
@@ -72,6 +86,14 @@ export default function RepairCenterTransferRequestsPage() {
   const [requestItems, setRequestItems] = useState<Array<{ productId: string; quantity: number }>>([]);
   const [receiveItems, setReceiveItems] = useState<Array<{ id: string; receivedQuantity: number }>>([]);
 
+  // Wizard state
+  const [wizardStep, setWizardStep] = useState(1);
+  const [productSearch, setProductSearch] = useState("");
+  const [productTypeFilter, setProductTypeFilter] = useState<string>("all");
+  const [selectedProduct, setSelectedProduct] = useState<ProductWithStock | null>(null);
+  const [selectedWarehouse, setSelectedWarehouse] = useState<string>("");
+  const [requestQuantity, setRequestQuantity] = useState(1);
+
   const { data: requests = [], isLoading } = useQuery<TransferRequest[]>({
     queryKey: ["/api/repair-center/transfer-requests"],
   });
@@ -89,6 +111,37 @@ export default function RepairCenterTransferRequestsPage() {
     queryKey: ["/api/products"],
   });
 
+  // Search products with stock for wizard
+  const searchParams = useMemo(() => {
+    const params = new URLSearchParams();
+    if (productSearch.trim()) params.set("query", productSearch.trim());
+    if (productTypeFilter !== "all") params.set("productType", productTypeFilter);
+    return params.toString();
+  }, [productSearch, productTypeFilter]);
+
+  const { data: searchResults = [], isLoading: isSearching } = useQuery<ProductWithStock[]>({
+    queryKey: ["/api/repair-center/transfer-requests/search-products", searchParams],
+    queryFn: async () => {
+      const url = searchParams 
+        ? `/api/repair-center/transfer-requests/search-products?${searchParams}`
+        : "/api/repair-center/transfer-requests/search-products";
+      const res = await fetch(url, { credentials: "include" });
+      if (!res.ok) return [];
+      return res.json();
+    },
+    enabled: showNewRequestDialog && wizardStep === 1,
+  });
+
+  const resetWizard = () => {
+    setWizardStep(1);
+    setProductSearch("");
+    setProductTypeFilter("all");
+    setSelectedProduct(null);
+    setSelectedWarehouse("");
+    setRequestQuantity(1);
+    setRequestNotes("");
+  };
+
   const createRequestMutation = useMutation({
     mutationFn: async (data: { notes: string; items: Array<{ productId: string; quantity: number }> }) => {
       return apiRequest("POST", "/api/repair-center/transfer-requests", data);
@@ -97,8 +150,7 @@ export default function RepairCenterTransferRequestsPage() {
       queryClient.invalidateQueries({ queryKey: ["/api/repair-center/transfer-requests"] });
       toast({ title: "Richiesta Inviata", description: "La richiesta di trasferimento è stata inviata al reseller" });
       setShowNewRequestDialog(false);
-      setRequestNotes("");
-      setRequestItems([]);
+      resetWizard();
     },
     onError: (error: any) => {
       toast({ title: "Errore", description: error.message, variant: "destructive" });
@@ -197,95 +249,278 @@ export default function RepairCenterTransferRequestsPage() {
           </div>
         </div>
 
-        <Dialog open={showNewRequestDialog} onOpenChange={setShowNewRequestDialog}>
+        <Dialog open={showNewRequestDialog} onOpenChange={(open) => {
+          setShowNewRequestDialog(open);
+          if (!open) resetWizard();
+        }}>
           <DialogTrigger asChild>
             <Button data-testid="button-new-request">
               <Plus className="h-4 w-4 mr-2" />
               Nuova Richiesta
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-2xl">
+          <DialogContent className="max-w-3xl max-h-[85vh] overflow-hidden flex flex-col">
             <DialogHeader>
               <DialogTitle>Nuova Richiesta Trasferimento</DialogTitle>
+              <DialogDescription>
+                {wizardStep === 1 && "Cerca il prodotto che vuoi richiedere"}
+                {wizardStep === 2 && "Seleziona il magazzino da cui richiedere"}
+                {wizardStep === 3 && "Conferma quantità e invia richiesta"}
+              </DialogDescription>
             </DialogHeader>
-            <div className="space-y-4 max-h-[60vh] overflow-y-auto">
-              <div className="space-y-2">
-                <Label>Note</Label>
-                <Textarea
-                  value={requestNotes}
-                  onChange={(e) => setRequestNotes(e.target.value)}
-                  placeholder="Note aggiuntive per la richiesta..."
-                  data-testid="input-notes"
-                />
-              </div>
 
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <Label>Prodotti Richiesti</Label>
-                  <Button variant="outline" size="sm" onClick={handleAddItem} data-testid="button-add-item">
-                    <Plus className="h-4 w-4 mr-1" />
-                    Aggiungi
-                  </Button>
+            <div className="flex items-center justify-center gap-2 py-2">
+              {[1, 2, 3].map((step) => (
+                <div key={step} className="flex items-center gap-2">
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
+                    wizardStep === step 
+                      ? "bg-primary text-primary-foreground" 
+                      : wizardStep > step 
+                        ? "bg-green-500 text-white" 
+                        : "bg-muted text-muted-foreground"
+                  }`}>
+                    {wizardStep > step ? <CheckCircle className="h-4 w-4" /> : step}
+                  </div>
+                  {step < 3 && <div className={`w-12 h-1 ${wizardStep > step ? "bg-green-500" : "bg-muted"}`} />}
                 </div>
+              ))}
+            </div>
 
-                {requestItems.length === 0 && (
-                  <p className="text-sm text-muted-foreground text-center py-4">
-                    Nessun prodotto aggiunto. Clicca "Aggiungi" per iniziare.
-                  </p>
-                )}
-
-                {requestItems.map((item, index) => (
-                  <div key={index} className="flex items-center gap-2 p-3 border rounded-md">
-                    <div className="flex-1">
-                      <Select
-                        value={item.productId}
-                        onValueChange={(v) => handleItemChange(index, 'productId', v)}
-                      >
-                        <SelectTrigger data-testid={`select-product-${index}`}>
-                          <SelectValue placeholder="Seleziona prodotto" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {products.map((p) => (
-                            <SelectItem key={p.id} value={p.id}>
-                              {p.name} ({p.sku})
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="w-24">
+            <div className="flex-1 overflow-y-auto space-y-4 py-4">
+              {wizardStep === 1 && (
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2">
+                    <div className="relative flex-1">
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                       <Input
-                        type="number"
-                        min={1}
-                        value={item.quantity}
-                        onChange={(e) => handleItemChange(index, 'quantity', parseInt(e.target.value) || 0)}
-                        placeholder="Qtà"
-                        data-testid={`input-quantity-${index}`}
+                        placeholder="Cerca prodotto per nome, SKU o marca..."
+                        value={productSearch}
+                        onChange={(e) => setProductSearch(e.target.value)}
+                        className="pl-10"
+                        data-testid="input-product-search"
                       />
                     </div>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleRemoveItem(index)}
-                      data-testid={`button-remove-item-${index}`}
-                    >
-                      <Trash2 className="h-4 w-4 text-destructive" />
-                    </Button>
+                    <Select value={productTypeFilter} onValueChange={setProductTypeFilter}>
+                      <SelectTrigger className="w-[160px]" data-testid="select-product-type">
+                        <SelectValue placeholder="Tipo" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Tutti i tipi</SelectItem>
+                        <SelectItem value="ricambio">Ricambi</SelectItem>
+                        <SelectItem value="accessorio">Accessori</SelectItem>
+                        <SelectItem value="dispositivo">Dispositivi</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
-                ))}
-              </div>
+
+                  {isSearching && (
+                    <div className="flex items-center justify-center py-8">
+                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+                    </div>
+                  )}
+
+                  {!isSearching && searchResults.length === 0 && (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <Package className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                      <p>Nessun prodotto disponibile trovato</p>
+                      <p className="text-sm">Prova a modificare i criteri di ricerca</p>
+                    </div>
+                  )}
+
+                  {!isSearching && searchResults.length > 0 && (
+                    <div className="grid gap-2 max-h-[40vh] overflow-y-auto">
+                      {searchResults.map((item) => {
+                        const typeIcon = item.productType === 'dispositivo' ? Smartphone 
+                          : item.productType === 'accessorio' ? ShoppingBag : Wrench;
+                        const TypeIcon = typeIcon;
+                        const totalStock = item.warehouses.reduce((sum, w) => sum + w.quantity, 0);
+                        
+                        return (
+                          <Card 
+                            key={item.product.id} 
+                            className={`cursor-pointer transition-colors hover-elevate ${
+                              selectedProduct?.product.id === item.product.id ? "ring-2 ring-primary" : ""
+                            }`}
+                            onClick={() => {
+                              setSelectedProduct(item);
+                              if (item.warehouses.length === 1) {
+                                setSelectedWarehouse(item.warehouses[0].warehouseId);
+                              }
+                            }}
+                            data-testid={`card-product-${item.product.id}`}
+                          >
+                            <CardContent className="p-3">
+                              <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded bg-muted flex items-center justify-center">
+                                  <TypeIcon className="h-5 w-5 text-muted-foreground" />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <p className="font-medium truncate">{item.product.name}</p>
+                                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                    <span>{item.product.sku}</span>
+                                    {item.product.brand && <span>| {item.product.brand}</span>}
+                                  </div>
+                                </div>
+                                <div className="text-right">
+                                  <Badge variant="secondary">
+                                    {totalStock} disponibili
+                                  </Badge>
+                                  <p className="text-xs text-muted-foreground mt-1">
+                                    {item.warehouses.length} magazzin{item.warehouses.length === 1 ? 'o' : 'i'}
+                                  </p>
+                                </div>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {wizardStep === 2 && selectedProduct && (
+                <div className="space-y-4">
+                  <Card className="bg-muted/50">
+                    <CardContent className="p-3">
+                      <div className="flex items-center gap-3">
+                        <Package className="h-5 w-5 text-primary" />
+                        <div>
+                          <p className="font-medium">{selectedProduct.product.name}</p>
+                          <p className="text-sm text-muted-foreground">{selectedProduct.product.sku}</p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Label>Seleziona il magazzino sorgente</Label>
+                  <div className="grid gap-2">
+                    {selectedProduct.warehouses.map((wh) => (
+                      <Card
+                        key={wh.warehouseId}
+                        className={`cursor-pointer transition-colors hover-elevate ${
+                          selectedWarehouse === wh.warehouseId ? "ring-2 ring-primary" : ""
+                        }`}
+                        onClick={() => setSelectedWarehouse(wh.warehouseId)}
+                        data-testid={`card-warehouse-${wh.warehouseId}`}
+                      >
+                        <CardContent className="p-3">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                              <Warehouse className="h-5 w-5 text-muted-foreground" />
+                              <div>
+                                <p className="font-medium">{wh.warehouseName}</p>
+                                <p className="text-sm text-muted-foreground">{wh.ownerName}</p>
+                              </div>
+                            </div>
+                            <Badge variant="outline" className="text-lg px-3">
+                              {wh.quantity}
+                            </Badge>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {wizardStep === 3 && selectedProduct && selectedWarehouse && (
+                <div className="space-y-4">
+                  <Card className="bg-muted/50">
+                    <CardContent className="p-4 space-y-3">
+                      <div className="flex items-center gap-3">
+                        <Package className="h-5 w-5 text-primary" />
+                        <div className="flex-1">
+                          <p className="font-medium">{selectedProduct.product.name}</p>
+                          <p className="text-sm text-muted-foreground">{selectedProduct.product.sku}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <Warehouse className="h-5 w-5 text-muted-foreground" />
+                        <div>
+                          <p className="font-medium">
+                            {selectedProduct.warehouses.find(w => w.warehouseId === selectedWarehouse)?.warehouseName}
+                          </p>
+                          <p className="text-sm text-muted-foreground">
+                            Disponibili: {selectedProduct.warehouses.find(w => w.warehouseId === selectedWarehouse)?.quantity}
+                          </p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <div className="space-y-2">
+                    <Label>Quantità richiesta</Label>
+                    <Input
+                      type="number"
+                      min={1}
+                      max={selectedProduct.warehouses.find(w => w.warehouseId === selectedWarehouse)?.quantity || 1}
+                      value={requestQuantity}
+                      onChange={(e) => setRequestQuantity(parseInt(e.target.value) || 1)}
+                      data-testid="input-request-quantity"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Note (opzionale)</Label>
+                    <Textarea
+                      value={requestNotes}
+                      onChange={(e) => setRequestNotes(e.target.value)}
+                      placeholder="Note aggiuntive per la richiesta..."
+                      data-testid="input-request-notes"
+                    />
+                  </div>
+                </div>
+              )}
             </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setShowNewRequestDialog(false)}>
-                Annulla
-              </Button>
-              <Button
-                onClick={() => createRequestMutation.mutate({ notes: requestNotes, items: requestItems })}
-                disabled={!canSubmit || createRequestMutation.isPending}
-                data-testid="button-submit-request"
-              >
-                {createRequestMutation.isPending ? "Invio..." : "Invia Richiesta"}
-              </Button>
+
+            <DialogFooter className="gap-2 sm:gap-0">
+              {wizardStep > 1 && (
+                <Button variant="outline" onClick={() => setWizardStep(wizardStep - 1)} data-testid="button-wizard-back">
+                  <ArrowLeft className="h-4 w-4 mr-2" />
+                  Indietro
+                </Button>
+              )}
+              {wizardStep === 1 && (
+                <Button variant="outline" onClick={() => {
+                  setShowNewRequestDialog(false);
+                  resetWizard();
+                }}>
+                  Annulla
+                </Button>
+              )}
+              {wizardStep === 1 && (
+                <Button
+                  onClick={() => setWizardStep(2)}
+                  disabled={!selectedProduct}
+                  data-testid="button-wizard-next-1"
+                >
+                  Avanti
+                  <ArrowRight className="h-4 w-4 ml-2" />
+                </Button>
+              )}
+              {wizardStep === 2 && (
+                <Button
+                  onClick={() => setWizardStep(3)}
+                  disabled={!selectedWarehouse}
+                  data-testid="button-wizard-next-2"
+                >
+                  Avanti
+                  <ArrowRight className="h-4 w-4 ml-2" />
+                </Button>
+              )}
+              {wizardStep === 3 && (
+                <Button
+                  onClick={() => createRequestMutation.mutate({
+                    notes: requestNotes,
+                    items: [{ productId: selectedProduct!.product.id, quantity: requestQuantity }]
+                  })}
+                  disabled={createRequestMutation.isPending || requestQuantity < 1}
+                  data-testid="button-submit-request"
+                >
+                  {createRequestMutation.isPending ? "Invio..." : "Invia Richiesta"}
+                </Button>
+              )}
             </DialogFooter>
           </DialogContent>
         </Dialog>
