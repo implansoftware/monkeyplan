@@ -323,8 +323,16 @@ export default function SubResellerTransferRequestsPage() {
                           >
                             <CardContent className="p-3">
                               <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded bg-muted flex items-center justify-center">
-                                  <TypeIcon className="h-5 w-5 text-muted-foreground" />
+                                <div className="w-10 h-10 rounded bg-muted flex items-center justify-center overflow-hidden">
+                                  {item.product.imageUrl ? (
+                                    <img 
+                                      src={item.product.imageUrl} 
+                                      alt={item.product.name}
+                                      className="w-full h-full object-cover"
+                                    />
+                                  ) : (
+                                    <TypeIcon className="h-5 w-5 text-muted-foreground" />
+                                  )}
                                 </div>
                                 <div className="flex-1 min-w-0">
                                   <p className="font-medium truncate">{item.product.name}</p>
@@ -356,7 +364,17 @@ export default function SubResellerTransferRequestsPage() {
                   <Card className="bg-muted/50">
                     <CardContent className="p-3">
                       <div className="flex items-center gap-3">
-                        <Package className="h-5 w-5 text-primary" />
+                        <div className="w-10 h-10 rounded bg-muted flex items-center justify-center overflow-hidden">
+                          {selectedProduct.product.imageUrl ? (
+                            <img 
+                              src={selectedProduct.product.imageUrl} 
+                              alt={selectedProduct.product.name}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <Package className="h-5 w-5 text-primary" />
+                          )}
+                        </div>
                         <div>
                           <p className="font-medium">{selectedProduct.product.name}</p>
                           <p className="text-sm text-muted-foreground">{selectedProduct.product.sku}</p>
@@ -401,7 +419,17 @@ export default function SubResellerTransferRequestsPage() {
                   <Card className="bg-muted/50">
                     <CardContent className="p-4 space-y-3">
                       <div className="flex items-center gap-3">
-                        <Package className="h-5 w-5 text-primary" />
+                        <div className="w-10 h-10 rounded bg-muted flex items-center justify-center overflow-hidden">
+                          {selectedProduct.product.imageUrl ? (
+                            <img 
+                              src={selectedProduct.product.imageUrl} 
+                              alt={selectedProduct.product.name}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <Package className="h-5 w-5 text-primary" />
+                          )}
+                        </div>
                         <div className="flex-1">
                           <p className="font-medium">{selectedProduct.product.name}</p>
                           <p className="text-sm text-muted-foreground">{selectedProduct.product.sku}</p>
