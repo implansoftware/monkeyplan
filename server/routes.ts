@@ -1585,6 +1585,29 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Get sub-resellers for a specific reseller (for admin customer creation)
+  app.get("/api/admin/resellers/:resellerId/sub-resellers", requireRole("admin"), async (req, res) => {
+    try {
+      const { resellerId } = req.params;
+      
+      // Verify reseller exists
+      const reseller = await storage.getUser(resellerId);
+      if (!reseller || reseller.role !== 'reseller') {
+        return res.status(404).send("Rivenditore non trovato");
+      }
+      
+      // Get sub-resellers for this reseller (users with role='sub_reseller' and parentResellerId=resellerId)
+      const allUsers = await storage.listUsers();
+      const subResellers = allUsers
+        .filter(u => u.role === 'sub_reseller' && u.parentResellerId === resellerId)
+        .map(({ password, ...u }) => u);
+      
+      res.json(subResellers);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
   // Get reseller overview with all related entities (for admin detail view)
   app.get("/api/admin/resellers/:id/overview", requireRole("admin"), async (req, res) => {
     try {

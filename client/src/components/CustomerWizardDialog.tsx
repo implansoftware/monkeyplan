@@ -80,6 +80,12 @@ export function CustomerWizardDialog({ open, onOpenChange, onSuccess }: Customer
     queryKey: ["/api/reseller/sub-resellers"],
     enabled: isReseller,
   });
+  
+  // Carica i sub-reseller per admin quando seleziona un rivenditore
+  const { data: adminSubResellers = [] } = useQuery<UserType[]>({
+    queryKey: ["/api/admin/resellers", selectedResellerId, "sub-resellers"],
+    enabled: isAdmin && !!selectedResellerId,
+  });
 
   const form = useForm<InsertCustomerWizard>({
     resolver: zodResolver(customerWizardSchema),
@@ -106,6 +112,9 @@ export function CustomerWizardDialog({ open, onOpenChange, onSuccess }: Customer
       let payload: any = { ...data };
       if (isAdmin && selectedResellerId) {
         payload.resellerId = selectedResellerId;
+        if (selectedSubResellerId) {
+          payload.subResellerId = selectedSubResellerId;
+        }
       }
       if (isReseller && selectedSubResellerId) {
         payload.subResellerId = selectedSubResellerId;
@@ -514,7 +523,12 @@ export function CustomerWizardDialog({ open, onOpenChange, onSuccess }: Customer
               <FormItem>
                 <FormLabel>Rivenditore di Riferimento</FormLabel>
                 <Select 
-                  onValueChange={(value) => setSelectedResellerId(value === "none" ? null : value)} 
+                  onValueChange={(value) => {
+                    const newResellerId = value === "none" ? null : value;
+                    setSelectedResellerId(newResellerId);
+                    // Reset sub-reseller when reseller changes
+                    setSelectedSubResellerId(null);
+                  }} 
                   value={selectedResellerId || "none"}
                 >
                   <FormControl>
@@ -533,6 +547,36 @@ export function CustomerWizardDialog({ open, onOpenChange, onSuccess }: Customer
                 </Select>
                 <FormDescription>
                   Associa questo cliente a un rivenditore specifico
+                </FormDescription>
+              </FormItem>
+            </>
+          )}
+
+          {/* Selezione sub-reseller per admin quando ha selezionato un rivenditore */}
+          {isAdmin && selectedResellerId && adminSubResellers.length > 0 && (
+            <>
+              <FormItem>
+                <FormLabel>Sub-Reseller di Riferimento</FormLabel>
+                <Select 
+                  onValueChange={(value) => setSelectedSubResellerId(value === "none" ? null : value)} 
+                  value={selectedSubResellerId || "none"}
+                >
+                  <FormControl>
+                    <SelectTrigger data-testid="select-admin-sub-reseller">
+                      <SelectValue placeholder="Seleziona sub-reseller (opzionale)" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value="none">Nessun sub-reseller</SelectItem>
+                    {adminSubResellers.map((subReseller) => (
+                      <SelectItem key={subReseller.id} value={subReseller.id}>
+                        {subReseller.fullName} ({subReseller.email})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FormDescription>
+                  Associa questo cliente a un sub-reseller specifico
                 </FormDescription>
               </FormItem>
             </>
@@ -739,11 +783,14 @@ export function CustomerWizardDialog({ open, onOpenChange, onSuccess }: Customer
               </div>
             )}
 
-            {isReseller && selectedSubResellerId && (
+            {selectedSubResellerId && (
               <div>
                 <h4 className="font-medium mb-2">Sub-Reseller di Riferimento</h4>
                 <p className="text-sm" data-testid="text-review-sub-reseller">
-                  {subResellers.find(r => r.id === selectedSubResellerId)?.fullName || "N/D"}
+                  {(isReseller 
+                    ? subResellers.find(r => r.id === selectedSubResellerId)?.fullName 
+                    : adminSubResellers.find(r => r.id === selectedSubResellerId)?.fullName
+                  ) || "N/D"}
                 </p>
               </div>
             )}
