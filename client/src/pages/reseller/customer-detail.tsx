@@ -1,4 +1,5 @@
-import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { useParams, Link, useLocation } from "wouter";
 import { User, RepairOrder, SalesOrder, BillingData, UtilityPractice } from "@shared/schema";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
 import { 
@@ -21,9 +23,12 @@ import {
   Calendar,
   Eye,
   Zap,
-  UserCheck
+  UserCheck,
+  Pencil
 } from "lucide-react";
 import { getStatusConfig } from "@/lib/repair-status-config";
+import { queryClient, apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 
 type EnrichedUtilityPractice = UtilityPractice & { 
   supplierName: string | null; 
@@ -44,10 +49,35 @@ export default function ResellerCustomerDetail() {
   const params = useParams<{ id: string }>();
   const customerId = params.id;
   const [, setLocation] = useLocation();
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const { toast } = useToast();
 
   const { data, isLoading, error } = useQuery<CustomerDetailResponse>({
     queryKey: ["/api/customers", customerId],
     enabled: !!customerId,
+  });
+
+  const updateCustomerMutation = useMutation({
+    mutationFn: async (customerData: Record<string, unknown>) => {
+      const response = await apiRequest("PATCH", `/api/reseller/customers/${customerId}`, customerData);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/customers", customerId] });
+      queryClient.invalidateQueries({ queryKey: ["/api/reseller/customers"] });
+      setEditDialogOpen(false);
+      toast({
+        title: "Cliente aggiornato",
+        description: "I dati del cliente sono stati salvati correttamente.",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Errore",
+        description: error.message || "Impossibile aggiornare il cliente",
+        variant: "destructive",
+      });
+    },
   });
 
   if (isLoading) {
@@ -98,6 +128,15 @@ export default function ResellerCustomerDetail() {
         <Badge variant={customer.isActive ? "default" : "secondary"} data-testid="badge-customer-status">
           {customer.isActive ? "Attivo" : "Inattivo"}
         </Badge>
+        <Button 
+          variant="outline" 
+          size="sm"
+          onClick={() => setEditDialogOpen(true)}
+          data-testid="button-edit-customer"
+        >
+          <Pencil className="h-4 w-4 mr-2" />
+          Modifica
+        </Button>
       </div>
 
       <div className="grid gap-6 md:grid-cols-2">
@@ -400,6 +439,121 @@ export default function ResellerCustomerDetail() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Modifica Cliente</DialogTitle>
+            <DialogDescription>
+              Modifica i dati del cliente {customer.fullName}
+            </DialogDescription>
+          </DialogHeader>
+          <CustomerEditForm
+            customer={customer}
+            billingData={billingData}
+            onSave={(formData) => updateCustomerMutation.mutate(formData)}
+            onCancel={() => setEditDialogOpen(false)}
+            isPending={updateCustomerMutation.isPending}
+          />
+        </DialogContent>
+      </Dialog>
     </div>
+  );
+}
+
+function CustomerEditForm({
+  customer,
+  billingData,
+  onSave,
+  onCancel,
+  isPending,
+}: {
+  customer: User;
+  billingData: BillingData | null;
+  onSave: (data: Record<string, unknown>) => void;
+  onCancel: () => void;
+  isPending: boolean;
+}) {
+  const [formData, setFormData] = useState({
+    fullName: customer.fullName,
+    email: customer.email,
+    phone: customer.phone || "",
+    isActive: customer.isActive,
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onSave(formData);
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="space-y-2">
+        <label htmlFor="fullName" className="text-sm font-medium">
+          Nome Completo
+        </label>
+        <input
+          id="fullName"
+          type="text"
+          value={formData.fullName}
+          onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+          className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+          required
+          data-testid="input-edit-fullName"
+        />
+      </div>
+
+      <div className="space-y-2">
+        <label htmlFor="email" className="text-sm font-medium">
+          Email
+        </label>
+        <input
+          id="email"
+          type="email"
+          value={formData.email}
+          onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+          className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+          required
+          data-testid="input-edit-email"
+        />
+      </div>
+
+      <div className="space-y-2">
+        <label htmlFor="phone" className="text-sm font-medium">
+          Telefono
+        </label>
+        <input
+          id="phone"
+          type="tel"
+          value={formData.phone}
+          onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+          className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+          data-testid="input-edit-phone"
+        />
+      </div>
+
+      <div className="flex items-center gap-2">
+        <input
+          id="isActive"
+          type="checkbox"
+          checked={formData.isActive}
+          onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
+          className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+          data-testid="input-edit-isActive"
+        />
+        <label htmlFor="isActive" className="text-sm font-medium">
+          Cliente attivo
+        </label>
+      </div>
+
+      <div className="flex justify-end gap-2 pt-4">
+        <Button type="button" variant="outline" onClick={onCancel} data-testid="button-cancel-edit">
+          Annulla
+        </Button>
+        <Button type="submit" disabled={isPending} data-testid="button-save-edit">
+          {isPending ? "Salvataggio..." : "Salva"}
+        </Button>
+      </div>
+    </form>
   );
 }
