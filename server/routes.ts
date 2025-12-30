@@ -12825,7 +12825,19 @@ export function registerRoutes(app: Express): Server {
         const warehouseStats = await storage.getWarehouseGlobalStats();
         const ecommerceStats = await storage.getEcommerceStats();
         
-        stats.overview = overviewKPIs;
+        // Compute KPI counts from filtered data (consistent with repairsByStatus chart)
+        const activeStatuses = ['ingressato', 'in_diagnosi', 'preventivo_emesso', 'preventivo_accettato', 'attesa_ricambi', 'in_riparazione', 'pronto_ritiro'];
+        const completedStatuses = ['consegnato'];
+        
+        // Always derive KPI from the same data source used for charts
+        stats.overview = {
+          ...overviewKPIs,
+          totalRepairs: allRepairs.length,
+          activeRepairs: allRepairs.filter(r => activeStatuses.includes(r.status)).length,
+          completedRepairs: allRepairs.filter(r => completedStatuses.includes(r.status)).length,
+          totalTickets: allTickets.length,
+          openTickets: allTickets.filter(t => t.status === 'open').length,
+        };
         stats.ticketsByStatus = ticketsByStatus;
         stats.repairsByStatus = repairsByStatus;
         stats.topProducts = topProducts;
