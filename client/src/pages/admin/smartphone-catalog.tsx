@@ -825,10 +825,6 @@ export default function AdminSmartphoneCatalog() {
                     <TableHead>Dispositivo</TableHead>
                     <TableHead>Categoria</TableHead>
                     <TableHead>Rivenditore</TableHead>
-                    <TableHead>Storage</TableHead>
-                    <TableHead>Grado</TableHead>
-                    <TableHead>Stato Rete</TableHead>
-                    <TableHead>Batteria</TableHead>
                     <TableHead className="text-right">Prezzo</TableHead>
                     <TableHead className="text-center">Shop</TableHead>
                     <TableHead className="w-24">Azioni</TableHead>
@@ -893,30 +889,6 @@ export default function AdminSmartphoneCatalog() {
                             </div>
                           );
                         })()}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-1">
-                          <HardDrive className="h-4 w-4 text-muted-foreground" />
-                          {smartphone.specs?.storage || "-"}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        {smartphone.specs?.grade && (
-                          <Badge className={`${getGradeColor(smartphone.specs.grade)} text-white`}>
-                            {smartphone.specs.grade}
-                          </Badge>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        {getNetworkLockBadge(smartphone.specs?.networkLock)}
-                      </TableCell>
-                      <TableCell>
-                        {smartphone.specs?.batteryHealth && (
-                          <div className="flex items-center gap-1">
-                            <Battery className="h-4 w-4 text-muted-foreground" />
-                            {smartphone.specs.batteryHealth}%
-                          </div>
-                        )}
                       </TableCell>
                       <TableCell className="text-right font-medium">
                         {(smartphone.unitPrice / 100).toFixed(2)}
