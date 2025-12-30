@@ -22,6 +22,7 @@ The backend is an `Express.js` application with TypeScript, featuring a RESTful 
 *   **Customer & Service Management**: Corporate branch management, a standardized service catalog with custom pricing, and a delivery appointment system.
 *   **Integrations**: Direct integration with SIFAR supplier API for spare parts ordering, including credential management, store mapping, catalog browsing, cart functionality, and order submission.
 *   **B2B Ordering System**: Multi-level B2B ordering supporting both Reseller→Admin and RepairCenter→Reseller purchase flows with automatic stock transfers, order approval workflows, shipping tracking, and receipt confirmation.
+*   **Multi-Role Ticketing**: Two ticket types - "support" (customer→admin) and "internal" (between business entities). Internal tickets enable resellers, repair centers, and admins to communicate with role-based filtering and access control. Tickets include initiator/target tracking with proper role-based visibility.
 
 ## External Dependencies
 
