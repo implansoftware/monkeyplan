@@ -146,6 +146,7 @@ import RepairCenterUtilityPractices from "@/pages/repair-center/utility/practice
 import RepairCenterUtilityPracticeDetail from "@/pages/repair-center/utility/practice-detail";
 import RepairCenterUtilityCommissions from "@/pages/repair-center/utility/commissions";
 import RepairCenterUtilityReports from "@/pages/repair-center/utility/reports";
+import RepairCenterTransferRequests from "@/pages/repair-center/transfer-requests";
 
 // Customer pages
 import CustomerDashboard from "@/pages/customer/dashboard";
@@ -185,6 +186,10 @@ import AdminB2BReturns from "@/pages/admin/b2b-returns";
 import ResellerMarketplace from "@/pages/reseller/marketplace";
 import ResellerMarketplaceOrders from "@/pages/reseller/marketplace-orders";
 import ResellerMarketplaceSales from "@/pages/reseller/marketplace-sales";
+
+// Transfer requests
+import SubResellerTransferRequests from "@/pages/reseller/sub-reseller-transfer-requests";
+import IncomingTransferRequests from "@/pages/reseller/incoming-transfer-requests";
 
 function Router() {
   return (
@@ -307,6 +312,8 @@ function Router() {
       <ProtectedRoute path="/reseller/marketplace" component={ResellerMarketplace} />
       <ProtectedRoute path="/reseller/marketplace-orders" component={ResellerMarketplaceOrders} />
       <ProtectedRoute path="/reseller/marketplace-sales" component={ResellerMarketplaceSales} />
+      <ProtectedRoute path="/reseller/sub-transfer-requests" component={SubResellerTransferRequests} />
+      <ProtectedRoute path="/reseller/incoming-transfer-requests" component={IncomingTransferRequests} />
       
       {/* Repair Center routes */}
       <ProtectedRoute path="/repair-center" component={RepairCenterDashboard} />
@@ -333,6 +340,7 @@ function Router() {
       <ProtectedRoute path="/repair-center/utility/practices" component={RepairCenterUtilityPractices} />
       <ProtectedRoute path="/repair-center/utility/commissions" component={RepairCenterUtilityCommissions} />
       <ProtectedRoute path="/repair-center/utility/reports" component={RepairCenterUtilityReports} />
+      <ProtectedRoute path="/repair-center/transfer-requests" component={RepairCenterTransferRequests} />
       <ProtectedRoute path="/repair-center/diagnostics" component={DiagnosisList} />
       <ProtectedRoute path="/repair-center/quotes" component={QuotesList} />
       

@@ -36,6 +36,8 @@ import {
   Warehouse,
   TrendingUp,
   FolderOpen,
+  Inbox,
+  Send,
 } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useState, Fragment, useMemo } from "react";
@@ -179,6 +181,8 @@ const menuItems = {
     { title: "I Miei Ordini B2B", url: "/reseller/b2b-orders", icon: ShoppingCart, group: "Acquisti B2B" },
     { title: "I Miei Resi B2B", url: "/reseller/b2b-returns", icon: RotateCcw, group: "Acquisti B2B" },
     { title: "Ordini Centri Rip.", url: "/reseller/rc-b2b-orders", icon: Building2, group: "Acquisti B2B" },
+    { title: "Richieste Ricevute", url: "/reseller/incoming-transfer-requests", icon: Inbox, group: "Richieste Trasf." },
+    { title: "Richieste Inviate", url: "/reseller/sub-transfer-requests", icon: Send, group: "Richieste Trasf." },
     { title: "Catalogo Marketplace", url: "/reseller/marketplace", icon: Store, group: "Marketplace P2P" },
     { title: "I Miei Acquisti", url: "/reseller/marketplace-orders", icon: ShoppingCart, group: "Marketplace P2P" },
     { title: "Le Mie Vendite", url: "/reseller/marketplace-sales", icon: TrendingUp, group: "Marketplace P2P" },
@@ -199,6 +203,7 @@ const menuItems = {
     { title: "Catalogo B2B", url: "/repair-center/b2b-catalog", icon: ShoppingCart, group: "Acquisti B2B" },
     { title: "Ordini B2B", url: "/repair-center/b2b-orders", icon: FileText, group: "Acquisti B2B" },
     { title: "Resi B2B", url: "/repair-center/b2b-returns", icon: RotateCcw, group: "Acquisti B2B" },
+    { title: "Richieste Trasf.", url: "/repair-center/transfer-requests", icon: Send, group: "Acquisti B2B" },
     { title: "Marketplace Rivenditori", url: "/repair-center/marketplace", icon: Store, group: "Marketplace" },
     { title: "Utility", url: "/repair-center/utility", icon: Zap, group: "Utility" },
     { title: "Fornitori Utility", url: "/repair-center/utility/suppliers", icon: Phone, group: "Utility" },
