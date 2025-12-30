@@ -553,10 +553,23 @@ export default function AdminDashboard() {
               <ResponsiveContainer width="100%" height={250}>
                 <BarChart data={repairsChartData}>
                   <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" />
+                  <XAxis dataKey="name" tick={{ fontSize: 11 }} />
                   <YAxis />
-                  <Tooltip />
-                  <Bar dataKey="value" fill="hsl(var(--primary))" />
+                  <Tooltip 
+                    contentStyle={{ 
+                      backgroundColor: 'hsl(var(--background))', 
+                      border: '1px solid hsl(var(--border))',
+                      borderRadius: '6px',
+                      padding: '8px 12px'
+                    }}
+                    formatter={(value: number, name: string) => [value, 'Riparazioni']}
+                    labelFormatter={(label) => label}
+                  />
+                  <Bar dataKey="value" fill="hsl(var(--primary))">
+                    {repairsChartData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.fill} />
+                    ))}
+                  </Bar>
                 </BarChart>
               </ResponsiveContainer>
             )}
