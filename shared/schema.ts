@@ -555,6 +555,7 @@ export const repairCenters = pgTable("repair_centers", {
   phone: text("phone").notNull(),
   email: text("email").notNull(),
   resellerId: varchar("reseller_id"), // Rivenditore di appartenenza
+  subResellerId: varchar("sub_reseller_id"), // Sub-reseller di appartenenza (opzionale)
   isActive: boolean("is_active").notNull().default(true),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   // Dati fiscali
