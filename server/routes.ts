@@ -12818,6 +12818,12 @@ export function registerRoutes(app: Express): Server {
         subResellerId: assignedSubResellerId,
       });
       
+      // If acting as a repair center context, assign customer to that center
+      const context = getEffectiveContext(req);
+      if (context.repairCenterId) {
+        await storage.setCustomerRepairCenters(customer.id, [context.repairCenterId]);
+      }
+      
       // Remove password from response
       const { password: _, ...customerWithoutPassword } = customer;
       
