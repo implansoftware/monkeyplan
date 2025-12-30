@@ -10,6 +10,8 @@ export const resellerCategoryEnum = pgEnum("reseller_category", ["standard", "fr
 export const customerTypeEnum = pgEnum("customer_type", ["private", "company"]);
 export const ticketStatusEnum = pgEnum("ticket_status", ["open", "in_progress", "closed"]);
 export const ticketPriorityEnum = pgEnum("ticket_priority", ["low", "medium", "high"]);
+export const ticketTypeEnum = pgEnum("ticket_type", ["support", "internal"]); // support = cliente→admin, internal = tra entità business
+export const ticketTargetTypeEnum = pgEnum("ticket_target_type", ["admin", "reseller", "repair_center"]); // destinatario del ticket
 export const repairStatusEnum = pgEnum("repair_status", [
   "pending",           // In attesa (stato iniziale)
   "ingressato",        // Ricevuto in laboratorio
@@ -2897,12 +2899,20 @@ export const serviceItemPrices = pgTable("service_item_prices", {
 export const tickets = pgTable("tickets", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   ticketNumber: text("ticket_number").notNull().unique(),
-  customerId: varchar("customer_id").notNull(),
+  customerId: varchar("customer_id").notNull(), // Mantenuto per backward compatibility (clienti)
   subject: text("subject").notNull(),
   description: text("description").notNull(),
   status: ticketStatusEnum("status").notNull().default("open"),
   priority: ticketPriorityEnum("priority").notNull().default("medium"),
   assignedTo: varchar("assigned_to"),
+  
+  // Nuovi campi per sistema ticket multi-ruolo
+  ticketType: ticketTypeEnum("ticket_type").notNull().default("support"), // support = cliente→admin, internal = tra entità business
+  initiatorId: varchar("initiator_id"), // Chi ha creato il ticket (per ticket interni)
+  initiatorRole: varchar("initiator_role"), // Ruolo di chi ha creato: 'reseller', 'repair_center', 'customer'
+  targetType: ticketTargetTypeEnum("target_type").default("admin"), // Tipo destinatario: 'admin', 'reseller', 'repair_center'
+  targetId: varchar("target_id"), // ID specifico del destinatario (se non admin)
+  
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
