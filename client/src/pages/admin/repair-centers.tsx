@@ -453,12 +453,15 @@ export default function AdminRepairCenters() {
                     {selectedResellerId && subResellers.length > 0 && (
                       <div className="space-y-2">
                         <Label htmlFor="subResellerId">Sub-Reseller di Riferimento</Label>
-                        <Select value={selectedSubResellerId} onValueChange={setSelectedSubResellerId}>
+                        <Select 
+                          value={selectedSubResellerId || "none"} 
+                          onValueChange={(value) => setSelectedSubResellerId(value === "none" ? "" : value)}
+                        >
                           <SelectTrigger id="subResellerId" data-testid="select-sub-reseller-id">
                             <SelectValue placeholder="Seleziona un sub-reseller (opzionale)" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="">Nessun sub-reseller</SelectItem>
+                            <SelectItem value="none">Nessun sub-reseller</SelectItem>
                             {subResellers.map((subReseller) => (
                               <SelectItem key={subReseller.id} value={subReseller.id}>
                                 {subReseller.fullName} ({subReseller.email})
