@@ -10,7 +10,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
-import { Users, Plus, Search, Mail, Building2, Wrench, Pencil, X, Check, Trash2 } from "lucide-react";
+import { Users, Plus, Search, Mail, Building2, Wrench, Pencil, X, Check, Trash2, Phone, MapPin, FileText, UserCheck } from "lucide-react";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
@@ -50,6 +50,18 @@ export default function ResellerCustomers() {
   const { data: repairCenters = [] } = useQuery<RepairCenter[]>({
     queryKey: ["/api/reseller/repair-centers"],
   });
+
+  const { data: subResellers = [] } = useQuery<User[]>({
+    queryKey: ["/api/reseller/sub-resellers"],
+  });
+
+  const hasSubResellers = subResellers.length > 0;
+
+  const getSubResellerName = (subResellerId: string | null | undefined) => {
+    if (!subResellerId) return null;
+    const subReseller = subResellers.find(sr => sr.id === subResellerId);
+    return subReseller?.fullName || null;
+  };
 
   const updateCustomerMutation = useMutation({
     mutationFn: async (data: { id: string; updates: typeof editForm }) => {
@@ -239,6 +251,7 @@ export default function ResellerCustomers() {
                   <TableHead>Nome Completo</TableHead>
                   <TableHead>Email</TableHead>
                   <TableHead>Username</TableHead>
+                  {hasSubResellers && <TableHead>Sub-Reseller</TableHead>}
                   <TableHead>Stato</TableHead>
                   <TableHead>Centri Riparazione</TableHead>
                   <TableHead>Riparazioni</TableHead>
@@ -248,6 +261,7 @@ export default function ResellerCustomers() {
               <TableBody>
                 {filteredCustomers.map((customer) => {
                   const customerRepairs = getCustomerRepairs(customer.id);
+                  const subResellerName = getSubResellerName(customer.subResellerId);
                   return (
                     <TableRow key={customer.id} data-testid={`row-customer-${customer.id}`}>
                       <TableCell className="font-medium" data-testid={`text-name-${customer.id}`}>
@@ -260,6 +274,18 @@ export default function ResellerCustomers() {
                         </div>
                       </TableCell>
                       <TableCell className="font-mono text-sm">{customer.username}</TableCell>
+                      {hasSubResellers && (
+                        <TableCell>
+                          {subResellerName ? (
+                            <Badge variant="secondary" className="text-xs" data-testid={`badge-sub-reseller-${customer.id}`}>
+                              <UserCheck className="h-3 w-3 mr-1" />
+                              {subResellerName}
+                            </Badge>
+                          ) : (
+                            <span className="text-muted-foreground text-sm">-</span>
+                          )}
+                        </TableCell>
+                      )}
                       <TableCell>
                         {customer.isActive ? (
                           <Badge variant="outline">Attivo</Badge>
@@ -445,9 +471,12 @@ export default function ResellerCustomers() {
                       <p className="text-sm text-muted-foreground">{selectedCustomer.username}</p>
                     </div>
                     <div>
-                      <Label>Data Registrazione</Label>
+                      <Label className="flex items-center gap-1">
+                        <Phone className="h-3 w-3" />
+                        Telefono
+                      </Label>
                       <p className="text-sm text-muted-foreground">
-                        {format(new Date(selectedCustomer.createdAt), "dd/MM/yyyy HH:mm")}
+                        {selectedCustomer.phone || <span className="italic">Non specificato</span>}
                       </p>
                     </div>
                     <div>
@@ -456,7 +485,89 @@ export default function ResellerCustomers() {
                         {selectedCustomer.isActive ? "Attivo" : "Disattivato"}
                       </p>
                     </div>
+                    <div>
+                      <Label>Data Registrazione</Label>
+                      <p className="text-sm text-muted-foreground">
+                        {format(new Date(selectedCustomer.createdAt), "dd/MM/yyyy HH:mm")}
+                      </p>
+                    </div>
+                    {hasSubResellers && (
+                      <div>
+                        <Label className="flex items-center gap-1">
+                          <UserCheck className="h-3 w-3" />
+                          Sub-Reseller
+                        </Label>
+                        <p className="text-sm text-muted-foreground">
+                          {getSubResellerName(selectedCustomer.subResellerId) || <span className="italic">Nessuno</span>}
+                        </p>
+                      </div>
+                    )}
                   </div>
+
+                  {selectedCustomer.customerType === "company" && (
+                    <div className="pt-4 border-t">
+                      <Label className="flex items-center gap-2 mb-3">
+                        <FileText className="h-4 w-4" />
+                        Dati Aziendali
+                      </Label>
+                      <div className="grid grid-cols-2 gap-4">
+                        {selectedCustomer.companyName && (
+                          <div>
+                            <Label className="text-xs text-muted-foreground">Ragione Sociale</Label>
+                            <p className="text-sm">{selectedCustomer.companyName}</p>
+                          </div>
+                        )}
+                        {selectedCustomer.vatNumber && (
+                          <div>
+                            <Label className="text-xs text-muted-foreground">P.IVA</Label>
+                            <p className="text-sm font-mono">{selectedCustomer.vatNumber}</p>
+                          </div>
+                        )}
+                        {selectedCustomer.fiscalCode && (
+                          <div>
+                            <Label className="text-xs text-muted-foreground">Codice Fiscale</Label>
+                            <p className="text-sm font-mono">{selectedCustomer.fiscalCode}</p>
+                          </div>
+                        )}
+                        {selectedCustomer.pec && (
+                          <div>
+                            <Label className="text-xs text-muted-foreground">PEC</Label>
+                            <p className="text-sm">{selectedCustomer.pec}</p>
+                          </div>
+                        )}
+                        {selectedCustomer.codiceUnivoco && (
+                          <div>
+                            <Label className="text-xs text-muted-foreground">Codice Univoco (SDI)</Label>
+                            <p className="text-sm font-mono">{selectedCustomer.codiceUnivoco}</p>
+                          </div>
+                        )}
+                        {selectedCustomer.iban && (
+                          <div className="col-span-2">
+                            <Label className="text-xs text-muted-foreground">IBAN</Label>
+                            <p className="text-sm font-mono">{selectedCustomer.iban}</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {(selectedCustomer.address || selectedCustomer.city) && (
+                    <div className="pt-4 border-t">
+                      <Label className="flex items-center gap-2 mb-3">
+                        <MapPin className="h-4 w-4" />
+                        Indirizzo
+                      </Label>
+                      <p className="text-sm text-muted-foreground">
+                        {[
+                          selectedCustomer.address,
+                          selectedCustomer.zipCode,
+                          selectedCustomer.city,
+                          selectedCustomer.country
+                        ].filter(Boolean).join(", ")}
+                      </p>
+                    </div>
+                  )}
+
                   <div className="pt-4 border-t">
                     <Label className="flex items-center gap-2 mb-2">
                       <Wrench className="h-4 w-4" />
