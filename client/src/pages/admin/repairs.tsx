@@ -92,7 +92,8 @@ export default function AdminRepairs() {
     })).sort((a, b) => a.name.localeCompare(b.name));
   }, [resellersData]);
 
-  const { data: paginatedData, isLoading } = useQuery<PaginatedRepairsResponse>({
+  // Paginated query for table view
+  const { data: paginatedData, isLoading: isLoadingTable } = useQuery<PaginatedRepairsResponse>({
     queryKey: [
       "/api/admin/repairs/paginated",
       page,
@@ -121,11 +122,52 @@ export default function AdminRepairs() {
       if (!res.ok) throw new Error("Failed to fetch repairs");
       return res.json();
     },
+    enabled: viewMode === "table",
   });
 
-  const repairs = paginatedData?.data || [];
+  // Full dataset query for kanban view (uses original endpoint)
+  const { data: kanbanRepairs = [], isLoading: isLoadingKanban } = useQuery<RepairOrderWithSLA[]>({
+    queryKey: ["/api/repair-orders", { slaSeverity: slaFilter }],
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      if (slaFilter !== "all") params.append("slaSeverity", slaFilter);
+      const res = await fetch(`/api/repair-orders?${params.toString()}`, { credentials: "include" });
+      if (!res.ok) throw new Error("Failed to fetch repairs");
+      return res.json();
+    },
+    enabled: viewMode === "kanban",
+  });
+
+  // Apply client-side filtering for kanban (since it uses the original endpoint)
+  const filteredKanbanRepairs = useMemo(() => {
+    return kanbanRepairs.filter((repair) => {
+      const searchLower = debouncedSearch.toLowerCase();
+      const matchesSearch = !debouncedSearch || 
+        repair.orderNumber.toLowerCase().includes(searchLower) ||
+        repair.deviceModel.toLowerCase().includes(searchLower) ||
+        (repair.customerName && repair.customerName.toLowerCase().includes(searchLower)) ||
+        (repair.resellerName && repair.resellerName.toLowerCase().includes(searchLower));
+      const matchesStatus = statusFilter === "all" || repair.status === statusFilter;
+      const matchesRepairCenter = repairCenterFilter === "all" || repair.repairCenterId === repairCenterFilter;
+      const matchesReseller = resellerFilter === "all" || repair.resellerId === resellerFilter;
+      
+      let matchesDate = true;
+      if (dateRange?.from) {
+        const repairDate = new Date(repair.createdAt);
+        matchesDate = repairDate >= dateRange.from;
+        if (dateRange.to) {
+          matchesDate = matchesDate && repairDate <= dateRange.to;
+        }
+      }
+      
+      return matchesSearch && matchesStatus && matchesRepairCenter && matchesReseller && matchesDate;
+    });
+  }, [kanbanRepairs, debouncedSearch, statusFilter, repairCenterFilter, resellerFilter, dateRange]);
+
+  const repairs = viewMode === "table" ? (paginatedData?.data || []) : filteredKanbanRepairs;
   const totalPages = paginatedData?.totalPages || 1;
   const total = paginatedData?.total || 0;
+  const isLoading = viewMode === "table" ? isLoadingTable : isLoadingKanban;
 
   const handleExport = async () => {
     try {
@@ -172,7 +214,9 @@ export default function AdminRepairs() {
       return await res.json();
     },
     onSuccess: () => {
+      // Invalidate both paginated and non-paginated queries
       queryClient.invalidateQueries({ queryKey: ["/api/repair-orders"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/repairs/paginated"] });
       toast({ title: "Stato aggiornato" });
     },
   });
@@ -670,6 +714,7 @@ export default function AdminRepairs() {
         onOpenChange={setWizardOpen}
         onSuccess={() => {
           queryClient.invalidateQueries({ queryKey: ["/api/repair-orders"] });
+          queryClient.invalidateQueries({ queryKey: ["/api/admin/repairs/paginated"] });
         }}
       />
     </div>
