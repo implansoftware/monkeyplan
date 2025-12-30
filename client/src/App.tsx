@@ -39,6 +39,7 @@ import AdminServiceCatalog from "@/pages/admin/service-catalog";
 import AdminSuppliers from "@/pages/admin/suppliers";
 import AdminSupplierOrders from "@/pages/admin/supplier-orders";
 import AdminSupplierReturns from "@/pages/admin/supplier-returns";
+import AdminTransferRequests from "@/pages/admin/transfer-requests";
 import AdminExternalIntegrations from "@/pages/admin/external-integrations";
 import AdminCustomers from "@/pages/admin/customers";
 import AdminCustomerDetail from "@/pages/admin/customer-detail";
@@ -233,6 +234,7 @@ function Router() {
       <ProtectedRoute path="/admin/suppliers" component={AdminSuppliers} />
       <ProtectedRoute path="/admin/supplier-orders" component={AdminSupplierOrders} />
       <ProtectedRoute path="/admin/supplier-returns" component={AdminSupplierReturns} />
+      <ProtectedRoute path="/admin/transfer-requests" component={AdminTransferRequests} />
       <ProtectedRoute path="/admin/external-integrations" component={AdminExternalIntegrations} />
       <ProtectedRoute path="/admin/utility" component={AdminUtility} />
       <ProtectedRoute path="/admin/utility/suppliers" component={AdminUtilitySuppliers} />

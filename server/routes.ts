@@ -21265,6 +21265,147 @@ export function registerRoutes(app: Express): Server {
   });
 
   // ==========================================
+  // ADMIN TRANSFER REQUESTS MANAGEMENT
+  // ==========================================
+
+  // Admin: List all transfer requests
+  app.get("/api/admin/transfer-requests", requireRole("admin"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      const requests = await storage.listTransferRequests({});
+      
+      // Enrich with items and related info
+      const enrichedRequests = await Promise.all(requests.map(async (request) => {
+        const items = await storage.listTransferRequestItems(request.id);
+        const enrichedItems = await Promise.all(items.map(async (item) => {
+          const product = await storage.getProduct(item.productId);
+          return { ...item, product };
+        }));
+        
+        // Get requester info
+        let requesterName = "";
+        if (request.requesterType === 'repair_center') {
+          const repairCenter = await storage.getRepairCenter(request.requesterId);
+          requesterName = repairCenter?.name || "Centro sconosciuto";
+        } else {
+          const user = await storage.getUser(request.requesterId);
+          requesterName = user?.username || "Utente sconosciuto";
+        }
+        
+        // Get source warehouse info
+        const sourceWarehouse = await storage.getWarehouse(request.sourceWarehouseId);
+        const requesterWarehouse = await storage.getWarehouse(request.requesterWarehouseId);
+        
+        return { 
+          ...request, 
+          items: enrichedItems,
+          requesterName,
+          sourceWarehouseName: sourceWarehouse?.name || "Magazzino sconosciuto",
+          requesterWarehouseName: requesterWarehouse?.name || "Magazzino sconosciuto"
+        };
+      }));
+      
+      res.json(enrichedRequests);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Admin: Get single transfer request with items
+  app.get("/api/admin/transfer-requests/:id", requireRole("admin"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      const request = await storage.getTransferRequest(req.params.id);
+      if (!request) return res.status(404).json({ error: "Richiesta non trovata" });
+      
+      const items = await storage.listTransferRequestItems(request.id);
+      const enrichedItems = await Promise.all(items.map(async (item) => {
+        const product = await storage.getProduct(item.productId);
+        return { ...item, product };
+      }));
+      
+      res.json({ ...request, items: enrichedItems });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Admin: Approve or reject transfer request
+  app.patch("/api/admin/transfer-requests/:id/decide", requireRole("admin"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      const request = await storage.getTransferRequest(req.params.id);
+      if (!request) return res.status(404).json({ error: "Richiesta non trovata" });
+      if (request.status !== 'pending') return res.status(400).json({ error: "Solo le richieste in attesa possono essere gestite" });
+      
+      const { decision, rejectionReason, items } = req.body;
+      
+      if (decision === 'approve') {
+        if (items && Array.isArray(items)) {
+          for (const item of items) {
+            await storage.updateTransferRequestItem(item.id, { approvedQuantity: item.approvedQuantity });
+          }
+        }
+        const updated = await storage.updateTransferRequest(req.params.id, {
+          status: 'approved',
+          approvedBy: req.user.id,
+          approvedAt: new Date()
+        });
+        res.json(updated);
+      } else if (decision === 'reject') {
+        const updated = await storage.updateTransferRequest(req.params.id, {
+          status: 'rejected',
+          rejectedBy: req.user.id,
+          rejectedAt: new Date(),
+          rejectionReason
+        });
+        res.json(updated);
+      } else {
+        res.status(400).json({ error: "Decisione non valida" });
+      }
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Admin: Ship approved transfer request
+  app.patch("/api/admin/transfer-requests/:id/ship", requireRole("admin"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      const request = await storage.getTransferRequest(req.params.id);
+      if (!request) return res.status(404).json({ error: "Richiesta non trovata" });
+      if (request.status !== 'approved') return res.status(400).json({ error: "Solo le richieste approvate possono essere spedite" });
+      
+      const { items } = req.body;
+      
+      if (items && Array.isArray(items)) {
+        for (const item of items) {
+          await storage.updateTransferRequestItem(item.id, { shippedQuantity: item.shippedQuantity });
+          await storage.updateWarehouseStockQuantity(request.sourceWarehouseId, item.productId, -item.shippedQuantity);
+          await storage.createWarehouseMovement({
+            warehouseId: request.sourceWarehouseId,
+            productId: item.productId,
+            movementType: 'trasferimento_out',
+            quantity: item.shippedQuantity,
+            referenceType: 'transfer_request',
+            referenceId: request.id,
+            createdBy: req.user.id,
+          });
+        }
+      }
+      
+      const updated = await storage.updateTransferRequest(req.params.id, {
+        status: 'shipped',
+        shippedAt: new Date(),
+        shippedBy: req.user.id
+      });
+      res.json(updated);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // ==========================================
   // B2B RESELLER PURCHASE ORDERS
   // ==========================================
 
