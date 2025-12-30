@@ -12353,6 +12353,7 @@ export function registerRoutes(app: Express): Server {
         fullName: z.string().min(2, "Nome richiesto (minimo 2 caratteri)"),
         email: z.string().email("Email non valida").optional().nullable(),
         phone: z.string().optional().nullable(),
+        subResellerId: z.string().optional().nullable(),
       });
       
       const validatedData = quickCreateSchema.parse(req.body);
@@ -12400,10 +12401,31 @@ export function registerRoutes(app: Express): Server {
       
       // Determine resellerId based on role
       let assignedResellerId: string | null = null;
+      let assignedSubResellerId: string | null = null;
+      
       if (req.user.role === 'reseller') {
         assignedResellerId = req.user.id;
+        // If sub-reseller is specified, validate it belongs to this reseller
+        if (validatedData.subResellerId) {
+          const subReseller = await storage.getUser(validatedData.subResellerId);
+          if (!subReseller || subReseller.role !== 'sub_reseller' || subReseller.parentResellerId !== req.user.id) {
+            return res.status(400).send("Sub-reseller non valido o non appartenente a questo rivenditore");
+          }
+          assignedSubResellerId = validatedData.subResellerId;
+        }
       } else if (req.user.role === 'admin') {
         assignedResellerId = (req.body.resellerId as string) || null;
+        // For admin, sub-reseller requires a valid resellerId
+        if (validatedData.subResellerId) {
+          if (!assignedResellerId) {
+            return res.status(400).send("Seleziona un rivenditore prima di assegnare un sub-reseller");
+          }
+          const subReseller = await storage.getUser(validatedData.subResellerId);
+          if (!subReseller || subReseller.role !== 'sub_reseller' || subReseller.parentResellerId !== assignedResellerId) {
+            return res.status(400).send("Sub-reseller non valido o non appartenente al rivenditore selezionato");
+          }
+          assignedSubResellerId = validatedData.subResellerId;
+        }
       }
       
       // Create customer
@@ -12416,6 +12438,7 @@ export function registerRoutes(app: Express): Server {
         role: 'customer',
         isActive: true,
         resellerId: assignedResellerId,
+        subResellerId: assignedSubResellerId,
       });
       
       // Remove password from response
@@ -12464,11 +12487,39 @@ export function registerRoutes(app: Express): Server {
       // - Reseller/Repair Center: Force their own ID (cannot be overridden)
       // - Admin: Can specify resellerId in body or leave null
       let assignedResellerId: string | null = null;
-      if (req.user.role === 'reseller' || req.user.role === 'repair_center') {
+      let assignedSubResellerId: string | null = null;
+      const subResellerIdFromBody = req.body.subResellerId as string | undefined;
+      
+      if (req.user.role === 'reseller') {
         assignedResellerId = req.user.id;
+        // Validate sub-reseller belongs to this reseller
+        if (subResellerIdFromBody) {
+          const subReseller = await storage.getUser(subResellerIdFromBody);
+          if (!subReseller || subReseller.role !== 'sub_reseller' || subReseller.parentResellerId !== req.user.id) {
+            return res.status(400).send("Sub-reseller non valido o non appartenente a questo rivenditore");
+          }
+          assignedSubResellerId = subResellerIdFromBody;
+        }
+      } else if (req.user.role === 'repair_center') {
+        assignedResellerId = req.user.resellerId || req.user.id;
+        // Repair centers cannot assign sub-resellers
+        if (subResellerIdFromBody) {
+          return res.status(400).send("I centri di riparazione non possono assegnare sub-reseller ai clienti");
+        }
       } else if (req.user.role === 'admin') {
         // Admin can optionally specify resellerId from body
         assignedResellerId = (req.body.resellerId as string) || null;
+        // Validate sub-reseller requires a reseller to be selected
+        if (subResellerIdFromBody) {
+          if (!assignedResellerId) {
+            return res.status(400).send("Seleziona un rivenditore prima di assegnare un sub-reseller");
+          }
+          const subReseller = await storage.getUser(subResellerIdFromBody);
+          if (!subReseller || subReseller.role !== 'sub_reseller' || subReseller.parentResellerId !== assignedResellerId) {
+            return res.status(400).send("Sub-reseller non valido o non appartenente al rivenditore selezionato");
+          }
+          assignedSubResellerId = subResellerIdFromBody;
+        }
       }
       
       // Prepare user data with reseller assignment
@@ -12481,6 +12532,7 @@ export function registerRoutes(app: Express): Server {
         role: 'customer' as const,
         isActive: true,
         resellerId: assignedResellerId,
+        subResellerId: assignedSubResellerId,
       };
       
       // Prepare billing data

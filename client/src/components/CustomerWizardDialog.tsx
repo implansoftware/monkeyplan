@@ -53,6 +53,7 @@ export function CustomerWizardDialog({ open, onOpenChange, onSuccess }: Customer
   const [customerType, setCustomerType] = useState<"private" | "company">("private");
   const [createdCustomer, setCreatedCustomer] = useState<any>(null);
   const [selectedResellerId, setSelectedResellerId] = useState<string | null>(null);
+  const [selectedSubResellerId, setSelectedSubResellerId] = useState<string | null>(null);
   const [selectedRepairCenterIds, setSelectedRepairCenterIds] = useState<string[]>([]);
   
   const { toast } = useToast();
@@ -72,6 +73,12 @@ export function CustomerWizardDialog({ open, onOpenChange, onSuccess }: Customer
   const { data: repairCenters = [] } = useQuery<RepairCenter[]>({
     queryKey: ["/api/reseller/repair-centers"],
     enabled: isReseller || isRepairCenter,
+  });
+  
+  // Carica i sub-reseller per il reseller
+  const { data: subResellers = [] } = useQuery<UserType[]>({
+    queryKey: ["/api/reseller/sub-resellers"],
+    enabled: isReseller,
   });
 
   const form = useForm<InsertCustomerWizard>({
@@ -95,10 +102,13 @@ export function CustomerWizardDialog({ open, onOpenChange, onSuccess }: Customer
 
   const createCustomerMutation = useMutation({
     mutationFn: async (data: InsertCustomerWizard) => {
-      // Build payload with optional resellerId and repairCenterIds
+      // Build payload with optional resellerId, subResellerId and repairCenterIds
       let payload: any = { ...data };
       if (isAdmin && selectedResellerId) {
         payload.resellerId = selectedResellerId;
+      }
+      if (isReseller && selectedSubResellerId) {
+        payload.subResellerId = selectedSubResellerId;
       }
       if (selectedRepairCenterIds.length > 0) {
         payload.repairCenterIds = selectedRepairCenterIds;
@@ -158,6 +168,7 @@ export function CustomerWizardDialog({ open, onOpenChange, onSuccess }: Customer
     setCustomerType("private");
     setCreatedCustomer(null);
     setSelectedResellerId(null);
+    setSelectedSubResellerId(null);
     setSelectedRepairCenterIds([]);
     onOpenChange(false);
   };
@@ -527,6 +538,37 @@ export function CustomerWizardDialog({ open, onOpenChange, onSuccess }: Customer
             </>
           )}
 
+          {/* Selezione sub-reseller per reseller */}
+          {isReseller && subResellers.length > 0 && (
+            <>
+              <Separator />
+              <FormItem>
+                <FormLabel>Sub-Reseller di Riferimento</FormLabel>
+                <Select 
+                  onValueChange={(value) => setSelectedSubResellerId(value === "none" ? null : value)} 
+                  value={selectedSubResellerId || "none"}
+                >
+                  <FormControl>
+                    <SelectTrigger data-testid="select-sub-reseller">
+                      <SelectValue placeholder="Seleziona sub-reseller (opzionale)" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value="none">Nessun sub-reseller</SelectItem>
+                    {subResellers.map((subReseller) => (
+                      <SelectItem key={subReseller.id} value={subReseller.id}>
+                        {subReseller.fullName} ({subReseller.email})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FormDescription>
+                  Associa questo cliente a un sub-reseller specifico
+                </FormDescription>
+              </FormItem>
+            </>
+          )}
+
           {/* Selezione centri di riparazione per reseller/repair_center */}
           {(isReseller || isRepairCenter) && repairCenters.length > 0 && (
             <>
@@ -693,6 +735,15 @@ export function CustomerWizardDialog({ open, onOpenChange, onSuccess }: Customer
                 <h4 className="font-medium mb-2">Rivenditore di Riferimento</h4>
                 <p className="text-sm" data-testid="text-review-reseller">
                   {resellers.find(r => r.id === selectedResellerId)?.fullName || "N/D"}
+                </p>
+              </div>
+            )}
+
+            {isReseller && selectedSubResellerId && (
+              <div>
+                <h4 className="font-medium mb-2">Sub-Reseller di Riferimento</h4>
+                <p className="text-sm" data-testid="text-review-sub-reseller">
+                  {subResellers.find(r => r.id === selectedSubResellerId)?.fullName || "N/D"}
                 </p>
               </div>
             )}
