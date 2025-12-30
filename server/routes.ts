@@ -20915,6 +20915,31 @@ export function registerRoutes(app: Express): Server {
   // TRANSFER REQUESTS (da repair_center/sub_reseller)
   // ==========================================
 
+  // Repair Center: Search products with warehouse stock for transfer requests
+  app.get("/api/repair-center/transfer-requests/search-products", requireRole("repair_center"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      
+      const repairCenter = await storage.getRepairCenterByUserId(req.user.id);
+      if (!repairCenter) return res.status(404).json({ error: "Centro di riparazione non trovato" });
+      
+      const resellerWarehouse = await storage.getWarehouseByOwner('reseller', repairCenter.resellerId);
+      if (!resellerWarehouse) return res.status(404).json({ error: "Magazzino rivenditore non trovato" });
+      
+      const { query, productType } = req.query;
+      
+      const results = await storage.searchProductsWithStock({
+        query: query as string | undefined,
+        productType: productType as string | undefined,
+        warehouseIds: [resellerWarehouse.id],
+      });
+      
+      res.json(results);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   // Repair Center: List own transfer requests
   app.get("/api/repair-center/transfer-requests", requireRole("repair_center"), async (req, res) => {
     try {
@@ -21055,6 +21080,30 @@ export function registerRoutes(app: Express): Server {
         receivedAt: new Date()
       });
       res.json(updated);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Sub-reseller: Search products with warehouse stock for transfer requests
+  app.get("/api/reseller/sub-reseller/transfer-requests/search-products", requireRole("reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      const user = await storage.getUser(req.user.id);
+      if (!user?.parentResellerId) return res.status(403).json({ error: "Solo sub-reseller possono accedere" });
+      
+      const parentWarehouse = await storage.getWarehouseByOwner('reseller', user.parentResellerId);
+      if (!parentWarehouse) return res.status(404).json({ error: "Magazzino rivenditore padre non trovato" });
+      
+      const { query, productType } = req.query;
+      
+      const results = await storage.searchProductsWithStock({
+        query: query as string | undefined,
+        productType: productType as string | undefined,
+        warehouseIds: [parentWarehouse.id],
+      });
+      
+      res.json(results);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }
