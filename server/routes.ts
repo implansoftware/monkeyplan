@@ -12786,9 +12786,12 @@ export function registerRoutes(app: Express): Server {
         if (filterResellerId) repairFilter.resellerId = filterResellerId;
         if (filterRepairCenterId) repairFilter.repairCenterId = filterRepairCenterId;
         
-        // Get ticket counts by status (filtered if params provided)
-        // Note: tickets don't have resellerId/repairCenterId directly, so we filter by assignedTo user's org
-        const allTickets = await storage.listTickets();
+        // Get ticket counts by status (filtered by customer's reseller/repair center if params provided)
+        const ticketFilter: { resellerId?: string; repairCenterId?: string } = {};
+        if (filterResellerId) ticketFilter.resellerId = filterResellerId;
+        if (filterRepairCenterId) ticketFilter.repairCenterId = filterRepairCenterId;
+        
+        const allTickets = await storage.listTickets(Object.keys(ticketFilter).length > 0 ? ticketFilter : undefined);
         const ticketsByStatus = {
           open: allTickets.filter(t => t.status === 'open').length,
           in_progress: allTickets.filter(t => t.status === 'in_progress').length,

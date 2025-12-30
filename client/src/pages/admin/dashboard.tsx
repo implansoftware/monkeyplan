@@ -130,20 +130,15 @@ export default function AdminDashboard() {
   const [selectedResellerId, setSelectedResellerId] = useState<string>("");
   const [selectedRepairCenterId, setSelectedRepairCenterId] = useState<string>("");
   
-  // Build query params for filtered stats
-  const queryParams = new URLSearchParams();
-  if (selectedResellerId) queryParams.set("resellerId", selectedResellerId);
-  if (selectedRepairCenterId) queryParams.set("repairCenterId", selectedRepairCenterId);
-  const queryString = queryParams.toString();
+  // Build query params for filtered stats - use URL in queryKey for default fetcher
+  const statsParams = new URLSearchParams();
+  if (selectedResellerId) statsParams.set("resellerId", selectedResellerId);
+  if (selectedRepairCenterId) statsParams.set("repairCenterId", selectedRepairCenterId);
+  const statsQueryString = statsParams.toString();
+  const statsUrl = statsQueryString ? `/api/stats?${statsQueryString}` : "/api/stats";
   
   const { data: stats, isLoading } = useQuery<AdminStats>({
-    queryKey: ["/api/stats", selectedResellerId, selectedRepairCenterId],
-    queryFn: async () => {
-      const url = queryString ? `/api/stats?${queryString}` : "/api/stats";
-      const res = await fetch(url, { credentials: "include" });
-      if (!res.ok) throw new Error("Failed to fetch stats");
-      return res.json();
-    },
+    queryKey: [statsUrl],
   });
   
   // Fetch resellers for filter dropdown
@@ -640,11 +635,21 @@ export default function AdminDashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card>
           <CardHeader>
-            <CardTitle>Tickets per Stato</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <Ticket className="h-5 w-5" />
+              Tickets per Stato
+            </CardTitle>
           </CardHeader>
           <CardContent>
             {isLoading ? (
               <Skeleton className="h-64 w-full" />
+            ) : ticketsChartData.reduce((sum, item) => sum + item.value, 0) === 0 ? (
+              <div className="flex flex-col items-center justify-center h-[250px] text-muted-foreground">
+                <Ticket className="h-12 w-12 mb-4 opacity-40" />
+                <p className="text-sm text-center">
+                  Nessun ticket trovato
+                </p>
+              </div>
             ) : (
               <ResponsiveContainer width="100%" height={250}>
                 <PieChart>

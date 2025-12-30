@@ -1852,18 +1852,52 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Tickets
-  async listTickets(filters?: { customerId?: string; assignedTo?: string; status?: string }): Promise<Ticket[]> {
+  async listTickets(filters?: { customerId?: string; assignedTo?: string; status?: string; resellerId?: string; repairCenterId?: string }): Promise<Ticket[]> {
+    const conditions = [];
+    
+    // Standard filters
+    if (filters?.customerId) conditions.push(eq(tickets.customerId, filters.customerId));
+    if (filters?.assignedTo) conditions.push(eq(tickets.assignedTo, filters.assignedTo));
+    if (filters?.status) conditions.push(eq(tickets.status, filters.status as any));
+    
+    // Reseller filter: find customers belonging to this reseller
+    if (filters?.resellerId) {
+      const resellerCustomers = await db.select({ id: users.id })
+        .from(users)
+        .where(and(
+          eq(users.role, 'customer'),
+          eq(users.resellerId, filters.resellerId)
+        ));
+      
+      const customerIds = resellerCustomers.map(c => c.id);
+      if (customerIds.length > 0) {
+        conditions.push(inArray(tickets.customerId, customerIds));
+      } else {
+        // No customers for this reseller, return empty
+        return [];
+      }
+    }
+    
+    // Repair center filter: find tickets assigned to staff of this center
+    if (filters?.repairCenterId) {
+      // Get staff IDs associated with this repair center
+      const centerStaff = await db.select({ staffId: staffRepairCenters.staffId })
+        .from(staffRepairCenters)
+        .where(eq(staffRepairCenters.repairCenterId, filters.repairCenterId));
+      
+      const staffIds = centerStaff.map(s => s.staffId);
+      if (staffIds.length > 0) {
+        conditions.push(inArray(tickets.assignedTo, staffIds));
+      } else {
+        // No staff for this center, return empty
+        return [];
+      }
+    }
+    
     let query = db.select().from(tickets);
     
-    if (filters) {
-      const conditions = [];
-      if (filters.customerId) conditions.push(eq(tickets.customerId, filters.customerId));
-      if (filters.assignedTo) conditions.push(eq(tickets.assignedTo, filters.assignedTo));
-      if (filters.status) conditions.push(eq(tickets.status, filters.status as any));
-      
-      if (conditions.length > 0) {
-        query = query.where(and(...conditions)) as any;
-      }
+    if (conditions.length > 0) {
+      query = query.where(and(...conditions)) as any;
     }
     
     return await query.orderBy(desc(tickets.createdAt));
@@ -7243,57 +7277,55 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getUtilityPracticesStats(resellerId?: string, repairCenterId?: string): Promise<{ total: number; byStatus: Record<string, number>; totalCommissions: number; pendingCommissions: number }> {
-    // Build WHERE clause based on filters
-    let practicesQuery;
-    if (resellerId && repairCenterId) {
-      practicesQuery = await db.execute(sql`
-        SELECT status, COUNT(*) as count
-        FROM ${utilityPractices}
-        WHERE reseller_id = ${resellerId} AND repair_center_id = ${repairCenterId}
-        GROUP BY status
-      `);
-    } else if (resellerId) {
-      practicesQuery = await db.execute(sql`
-        SELECT status, COUNT(*) as count
-        FROM ${utilityPractices}
-        WHERE reseller_id = ${resellerId}
-        GROUP BY status
-      `);
-    } else if (repairCenterId) {
-      practicesQuery = await db.execute(sql`
-        SELECT status, COUNT(*) as count
-        FROM ${utilityPractices}
-        WHERE repair_center_id = ${repairCenterId}
-        GROUP BY status
-      `);
-    } else {
-      practicesQuery = await db.execute(sql`
-        SELECT status, COUNT(*) as count
-        FROM ${utilityPractices}
-        GROUP BY status
-      `);
+    // Use Drizzle ORM query builder for practices to enable dynamic filtering
+    const conditions = [];
+    if (resellerId) conditions.push(eq(utilityPractices.resellerId, resellerId));
+    if (repairCenterId) conditions.push(eq(utilityPractices.repairCenterId, repairCenterId));
+    
+    // Single query for practice counts by status with optional filters
+    let practicesQuery = db.select({
+      status: utilityPractices.status,
+      count: sql<number>`COUNT(*)`
+    }).from(utilityPractices);
+    
+    if (conditions.length > 0) {
+      practicesQuery = practicesQuery.where(and(...conditions)) as any;
     }
     
-    const commissionStats = await db.execute(sql`
-      SELECT 
-        COALESCE(SUM(amount_cents), 0) as total,
-        COALESCE(SUM(CASE WHEN status = 'pending' THEN amount_cents ELSE 0 END), 0) as pending
-      FROM ${utilityCommissions}
-    `);
+    const practicesByStatus = await practicesQuery.groupBy(utilityPractices.status);
+    
+    // Single query for commissions using JOIN with practices to apply same filters
+    // This avoids fetching practice IDs separately
+    let commissionQuery = db.select({
+      total: sql<number>`COALESCE(SUM(${utilityCommissions.amountCents}), 0)`,
+      pending: sql<number>`COALESCE(SUM(CASE WHEN ${utilityCommissions.status} = 'pending' THEN ${utilityCommissions.amountCents} ELSE 0 END), 0)`
+    }).from(utilityCommissions);
+    
+    if (conditions.length > 0) {
+      // Join with practices to apply filters
+      commissionQuery = db.select({
+        total: sql<number>`COALESCE(SUM(${utilityCommissions.amountCents}), 0)`,
+        pending: sql<number>`COALESCE(SUM(CASE WHEN ${utilityCommissions.status} = 'pending' THEN ${utilityCommissions.amountCents} ELSE 0 END), 0)`
+      }).from(utilityCommissions)
+        .innerJoin(utilityPractices, eq(utilityCommissions.practiceId, utilityPractices.id))
+        .where(and(...conditions)) as any;
+    }
+    
+    const commissionStats = await commissionQuery;
     
     const byStatus: Record<string, number> = {};
     let totalPractices = 0;
-    practicesQuery.rows.forEach((row: any) => {
+    practicesByStatus.forEach((row: any) => {
       byStatus[row.status] = parseInt(row.count) || 0;
       totalPractices += parseInt(row.count) || 0;
     });
     
-    const commRow = commissionStats.rows[0] as any;
+    const commRow = commissionStats[0] || { total: 0, pending: 0 };
     return {
       total: totalPractices,
       byStatus,
-      totalCommissions: parseInt(commRow?.total) || 0,
-      pendingCommissions: parseInt(commRow?.pending) || 0,
+      totalCommissions: parseInt(String(commRow.total)) || 0,
+      pendingCommissions: parseInt(String(commRow.pending)) || 0,
     };
   }
 
