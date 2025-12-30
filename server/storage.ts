@@ -99,7 +99,9 @@ import {
   rcB2bReturns, RcB2bReturn, InsertRcB2bReturn,
   rcB2bReturnItems, RcB2bReturnItem, InsertRcB2bReturnItem,
   marketplaceOrders, MarketplaceOrder, InsertMarketplaceOrder,
-  marketplaceOrderItems, MarketplaceOrderItem, InsertMarketplaceOrderItem
+  marketplaceOrderItems, MarketplaceOrderItem, InsertMarketplaceOrderItem,
+  transferRequests, TransferRequest, InsertTransferRequest,
+  transferRequestItems, TransferRequestItem, InsertTransferRequestItem
 } from "@shared/schema";
 import { db, pool } from "./db";
 import { eq, and, or, desc, lt, gte, lte, sql, not, inArray, isNull, ilike } from "drizzle-orm";
@@ -801,6 +803,24 @@ export interface IStorage {
   listWarehouseTransferItems(transferId: string): Promise<WarehouseTransferItem[]>;
   createWarehouseTransferItem(data: InsertWarehouseTransferItem): Promise<WarehouseTransferItem>;
   updateWarehouseTransferItem(id: string, updates: Partial<WarehouseTransferItem>): Promise<WarehouseTransferItem>;
+  
+  // Transfer Requests (da repair_center/sub_reseller)
+  listTransferRequests(filters?: { 
+    requesterId?: string; 
+    requesterType?: string; 
+    targetResellerId?: string; 
+    status?: string;
+    sourceWarehouseId?: string;
+  }): Promise<TransferRequest[]>;
+  getTransferRequest(id: string): Promise<TransferRequest | undefined>;
+  createTransferRequest(data: InsertTransferRequest): Promise<TransferRequest>;
+  updateTransferRequest(id: string, updates: Partial<TransferRequest>): Promise<TransferRequest>;
+  generateTransferRequestNumber(): Promise<string>;
+  
+  // Transfer Request Items
+  listTransferRequestItems(requestId: string): Promise<TransferRequestItem[]>;
+  createTransferRequestItem(data: InsertTransferRequestItem): Promise<TransferRequestItem>;
+  updateTransferRequestItem(id: string, updates: Partial<TransferRequestItem>): Promise<TransferRequestItem>;
   
   // B2B Reseller Purchase Orders
   listResellerPurchaseOrders(filters?: { resellerId?: string; status?: string }): Promise<ResellerPurchaseOrder[]>;
@@ -6921,6 +6941,86 @@ export class DatabaseStorage implements IStorage {
       .where(eq(warehouseTransferItems.id, id))
       .returning();
     if (!updated) throw new Error("Transfer item not found");
+    return updated;
+  }
+
+  // ==========================================
+  // TRANSFER REQUESTS (da repair_center/sub_reseller)
+  // ==========================================
+
+  async listTransferRequests(filters?: { 
+    requesterId?: string; 
+    requesterType?: string; 
+    targetResellerId?: string; 
+    status?: string;
+    sourceWarehouseId?: string;
+  }): Promise<TransferRequest[]> {
+    const conditions = [];
+    if (filters?.requesterId) conditions.push(eq(transferRequests.requesterId, filters.requesterId));
+    if (filters?.requesterType) conditions.push(eq(transferRequests.requesterType, filters.requesterType as any));
+    if (filters?.targetResellerId) conditions.push(eq(transferRequests.targetResellerId, filters.targetResellerId));
+    if (filters?.status) conditions.push(eq(transferRequests.status, filters.status as any));
+    if (filters?.sourceWarehouseId) conditions.push(eq(transferRequests.sourceWarehouseId, filters.sourceWarehouseId));
+    
+    if (conditions.length === 0) {
+      return await db.select().from(transferRequests).orderBy(desc(transferRequests.createdAt));
+    }
+    return await db.select().from(transferRequests)
+      .where(and(...conditions))
+      .orderBy(desc(transferRequests.createdAt));
+  }
+
+  async getTransferRequest(id: string): Promise<TransferRequest | undefined> {
+    const [request] = await db.select().from(transferRequests).where(eq(transferRequests.id, id));
+    return request || undefined;
+  }
+
+  async createTransferRequest(data: InsertTransferRequest): Promise<TransferRequest> {
+    const requestNumber = await this.generateTransferRequestNumber();
+    const [created] = await db.insert(transferRequests)
+      .values({ ...data, requestNumber })
+      .returning();
+    return created;
+  }
+
+  async updateTransferRequest(id: string, updates: Partial<TransferRequest>): Promise<TransferRequest> {
+    const [updated] = await db.update(transferRequests)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(transferRequests.id, id))
+      .returning();
+    if (!updated) throw new Error("Transfer request not found");
+    return updated;
+  }
+
+  async generateTransferRequestNumber(): Promise<string> {
+    const year = new Date().getFullYear();
+    const prefix = `REQ-${year}`;
+    
+    const [result] = await db.select({ count: sql<number>`count(*)` })
+      .from(transferRequests)
+      .where(sql`${transferRequests.requestNumber} LIKE ${prefix + '%'}`);
+    
+    const nextNumber = (result?.count || 0) + 1;
+    return `${prefix}-${String(nextNumber).padStart(5, '0')}`;
+  }
+
+  // Transfer Request Items
+  async listTransferRequestItems(requestId: string): Promise<TransferRequestItem[]> {
+    return await db.select().from(transferRequestItems)
+      .where(eq(transferRequestItems.requestId, requestId));
+  }
+
+  async createTransferRequestItem(data: InsertTransferRequestItem): Promise<TransferRequestItem> {
+    const [created] = await db.insert(transferRequestItems).values(data).returning();
+    return created;
+  }
+
+  async updateTransferRequestItem(id: string, updates: Partial<TransferRequestItem>): Promise<TransferRequestItem> {
+    const [updated] = await db.update(transferRequestItems)
+      .set(updates)
+      .where(eq(transferRequestItems.id, id))
+      .returning();
+    if (!updated) throw new Error("Transfer request item not found");
     return updated;
   }
 
