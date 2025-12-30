@@ -1596,10 +1596,10 @@ export function registerRoutes(app: Express): Server {
         return res.status(404).send("Rivenditore non trovato");
       }
       
-      // Get sub-resellers for this reseller (users with role='sub_reseller' and parentResellerId=resellerId)
+      // Get sub-resellers for this reseller (resellers with parentResellerId = this reseller)
       const allUsers = await storage.listUsers();
       const subResellers = allUsers
-        .filter(u => u.role === 'sub_reseller' && u.parentResellerId === resellerId)
+        .filter(u => u.role === 'reseller' && u.parentResellerId === resellerId)
         .map(({ password, ...u }) => u);
       
       res.json(subResellers);
