@@ -5661,6 +5661,20 @@ export function registerRoutes(app: Express): Server {
       if (validated.pec !== undefined) updates.pec = validated.pec;
       // Never allow changing resellerId via reseller endpoint
       
+      // Handle subResellerId assignment
+      if (validated.subResellerId !== undefined) {
+        if (validated.subResellerId === null || validated.subResellerId === "") {
+          updates.subResellerId = null;
+        } else {
+          // Verify sub-reseller belongs to this reseller
+          const subReseller = await storage.getUser(validated.subResellerId);
+          if (!subReseller || subReseller.role !== "sub_reseller" || subReseller.resellerId !== req.user.id) {
+            return res.status(403).send("Sub-reseller non valido o non autorizzato");
+          }
+          updates.subResellerId = validated.subResellerId;
+        }
+      }
+      
       const center = await storage.updateRepairCenter(req.params.id, updates);
       setActivityEntity(res, { type: 'repair-centers', id: center.id });
       res.json(center);

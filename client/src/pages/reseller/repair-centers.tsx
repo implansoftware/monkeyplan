@@ -9,7 +9,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Plus, Search, MapPin, Phone, Mail, Pencil, Trash2, Building, Clock, ChevronLeft, ChevronRight, Check, FileText, Settings, Network, Users, Eye } from "lucide-react";
+import { Plus, Search, MapPin, Phone, Mail, Pencil, Trash2, Building, Clock, ChevronLeft, ChevronRight, Check, FileText, Settings, Network, Users, Eye, UserCheck } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { User } from "@shared/schema";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -54,6 +56,7 @@ export default function ResellerRepairCenters() {
   const [useMyFiscalData, setUseMyFiscalData] = useState(false);
   const [wizardStep, setWizardStep] = useState(1);
   const [expandedSubResellers, setExpandedSubResellers] = useState<Record<string, boolean>>({});
+  const [selectedSubResellerId, setSelectedSubResellerId] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     name: "",
     phone: "",
@@ -74,6 +77,10 @@ export default function ResellerRepairCenters() {
 
   const { data: subResellersCenters = [], isLoading: isLoadingSubResellers } = useQuery<SubResellerWithCenters[]>({
     queryKey: ["/api/reseller/sub-resellers-repair-centers"],
+  });
+
+  const { data: subResellers = [] } = useQuery<User[]>({
+    queryKey: ["/api/reseller/sub-resellers"],
   });
 
   const totalNetworkCenters = subResellersCenters.reduce((acc, sr) => acc + sr.repairCenters.length, 0);
@@ -140,6 +147,7 @@ export default function ResellerRepairCenters() {
     setAddressData({ address: "", city: "", cap: "", provincia: "" });
     setHourlyRateEuros("");
     setUseMyFiscalData(false);
+    setSelectedSubResellerId(null);
   };
 
   const progressPercent = (wizardStep / WIZARD_STEPS.length) * 100;
@@ -221,6 +229,7 @@ export default function ResellerRepairCenters() {
         phone: formData.phone,
         email: formData.email,
         hourlyRateCents: hourlyRateCentsValue,
+        subResellerId: selectedSubResellerId,
         ...fiscalData,
       };
       updateCenterMutation.mutate({ id: editingCenter.id, data: updates });
@@ -235,6 +244,7 @@ export default function ResellerRepairCenters() {
         email: formData.email,
         isActive: true,
         hourlyRateCents: hourlyRateCentsValue,
+        subResellerId: selectedSubResellerId,
         ...fiscalData,
       };
       createCenterMutation.mutate(data);
@@ -505,6 +515,37 @@ export default function ResellerRepairCenters() {
                       </div>
                     </div>
                     
+                    {subResellers.length > 0 && (
+                      <div className="space-y-2">
+                        <h4 className="font-medium text-sm text-muted-foreground flex items-center gap-2">
+                          <UserCheck className="h-4 w-4" />
+                          Assegnazione Sub-Reseller
+                        </h4>
+                        <div className="space-y-2">
+                          <Label htmlFor="subReseller">Sub-Reseller (opzionale)</Label>
+                          <Select
+                            value={selectedSubResellerId || "none"}
+                            onValueChange={(value) => setSelectedSubResellerId(value === "none" ? null : value)}
+                          >
+                            <SelectTrigger data-testid="select-sub-reseller">
+                              <SelectValue placeholder="Seleziona sub-reseller..." />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="none">Nessuno (gestito direttamente)</SelectItem>
+                              {subResellers.map((sr) => (
+                                <SelectItem key={sr.id} value={sr.id}>
+                                  {sr.fullName}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <p className="text-xs text-muted-foreground">
+                            Assegna questo centro a un sub-reseller per permettergli di gestirlo.
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                    
                     <div className="bg-muted/50 p-3 rounded-md mt-4">
                       <p className="text-xs text-muted-foreground">
                         Il centro di riparazione sarà automaticamente associato al tuo account rivenditore e potrai gestirne le attività.
@@ -653,6 +694,7 @@ export default function ResellerRepairCenters() {
                               provincia: center.provincia || "",
                             });
                             setHourlyRateEuros(center.hourlyRateCents ? (center.hourlyRateCents / 100).toFixed(2) : "");
+                            setSelectedSubResellerId(center.subResellerId || null);
                             setDialogOpen(true);
                           }}
                           data-testid={`button-edit-${center.id}`}
