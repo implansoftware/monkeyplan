@@ -826,6 +826,9 @@ export default function AdminProducts() {
   };
 
   const filteredProducts = productsWithStock.filter(({ product }) => {
+    // Mostra solo ricambi (escludi dispositivi e accessori)
+    if (product.productType !== 'ricambio') return false;
+    
     const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       product.sku.toLowerCase().includes(searchQuery.toLowerCase()) ||
       (product.brand?.toLowerCase().includes(searchQuery.toLowerCase()));
@@ -869,9 +872,9 @@ export default function AdminProducts() {
     <div className="space-y-6">
       <div className="flex items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold mb-2">Prodotti</h1>
+          <h1 className="text-2xl font-semibold mb-2">Ricambi</h1>
           <p className="text-muted-foreground">
-            Gestisci il catalogo ricambi e accessori
+            Gestisci il catalogo ricambi
           </p>
         </div>
         <Dialog open={dialogOpen} onOpenChange={(open) => {
