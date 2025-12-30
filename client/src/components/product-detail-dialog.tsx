@@ -10,6 +10,11 @@ import {
   Battery, HardDrive, CheckCircle, XCircle, Info, Tag, Users, Link2
 } from "lucide-react";
 import type { Product, SmartphoneSpecs, AccessorySpecs } from "@shared/schema";
+import { 
+  DEVICE_CATEGORY_LABELS, 
+  PRODUCT_TYPE_LABELS, 
+  getSpecsConfig 
+} from "@/lib/device-category-config";
 
 type ProductDetails = {
   product: Product;
@@ -48,48 +53,10 @@ const CONDITION_LABELS: Record<string, string> = {
   difettoso: "Difettoso",
 };
 
-const PRODUCT_TYPE_LABELS: Record<string, string> = {
-  dispositivo: "Dispositivo",
-  accessorio: "Accessorio",
-  ricambio: "Ricambio",
-};
-
-const DEVICE_CATEGORY_LABELS: Record<string, string> = {
-  smartphone: "Smartphone",
-  tablet: "Tablet",
-  portatile: "PC Portatile",
-  pc_fisso: "PC Fisso",
-  smartwatch: "Smartwatch",
-  console: "Console",
-  altro: "Altro",
-};
-
 const NETWORK_LABELS: Record<string, string> = {
   unlocked: "Sbloccato",
   locked: "Bloccato operatore",
   icloud_locked: "Bloccato iCloud",
-};
-
-const CATEGORY_SPECS_CONFIG: Record<string, {
-  storage: boolean;
-  grade: boolean;
-  batteryHealth: boolean;
-  networkLock: boolean;
-  imei: boolean;
-  serialNumber: boolean;
-  originalBox: boolean;
-}> = {
-  smartphone: { storage: true, grade: true, batteryHealth: true, networkLock: true, imei: true, serialNumber: true, originalBox: true },
-  tablet: { storage: true, grade: true, batteryHealth: true, networkLock: true, imei: true, serialNumber: true, originalBox: true },
-  portatile: { storage: true, grade: true, batteryHealth: true, networkLock: false, imei: false, serialNumber: true, originalBox: true },
-  pc_fisso: { storage: true, grade: true, batteryHealth: false, networkLock: false, imei: false, serialNumber: true, originalBox: true },
-  smartwatch: { storage: false, grade: true, batteryHealth: true, networkLock: false, imei: false, serialNumber: true, originalBox: true },
-  console: { storage: true, grade: true, batteryHealth: false, networkLock: false, imei: false, serialNumber: true, originalBox: true },
-  altro: { storage: false, grade: true, batteryHealth: false, networkLock: false, imei: false, serialNumber: true, originalBox: true },
-};
-
-const getSpecsConfig = (category: string | null | undefined) => {
-  return CATEGORY_SPECS_CONFIG[category || ''] || CATEGORY_SPECS_CONFIG.altro;
 };
 
 const OWNER_TYPE_LABELS: Record<string, string> = {

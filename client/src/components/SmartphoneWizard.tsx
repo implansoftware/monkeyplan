@@ -40,6 +40,7 @@ import {
 } from "lucide-react";
 import type { DeviceBrand, DeviceModel } from "@shared/schema";
 import { cn } from "@/lib/utils";
+import { getSpecsConfig } from "@/lib/device-category-config";
 
 interface SmartphoneWizardProps {
   open: boolean;
@@ -163,101 +164,6 @@ const ACCESSORY_OPTIONS = [
   "Manuale",
 ];
 
-// Configurazione specifiche per categoria
-const CATEGORY_SPECS_CONFIG: Record<string, {
-  storage: boolean;
-  grade: boolean;
-  batteryHealth: boolean;
-  networkLock: boolean;
-  imei: boolean;
-  serialNumber: boolean;
-  originalBox: boolean;
-  accessories: boolean;
-  description: boolean;
-}> = {
-  smartphone: {
-    storage: true,
-    grade: true,
-    batteryHealth: true,
-    networkLock: true,
-    imei: true,
-    serialNumber: true,
-    originalBox: true,
-    accessories: true,
-    description: true,
-  },
-  tablet: {
-    storage: true,
-    grade: true,
-    batteryHealth: true,
-    networkLock: true,
-    imei: true,
-    serialNumber: true,
-    originalBox: true,
-    accessories: true,
-    description: true,
-  },
-  portatile: {
-    storage: true,
-    grade: true,
-    batteryHealth: true,
-    networkLock: false,
-    imei: false,
-    serialNumber: true,
-    originalBox: true,
-    accessories: true,
-    description: true,
-  },
-  pc_fisso: {
-    storage: true,
-    grade: true,
-    batteryHealth: false,
-    networkLock: false,
-    imei: false,
-    serialNumber: true,
-    originalBox: true,
-    accessories: true,
-    description: true,
-  },
-  smartwatch: {
-    storage: false,
-    grade: true,
-    batteryHealth: true,
-    networkLock: false,
-    imei: false,
-    serialNumber: true,
-    originalBox: true,
-    accessories: true,
-    description: true,
-  },
-  console: {
-    storage: true,
-    grade: true,
-    batteryHealth: false,
-    networkLock: false,
-    imei: false,
-    serialNumber: true,
-    originalBox: true,
-    accessories: true,
-    description: true,
-  },
-  altro: {
-    storage: false,
-    grade: true,
-    batteryHealth: false,
-    networkLock: false,
-    imei: false,
-    serialNumber: true,
-    originalBox: true,
-    accessories: false,
-    description: true,
-  },
-};
-
-// Helper per ottenere config specs per categoria
-const getSpecsConfig = (category: string) => {
-  return CATEGORY_SPECS_CONFIG[category] || CATEGORY_SPECS_CONFIG.altro;
-};
 
 export function SmartphoneWizard({ 
   open, 
