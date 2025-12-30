@@ -346,7 +346,7 @@ export interface IStorage {
   listEstimatedRepairTimes(deviceTypeId?: string, activeOnly?: boolean): Promise<EstimatedRepairTime[]>;
   
   // Device Models (Cascading dropdown catalog)
-  listDeviceModels(filters?: { typeId?: string; brandId?: string; activeOnly?: boolean }): Promise<DeviceModel[]>;
+  listDeviceModels(filters?: { typeId?: string; brandId?: string; activeOnly?: boolean; resellerId?: string }): Promise<DeviceModel[]>;
   getDeviceModel(id: string): Promise<DeviceModel | undefined>;
   createDeviceModel(insertDeviceModel: InsertDeviceModel): Promise<DeviceModel>;
   updateDeviceModel(id: string, updates: Partial<InsertDeviceModel>): Promise<DeviceModel>;
@@ -3438,7 +3438,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Device Models (Cascading dropdown)
-  async listDeviceModels(filters?: { typeId?: string; brandId?: string; activeOnly?: boolean }): Promise<DeviceModel[]> {
+  async listDeviceModels(filters?: { typeId?: string; brandId?: string; activeOnly?: boolean; resellerId?: string }): Promise<DeviceModel[]> {
     let query = db.select().from(deviceModels);
     
     const conditions = [];
@@ -3453,6 +3453,14 @@ export class DatabaseStorage implements IStorage {
     
     if (filters?.activeOnly !== false) {
       conditions.push(eq(deviceModels.isActive, true));
+    }
+    
+    // If resellerId is provided, include both global models (resellerId = null) and reseller's custom models
+    if (filters?.resellerId) {
+      conditions.push(or(
+        sql`${deviceModels.resellerId} IS NULL`,
+        eq(deviceModels.resellerId, filters.resellerId)
+      ));
     }
     
     if (conditions.length > 0) {

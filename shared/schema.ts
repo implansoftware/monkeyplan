@@ -1450,6 +1450,7 @@ export const deviceModels = pgTable("device_models", {
   modelName: text("model_name").notNull(), // es: "iPhone 12", "Samsung Galaxy S21"
   brandId: varchar("brand_id").references(() => deviceBrands.id), // FK to brands (nullable for backward compat)
   typeId: varchar("type_id").references(() => deviceTypes.id), // FK to types (nullable for backward compat)
+  resellerId: varchar("reseller_id").references(() => users.id), // null = modello globale, valorizzato = modello custom del reseller
   brand: text("brand"), // Legacy text column (kept for backward compatibility)
   deviceClass: text("device_class"), // Legacy text column (kept for backward compatibility)
   marketCode: text("market_code"), // Codice markettario

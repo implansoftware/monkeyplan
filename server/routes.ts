@@ -4637,29 +4637,23 @@ export function registerRoutes(app: Express): Server {
       const brandId = req.query.brandId as string | undefined;
       const typeId = req.query.typeId as string | undefined;
       
-      // Get reseller custom models
-      const customModels = await storage.listResellerDeviceModels(resellerId, brandId, typeId, activeOnly);
+      // Get all models from unified device_models table
+      const allModels = await storage.listDeviceModels({ brandId, typeId, activeOnly, resellerId });
       
       if (includeGlobal) {
-        // Also get global models and merge
-        const globalModels = await storage.listDeviceModels({ brandId, typeId, activeOnly });
-        const mergedModels = [
-          ...globalModels.map(m => ({ ...m, isGlobal: true, isCustom: false })),
-          // Normalize custom models: use resellerBrandId as brandId if brandId is null
-          ...customModels.map(m => ({ 
-            ...m, 
-            brandId: m.brandId || m.resellerBrandId, // Use resellerBrandId as fallback
-            isGlobal: false, 
-            isCustom: true 
-          }))
-        ];
+        // Return all models with isGlobal/isCustom flags
+        const mergedModels = allModels.map(m => ({
+          ...m,
+          isGlobal: m.resellerId === null,
+          isCustom: m.resellerId !== null
+        }));
         return res.json(mergedModels);
       }
       
-      // Normalize custom models: use resellerBrandId as brandId if brandId is null
+      // Only return reseller's custom models
+      const customModels = allModels.filter(m => m.resellerId === resellerId);
       res.json(customModels.map(m => ({ 
         ...m, 
-        brandId: m.brandId || m.resellerBrandId,
         isGlobal: false, 
         isCustom: true 
       })));
@@ -4668,7 +4662,7 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  // Create a custom model for the reseller
+  // Create a custom model for the reseller (inserisce in device_models con resellerId per FK compatibility)
   app.post("/api/reseller/device-models", requireRole("reseller", "reseller_staff"), async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Non autorizzato");
@@ -4676,21 +4670,20 @@ export function registerRoutes(app: Express): Server {
       const resellerId = req.user.role === 'reseller' ? req.user.id : req.user.resellerId;
       if (!resellerId) return res.status(400).send("Rivenditore non trovato");
       
-      const { modelName, brandId, resellerBrandId, brandName, typeId, photoUrl } = req.body;
+      const { modelName, brandId, typeId, photoUrl } = req.body;
       if (!modelName) return res.status(400).send("Nome modello obbligatorio");
       
-      const model = await storage.createResellerDeviceModel({
-        resellerId,
+      // Inserisce direttamente in device_models con resellerId per compatibilità FK
+      const model = await storage.createDeviceModel({
         modelName,
         brandId: brandId || null,
-        resellerBrandId: resellerBrandId || null,
-        brandName: brandName || null,
         typeId: typeId || null,
+        resellerId, // Marca il modello come proprietà del reseller
         photoUrl: photoUrl || null,
         isActive: true
       });
       
-      setActivityEntity(res, { type: 'reseller_device_model', id: model.id });
+      setActivityEntity(res, { type: 'device_model', id: model.id });
       res.status(201).json({ ...model, isGlobal: false, isCustom: true });
     } catch (error: any) {
       res.status(400).send(error.message);
@@ -7749,10 +7742,11 @@ export function registerRoutes(app: Express): Server {
         }
       }
       
-      // Validate deviceModelId if provided - must exist in database
+      // Validate deviceModelId if provided - must exist in database (check both global and reseller models)
       if (req.body.deviceModelId) {
-        const deviceModel = await storage.getDeviceModel(req.body.deviceModelId);
-        if (!deviceModel) {
+        const globalModel = await storage.getDeviceModel(req.body.deviceModelId);
+        const resellerModel = await storage.getResellerDeviceModel(req.body.deviceModelId);
+        if (!globalModel && !resellerModel) {
           return res.status(400).send("Modello dispositivo non trovato. Riprova selezionando il modello dalla lista.");
         }
       }
