@@ -1,9 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { RepairOrder, RepairCenter } from "@shared/schema";
-import { Building, Download } from "lucide-react";
+import { Building, Download, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -33,8 +33,17 @@ interface RepairOrderWithSLA extends RepairOrder {
   quoteTotalAmount: number | null;
 }
 
+interface PaginatedRepairsResponse {
+  data: RepairOrderWithSLA[];
+  page: number;
+  pageSize: number;
+  total: number;
+  totalPages: number;
+}
+
 export default function ResellerRepairs() {
   const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [slaFilter, setSlaFilter] = useState<string>("all");
   const [repairCenterFilter, setRepairCenterFilter] = useState<string>("all");
@@ -43,14 +52,62 @@ export default function ResellerRepairs() {
   const [wizardOpen, setWizardOpen] = useState(false);
   const [viewMode, setViewMode] = useState<"table" | "kanban">("table");
   const [isExporting, setIsExporting] = useState(false);
+  const [page, setPage] = useState(1);
+  const [pageSize] = useState(25);
   const { toast } = useToast();
+
+  // Debounce search input
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchQuery);
+      setPage(1);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  // Reset page when filters change
+  useEffect(() => {
+    setPage(1);
+  }, [statusFilter, slaFilter, repairCenterFilter, dateRange]);
 
   // Fetch repair centers for filter
   const { data: repairCenters = [] } = useQuery<RepairCenter[]>({
     queryKey: ["/api/reseller/repair-centers"],
   });
 
-  const { data: repairs = [], isLoading } = useQuery<RepairOrderWithSLA[]>({
+  // Paginated query for table view
+  const { data: paginatedData, isLoading: isLoadingTable } = useQuery<PaginatedRepairsResponse>({
+    queryKey: [
+      "/api/reseller/repairs/paginated",
+      page,
+      pageSize,
+      statusFilter,
+      slaFilter,
+      repairCenterFilter,
+      debouncedSearch,
+      dateRange?.from?.toISOString(),
+      dateRange?.to?.toISOString(),
+    ],
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      params.append("page", page.toString());
+      params.append("pageSize", pageSize.toString());
+      if (statusFilter !== "all") params.append("status", statusFilter);
+      if (slaFilter !== "all") params.append("slaSeverity", slaFilter);
+      if (repairCenterFilter !== "all") params.append("repairCenterId", repairCenterFilter);
+      if (debouncedSearch) params.append("search", debouncedSearch);
+      if (dateRange?.from) params.append("startDate", format(dateRange.from, "yyyy-MM-dd"));
+      if (dateRange?.to) params.append("endDate", format(dateRange.to, "yyyy-MM-dd"));
+      
+      const res = await fetch(`/api/reseller/repairs/paginated?${params.toString()}`, { credentials: "include" });
+      if (!res.ok) throw new Error("Failed to fetch repairs");
+      return res.json();
+    },
+    enabled: viewMode === "table",
+  });
+
+  // Full dataset query for kanban view
+  const { data: kanbanRepairs = [], isLoading: isLoadingKanban } = useQuery<RepairOrderWithSLA[]>({
     queryKey: ["/api/repair-orders", { slaSeverity: slaFilter }],
     queryFn: async () => {
       const params = new URLSearchParams();
@@ -59,12 +116,16 @@ export default function ResellerRepairs() {
       if (!res.ok) throw new Error("Failed to fetch repairs");
       return res.json();
     },
+    enabled: viewMode === "kanban",
   });
 
-  const filteredRepairs = repairs.filter((repair) => {
-    const matchesSearch = repair.orderNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      repair.deviceModel.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (repair.customerName && repair.customerName.toLowerCase().includes(searchQuery.toLowerCase()));
+  // Apply client-side filtering for kanban
+  const filteredKanbanRepairs = kanbanRepairs.filter((repair) => {
+    const searchLower = debouncedSearch.toLowerCase();
+    const matchesSearch = !debouncedSearch || 
+      repair.orderNumber.toLowerCase().includes(searchLower) ||
+      repair.deviceModel.toLowerCase().includes(searchLower) ||
+      (repair.customerName && repair.customerName.toLowerCase().includes(searchLower));
     const matchesStatus = statusFilter === "all" || repair.status === statusFilter;
     const matchesRepairCenter = repairCenterFilter === "all" || repair.repairCenterId === repairCenterFilter;
     
@@ -79,6 +140,11 @@ export default function ResellerRepairs() {
     
     return matchesSearch && matchesStatus && matchesRepairCenter && matchesDate;
   });
+
+  const repairs = viewMode === "table" ? (paginatedData?.data || []) : filteredKanbanRepairs;
+  const isLoading = viewMode === "table" ? isLoadingTable : isLoadingKanban;
+  const total = paginatedData?.total || 0;
+  const totalPages = paginatedData?.totalPages || 1;
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -95,14 +161,6 @@ export default function ResellerRepairs() {
       case "cancelled": return <Badge variant="destructive">Annullato</Badge>;
       default: return <Badge variant="outline">{status}</Badge>;
     }
-  };
-
-  const formatCurrency = (cents: number | null) => {
-    if (!cents) return "N/D";
-    return new Intl.NumberFormat("it-IT", {
-      style: "currency",
-      currency: "EUR",
-    }).format(cents / 100);
   };
 
   const handleExport = async () => {
@@ -297,7 +355,7 @@ export default function ResellerRepairs() {
         <CardContent>
           {viewMode === "kanban" ? (
             <RepairsKanbanBoard
-              repairs={filteredRepairs}
+              repairs={filteredKanbanRepairs}
               isLoading={isLoading}
               onCardClick={(repairId) => {
                 setLocation(`/reseller/repairs/${repairId}`);
@@ -309,7 +367,7 @@ export default function ResellerRepairs() {
               <Skeleton className="h-16 w-full" />
               <Skeleton className="h-16 w-full" />
             </div>
-          ) : filteredRepairs.length === 0 ? (
+          ) : repairs.length === 0 ? (
             <div className="text-center py-12 text-muted-foreground">
               <Wrench className="h-12 w-12 mx-auto mb-4 opacity-20" />
               <p>Nessuna lavorazione trovata</p>
@@ -329,7 +387,7 @@ export default function ResellerRepairs() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredRepairs.map((repair) => (
+                {repairs.map((repair) => (
                   <TableRow
                     key={repair.id}
                     data-testid={`row-repair-${repair.id}`}
@@ -430,6 +488,52 @@ export default function ResellerRepairs() {
             </Table>
           )}
         </CardContent>
+        {viewMode === "table" && totalPages > 1 && (
+          <CardFooter className="flex items-center justify-between border-t pt-4">
+            <div className="text-sm text-muted-foreground">
+              Pagina {page} di {totalPages} ({total} risultati)
+            </div>
+            <div className="flex items-center gap-1">
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => setPage(1)}
+                disabled={page === 1}
+                data-testid="button-pagination-first"
+              >
+                <ChevronsLeft className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => setPage(p => Math.max(1, p - 1))}
+                disabled={page === 1}
+                data-testid="button-pagination-prev"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <span className="px-3 text-sm font-medium">{page}</span>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                disabled={page === totalPages}
+                data-testid="button-pagination-next"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => setPage(totalPages)}
+                disabled={page === totalPages}
+                data-testid="button-pagination-last"
+              >
+                <ChevronsRight className="h-4 w-4" />
+              </Button>
+            </div>
+          </CardFooter>
+        )}
       </Card>
 
       <RepairIntakeWizard
@@ -437,6 +541,7 @@ export default function ResellerRepairs() {
         onOpenChange={setWizardOpen}
         onSuccess={() => {
           queryClient.invalidateQueries({ queryKey: ["/api/repair-orders"] });
+          queryClient.invalidateQueries({ queryKey: ["/api/reseller/repairs/paginated"] });
         }}
       />
     </div>

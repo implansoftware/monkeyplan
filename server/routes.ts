@@ -3782,6 +3782,86 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Reseller paginated repairs endpoint
+  app.get("/api/reseller/repairs/paginated", requireRole("reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const page = parseInt(req.query.page as string) || 1;
+      const pageSize = Math.min(parseInt(req.query.pageSize as string) || 25, 100);
+      
+      // Use effective context
+      const context = getEffectiveContext(req);
+      
+      const filters: any = { resellerId: context.resellerId };
+      if (context.repairCenterId) {
+        filters.repairCenterId = context.repairCenterId;
+        delete filters.resellerId;
+      }
+      
+      if (req.query.status && req.query.status !== 'all') filters.status = req.query.status;
+      if (req.query.repairCenterId && req.query.repairCenterId !== 'all') filters.repairCenterId = req.query.repairCenterId;
+      if (req.query.search) filters.search = req.query.search;
+      if (req.query.startDate) filters.startDate = req.query.startDate;
+      if (req.query.endDate) filters.endDate = req.query.endDate;
+      
+      const result = await storage.listRepairOrdersPaginated({ page, pageSize, filters });
+      
+      // Enrich with names for display
+      const allUsers = await storage.listUsers();
+      const customersMap = new Map<string, { fullName: string | null; ragioneSociale: string | null }>();
+      
+      allUsers.forEach(u => {
+        if (u.role === 'customer') {
+          customersMap.set(u.id, { fullName: u.fullName, ragioneSociale: u.ragioneSociale });
+        }
+      });
+      
+      const allRepairCenters = await storage.listRepairCenters();
+      const repairCentersMap = new Map<string, string>();
+      allRepairCenters.forEach(rc => repairCentersMap.set(rc.id, rc.name));
+      
+      // Compute SLA for each order
+      const { loadSLAConfig, computeSLASeverity } = await import("./sla-utils");
+      const slaConfig = await loadSLAConfig();
+      
+      const enrichedData = await Promise.all(result.data.map(async (repair) => {
+        const currentState = await storage.getCurrentRepairOrderState(repair.id);
+        const stateEnteredAt = currentState?.enteredAt || repair.createdAt;
+        const { severity, minutesInState, phase } = computeSLASeverity(repair.status, stateEnteredAt, slaConfig);
+        
+        const customer = repair.customerId ? customersMap.get(repair.customerId) : null;
+        const customerName = customer?.ragioneSociale || customer?.fullName || null;
+        
+        return {
+          ...repair,
+          customerName,
+          repairCenterName: repair.repairCenterId ? repairCentersMap.get(repair.repairCenterId) || null : null,
+          slaSeverity: severity,
+          slaMinutesInState: minutesInState,
+          slaPhase: phase,
+          slaEnteredAt: stateEnteredAt.toISOString(),
+        };
+      }));
+      
+      // Apply SLA filter client-side
+      let filteredData = enrichedData;
+      if (req.query.slaSeverity && req.query.slaSeverity !== 'all') {
+        filteredData = enrichedData.filter(r => r.slaSeverity === req.query.slaSeverity);
+      }
+      
+      res.json({
+        data: filteredData,
+        page: result.page,
+        pageSize: result.pageSize,
+        total: result.total,
+        totalPages: result.totalPages,
+      });
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
   app.post("/api/reseller/repairs", requireRole("reseller"), async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
