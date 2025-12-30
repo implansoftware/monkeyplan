@@ -671,21 +671,42 @@ export default function AdminUtilityPractices() {
       // Use allServices to ensure we find the service regardless of timing
       const service = allServices.find(s => s.id === serviceId) || services.find(s => s.id === serviceId);
       if (service) {
-        // Set monthly price if available
-        if (service.monthlyPriceCents) {
-          setMonthlyPriceValue((service.monthlyPriceCents / 100).toFixed(2));
-        } else {
+        // Determine price type based on available data
+        const hasMonthlyPrice = service.monthlyPriceCents && service.monthlyPriceCents > 0;
+        const hasActivationFee = service.activationFeeCents && service.activationFeeCents > 0;
+        
+        if (hasMonthlyPrice) {
+          // Service has monthly price - use mensile type
+          setSelectedPriceType("mensile");
+          setMonthlyPriceValue((service.monthlyPriceCents! / 100).toFixed(2));
+          setFlatPriceValue("");
+        } else if (hasActivationFee) {
+          // Service has only activation fee - use forfait type  
+          setSelectedPriceType("forfait");
+          setFlatPriceValue((service.activationFeeCents! / 100).toFixed(2));
           setMonthlyPriceValue("");
+        } else {
+          // No price defined
+          setMonthlyPriceValue("");
+          setFlatPriceValue("");
         }
         
-        // Calculate commission
-        if (service.commissionFixed) {
+        // Calculate commission based on service type
+        if (service.commissionOneTime && hasActivationFee && !hasMonthlyPrice) {
+          // One-time commission for activation-only services
+          setCommissionValue((service.commissionOneTime / 100).toFixed(2));
+        } else if (service.commissionFixed) {
           // Fixed commission takes priority
           setCommissionValue((service.commissionFixed / 100).toFixed(2));
-        } else if (service.commissionPercent && service.monthlyPriceCents) {
-          // Calculate percentage of monthly price
-          const commissionAmount = (service.monthlyPriceCents * service.commissionPercent / 100) / 100;
-          setCommissionValue(commissionAmount.toFixed(2));
+        } else if (service.commissionPercent) {
+          // Calculate percentage based on the price type
+          const basePrice = hasMonthlyPrice ? service.monthlyPriceCents : (hasActivationFee ? service.activationFeeCents : 0);
+          if (basePrice) {
+            const commissionAmount = (basePrice * service.commissionPercent / 100) / 100;
+            setCommissionValue(commissionAmount.toFixed(2));
+          } else {
+            setCommissionValue("");
+          }
         } else {
           setCommissionValue("");
         }
