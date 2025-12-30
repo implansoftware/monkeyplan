@@ -12595,11 +12595,12 @@ export function registerRoutes(app: Express): Server {
       }
       
       // Get related data
-      const [repairOrders, salesOrders, billingData, utilityPractices] = await Promise.all([
+      const [repairOrders, salesOrders, billingData, utilityPractices, assignedRepairCenters] = await Promise.all([
         storage.listRepairOrders({ customerId }),
         storage.listSalesOrders({ customerId }),
         storage.getBillingDataByUserId(customerId),
         storage.listUtilityPractices({ customerId }),
+        storage.listRepairCentersForCustomer(customerId),
       ]);
       
       // Get reseller info if available
@@ -12634,7 +12635,7 @@ export function registerRoutes(app: Express): Server {
       );
       
       res.json({
-        customer,
+        customer: { ...customer, assignedRepairCenters },
         reseller: reseller ? { id: reseller.id, fullName: reseller.fullName } : null,
         subReseller: subReseller ? { id: subReseller.id, fullName: subReseller.fullName } : null,
         repairOrders,

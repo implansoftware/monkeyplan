@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useParams, Link, useLocation } from "wouter";
-import { User, RepairOrder, SalesOrder, BillingData, UtilityPractice } from "@shared/schema";
+import { User, RepairOrder, SalesOrder, BillingData, UtilityPractice, RepairCenter } from "@shared/schema";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -24,7 +24,8 @@ import {
   Eye,
   Zap,
   UserCheck,
-  Pencil
+  Pencil,
+  Check
 } from "lucide-react";
 import { getStatusConfig } from "@/lib/repair-status-config";
 import { queryClient, apiRequest } from "@/lib/queryClient";
@@ -55,6 +56,10 @@ export default function ResellerCustomerDetail() {
   const { data, isLoading, error } = useQuery<CustomerDetailResponse>({
     queryKey: ["/api/customers", customerId],
     enabled: !!customerId,
+  });
+
+  const { data: repairCenters = [] } = useQuery<RepairCenter[]>({
+    queryKey: ["/api/reseller/repair-centers"],
   });
 
   const updateCustomerMutation = useMutation({
@@ -451,6 +456,7 @@ export default function ResellerCustomerDetail() {
           <CustomerEditForm
             customer={customer}
             billingData={billingData}
+            repairCenters={repairCenters}
             onSave={(formData) => updateCustomerMutation.mutate(formData)}
             onCancel={() => setEditDialogOpen(false)}
             isPending={updateCustomerMutation.isPending}
@@ -461,15 +467,21 @@ export default function ResellerCustomerDetail() {
   );
 }
 
+type CustomerWithRepairCenters = User & {
+  assignedRepairCenters?: RepairCenter[];
+};
+
 function CustomerEditForm({
   customer,
   billingData,
+  repairCenters,
   onSave,
   onCancel,
   isPending,
 }: {
-  customer: User;
+  customer: CustomerWithRepairCenters;
   billingData: BillingData | null;
+  repairCenters: RepairCenter[];
   onSave: (data: Record<string, unknown>) => void;
   onCancel: () => void;
   isPending: boolean;
@@ -479,7 +491,17 @@ function CustomerEditForm({
     email: customer.email,
     phone: customer.phone || "",
     isActive: customer.isActive,
+    repairCenterIds: customer.assignedRepairCenters?.map(rc => rc.id) || [],
   });
+
+  const toggleRepairCenter = (centerId: string) => {
+    setFormData(prev => ({
+      ...prev,
+      repairCenterIds: prev.repairCenterIds.includes(centerId)
+        ? prev.repairCenterIds.filter(id => id !== centerId)
+        : [...prev.repairCenterIds, centerId],
+    }));
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -545,6 +567,32 @@ function CustomerEditForm({
           Cliente attivo
         </label>
       </div>
+
+      {repairCenters.length > 0 && (
+        <div className="pt-4 border-t">
+          <label className="flex items-center gap-2 mb-3 text-sm font-medium">
+            <Wrench className="h-4 w-4" />
+            Centri Riparazione Assegnati
+          </label>
+          <div className="flex flex-wrap gap-2">
+            {repairCenters.map((rc) => {
+              const isSelected = formData.repairCenterIds.includes(rc.id);
+              return (
+                <Badge
+                  key={rc.id}
+                  variant={isSelected ? "default" : "outline"}
+                  className="cursor-pointer"
+                  onClick={() => toggleRepairCenter(rc.id)}
+                  data-testid={`badge-edit-repair-center-${rc.id}`}
+                >
+                  {isSelected && <Check className="h-3 w-3 mr-1" />}
+                  {rc.name}
+                </Badge>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       <div className="flex justify-end gap-2 pt-4">
         <Button type="button" variant="outline" onClick={onCancel} data-testid="button-cancel-edit">
