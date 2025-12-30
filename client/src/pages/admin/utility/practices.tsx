@@ -668,16 +668,26 @@ export default function AdminUtilityPractices() {
     setSelectedServiceId(serviceId);
     
     if (serviceId) {
-      const service = services.find(s => s.id === serviceId);
+      // Use allServices to ensure we find the service regardless of timing
+      const service = allServices.find(s => s.id === serviceId) || services.find(s => s.id === serviceId);
       if (service) {
+        // Set monthly price if available
         if (service.monthlyPriceCents) {
           setMonthlyPriceValue((service.monthlyPriceCents / 100).toFixed(2));
+        } else {
+          setMonthlyPriceValue("");
         }
-        if (service.commissionPercent && service.monthlyPriceCents) {
+        
+        // Calculate commission
+        if (service.commissionFixed) {
+          // Fixed commission takes priority
+          setCommissionValue((service.commissionFixed / 100).toFixed(2));
+        } else if (service.commissionPercent && service.monthlyPriceCents) {
+          // Calculate percentage of monthly price
           const commissionAmount = (service.monthlyPriceCents * service.commissionPercent / 100) / 100;
           setCommissionValue(commissionAmount.toFixed(2));
-        } else if (service.commissionFixed) {
-          setCommissionValue((service.commissionFixed / 100).toFixed(2));
+        } else {
+          setCommissionValue("");
         }
       }
     }
