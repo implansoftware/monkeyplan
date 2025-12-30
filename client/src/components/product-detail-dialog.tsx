@@ -48,16 +48,48 @@ const CONDITION_LABELS: Record<string, string> = {
   difettoso: "Difettoso",
 };
 
-const CATEGORY_LABELS: Record<string, string> = {
+const PRODUCT_TYPE_LABELS: Record<string, string> = {
   dispositivo: "Dispositivo",
   accessorio: "Accessorio",
   ricambio: "Ricambio",
+};
+
+const DEVICE_CATEGORY_LABELS: Record<string, string> = {
+  smartphone: "Smartphone",
+  tablet: "Tablet",
+  portatile: "PC Portatile",
+  pc_fisso: "PC Fisso",
+  smartwatch: "Smartwatch",
+  console: "Console",
+  altro: "Altro",
 };
 
 const NETWORK_LABELS: Record<string, string> = {
   unlocked: "Sbloccato",
   locked: "Bloccato operatore",
   icloud_locked: "Bloccato iCloud",
+};
+
+const CATEGORY_SPECS_CONFIG: Record<string, {
+  storage: boolean;
+  grade: boolean;
+  batteryHealth: boolean;
+  networkLock: boolean;
+  imei: boolean;
+  serialNumber: boolean;
+  originalBox: boolean;
+}> = {
+  smartphone: { storage: true, grade: true, batteryHealth: true, networkLock: true, imei: true, serialNumber: true, originalBox: true },
+  tablet: { storage: true, grade: true, batteryHealth: true, networkLock: true, imei: true, serialNumber: true, originalBox: true },
+  portatile: { storage: true, grade: true, batteryHealth: true, networkLock: false, imei: false, serialNumber: true, originalBox: true },
+  pc_fisso: { storage: true, grade: true, batteryHealth: false, networkLock: false, imei: false, serialNumber: true, originalBox: true },
+  smartwatch: { storage: false, grade: true, batteryHealth: true, networkLock: false, imei: false, serialNumber: true, originalBox: true },
+  console: { storage: true, grade: true, batteryHealth: false, networkLock: false, imei: false, serialNumber: true, originalBox: true },
+  altro: { storage: false, grade: true, batteryHealth: false, networkLock: false, imei: false, serialNumber: true, originalBox: true },
+};
+
+const getSpecsConfig = (category: string | null | undefined) => {
+  return CATEGORY_SPECS_CONFIG[category || ''] || CATEGORY_SPECS_CONFIG.altro;
 };
 
 const OWNER_TYPE_LABELS: Record<string, string> = {
@@ -129,7 +161,9 @@ export function ProductDetailDialog({ open, onOpenChange, productId }: ProductDe
                   <p className="text-sm text-muted-foreground">SKU: {data.product.sku}</p>
                   <div className="flex flex-wrap gap-2 mt-2">
                     <Badge variant="outline">
-                      {CATEGORY_LABELS[data.product.productType || 'ricambio'] || data.product.productType}
+                      {data.product.productType === 'dispositivo' && data.product.category
+                        ? DEVICE_CATEGORY_LABELS[data.product.category] || data.product.category
+                        : PRODUCT_TYPE_LABELS[data.product.productType || 'ricambio'] || data.product.productType}
                     </Badge>
                     {data.product.condition && (
                       <Badge variant="secondary">
@@ -160,79 +194,89 @@ export function ProductDetailDialog({ open, onOpenChange, productId }: ProductDe
                 </div>
               )}
 
-              {data.product.productType === 'dispositivo' && (
-                <>
-                  <Separator />
-                  <div>
-                    <h3 className="font-medium flex items-center gap-2 mb-3">
-                      <Smartphone className="h-4 w-4" />
-                      Specifiche Dispositivo
-                    </h3>
-                    {data.specs ? (
-                      <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
-                        {data.product.brand && (
-                          <div>
-                            <span className="text-muted-foreground">Marca:</span>
-                            <span className="ml-2 font-medium">{data.product.brand}</span>
-                          </div>
-                        )}
-                        {(data.specs as SmartphoneSpecs).storage && (
-                          <div className="flex items-center gap-1">
-                            <HardDrive className="h-4 w-4 text-muted-foreground" />
-                            <span>{(data.specs as SmartphoneSpecs).storage}</span>
-                          </div>
-                        )}
-                        {data.product.color && (
-                          <div>
-                            <span className="text-muted-foreground">Colore:</span>
-                            <span className="ml-2 font-medium">{data.product.color}</span>
-                          </div>
-                        )}
-                        {(data.specs as SmartphoneSpecs).batteryHealth && (
-                          <div className="flex items-center gap-1">
-                            <Battery className="h-4 w-4 text-muted-foreground" />
-                            <span>{(data.specs as SmartphoneSpecs).batteryHealth}%</span>
-                          </div>
-                        )}
-                        {(data.specs as SmartphoneSpecs).grade && (
-                          <div>
-                            <span className="text-muted-foreground">Grado:</span>
-                            <Badge className="ml-2" variant="outline">{(data.specs as SmartphoneSpecs).grade}</Badge>
-                          </div>
-                        )}
-                        {(data.specs as SmartphoneSpecs).networkLock && (
-                          <div>
-                            <span className="text-muted-foreground">Rete:</span>
-                            <span className="ml-2 font-medium">
-                              {NETWORK_LABELS[(data.specs as SmartphoneSpecs).networkLock || ''] || (data.specs as SmartphoneSpecs).networkLock}
-                            </span>
-                          </div>
-                        )}
-                        {(data.specs as SmartphoneSpecs).imei && (
-                          <div className="col-span-2">
-                            <span className="text-muted-foreground">IMEI:</span>
-                            <span className="ml-2 font-mono text-xs">{(data.specs as SmartphoneSpecs).imei}</span>
-                          </div>
-                        )}
-                        {(data.specs as SmartphoneSpecs).originalBox !== undefined && (
-                          <div className="flex items-center gap-1">
-                            {(data.specs as SmartphoneSpecs).originalBox ? (
-                              <CheckCircle className="h-4 w-4 text-green-500" />
-                            ) : (
-                              <XCircle className="h-4 w-4 text-muted-foreground" />
-                            )}
-                            <span>Scatola originale</span>
-                          </div>
-                        )}
-                      </div>
-                    ) : (
-                      <div className="text-sm text-muted-foreground italic">
-                        Nessuna specifica tecnica disponibile. Modifica il dispositivo per aggiungere le specifiche.
-                      </div>
-                    )}
-                  </div>
-                </>
-              )}
+              {data.product.productType === 'dispositivo' && (() => {
+                const specsConfig = getSpecsConfig(data.product.category);
+                const specs = data.specs as SmartphoneSpecs | null;
+                return (
+                  <>
+                    <Separator />
+                    <div>
+                      <h3 className="font-medium flex items-center gap-2 mb-3">
+                        <Smartphone className="h-4 w-4" />
+                        Specifiche {DEVICE_CATEGORY_LABELS[data.product.category || ''] || 'Dispositivo'}
+                      </h3>
+                      {specs ? (
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
+                          {data.product.brand && (
+                            <div>
+                              <span className="text-muted-foreground">Marca:</span>
+                              <span className="ml-2 font-medium">{data.product.brand}</span>
+                            </div>
+                          )}
+                          {specsConfig.storage && specs.storage && (
+                            <div className="flex items-center gap-1">
+                              <HardDrive className="h-4 w-4 text-muted-foreground" />
+                              <span>{specs.storage}</span>
+                            </div>
+                          )}
+                          {data.product.color && (
+                            <div>
+                              <span className="text-muted-foreground">Colore:</span>
+                              <span className="ml-2 font-medium">{data.product.color}</span>
+                            </div>
+                          )}
+                          {specsConfig.batteryHealth && specs.batteryHealth && (
+                            <div className="flex items-center gap-1">
+                              <Battery className="h-4 w-4 text-muted-foreground" />
+                              <span>{specs.batteryHealth}%</span>
+                            </div>
+                          )}
+                          {specsConfig.grade && specs.grade && (
+                            <div>
+                              <span className="text-muted-foreground">Grado:</span>
+                              <Badge className="ml-2" variant="outline">{specs.grade}</Badge>
+                            </div>
+                          )}
+                          {specsConfig.networkLock && specs.networkLock && (
+                            <div>
+                              <span className="text-muted-foreground">Rete:</span>
+                              <span className="ml-2 font-medium">
+                                {NETWORK_LABELS[specs.networkLock || ''] || specs.networkLock}
+                              </span>
+                            </div>
+                          )}
+                          {specsConfig.imei && specs.imei && (
+                            <div className="col-span-2">
+                              <span className="text-muted-foreground">IMEI:</span>
+                              <span className="ml-2 font-mono text-xs">{specs.imei}</span>
+                            </div>
+                          )}
+                          {specsConfig.serialNumber && specs.serialNumber && (
+                            <div className="col-span-2">
+                              <span className="text-muted-foreground">Numero Seriale:</span>
+                              <span className="ml-2 font-mono text-xs">{specs.serialNumber}</span>
+                            </div>
+                          )}
+                          {specsConfig.originalBox && specs.originalBox !== undefined && (
+                            <div className="flex items-center gap-1">
+                              {specs.originalBox ? (
+                                <CheckCircle className="h-4 w-4 text-green-500" />
+                              ) : (
+                                <XCircle className="h-4 w-4 text-muted-foreground" />
+                              )}
+                              <span>Scatola originale</span>
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <div className="text-sm text-muted-foreground italic">
+                          Nessuna specifica tecnica disponibile. Modifica il dispositivo per aggiungere le specifiche.
+                        </div>
+                      )}
+                    </div>
+                  </>
+                );
+              })()}
 
               {data.specs && data.product.productType === 'accessorio' && (
                 <>
