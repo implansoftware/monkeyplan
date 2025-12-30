@@ -12771,13 +12771,23 @@ export function registerRoutes(app: Express): Server {
       
       const stats: any = {};
       
+      // Parse filter parameters for admin dashboard
+      const filterResellerId = req.query.resellerId as string | undefined;
+      const filterRepairCenterId = req.query.repairCenterId as string | undefined;
+      
       if (req.user.role === 'admin' || req.user.role === 'admin_staff') {
         // Admin sees comprehensive dashboard stats
         const overviewKPIs = await storage.getOverviewKPIs();
         const topProducts = await storage.getTopProducts(5);
         const repairCenterPerformance = await storage.getRepairCenterPerformance();
         
-        // Get ticket counts by status
+        // Build repair filter based on query params
+        const repairFilter: { resellerId?: string; repairCenterId?: string } = {};
+        if (filterResellerId) repairFilter.resellerId = filterResellerId;
+        if (filterRepairCenterId) repairFilter.repairCenterId = filterRepairCenterId;
+        
+        // Get ticket counts by status (filtered if params provided)
+        // Note: tickets don't have resellerId/repairCenterId directly, so we filter by assignedTo user's org
         const allTickets = await storage.listTickets();
         const ticketsByStatus = {
           open: allTickets.filter(t => t.status === 'open').length,
@@ -12785,8 +12795,8 @@ export function registerRoutes(app: Express): Server {
           closed: allTickets.filter(t => t.status === 'closed').length,
         };
         
-        // Get repair orders by status - using real Italian status enum values
-        const allRepairs = await storage.listRepairOrders();
+        // Get repair orders by status - using real Italian status enum values, with optional filters
+        const allRepairs = await storage.listRepairOrders(Object.keys(repairFilter).length > 0 ? repairFilter : undefined);
         const repairsByStatus = {
           pending: allRepairs.filter(r => r.status === 'pending').length,
           ingressato: allRepairs.filter(r => r.status === 'ingressato').length,
@@ -12801,12 +12811,14 @@ export function registerRoutes(app: Express): Server {
           annullato: allRepairs.filter(r => r.status === 'annullato').length,
         };
         
-        // Extended dashboard stats
+        // Get utility stats with optional filters
+        const utilityStats = await storage.getUtilityPracticesStats(filterResellerId, filterRepairCenterId);
+        
+        // Extended dashboard stats (unfiltered global stats)
         const latestCustomers = await storage.getLatestCustomers(5);
         const latestResellers = await storage.getLatestResellers(5);
         const resellerStats = await storage.getResellerStats();
         const repairCenterGlobalStats = await storage.getRepairCenterGlobalStats();
-        const utilityStats = await storage.getUtilityPracticesStats();
         const warehouseStats = await storage.getWarehouseGlobalStats();
         const ecommerceStats = await storage.getEcommerceStats();
         

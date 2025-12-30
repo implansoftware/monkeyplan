@@ -7242,12 +7242,37 @@ export class DatabaseStorage implements IStorage {
     };
   }
 
-  async getUtilityPracticesStats(): Promise<{ total: number; byStatus: Record<string, number>; totalCommissions: number; pendingCommissions: number }> {
-    const practicesByStatus = await db.execute(sql`
-      SELECT status, COUNT(*) as count
-      FROM ${utilityPractices}
-      GROUP BY status
-    `);
+  async getUtilityPracticesStats(resellerId?: string, repairCenterId?: string): Promise<{ total: number; byStatus: Record<string, number>; totalCommissions: number; pendingCommissions: number }> {
+    // Build WHERE clause based on filters
+    let practicesQuery;
+    if (resellerId && repairCenterId) {
+      practicesQuery = await db.execute(sql`
+        SELECT status, COUNT(*) as count
+        FROM ${utilityPractices}
+        WHERE reseller_id = ${resellerId} AND repair_center_id = ${repairCenterId}
+        GROUP BY status
+      `);
+    } else if (resellerId) {
+      practicesQuery = await db.execute(sql`
+        SELECT status, COUNT(*) as count
+        FROM ${utilityPractices}
+        WHERE reseller_id = ${resellerId}
+        GROUP BY status
+      `);
+    } else if (repairCenterId) {
+      practicesQuery = await db.execute(sql`
+        SELECT status, COUNT(*) as count
+        FROM ${utilityPractices}
+        WHERE repair_center_id = ${repairCenterId}
+        GROUP BY status
+      `);
+    } else {
+      practicesQuery = await db.execute(sql`
+        SELECT status, COUNT(*) as count
+        FROM ${utilityPractices}
+        GROUP BY status
+      `);
+    }
     
     const commissionStats = await db.execute(sql`
       SELECT 
@@ -7258,7 +7283,7 @@ export class DatabaseStorage implements IStorage {
     
     const byStatus: Record<string, number> = {};
     let totalPractices = 0;
-    practicesByStatus.rows.forEach((row: any) => {
+    practicesQuery.rows.forEach((row: any) => {
       byStatus[row.status] = parseInt(row.count) || 0;
       totalPractices += parseInt(row.count) || 0;
     });
