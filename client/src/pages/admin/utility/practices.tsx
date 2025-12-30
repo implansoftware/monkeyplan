@@ -99,6 +99,9 @@ export default function AdminUtilityPractices() {
   const [selectedResellerId, setSelectedResellerId] = useState<string>("");
   const [selectedSubResellerId, setSelectedSubResellerId] = useState<string>("");
   const [selectedRepairCenterId, setSelectedRepairCenterId] = useState<string>("");
+  const [monthlyPriceValue, setMonthlyPriceValue] = useState<string>("");
+  const [flatPriceValue, setFlatPriceValue] = useState<string>("");
+  const [commissionValue, setCommissionValue] = useState<string>("");
   const { toast } = useToast();
 
   const parseImportText = (text: string) => {
@@ -432,17 +435,17 @@ export default function AdminUtilityPractices() {
     
     const data: Partial<InsertUtilityPractice> = {
       itemType: selectedItemType,
-      supplierReference: formData.get("supplierReference") as string || undefined,
+      supplierReference: supplierReferenceValue || undefined,
       status: selectedStatus,
       priceType: selectedPriceType,
-      monthlyPriceCents: selectedPriceType === "mensile" && formData.get("monthlyPriceCents") 
-        ? Math.round(parseFloat(formData.get("monthlyPriceCents") as string) * 100) 
+      monthlyPriceCents: selectedPriceType === "mensile" && monthlyPriceValue 
+        ? Math.round(parseFloat(monthlyPriceValue) * 100) 
         : undefined,
-      flatPriceCents: selectedPriceType === "forfait" && formData.get("flatPriceCents")
-        ? Math.round(parseFloat(formData.get("flatPriceCents") as string) * 100)
+      flatPriceCents: selectedPriceType === "forfait" && flatPriceValue
+        ? Math.round(parseFloat(flatPriceValue) * 100)
         : undefined,
-      commissionAmountCents: formData.get("commissionAmountCents")
-        ? Math.round(parseFloat(formData.get("commissionAmountCents") as string) * 100)
+      commissionAmountCents: commissionValue
+        ? Math.round(parseFloat(commissionValue) * 100)
         : undefined,
       notes: formData.get("notes") as string || undefined,
     };
@@ -540,6 +543,17 @@ export default function AdminUtilityPractices() {
     setSelectedStatus(practice.status);
     setSelectedPriceType((practice.priceType as PriceType) || "mensile");
     setSupplierReferenceValue(practice.supplierReference || "");
+    
+    // Set price and commission values
+    setMonthlyPriceValue(practice.monthlyPriceCents 
+      ? (practice.monthlyPriceCents / 100).toFixed(2) 
+      : "");
+    setFlatPriceValue(practice.flatPriceCents 
+      ? (practice.flatPriceCents / 100).toFixed(2) 
+      : "");
+    setCommissionValue(practice.commissionAmountCents 
+      ? (practice.commissionAmountCents / 100).toFixed(2) 
+      : "");
     
     // Set custom service mode
     const hasCustomService = !!(practice as any).customServiceName;
@@ -644,7 +658,29 @@ export default function AdminUtilityPractices() {
     setSelectedResellerId("");
     setSelectedSubResellerId("");
     setSelectedRepairCenterId("");
+    setMonthlyPriceValue("");
+    setFlatPriceValue("");
+    setCommissionValue("");
     setDialogOpen(true);
+  };
+
+  const handleServiceChange = (serviceId: string) => {
+    setSelectedServiceId(serviceId);
+    
+    if (serviceId) {
+      const service = services.find(s => s.id === serviceId);
+      if (service) {
+        if (service.monthlyPriceCents) {
+          setMonthlyPriceValue((service.monthlyPriceCents / 100).toFixed(2));
+        }
+        if (service.commissionPercent && service.monthlyPriceCents) {
+          const commissionAmount = (service.monthlyPriceCents * service.commissionPercent / 100) / 100;
+          setCommissionValue(commissionAmount.toFixed(2));
+        } else if (service.commissionFixed) {
+          setCommissionValue((service.commissionFixed / 100).toFixed(2));
+        }
+      }
+    }
   };
 
   const addProduct = () => {
@@ -1257,7 +1293,7 @@ export default function AdminUtilityPractices() {
                       <Select 
                         name="serviceId" 
                         value={selectedServiceId}
-                        onValueChange={setSelectedServiceId}
+                        onValueChange={handleServiceChange}
                         disabled={!selectedSupplierId}
                         required
                       >
@@ -1573,9 +1609,8 @@ export default function AdminUtilityPractices() {
                         type="number"
                         step="0.01"
                         placeholder="0.00"
-                        defaultValue={editingPractice?.monthlyPriceCents 
-                          ? (editingPractice.monthlyPriceCents / 100).toFixed(2) 
-                          : ""}
+                        value={monthlyPriceValue}
+                        onChange={(e) => setMonthlyPriceValue(e.target.value)}
                         data-testid="input-monthly-price"
                       />
                     </>
@@ -1588,9 +1623,8 @@ export default function AdminUtilityPractices() {
                         type="number"
                         step="0.01"
                         placeholder="0.00"
-                        defaultValue={editingPractice?.flatPriceCents 
-                          ? (editingPractice.flatPriceCents / 100).toFixed(2) 
-                          : ""}
+                        value={flatPriceValue}
+                        onChange={(e) => setFlatPriceValue(e.target.value)}
                         data-testid="input-flat-price"
                       />
                     </>
@@ -1604,9 +1638,8 @@ export default function AdminUtilityPractices() {
                     type="number"
                     step="0.01"
                     placeholder="0.00"
-                    defaultValue={editingPractice?.commissionAmountCents 
-                      ? (editingPractice.commissionAmountCents / 100).toFixed(2) 
-                      : ""}
+                    value={commissionValue}
+                    onChange={(e) => setCommissionValue(e.target.value)}
                     data-testid="input-commission"
                   />
                 </div>
