@@ -457,7 +457,7 @@ export default function AdminUtilityPractices() {
       data.temporaryCustomerEmail = temporaryCustomerEmail.trim() || null;
       data.temporaryCustomerPhone = temporaryCustomerPhone.trim() || null;
     } else {
-      data.customerId = selectedCustomerId;
+      data.customerId = selectedCustomerId || null;
       data.temporaryCustomerName = null;
       data.temporaryCustomerEmail = null;
       data.temporaryCustomerPhone = null;
