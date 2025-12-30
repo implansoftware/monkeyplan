@@ -34,6 +34,10 @@ export const warehouseOwnerTypeEnum = pgEnum("warehouse_owner_type", ["admin", "
 export const warehouseMovementTypeEnum = pgEnum("warehouse_movement_type", ["carico", "scarico", "trasferimento_in", "trasferimento_out", "rettifica"]);
 export const warehouseTransferStatusEnum = pgEnum("warehouse_transfer_status", ["pending", "approved", "shipped", "received", "cancelled"]);
 
+// Transfer Request Status (richieste da repair_center/sub_reseller)
+export const transferRequestStatusEnum = pgEnum("transfer_request_status", ["pending", "approved", "rejected", "shipped", "received", "cancelled"]);
+export const transferRequesterTypeEnum = pgEnum("transfer_requester_type", ["repair_center", "sub_reseller"]);
+
 // B2B Reseller Purchase Orders Status
 export const resellerPurchaseOrderStatusEnum = pgEnum("reseller_purchase_order_status", [
   "draft",             // Bozza (carrello non ancora inviato)
@@ -960,6 +964,81 @@ export const warehouseTransferItems = pgTable("warehouse_transfer_items", {
 
 export const insertWarehouseTransferItemSchema = createInsertSchema(warehouseTransferItems).omit({
   id: true,
+  shippedQuantity: true,
+  receivedQuantity: true,
+});
+
+// ==========================================
+// TRANSFER REQUESTS (Richieste trasferimento da repair_center/sub_reseller)
+// ==========================================
+
+// Richieste di trasferimento (repair_center o sub_reseller → reseller padre o admin)
+export const transferRequests = pgTable("transfer_requests", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  requestNumber: text("request_number").notNull().unique(),
+  
+  // Chi richiede
+  requesterType: transferRequesterTypeEnum("requester_type").notNull(),
+  requesterId: varchar("requester_id").notNull(), // ID repair_center o user (sub_reseller)
+  requesterWarehouseId: varchar("requester_warehouse_id").notNull().references(() => warehouses.id),
+  
+  // A chi si richiede (il magazzino sorgente)
+  sourceWarehouseId: varchar("source_warehouse_id").notNull().references(() => warehouses.id),
+  targetResellerId: varchar("target_reseller_id").references(() => users.id), // Reseller padre (null se admin)
+  
+  // Stato
+  status: transferRequestStatusEnum("status").notNull().default("pending"),
+  
+  // Approvazione / Rifiuto
+  approvedBy: varchar("approved_by").references(() => users.id),
+  approvedAt: timestamp("approved_at"),
+  rejectedBy: varchar("rejected_by").references(() => users.id),
+  rejectedAt: timestamp("rejected_at"),
+  rejectionReason: text("rejection_reason"),
+  
+  // Spedizione
+  shippedAt: timestamp("shipped_at"),
+  shippedBy: varchar("shipped_by").references(() => users.id),
+  
+  // Ricezione
+  receivedAt: timestamp("received_at"),
+  
+  // Note
+  notes: text("notes"),
+  
+  // Audit
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export const insertTransferRequestSchema = createInsertSchema(transferRequests).omit({
+  id: true,
+  requestNumber: true,
+  approvedBy: true,
+  approvedAt: true,
+  rejectedBy: true,
+  rejectedAt: true,
+  shippedAt: true,
+  shippedBy: true,
+  receivedAt: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+// Articoli della richiesta di trasferimento
+export const transferRequestItems = pgTable("transfer_request_items", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  requestId: varchar("request_id").notNull().references(() => transferRequests.id, { onDelete: "cascade" }),
+  productId: varchar("product_id").notNull().references(() => products.id),
+  requestedQuantity: integer("requested_quantity").notNull(),
+  approvedQuantity: integer("approved_quantity"),
+  shippedQuantity: integer("shipped_quantity"),
+  receivedQuantity: integer("received_quantity"),
+});
+
+export const insertTransferRequestItemSchema = createInsertSchema(transferRequestItems).omit({
+  id: true,
+  approvedQuantity: true,
   shippedQuantity: true,
   receivedQuantity: true,
 });
@@ -5200,6 +5279,14 @@ export type InsertWarehouseTransferItem = z.infer<typeof insertWarehouseTransfer
 export type WarehouseOwnerType = "admin" | "reseller" | "sub_reseller" | "repair_center";
 export type WarehouseMovementType = "carico" | "scarico" | "trasferimento_in" | "trasferimento_out" | "rettifica";
 export type WarehouseTransferStatus = "pending" | "approved" | "shipped" | "received" | "cancelled";
+
+// Transfer Request Types (Richieste da repair_center/sub_reseller)
+export type TransferRequest = typeof transferRequests.$inferSelect;
+export type InsertTransferRequest = z.infer<typeof insertTransferRequestSchema>;
+export type TransferRequestItem = typeof transferRequestItems.$inferSelect;
+export type InsertTransferRequestItem = z.infer<typeof insertTransferRequestItemSchema>;
+export type TransferRequestStatus = "pending" | "approved" | "rejected" | "shipped" | "received" | "cancelled";
+export type TransferRequesterType = "repair_center" | "sub_reseller";
 
 // Marketplace Types (Reseller-to-Reseller B2B)
 export type MarketplaceOrder = typeof marketplaceOrders.$inferSelect;
