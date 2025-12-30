@@ -229,9 +229,11 @@ export default function ResellerRepairCenters() {
         phone: formData.phone,
         email: formData.email,
         hourlyRateCents: hourlyRateCentsValue,
-        subResellerId: selectedSubResellerId,
         ...fiscalData,
       };
+      if (subResellers.length > 0) {
+        updates.subResellerId = selectedSubResellerId;
+      }
       updateCenterMutation.mutate({ id: editingCenter.id, data: updates });
     } else {
       const data = {
@@ -244,7 +246,7 @@ export default function ResellerRepairCenters() {
         email: formData.email,
         isActive: true,
         hourlyRateCents: hourlyRateCentsValue,
-        subResellerId: selectedSubResellerId,
+        ...(subResellers.length > 0 ? { subResellerId: selectedSubResellerId } : {}),
         ...fiscalData,
       };
       createCenterMutation.mutate(data);
