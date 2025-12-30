@@ -1,7 +1,7 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { RepairOrder, RepairCenter } from "@shared/schema";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { RepairOrder, RepairCenter, PaginatedResult } from "@shared/schema";
+import { Card, CardContent, CardHeader, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Search, Wrench, Download, CalendarIcon, Plus, Stethoscope, Receipt, ClipboardCheck, Package, Play, TestTube, Truck, Eye, Clock, AlertTriangle, AlertCircle, LayoutGrid, TableIcon, Building, Store } from "lucide-react";
+import { Search, Wrench, Download, CalendarIcon, Plus, Stethoscope, Receipt, ClipboardCheck, Package, Play, TestTube, Truck, Eye, Clock, AlertTriangle, AlertCircle, LayoutGrid, TableIcon, Building, Store, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -33,8 +33,17 @@ interface RepairOrderWithSLA extends RepairOrder {
   quoteTotalAmount: number | null;
 }
 
+interface PaginatedRepairsResponse {
+  data: RepairOrderWithSLA[];
+  page: number;
+  pageSize: number;
+  total: number;
+  totalPages: number;
+}
+
 export default function AdminRepairs() {
   const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [slaFilter, setSlaFilter] = useState<string>("all");
   const [repairCenterFilter, setRepairCenterFilter] = useState<string>("all");
@@ -44,33 +53,79 @@ export default function AdminRepairs() {
   const [wizardOpen, setWizardOpen] = useState(false);
   const [, setLocation] = useLocation();
   const [viewMode, setViewMode] = useState<"table" | "kanban">("table");
+  const [page, setPage] = useState(1);
+  const [pageSize] = useState(25);
   const { toast } = useToast();
+
+  // Debounce search input
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchQuery);
+      setPage(1); // Reset to first page on search
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  // Reset page when filters change
+  useEffect(() => {
+    setPage(1);
+  }, [statusFilter, slaFilter, repairCenterFilter, resellerFilter, dateRange]);
 
   const { data: repairCenters = [] } = useQuery<RepairCenter[]>({
     queryKey: ["/api/repair-centers"],
   });
 
-  const { data: repairs = [], isLoading } = useQuery<RepairOrderWithSLA[]>({
-    queryKey: ["/api/repair-orders", { slaSeverity: slaFilter }],
+  // Fetch resellers for filter dropdown
+  const { data: resellersData = [] } = useQuery<Array<{ id: string; username: string; fullName: string | null; ragioneSociale: string | null }>>({
+    queryKey: ["/api/admin/resellers"],
+    queryFn: async () => {
+      const res = await fetch("/api/admin/resellers", { credentials: "include" });
+      if (!res.ok) throw new Error("Failed to fetch resellers");
+      return res.json();
+    },
+  });
+
+  const resellers = useMemo(() => {
+    return resellersData.map(r => ({
+      id: r.id,
+      name: r.ragioneSociale || r.fullName || r.username,
+    })).sort((a, b) => a.name.localeCompare(b.name));
+  }, [resellersData]);
+
+  const { data: paginatedData, isLoading } = useQuery<PaginatedRepairsResponse>({
+    queryKey: [
+      "/api/admin/repairs/paginated",
+      page,
+      pageSize,
+      statusFilter,
+      slaFilter,
+      repairCenterFilter,
+      resellerFilter,
+      debouncedSearch,
+      dateRange?.from?.toISOString(),
+      dateRange?.to?.toISOString(),
+    ],
     queryFn: async () => {
       const params = new URLSearchParams();
+      params.append("page", page.toString());
+      params.append("pageSize", pageSize.toString());
+      if (statusFilter !== "all") params.append("status", statusFilter);
       if (slaFilter !== "all") params.append("slaSeverity", slaFilter);
-      const res = await fetch(`/api/repair-orders?${params.toString()}`, { credentials: "include" });
+      if (repairCenterFilter !== "all") params.append("repairCenterId", repairCenterFilter);
+      if (resellerFilter !== "all") params.append("resellerId", resellerFilter);
+      if (debouncedSearch) params.append("search", debouncedSearch);
+      if (dateRange?.from) params.append("startDate", format(dateRange.from, "yyyy-MM-dd"));
+      if (dateRange?.to) params.append("endDate", format(dateRange.to, "yyyy-MM-dd"));
+      
+      const res = await fetch(`/api/admin/repairs/paginated?${params.toString()}`, { credentials: "include" });
       if (!res.ok) throw new Error("Failed to fetch repairs");
       return res.json();
     },
   });
 
-  // Derive unique resellers from repairs data
-  const resellers = useMemo(() => {
-    const resellerMap = new Map<string, string>();
-    repairs.forEach((repair) => {
-      if (repair.resellerId && repair.resellerName) {
-        resellerMap.set(repair.resellerId, repair.resellerName);
-      }
-    });
-    return Array.from(resellerMap.entries()).map(([id, name]) => ({ id, name })).sort((a, b) => a.name.localeCompare(b.name));
-  }, [repairs]);
+  const repairs = paginatedData?.data || [];
+  const totalPages = paginatedData?.totalPages || 1;
+  const total = paginatedData?.total || 0;
 
   const handleExport = async () => {
     try {
@@ -122,27 +177,7 @@ export default function AdminRepairs() {
     },
   });
 
-  const filteredRepairs = repairs.filter((repair) => {
-    const searchLower = searchQuery.toLowerCase();
-    const matchesSearch = repair.orderNumber.toLowerCase().includes(searchLower) ||
-      repair.deviceModel.toLowerCase().includes(searchLower) ||
-      (repair.customerName && repair.customerName.toLowerCase().includes(searchLower)) ||
-      (repair.resellerName && repair.resellerName.toLowerCase().includes(searchLower));
-    const matchesStatus = statusFilter === "all" || repair.status === statusFilter;
-    const matchesRepairCenter = repairCenterFilter === "all" || repair.repairCenterId === repairCenterFilter;
-    const matchesReseller = resellerFilter === "all" || repair.resellerId === resellerFilter;
-    
-    let matchesDate = true;
-    if (dateRange?.from) {
-      const repairDate = new Date(repair.createdAt);
-      matchesDate = repairDate >= dateRange.from;
-      if (dateRange.to) {
-        matchesDate = matchesDate && repairDate <= dateRange.to;
-      }
-    }
-    
-    return matchesSearch && matchesStatus && matchesRepairCenter && matchesReseller && matchesDate;
-  });
+  // Filtering is now done server-side, repairs are already filtered
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -399,7 +434,7 @@ export default function AdminRepairs() {
         <CardContent>
           {viewMode === "kanban" ? (
             <RepairsKanbanBoard
-              repairs={filteredRepairs}
+              repairs={repairs}
               isLoading={isLoading}
               onCardClick={(repairId) => {
                 openRepairDetail(repairId);
@@ -411,7 +446,7 @@ export default function AdminRepairs() {
               <Skeleton className="h-16 w-full" />
               <Skeleton className="h-16 w-full" />
             </div>
-          ) : filteredRepairs.length === 0 ? (
+          ) : repairs.length === 0 ? (
             <div className="text-center py-12 text-muted-foreground">
               <Wrench className="h-12 w-12 mx-auto mb-4 opacity-20" />
               <p>Nessuna lavorazione trovata</p>
@@ -432,7 +467,7 @@ export default function AdminRepairs() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredRepairs.map((repair) => {
+                {repairs.map((repair) => {
                   const actions = getWorkflowActions(repair);
                   const availableActions = actions.filter(a => a.available);
                   
@@ -582,6 +617,52 @@ export default function AdminRepairs() {
             </Table>
           )}
         </CardContent>
+        {viewMode === "table" && totalPages > 1 && (
+          <CardFooter className="flex items-center justify-between border-t pt-4">
+            <div className="text-sm text-muted-foreground">
+              Pagina {page} di {totalPages} ({total} risultati)
+            </div>
+            <div className="flex items-center gap-1">
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => setPage(1)}
+                disabled={page === 1}
+                data-testid="button-pagination-first"
+              >
+                <ChevronsLeft className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => setPage(p => Math.max(1, p - 1))}
+                disabled={page === 1}
+                data-testid="button-pagination-prev"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <span className="px-3 text-sm font-medium">{page}</span>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                disabled={page === totalPages}
+                data-testid="button-pagination-next"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => setPage(totalPages)}
+                disabled={page === totalPages}
+                data-testid="button-pagination-last"
+              >
+                <ChevronsRight className="h-4 w-4" />
+              </Button>
+            </div>
+          </CardFooter>
+        )}
       </Card>
 
       <RepairIntakeWizard
