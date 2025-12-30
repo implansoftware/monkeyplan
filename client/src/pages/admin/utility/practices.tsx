@@ -97,6 +97,7 @@ export default function AdminUtilityPractices() {
   const [supplierReferenceValue, setSupplierReferenceValue] = useState("");
   const [assigneeType, setAssigneeType] = useState<"admin" | "reseller" | "repair_center">("admin");
   const [selectedResellerId, setSelectedResellerId] = useState<string>("");
+  const [selectedSubResellerId, setSelectedSubResellerId] = useState<string>("");
   const [selectedRepairCenterId, setSelectedRepairCenterId] = useState<string>("");
   const { toast } = useToast();
 
@@ -334,6 +335,21 @@ export default function AdminUtilityPractices() {
     queryKey: ["/api/repair-centers"],
   });
 
+  // Filtra i rivenditori padre (quelli senza parentResellerId)
+  const parentResellers = resellers.filter((r: any) => !r.parentResellerId);
+
+  // Query per sotto-rivenditori del rivenditore selezionato
+  const { data: subResellers = [] } = useQuery<User[]>({
+    queryKey: ["/api/admin/resellers", selectedResellerId, "sub-resellers"],
+    queryFn: async () => {
+      if (!selectedResellerId) return [];
+      const res = await fetch(`/api/admin/resellers/${selectedResellerId}/sub-resellers`);
+      if (!res.ok) return [];
+      return res.json();
+    },
+    enabled: !!selectedResellerId && assigneeType === "reseller",
+  });
+
   const createMutation = useMutation({
     mutationFn: async (data: InsertUtilityPractice) => {
       const res = await apiRequest("POST", "/api/utility/practices", data);
@@ -446,7 +462,10 @@ export default function AdminUtilityPractices() {
 
     // Handle assignee (reseller or repair center)
     if (assigneeType === "reseller" && selectedResellerId) {
-      data.resellerId = selectedResellerId;
+      // Se è selezionato un sotto-rivenditore, usa quello; altrimenti usa il rivenditore padre
+      data.resellerId = (selectedSubResellerId && selectedSubResellerId !== "none") 
+        ? selectedSubResellerId 
+        : selectedResellerId;
       (data as any).repairCenterId = null;
     } else if (assigneeType === "repair_center" && selectedRepairCenterId) {
       data.resellerId = null;
@@ -546,11 +565,22 @@ export default function AdminUtilityPractices() {
       setSelectedResellerId("");
     } else if (practice.resellerId) {
       setAssigneeType("reseller");
-      setSelectedResellerId(practice.resellerId);
+      // Verifica se il resellerId è un sotto-rivenditore (ha parentResellerId)
+      const assignedReseller = resellers.find(r => r.id === practice.resellerId);
+      if (assignedReseller && (assignedReseller as any).parentResellerId) {
+        // È un sotto-rivenditore: imposta il parent e il sub
+        setSelectedResellerId((assignedReseller as any).parentResellerId);
+        setSelectedSubResellerId(practice.resellerId);
+      } else {
+        // È un rivenditore padre
+        setSelectedResellerId(practice.resellerId);
+        setSelectedSubResellerId("");
+      }
       setSelectedRepairCenterId("");
     } else {
       setAssigneeType("admin");
       setSelectedResellerId("");
+      setSelectedSubResellerId("");
       setSelectedRepairCenterId("");
     }
     
@@ -612,6 +642,7 @@ export default function AdminUtilityPractices() {
     setSupplierReferenceValue("");
     setAssigneeType("admin");
     setSelectedResellerId("");
+    setSelectedSubResellerId("");
     setSelectedRepairCenterId("");
     setDialogOpen(true);
   };
@@ -1006,6 +1037,7 @@ export default function AdminUtilityPractices() {
                     onClick={() => {
                       setAssigneeType("admin");
                       setSelectedResellerId("");
+                      setSelectedSubResellerId("");
                       setSelectedRepairCenterId("");
                     }}
                     data-testid="button-assignee-admin"
@@ -1019,6 +1051,7 @@ export default function AdminUtilityPractices() {
                     size="sm"
                     onClick={() => {
                       setAssigneeType("reseller");
+                      setSelectedSubResellerId("");
                       setSelectedRepairCenterId("");
                     }}
                     data-testid="button-assignee-reseller"
@@ -1033,6 +1066,7 @@ export default function AdminUtilityPractices() {
                     onClick={() => {
                       setAssigneeType("repair_center");
                       setSelectedResellerId("");
+                      setSelectedSubResellerId("");
                     }}
                     data-testid="button-assignee-repair-center"
                   >
@@ -1042,24 +1076,45 @@ export default function AdminUtilityPractices() {
                 </div>
                 
                 {assigneeType === "reseller" && (
-                  <Select
-                    value={selectedResellerId}
-                    onValueChange={setSelectedResellerId}
-                  >
-                    <SelectTrigger className="mt-2" data-testid="select-reseller">
-                      <SelectValue placeholder="Seleziona rivenditore" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {resellers.map((reseller) => (
-                        <SelectItem key={reseller.id} value={reseller.id}>
-                          {reseller.fullName || reseller.username}
-                          {(reseller as any).parentResellerId && (
-                            <span className="text-xs text-muted-foreground ml-1">(Sub)</span>
-                          )}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <div className="space-y-2 mt-2">
+                    <Select
+                      value={selectedResellerId}
+                      onValueChange={(value) => {
+                        setSelectedResellerId(value);
+                        setSelectedSubResellerId("");
+                      }}
+                    >
+                      <SelectTrigger data-testid="select-reseller">
+                        <SelectValue placeholder="Seleziona rivenditore" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {parentResellers.map((reseller) => (
+                          <SelectItem key={reseller.id} value={reseller.id}>
+                            {reseller.fullName || reseller.username}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+
+                    {selectedResellerId && subResellers.length > 0 && (
+                      <Select
+                        value={selectedSubResellerId}
+                        onValueChange={setSelectedSubResellerId}
+                      >
+                        <SelectTrigger data-testid="select-sub-reseller">
+                          <SelectValue placeholder="Assegna a sotto-rivenditore (opzionale)" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">-- Nessuno (assegna al rivenditore) --</SelectItem>
+                          {subResellers.map((sub) => (
+                            <SelectItem key={sub.id} value={sub.id}>
+                              {sub.fullName || sub.username}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
+                  </div>
                 )}
                 
                 {assigneeType === "repair_center" && (
