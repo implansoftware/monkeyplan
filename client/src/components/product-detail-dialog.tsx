@@ -143,7 +143,7 @@ export function ProductDetailDialog({ open, onOpenChange, productId }: ProductDe
                   <div className="flex items-center gap-4 mt-3">
                     <div className="flex items-center gap-1">
                       <Tag className="h-4 w-4 text-muted-foreground" />
-                      <span className="font-medium">{Number(data.product.unitPrice || 0).toFixed(2)} €</span>
+                      <span className="font-medium">{(Number(data.product.unitPrice || 0) / 100).toFixed(2)} €</span>
                     </div>
                     <div className="flex items-center gap-1">
                       <Warehouse className="h-4 w-4 text-muted-foreground" />
