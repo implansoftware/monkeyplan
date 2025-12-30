@@ -89,7 +89,7 @@ export default function AdminUtilityReports() {
   const years = Array.from({ length: 5 }, (_, i) => currentYear - i);
 
   const { data: summary, isLoading } = useQuery<UtilitySummary>({
-    queryKey: ["/api/utility/reports/summary", { year: selectedYear }],
+    queryKey: [`/api/utility/reports/summary?year=${selectedYear}`],
   });
 
   const categoryData = Object.entries(summary?.byCategory || {}).map(([key, value]) => ({
