@@ -2,7 +2,7 @@ import { useState, useRef } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useParams, useLocation } from "wouter";
 import { 
-  UtilityPractice, UtilitySupplier, UtilityService, User, Product,
+  UtilityPractice, UtilitySupplier, UtilityService, User, Product, RepairCenter,
   UtilityPracticeTask, UtilityPracticeNote, UtilityPracticeDocument,
   UtilityPracticeTimelineEvent, UtilityPracticeStateHistoryEntry
 } from "@shared/schema";
@@ -22,7 +22,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { 
   ArrowLeft, FileText, CheckSquare, Clock, MessageSquare, 
   Plus, Trash2, Upload, Download, Calendar, User as UserIcon,
-  AlertCircle, CheckCircle, Circle, Play, XCircle, History, Package
+  AlertCircle, CheckCircle, Circle, Play, XCircle, History, Package, Building2, Users
 } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -125,6 +125,9 @@ interface EnrichedPractice extends UtilityPractice {
   service?: UtilityService | null;
   product?: Product | null;
   practiceProducts?: PracticeProductWithDetail[];
+  reseller?: User | null;
+  parentReseller?: User | null;
+  repairCenter?: RepairCenter | null;
 }
 
 export default function AdminUtilityPracticeDetail() {
@@ -156,6 +159,9 @@ export default function AdminUtilityPracticeDetail() {
   const service = practiceData?.service;
   const product = practiceData?.product;
   const practiceProducts = practiceData?.practiceProducts || [];
+  const reseller = practiceData?.reseller;
+  const parentReseller = practiceData?.parentReseller;
+  const repairCenter = practiceData?.repairCenter;
 
   const { data: customer } = useQuery<User>({
     queryKey: ["/api/customers", practice?.customerId],
@@ -423,6 +429,47 @@ export default function AdminUtilityPracticeDetail() {
                   <p>Email: {customer?.email || "-"}</p>
                   <p>Telefono: {customer?.phone || "-"}</p>
                 </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Gestito da</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {reseller ? (
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <Users className="h-4 w-4 text-muted-foreground" />
+                      <span className="font-medium" data-testid="text-reseller-name">
+                        {reseller.fullName || reseller.username}
+                      </span>
+                      {parentReseller && (
+                        <Badge variant="secondary" className="text-xs">Sub-rivenditore</Badge>
+                      )}
+                    </div>
+                    {parentReseller && (
+                      <div className="text-sm text-muted-foreground pl-6">
+                        Rivenditore padre: {parentReseller.fullName || parentReseller.username}
+                      </div>
+                    )}
+                  </div>
+                ) : repairCenter ? (
+                  <div className="flex items-center gap-2">
+                    <Building2 className="h-4 w-4 text-muted-foreground" />
+                    <span className="font-medium" data-testid="text-repair-center-name">
+                      {repairCenter.name}
+                    </span>
+                    <Badge variant="outline" className="text-xs">Centro Riparazione</Badge>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <UserIcon className="h-4 w-4 text-muted-foreground" />
+                    <span className="font-medium text-muted-foreground" data-testid="text-admin-managed">
+                      Admin (gestione diretta)
+                    </span>
+                  </div>
+                )}
               </CardContent>
             </Card>
 

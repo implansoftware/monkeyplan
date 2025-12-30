@@ -16381,6 +16381,44 @@ export function registerRoutes(app: Express): Server {
         storage.listUtilityPracticeProducts(practice.id),
       ]);
       
+      // Enrich with reseller and repair center info (minimal fields only for security)
+      let reseller = null;
+      let parentReseller = null;
+      let repairCenter = null;
+      
+      if (practice.resellerId) {
+        const fullReseller = await storage.getUser(practice.resellerId);
+        if (fullReseller) {
+          reseller = {
+            id: fullReseller.id,
+            fullName: fullReseller.fullName,
+            username: fullReseller.username,
+            parentResellerId: (fullReseller as any).parentResellerId || null,
+          };
+          // Se è un sotto-rivenditore, carica anche il parent (minimal fields)
+          if ((fullReseller as any).parentResellerId) {
+            const fullParent = await storage.getUser((fullReseller as any).parentResellerId);
+            if (fullParent) {
+              parentReseller = {
+                id: fullParent.id,
+                fullName: fullParent.fullName,
+                username: fullParent.username,
+              };
+            }
+          }
+        }
+      }
+      
+      if (practice.repairCenterId) {
+        const fullRepairCenter = await storage.getRepairCenter(practice.repairCenterId);
+        if (fullRepairCenter) {
+          repairCenter = {
+            id: fullRepairCenter.id,
+            name: fullRepairCenter.name,
+          };
+        }
+      }
+      
       // Enrich practice products with product details
       const productsWithDetails = await Promise.all(
         practiceProducts.map(async (pp) => {
@@ -16389,7 +16427,7 @@ export function registerRoutes(app: Express): Server {
         })
       );
       
-      res.json({ ...practice, supplier, service, product, practiceProducts: productsWithDetails });
+      res.json({ ...practice, supplier, service, product, practiceProducts: productsWithDetails, reseller, parentReseller, repairCenter });
     } catch (error: any) {
       res.status(500).send(error.message);
     }
