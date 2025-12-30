@@ -21000,17 +21000,28 @@ export function registerRoutes(app: Express): Server {
       const requesterWarehouse = await storage.getWarehouseForOwner(req.user.id, 'repair_center');
       if (!requesterWarehouse) return res.status(404).json({ error: "Magazzino richiedente non trovato" });
       
-      // Target is the reseller's warehouse
-      const resellerWarehouse = await storage.getWarehouseForOwner(repairCenter.resellerId, 'reseller');
-      if (!resellerWarehouse) return res.status(404).json({ error: "Magazzino fornitore non trovato" });
+      // Get source warehouse from request body or fallback to reseller's warehouse
+      const { notes, items, sourceWarehouseId } = req.body;
       
-      const { notes, items } = req.body;
+      let finalSourceWarehouseId = sourceWarehouseId;
+      if (!finalSourceWarehouseId) {
+        const resellerWarehouse = await storage.getWarehouseForOwner(repairCenter.resellerId, 'reseller');
+        if (!resellerWarehouse) return res.status(404).json({ error: "Magazzino fornitore non trovato" });
+        finalSourceWarehouseId = resellerWarehouse.id;
+      } else {
+        // Validate that the provided sourceWarehouseId belongs to the reseller
+        const sourceWarehouse = await storage.getWarehouse(sourceWarehouseId);
+        if (!sourceWarehouse) return res.status(404).json({ error: "Magazzino sorgente non trovato" });
+        if (sourceWarehouse.ownerId !== repairCenter.resellerId || sourceWarehouse.ownerType !== 'reseller') {
+          return res.status(403).json({ error: "Magazzino sorgente non valido per questo reseller" });
+        }
+      }
       
       const request = await storage.createTransferRequest({
         requesterType: 'repair_center',
         requesterId: req.user.id,
         requesterWarehouseId: requesterWarehouse.id,
-        sourceWarehouseId: resellerWarehouse.id,
+        sourceWarehouseId: finalSourceWarehouseId,
         targetResellerId: repairCenter.resellerId,
         status: 'pending',
         notes,
@@ -21150,17 +21161,28 @@ export function registerRoutes(app: Express): Server {
       const requesterWarehouse = await storage.getWarehouseForOwner(req.user.id, 'reseller');
       if (!requesterWarehouse) return res.status(404).json({ error: "Magazzino richiedente non trovato" });
       
-      // Target is the parent reseller's warehouse
-      const parentWarehouse = await storage.getWarehouseForOwner(user.parentResellerId, 'reseller');
-      if (!parentWarehouse) return res.status(404).json({ error: "Magazzino fornitore non trovato" });
+      // Get source warehouse from request body or fallback to parent reseller's warehouse
+      const { notes, items, sourceWarehouseId } = req.body;
       
-      const { notes, items } = req.body;
+      let finalSourceWarehouseId = sourceWarehouseId;
+      if (!finalSourceWarehouseId) {
+        const parentWarehouse = await storage.getWarehouseForOwner(user.parentResellerId, 'reseller');
+        if (!parentWarehouse) return res.status(404).json({ error: "Magazzino fornitore non trovato" });
+        finalSourceWarehouseId = parentWarehouse.id;
+      } else {
+        // Validate that the provided sourceWarehouseId belongs to the parent reseller
+        const sourceWarehouse = await storage.getWarehouse(sourceWarehouseId);
+        if (!sourceWarehouse) return res.status(404).json({ error: "Magazzino sorgente non trovato" });
+        if (sourceWarehouse.ownerId !== user.parentResellerId || sourceWarehouse.ownerType !== 'reseller') {
+          return res.status(403).json({ error: "Magazzino sorgente non valido per il reseller padre" });
+        }
+      }
       
       const request = await storage.createTransferRequest({
         requesterType: 'sub_reseller',
         requesterId: req.user.id,
         requesterWarehouseId: requesterWarehouse.id,
-        sourceWarehouseId: parentWarehouse.id,
+        sourceWarehouseId: finalSourceWarehouseId,
         targetResellerId: user.parentResellerId,
         status: 'pending',
         notes,

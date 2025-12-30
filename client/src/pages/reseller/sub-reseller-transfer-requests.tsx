@@ -131,7 +131,7 @@ export default function SubResellerTransferRequestsPage() {
   };
 
   const createRequestMutation = useMutation({
-    mutationFn: async (data: { notes: string; items: Array<{ productId: string; quantity: number }> }) => {
+    mutationFn: async (data: { notes: string; sourceWarehouseId: string; items: Array<{ productId: string; quantity: number }> }) => {
       return apiRequest("POST", "/api/reseller/sub-reseller/transfer-requests", data);
     },
     onSuccess: () => {
@@ -314,6 +314,7 @@ export default function SubResellerTransferRequestsPage() {
                             }`}
                             onClick={() => {
                               setSelectedProduct(item);
+                              setSelectedWarehouse("");
                               if (item.warehouses.length === 1) {
                                 setSelectedWarehouse(item.warehouses[0].warehouseId);
                               }
@@ -484,9 +485,10 @@ export default function SubResellerTransferRequestsPage() {
                 <Button
                   onClick={() => createRequestMutation.mutate({
                     notes: requestNotes,
+                    sourceWarehouseId: selectedWarehouse,
                     items: [{ productId: selectedProduct!.product.id, quantity: requestQuantity }]
                   })}
-                  disabled={createRequestMutation.isPending || requestQuantity < 1}
+                  disabled={createRequestMutation.isPending || requestQuantity < 1 || !selectedWarehouse || !selectedProduct}
                   data-testid="button-submit-request"
                 >
                   {createRequestMutation.isPending ? "Invio..." : "Invia Richiesta"}
