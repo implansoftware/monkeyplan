@@ -485,6 +485,7 @@ export const users = pgTable("users", {
   isActive: boolean("is_active").notNull().default(true),
   repairCenterId: varchar("repair_center_id"),
   resellerId: varchar("reseller_id"), // Which reseller this user belongs to (for customers and repair_centers)
+  subResellerId: varchar("sub_reseller_id"), // Which sub-reseller this customer belongs to (optional, for customers only)
   // Dati fiscali (principalmente per rivenditori)
   partitaIva: text("partita_iva"),
   codiceFiscale: text("codice_fiscale"),
