@@ -66,10 +66,7 @@ export default function ResellerTickets() {
 
   const createMutation = useMutation({
     mutationFn: async (data: typeof newTicket) => {
-      return apiRequest("/api/internal-tickets", {
-        method: "POST",
-        body: JSON.stringify(data),
-      });
+      return apiRequest("POST", "/api/internal-tickets", data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/internal-tickets"] });

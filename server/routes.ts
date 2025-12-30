@@ -7095,13 +7095,34 @@ export function registerRoutes(app: Express): Server {
       const ticket = await storage.getTicket(req.params.id);
       if (!ticket) return res.status(404).send("Ticket not found");
       
-      // Check access based on role
-      const hasAccess = 
-        req.user.role === 'admin' ||
-        ticket.customerId === req.user.id ||
-        ticket.assignedTo === req.user.id;
+      // Check access based on role and ticket type
+      let hasAccess = false;
       
-      if (!hasAccess) return res.status(403).send("Forbidden");
+      if (req.user.role === 'admin' || req.user.role === 'admin_staff') {
+        // Admin can see all tickets
+        hasAccess = true;
+      } else if (ticket.ticketType === 'internal') {
+        // For internal tickets, check if user is initiator or target
+        // User is initiator
+        if (ticket.initiatorId === req.user.id) {
+          hasAccess = true;
+        }
+        // User is targeted reseller
+        else if (ticket.targetType === 'reseller' && ticket.targetId === req.user.id) {
+          hasAccess = true;
+        }
+        // User is repair_center role - targetId matches their user ID
+        else if (ticket.targetType === 'repair_center' && ticket.targetId === req.user.id) {
+          hasAccess = true;
+        }
+      } else {
+        // For support tickets (customer→admin)
+        hasAccess = 
+          ticket.customerId === req.user.id ||
+          ticket.assignedTo === req.user.id;
+      }
+      
+      if (!hasAccess) return res.status(403).send("Accesso negato");
       
       res.json(ticket);
     } catch (error: any) {
