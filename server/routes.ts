@@ -7749,6 +7749,14 @@ export function registerRoutes(app: Express): Server {
         }
       }
       
+      // Validate deviceModelId if provided - must exist in database
+      if (req.body.deviceModelId) {
+        const deviceModel = await storage.getDeviceModel(req.body.deviceModelId);
+        if (!deviceModel) {
+          return res.status(400).send("Modello dispositivo non trovato. Riprova selezionando il modello dalla lista.");
+        }
+      }
+      
       // Build order data
       const orderData: any = {
         ...validatedData,
