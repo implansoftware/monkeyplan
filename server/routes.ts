@@ -2090,6 +2090,18 @@ export function registerRoutes(app: Express): Server {
   app.post("/api/admin/repair-centers", requireRole("admin"), async (req, res) => {
     try {
       const validatedData = insertRepairCenterSchema.parse(req.body);
+      
+      // Validate sub-reseller if provided
+      if (validatedData.subResellerId) {
+        if (!validatedData.resellerId) {
+          return res.status(400).send("Seleziona un rivenditore prima di assegnare un sub-reseller");
+        }
+        const subReseller = await storage.getUser(validatedData.subResellerId);
+        if (!subReseller || subReseller.role !== 'reseller' || subReseller.parentResellerId !== validatedData.resellerId) {
+          return res.status(400).send("Sub-reseller non valido o non appartenente al rivenditore selezionato");
+        }
+      }
+      
       const center = await storage.createRepairCenter(validatedData);
       setActivityEntity(res, { type: 'repair-centers', id: center.id });
       res.status(201).json(center);
@@ -2101,7 +2113,7 @@ export function registerRoutes(app: Express): Server {
   app.patch("/api/admin/repair-centers/:id", requireRole("admin"), async (req, res) => {
     try {
       const { 
-        name, address, city, phone, email, resellerId, isActive,
+        name, address, city, phone, email, resellerId, subResellerId, isActive,
         hourlyRateCents, cap, provincia, ragioneSociale, partitaIva,
         codiceFiscale, iban, codiceUnivoco, pec
       } = req.body;
@@ -2112,6 +2124,20 @@ export function registerRoutes(app: Express): Server {
       if (phone !== undefined) updates.phone = phone;
       if (email !== undefined) updates.email = email;
       if (resellerId !== undefined) updates.resellerId = resellerId;
+      if (subResellerId !== undefined) {
+        // Validate sub-reseller if provided
+        if (subResellerId) {
+          const effectiveResellerId = resellerId !== undefined ? resellerId : (await storage.getRepairCenter(req.params.id))?.resellerId;
+          if (!effectiveResellerId) {
+            return res.status(400).send("Seleziona un rivenditore prima di assegnare un sub-reseller");
+          }
+          const subReseller = await storage.getUser(subResellerId);
+          if (!subReseller || subReseller.role !== 'reseller' || subReseller.parentResellerId !== effectiveResellerId) {
+            return res.status(400).send("Sub-reseller non valido o non appartenente al rivenditore selezionato");
+          }
+        }
+        updates.subResellerId = subResellerId;
+      }
       if (isActive !== undefined) updates.isActive = isActive;
       if (hourlyRateCents !== undefined) updates.hourlyRateCents = hourlyRateCents;
       if (cap !== undefined) updates.cap = cap;
