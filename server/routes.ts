@@ -12196,9 +12196,12 @@ export function registerRoutes(app: Express): Server {
         .filter(u => u.role === 'reseller' && u.parentResellerId === req.user!.id && u.isActive);
       
       // For each sub-reseller, get their repair centers (include inactive for full visibility)
+      // Centers can be associated via:
+      // 1. resellerId === subReseller.id (centers created directly by sub-reseller)
+      // 2. subResellerId === subReseller.id (centers assigned to sub-reseller by parent reseller)
       const result = mySubResellers.map(subReseller => {
         const subResellerCenters = allRepairCenters.filter(
-          rc => rc.resellerId === subReseller.id
+          rc => rc.resellerId === subReseller.id || rc.subResellerId === subReseller.id
         );
         return {
           subReseller: {
