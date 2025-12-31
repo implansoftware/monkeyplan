@@ -9,7 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
-import { Users, Plus, Search, Edit, Trash2, Shield, UserCog, Eye, FilePlus, Pencil } from "lucide-react";
+import { Users, Plus, Search, Edit, Trash2, Shield, UserCog, Eye, FilePlus, Pencil, Key } from "lucide-react";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
@@ -91,6 +91,8 @@ export default function ResellerTeam() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [permissionsDialogOpen, setPermissionsDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [resetPasswordDialogOpen, setResetPasswordDialogOpen] = useState(false);
+  const [newPassword, setNewPassword] = useState("");
   const [selectedMember, setSelectedMember] = useState<StaffMember | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [localPermissions, setLocalPermissions] = useState<Record<string, Record<string, boolean>>>({});
@@ -191,6 +193,28 @@ export default function ResellerTeam() {
       toast({
         title: "Errore",
         description: error.message || "Impossibile eliminare",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const resetPasswordMutation = useMutation({
+    mutationFn: async ({ id, newPassword }: { id: string; newPassword: string }) => {
+      return apiRequest("POST", `/api/reseller/team/${id}/reset-password`, { newPassword });
+    },
+    onSuccess: () => {
+      setResetPasswordDialogOpen(false);
+      setNewPassword("");
+      setSelectedMember(null);
+      toast({
+        title: "Password aggiornata",
+        description: "La password del collaboratore è stata reimpostata con successo.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Errore",
+        description: error.message || "Impossibile reimpostare la password",
         variant: "destructive",
       });
     },
@@ -464,6 +488,19 @@ export default function ResellerTeam() {
                           data-testid={`button-edit-${member.id}`}
                         >
                           <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => {
+                            setSelectedMember(member);
+                            setNewPassword("");
+                            setResetPasswordDialogOpen(true);
+                          }}
+                          title="Reset password"
+                          data-testid={`button-reset-password-${member.id}`}
+                        >
+                          <Key className="h-4 w-4" />
                         </Button>
                         <Button
                           variant="ghost"
@@ -798,6 +835,45 @@ export default function ResellerTeam() {
               data-testid="button-confirm-delete"
             >
               Elimina
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={resetPasswordDialogOpen} onOpenChange={setResetPasswordDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Reimposta Password</DialogTitle>
+            <DialogDescription>
+              Imposta una nuova password per {selectedMember?.fullName}. Il collaboratore dovrà usare questa password per accedere.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="new-password">Nuova Password</Label>
+              <Input
+                id="new-password"
+                type="password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                placeholder="Inserisci la nuova password"
+                data-testid="input-new-password"
+              />
+              <p className="text-sm text-muted-foreground">
+                La password deve contenere almeno 4 caratteri
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setResetPasswordDialogOpen(false)}>
+              Annulla
+            </Button>
+            <Button
+              onClick={() => selectedMember && resetPasswordMutation.mutate({ id: selectedMember.id, newPassword })}
+              disabled={resetPasswordMutation.isPending || newPassword.length < 4}
+              data-testid="button-confirm-reset-password"
+            >
+              Reimposta Password
             </Button>
           </DialogFooter>
         </DialogContent>
