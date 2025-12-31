@@ -390,6 +390,7 @@ export default function ResellerTeam() {
                   <TableHead>Stato</TableHead>
                   <TableHead>Permessi</TableHead>
                   <TableHead>Centri Assegnati</TableHead>
+                  <TableHead>Sotto-Rivenditori</TableHead>
                   <TableHead>Data Creazione</TableHead>
                   <TableHead>Azioni</TableHead>
                 </TableRow>
@@ -422,6 +423,22 @@ export default function ResellerTeam() {
                               {rc.name}
                             </Badge>
                           ))}
+                        </div>
+                      ) : (
+                        <span className="text-muted-foreground text-sm">-</span>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {member.assignedSubResellerIds && member.assignedSubResellerIds.length > 0 ? (
+                        <div className="flex flex-wrap gap-1">
+                          {member.assignedSubResellerIds.map((subResellerId) => {
+                            const subReseller = subResellers.find(sr => sr.id === subResellerId);
+                            return (
+                              <Badge key={subResellerId} variant="outline" data-testid={`badge-subreseller-${member.id}-${subResellerId}`}>
+                                {subReseller?.ragioneSociale || subReseller?.fullName || "Sotto-rivenditore"}
+                              </Badge>
+                            );
+                          })}
                         </div>
                       ) : (
                         <span className="text-muted-foreground text-sm">-</span>
