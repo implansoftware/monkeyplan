@@ -70,9 +70,6 @@ export function useStaffPermissions() {
 export const moduleToMenuMapping: Record<StaffModule, string[]> = {
   repairs: [
     "/reseller/repairs",
-    "/reseller/new-repair",
-    "/reseller/diagnostics",
-    "/reseller/quotes",
   ],
   customers: [
     "/reseller/customers",
@@ -93,7 +90,6 @@ export const moduleToMenuMapping: Record<StaffModule, string[]> = {
   ],
   repair_centers: [
     "/reseller/repair-centers",
-    "/reseller/repair-center-schedules",
   ],
   services: [
     "/reseller/service-catalog",
@@ -106,15 +102,9 @@ export const moduleToMenuMapping: Record<StaffModule, string[]> = {
   ],
   suppliers: [
     "/reseller/suppliers",
-    "/reseller/sifar/settings",
-    "/reseller/sifar/catalog",
-    "/reseller/sifar/cart",
-    "/reseller/foneday/settings",
-    "/reseller/foneday/catalog",
-    "/reseller/foneday/cart",
-    "/reseller/mobilesentrix/settings",
-    "/reseller/mobilesentrix/catalog",
-    "/reseller/trovausati/settings",
+    "/reseller/sifar",
+    "/reseller/foneday",
+    "/reseller/mobilesentrix",
   ],
   supplier_orders: [
     "/reseller/supplier-orders",

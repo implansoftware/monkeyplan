@@ -383,7 +383,7 @@ export function AppSidebar() {
         return group;
       }
     }
-    if (isReseller) {
+    if (isReseller || isResellerStaff) {
       for (const supplier of integratedSuppliers) {
         if (location.startsWith(supplier.basePath)) {
           return "Fornitori";
@@ -533,7 +533,7 @@ export function AppSidebar() {
                         );
                       })}
                       
-                      {group === "Fornitori" && isReseller && (
+                      {group === "Fornitori" && (isReseller || isResellerStaff) && canAccessModule("suppliers") && (
                         <>
                           <div className="my-2 mx-2 border-t border-sidebar-border" />
                           <div className="px-4 py-1 text-xs font-medium text-muted-foreground flex items-center gap-1">
