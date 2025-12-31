@@ -21019,8 +21019,9 @@ export function registerRoutes(app: Express): Server {
   app.get("/api/repair-center/transfer-requests/search-products", requireRole("repair_center"), async (req, res) => {
     try {
       if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      if (!req.user.repairCenterId) return res.status(404).json({ error: "Centro di riparazione non trovato" });
       
-      const repairCenter = await storage.getRepairCenterByUserId(req.user.id);
+      const repairCenter = await storage.getRepairCenter(req.user.repairCenterId);
       if (!repairCenter) return res.status(404).json({ error: "Centro di riparazione non trovato" });
       
       const resellerWarehouse = await storage.getWarehouseByOwner('reseller', repairCenter.resellerId);
