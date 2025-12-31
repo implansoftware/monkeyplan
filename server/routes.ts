@@ -21028,14 +21028,19 @@ export function registerRoutes(app: Express): Server {
       
       const { query, productType } = req.query;
       
+      console.log("searchProductsWithStock params:", { warehouseId: resellerWarehouse.id, query, productType });
+      
       const results = await storage.searchProductsWithStock({
         query: query as string | undefined,
         productType: productType as string | undefined,
         warehouseIds: [resellerWarehouse.id],
       });
       
+      console.log("searchProductsWithStock results:", results.length);
+      
       res.json(results);
     } catch (error: any) {
+      console.error("searchProductsWithStock error:", error);
       res.status(500).json({ error: error.message });
     }
   });
