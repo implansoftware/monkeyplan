@@ -21396,11 +21396,16 @@ export function registerRoutes(app: Express): Server {
       const request = await storage.getTransferRequest(req.params.id);
       if (!request) return res.status(404).json({ error: "Richiesta non trovata" });
       
-      // Check access: sender (targetReseller) or recipient (requester)
-      const isAuthorized = 
+      // Check access: sender (targetReseller), recipient (requester), or repair center user
+      let isAuthorized = 
         request.targetResellerId === req.user.id ||
         request.requesterId === req.user.id ||
         req.user.role === 'admin';
+      
+      // For repair center requesters, also allow repair center users
+      if (!isAuthorized && request.requesterType === 'repair_center' && req.user.role === 'repair_center') {
+        isAuthorized = req.user.repairCenterId === request.requesterId;
+      }
       
       if (!isAuthorized) return res.status(403).json({ error: "Accesso negato" });
       
