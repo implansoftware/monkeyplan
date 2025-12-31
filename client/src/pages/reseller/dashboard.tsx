@@ -15,7 +15,7 @@ import { RepairOrder, Invoice } from "@shared/schema";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
 import { CustomerWizardDialog } from "@/components/CustomerWizardDialog";
-import { AcceptanceWizardDialog } from "@/components/AcceptanceWizardDialog";
+import { RepairIntakeWizard } from "@/components/RepairIntakeWizard";
 
 type ResellerStats = {
   overview: {
@@ -222,7 +222,7 @@ export default function ResellerDashboard() {
               )}
             </p>
             <Link href="/reseller/incoming-transfer-requests">
-              <Button variant="link" size="sm" className="p-0 h-auto mt-2">
+              <Button variant="ghost" size="sm" className="p-0 h-auto mt-2">
                 Gestisci richieste
               </Button>
             </Link>
@@ -245,7 +245,7 @@ export default function ResellerDashboard() {
               Ordini in corso • {stats?.b2b?.totalOrders ?? 0} totali
             </p>
             <Link href="/reseller/b2b-orders">
-              <Button variant="link" size="sm" className="p-0 h-auto mt-2">
+              <Button variant="ghost" size="sm" className="p-0 h-auto mt-2">
                 Vedi ordini
               </Button>
             </Link>
@@ -268,7 +268,7 @@ export default function ResellerDashboard() {
               Pratiche attive • {stats?.utility?.totalPractices ?? 0} totali
             </p>
             <Link href="/reseller/utility/practices">
-              <Button variant="link" size="sm" className="p-0 h-auto mt-2">
+              <Button variant="ghost" size="sm" className="p-0 h-auto mt-2">
                 Gestisci pratiche
               </Button>
             </Link>
@@ -294,7 +294,7 @@ export default function ResellerDashboard() {
               )}
             </p>
             <Link href="/reseller/repair-centers">
-              <Button variant="link" size="sm" className="p-0 h-auto mt-2">
+              <Button variant="ghost" size="sm" className="p-0 h-auto mt-2">
                 Vedi dettagli
               </Button>
             </Link>
@@ -540,7 +540,7 @@ export default function ResellerDashboard() {
         onOpenChange={setCustomerDialogOpen}
         onSuccess={() => setCustomerDialogOpen(false)}
       />
-      <AcceptanceWizardDialog 
+      <RepairIntakeWizard 
         open={acceptanceDialogOpen} 
         onOpenChange={setAcceptanceDialogOpen}
         onSuccess={() => setAcceptanceDialogOpen(false)}
