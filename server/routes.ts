@@ -4280,16 +4280,18 @@ export function registerRoutes(app: Express): Server {
       // Note: When acting as repair center, still show the reseller's team (not center-specific)
       const staff = await storage.listResellerStaff(context.resellerId);
       
-      // Get permissions and assigned repair centers for each staff member
+      // Get permissions, assigned repair centers and sub-resellers for each staff member
       const staffWithPermissions = await Promise.all(
         staff.map(async (member) => {
           const permissions = await storage.getStaffPermissions(member.id);
           const assignedRepairCenters = await storage.listRepairCentersForStaff(member.id);
+          const assignedSubResellerIds = await storage.listSubResellerIdsForStaff(member.id);
           return {
             ...member,
             password: undefined, // Never send password
             permissions,
-            assignedRepairCenters
+            assignedRepairCenters,
+            assignedSubResellerIds
           };
         })
       );
@@ -4305,7 +4307,7 @@ export function registerRoutes(app: Express): Server {
     try {
       if (!req.user) return res.status(401).send("Non autorizzato");
       
-      const { user: userData, permissions, repairCenterIds } = req.body;
+      const { user: userData, permissions, repairCenterIds, subResellerIds } = req.body;
       
       if (!userData || !userData.username || !userData.email || !userData.password || !userData.fullName) {
         return res.status(400).send("Dati utente incompleti");
@@ -4336,16 +4338,23 @@ export function registerRoutes(app: Express): Server {
         await storage.setStaffRepairCenters(newUser.id, repairCenterIds);
       }
 
-      // Get created permissions and assigned repair centers
+      // Assign sub-resellers if provided
+      if (subResellerIds && Array.isArray(subResellerIds)) {
+        await storage.setStaffSubResellers(newUser.id, subResellerIds);
+      }
+
+      // Get created permissions, assigned repair centers and sub-resellers
       const createdPermissions = await storage.getStaffPermissions(newUser.id);
       const assignedRepairCenters = await storage.listRepairCentersForStaff(newUser.id);
+      const assignedSubResellerIds = await storage.listSubResellerIdsForStaff(newUser.id);
 
       setActivityEntity(res, { type: 'users', id: newUser.id });
       res.status(201).json({
         ...newUser,
         password: undefined,
         permissions: createdPermissions,
-        assignedRepairCenters
+        assignedRepairCenters,
+        assignedSubResellerIds
       });
     } catch (error: any) {
       console.error("Error creating staff member:", error);
@@ -4359,7 +4368,7 @@ export function registerRoutes(app: Express): Server {
       if (!req.user) return res.status(401).send("Non autorizzato");
       
       const staffId = req.params.id;
-      const { user: userData, permissions, repairCenterIds } = req.body;
+      const { user: userData, permissions, repairCenterIds, subResellerIds } = req.body;
       
       // Verify the staff member belongs to this reseller
       const staffMember = await storage.getUser(staffId);
@@ -4390,17 +4399,24 @@ export function registerRoutes(app: Express): Server {
         await storage.setStaffRepairCenters(staffId, repairCenterIds);
       }
 
-      // Get updated staff member with permissions and repair centers
+      // Update sub-reseller assignments if provided
+      if (subResellerIds !== undefined && Array.isArray(subResellerIds)) {
+        await storage.setStaffSubResellers(staffId, subResellerIds);
+      }
+
+      // Get updated staff member with permissions, repair centers and sub-resellers
       const updatedMember = await storage.getUser(staffId);
       const updatedPermissions = await storage.getStaffPermissions(staffId);
       const assignedRepairCenters = await storage.listRepairCentersForStaff(staffId);
+      const assignedSubResellerIds = await storage.listSubResellerIdsForStaff(staffId);
 
       setActivityEntity(res, { type: 'users', id: staffId });
       res.json({
         ...updatedMember,
         password: undefined,
         permissions: updatedPermissions,
-        assignedRepairCenters
+        assignedRepairCenters,
+        assignedSubResellerIds
       });
     } catch (error: any) {
       console.error("Error updating staff member:", error);
