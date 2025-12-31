@@ -21347,7 +21347,7 @@ export function registerRoutes(app: Express): Server {
       if (request.targetResellerId !== req.user.id) return res.status(403).json({ error: "Accesso negato" });
       if (request.status !== 'approved') return res.status(400).json({ error: "Solo le richieste approvate possono essere spedite" });
       
-      const { items } = req.body;
+      const { items, trackingNumber, trackingCarrier, ddtNumber } = req.body;
       
       // Update shipped quantities and deduct from source warehouse
       if (items && Array.isArray(items)) {
@@ -21369,7 +21369,10 @@ export function registerRoutes(app: Express): Server {
       const updated = await storage.updateTransferRequest(req.params.id, {
         status: 'shipped',
         shippedAt: new Date(),
-        shippedBy: req.user.id
+        shippedBy: req.user.id,
+        trackingNumber: trackingNumber || null,
+        trackingCarrier: trackingCarrier || null,
+        ddtNumber: ddtNumber || null,
       });
       res.json(updated);
     } catch (error: any) {

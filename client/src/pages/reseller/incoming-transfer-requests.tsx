@@ -43,6 +43,9 @@ type TransferRequest = {
   rejectionReason: string | null;
   shippedAt: string | null;
   shippedBy: string | null;
+  trackingNumber: string | null;
+  trackingCarrier: string | null;
+  ddtNumber: string | null;
   receivedAt: string | null;
   notes: string | null;
   createdAt: string;
@@ -79,6 +82,9 @@ export default function IncomingTransferRequestsPage() {
   const [rejectionReason, setRejectionReason] = useState("");
   const [approvedItems, setApprovedItems] = useState<Array<{ id: string; approvedQuantity: number }>>([]);
   const [shippedItems, setShippedItems] = useState<Array<{ id: string; productId: string; shippedQuantity: number }>>([]);
+  const [shipTrackingNumber, setShipTrackingNumber] = useState("");
+  const [shipTrackingCarrier, setShipTrackingCarrier] = useState("");
+  const [shipDdtNumber, setShipDdtNumber] = useState("");
 
   const { data: requests = [], isLoading } = useQuery<TransferRequest[]>({
     queryKey: ["/api/reseller/incoming-transfer-requests"],
@@ -116,9 +122,15 @@ export default function IncomingTransferRequestsPage() {
     mutationFn: async (data: { 
       requestId: string; 
       items: Array<{ id: string; productId: string; shippedQuantity: number }>;
+      trackingNumber?: string;
+      trackingCarrier?: string;
+      ddtNumber?: string;
     }) => {
       return apiRequest("PATCH", `/api/reseller/incoming-transfer-requests/${data.requestId}/ship`, {
-        items: data.items
+        items: data.items,
+        trackingNumber: data.trackingNumber,
+        trackingCarrier: data.trackingCarrier,
+        ddtNumber: data.ddtNumber
       });
     },
     onSuccess: () => {
@@ -129,6 +141,9 @@ export default function IncomingTransferRequestsPage() {
       setShowShipDialog(false);
       setSelectedRequest(null);
       setShippedItems([]);
+      setShipTrackingNumber("");
+      setShipTrackingCarrier("");
+      setShipDdtNumber("");
     },
     onError: (error: any) => {
       toast({ title: "Errore", description: error.message, variant: "destructive" });
@@ -498,42 +513,86 @@ export default function IncomingTransferRequestsPage() {
       </Dialog>
 
       <Dialog open={showShipDialog} onOpenChange={setShowShipDialog}>
-        <DialogContent>
+        <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>Spedisci - {selectedRequest?.requestNumber}</DialogTitle>
           </DialogHeader>
           {selectedRequest && (
             <div className="space-y-4">
-              <p className="text-sm text-muted-foreground">
-                Inserisci le quantità da spedire per ogni prodotto:
-              </p>
-              <div className="space-y-2">
-                {selectedRequest.items.map((item, index) => (
-                  <div key={item.id} className="flex items-center justify-between p-3 border rounded-md">
-                    <div>
-                      <p className="font-medium">{item.product?.name || "Prodotto"}</p>
-                      <p className="text-sm text-muted-foreground">
-                        Approvato: {item.approvedQuantity || 0}
-                      </p>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="carrier">Corriere</Label>
+                  <Select value={shipTrackingCarrier} onValueChange={setShipTrackingCarrier}>
+                    <SelectTrigger data-testid="select-carrier">
+                      <SelectValue placeholder="Seleziona corriere" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="brt">BRT/Bartolini</SelectItem>
+                      <SelectItem value="gls">GLS</SelectItem>
+                      <SelectItem value="dhl">DHL</SelectItem>
+                      <SelectItem value="ups">UPS</SelectItem>
+                      <SelectItem value="fedex">FedEx</SelectItem>
+                      <SelectItem value="poste_italiane">Poste Italiane</SelectItem>
+                      <SelectItem value="sda">SDA</SelectItem>
+                      <SelectItem value="tnt">TNT</SelectItem>
+                      <SelectItem value="other">Altro</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="tracking">Numero Tracking</Label>
+                  <Input
+                    id="tracking"
+                    placeholder="es. 1234567890"
+                    value={shipTrackingNumber}
+                    onChange={(e) => setShipTrackingNumber(e.target.value)}
+                    data-testid="input-tracking-number"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="ddt">Numero DDT</Label>
+                  <Input
+                    id="ddt"
+                    placeholder="es. DDT-2025-00001"
+                    value={shipDdtNumber}
+                    onChange={(e) => setShipDdtNumber(e.target.value)}
+                    data-testid="input-ddt-number"
+                  />
+                </div>
+              </div>
+
+              <div className="border-t pt-4">
+                <p className="text-sm text-muted-foreground mb-2">
+                  Quantità da spedire per ogni prodotto:
+                </p>
+                <div className="space-y-2 max-h-60 overflow-y-auto">
+                  {selectedRequest.items.map((item, index) => (
+                    <div key={item.id} className="flex items-center justify-between p-3 border rounded-md">
+                      <div>
+                        <p className="font-medium">{item.product?.name || "Prodotto"}</p>
+                        <p className="text-sm text-muted-foreground">
+                          Approvato: {item.approvedQuantity || 0}
+                        </p>
+                      </div>
+                      <Input
+                        type="number"
+                        min={0}
+                        max={item.approvedQuantity || 0}
+                        value={shippedItems[index]?.shippedQuantity || 0}
+                        onChange={(e) => {
+                          const updated = [...shippedItems];
+                          updated[index] = { 
+                            ...updated[index], 
+                            shippedQuantity: parseInt(e.target.value) || 0 
+                          };
+                          setShippedItems(updated);
+                        }}
+                        className="w-24"
+                        data-testid={`input-ship-${item.id}`}
+                      />
                     </div>
-                    <Input
-                      type="number"
-                      min={0}
-                      max={item.approvedQuantity || 0}
-                      value={shippedItems[index]?.shippedQuantity || 0}
-                      onChange={(e) => {
-                        const updated = [...shippedItems];
-                        updated[index] = { 
-                          ...updated[index], 
-                          shippedQuantity: parseInt(e.target.value) || 0 
-                        };
-                        setShippedItems(updated);
-                      }}
-                      className="w-24"
-                      data-testid={`input-ship-${item.id}`}
-                    />
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
             </div>
           )}
@@ -546,7 +605,10 @@ export default function IncomingTransferRequestsPage() {
                 if (selectedRequest) {
                   shipMutation.mutate({
                     requestId: selectedRequest.id,
-                    items: shippedItems
+                    items: shippedItems,
+                    trackingNumber: shipTrackingNumber || undefined,
+                    trackingCarrier: shipTrackingCarrier || undefined,
+                    ddtNumber: shipDdtNumber || undefined
                   });
                 }
               }}
