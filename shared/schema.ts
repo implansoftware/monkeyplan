@@ -621,6 +621,24 @@ export const insertStaffRepairCenterSchema = createInsertSchema(staffRepairCente
 export type InsertStaffRepairCenter = z.infer<typeof insertStaffRepairCenterSchema>;
 export type StaffRepairCenter = typeof staffRepairCenters.$inferSelect;
 
+// Staff-SubReseller many-to-many relationship
+// Staff members (reseller_staff) can be assigned to specific sub-resellers
+export const staffSubResellers = pgTable("staff_sub_resellers", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  staffId: varchar("staff_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+  subResellerId: varchar("sub_reseller_id").notNull().references(() => users.id, { onDelete: 'cascade' }), // User with role='reseller' and parentResellerId set
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+}, (table) => [
+  unique().on(table.staffId, table.subResellerId),
+]);
+
+export const insertStaffSubResellerSchema = createInsertSchema(staffSubResellers).omit({
+  id: true,
+  createdAt: true,
+});
+export type InsertStaffSubReseller = z.infer<typeof insertStaffSubResellerSchema>;
+export type StaffSubReseller = typeof staffSubResellers.$inferSelect;
+
 // Product type enum
 export const productTypeEnum = pgEnum("product_type", [
   "ricambio",      // Spare part
