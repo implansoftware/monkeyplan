@@ -6976,7 +6976,7 @@ export class DatabaseStorage implements IStorage {
         ownerNames[entry.ownerId] = 'Admin';
       } else if (entry.ownerType === 'reseller' || entry.ownerType === 'sub_reseller') {
         const user = await this.getUser(entry.ownerId);
-        ownerNames[entry.ownerId] = user?.companyName || user?.username || 'Sconosciuto';
+        ownerNames[entry.ownerId] = user?.ragioneSociale || user?.username || 'Sconosciuto';
       } else if (entry.ownerType === 'repair_center') {
         const rc = await this.getRepairCenter(entry.ownerId);
         ownerNames[entry.ownerId] = rc?.name || 'Sconosciuto';
