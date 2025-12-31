@@ -453,6 +453,14 @@ export function AppSidebar() {
                     <span className={`flex-1 text-left font-medium ${hasActiveItem ? "text-sidebar-primary" : ""}`}>
                       {group}
                     </span>
+                    {group === "Interscambio" && pendingTransferRequestsCount > 0 && !isOpen && (
+                      <span 
+                        className="flex h-5 min-w-5 items-center justify-center rounded-full bg-destructive text-destructive-foreground text-xs font-medium px-1.5"
+                        data-testid="badge-pending-transfer-requests-group"
+                      >
+                        {pendingTransferRequestsCount}
+                      </span>
+                    )}
                     <ChevronRight className={`h-4 w-4 transition-transform duration-200 ${isOpen ? "rotate-90" : ""}`} />
                   </SidebarMenuButton>
                 </CollapsibleTrigger>
