@@ -999,6 +999,9 @@ export const transferRequests = pgTable("transfer_requests", {
   // Spedizione
   shippedAt: timestamp("shipped_at"),
   shippedBy: varchar("shipped_by").references(() => users.id),
+  trackingNumber: text("tracking_number"),
+  trackingCarrier: text("tracking_carrier"),
+  ddtNumber: text("ddt_number"),
   
   // Ricezione
   receivedAt: timestamp("received_at"),
@@ -1020,6 +1023,9 @@ export const insertTransferRequestSchema = createInsertSchema(transferRequests).
   rejectedAt: true,
   shippedAt: true,
   shippedBy: true,
+  trackingNumber: true,
+  trackingCarrier: true,
+  ddtNumber: true,
   receivedAt: true,
   createdAt: true,
   updatedAt: true,
