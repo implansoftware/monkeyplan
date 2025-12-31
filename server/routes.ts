@@ -21271,14 +21271,13 @@ export function registerRoutes(app: Express): Server {
               item.receivedQuantity
             );
             
-            // Record stock movement
-            await storage.createStockMovement({
+            // Record warehouse movement
+            await storage.createWarehouseMovement({
               warehouseId: request.requesterWarehouseId,
               productId: requestItem.productId,
-              type: 'in',
+              movementType: 'carico',
               quantity: item.receivedQuantity,
-              referenceType: 'transfer_request',
-              referenceId: request.id,
+              notes: `Ricezione da richiesta interscambio ${request.requestNumber}`,
               createdBy: req.user.id,
             });
           }
