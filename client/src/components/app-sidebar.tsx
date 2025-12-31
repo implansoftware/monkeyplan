@@ -56,6 +56,7 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { useAuth } from "@/hooks/use-auth";
+import { useStaffPermissions, getRequiredModuleForUrl } from "@/hooks/use-staff-permissions";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Link, useLocation } from "wouter";
@@ -290,8 +291,10 @@ export function AppSidebar() {
   const { setOpenMobile, isMobile } = useSidebar();
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
   const [openSuppliers, setOpenSuppliers] = useState<Record<string, boolean>>({});
+  const { canAccessModule, hasFullAccess } = useStaffPermissions();
 
   const isReseller = user?.role === "reseller";
+  const isResellerStaff = user?.role === "reseller_staff";
   const isFranchisingOrGdo = user?.resellerCategory === "franchising" || user?.resellerCategory === "gdo";
 
   // Query sub-resellers for franchising/gdo resellers
@@ -310,9 +313,40 @@ export function AppSidebar() {
   });
   const pendingTransferRequestsCount = transferRequestsSummary?.pendingCount || 0;
 
-  // Build menu items dynamically based on sub-resellers
+  // Build menu items dynamically based on sub-resellers and permissions
   const items = useMemo(() => {
-    const baseItems = user ? (menuItems[user.role as keyof typeof menuItems] || []) : [];
+    // For reseller_staff, use reseller menu items
+    let baseItems: typeof menuItems.admin = [];
+    if (user?.role === "reseller_staff") {
+      baseItems = [...menuItems.reseller];
+    } else if (user) {
+      baseItems = menuItems[user.role as keyof typeof menuItems] || [];
+    }
+    
+    // For reseller_staff, filter items based on permissions
+    if (isResellerStaff && !hasFullAccess) {
+      baseItems = baseItems.filter(item => {
+        // Dashboard is always accessible
+        if (item.url === "/reseller") return true;
+        // Guide is always accessible
+        if (item.url === "/reseller/guide") return true;
+        
+        // Check if the item requires a specific module permission
+        const requiredModule = getRequiredModuleForUrl(item.url);
+        if (requiredModule) {
+          return canAccessModule(requiredModule);
+        }
+        
+        // Default: show item (for items not mapped to modules)
+        return true;
+      });
+      
+      // Remove Team and Sub-Resellers for staff
+      baseItems = baseItems.filter(item => 
+        item.url !== "/reseller/team" && 
+        item.url !== "/reseller/sub-resellers"
+      );
+    }
     
     if (isReseller && hasSubResellers) {
       // Add Sub-Reseller item after Team in "Clienti & Team" group
@@ -333,7 +367,7 @@ export function AppSidebar() {
     }
     
     return baseItems;
-  }, [user, isReseller, hasSubResellers]);
+  }, [user, isReseller, isResellerStaff, hasSubResellers, hasFullAccess, canAccessModule]);
   
   const groupedItems = items.reduce((acc, item) => {
     if (!acc[item.group]) {
