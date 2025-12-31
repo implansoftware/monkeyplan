@@ -21232,6 +21232,19 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Reseller: Get pending count for incoming transfer requests (for sidebar badge)
+  app.get("/api/reseller/incoming-transfer-requests/summary", requireRole("reseller", "reseller_staff"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      const context = getEffectiveContext(req);
+      const resellerId = context.resellerId || req.user.id;
+      const pendingCount = await storage.countIncomingTransferRequests(resellerId, 'pending');
+      res.json({ pendingCount });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   // Reseller: List incoming transfer requests (from repair centers and sub-resellers)
   app.get("/api/reseller/incoming-transfer-requests", requireRole("reseller"), async (req, res) => {
     try {

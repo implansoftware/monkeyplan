@@ -831,6 +831,7 @@ export interface IStorage {
     status?: string;
     sourceWarehouseId?: string;
   }): Promise<TransferRequest[]>;
+  countIncomingTransferRequests(targetResellerId: string, status?: string): Promise<number>;
   getTransferRequest(id: string): Promise<TransferRequest | undefined>;
   createTransferRequest(data: InsertTransferRequest): Promise<TransferRequest>;
   updateTransferRequest(id: string, updates: Partial<TransferRequest>): Promise<TransferRequest>;
@@ -7133,6 +7134,17 @@ export class DatabaseStorage implements IStorage {
   async getTransferRequest(id: string): Promise<TransferRequest | undefined> {
     const [request] = await db.select().from(transferRequests).where(eq(transferRequests.id, id));
     return request || undefined;
+  }
+
+  async countIncomingTransferRequests(targetResellerId: string, status?: string): Promise<number> {
+    const conditions = [eq(transferRequests.targetResellerId, targetResellerId)];
+    if (status) {
+      conditions.push(eq(transferRequests.status, status as any));
+    }
+    const [result] = await db.select({ count: sql<number>`count(*)` })
+      .from(transferRequests)
+      .where(and(...conditions));
+    return result?.count || 0;
   }
 
   async createTransferRequest(data: InsertTransferRequest): Promise<TransferRequest> {
