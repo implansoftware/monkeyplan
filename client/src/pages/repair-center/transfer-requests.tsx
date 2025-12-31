@@ -148,7 +148,7 @@ export default function RepairCenterTransferRequestsPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/repair-center/transfer-requests"] });
-      toast({ title: "Richiesta Inviata", description: "La richiesta di trasferimento è stata inviata al reseller" });
+      toast({ title: "Richiesta Inviata", description: "La richiesta di interscambio è stata inviata al reseller" });
       setShowNewRequestDialog(false);
       resetWizard();
     },
@@ -241,7 +241,7 @@ export default function RepairCenterTransferRequestsPage() {
           <Send className="h-8 w-8 text-primary" />
           <div>
             <h1 className="text-2xl font-bold" data-testid="text-title">
-              Richieste Trasferimento
+              Interscambio
             </h1>
             <p className="text-sm text-muted-foreground">
               Richiedi prodotti dal magazzino del tuo reseller
@@ -261,7 +261,7 @@ export default function RepairCenterTransferRequestsPage() {
           </DialogTrigger>
           <DialogContent className="max-w-3xl max-h-[85vh] overflow-hidden flex flex-col">
             <DialogHeader>
-              <DialogTitle>Nuova Richiesta Trasferimento</DialogTitle>
+              <DialogTitle>Nuova Richiesta Interscambio</DialogTitle>
               <DialogDescription>
                 {wizardStep === 1 && "Cerca il prodotto che vuoi richiedere"}
                 {wizardStep === 2 && "Seleziona il magazzino da cui richiedere"}

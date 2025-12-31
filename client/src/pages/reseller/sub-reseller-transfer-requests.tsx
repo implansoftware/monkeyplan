@@ -136,7 +136,7 @@ export default function SubResellerTransferRequestsPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/reseller/sub-reseller/transfer-requests"] });
-      toast({ title: "Richiesta Inviata", description: "La richiesta di trasferimento è stata inviata al reseller padre" });
+      toast({ title: "Richiesta Inviata", description: "La richiesta di interscambio è stata inviata al reseller padre" });
       setShowNewRequestDialog(false);
       resetWizard();
     },
@@ -212,7 +212,7 @@ export default function SubResellerTransferRequestsPage() {
           <Send className="h-8 w-8 text-primary" />
           <div>
             <h1 className="text-2xl font-bold" data-testid="text-title">
-              Richieste Trasferimento
+              Interscambio
             </h1>
             <p className="text-sm text-muted-foreground">
               Richiedi prodotti dal magazzino del reseller padre
@@ -232,7 +232,7 @@ export default function SubResellerTransferRequestsPage() {
           </DialogTrigger>
           <DialogContent className="max-w-3xl max-h-[85vh] overflow-hidden flex flex-col">
             <DialogHeader>
-              <DialogTitle>Nuova Richiesta Trasferimento</DialogTitle>
+              <DialogTitle>Nuova Richiesta Interscambio</DialogTitle>
               <DialogDescription>
                 {wizardStep === 1 && "Cerca il prodotto che vuoi richiedere"}
                 {wizardStep === 2 && "Seleziona il magazzino da cui richiedere"}

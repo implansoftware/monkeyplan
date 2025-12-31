@@ -181,8 +181,8 @@ export default function AdminTransferRequestsPage() {
     <div className="p-6 space-y-6" data-testid="admin-transfer-requests-page">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold" data-testid="text-page-title">Richieste Trasferimento</h1>
-          <p className="text-muted-foreground">Gestisci tutte le richieste di trasferimento prodotti</p>
+          <h1 className="text-2xl font-bold" data-testid="text-page-title">Interscambio</h1>
+          <p className="text-muted-foreground">Gestisci tutte le richieste di interscambio prodotti</p>
         </div>
         <div className="flex items-center gap-2">
           {pendingCount > 0 && (
