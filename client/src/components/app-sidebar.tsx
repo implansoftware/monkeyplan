@@ -297,6 +297,14 @@ export function AppSidebar() {
 
   const hasSubResellers = subResellers.length > 0;
 
+  // Query pending incoming transfer requests count for badge (reseller/reseller_staff)
+  const { data: transferRequestsSummary } = useQuery<{ pendingCount: number }>({
+    queryKey: ["/api/reseller/incoming-transfer-requests/summary"],
+    enabled: user?.role === "reseller" || user?.role === "reseller_staff",
+    refetchInterval: 30000, // Refresh every 30 seconds
+  });
+  const pendingTransferRequestsCount = transferRequestsSummary?.pendingCount || 0;
+
   // Build menu items dynamically based on sub-resellers
   const items = useMemo(() => {
     const baseItems = user ? (menuItems[user.role as keyof typeof menuItems] || []) : [];
@@ -453,6 +461,7 @@ export function AppSidebar() {
                     <SidebarMenu className="ml-4 border-l border-sidebar-border">
                       {groupItems.map((item) => {
                         const isActive = location === item.url || location.startsWith(item.url + "/");
+                        const showBadge = item.url === "/reseller/incoming-transfer-requests" && pendingTransferRequestsCount > 0;
                         return (
                           <SidebarMenuItem key={item.title}>
                             <SidebarMenuButton asChild isActive={isActive} className="pl-4">
@@ -462,7 +471,15 @@ export function AppSidebar() {
                                 data-testid={`link-${item.title.toLowerCase().replace(/\s+/g, "-")}`}
                               >
                                 <item.icon className="h-4 w-4" />
-                                <span>{item.title}</span>
+                                <span className="flex-1">{item.title}</span>
+                                {showBadge && (
+                                  <span 
+                                    className="flex h-5 min-w-5 items-center justify-center rounded-full bg-destructive text-destructive-foreground text-xs font-medium px-1.5"
+                                    data-testid="badge-pending-transfer-requests"
+                                  >
+                                    {pendingTransferRequestsCount}
+                                  </span>
+                                )}
                               </Link>
                             </SidebarMenuButton>
                           </SidebarMenuItem>

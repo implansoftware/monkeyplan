@@ -99,6 +99,7 @@ export default function IncomingTransferRequestsPage() {
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["/api/reseller/incoming-transfer-requests"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/reseller/incoming-transfer-requests/summary"] });
       const action = variables.decision === 'approve' ? 'approvata' : 'rifiutata';
       toast({ title: "Richiesta " + action, description: `La richiesta è stata ${action} con successo` });
       setShowDecideDialog(false);
@@ -122,6 +123,7 @@ export default function IncomingTransferRequestsPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/reseller/incoming-transfer-requests"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/reseller/incoming-transfer-requests/summary"] });
       queryClient.invalidateQueries({ queryKey: ["/api/warehouses"] });
       toast({ title: "Spedizione Confermata", description: "Gli articoli sono stati spediti e scalati dal magazzino" });
       setShowShipDialog(false);
