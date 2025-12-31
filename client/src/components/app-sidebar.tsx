@@ -474,7 +474,7 @@ export function AppSidebar() {
                     <SidebarMenu className="ml-4 border-l border-sidebar-border">
                       {groupItems.map((item) => {
                         const isActive = location === item.url || location.startsWith(item.url + "/");
-                        const showBadge = item.url === "/reseller/incoming-transfer-requests" && pendingTransferRequestsCount > 0;
+                        const showBadge = item.url === "/reseller/transfer-requests" && pendingTransferRequestsCount > 0;
                         return (
                           <SidebarMenuItem key={item.title}>
                             <SidebarMenuButton asChild isActive={isActive} className="pl-4">
