@@ -104,7 +104,7 @@ import {
   transferRequestItems, TransferRequestItem, InsertTransferRequestItem
 } from "@shared/schema";
 import { db, pool } from "./db";
-import { eq, and, or, desc, lt, gte, lte, sql, not, inArray, isNull, ilike } from "drizzle-orm";
+import { eq, and, or, desc, lt, gt, gte, lte, sql, not, inArray, isNull, ilike } from "drizzle-orm";
 import session from "express-session";
 import connectPg from "connect-pg-simple";
 
@@ -6961,9 +6961,9 @@ export class DatabaseStorage implements IStorage {
     .from(warehouseStock)
     .innerJoin(warehouses, eq(warehouseStock.warehouseId, warehouses.id))
     .where(and(
-      sql`${warehouseStock.productId} IN ${productIds}`,
-      sql`${warehouseStock.warehouseId} IN ${filters.warehouseIds}`,
-      sql`${warehouseStock.quantity} > 0`
+      inArray(warehouseStock.productId, productIds),
+      inArray(warehouseStock.warehouseId, filters.warehouseIds),
+      gt(warehouseStock.quantity, 0)
     ));
 
     const ownerIds = [...new Set(stockEntries.map(s => s.ownerId))];
