@@ -4424,6 +4424,36 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Reset password for a staff member
+  app.post("/api/reseller/team/:id/reset-password", requireRole("reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Non autorizzato");
+      
+      const staffId = req.params.id;
+      const { newPassword } = req.body;
+      
+      if (!newPassword || newPassword.length < 4) {
+        return res.status(400).send("La password deve contenere almeno 4 caratteri");
+      }
+
+      // Verify the staff member belongs to this reseller
+      const staffMember = await storage.getUser(staffId);
+      if (!staffMember || staffMember.resellerId !== req.user.id || staffMember.role !== 'reseller_staff') {
+        return res.status(404).send("Membro staff non trovato");
+      }
+
+      // Hash and update password
+      const hashedPassword = await hashPassword(newPassword);
+      await storage.updateUser(staffId, { password: hashedPassword });
+
+      setActivityEntity(res, { type: 'users', id: staffId });
+      res.json({ message: "Password aggiornata con successo" });
+    } catch (error: any) {
+      console.error("Error resetting staff password:", error);
+      res.status(400).send(error.message);
+    }
+  });
+
   // Delete a staff member
   app.delete("/api/reseller/team/:id", requireRole("reseller"), async (req, res) => {
     try {
