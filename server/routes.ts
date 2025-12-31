@@ -47,7 +47,7 @@ import {
 } from "@shared/schema";
 import { ObjectStorageService, objectStorageClient, parseObjectPath } from "./objectStorage";
 import { canAccessObject, ObjectPermission } from "./objectAcl";
-import { generateAndStoreReturnDocuments, getSignedDownloadUrl } from "./services/shippingDocuments";
+import { generateAndStoreReturnDocuments, getSignedDownloadUrl, generateTransferDDT, TransferDdtData } from "./services/shippingDocuments";
 import { calculateRepairPriority } from "./helpers/priorityCalculation";
 import { db } from "./db";
 import { sql } from "drizzle-orm";
@@ -21347,12 +21347,15 @@ export function registerRoutes(app: Express): Server {
       if (request.targetResellerId !== req.user.id) return res.status(403).json({ error: "Accesso negato" });
       if (request.status !== 'approved') return res.status(400).json({ error: "Solo le richieste approvate possono essere spedite" });
       
-      const { items, trackingNumber, trackingCarrier, ddtNumber } = req.body;
+      const { items, trackingNumber, trackingCarrier } = req.body;
       
-      // Validate required shipping fields
-      if (!trackingCarrier || !trackingNumber || !ddtNumber) {
-        return res.status(400).json({ error: "Corriere, numero tracking e numero DDT sono obbligatori" });
+      // Validate required shipping fields (DDT is auto-generated)
+      if (!trackingCarrier || !trackingNumber) {
+        return res.status(400).json({ error: "Corriere e numero tracking sono obbligatori" });
       }
+      
+      // Generate DDT number automatically
+      const ddtNumber = await storage.generateDdtNumber();
       
       // Update shipped quantities and deduct from source warehouse
       if (items && Array.isArray(items)) {
@@ -21377,9 +21380,108 @@ export function registerRoutes(app: Express): Server {
         shippedBy: req.user.id,
         trackingNumber: trackingNumber || null,
         trackingCarrier: trackingCarrier || null,
-        ddtNumber: ddtNumber || null,
+        ddtNumber: ddtNumber,
       });
       res.json(updated);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Download DDT PDF for transfer request
+  app.get("/api/transfer-requests/:id/ddt", async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      
+      const request = await storage.getTransferRequest(req.params.id);
+      if (!request) return res.status(404).json({ error: "Richiesta non trovata" });
+      
+      // Check access: sender (targetReseller) or recipient (requester)
+      const isAuthorized = 
+        request.targetResellerId === req.user.id ||
+        request.requesterId === req.user.id ||
+        req.user.role === 'admin';
+      
+      if (!isAuthorized) return res.status(403).json({ error: "Accesso negato" });
+      
+      if (!request.ddtNumber || request.status !== 'shipped') {
+        return res.status(400).json({ error: "DDT non disponibile per questa richiesta" });
+      }
+      
+      // Get items
+      const items = await storage.listTransferRequestItems(request.id);
+      const enrichedItems = await Promise.all(items.map(async (item) => {
+        const product = await storage.getProduct(item.productId);
+        return {
+          productName: product?.name || "Prodotto sconosciuto",
+          productSku: product?.sku || undefined,
+          quantity: item.shippedQuantity || item.approvedQuantity || 0,
+        };
+      }));
+      
+      // Get sender info (the reseller who ships)
+      const sender = await storage.getUser(request.targetResellerId || "");
+      // Get recipient info
+      let recipientName = "";
+      let recipientData: any = {};
+      if (request.requesterType === 'repair_center') {
+        const rc = await storage.getRepairCenter(request.requesterId);
+        recipientName = rc?.name || "Destinatario sconosciuto";
+        recipientData = {
+          name: recipientName,
+          address: rc?.address,
+          city: rc?.city,
+          postalCode: rc?.postalCode,
+          province: rc?.province,
+          phone: rc?.phone,
+          email: rc?.email,
+        };
+      } else {
+        const user = await storage.getUser(request.requesterId);
+        recipientName = user?.ragioneSociale || user?.fullName || user?.username || "Destinatario";
+        recipientData = {
+          name: recipientName,
+          address: user?.indirizzo,
+          city: user?.citta,
+          postalCode: user?.cap,
+          province: user?.provincia,
+          phone: user?.phone,
+          email: user?.email,
+          partitaIva: user?.partitaIva,
+        };
+      }
+      
+      // Get warehouse names
+      const sourceWarehouse = await storage.getWarehouse(request.sourceWarehouseId);
+      const destWarehouse = await storage.getWarehouse(request.requesterWarehouseId);
+      
+      const ddtData: TransferDdtData = {
+        ddtNumber: request.ddtNumber,
+        requestNumber: request.requestNumber,
+        shippedAt: request.shippedAt || new Date(),
+        trackingNumber: request.trackingNumber || "",
+        trackingCarrier: request.trackingCarrier || "",
+        sender: {
+          name: sender?.ragioneSociale || sender?.fullName || sender?.username || "Mittente",
+          address: sender?.indirizzo,
+          city: sender?.citta,
+          postalCode: sender?.cap,
+          province: sender?.provincia,
+          phone: sender?.phone,
+          email: sender?.email,
+          partitaIva: sender?.partitaIva,
+        },
+        recipient: recipientData,
+        items: enrichedItems,
+        sourceWarehouse: sourceWarehouse?.name || "Magazzino origine",
+        destinationWarehouse: destWarehouse?.name || "Magazzino destinazione",
+      };
+      
+      const pdfBuffer = await generateTransferDDT(ddtData);
+      
+      res.setHeader("Content-Type", "application/pdf");
+      res.setHeader("Content-Disposition", `attachment; filename="${request.ddtNumber}.pdf"`);
+      res.send(pdfBuffer);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }

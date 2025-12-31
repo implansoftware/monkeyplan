@@ -7176,6 +7176,18 @@ export class DatabaseStorage implements IStorage {
     return `${prefix}-${String(nextNumber).padStart(5, '0')}`;
   }
 
+  async generateDdtNumber(): Promise<string> {
+    const year = new Date().getFullYear();
+    const prefix = `DDT-${year}`;
+    
+    const [result] = await db.select({ count: sql<number>`count(*)` })
+      .from(transferRequests)
+      .where(sql`${transferRequests.ddtNumber} LIKE ${prefix + '%'}`);
+    
+    const nextNumber = (result?.count || 0) + 1;
+    return `${prefix}-${String(nextNumber).padStart(5, '0')}`;
+  }
+
   // Transfer Request Items
   async listTransferRequestItems(requestId: string): Promise<TransferRequestItem[]> {
     return await db.select().from(transferRequestItems)

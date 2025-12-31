@@ -12,7 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { 
   Inbox, Package, Search, Clock, CheckCircle, XCircle, 
-  Truck, Ban, Eye, PackageCheck, User, Building
+  Truck, Ban, Eye, PackageCheck, User, Building, FileText, Download
 } from "lucide-react";
 import type { Product, User as UserType } from "@shared/schema";
 
@@ -84,7 +84,6 @@ export default function IncomingTransferRequestsPage() {
   const [shippedItems, setShippedItems] = useState<Array<{ id: string; productId: string; shippedQuantity: number }>>([]);
   const [shipTrackingNumber, setShipTrackingNumber] = useState("");
   const [shipTrackingCarrier, setShipTrackingCarrier] = useState("");
-  const [shipDdtNumber, setShipDdtNumber] = useState("");
 
   const { data: requests = [], isLoading } = useQuery<TransferRequest[]>({
     queryKey: ["/api/reseller/incoming-transfer-requests"],
@@ -122,28 +121,25 @@ export default function IncomingTransferRequestsPage() {
     mutationFn: async (data: { 
       requestId: string; 
       items: Array<{ id: string; productId: string; shippedQuantity: number }>;
-      trackingNumber?: string;
-      trackingCarrier?: string;
-      ddtNumber?: string;
+      trackingNumber: string;
+      trackingCarrier: string;
     }) => {
       return apiRequest("PATCH", `/api/reseller/incoming-transfer-requests/${data.requestId}/ship`, {
         items: data.items,
         trackingNumber: data.trackingNumber,
-        trackingCarrier: data.trackingCarrier,
-        ddtNumber: data.ddtNumber
+        trackingCarrier: data.trackingCarrier
       });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/reseller/incoming-transfer-requests"] });
       queryClient.invalidateQueries({ queryKey: ["/api/reseller/incoming-transfer-requests/summary"] });
       queryClient.invalidateQueries({ queryKey: ["/api/warehouses"] });
-      toast({ title: "Spedizione Confermata", description: "Gli articoli sono stati spediti e scalati dal magazzino" });
+      toast({ title: "Spedizione Confermata", description: "Gli articoli sono stati spediti e il DDT è stato generato automaticamente" });
       setShowShipDialog(false);
       setSelectedRequest(null);
       setShippedItems([]);
       setShipTrackingNumber("");
       setShipTrackingCarrier("");
-      setShipDdtNumber("");
     },
     onError: (error: any) => {
       toast({ title: "Errore", description: error.message, variant: "destructive" });
@@ -304,6 +300,17 @@ export default function IncomingTransferRequestsPage() {
                         >
                           <Truck className="h-4 w-4 mr-1" />
                           Spedisci
+                        </Button>
+                      )}
+                      {request.status === 'shipped' && request.ddtNumber && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => window.open(`/api/transfer-requests/${request.id}/ddt`, '_blank')}
+                          data-testid={`button-ddt-${request.id}`}
+                        >
+                          <FileText className="h-4 w-4 mr-1" />
+                          DDT
                         </Button>
                       )}
                       <Button
@@ -519,9 +526,9 @@ export default function IncomingTransferRequestsPage() {
           </DialogHeader>
           {selectedRequest && (
             <div className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="carrier">Corriere</Label>
+                  <Label htmlFor="carrier">Corriere *</Label>
                   <Select value={shipTrackingCarrier} onValueChange={setShipTrackingCarrier}>
                     <SelectTrigger data-testid="select-carrier">
                       <SelectValue placeholder="Seleziona corriere" />
@@ -540,7 +547,7 @@ export default function IncomingTransferRequestsPage() {
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="tracking">Numero Tracking</Label>
+                  <Label htmlFor="tracking">Numero Tracking *</Label>
                   <Input
                     id="tracking"
                     placeholder="es. 1234567890"
@@ -549,17 +556,10 @@ export default function IncomingTransferRequestsPage() {
                     data-testid="input-tracking-number"
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="ddt">Numero DDT</Label>
-                  <Input
-                    id="ddt"
-                    placeholder="es. DDT-2025-00001"
-                    value={shipDdtNumber}
-                    onChange={(e) => setShipDdtNumber(e.target.value)}
-                    data-testid="input-ddt-number"
-                  />
-                </div>
               </div>
+              <p className="text-sm text-muted-foreground">
+                Il numero DDT verrà generato automaticamente alla conferma della spedizione.
+              </p>
 
               <div className="border-t pt-4">
                 <p className="text-sm text-muted-foreground mb-2">
@@ -610,21 +610,16 @@ export default function IncomingTransferRequestsPage() {
                   toast({ title: "Errore", description: "Inserisci il numero di tracking", variant: "destructive" });
                   return;
                 }
-                if (!shipDdtNumber.trim()) {
-                  toast({ title: "Errore", description: "Inserisci il numero DDT", variant: "destructive" });
-                  return;
-                }
                 if (selectedRequest) {
                   shipMutation.mutate({
                     requestId: selectedRequest.id,
                     items: shippedItems,
                     trackingNumber: shipTrackingNumber.trim(),
-                    trackingCarrier: shipTrackingCarrier,
-                    ddtNumber: shipDdtNumber.trim()
+                    trackingCarrier: shipTrackingCarrier
                   });
                 }
               }}
-              disabled={shipMutation.isPending || !shipTrackingCarrier || !shipTrackingNumber.trim() || !shipDdtNumber.trim()}
+              disabled={shipMutation.isPending || !shipTrackingCarrier || !shipTrackingNumber.trim()}
               data-testid="button-confirm-ship"
             >
               <Truck className="h-4 w-4 mr-1" />

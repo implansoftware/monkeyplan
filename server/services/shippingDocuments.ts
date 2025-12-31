@@ -1,8 +1,43 @@
 import PDFDocument from "pdfkit";
 import { objectStorageClient, parseObjectPath } from "../objectStorage";
-import { B2bReturn, B2bReturnItem, User } from "@shared/schema";
+import { B2bReturn, B2bReturnItem, User, Product, Warehouse } from "@shared/schema";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
+
+export interface TransferDdtData {
+  ddtNumber: string;
+  requestNumber: string;
+  shippedAt: Date;
+  trackingNumber: string;
+  trackingCarrier: string;
+  sender: {
+    name: string;
+    address?: string;
+    city?: string;
+    postalCode?: string;
+    province?: string;
+    phone?: string;
+    email?: string;
+    partitaIva?: string;
+  };
+  recipient: {
+    name: string;
+    address?: string;
+    city?: string;
+    postalCode?: string;
+    province?: string;
+    phone?: string;
+    email?: string;
+    partitaIva?: string;
+  };
+  items: Array<{
+    productName: string;
+    productSku?: string;
+    quantity: number;
+  }>;
+  sourceWarehouse: string;
+  destinationWarehouse: string;
+}
 
 interface ReturnDocumentData {
   returnData: B2bReturn;
@@ -310,4 +345,146 @@ export async function getSignedDownloadUrl(
 
   const { signed_url: signedURL } = await response.json();
   return signedURL;
+}
+
+const carrierLabels: Record<string, string> = {
+  brt: "BRT/Bartolini",
+  gls: "GLS",
+  dhl: "DHL",
+  ups: "UPS",
+  fedex: "FedEx",
+  poste_italiane: "Poste Italiane",
+  sda: "SDA",
+  tnt: "TNT",
+  other: "Altro",
+};
+
+export async function generateTransferDDT(data: TransferDdtData): Promise<Buffer> {
+  return new Promise((resolve, reject) => {
+    const doc = new PDFDocument({ size: "A4", margin: 40 });
+    const chunks: Buffer[] = [];
+
+    doc.on("data", (chunk: Buffer) => chunks.push(chunk));
+    doc.on("end", () => resolve(Buffer.concat(chunks)));
+    doc.on("error", reject);
+
+    doc.fontSize(18).font("Helvetica-Bold").text("DOCUMENTO DI TRASPORTO", { align: "center" });
+    doc.fontSize(10).font("Helvetica").text("(D.D.T. - Art. 1 D.P.R. 472/96)", { align: "center" });
+    doc.moveDown(0.5);
+    doc.fontSize(14).font("Helvetica-Bold").text(`N. ${data.ddtNumber}`, { align: "center" });
+    doc.fontSize(10).font("Helvetica").text(`Rif. Richiesta: ${data.requestNumber}`, { align: "center" });
+    doc.moveDown(1);
+
+    const startY = doc.y;
+    const halfWidth = (doc.page.width - 80) / 2;
+
+    doc.fontSize(11).font("Helvetica-Bold").text("MITTENTE:", 40, startY);
+    doc.fontSize(9).font("Helvetica");
+    let y = doc.y;
+    doc.text(data.sender.name, 40, y); y = doc.y;
+    if (data.sender.address) { doc.text(data.sender.address, 40, y); y = doc.y; }
+    if (data.sender.city) {
+      let cityLine = data.sender.city;
+      if (data.sender.postalCode) cityLine = `${data.sender.postalCode} ${cityLine}`;
+      if (data.sender.province) cityLine += ` (${data.sender.province})`;
+      doc.text(cityLine, 40, y); y = doc.y;
+    }
+    if (data.sender.phone) { doc.text(`Tel: ${data.sender.phone}`, 40, y); y = doc.y; }
+    if (data.sender.email) { doc.text(`Email: ${data.sender.email}`, 40, y); y = doc.y; }
+    if (data.sender.partitaIva) { doc.text(`P.IVA: ${data.sender.partitaIva}`, 40, y); y = doc.y; }
+
+    const destX = 40 + halfWidth + 20;
+    doc.fontSize(11).font("Helvetica-Bold").text("DESTINATARIO:", destX, startY);
+    doc.fontSize(9).font("Helvetica");
+    let dy = startY + 14;
+    doc.text(data.recipient.name, destX, dy); dy += 12;
+    if (data.recipient.address) { doc.text(data.recipient.address, destX, dy); dy += 12; }
+    if (data.recipient.city) {
+      let cityLine = data.recipient.city;
+      if (data.recipient.postalCode) cityLine = `${data.recipient.postalCode} ${cityLine}`;
+      if (data.recipient.province) cityLine += ` (${data.recipient.province})`;
+      doc.text(cityLine, destX, dy); dy += 12;
+    }
+    if (data.recipient.phone) { doc.text(`Tel: ${data.recipient.phone}`, destX, dy); dy += 12; }
+    if (data.recipient.email) { doc.text(`Email: ${data.recipient.email}`, destX, dy); dy += 12; }
+    if (data.recipient.partitaIva) { doc.text(`P.IVA: ${data.recipient.partitaIva}`, destX, dy); dy += 12; }
+
+    doc.moveDown(4);
+
+    const infoY = doc.y;
+    doc.fontSize(9).font("Helvetica-Bold");
+    doc.text("Data documento:", 40, infoY);
+    doc.font("Helvetica").text(format(data.shippedAt, "dd/MM/yyyy", { locale: it }), 130, infoY);
+    
+    doc.font("Helvetica-Bold").text("Causale trasporto:", 250, infoY);
+    doc.font("Helvetica").text("TRASFERIMENTO MERCE", 350, infoY);
+
+    const infoY2 = infoY + 15;
+    doc.font("Helvetica-Bold").text("Magazzino Origine:", 40, infoY2);
+    doc.font("Helvetica").text(data.sourceWarehouse, 150, infoY2);
+    
+    doc.font("Helvetica-Bold").text("Magazzino Dest.:", 300, infoY2);
+    doc.font("Helvetica").text(data.destinationWarehouse, 400, infoY2);
+
+    const infoY3 = infoY2 + 15;
+    doc.font("Helvetica-Bold").text("Corriere:", 40, infoY3);
+    doc.font("Helvetica").text(carrierLabels[data.trackingCarrier] || data.trackingCarrier, 100, infoY3);
+    
+    doc.font("Helvetica-Bold").text("Tracking:", 200, infoY3);
+    doc.font("Helvetica").text(data.trackingNumber, 260, infoY3);
+
+    doc.moveDown(3);
+
+    const tableTop = doc.y + 10;
+    const tableLeft = 40;
+    const colWidths = [50, 300, 100, 60];
+    const headers = ["#", "Descrizione Prodotto", "Codice", "Quantità"];
+    
+    doc.fontSize(9).font("Helvetica-Bold");
+    let xPos = tableLeft;
+    headers.forEach((header, i) => {
+      doc.text(header, xPos + 5, tableTop);
+      xPos += colWidths[i];
+    });
+
+    doc.moveTo(tableLeft, tableTop + 14).lineTo(tableLeft + colWidths.reduce((a, b) => a + b, 0), tableTop + 14).stroke();
+
+    doc.font("Helvetica");
+    let rowY = tableTop + 20;
+    data.items.forEach((item, index) => {
+      xPos = tableLeft;
+      doc.text(String(index + 1), xPos + 5, rowY);
+      xPos += colWidths[0];
+      doc.text(item.productName, xPos + 5, rowY, { width: colWidths[1] - 10 });
+      xPos += colWidths[1];
+      doc.text(item.productSku || "-", xPos + 5, rowY);
+      xPos += colWidths[2];
+      doc.text(String(item.quantity), xPos + 5, rowY);
+      rowY += 18;
+    });
+
+    doc.moveTo(tableLeft, rowY).lineTo(tableLeft + colWidths.reduce((a, b) => a + b, 0), rowY).stroke();
+
+    doc.moveDown(2);
+    doc.y = rowY + 20;
+    doc.fontSize(10).font("Helvetica-Bold");
+    doc.text(`Totale Colli: ${data.items.reduce((sum, item) => sum + item.quantity, 0)}`, 40);
+
+    const footerY = doc.page.height - 130;
+    doc.fontSize(9).font("Helvetica");
+    
+    doc.text("Firma Mittente:", 40, footerY);
+    doc.moveTo(40, footerY + 40).lineTo(200, footerY + 40).stroke();
+    
+    doc.text("Firma Vettore:", 250, footerY);
+    doc.moveTo(250, footerY + 40).lineTo(410, footerY + 40).stroke();
+    
+    doc.text("Data e Ora Ritiro:", 40, footerY + 55);
+    doc.moveTo(130, footerY + 55).lineTo(250, footerY + 55).stroke();
+
+    doc.fontSize(8).fillColor("gray");
+    doc.text(`Documento generato automaticamente il ${format(new Date(), "dd/MM/yyyy HH:mm", { locale: it })}`, 40, doc.page.height - 50, { align: "center" });
+
+    doc.end();
+  });
 }
