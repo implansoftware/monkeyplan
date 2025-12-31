@@ -602,17 +602,29 @@ export default function IncomingTransferRequestsPage() {
             </Button>
             <Button
               onClick={() => {
+                if (!shipTrackingCarrier) {
+                  toast({ title: "Errore", description: "Seleziona un corriere", variant: "destructive" });
+                  return;
+                }
+                if (!shipTrackingNumber.trim()) {
+                  toast({ title: "Errore", description: "Inserisci il numero di tracking", variant: "destructive" });
+                  return;
+                }
+                if (!shipDdtNumber.trim()) {
+                  toast({ title: "Errore", description: "Inserisci il numero DDT", variant: "destructive" });
+                  return;
+                }
                 if (selectedRequest) {
                   shipMutation.mutate({
                     requestId: selectedRequest.id,
                     items: shippedItems,
-                    trackingNumber: shipTrackingNumber || undefined,
-                    trackingCarrier: shipTrackingCarrier || undefined,
-                    ddtNumber: shipDdtNumber || undefined
+                    trackingNumber: shipTrackingNumber.trim(),
+                    trackingCarrier: shipTrackingCarrier,
+                    ddtNumber: shipDdtNumber.trim()
                   });
                 }
               }}
-              disabled={shipMutation.isPending}
+              disabled={shipMutation.isPending || !shipTrackingCarrier || !shipTrackingNumber.trim() || !shipDdtNumber.trim()}
               data-testid="button-confirm-ship"
             >
               <Truck className="h-4 w-4 mr-1" />

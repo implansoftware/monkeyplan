@@ -21349,6 +21349,11 @@ export function registerRoutes(app: Express): Server {
       
       const { items, trackingNumber, trackingCarrier, ddtNumber } = req.body;
       
+      // Validate required shipping fields
+      if (!trackingCarrier || !trackingNumber || !ddtNumber) {
+        return res.status(400).json({ error: "Corriere, numero tracking e numero DDT sono obbligatori" });
+      }
+      
       // Update shipped quantities and deduct from source warehouse
       if (items && Array.isArray(items)) {
         for (const item of items) {
