@@ -21149,12 +21149,13 @@ export function registerRoutes(app: Express): Server {
   app.post("/api/repair-center/transfer-requests", requireRole("repair_center"), async (req, res) => {
     try {
       if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      if (!req.user.repairCenterId) return res.status(404).json({ error: "Centro di riparazione non trovato" });
       
       // Get repair center's own warehouse
-      const repairCenter = await storage.getRepairCenterByUserId(req.user.id);
+      const repairCenter = await storage.getRepairCenter(req.user.repairCenterId);
       if (!repairCenter) return res.status(404).json({ error: "Centro di riparazione non trovato" });
       
-      const requesterWarehouse = await storage.getWarehouseByOwner('repair_center', req.user.id);
+      const requesterWarehouse = await storage.getWarehouseByOwner('repair_center', repairCenter.id);
       if (!requesterWarehouse) return res.status(404).json({ error: "Magazzino richiedente non trovato" });
       
       // Get source warehouse from request body or fallback to reseller's warehouse
