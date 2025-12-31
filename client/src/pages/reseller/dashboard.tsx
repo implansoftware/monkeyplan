@@ -1,14 +1,14 @@
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { useQuery } from "@tanstack/react-query";
-import { ShoppingCart, Users, TrendingUp, Clock, FileText, Package, AlertTriangle, CheckCircle } from "lucide-react";
+import { ShoppingCart, Users, TrendingUp, Clock, FileText, Package, AlertTriangle, CheckCircle, Zap, ArrowRightLeft, Store } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Link } from "wouter";
 import { 
   Plus, Wrench, Ticket, UserPlus, Building2, CalendarPlus, PackageOpen, 
-  Truck, Receipt, FileCheck, ListChecks, Boxes, Network
+  Truck, Receipt, FileCheck, ListChecks, Boxes, Network, Inbox, Send, Warehouse
 } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 import { RepairOrder, Invoice } from "@shared/schema";
@@ -19,16 +19,47 @@ import { AcceptanceWizardDialog } from "@/components/AcceptanceWizardDialog";
 
 type ResellerStats = {
   overview: {
-    totalOrders: number;
-    completedOrders: number;
+    totalRepairs: number;
+    activeRepairs: number;
+    completedRepairs: number;
     totalCustomers: number;
     totalRevenue: number;
   };
   repairsByStatus: {
-    pending: number;
-    in_progress: number;
-    completed: number;
+    ingressato: number;
+    in_diagnosi: number;
+    preventivo_emesso: number;
+    preventivo_accettato: number;
+    preventivo_rifiutato: number;
+    attesa_ricambi: number;
+    in_riparazione: number;
+    in_test: number;
+    pronto_ritiro: number;
+    consegnato: number;
     cancelled: number;
+  };
+  interscambio: {
+    pendingRequests: number;
+    shippedRequests: number;
+    totalIncoming: number;
+    totalOutgoing: number;
+  };
+  utility: {
+    activePractices: number;
+    totalPractices: number;
+  };
+  b2b: {
+    pendingOrders: number;
+    totalOrders: number;
+  };
+  warehouse: {
+    totalStock: number;
+    lowStockItems: number;
+    warehouseCount: number;
+  };
+  network: {
+    subResellers: number;
+    repairCenters: number;
   };
 };
 
@@ -50,17 +81,6 @@ export default function ResellerDashboard() {
     queryKey: ["/api/invoices"],
   });
 
-  type SubResellerWithCenters = {
-    subReseller: { id: string; name: string; };
-    repairCenters: { id: string; }[];
-  };
-
-  const { data: subResellersCenters = [] } = useQuery<SubResellerWithCenters[]>({
-    queryKey: ["/api/reseller/sub-resellers-repair-centers"],
-  });
-
-  const totalNetworkCenters = subResellersCenters.reduce((acc, sr) => acc + sr.repairCenters.length, 0);
-  const hasSubResellers = subResellersCenters.length > 0;
 
   const formatCurrency = (cents: number) => {
     return new Intl.NumberFormat("it-IT", {
@@ -75,16 +95,18 @@ export default function ResellerDashboard() {
 
   const getStatusBadge = (status: string) => {
     const statusMap: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
+      pending: { label: "In Attesa", variant: "outline" },
       ingressato: { label: "Ingressato", variant: "secondary" },
       in_diagnosi: { label: "In Diagnosi", variant: "secondary" },
-      attesa_preventivo: { label: "Attesa Prev.", variant: "outline" },
-      preventivo_approvato: { label: "Prev. OK", variant: "default" },
+      preventivo_emesso: { label: "Prev. Emesso", variant: "outline" },
+      preventivo_accettato: { label: "Prev. OK", variant: "default" },
       preventivo_rifiutato: { label: "Prev. Rifiutato", variant: "destructive" },
       attesa_ricambi: { label: "Attesa Ricambi", variant: "outline" },
       in_riparazione: { label: "In Riparazione", variant: "default" },
       in_test: { label: "In Test", variant: "default" },
       pronto_ritiro: { label: "Pronto", variant: "default" },
       consegnato: { label: "Consegnato", variant: "secondary" },
+      cancelled: { label: "Annullato", variant: "destructive" },
     };
     const config = statusMap[status] || { label: status, variant: "outline" as const };
     return <Badge variant={config.variant}>{config.label}</Badge>;
@@ -92,18 +114,10 @@ export default function ResellerDashboard() {
 
   const kpiCards = [
     {
-      title: "Ordini Totali",
-      value: stats?.overview.totalOrders ?? 0,
-      icon: ShoppingCart,
-      subtitle: `${stats?.overview.completedOrders ?? 0} completati`,
-      color: "text-primary",
-      bg: "bg-primary/10",
-    },
-    {
       title: "Riparazioni Attive",
-      value: (stats?.repairsByStatus.pending ?? 0) + (stats?.repairsByStatus.in_progress ?? 0),
-      icon: Clock,
-      subtitle: `${stats?.repairsByStatus.in_progress ?? 0} in lavorazione`,
+      value: stats?.overview.activeRepairs ?? 0,
+      icon: Wrench,
+      subtitle: `${stats?.overview.totalRepairs ?? 0} totali`,
       color: "text-blue-600",
       bg: "bg-blue-100 dark:bg-blue-900/30",
     },
@@ -117,25 +131,37 @@ export default function ResellerDashboard() {
     },
     {
       title: "Fatturato",
-      value: stats ? formatCurrency(stats.overview.totalRevenue) : "€0.00",
+      value: stats ? formatCurrency(stats.overview.totalRevenue) : "0,00 €",
       icon: TrendingUp,
-      subtitle: "Da ordini completati",
+      subtitle: "Da riparazioni completate",
       color: "text-yellow-600",
       bg: "bg-yellow-100 dark:bg-yellow-900/30",
     },
+    {
+      title: "Stock Magazzino",
+      value: stats?.warehouse.totalStock ?? 0,
+      icon: Warehouse,
+      subtitle: stats?.warehouse.lowStockItems ? `${stats.warehouse.lowStockItems} sotto scorta` : "Tutto ok",
+      color: "text-amber-600",
+      bg: "bg-amber-100 dark:bg-amber-900/30",
+    },
   ];
 
+  // Chart data using correct Italian status names
   const repairsChartData = stats ? [
-    { name: "Pendenti", value: stats.repairsByStatus.pending },
-    { name: "In Corso", value: stats.repairsByStatus.in_progress },
-    { name: "Completate", value: stats.repairsByStatus.completed },
-    { name: "Annullate", value: stats.repairsByStatus.cancelled },
-  ] : [];
+    { name: "Ingressato", value: stats.repairsByStatus.ingressato },
+    { name: "Diagnosi", value: stats.repairsByStatus.in_diagnosi },
+    { name: "Prev. Emesso", value: stats.repairsByStatus.preventivo_emesso },
+    { name: "In Rip.", value: stats.repairsByStatus.in_riparazione },
+    { name: "Pronto", value: stats.repairsByStatus.pronto_ritiro },
+    { name: "Consegnato", value: stats.repairsByStatus.consegnato },
+  ].filter(d => d.value > 0) : [];
 
   const pieData = stats ? [
-    { name: "Pendenti", value: stats.repairsByStatus.pending },
-    { name: "In Corso", value: stats.repairsByStatus.in_progress },
-    { name: "Completate", value: stats.repairsByStatus.completed },
+    { name: "In Lavorazione", value: (stats.repairsByStatus.ingressato || 0) + (stats.repairsByStatus.in_diagnosi || 0) + (stats.repairsByStatus.in_riparazione || 0) },
+    { name: "In Attesa", value: (stats.repairsByStatus.preventivo_emesso || 0) + (stats.repairsByStatus.attesa_ricambi || 0) },
+    { name: "Completate", value: stats.repairsByStatus.consegnato || 0 },
+    { name: "Pronte", value: stats.repairsByStatus.pronto_ritiro || 0 },
   ].filter(d => d.value > 0) : [];
 
   return (
@@ -175,43 +201,106 @@ export default function ResellerDashboard() {
         ))}
       </div>
 
-      {/* Network Stats - Solo se ci sono sub-reseller */}
-      {hasSubResellers && (
-        <Card data-testid="card-network-stats">
+      {/* Status Cards Row - Interscambio, B2B, Utility, Rete */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* Interscambio */}
+        <Card data-testid="card-interscambio">
           <CardHeader className="flex flex-row items-center justify-between gap-1 space-y-0 pb-2">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-violet-100 dark:bg-violet-900/30">
-                <Network className="h-5 w-5 text-violet-600" />
-              </div>
-              <div>
-                <CardTitle className="text-base">La Tua Rete</CardTitle>
-                <CardDescription>Panoramica dei tuoi rivenditori</CardDescription>
-              </div>
+            <CardTitle className="text-sm font-medium">Interscambio</CardTitle>
+            <div className="p-2 rounded-lg bg-purple-100 dark:bg-purple-900/30">
+              <ArrowRightLeft className="h-4 w-4 text-purple-600" />
             </div>
-            <Link href="/reseller/repair-centers">
-              <Button variant="outline" size="sm">
-                Vedi Dettagli
-              </Button>
-            </Link>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="text-center p-4 rounded-lg bg-muted/50">
-                <div className="text-2xl font-bold text-violet-600" data-testid="text-network-resellers">
-                  {subResellersCenters.length}
-                </div>
-                <p className="text-xs text-muted-foreground">Rivenditori</p>
-              </div>
-              <div className="text-center p-4 rounded-lg bg-muted/50">
-                <div className="text-2xl font-bold text-primary" data-testid="text-network-centers">
-                  {totalNetworkCenters}
-                </div>
-                <p className="text-xs text-muted-foreground">Centri Riparazione</p>
-              </div>
+            <div className="text-2xl font-bold" data-testid="text-pending-transfers">
+              {stats?.interscambio?.pendingRequests ?? 0}
             </div>
+            <p className="text-xs text-muted-foreground">
+              Richieste in attesa
+              {(stats?.interscambio?.shippedRequests ?? 0) > 0 && (
+                <span className="ml-1">• {stats?.interscambio?.shippedRequests} in transito</span>
+              )}
+            </p>
+            <Link href="/reseller/incoming-transfer-requests">
+              <Button variant="link" size="sm" className="p-0 h-auto mt-2">
+                Gestisci richieste
+              </Button>
+            </Link>
           </CardContent>
         </Card>
-      )}
+
+        {/* B2B Orders */}
+        <Card data-testid="card-b2b">
+          <CardHeader className="flex flex-row items-center justify-between gap-1 space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Ordini B2B</CardTitle>
+            <div className="p-2 rounded-lg bg-blue-100 dark:bg-blue-900/30">
+              <ShoppingCart className="h-4 w-4 text-blue-600" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold" data-testid="text-pending-b2b">
+              {stats?.b2b?.pendingOrders ?? 0}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Ordini in corso • {stats?.b2b?.totalOrders ?? 0} totali
+            </p>
+            <Link href="/reseller/b2b-orders">
+              <Button variant="link" size="sm" className="p-0 h-auto mt-2">
+                Vedi ordini
+              </Button>
+            </Link>
+          </CardContent>
+        </Card>
+
+        {/* Utility Practices */}
+        <Card data-testid="card-utility">
+          <CardHeader className="flex flex-row items-center justify-between gap-1 space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Pratiche Utility</CardTitle>
+            <div className="p-2 rounded-lg bg-indigo-100 dark:bg-indigo-900/30">
+              <Zap className="h-4 w-4 text-indigo-600" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold" data-testid="text-active-practices">
+              {stats?.utility?.activePractices ?? 0}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Pratiche attive • {stats?.utility?.totalPractices ?? 0} totali
+            </p>
+            <Link href="/reseller/utility/practices">
+              <Button variant="link" size="sm" className="p-0 h-auto mt-2">
+                Gestisci pratiche
+              </Button>
+            </Link>
+          </CardContent>
+        </Card>
+
+        {/* Network */}
+        <Card data-testid="card-network-stats">
+          <CardHeader className="flex flex-row items-center justify-between gap-1 space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">La Tua Rete</CardTitle>
+            <div className="p-2 rounded-lg bg-violet-100 dark:bg-violet-900/30">
+              <Network className="h-4 w-4 text-violet-600" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold" data-testid="text-network-centers">
+              {stats?.network?.repairCenters ?? 0}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Centri Riparazione
+              {(stats?.network?.subResellers ?? 0) > 0 && (
+                <span className="ml-1">• {stats?.network?.subResellers} rivenditori</span>
+              )}
+            </p>
+            <Link href="/reseller/repair-centers">
+              <Button variant="link" size="sm" className="p-0 h-auto mt-2">
+                Vedi dettagli
+              </Button>
+            </Link>
+          </CardContent>
+        </Card>
+      </div>
 
       {/* Quick Actions */}
       <Card>
@@ -223,37 +312,55 @@ export default function ResellerDashboard() {
           <Button 
             variant="outline" 
             className="w-full h-auto flex-col gap-2 p-4 hover-elevate" 
+            onClick={() => setAcceptanceDialogOpen(true)}
+            data-testid="button-quick-new-intake"
+          >
+            <PackageOpen className="h-5 w-5 text-orange-600" />
+            <span className="text-xs font-medium">Nuova Lavorazione</span>
+          </Button>
+          <Button 
+            variant="outline" 
+            className="w-full h-auto flex-col gap-2 p-4 hover-elevate" 
             onClick={() => setCustomerDialogOpen(true)}
             data-testid="button-quick-new-customer"
           >
             <UserPlus className="h-5 w-5 text-blue-600" />
             <span className="text-xs font-medium">Nuovo Cliente</span>
           </Button>
-          <Link href="/reseller/repair-centers">
-            <Button variant="outline" className="w-full h-auto flex-col gap-2 p-4 hover-elevate" data-testid="button-quick-new-center">
-              <Building2 className="h-5 w-5 text-purple-600" />
-              <span className="text-xs font-medium">Nuovo Centro</span>
-            </Button>
-          </Link>
           <Link href="/reseller/appointments">
             <Button variant="outline" className="w-full h-auto flex-col gap-2 p-4 hover-elevate" data-testid="button-quick-new-appointment">
               <CalendarPlus className="h-5 w-5 text-green-600" />
-              <span className="text-xs font-medium">Nuovo Appuntamento</span>
+              <span className="text-xs font-medium">Appuntamento</span>
             </Button>
           </Link>
-          <Button 
-            variant="outline" 
-            className="w-full h-auto flex-col gap-2 p-4 hover-elevate" 
-            onClick={() => setAcceptanceDialogOpen(true)}
-            data-testid="button-quick-new-intake"
-          >
-            <PackageOpen className="h-5 w-5 text-orange-600" />
-            <span className="text-xs font-medium">Nuovo Ingresso</span>
-          </Button>
-          <Link href="/reseller/inventory">
+          <Link href="/reseller/warehouses">
             <Button variant="outline" className="w-full h-auto flex-col gap-2 p-4 hover-elevate" data-testid="button-quick-warehouse">
-              <Boxes className="h-5 w-5 text-amber-600" />
+              <Warehouse className="h-5 w-5 text-amber-600" />
               <span className="text-xs font-medium">Magazzino</span>
+            </Button>
+          </Link>
+          <Link href="/reseller/incoming-transfer-requests">
+            <Button variant="outline" className="w-full h-auto flex-col gap-2 p-4 hover-elevate" data-testid="button-quick-interscambio">
+              <ArrowRightLeft className="h-5 w-5 text-purple-600" />
+              <span className="text-xs font-medium">Interscambio</span>
+            </Button>
+          </Link>
+          <Link href="/reseller/b2b-catalog">
+            <Button variant="outline" className="w-full h-auto flex-col gap-2 p-4 hover-elevate" data-testid="button-quick-b2b">
+              <ShoppingCart className="h-5 w-5 text-blue-600" />
+              <span className="text-xs font-medium">Ordine B2B</span>
+            </Button>
+          </Link>
+          <Link href="/reseller/utility/practices">
+            <Button variant="outline" className="w-full h-auto flex-col gap-2 p-4 hover-elevate" data-testid="button-quick-practices">
+              <Zap className="h-5 w-5 text-indigo-600" />
+              <span className="text-xs font-medium">Pratiche Utility</span>
+            </Button>
+          </Link>
+          <Link href="/reseller/repair-centers">
+            <Button variant="outline" className="w-full h-auto flex-col gap-2 p-4 hover-elevate" data-testid="button-quick-centers">
+              <Building2 className="h-5 w-5 text-violet-600" />
+              <span className="text-xs font-medium">Centri Rip.</span>
             </Button>
           </Link>
           <Link href="/reseller/suppliers">
@@ -266,24 +373,6 @@ export default function ResellerDashboard() {
             <Button variant="outline" className="w-full h-auto flex-col gap-2 p-4 hover-elevate" data-testid="button-quick-invoices">
               <Receipt className="h-5 w-5 text-red-600" />
               <span className="text-xs font-medium">Fatture</span>
-            </Button>
-          </Link>
-          <Link href="/reseller/utility/practices">
-            <Button variant="outline" className="w-full h-auto flex-col gap-2 p-4 hover-elevate" data-testid="button-quick-practices">
-              <FileCheck className="h-5 w-5 text-indigo-600" />
-              <span className="text-xs font-medium">Pratiche</span>
-            </Button>
-          </Link>
-          <Link href="/reseller/utility/practices?new=true">
-            <Button variant="outline" className="w-full h-auto flex-col gap-2 p-4 hover-elevate" data-testid="button-quick-new-practice">
-              <Plus className="h-5 w-5 text-indigo-600" />
-              <span className="text-xs font-medium">Nuova Pratica</span>
-            </Button>
-          </Link>
-          <Link href="/reseller/service-catalog">
-            <Button variant="outline" className="w-full h-auto flex-col gap-2 p-4 hover-elevate" data-testid="button-quick-service-catalog">
-              <ListChecks className="h-5 w-5 text-cyan-600" />
-              <span className="text-xs font-medium">Listino Servizi</span>
             </Button>
           </Link>
         </CardContent>
@@ -403,7 +492,7 @@ export default function ResellerDashboard() {
             <CardTitle>Ultime Riparazioni</CardTitle>
             <CardDescription>Le tue riparazioni più recenti</CardDescription>
           </div>
-          <Link href="/reseller/orders">
+          <Link href="/reseller/repairs">
             <Button variant="outline" size="sm">Vedi tutte</Button>
           </Link>
         </CardHeader>

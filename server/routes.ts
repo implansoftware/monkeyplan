@@ -13348,38 +13348,109 @@ export function registerRoutes(app: Express): Server {
         stats.lowStockProducts = lowStockProducts;
         
       } else if (req.user.role === 'reseller') {
-        // Reseller sees own orders and customers stats (respecting context switch)
+        // Reseller sees comprehensive dashboard stats
         const context = getEffectiveContext(req);
+        const resellerId = context.resellerId;
         
+        // Get repair orders
         let ownOrders;
         if (context.repairCenterId) {
           ownOrders = await storage.listRepairOrders({ repairCenterId: context.repairCenterId });
         } else {
-          ownOrders = await storage.listRepairOrders({ resellerId: context.resellerId });
+          ownOrders = await storage.listRepairOrders({ resellerId: resellerId });
         }
         
+        // Repairs by status using correct Italian enum values
         const repairsByStatus = {
-          pending: ownOrders.filter(r => r.status === 'pending').length,
-          in_progress: ownOrders.filter(r => r.status === 'in_progress').length,
-          completed: ownOrders.filter(r => r.status === 'completed').length,
+          ingressato: ownOrders.filter(r => r.status === 'ingressato').length,
+          in_diagnosi: ownOrders.filter(r => r.status === 'in_diagnosi').length,
+          preventivo_emesso: ownOrders.filter(r => r.status === 'preventivo_emesso').length,
+          preventivo_accettato: ownOrders.filter(r => r.status === 'preventivo_accettato').length,
+          preventivo_rifiutato: ownOrders.filter(r => r.status === 'preventivo_rifiutato').length,
+          attesa_ricambi: ownOrders.filter(r => r.status === 'attesa_ricambi').length,
+          in_riparazione: ownOrders.filter(r => r.status === 'in_riparazione').length,
+          in_test: ownOrders.filter(r => r.status === 'in_test').length,
+          pronto_ritiro: ownOrders.filter(r => r.status === 'pronto_ritiro').length,
+          consegnato: ownOrders.filter(r => r.status === 'consegnato').length,
           cancelled: ownOrders.filter(r => r.status === 'cancelled').length,
         };
         
+        // Active repairs (all non-completed statuses)
+        const activeStatuses = ['ingressato', 'in_diagnosi', 'preventivo_emesso', 'preventivo_accettato', 'attesa_ricambi', 'in_riparazione', 'in_test', 'pronto_ritiro'];
+        const activeRepairs = ownOrders.filter(r => activeStatuses.includes(r.status)).length;
+        
         // Count unique customers
-        const uniqueCustomers = new Set(ownOrders.map(o => o.customerId));
+        const customers = await storage.listUsers({ role: 'customer', resellerId: resellerId });
         
         // Calculate revenue from completed orders
-        const revenue = ownOrders
-          .filter(o => o.status === 'completed' && o.finalCost)
+        const completedOrders = ownOrders.filter(o => o.status === 'consegnato');
+        const revenue = completedOrders
+          .filter(o => o.finalCost)
           .reduce((sum, o) => sum + (o.finalCost || 0), 0);
         
+        // Get transfer requests (interscambio) stats
+        const incomingTransferRequests = await storage.listTransferRequests({ targetResellerId: resellerId });
+        const outgoingTransferRequests = await storage.listTransferRequests({ requesterId: resellerId });
+        const pendingTransferRequests = incomingTransferRequests.filter(tr => tr.status === 'pending').length;
+        const shippedTransferRequests = incomingTransferRequests.filter(tr => tr.status === 'shipped').length;
+        
+        // Get utility practices stats
+        const utilityPractices = await storage.listUtilityPractices({ resellerId: resellerId });
+        const activePractices = utilityPractices.filter(p => 
+          ['pending', 'in_progress', 'submitted', 'processing'].includes(p.status)
+        ).length;
+        
+        // Get B2B orders stats
+        const b2bOrders = await storage.listResellerPurchaseOrders({ resellerId: resellerId });
+        const pendingB2bOrders = b2bOrders.filter(o => 
+          ['pending', 'approved', 'shipped'].includes(o.status)
+        ).length;
+        
+        // Get warehouse stats
+        const warehouses = await storage.listWarehouses({ ownerId: resellerId });
+        let totalStock = 0;
+        let lowStockItems = 0;
+        for (const warehouse of warehouses) {
+          const stock = await storage.listWarehouseStock(warehouse.id);
+          totalStock += stock.reduce((sum, s) => sum + s.quantity, 0);
+          lowStockItems += stock.filter(s => s.quantity < 5 && s.quantity > 0).length;
+        }
+        
+        // Get sub-resellers and repair centers count
+        const subResellers = await storage.listUsers({ role: 'reseller', parentResellerId: resellerId });
+        const repairCenters = await storage.listRepairCenters({ resellerId: resellerId });
+        
         stats.overview = {
-          totalOrders: ownOrders.length,
-          completedOrders: ownOrders.filter(r => r.status === 'completed').length,
-          totalCustomers: uniqueCustomers.size,
+          totalRepairs: ownOrders.length,
+          activeRepairs: activeRepairs,
+          completedRepairs: completedOrders.length,
+          totalCustomers: customers.length,
           totalRevenue: revenue,
         };
         stats.repairsByStatus = repairsByStatus;
+        stats.interscambio = {
+          pendingRequests: pendingTransferRequests,
+          shippedRequests: shippedTransferRequests,
+          totalIncoming: incomingTransferRequests.length,
+          totalOutgoing: outgoingTransferRequests.length,
+        };
+        stats.utility = {
+          activePractices: activePractices,
+          totalPractices: utilityPractices.length,
+        };
+        stats.b2b = {
+          pendingOrders: pendingB2bOrders,
+          totalOrders: b2bOrders.length,
+        };
+        stats.warehouse = {
+          totalStock: totalStock,
+          lowStockItems: lowStockItems,
+          warehouseCount: warehouses.length,
+        };
+        stats.network = {
+          subResellers: subResellers.length,
+          repairCenters: repairCenters.length,
+        };
         
       } else if (req.user.role === 'customer') {
         // Customer sees own tickets and repairs stats
