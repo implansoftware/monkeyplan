@@ -191,6 +191,7 @@ import ResellerMarketplaceSales from "@/pages/reseller/marketplace-sales";
 // Transfer requests
 import SubResellerTransferRequests from "@/pages/reseller/sub-reseller-transfer-requests";
 import IncomingTransferRequests from "@/pages/reseller/incoming-transfer-requests";
+import TransferRequests from "@/pages/reseller/transfer-requests";
 
 function Router() {
   return (
@@ -316,6 +317,7 @@ function Router() {
       <ProtectedRoute path="/reseller/marketplace-sales" component={ResellerMarketplaceSales} />
       <ProtectedRoute path="/reseller/sub-transfer-requests" component={SubResellerTransferRequests} />
       <ProtectedRoute path="/reseller/incoming-transfer-requests" component={IncomingTransferRequests} />
+      <ProtectedRoute path="/reseller/transfer-requests" component={TransferRequests} />
       
       {/* Repair Center routes */}
       <ProtectedRoute path="/repair-center" component={RepairCenterDashboard} />

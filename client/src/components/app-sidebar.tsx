@@ -38,6 +38,7 @@ import {
   FolderOpen,
   Inbox,
   Send,
+  ArrowRightLeft,
 } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useState, Fragment, useMemo } from "react";
@@ -165,6 +166,7 @@ const menuItems = {
     { title: "Ricambi", url: "/reseller/products", icon: Package, group: "Magazzino" },
     { title: "Dispositivi", url: "/reseller/dispositivi", icon: Smartphone, group: "Magazzino" },
     { title: "Accessori", url: "/reseller/accessory-catalog", icon: ShoppingCart, group: "Magazzino" },
+    { title: "Panoramica", url: "/reseller/transfer-requests", icon: ArrowRightLeft, group: "Interscambio" },
     { title: "Richieste Ricevute", url: "/reseller/incoming-transfer-requests", icon: Inbox, group: "Interscambio" },
     { title: "Richieste Inviate", url: "/reseller/sub-transfer-requests", icon: Send, group: "Interscambio" },
     { title: "Anagrafica Fornitori", url: "/reseller/suppliers", icon: Truck, group: "Fornitori" },

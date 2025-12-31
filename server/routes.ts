@@ -21379,6 +21379,71 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Reseller: Overview of all transfer requests (incoming, outgoing, history)
+  app.get("/api/reseller/transfer-requests/overview", requireRole("reseller", "reseller_staff"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      const context = getEffectiveContext(req);
+      const resellerId = context.resellerId || req.user.id;
+      const user = await storage.getUser(resellerId);
+      
+      // Helper function to enrich requests
+      const enrichRequest = async (r: any) => {
+        const items = await storage.listTransferRequestItems(r.id);
+        const enrichedItems = await Promise.all(items.map(async (item) => {
+          const product = await storage.getProduct(item.productId);
+          return { ...item, product };
+        }));
+        const sourceWarehouse = await storage.getWarehouse(r.sourceWarehouseId);
+        const requesterWarehouse = await storage.getWarehouse(r.requesterWarehouseId);
+        const requester = await storage.getUser(r.requesterId);
+        return { ...r, items: enrichedItems, sourceWarehouse, requesterWarehouse, requester };
+      };
+      
+      // Incoming: requests where this reseller is the target
+      const incomingRaw = await storage.listTransferRequests({ targetResellerId: resellerId });
+      
+      // Outgoing: requests made by this user (if sub-reseller)
+      let outgoingRaw: any[] = [];
+      if (user?.parentResellerId) {
+        outgoingRaw = await storage.listTransferRequests({ 
+          requesterId: resellerId,
+          requesterType: 'sub_reseller'
+        });
+      }
+      
+      // Filter active (non-completed) for tabs
+      const activeStatuses = ['pending', 'approved', 'shipped'];
+      const completedStatuses = ['received', 'cancelled', 'rejected'];
+      
+      const incomingActive = incomingRaw.filter(r => activeStatuses.includes(r.status));
+      const incoming = await Promise.all(incomingActive.map(enrichRequest));
+      
+      const outgoingActive = outgoingRaw.filter(r => activeStatuses.includes(r.status));
+      const outgoing = await Promise.all(outgoingActive.map(enrichRequest));
+      
+      // History: completed transfers (received/cancelled/rejected) for both directions
+      const allRequests = [...incomingRaw, ...outgoingRaw];
+      const historyFiltered = allRequests.filter(r => completedStatuses.includes(r.status));
+      const history = await Promise.all(historyFiltered.map(enrichRequest));
+      
+      // Stats
+      const stats = {
+        incomingPending: incoming.filter(r => r.status === 'pending').length,
+        incomingApproved: incoming.filter(r => r.status === 'approved').length,
+        incomingShipped: incoming.filter(r => r.status === 'shipped').length,
+        outgoingPending: outgoing.filter(r => r.status === 'pending').length,
+        outgoingShipped: outgoing.filter(r => r.status === 'shipped').length,
+        totalHistory: history.length,
+        isSubReseller: !!user?.parentResellerId,
+      };
+      
+      res.json({ incoming, outgoing, history, stats });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   // Reseller: List incoming transfer requests (from repair centers and sub-resellers)
   app.get("/api/reseller/incoming-transfer-requests", requireRole("reseller"), async (req, res) => {
     try {
