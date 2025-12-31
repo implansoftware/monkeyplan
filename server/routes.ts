@@ -21026,7 +21026,7 @@ export function registerRoutes(app: Express): Server {
       const repairCenter = await storage.getRepairCenterByUserId(req.user.id);
       if (!repairCenter) return res.status(404).json({ error: "Centro di riparazione non trovato" });
       
-      const requesterWarehouse = await storage.getWarehouseForOwner(req.user.id, 'repair_center');
+      const requesterWarehouse = await storage.getWarehouseByOwner('repair_center', req.user.id);
       if (!requesterWarehouse) return res.status(404).json({ error: "Magazzino richiedente non trovato" });
       
       // Get source warehouse from request body or fallback to reseller's warehouse
@@ -21034,7 +21034,7 @@ export function registerRoutes(app: Express): Server {
       
       let finalSourceWarehouseId = sourceWarehouseId;
       if (!finalSourceWarehouseId) {
-        const resellerWarehouse = await storage.getWarehouseForOwner(repairCenter.resellerId, 'reseller');
+        const resellerWarehouse = await storage.getWarehouseByOwner('reseller', repairCenter.resellerId);
         if (!resellerWarehouse) return res.status(404).json({ error: "Magazzino fornitore non trovato" });
         finalSourceWarehouseId = resellerWarehouse.id;
       } else {
@@ -21187,7 +21187,7 @@ export function registerRoutes(app: Express): Server {
       if (!user?.parentResellerId) return res.status(403).json({ error: "Solo sub-reseller possono creare richieste" });
       
       // Get sub-reseller's own warehouse
-      const requesterWarehouse = await storage.getWarehouseForOwner(req.user.id, 'reseller');
+      const requesterWarehouse = await storage.getWarehouseByOwner('reseller', req.user.id);
       if (!requesterWarehouse) return res.status(404).json({ error: "Magazzino richiedente non trovato" });
       
       // Get source warehouse from request body or fallback to parent reseller's warehouse
@@ -21195,7 +21195,7 @@ export function registerRoutes(app: Express): Server {
       
       let finalSourceWarehouseId = sourceWarehouseId;
       if (!finalSourceWarehouseId) {
-        const parentWarehouse = await storage.getWarehouseForOwner(user.parentResellerId, 'reseller');
+        const parentWarehouse = await storage.getWarehouseByOwner('reseller', user.parentResellerId);
         if (!parentWarehouse) return res.status(404).json({ error: "Magazzino fornitore non trovato" });
         finalSourceWarehouseId = parentWarehouse.id;
       } else {
