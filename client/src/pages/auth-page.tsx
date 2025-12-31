@@ -61,6 +61,7 @@ export default function AuthPage() {
   if (user) {
     const redirectPath = user.role === "admin" ? "/" :
       user.role === "reseller" ? "/reseller" :
+      user.role === "reseller_staff" ? "/reseller" :
       user.role === "repair_center" ? "/repair-center" :
       "/customer";
     return <Redirect to={redirectPath} />;
