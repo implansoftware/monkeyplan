@@ -474,7 +474,7 @@ export default function TransferRequestsPage() {
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="incoming" className="gap-2" data-testid="tab-incoming">
             <Inbox className="h-4 w-4" />
-            In Arrivo
+            Ricevute
             {(stats?.incomingPending || 0) > 0 && (
               <Badge variant="secondary" className="ml-1">{stats?.incomingPending}</Badge>
             )}
@@ -497,7 +497,7 @@ export default function TransferRequestsPage() {
             <Card>
               <CardContent className="py-12 text-center">
                 <Inbox className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <p className="text-muted-foreground">Nessuna richiesta in arrivo</p>
+                <p className="text-muted-foreground">Nessuna richiesta ricevuta</p>
               </CardContent>
             </Card>
           ) : (
