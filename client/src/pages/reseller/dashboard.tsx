@@ -221,7 +221,7 @@ export default function ResellerDashboard() {
                 <span className="ml-1">• {stats?.interscambio?.shippedRequests} in transito</span>
               )}
             </p>
-            <Link href="/reseller/incoming-transfer-requests">
+            <Link href="/reseller/transfer-requests">
               <Button variant="ghost" size="sm" className="p-0 h-auto mt-2">
                 Gestisci richieste
               </Button>
@@ -339,7 +339,7 @@ export default function ResellerDashboard() {
               <span className="text-xs font-medium">Magazzino</span>
             </Button>
           </Link>
-          <Link href="/reseller/incoming-transfer-requests">
+          <Link href="/reseller/transfer-requests">
             <Button variant="outline" className="w-full h-auto flex-col gap-2 p-4 hover-elevate" data-testid="button-quick-interscambio">
               <ArrowRightLeft className="h-5 w-5 text-purple-600" />
               <span className="text-xs font-medium">Interscambio</span>
