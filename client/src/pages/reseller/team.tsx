@@ -45,6 +45,13 @@ interface RepairCenter {
   name: string;
 }
 
+interface SubReseller {
+  id: string;
+  fullName: string;
+  ragioneSociale: string | null;
+  email: string;
+}
+
 interface StaffMember {
   id: string;
   username: string;
@@ -55,6 +62,7 @@ interface StaffMember {
   createdAt: string;
   permissions: StaffPermission[];
   assignedRepairCenters?: RepairCenter[];
+  assignedSubResellerIds?: string[];
 }
 
 interface StaffPermission {
@@ -87,6 +95,7 @@ export default function ResellerTeam() {
   const [isEditing, setIsEditing] = useState(false);
   const [localPermissions, setLocalPermissions] = useState<Record<string, Record<string, boolean>>>({});
   const [localRepairCenterIds, setLocalRepairCenterIds] = useState<string[]>([]);
+  const [localSubResellerIds, setLocalSubResellerIds] = useState<string[]>([]);
   const { toast } = useToast();
 
   const form = useForm<StaffFormValues>({
@@ -108,8 +117,12 @@ export default function ResellerTeam() {
     queryKey: ["/api/reseller/repair-centers"],
   });
 
+  const { data: subResellers = [] } = useQuery<SubReseller[]>({
+    queryKey: ["/api/reseller/sub-resellers"],
+  });
+
   const createMutation = useMutation({
-    mutationFn: async (data: { user: StaffFormValues; permissions: any[]; repairCenterIds?: string[] }) => {
+    mutationFn: async (data: { user: StaffFormValues; permissions: any[]; repairCenterIds?: string[]; subResellerIds?: string[] }) => {
       return apiRequest("POST", "/api/reseller/team", data);
     },
     onSuccess: () => {
@@ -118,6 +131,7 @@ export default function ResellerTeam() {
       form.reset();
       setLocalPermissions({});
       setLocalRepairCenterIds([]);
+      setLocalSubResellerIds([]);
       toast({
         title: "Membro staff creato",
         description: "Il nuovo membro del team è stato aggiunto con successo.",
@@ -133,7 +147,7 @@ export default function ResellerTeam() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: { user?: Partial<StaffFormValues>; permissions?: any[]; repairCenterIds?: string[] } }) => {
+    mutationFn: async ({ id, data }: { id: string; data: { user?: Partial<StaffFormValues>; permissions?: any[]; repairCenterIds?: string[]; subResellerIds?: string[] } }) => {
       return apiRequest("PATCH", `/api/reseller/team/${id}`, data);
     },
     onSuccess: () => {
@@ -145,6 +159,7 @@ export default function ResellerTeam() {
       form.reset();
       setLocalPermissions({});
       setLocalRepairCenterIds([]);
+      setLocalSubResellerIds([]);
       toast({
         title: "Aggiornato",
         description: "Le modifiche sono state salvate con successo.",
@@ -199,6 +214,7 @@ export default function ResellerTeam() {
     });
     setLocalPermissions({});
     setLocalRepairCenterIds([]);
+    setLocalSubResellerIds([]);
     setDialogOpen(true);
   };
 
@@ -213,6 +229,7 @@ export default function ResellerTeam() {
       password: "placeholder",
     });
     setLocalRepairCenterIds(member.assignedRepairCenters?.map(rc => rc.id) || []);
+    setLocalSubResellerIds(member.assignedSubResellerIds || []);
     setDialogOpen(true);
   };
 
@@ -246,12 +263,13 @@ export default function ResellerTeam() {
         email: values.email,
         phone: values.phone,
       };
-      updateMutation.mutate({ id: selectedMember.id, data: { user: userData, repairCenterIds: localRepairCenterIds } });
+      updateMutation.mutate({ id: selectedMember.id, data: { user: userData, repairCenterIds: localRepairCenterIds, subResellerIds: localSubResellerIds } });
     } else {
       createMutation.mutate({
         user: values,
         permissions: permissionsArray,
         repairCenterIds: localRepairCenterIds,
+        subResellerIds: localSubResellerIds,
       });
     }
   };
@@ -570,6 +588,41 @@ export default function ResellerTeam() {
                             className="text-sm font-medium leading-none cursor-pointer"
                           >
                             {center.name}
+                          </label>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {subResellers.length > 0 && (
+                <div className="space-y-3">
+                  <Label className="text-base font-medium">Sotto-Rivenditori Assegnati</Label>
+                  <p className="text-sm text-muted-foreground">
+                    Seleziona i sotto-rivenditori a cui questo collaboratore avrà accesso
+                  </p>
+                  <div className="border rounded-lg p-4 max-h-40 overflow-y-auto">
+                    <div className="space-y-2">
+                      {subResellers.map((subReseller) => (
+                        <div key={subReseller.id} className="flex items-center space-x-2">
+                          <Checkbox
+                            id={`subreseller-${subReseller.id}`}
+                            checked={localSubResellerIds.includes(subReseller.id)}
+                            onCheckedChange={(checked) => {
+                              if (checked) {
+                                setLocalSubResellerIds([...localSubResellerIds, subReseller.id]);
+                              } else {
+                                setLocalSubResellerIds(localSubResellerIds.filter(id => id !== subReseller.id));
+                              }
+                            }}
+                            data-testid={`checkbox-subreseller-${subReseller.id}`}
+                          />
+                          <label
+                            htmlFor={`subreseller-${subReseller.id}`}
+                            className="text-sm font-medium leading-none cursor-pointer"
+                          >
+                            {subReseller.ragioneSociale || subReseller.fullName}
                           </label>
                         </div>
                       ))}
