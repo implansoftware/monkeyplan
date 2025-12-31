@@ -209,7 +209,7 @@ export default function AdminDashboard() {
         <div>
           <h1 className="text-2xl font-semibold mb-2">Dashboard Amministratore</h1>
           <p className="text-muted-foreground">
-            Panoramica completa della piattaforma Monkey Plan Beta v.22
+            Panoramica completa della piattaforma Monkey Plan Beta v.22.5
           </p>
         </div>
         

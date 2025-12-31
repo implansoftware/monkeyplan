@@ -399,7 +399,7 @@ export function AppSidebar() {
             <Wrench className="h-5 w-5" />
           </div>
           <div>
-            <h2 className="text-lg font-semibold">Monkey Plan <span className="text-red-500">Beta v.22</span></h2>
+            <h2 className="text-lg font-semibold">Monkey Plan <span className="text-red-500">Beta v.22.5</span></h2>
             <p className="text-xs text-muted-foreground capitalize">
               {user.role.replace("_", " ")}
             </p>
