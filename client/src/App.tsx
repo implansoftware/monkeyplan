@@ -40,6 +40,7 @@ import AdminSuppliers from "@/pages/admin/suppliers";
 import AdminSupplierOrders from "@/pages/admin/supplier-orders";
 import AdminSupplierReturns from "@/pages/admin/supplier-returns";
 import AdminTransferRequests from "@/pages/admin/transfer-requests";
+import AdminTransferRequestsOverview from "@/pages/admin/transfer-requests-overview";
 import AdminExternalIntegrations from "@/pages/admin/external-integrations";
 import AdminCustomers from "@/pages/admin/customers";
 import AdminCustomerDetail from "@/pages/admin/customer-detail";
@@ -148,6 +149,7 @@ import RepairCenterUtilityPracticeDetail from "@/pages/repair-center/utility/pra
 import RepairCenterUtilityCommissions from "@/pages/repair-center/utility/commissions";
 import RepairCenterUtilityReports from "@/pages/repair-center/utility/reports";
 import RepairCenterTransferRequests from "@/pages/repair-center/transfer-requests";
+import RepairCenterTransferRequestsOverview from "@/pages/repair-center/transfer-requests-overview";
 
 // Customer pages
 import CustomerDashboard from "@/pages/customer/dashboard";
@@ -235,6 +237,7 @@ function Router() {
       <ProtectedRoute path="/admin/suppliers" component={AdminSuppliers} />
       <ProtectedRoute path="/admin/supplier-orders" component={AdminSupplierOrders} />
       <ProtectedRoute path="/admin/supplier-returns" component={AdminSupplierReturns} />
+      <ProtectedRoute path="/admin/transfer-requests/overview" component={AdminTransferRequestsOverview} />
       <ProtectedRoute path="/admin/transfer-requests" component={AdminTransferRequests} />
       <ProtectedRoute path="/admin/external-integrations" component={AdminExternalIntegrations} />
       <ProtectedRoute path="/admin/utility" component={AdminUtility} />
@@ -344,6 +347,7 @@ function Router() {
       <ProtectedRoute path="/repair-center/utility/practices" component={RepairCenterUtilityPractices} />
       <ProtectedRoute path="/repair-center/utility/commissions" component={RepairCenterUtilityCommissions} />
       <ProtectedRoute path="/repair-center/utility/reports" component={RepairCenterUtilityReports} />
+      <ProtectedRoute path="/repair-center/transfer-requests/overview" component={RepairCenterTransferRequestsOverview} />
       <ProtectedRoute path="/repair-center/transfer-requests" component={RepairCenterTransferRequests} />
       <ProtectedRoute path="/repair-center/diagnostics" component={DiagnosisList} />
       <ProtectedRoute path="/repair-center/quotes" component={QuotesList} />

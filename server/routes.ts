@@ -21040,6 +21040,57 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Repair Center: Overview of own transfer requests with stats
+  app.get("/api/repair-center/transfer-requests/overview", requireRole("repair_center"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      
+      const allRequests = await storage.listTransferRequests({ 
+        requesterId: req.user.id,
+        requesterType: 'repair_center'
+      });
+      
+      const enrichRequest = async (r: any) => {
+        const items = await storage.listTransferRequestItems(r.id);
+        const enrichedItems = await Promise.all(items.map(async (item) => {
+          const product = await storage.getProduct(item.productId);
+          return { ...item, product };
+        }));
+        const sourceWarehouse = await storage.getWarehouse(r.sourceWarehouseId);
+        const requesterWarehouse = await storage.getWarehouse(r.requesterWarehouseId);
+        const targetReseller = await storage.getUser(r.targetResellerId);
+        return { 
+          ...r, 
+          items: enrichedItems, 
+          sourceWarehouse, 
+          requesterWarehouse,
+          targetResellerName: targetReseller?.username || "Reseller"
+        };
+      };
+      
+      const activeStatuses = ['pending', 'approved', 'shipped'];
+      const completedStatuses = ['received', 'cancelled', 'rejected'];
+      
+      const activeRaw = allRequests.filter(r => activeStatuses.includes(r.status));
+      const active = await Promise.all(activeRaw.map(enrichRequest));
+      
+      const historyRaw = allRequests.filter(r => completedStatuses.includes(r.status));
+      const history = await Promise.all(historyRaw.map(enrichRequest));
+      
+      const stats = {
+        pending: active.filter(r => r.status === 'pending').length,
+        approved: active.filter(r => r.status === 'approved').length,
+        shipped: active.filter(r => r.status === 'shipped').length,
+        totalHistory: history.length,
+        totalActive: active.length,
+      };
+      
+      res.json({ active, history, stats });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   // Repair Center: List own transfer requests
   app.get("/api/repair-center/transfer-requests", requireRole("repair_center"), async (req, res) => {
     try {
@@ -21694,6 +21745,63 @@ export function registerRoutes(app: Express): Server {
   // ==========================================
   // ADMIN TRANSFER REQUESTS MANAGEMENT
   // ==========================================
+
+  // Admin: Overview of all transfer requests with stats
+  app.get("/api/admin/transfer-requests/overview", requireRole("admin"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      
+      const allRequests = await storage.listTransferRequests({});
+      
+      const enrichRequest = async (r: any) => {
+        const items = await storage.listTransferRequestItems(r.id);
+        const enrichedItems = await Promise.all(items.map(async (item) => {
+          const product = await storage.getProduct(item.productId);
+          return { ...item, product };
+        }));
+        const sourceWarehouse = await storage.getWarehouse(r.sourceWarehouseId);
+        const requesterWarehouse = await storage.getWarehouse(r.requesterWarehouseId);
+        let requesterName = "";
+        if (r.requesterType === 'repair_center') {
+          const repairCenter = await storage.getRepairCenter(r.requesterId);
+          requesterName = repairCenter?.name || "Centro sconosciuto";
+        } else {
+          const user = await storage.getUser(r.requesterId);
+          requesterName = user?.username || "Utente sconosciuto";
+        }
+        const targetReseller = await storage.getUser(r.targetResellerId);
+        return { 
+          ...r, 
+          items: enrichedItems, 
+          sourceWarehouse, 
+          requesterWarehouse, 
+          requesterName,
+          targetResellerName: targetReseller?.username || "Reseller sconosciuto"
+        };
+      };
+      
+      const activeStatuses = ['pending', 'approved', 'shipped'];
+      const completedStatuses = ['received', 'cancelled', 'rejected'];
+      
+      const activeRaw = allRequests.filter(r => activeStatuses.includes(r.status));
+      const active = await Promise.all(activeRaw.map(enrichRequest));
+      
+      const historyRaw = allRequests.filter(r => completedStatuses.includes(r.status));
+      const history = await Promise.all(historyRaw.map(enrichRequest));
+      
+      const stats = {
+        pending: active.filter(r => r.status === 'pending').length,
+        approved: active.filter(r => r.status === 'approved').length,
+        shipped: active.filter(r => r.status === 'shipped').length,
+        totalHistory: history.length,
+        totalActive: active.length,
+      };
+      
+      res.json({ active, history, stats });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
 
   // Admin: List all transfer requests
   app.get("/api/admin/transfer-requests", requireRole("admin"), async (req, res) => {
