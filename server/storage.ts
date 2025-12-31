@@ -71,6 +71,7 @@ import {
   adminStaffPermissions, AdminStaffPermission, InsertAdminStaffPermission,
   customerRepairCenters, CustomerRepairCenter, InsertCustomerRepairCenter,
   staffRepairCenters, StaffRepairCenter, InsertStaffRepairCenter,
+  staffSubResellers, StaffSubReseller, InsertStaffSubReseller,
   smartphoneSpecs, SmartphoneSpecs, InsertSmartphoneSpecs,
   accessorySpecs, AccessorySpecs, InsertAccessorySpecs,
   customerAddresses, CustomerAddress, InsertCustomerAddress,
@@ -1160,6 +1161,49 @@ export class DatabaseStorage implements IStorage {
 
   async listAllStaffRepairCenters(): Promise<StaffRepairCenter[]> {
     return await db.select().from(staffRepairCenters);
+  }
+
+  // Staff-SubReseller Many-to-Many
+  async listSubResellersForStaff(staffId: string): Promise<User[]> {
+    const results = await db
+      .select({
+        user: users,
+      })
+      .from(staffSubResellers)
+      .innerJoin(users, eq(staffSubResellers.subResellerId, users.id))
+      .where(eq(staffSubResellers.staffId, staffId));
+    return results.map(r => r.user);
+  }
+
+  async listSubResellerIdsForStaff(staffId: string): Promise<string[]> {
+    const results = await db
+      .select({ subResellerId: staffSubResellers.subResellerId })
+      .from(staffSubResellers)
+      .where(eq(staffSubResellers.staffId, staffId));
+    return results.map(r => r.subResellerId);
+  }
+
+  async setStaffSubResellers(staffId: string, subResellerIds: string[]): Promise<void> {
+    // De-duplicate and filter empty values
+    const filteredIds = subResellerIds.filter(id => id && id.trim());
+    const uniqueSubResellerIds = Array.from(new Set(filteredIds));
+    
+    // Delete existing associations
+    await db.delete(staffSubResellers).where(eq(staffSubResellers.staffId, staffId));
+    
+    // Insert new associations
+    if (uniqueSubResellerIds.length > 0) {
+      await db.insert(staffSubResellers).values(
+        uniqueSubResellerIds.map(subResellerId => ({
+          staffId,
+          subResellerId,
+        }))
+      );
+    }
+  }
+
+  async listAllStaffSubResellers(): Promise<StaffSubReseller[]> {
+    return await db.select().from(staffSubResellers);
   }
 
   // Repair Centers
