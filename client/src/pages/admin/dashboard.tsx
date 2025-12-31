@@ -6,7 +6,7 @@ import { useQuery } from "@tanstack/react-query";
 import { 
   Users, Wrench, Ticket, TrendingUp, Package, Building, 
   Store, Warehouse, ShoppingCart, Zap, FileCheck, Clock,
-  UserPlus, AlertTriangle, Filter
+  UserPlus, AlertTriangle, Filter, ArrowLeftRight
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
@@ -121,6 +121,15 @@ type AdminStats = {
     totalRevenue: number;
     pendingOrders: number;
     activeCartItems: number;
+  };
+  transferRequestStats: {
+    total: number;
+    pending: number;
+    approved: number;
+    shipped: number;
+    received: number;
+    rejected: number;
+    cancelled: number;
   };
 };
 
@@ -526,6 +535,57 @@ export default function AdminDashboard() {
               <div className="text-center p-2 bg-muted/50 rounded-md">
                 <div className="text-2xl font-bold">{stats?.ecommerceStats?.activeCartItems ?? 0}</div>
                 <div className="text-xs text-muted-foreground">Carrelli Attivi</div>
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Interscambio Stats Row */}
+      <Card data-testid="card-stats-interscambio">
+        <CardHeader className="flex flex-row items-center justify-between gap-1 space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium flex items-center gap-2">
+            <ArrowLeftRight className="h-4 w-4" />
+            Interscambio
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {isLoading ? (
+            <div className="grid grid-cols-4 gap-4">
+              <Skeleton className="h-12 w-full" />
+              <Skeleton className="h-12 w-full" />
+              <Skeleton className="h-12 w-full" />
+              <Skeleton className="h-12 w-full" />
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
+              <div className="text-center p-2 bg-muted/50 rounded-md">
+                <div className="text-2xl font-bold">{stats?.transferRequestStats?.total ?? 0}</div>
+                <div className="text-xs text-muted-foreground">Richieste Totali</div>
+              </div>
+              <div className="text-center p-2 bg-muted/50 rounded-md">
+                <div className="text-2xl font-bold text-yellow-600">{stats?.transferRequestStats?.pending ?? 0}</div>
+                <div className="text-xs text-muted-foreground">In Attesa</div>
+              </div>
+              <div className="text-center p-2 bg-muted/50 rounded-md">
+                <div className="text-2xl font-bold text-blue-600">{stats?.transferRequestStats?.approved ?? 0}</div>
+                <div className="text-xs text-muted-foreground">Approvate</div>
+              </div>
+              <div className="text-center p-2 bg-muted/50 rounded-md">
+                <div className="text-2xl font-bold text-purple-600">{stats?.transferRequestStats?.shipped ?? 0}</div>
+                <div className="text-xs text-muted-foreground">Spedite</div>
+              </div>
+              <div className="text-center p-2 bg-muted/50 rounded-md">
+                <div className="text-2xl font-bold text-green-600">{stats?.transferRequestStats?.received ?? 0}</div>
+                <div className="text-xs text-muted-foreground">Ricevute</div>
+              </div>
+              <div className="text-center p-2 bg-muted/50 rounded-md">
+                <div className="text-2xl font-bold text-red-600">{stats?.transferRequestStats?.rejected ?? 0}</div>
+                <div className="text-xs text-muted-foreground">Rifiutate</div>
+              </div>
+              <div className="text-center p-2 bg-muted/50 rounded-md">
+                <div className="text-2xl font-bold text-muted-foreground">{stats?.transferRequestStats?.cancelled ?? 0}</div>
+                <div className="text-xs text-muted-foreground">Annullate</div>
               </div>
             </div>
           )}

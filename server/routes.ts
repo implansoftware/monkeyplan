@@ -13308,6 +13308,19 @@ export function registerRoutes(app: Express): Server {
         stats.warehouseStats = warehouseStats;
         stats.ecommerceStats = ecommerceStats;
         
+        // Transfer Request (Interscambio) stats
+        const allTransferRequests = await storage.listTransferRequests({});
+        const transferRequestStats = {
+          total: allTransferRequests.length,
+          pending: allTransferRequests.filter(r => r.status === 'pending').length,
+          approved: allTransferRequests.filter(r => r.status === 'approved').length,
+          shipped: allTransferRequests.filter(r => r.status === 'shipped').length,
+          received: allTransferRequests.filter(r => r.status === 'received').length,
+          rejected: allTransferRequests.filter(r => r.status === 'rejected').length,
+          cancelled: allTransferRequests.filter(r => r.status === 'cancelled').length,
+        };
+        stats.transferRequestStats = transferRequestStats;
+        
       } else if (req.user.role === 'repair_center') {
         // Repair center sees own stats
         if (!req.user.repairCenterId) {
