@@ -21232,6 +21232,70 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Sub-reseller: Confirm receipt of transfer request
+  app.patch("/api/reseller/sub-reseller/transfer-requests/:id/receive", requireRole("reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      
+      const request = await storage.getTransferRequest(req.params.id);
+      if (!request) return res.status(404).json({ error: "Richiesta non trovata" });
+      
+      // Verify requester owns this request
+      if (request.requesterId !== req.user.id) {
+        return res.status(403).json({ error: "Accesso negato" });
+      }
+      
+      if (request.status !== 'shipped') {
+        return res.status(400).json({ error: "Solo le richieste spedite possono essere confermate" });
+      }
+      
+      const { items } = req.body;
+      
+      // Get all request items for lookup
+      const requestItems = await storage.listTransferRequestItems(request.id);
+      
+      // Update received quantities and add to destination warehouse
+      if (items && Array.isArray(items)) {
+        for (const item of items) {
+          await storage.updateTransferRequestItem(item.id, { 
+            receivedQuantity: item.receivedQuantity 
+          });
+          
+          // Find item details from the list
+          const requestItem = requestItems.find(ri => ri.id === item.id);
+          if (requestItem && item.receivedQuantity > 0) {
+            // Add to destination warehouse
+            await storage.updateWarehouseStockQuantity(
+              request.requesterWarehouseId, 
+              requestItem.productId, 
+              item.receivedQuantity
+            );
+            
+            // Record stock movement
+            await storage.createStockMovement({
+              warehouseId: request.requesterWarehouseId,
+              productId: requestItem.productId,
+              type: 'in',
+              quantity: item.receivedQuantity,
+              referenceType: 'transfer_request',
+              referenceId: request.id,
+              createdBy: req.user.id,
+            });
+          }
+        }
+      }
+      
+      const updated = await storage.updateTransferRequest(req.params.id, {
+        status: 'received',
+        receivedAt: new Date(),
+      });
+      
+      res.json(updated);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   // Reseller: Get pending count for incoming transfer requests (for sidebar badge)
   app.get("/api/reseller/incoming-transfer-requests/summary", requireRole("reseller", "reseller_staff"), async (req, res) => {
     try {
