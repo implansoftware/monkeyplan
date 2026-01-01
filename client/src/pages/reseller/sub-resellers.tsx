@@ -1,16 +1,23 @@
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Network, Search, Users, Building, Store, ShoppingCart, Package, TrendingUp, DollarSign, Eye } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { Network, Search, Users, Building, Store, ShoppingCart, Package, TrendingUp, DollarSign, Eye, Plus, Pencil, Trash2, Loader2 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
 import { Link } from "wouter";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 
 interface SubReseller {
   id: string;
@@ -36,10 +43,30 @@ interface SubResellerEcommerce {
   lastOrderDate: string | null;
 }
 
+interface SubResellerFormData {
+  username: string;
+  email: string;
+  password: string;
+  fullName: string;
+  phone: string;
+  resellerCategory: string;
+  isActive: boolean;
+}
+
 const categoryLabels: Record<string, string> = {
   standard: "Standard",
   franchising: "Franchising",
   gdo: "GDO",
+};
+
+const initialFormData: SubResellerFormData = {
+  username: "",
+  email: "",
+  password: "",
+  fullName: "",
+  phone: "",
+  resellerCategory: "standard",
+  isActive: true,
 };
 
 function formatPrice(cents: number): string {
@@ -49,6 +76,12 @@ function formatPrice(cents: number): string {
 export default function SubResellers() {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState("anagrafica");
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [editingReseller, setEditingReseller] = useState<SubReseller | null>(null);
+  const [deletingReseller, setDeletingReseller] = useState<SubReseller | null>(null);
+  const [formData, setFormData] = useState<SubResellerFormData>(initialFormData);
+  const { toast } = useToast();
 
   const { data: subResellers = [], isLoading } = useQuery<SubReseller[]>({
     queryKey: ["/api/reseller/sub-resellers"],
@@ -58,6 +91,111 @@ export default function SubResellers() {
     queryKey: ["/api/reseller/sub-resellers/ecommerce"],
     enabled: activeTab === "ecommerce",
   });
+
+  const createMutation = useMutation({
+    mutationFn: async (data: SubResellerFormData) => {
+      const response = await apiRequest("POST", "/api/reseller/sub-resellers", data);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/reseller/sub-resellers"] });
+      toast({ title: "Sub-reseller creato con successo" });
+      handleCloseDialog();
+    },
+    onError: (error: Error) => {
+      toast({ title: "Errore", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: Partial<SubResellerFormData> }) => {
+      const response = await apiRequest("PATCH", `/api/reseller/sub-resellers/${id}`, data);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/reseller/sub-resellers"] });
+      toast({ title: "Sub-reseller aggiornato con successo" });
+      handleCloseDialog();
+    },
+    onError: (error: Error) => {
+      toast({ title: "Errore", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const response = await apiRequest("DELETE", `/api/reseller/sub-resellers/${id}`);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/reseller/sub-resellers"] });
+      toast({ title: "Sub-reseller eliminato con successo" });
+      setDeleteDialogOpen(false);
+      setDeletingReseller(null);
+    },
+    onError: (error: Error) => {
+      toast({ title: "Errore", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const handleOpenCreate = () => {
+    setEditingReseller(null);
+    setFormData(initialFormData);
+    setDialogOpen(true);
+  };
+
+  const handleOpenEdit = (reseller: SubReseller) => {
+    setEditingReseller(reseller);
+    setFormData({
+      username: reseller.username,
+      email: reseller.email,
+      password: "",
+      fullName: reseller.fullName,
+      phone: reseller.phone || "",
+      resellerCategory: reseller.resellerCategory || "standard",
+      isActive: reseller.isActive,
+    });
+    setDialogOpen(true);
+  };
+
+  const handleOpenDelete = (reseller: SubReseller) => {
+    setDeletingReseller(reseller);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleCloseDialog = () => {
+    setDialogOpen(false);
+    setEditingReseller(null);
+    setFormData(initialFormData);
+  };
+
+  const handleSubmit = () => {
+    if (editingReseller) {
+      const updateData: Partial<SubResellerFormData> = {
+        fullName: formData.fullName,
+        email: formData.email,
+        phone: formData.phone,
+        resellerCategory: formData.resellerCategory,
+        isActive: formData.isActive,
+      };
+      if (formData.password) {
+        updateData.password = formData.password;
+      }
+      updateMutation.mutate({ id: editingReseller.id, data: updateData });
+    } else {
+      if (!formData.password) {
+        toast({ title: "Errore", description: "La password è obbligatoria", variant: "destructive" });
+        return;
+      }
+      createMutation.mutate(formData);
+    }
+  };
+
+  const handleDelete = () => {
+    if (deletingReseller) {
+      deleteMutation.mutate(deletingReseller.id);
+    }
+  };
 
   const filteredResellers = subResellers.filter((reseller) => {
     const matchesSearch =
@@ -74,9 +212,11 @@ export default function SubResellers() {
   const totalEcommerceRevenue = ecommerceData.reduce((acc, r) => acc + r.totalRevenue, 0);
   const totalEcommerceOrders = ecommerceData.reduce((acc, r) => acc + r.totalOrders, 0);
 
+  const isPending = createMutation.isPending || updateMutation.isPending;
+
   return (
     <div className="space-y-6 p-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
           <h1 className="text-2xl font-bold flex items-center gap-2" data-testid="text-page-title">
             <Network className="h-6 w-6" />
@@ -86,6 +226,10 @@ export default function SubResellers() {
             Gestisci i tuoi rivenditori affiliati
           </p>
         </div>
+        <Button onClick={handleOpenCreate} data-testid="button-add-subreseller">
+          <Plus className="h-4 w-4 mr-2" />
+          Nuovo Sub-Reseller
+        </Button>
       </div>
 
       <div className="grid gap-4 md:grid-cols-4">
@@ -184,7 +328,7 @@ export default function SubResellers() {
                 Elenco Sub-Reseller
               </CardTitle>
               <CardDescription>
-                Visualizza tutti i rivenditori affiliati alla tua rete
+                Visualizza e gestisci i rivenditori affiliati alla tua rete
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -230,6 +374,7 @@ export default function SubResellers() {
                         <TableHead className="text-center">Centri</TableHead>
                         <TableHead>Stato</TableHead>
                         <TableHead>Data Creazione</TableHead>
+                        <TableHead className="text-right">Azioni</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -271,6 +416,26 @@ export default function SubResellers() {
                           </TableCell>
                           <TableCell className="text-muted-foreground" data-testid={`text-date-${reseller.id}`}>
                             {format(new Date(reseller.createdAt), "dd MMM yyyy", { locale: it })}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex items-center justify-end gap-1">
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                onClick={() => handleOpenEdit(reseller)}
+                                data-testid={`button-edit-${reseller.id}`}
+                              >
+                                <Pencil className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                onClick={() => handleOpenDelete(reseller)}
+                                data-testid={`button-delete-${reseller.id}`}
+                              >
+                                <Trash2 className="h-4 w-4 text-destructive" />
+                              </Button>
+                            </div>
                           </TableCell>
                         </TableRow>
                       ))}
@@ -382,6 +547,141 @@ export default function SubResellers() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent className="max-w-md" data-testid="dialog-subreseller-form">
+          <DialogHeader>
+            <DialogTitle>
+              {editingReseller ? "Modifica Sub-Reseller" : "Nuovo Sub-Reseller"}
+            </DialogTitle>
+            <DialogDescription>
+              {editingReseller 
+                ? "Modifica i dati del sub-reseller selezionato"
+                : "Inserisci i dati per creare un nuovo sub-reseller"}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="username">Username *</Label>
+                <Input
+                  id="username"
+                  value={formData.username}
+                  onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+                  disabled={!!editingReseller}
+                  data-testid="input-username"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="email">Email *</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  data-testid="input-email"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="fullName">Nome Completo *</Label>
+              <Input
+                id="fullName"
+                value={formData.fullName}
+                onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+                data-testid="input-fullname"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="phone">Telefono</Label>
+                <Input
+                  id="phone"
+                  value={formData.phone}
+                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                  data-testid="input-phone"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="category">Categoria</Label>
+                <Select
+                  value={formData.resellerCategory}
+                  onValueChange={(value) => setFormData({ ...formData, resellerCategory: value })}
+                >
+                  <SelectTrigger data-testid="select-category">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="standard">Standard</SelectItem>
+                    <SelectItem value="franchising">Franchising</SelectItem>
+                    <SelectItem value="gdo">GDO</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="password">
+                Password {editingReseller ? "(lascia vuoto per non modificare)" : "*"}
+              </Label>
+              <Input
+                id="password"
+                type="password"
+                value={formData.password}
+                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                placeholder={editingReseller ? "••••••••" : ""}
+                data-testid="input-password"
+              />
+            </div>
+
+            <div className="flex items-center justify-between">
+              <Label htmlFor="isActive">Attivo</Label>
+              <Switch
+                id="isActive"
+                checked={formData.isActive}
+                onCheckedChange={(checked) => setFormData({ ...formData, isActive: checked })}
+                data-testid="switch-active"
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={handleCloseDialog} data-testid="button-cancel">
+              Annulla
+            </Button>
+            <Button onClick={handleSubmit} disabled={isPending} data-testid="button-submit">
+              {isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              {editingReseller ? "Salva Modifiche" : "Crea Sub-Reseller"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent data-testid="dialog-delete-confirm">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Conferma Eliminazione</AlertDialogTitle>
+            <AlertDialogDescription>
+              Sei sicuro di voler eliminare il sub-reseller "{deletingReseller?.fullName}"?
+              Questa azione non può essere annullata.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel data-testid="button-cancel-delete">Annulla</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              data-testid="button-confirm-delete"
+            >
+              {deleteMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              Elimina
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
