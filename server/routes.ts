@@ -702,7 +702,7 @@ export function registerRoutes(app: Express): Server {
   // ==========================================
 
   // Get service catalog with reseller's custom prices
-  app.get("/api/reseller/service-catalog", requireRole("reseller"), async (req, res) => {
+  app.get("/api/reseller/service-catalog", requireRole("reseller", "reseller_staff"), requireModulePermission("services", "read"), async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
@@ -750,7 +750,7 @@ export function registerRoutes(app: Express): Server {
   });
 
   // Create/Update reseller custom price
-  app.post("/api/reseller/service-item-prices", requireRole("reseller"), async (req, res) => {
+  app.post("/api/reseller/service-item-prices", requireRole("reseller", "reseller_staff"), requireModulePermission("services", "create"), async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
@@ -810,7 +810,7 @@ export function registerRoutes(app: Express): Server {
   });
 
   // Delete reseller custom price
-  app.delete("/api/reseller/service-item-prices/:id", requireRole("reseller"), async (req, res) => {
+  app.delete("/api/reseller/service-item-prices/:id", requireRole("reseller", "reseller_staff"), requireModulePermission("services", "delete"), async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
@@ -849,7 +849,7 @@ export function registerRoutes(app: Express): Server {
   // ==========================================
 
   // List reseller's own service items
-  app.get("/api/reseller/service-items", requireRole("reseller"), async (req, res) => {
+  app.get("/api/reseller/service-items", requireRole("reseller", "reseller_staff"), requireModulePermission("services", "read"), async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
@@ -864,7 +864,7 @@ export function registerRoutes(app: Express): Server {
   });
 
   // Create new service item for reseller
-  app.post("/api/reseller/service-items", requireRole("reseller"), async (req, res) => {
+  app.post("/api/reseller/service-items", requireRole("reseller", "reseller_staff"), requireModulePermission("services", "create"), async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
@@ -896,7 +896,7 @@ export function registerRoutes(app: Express): Server {
   });
 
   // Update reseller's service item
-  app.patch("/api/reseller/service-items/:id", requireRole("reseller"), async (req, res) => {
+  app.patch("/api/reseller/service-items/:id", requireRole("reseller", "reseller_staff"), requireModulePermission("services", "update"), async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
@@ -933,7 +933,7 @@ export function registerRoutes(app: Express): Server {
   });
 
   // Delete reseller's service item
-  app.delete("/api/reseller/service-items/:id", requireRole("reseller"), async (req, res) => {
+  app.delete("/api/reseller/service-items/:id", requireRole("reseller", "reseller_staff"), requireModulePermission("services", "delete"), async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
@@ -3807,7 +3807,7 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  app.get("/api/reseller/repairs", requireRole("reseller"), async (req, res) => {
+  app.get("/api/reseller/repairs", requireRole("reseller", "reseller_staff"), requireModulePermission("repairs", "read"), async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
@@ -3849,7 +3849,7 @@ export function registerRoutes(app: Express): Server {
   });
 
   // Reseller paginated repairs endpoint
-  app.get("/api/reseller/repairs/paginated", requireRole("reseller"), async (req, res) => {
+  app.get("/api/reseller/repairs/paginated", requireRole("reseller", "reseller_staff"), requireModulePermission("repairs", "read"), async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
@@ -3928,7 +3928,7 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  app.post("/api/reseller/repairs", requireRole("reseller"), async (req, res) => {
+  app.post("/api/reseller/repairs", requireRole("reseller", "reseller_staff"), requireModulePermission("repairs", "create"), async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
 
@@ -4133,7 +4133,7 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  app.get("/api/reseller/customers", requireRole("reseller"), async (req, res) => {
+  app.get("/api/reseller/customers", requireRole("reseller", "reseller_staff"), requireModulePermission("customers", "read"), async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
@@ -4170,7 +4170,7 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  app.post("/api/reseller/customers", requireRole("reseller"), async (req, res) => {
+  app.post("/api/reseller/customers", requireRole("reseller", "reseller_staff"), requireModulePermission("customers", "create"), async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
@@ -4226,7 +4226,7 @@ export function registerRoutes(app: Express): Server {
   });
 
   // Update an existing customer
-  app.patch("/api/reseller/customers/:id", requireRole("reseller"), async (req, res) => {
+  app.patch("/api/reseller/customers/:id", requireRole("reseller", "reseller_staff"), requireModulePermission("customers", "update"), async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
@@ -4292,7 +4292,7 @@ export function registerRoutes(app: Express): Server {
   });
 
   // Delete a customer (only if no active repairs)
-  app.delete("/api/reseller/customers/:id", requireRole("reseller"), async (req, res) => {
+  app.delete("/api/reseller/customers/:id", requireRole("reseller", "reseller_staff"), requireModulePermission("customers", "delete"), async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
@@ -4883,7 +4883,7 @@ export function registerRoutes(app: Express): Server {
   // ============================================================================
 
   // Reseller Inventory - view inventory of associated repair centers (enriched with product and center details)
-  app.get("/api/reseller/inventory", requireRole("reseller"), async (req, res) => {
+  app.get("/api/reseller/inventory", requireRole("reseller", "reseller_staff"), requireModulePermission("inventory", "read"), async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
@@ -5081,7 +5081,7 @@ export function registerRoutes(app: Express): Server {
   });
 
   // Reseller Products - update own product
-  app.patch("/api/reseller/products/:id", requireRole("reseller"), async (req, res) => {
+  app.patch("/api/reseller/products/:id", requireRole("reseller", "reseller_staff"), requireModulePermission("products", "update"), async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
@@ -5125,7 +5125,7 @@ export function registerRoutes(app: Express): Server {
   });
 
   // Reseller Catalog - prodotti assegnati dall'admin (non propri)
-  app.get("/api/reseller/catalog", requireRole("reseller"), async (req, res) => {
+  app.get("/api/reseller/catalog", requireRole("reseller", "reseller_staff"), requireModulePermission("products", "read"), async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
@@ -5151,7 +5151,7 @@ export function registerRoutes(app: Express): Server {
   });
 
   // Reseller Catalog - pubblica/nascondi prodotto nello shop
-  app.patch("/api/reseller/catalog/:assignmentId/publish", requireRole("reseller"), async (req, res) => {
+  app.patch("/api/reseller/catalog/:assignmentId/publish", requireRole("reseller", "reseller_staff"), requireModulePermission("products", "update"), async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
@@ -5182,7 +5182,7 @@ export function registerRoutes(app: Express): Server {
   });
 
   // Reseller Catalog - imposta prezzo personalizzato
-  app.patch("/api/reseller/catalog/:assignmentId/price", requireRole("reseller"), async (req, res) => {
+  app.patch("/api/reseller/catalog/:assignmentId/price", requireRole("reseller", "reseller_staff"), requireModulePermission("products", "update"), async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
@@ -5226,7 +5226,7 @@ export function registerRoutes(app: Express): Server {
   });
 
   // Reseller Shop Catalog - prodotti con stock nel magazzino del reseller
-  app.get("/api/reseller/shop-catalog", requireRole("reseller"), async (req, res) => {
+  app.get("/api/reseller/shop-catalog", requireRole("reseller", "reseller_staff"), requireModulePermission("products", "read"), async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
@@ -5307,7 +5307,7 @@ export function registerRoutes(app: Express): Server {
   });
 
   // Reseller Catalog - pubblica prodotto per ID prodotto
-  app.post("/api/reseller/catalog/:productId/publish", requireRole("reseller"), async (req, res) => {
+  app.post("/api/reseller/catalog/:productId/publish", requireRole("reseller", "reseller_staff"), requireModulePermission("products", "update"), async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
@@ -5330,7 +5330,7 @@ export function registerRoutes(app: Express): Server {
   });
 
   // Reseller Catalog - nascondi prodotto per ID prodotto
-  app.post("/api/reseller/catalog/:productId/unpublish", requireRole("reseller"), async (req, res) => {
+  app.post("/api/reseller/catalog/:productId/unpublish", requireRole("reseller", "reseller_staff"), requireModulePermission("products", "update"), async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
@@ -5357,7 +5357,7 @@ export function registerRoutes(app: Express): Server {
   });
 
   // Reseller Catalog - imposta prezzo per ID prodotto
-  app.patch("/api/reseller/catalog/:productId/price", requireRole("reseller"), async (req, res) => {
+  app.patch("/api/reseller/catalog/:productId/price", requireRole("reseller", "reseller_staff"), requireModulePermission("products", "update"), async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
@@ -5390,7 +5390,7 @@ export function registerRoutes(app: Express): Server {
   });
 
   // Reseller Products - delete own product
-  app.delete("/api/reseller/products/:id", requireRole("reseller"), async (req, res) => {
+  app.delete("/api/reseller/products/:id", requireRole("reseller", "reseller_staff"), requireModulePermission("products", "delete"), async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
@@ -5412,7 +5412,7 @@ export function registerRoutes(app: Express): Server {
   });
 
   // Reseller Products - Upload product image
-  app.post("/api/reseller/products/:id/image", requireRole("reseller"), upload.single("image"), async (req, res) => {
+  app.post("/api/reseller/products/:id/image", requireRole("reseller", "reseller_staff"), requireModulePermission("products", "update"), upload.single("image"), async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
@@ -5464,7 +5464,7 @@ export function registerRoutes(app: Express): Server {
   });
 
   // Reseller Products - Delete product image
-  app.delete("/api/reseller/products/:id/image", requireRole("reseller"), async (req, res) => {
+  app.delete("/api/reseller/products/:id/image", requireRole("reseller", "reseller_staff"), requireModulePermission("products", "update"), async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
@@ -5532,7 +5532,7 @@ export function registerRoutes(app: Express): Server {
   // ========== RESELLER INVENTORY MANAGEMENT ==========
   
   // Reseller Products - Get all own products with stock in own centers
-  app.get("/api/reseller/products/with-stock", requireRole("reseller"), async (req, res) => {
+  app.get("/api/reseller/products/with-stock", requireRole("reseller", "reseller_staff"), requireModulePermission("products", "read"), async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
@@ -5547,7 +5547,7 @@ export function registerRoutes(app: Express): Server {
   });
 
   // Reseller Products - Get stock for a specific product in own centers
-  app.get("/api/reseller/products/:id/stock", requireRole("reseller"), async (req, res) => {
+  app.get("/api/reseller/products/:id/stock", requireRole("reseller", "reseller_staff"), requireModulePermission("products", "read"), async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
@@ -5568,7 +5568,7 @@ export function registerRoutes(app: Express): Server {
   });
 
   // Reseller Products - Update stock for a product in a specific repair center
-  app.post("/api/reseller/products/:id/stock", requireRole("reseller"), async (req, res) => {
+  app.post("/api/reseller/products/:id/stock", requireRole("reseller", "reseller_staff"), requireModulePermission("products", "update"), async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
@@ -5630,7 +5630,7 @@ export function registerRoutes(app: Express): Server {
   });
 
   // Reseller Inventory - Create movement for own products in own centers
-  app.post("/api/reseller/inventory/movements", requireRole("reseller"), async (req, res) => {
+  app.post("/api/reseller/inventory/movements", requireRole("reseller", "reseller_staff"), requireModulePermission("inventory", "create"), async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
@@ -5680,7 +5680,7 @@ export function registerRoutes(app: Express): Server {
   });
 
   // Reseller Inventory - Get inventory movements for own products
-  app.get("/api/reseller/inventory/movements", requireRole("reseller"), async (req, res) => {
+  app.get("/api/reseller/inventory/movements", requireRole("reseller", "reseller_staff"), requireModulePermission("inventory", "read"), async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
@@ -5740,7 +5740,7 @@ export function registerRoutes(app: Express): Server {
   // ========== END RESELLER INVENTORY MANAGEMENT ==========
 
   // Reseller Repair Centers - list repair centers associated with this reseller
-  app.get("/api/reseller/repair-centers", requireRole("reseller"), async (req, res) => {
+  app.get("/api/reseller/repair-centers", requireRole("reseller", "reseller_staff"), requireModulePermission("repair_centers", "read"), async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
@@ -5763,7 +5763,7 @@ export function registerRoutes(app: Express): Server {
   });
 
   // Reseller Repair Centers - get single repair center by ID
-  app.get("/api/reseller/repair-centers/:id", requireRole("reseller"), async (req, res) => {
+  app.get("/api/reseller/repair-centers/:id", requireRole("reseller", "reseller_staff"), requireModulePermission("repair_centers", "read"), async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       const center = await storage.getRepairCenter(req.params.id);
@@ -5781,7 +5781,7 @@ export function registerRoutes(app: Express): Server {
   });
 
   // Reseller Repair Centers - create new repair center
-  app.post("/api/reseller/repair-centers", requireRole("reseller"), async (req, res) => {
+  app.post("/api/reseller/repair-centers", requireRole("reseller", "reseller_staff"), requireModulePermission("repair_centers", "create"), async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
@@ -5825,7 +5825,7 @@ export function registerRoutes(app: Express): Server {
   });
 
   // Reseller Repair Centers - update repair center
-  app.patch("/api/reseller/repair-centers/:id", requireRole("reseller"), async (req, res) => {
+  app.patch("/api/reseller/repair-centers/:id", requireRole("reseller", "reseller_staff"), requireModulePermission("repair_centers", "update"), async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
@@ -5889,7 +5889,7 @@ export function registerRoutes(app: Express): Server {
   });
 
   // Reseller Repair Centers - delete repair center
-  app.delete("/api/reseller/repair-centers/:id", requireRole("reseller"), async (req, res) => {
+  app.delete("/api/reseller/repair-centers/:id", requireRole("reseller", "reseller_staff"), requireModulePermission("repair_centers", "delete"), async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
@@ -5911,7 +5911,7 @@ export function registerRoutes(app: Express): Server {
   });
 
   // Reseller Suppliers - view global suppliers (admin) + own suppliers
-  app.get("/api/reseller/suppliers", requireRole("reseller"), async (req, res) => {
+  app.get("/api/reseller/suppliers", requireRole("reseller", "reseller_staff"), requireModulePermission("suppliers", "read"), async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
@@ -5958,7 +5958,7 @@ export function registerRoutes(app: Express): Server {
   });
 
   // Reseller Suppliers - create own supplier
-  app.post("/api/reseller/suppliers", requireRole("reseller"), async (req, res) => {
+  app.post("/api/reseller/suppliers", requireRole("reseller", "reseller_staff"), requireModulePermission("suppliers", "create"), async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
@@ -5987,7 +5987,7 @@ export function registerRoutes(app: Express): Server {
   });
 
   // Reseller Suppliers - update own supplier
-  app.patch("/api/reseller/suppliers/:id", requireRole("reseller"), async (req, res) => {
+  app.patch("/api/reseller/suppliers/:id", requireRole("reseller", "reseller_staff"), requireModulePermission("suppliers", "update"), async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
@@ -6013,7 +6013,7 @@ export function registerRoutes(app: Express): Server {
   });
 
   // Reseller Suppliers - delete own supplier
-  app.delete("/api/reseller/suppliers/:id", requireRole("reseller"), async (req, res) => {
+  app.delete("/api/reseller/suppliers/:id", requireRole("reseller", "reseller_staff"), requireModulePermission("suppliers", "delete"), async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
@@ -6039,7 +6039,7 @@ export function registerRoutes(app: Express): Server {
   });
 
   // Reseller Supplier Orders - view orders from associated repair centers
-  app.get("/api/reseller/supplier-orders", requireRole("reseller"), async (req, res) => {
+  app.get("/api/reseller/supplier-orders", requireRole("reseller", "reseller_staff"), requireModulePermission("supplier_orders", "read"), async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
@@ -6083,7 +6083,7 @@ export function registerRoutes(app: Express): Server {
   });
 
   // Reseller Supplier Order Details
-  app.get("/api/reseller/supplier-orders/:id", requireRole("reseller"), async (req, res) => {
+  app.get("/api/reseller/supplier-orders/:id", requireRole("reseller", "reseller_staff"), requireModulePermission("supplier_orders", "read"), async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
@@ -6129,7 +6129,7 @@ export function registerRoutes(app: Express): Server {
   });
 
   // Reseller Supplier Returns - view returns from associated repair centers
-  app.get("/api/reseller/supplier-returns", requireRole("reseller"), async (req, res) => {
+  app.get("/api/reseller/supplier-returns", requireRole("reseller", "reseller_staff"), requireModulePermission("supplier_orders", "read"), async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
@@ -6173,7 +6173,7 @@ export function registerRoutes(app: Express): Server {
   });
 
   // Reseller Supplier Return Details
-  app.get("/api/reseller/supplier-returns/:id", requireRole("reseller"), async (req, res) => {
+  app.get("/api/reseller/supplier-returns/:id", requireRole("reseller", "reseller_staff"), requireModulePermission("supplier_orders", "read"), async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
@@ -6221,7 +6221,7 @@ export function registerRoutes(app: Express): Server {
   // ============ RESELLER APPOINTMENTS ============
 
   // POST /api/reseller/appointments - Create a new delivery appointment
-  app.post("/api/reseller/appointments", requireRole("reseller"), async (req, res) => {
+  app.post("/api/reseller/appointments", requireRole("reseller", "reseller_staff"), requireModulePermission("appointments", "create"), async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
@@ -6353,7 +6353,7 @@ export function registerRoutes(app: Express): Server {
   });
 
   // GET /api/reseller/appointments/available-slots - Get available slots for a date
-  app.get("/api/reseller/appointments/available-slots", requireRole("reseller"), async (req, res) => {
+  app.get("/api/reseller/appointments/available-slots", requireRole("reseller", "reseller_staff"), requireModulePermission("appointments", "read"), async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
