@@ -19,6 +19,7 @@ import { User, RepairOrder, RepairCenter } from "@shared/schema";
 import { CustomerBranchManager } from "@/components/CustomerBranchManager";
 import { CustomerWizardDialog } from "@/components/CustomerWizardDialog";
 import { useToast } from "@/hooks/use-toast";
+import { ActionGuard } from "@/components/permission-guard";
 
 type CustomerWithRepairCenters = User & {
   assignedRepairCenters?: RepairCenter[];
@@ -196,7 +197,7 @@ export default function ResellerCustomers() {
             Gestisci la tua base clienti e visualizza le loro riparazioni
           </p>
         </div>
-        <>
+        <ActionGuard module="customers" action="create">
           <Button onClick={() => setDialogOpen(true)} data-testid="button-new-customer">
             <Plus className="h-4 w-4 mr-2" />
             Nuovo Cliente
@@ -206,7 +207,7 @@ export default function ResellerCustomers() {
             onOpenChange={setDialogOpen}
             onSuccess={handleCustomerCreated}
           />
-        </>
+        </ActionGuard>
       </div>
 
       <Card>
@@ -330,15 +331,17 @@ export default function ResellerCustomers() {
                               Dettagli
                             </Button>
                           </Link>
-                          <Button
-                            variant="destructive"
-                            size="icon"
-                            onClick={() => handleDeleteClick(customer)}
-                            title="Elimina cliente"
-                            data-testid={`button-delete-${customer.id}`}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
+                          <ActionGuard module="customers" action="delete">
+                            <Button
+                              variant="destructive"
+                              size="icon"
+                              onClick={() => handleDeleteClick(customer)}
+                              title="Elimina cliente"
+                              data-testid={`button-delete-${customer.id}`}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </ActionGuard>
                         </div>
                       </TableCell>
                     </TableRow>
@@ -357,10 +360,12 @@ export default function ResellerCustomers() {
               <div className="flex items-center justify-between gap-4">
                 <DialogTitle>Dettagli Cliente: {selectedCustomer.fullName}</DialogTitle>
                 {!isEditing && (
-                  <Button variant="outline" size="sm" onClick={() => startEditing(selectedCustomer)} data-testid="button-edit-customer">
-                    <Pencil className="h-4 w-4 mr-1" />
-                    Modifica
-                  </Button>
+                  <ActionGuard module="customers" action="update">
+                    <Button variant="outline" size="sm" onClick={() => startEditing(selectedCustomer)} data-testid="button-edit-customer">
+                      <Pencil className="h-4 w-4 mr-1" />
+                      Modifica
+                    </Button>
+                  </ActionGuard>
                 )}
               </div>
             </DialogHeader>

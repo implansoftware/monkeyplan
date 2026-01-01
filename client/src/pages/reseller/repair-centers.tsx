@@ -19,6 +19,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Progress } from "@/components/ui/progress";
 import { AddressAutocomplete } from "@/components/address-autocomplete";
 import { useUser } from "@/hooks/use-user";
+import { ActionGuard } from "@/components/permission-guard";
 
 const WIZARD_STEPS = [
   { id: 1, title: "Info Base", icon: Building },
@@ -274,12 +275,14 @@ export default function ResellerRepairCenters() {
             resetWizard();
           }
         }}>
-          <DialogTrigger asChild>
-            <Button onClick={() => resetWizard()} data-testid="button-new-center">
-              <Plus className="h-4 w-4 mr-2" />
-              Nuovo Centro
-            </Button>
-          </DialogTrigger>
+          <ActionGuard module="repair_centers" action="create">
+            <DialogTrigger asChild>
+              <Button onClick={() => resetWizard()} data-testid="button-new-center">
+                <Plus className="h-4 w-4 mr-2" />
+                Nuovo Centro
+              </Button>
+            </DialogTrigger>
+          </ActionGuard>
           <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto" data-testid="dialog-center-form">
             <DialogHeader>
               <DialogTitle>{editingCenter ? "Modifica Centro" : "Nuovo Centro di Riparazione"}</DialogTitle>

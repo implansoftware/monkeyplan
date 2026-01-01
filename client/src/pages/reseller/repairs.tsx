@@ -22,6 +22,7 @@ import type { DateRange } from "react-day-picker";
 import { RepairIntakeWizard } from "@/components/RepairIntakeWizard";
 import { useLocation } from "wouter";
 import { RepairsKanbanBoard } from "@/components/RepairsKanbanBoard";
+import { ActionGuard } from "@/components/permission-guard";
 
 interface RepairOrderWithSLA extends RepairOrder {
   slaSeverity: "in_time" | "late" | "urgent" | null;
@@ -334,13 +335,15 @@ export default function ResellerRepairs() {
                 />
               </PopoverContent>
             </Popover>
-            <Button
-              onClick={() => setWizardOpen(true)}
-              data-testid="button-new-acceptance"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Nuovo ingresso
-            </Button>
+            <ActionGuard module="repairs" action="create">
+              <Button
+                onClick={() => setWizardOpen(true)}
+                data-testid="button-new-acceptance"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Nuovo ingresso
+              </Button>
+            </ActionGuard>
             <Button
               onClick={handleExport}
               disabled={isExporting || repairs.length === 0}

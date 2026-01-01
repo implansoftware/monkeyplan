@@ -15,6 +15,7 @@ import { AddressAutocomplete } from "@/components/address-autocomplete";
 import { Link } from "wouter";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { ExternalIntegration } from "@shared/schema";
+import { ActionGuard } from "@/components/permission-guard";
 
 type Supplier = {
   id: string;
@@ -282,10 +283,12 @@ export default function ResellerSuppliers() {
             <User className="h-3 w-3" />
             {ownSuppliers.length} personali
           </Badge>
-          <Button onClick={handleOpenCreate} data-testid="button-add-supplier">
-            <Plus className="h-4 w-4 mr-2" />
-            Nuovo Fornitore
-          </Button>
+          <ActionGuard module="suppliers" action="create">
+            <Button onClick={handleOpenCreate} data-testid="button-add-supplier">
+              <Plus className="h-4 w-4 mr-2" />
+              Nuovo Fornitore
+            </Button>
+          </ActionGuard>
         </div>
       </div>
 

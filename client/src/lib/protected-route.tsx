@@ -68,7 +68,7 @@ function ProtectedRouteContent({ Component, path }: { Component: () => React.JSX
   if (user?.role === "reseller_staff" && !hasFullAccess) {
     const requiredModule = getRequiredModuleForUrl(path);
     if (requiredModule && !canAccessModule(requiredModule)) {
-      return <PermissionGuard module={requiredModule}><Component /></PermissionGuard>;
+      return <PermissionGuard module={requiredModule}>{null}</PermissionGuard>;
     }
   }
 
