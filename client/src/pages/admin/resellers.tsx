@@ -35,6 +35,9 @@ export default function AdminResellers() {
   const [addressData, setAddressData] = useState({ indirizzo: "", citta: "", cap: "", provincia: "" });
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [resellerToDelete, setResellerToDelete] = useState<Omit<User, 'password'> | null>(null);
+  const [resetPasswordDialogOpen, setResetPasswordDialogOpen] = useState(false);
+  const [resellerToResetPassword, setResellerToResetPassword] = useState<Omit<User, 'password'> | null>(null);
+  const [newPassword, setNewPassword] = useState("");
   const [wizardStep, setWizardStep] = useState(1);
   const [formData, setFormData] = useState({
     username: "",
@@ -141,9 +144,37 @@ export default function AdminResellers() {
     },
   });
 
+  const resetPasswordMutation = useMutation({
+    mutationFn: async ({ id, newPassword }: { id: string; newPassword: string }) => {
+      const res = await apiRequest("POST", `/api/admin/users/${id}/reset-password`, { newPassword });
+      return await res.json();
+    },
+    onSuccess: () => {
+      toast({ title: "Password aggiornata con successo" });
+      setResetPasswordDialogOpen(false);
+      setResellerToResetPassword(null);
+      setNewPassword("");
+    },
+    onError: (error: Error) => {
+      toast({ title: "Errore", description: error.message, variant: "destructive" });
+    },
+  });
+
   const handleDeleteClick = (reseller: Omit<User, 'password'>) => {
     setResellerToDelete(reseller);
     setDeleteDialogOpen(true);
+  };
+
+  const handleResetPasswordClick = (reseller: Omit<User, 'password'>) => {
+    setResellerToResetPassword(reseller);
+    setNewPassword("");
+    setResetPasswordDialogOpen(true);
+  };
+
+  const confirmResetPassword = () => {
+    if (resellerToResetPassword && newPassword.length >= 4) {
+      resetPasswordMutation.mutate({ id: resellerToResetPassword.id, newPassword });
+    }
   };
 
   const confirmDelete = () => {
@@ -733,6 +764,15 @@ export default function AdminResellers() {
                           <Pencil className="h-4 w-4" />
                         </Button>
                         <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleResetPasswordClick(reseller)}
+                          title="Reset password"
+                          data-testid={`button-reset-password-${reseller.id}`}
+                        >
+                          <KeyRound className="h-4 w-4" />
+                        </Button>
+                        <Button
                           variant="destructive"
                           size="icon"
                           onClick={() => handleDeleteClick(reseller)}
@@ -785,6 +825,49 @@ export default function AdminResellers() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <Dialog open={resetPasswordDialogOpen} onOpenChange={setResetPasswordDialogOpen}>
+        <DialogContent data-testid="dialog-reset-password">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <KeyRound className="h-5 w-5" />
+              Reset Password
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Stai per resettare la password di <strong>{resellerToResetPassword?.fullName}</strong>.
+            </p>
+            <div className="space-y-2">
+              <Label htmlFor="newPassword">Nuova Password</Label>
+              <Input
+                id="newPassword"
+                type="password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                placeholder="Inserisci nuova password (min. 4 caratteri)"
+                data-testid="input-new-password"
+              />
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button
+                variant="outline"
+                onClick={() => setResetPasswordDialogOpen(false)}
+                data-testid="button-cancel-reset-password"
+              >
+                Annulla
+              </Button>
+              <Button
+                onClick={confirmResetPassword}
+                disabled={newPassword.length < 4 || resetPasswordMutation.isPending}
+                data-testid="button-confirm-reset-password"
+              >
+                {resetPasswordMutation.isPending ? "Aggiornamento..." : "Conferma Reset"}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
