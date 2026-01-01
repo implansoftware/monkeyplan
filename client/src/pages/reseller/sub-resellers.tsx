@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
@@ -9,15 +9,19 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { Network, Search, Users, Building, Store, ShoppingCart, Package, TrendingUp, DollarSign, Eye, Plus, Pencil, Trash2, Loader2 } from "lucide-react";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Separator } from "@/components/ui/separator";
+import { Network, Search, Users, Building, Store, ShoppingCart, Package, TrendingUp, DollarSign, Eye, Plus, Pencil, Trash2, Loader2, Copy } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
+import { Checkbox } from "@/components/ui/checkbox";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
 import { Link } from "wouter";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/use-auth";
 
 interface SubReseller {
   id: string;
@@ -30,6 +34,15 @@ interface SubReseller {
   createdAt: string;
   customersCount: number;
   repairCentersCount: number;
+  partitaIva?: string | null;
+  ragioneSociale?: string | null;
+  codiceFiscale?: string | null;
+  indirizzo?: string | null;
+  citta?: string | null;
+  cap?: string | null;
+  provincia?: string | null;
+  pec?: string | null;
+  codiceUnivoco?: string | null;
 }
 
 interface SubResellerEcommerce {
@@ -51,6 +64,15 @@ interface SubResellerFormData {
   phone: string;
   resellerCategory: string;
   isActive: boolean;
+  partitaIva: string;
+  ragioneSociale: string;
+  codiceFiscale: string;
+  indirizzo: string;
+  citta: string;
+  cap: string;
+  provincia: string;
+  pec: string;
+  codiceUnivoco: string;
 }
 
 const categoryLabels: Record<string, string> = {
@@ -67,6 +89,15 @@ const initialFormData: SubResellerFormData = {
   phone: "",
   resellerCategory: "standard",
   isActive: true,
+  partitaIva: "",
+  ragioneSociale: "",
+  codiceFiscale: "",
+  indirizzo: "",
+  citta: "",
+  cap: "",
+  provincia: "",
+  pec: "",
+  codiceUnivoco: "",
 };
 
 function formatPrice(cents: number): string {
@@ -81,7 +112,9 @@ export default function SubResellers() {
   const [editingReseller, setEditingReseller] = useState<SubReseller | null>(null);
   const [deletingReseller, setDeletingReseller] = useState<SubReseller | null>(null);
   const [formData, setFormData] = useState<SubResellerFormData>(initialFormData);
+  const [useParentData, setUseParentData] = useState(false);
   const { toast } = useToast();
+  const { user: currentUser } = useAuth();
 
   const { data: subResellers = [], isLoading } = useQuery<SubReseller[]>({
     queryKey: ["/api/reseller/sub-resellers"],
@@ -91,6 +124,36 @@ export default function SubResellers() {
     queryKey: ["/api/reseller/sub-resellers/ecommerce"],
     enabled: activeTab === "ecommerce",
   });
+
+  useEffect(() => {
+    if (useParentData && currentUser && !editingReseller) {
+      setFormData(prev => ({
+        ...prev,
+        partitaIva: (currentUser as any).partitaIva || "",
+        ragioneSociale: (currentUser as any).ragioneSociale || "",
+        codiceFiscale: (currentUser as any).codiceFiscale || "",
+        indirizzo: (currentUser as any).indirizzo || "",
+        citta: (currentUser as any).citta || "",
+        cap: (currentUser as any).cap || "",
+        provincia: (currentUser as any).provincia || "",
+        pec: (currentUser as any).pec || "",
+        codiceUnivoco: (currentUser as any).codiceUnivoco || "",
+      }));
+    } else if (!useParentData && !editingReseller) {
+      setFormData(prev => ({
+        ...prev,
+        partitaIva: "",
+        ragioneSociale: "",
+        codiceFiscale: "",
+        indirizzo: "",
+        citta: "",
+        cap: "",
+        provincia: "",
+        pec: "",
+        codiceUnivoco: "",
+      }));
+    }
+  }, [useParentData, currentUser, editingReseller]);
 
   const createMutation = useMutation({
     mutationFn: async (data: SubResellerFormData) => {
@@ -141,11 +204,13 @@ export default function SubResellers() {
   const handleOpenCreate = () => {
     setEditingReseller(null);
     setFormData(initialFormData);
+    setUseParentData(false);
     setDialogOpen(true);
   };
 
   const handleOpenEdit = (reseller: SubReseller) => {
     setEditingReseller(reseller);
+    setUseParentData(false);
     setFormData({
       username: reseller.username,
       email: reseller.email,
@@ -154,6 +219,15 @@ export default function SubResellers() {
       phone: reseller.phone || "",
       resellerCategory: reseller.resellerCategory || "standard",
       isActive: reseller.isActive,
+      partitaIva: reseller.partitaIva || "",
+      ragioneSociale: reseller.ragioneSociale || "",
+      codiceFiscale: reseller.codiceFiscale || "",
+      indirizzo: reseller.indirizzo || "",
+      citta: reseller.citta || "",
+      cap: reseller.cap || "",
+      provincia: reseller.provincia || "",
+      pec: reseller.pec || "",
+      codiceUnivoco: reseller.codiceUnivoco || "",
     });
     setDialogOpen(true);
   };
@@ -167,6 +241,7 @@ export default function SubResellers() {
     setDialogOpen(false);
     setEditingReseller(null);
     setFormData(initialFormData);
+    setUseParentData(false);
   };
 
   const handleSubmit = () => {
@@ -177,6 +252,15 @@ export default function SubResellers() {
         phone: formData.phone,
         resellerCategory: formData.resellerCategory,
         isActive: formData.isActive,
+        partitaIva: formData.partitaIva,
+        ragioneSociale: formData.ragioneSociale,
+        codiceFiscale: formData.codiceFiscale,
+        indirizzo: formData.indirizzo,
+        citta: formData.citta,
+        cap: formData.cap,
+        provincia: formData.provincia,
+        pec: formData.pec,
+        codiceUnivoco: formData.codiceUnivoco,
       };
       if (formData.password) {
         updateData.password = formData.password;
@@ -549,7 +633,7 @@ export default function SubResellers() {
       </Tabs>
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-md" data-testid="dialog-subreseller-form">
+        <DialogContent className="max-w-2xl max-h-[90vh]" data-testid="dialog-subreseller-form">
           <DialogHeader>
             <DialogTitle>
               {editingReseller ? "Modifica Sub-Reseller" : "Nuovo Sub-Reseller"}
@@ -561,92 +645,221 @@ export default function SubResellers() {
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="username">Username *</Label>
-                <Input
-                  id="username"
-                  value={formData.username}
-                  onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-                  disabled={!!editingReseller}
-                  data-testid="input-username"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="email">Email *</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  data-testid="input-email"
-                />
-              </div>
-            </div>
+          <ScrollArea className="max-h-[60vh] pr-4">
+            <div className="space-y-6">
+              <div className="space-y-4">
+                <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+                  Dati Account
+                </h3>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="username">Username *</Label>
+                    <Input
+                      id="username"
+                      value={formData.username}
+                      onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+                      disabled={!!editingReseller}
+                      data-testid="input-username"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="email">Email *</Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      value={formData.email}
+                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                      data-testid="input-email"
+                    />
+                  </div>
+                </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="fullName">Nome Completo *</Label>
-              <Input
-                id="fullName"
-                value={formData.fullName}
-                onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
-                data-testid="input-fullname"
-              />
-            </div>
+                <div className="space-y-2">
+                  <Label htmlFor="fullName">Nome Completo *</Label>
+                  <Input
+                    id="fullName"
+                    value={formData.fullName}
+                    onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+                    data-testid="input-fullname"
+                  />
+                </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="phone">Telefono</Label>
-                <Input
-                  id="phone"
-                  value={formData.phone}
-                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                  data-testid="input-phone"
-                />
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="phone">Telefono</Label>
+                    <Input
+                      id="phone"
+                      value={formData.phone}
+                      onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                      data-testid="input-phone"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="category">Categoria</Label>
+                    <Select
+                      value={formData.resellerCategory}
+                      onValueChange={(value) => setFormData({ ...formData, resellerCategory: value })}
+                    >
+                      <SelectTrigger data-testid="select-category">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="standard">Standard</SelectItem>
+                        <SelectItem value="franchising">Franchising</SelectItem>
+                        <SelectItem value="gdo">GDO</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="password">
+                    Password {editingReseller ? "(lascia vuoto per non modificare)" : "*"}
+                  </Label>
+                  <Input
+                    id="password"
+                    type="password"
+                    value={formData.password}
+                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                    placeholder={editingReseller ? "Lascia vuoto per mantenere" : "Min. 6 caratteri"}
+                    data-testid="input-password"
+                  />
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="isActive">Attivo</Label>
+                  <Switch
+                    id="isActive"
+                    checked={formData.isActive}
+                    onCheckedChange={(checked) => setFormData({ ...formData, isActive: checked })}
+                    data-testid="switch-active"
+                  />
+                </div>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="category">Categoria</Label>
-                <Select
-                  value={formData.resellerCategory}
-                  onValueChange={(value) => setFormData({ ...formData, resellerCategory: value })}
-                >
-                  <SelectTrigger data-testid="select-category">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="standard">Standard</SelectItem>
-                    <SelectItem value="franchising">Franchising</SelectItem>
-                    <SelectItem value="gdo">GDO</SelectItem>
-                  </SelectContent>
-                </Select>
+
+              <Separator />
+
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+                    Dati Fiscali
+                  </h3>
+                  {!editingReseller && (
+                    <div className="flex items-center gap-2">
+                      <Checkbox
+                        id="useParentData"
+                        checked={useParentData}
+                        onCheckedChange={(checked) => setUseParentData(checked === true)}
+                        data-testid="checkbox-use-parent-data"
+                      />
+                      <Label htmlFor="useParentData" className="text-sm font-normal cursor-pointer flex items-center gap-1">
+                        <Copy className="h-3 w-3" />
+                        Usa i miei stessi dati fiscali
+                      </Label>
+                    </div>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="ragioneSociale">Ragione Sociale</Label>
+                    <Input
+                      id="ragioneSociale"
+                      value={formData.ragioneSociale}
+                      onChange={(e) => setFormData({ ...formData, ragioneSociale: e.target.value })}
+                      data-testid="input-ragione-sociale"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="partitaIva">Partita IVA</Label>
+                    <Input
+                      id="partitaIva"
+                      value={formData.partitaIva}
+                      onChange={(e) => setFormData({ ...formData, partitaIva: e.target.value })}
+                      data-testid="input-partita-iva"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="codiceFiscale">Codice Fiscale</Label>
+                  <Input
+                    id="codiceFiscale"
+                    value={formData.codiceFiscale}
+                    onChange={(e) => setFormData({ ...formData, codiceFiscale: e.target.value })}
+                    data-testid="input-codice-fiscale"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="indirizzo">Indirizzo</Label>
+                  <Input
+                    id="indirizzo"
+                    value={formData.indirizzo}
+                    onChange={(e) => setFormData({ ...formData, indirizzo: e.target.value })}
+                    data-testid="input-indirizzo"
+                  />
+                </div>
+
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="citta">Città</Label>
+                    <Input
+                      id="citta"
+                      value={formData.citta}
+                      onChange={(e) => setFormData({ ...formData, citta: e.target.value })}
+                      data-testid="input-citta"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="cap">CAP</Label>
+                    <Input
+                      id="cap"
+                      value={formData.cap}
+                      onChange={(e) => setFormData({ ...formData, cap: e.target.value })}
+                      data-testid="input-cap"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="provincia">Provincia</Label>
+                    <Input
+                      id="provincia"
+                      value={formData.provincia}
+                      onChange={(e) => setFormData({ ...formData, provincia: e.target.value })}
+                      placeholder="Es: MI"
+                      maxLength={2}
+                      data-testid="input-provincia"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="pec">PEC</Label>
+                    <Input
+                      id="pec"
+                      type="email"
+                      value={formData.pec}
+                      onChange={(e) => setFormData({ ...formData, pec: e.target.value })}
+                      data-testid="input-pec"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="codiceUnivoco">Codice Univoco (SDI)</Label>
+                    <Input
+                      id="codiceUnivoco"
+                      value={formData.codiceUnivoco}
+                      onChange={(e) => setFormData({ ...formData, codiceUnivoco: e.target.value.toUpperCase() })}
+                      placeholder="7 caratteri"
+                      maxLength={7}
+                      data-testid="input-codice-univoco"
+                    />
+                  </div>
+                </div>
               </div>
             </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="password">
-                Password {editingReseller ? "(lascia vuoto per non modificare)" : "*"}
-              </Label>
-              <Input
-                id="password"
-                type="password"
-                value={formData.password}
-                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                placeholder={editingReseller ? "••••••••" : ""}
-                data-testid="input-password"
-              />
-            </div>
-
-            <div className="flex items-center justify-between">
-              <Label htmlFor="isActive">Attivo</Label>
-              <Switch
-                id="isActive"
-                checked={formData.isActive}
-                onCheckedChange={(checked) => setFormData({ ...formData, isActive: checked })}
-                data-testid="switch-active"
-              />
-            </div>
-          </div>
+          </ScrollArea>
 
           <DialogFooter>
             <Button variant="outline" onClick={handleCloseDialog} data-testid="button-cancel">

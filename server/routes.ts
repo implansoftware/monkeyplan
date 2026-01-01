@@ -3590,6 +3590,15 @@ export function registerRoutes(app: Express): Server {
             createdAt: reseller.createdAt,
             customersCount: customers.length,
             repairCentersCount: repairCenters.length,
+            partitaIva: reseller.partitaIva,
+            ragioneSociale: reseller.ragioneSociale,
+            codiceFiscale: reseller.codiceFiscale,
+            indirizzo: reseller.indirizzo,
+            citta: reseller.citta,
+            cap: reseller.cap,
+            provincia: reseller.provincia,
+            pec: reseller.pec,
+            codiceUnivoco: reseller.codiceUnivoco,
           };
         })
       );
@@ -3677,7 +3686,10 @@ export function registerRoutes(app: Express): Server {
       }
       
       // Only allow specific safe fields to be updated - explicitly destructure and ignore dangerous fields
-      const { fullName, email, phone, isActive, resellerCategory, password } = req.body;
+      const { 
+        fullName, email, phone, isActive, resellerCategory, password,
+        partitaIva, ragioneSociale, codiceFiscale, indirizzo, citta, cap, provincia, pec, codiceUnivoco
+      } = req.body;
       
       // Check for duplicate email if changing
       if (email && email !== subReseller.email) {
@@ -3687,8 +3699,16 @@ export function registerRoutes(app: Express): Server {
         }
       }
       
+      // Check for duplicate partita IVA if changing
+      if (partitaIva && partitaIva.trim() !== '' && partitaIva !== subReseller.partitaIva) {
+        const existingPartitaIva = await storage.getUserByPartitaIva(partitaIva.trim());
+        if (existingPartitaIva) {
+          return res.status(400).send("Partita IVA già registrata nel sistema");
+        }
+      }
+      
       // Build updates object with only whitelisted fields
-      const updates: Partial<Pick<typeof subReseller, 'fullName' | 'email' | 'phone' | 'isActive' | 'resellerCategory' | 'password'>> = {};
+      const updates: any = {};
       if (fullName !== undefined && typeof fullName === 'string') updates.fullName = fullName;
       if (email !== undefined && typeof email === 'string') updates.email = email;
       if (phone !== undefined) updates.phone = typeof phone === 'string' ? phone : null;
@@ -3700,6 +3720,16 @@ export function registerRoutes(app: Express): Server {
       if (password && typeof password === 'string' && password.length >= 6) {
         updates.password = await hashPassword(password);
       }
+      // Fiscal data fields
+      if (partitaIva !== undefined) updates.partitaIva = typeof partitaIva === 'string' ? partitaIva : null;
+      if (ragioneSociale !== undefined) updates.ragioneSociale = typeof ragioneSociale === 'string' ? ragioneSociale : null;
+      if (codiceFiscale !== undefined) updates.codiceFiscale = typeof codiceFiscale === 'string' ? codiceFiscale : null;
+      if (indirizzo !== undefined) updates.indirizzo = typeof indirizzo === 'string' ? indirizzo : null;
+      if (citta !== undefined) updates.citta = typeof citta === 'string' ? citta : null;
+      if (cap !== undefined) updates.cap = typeof cap === 'string' ? cap : null;
+      if (provincia !== undefined) updates.provincia = typeof provincia === 'string' ? provincia : null;
+      if (pec !== undefined) updates.pec = typeof pec === 'string' ? pec : null;
+      if (codiceUnivoco !== undefined) updates.codiceUnivoco = typeof codiceUnivoco === 'string' ? codiceUnivoco : null;
       
       const updated = await storage.updateUser(id, updates);
       

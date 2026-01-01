@@ -118,7 +118,7 @@ export interface IStorage {
   getUserByEmail(email: string): Promise<User | undefined>;
   getUserByPartitaIva(partitaIva: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
-  updateUser(id: string, updates: Partial<Pick<User, 'username' | 'email' | 'fullName' | 'role' | 'isActive' | 'repairCenterId' | 'resellerId' | 'resellerCategory' | 'password' | 'phone'>>): Promise<User>;
+  updateUser(id: string, updates: Partial<Pick<User, 'username' | 'email' | 'fullName' | 'role' | 'isActive' | 'repairCenterId' | 'resellerId' | 'resellerCategory' | 'password' | 'phone' | 'partitaIva' | 'ragioneSociale' | 'codiceFiscale' | 'indirizzo' | 'citta' | 'cap' | 'provincia' | 'pec' | 'codiceUnivoco'>>): Promise<User>;
   listUsers(): Promise<User[]>;
   listStaffUsers(): Promise<{ id: string; username: string; role: string }[]>;
   listCustomers(filters?: { resellerId?: string; repairCenterId?: string }): Promise<User[]>;
@@ -956,7 +956,7 @@ export class DatabaseStorage implements IStorage {
     return user;
   }
 
-  async updateUser(id: string, updates: Partial<Pick<User, 'username' | 'email' | 'fullName' | 'role' | 'isActive' | 'repairCenterId' | 'resellerId' | 'resellerCategory' | 'password' | 'phone'>>): Promise<User> {
+  async updateUser(id: string, updates: Partial<Pick<User, 'username' | 'email' | 'fullName' | 'role' | 'isActive' | 'repairCenterId' | 'resellerId' | 'resellerCategory' | 'password' | 'phone' | 'partitaIva' | 'ragioneSociale' | 'codiceFiscale' | 'indirizzo' | 'citta' | 'cap' | 'provincia' | 'pec' | 'codiceUnivoco'>>): Promise<User> {
     const [user] = await db.update(users)
       .set(updates)
       .where(eq(users.id, id))
