@@ -1,4 +1,6 @@
 import { useAuth } from "@/hooks/use-auth";
+import { useStaffPermissions, getRequiredModuleForUrl } from "@/hooks/use-staff-permissions";
+import { PermissionGuard } from "@/components/permission-guard";
 import { Loader2 } from "lucide-react";
 import { Redirect, Route } from "wouter";
 
@@ -46,7 +48,29 @@ export function ProtectedRoute({
 
   return (
     <Route path={path}>
-      <Component />
+      <ProtectedRouteContent Component={Component} path={path} />
     </Route>
   );
+}
+
+function ProtectedRouteContent({ Component, path }: { Component: () => React.JSX.Element; path: string }) {
+  const { user } = useAuth();
+  const { hasFullAccess, canAccessModule, isLoading: permissionsLoading } = useStaffPermissions();
+
+  if (permissionsLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (user?.role === "reseller_staff" && !hasFullAccess) {
+    const requiredModule = getRequiredModuleForUrl(path);
+    if (requiredModule && !canAccessModule(requiredModule)) {
+      return <PermissionGuard module={requiredModule}><Component /></PermissionGuard>;
+    }
+  }
+
+  return <Component />;
 }
