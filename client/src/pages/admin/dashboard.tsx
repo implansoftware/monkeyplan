@@ -1,31 +1,16 @@
-import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useQuery } from "@tanstack/react-query";
 import { 
   Users, Wrench, Ticket, TrendingUp, Package, Building, 
   Store, Warehouse, ShoppingCart, Zap, FileCheck, Clock,
-  UserPlus, AlertTriangle, Filter, ArrowLeftRight
+  UserPlus, AlertTriangle, ArrowLeftRight
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
-
-type Reseller = {
-  id: string;
-  username: string;
-  fullName: string | null;
-};
-
-type RepairCenter = {
-  id: string;
-  name: string;
-  resellerId: string | null;
-};
 
 type AdminStats = {
   overview: {
@@ -136,39 +121,9 @@ type AdminStats = {
 const COLORS = ['hsl(var(--chart-1))', 'hsl(var(--chart-2))', 'hsl(var(--chart-3))', 'hsl(var(--chart-4))'];
 
 export default function AdminDashboard() {
-  const [selectedResellerId, setSelectedResellerId] = useState<string>("");
-  const [selectedRepairCenterId, setSelectedRepairCenterId] = useState<string>("");
-  
-  // Build query params for filtered stats - use URL in queryKey for default fetcher
-  const statsParams = new URLSearchParams();
-  if (selectedResellerId) statsParams.set("resellerId", selectedResellerId);
-  if (selectedRepairCenterId) statsParams.set("repairCenterId", selectedRepairCenterId);
-  const statsQueryString = statsParams.toString();
-  const statsUrl = statsQueryString ? `/api/stats?${statsQueryString}` : "/api/stats";
-  
   const { data: stats, isLoading } = useQuery<AdminStats>({
-    queryKey: [statsUrl],
+    queryKey: ["/api/stats"],
   });
-  
-  // Fetch resellers for filter dropdown
-  const { data: resellers } = useQuery<Reseller[]>({
-    queryKey: ["/api/resellers"],
-  });
-  
-  // Fetch repair centers for filter dropdown
-  const { data: repairCenters } = useQuery<RepairCenter[]>({
-    queryKey: ["/api/repair-centers"],
-  });
-  
-  // Filter repair centers by selected reseller
-  const filteredRepairCenters = selectedResellerId 
-    ? repairCenters?.filter(rc => rc.resellerId === selectedResellerId)
-    : repairCenters;
-  
-  const clearFilters = () => {
-    setSelectedResellerId("");
-    setSelectedRepairCenterId("");
-  };
 
   const formatCurrency = (cents: number) => {
     return new Intl.NumberFormat("it-IT", {
@@ -214,87 +169,11 @@ export default function AdminDashboard() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-semibold mb-2">Dashboard Amministratore</h1>
-          <p className="text-muted-foreground">
-            Panoramica completa della piattaforma Monkey Plan Beta v.22.5
-          </p>
-        </div>
-        
-        {/* Filtri Grafici */}
-        <Card className="p-4">
-          <div className="flex flex-wrap items-center gap-3">
-            <div className="flex items-center gap-2">
-              <Filter className="h-4 w-4 text-muted-foreground" />
-              <span className="text-sm font-medium">Filtra per:</span>
-            </div>
-            
-            <Select 
-              value={selectedResellerId} 
-              onValueChange={(value) => {
-                setSelectedResellerId(value === "all" ? "" : value);
-                setSelectedRepairCenterId(""); // Reset repair center when reseller changes
-              }}
-            >
-              <SelectTrigger className="w-[180px]" data-testid="select-reseller-filter">
-                <SelectValue placeholder="Rivenditore" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Tutti i Rivenditori</SelectItem>
-                {resellers?.map((reseller) => (
-                  <SelectItem key={reseller.id} value={reseller.id}>
-                    {reseller.fullName || reseller.username}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            
-            <Select 
-              value={selectedRepairCenterId} 
-              onValueChange={(value) => setSelectedRepairCenterId(value === "all" ? "" : value)}
-            >
-              <SelectTrigger className="w-[200px]" data-testid="select-repair-center-filter">
-                <SelectValue placeholder="Centro Riparazione" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Tutti i Centri</SelectItem>
-                {filteredRepairCenters?.map((center) => (
-                  <SelectItem key={center.id} value={center.id}>
-                    {center.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            
-            {(selectedResellerId || selectedRepairCenterId) && (
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={clearFilters}
-                data-testid="button-clear-filters"
-              >
-                Rimuovi Filtri
-              </Button>
-            )}
-          </div>
-          
-          {(selectedResellerId || selectedRepairCenterId) && (
-            <div className="mt-2 flex items-center gap-2">
-              <span className="text-xs text-muted-foreground">Filtri attivi:</span>
-              {selectedResellerId && (
-                <Badge variant="secondary" className="text-xs">
-                  Rivenditore: {resellers?.find(r => r.id === selectedResellerId)?.fullName || resellers?.find(r => r.id === selectedResellerId)?.username}
-                </Badge>
-              )}
-              {selectedRepairCenterId && (
-                <Badge variant="secondary" className="text-xs">
-                  Centro: {repairCenters?.find(rc => rc.id === selectedRepairCenterId)?.name}
-                </Badge>
-              )}
-            </div>
-          )}
-        </Card>
+      <div>
+        <h1 className="text-2xl font-semibold mb-2">Dashboard Amministratore</h1>
+        <p className="text-muted-foreground">
+          Panoramica completa della piattaforma Monkey Plan Beta v.22.5
+        </p>
       </div>
 
       {/* Primary KPI Cards */}
