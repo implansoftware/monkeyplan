@@ -1780,6 +1780,38 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Reset password for repair center by center ID (admin only)
+  app.post("/api/admin/repair-centers/:id/reset-password", requireRole("admin"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Non autorizzato");
+      
+      const centerId = req.params.id;
+      const { newPassword } = req.body;
+      
+      if (!newPassword || newPassword.length < 4) {
+        return res.status(400).send("La password deve contenere almeno 4 caratteri");
+      }
+
+      // Find the user associated with this repair center
+      const allUsers = await storage.listUsers();
+      const repairCenterUser = allUsers.find(u => u.role === 'repair_center' && u.repairCenterId === centerId);
+      
+      if (!repairCenterUser) {
+        return res.status(404).send("Utente del centro di riparazione non trovato");
+      }
+
+      // Hash and update password
+      const hashedPassword = await hashPassword(newPassword);
+      await storage.updateUser(repairCenterUser.id, { password: hashedPassword });
+
+      setActivityEntity(res, { type: 'users', id: repairCenterUser.id });
+      res.json({ message: "Password aggiornata con successo" });
+    } catch (error: any) {
+      console.error("Error resetting repair center password:", error);
+      res.status(500).send(error.message);
+    }
+  });
+
   // Admin Team (Collaboratori Admin)
   // List all admin staff members
   app.get("/api/admin/team", requireRole("admin"), async (req, res) => {

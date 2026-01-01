@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Search, MapPin, Phone, Mail, Pencil, Trash2, Building, Store, Clock, ChevronLeft, ChevronRight, Check, FileText, Settings, Eye } from "lucide-react";
+import { Plus, Search, MapPin, Phone, Mail, Pencil, Trash2, Building, Store, Clock, ChevronLeft, ChevronRight, Check, FileText, Settings, Eye, KeyRound } from "lucide-react";
 import { Link } from "wouter";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -33,6 +33,9 @@ export default function AdminRepairCenters() {
   const [addressData, setAddressData] = useState({ address: "", city: "", cap: "", provincia: "" });
   const [hourlyRateEuros, setHourlyRateEuros] = useState<string>("");
   const [wizardStep, setWizardStep] = useState(1);
+  const [resetPasswordDialogOpen, setResetPasswordDialogOpen] = useState(false);
+  const [centerToResetPassword, setCenterToResetPassword] = useState<RepairCenter | null>(null);
+  const [newPassword, setNewPassword] = useState("");
   const [formData, setFormData] = useState({
     name: "",
     phone: "",
@@ -105,6 +108,34 @@ export default function AdminRepairCenters() {
       toast({ title: "Centro eliminato" });
     },
   });
+
+  const resetPasswordMutation = useMutation({
+    mutationFn: async ({ id, newPassword }: { id: string; newPassword: string }) => {
+      const res = await apiRequest("POST", `/api/admin/repair-centers/${id}/reset-password`, { newPassword });
+      return await res.json();
+    },
+    onSuccess: () => {
+      toast({ title: "Password aggiornata con successo" });
+      setResetPasswordDialogOpen(false);
+      setCenterToResetPassword(null);
+      setNewPassword("");
+    },
+    onError: (error: Error) => {
+      toast({ title: "Errore", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const handleResetPasswordClick = (center: RepairCenter) => {
+    setCenterToResetPassword(center);
+    setNewPassword("");
+    setResetPasswordDialogOpen(true);
+  };
+
+  const confirmResetPassword = () => {
+    if (centerToResetPassword && newPassword.length >= 4) {
+      resetPasswordMutation.mutate({ id: centerToResetPassword.id, newPassword });
+    }
+  };
 
   const resetWizard = () => {
     setWizardStep(1);
@@ -667,6 +698,15 @@ export default function AdminRepairCenters() {
                         <Button
                           variant="ghost"
                           size="icon"
+                          onClick={() => handleResetPasswordClick(center)}
+                          title="Reset password"
+                          data-testid={`button-reset-password-${center.id}`}
+                        >
+                          <KeyRound className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
                           onClick={() => deleteCenterMutation.mutate(center.id)}
                           disabled={deleteCenterMutation.isPending}
                           data-testid={`button-delete-${center.id}`}
@@ -682,6 +722,49 @@ export default function AdminRepairCenters() {
           )}
         </CardContent>
       </Card>
+
+      <Dialog open={resetPasswordDialogOpen} onOpenChange={setResetPasswordDialogOpen}>
+        <DialogContent data-testid="dialog-reset-password">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <KeyRound className="h-5 w-5" />
+              Reset Password
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Stai per resettare la password del centro <strong>{centerToResetPassword?.name}</strong>.
+            </p>
+            <div className="space-y-2">
+              <Label htmlFor="newPassword">Nuova Password</Label>
+              <Input
+                id="newPassword"
+                type="password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                placeholder="Inserisci nuova password (min. 4 caratteri)"
+                data-testid="input-new-password"
+              />
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button
+                variant="outline"
+                onClick={() => setResetPasswordDialogOpen(false)}
+                data-testid="button-cancel-reset-password"
+              >
+                Annulla
+              </Button>
+              <Button
+                onClick={confirmResetPassword}
+                disabled={newPassword.length < 4 || resetPasswordMutation.isPending}
+                data-testid="button-confirm-reset-password"
+              >
+                {resetPasswordMutation.isPending ? "Aggiornamento..." : "Conferma Reset"}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
