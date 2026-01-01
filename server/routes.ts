@@ -3600,6 +3600,170 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Create sub-reseller (for franchising/GDO parent resellers)
+  app.post("/api/reseller/sub-resellers", requireRole("reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      // Only franchising/gdo resellers can create sub-resellers
+      if (req.user.resellerCategory !== 'franchising' && req.user.resellerCategory !== 'gdo') {
+        return res.status(403).send("Solo i rivenditori franchising/GDO possono creare sub-rivenditori");
+      }
+      
+      const validatedData = insertUserSchema.parse(req.body);
+      
+      // Check for duplicate email
+      const existingEmail = await storage.getUserByEmail(validatedData.email);
+      if (existingEmail) {
+        return res.status(400).send("Email già registrata nel sistema");
+      }
+      
+      // Check for duplicate username
+      const existingUsername = await storage.getUserByUsername(validatedData.username);
+      if (existingUsername) {
+        return res.status(400).send("Username già in uso");
+      }
+      
+      // Check for duplicate partita IVA (only if provided and not empty)
+      if (validatedData.partitaIva && validatedData.partitaIva.trim() !== '') {
+        const existingPartitaIva = await storage.getUserByPartitaIva(validatedData.partitaIva.trim());
+        if (existingPartitaIva) {
+          return res.status(400).send("Partita IVA già registrata nel sistema");
+        }
+      }
+      
+      // Hash password before storing
+      const hashedPassword = await hashPassword(validatedData.password);
+      
+      // Force role to reseller and set parent
+      const user = await storage.createUser({
+        ...validatedData,
+        password: hashedPassword,
+        role: 'reseller',
+        resellerCategory: validatedData.resellerCategory || 'standard',
+        parentResellerId: req.user.id,
+      });
+      
+      // Create automatic warehouse for new sub-reseller
+      const warehouse = await storage.createWarehouse({
+        name: `Magazzino ${user.fullName || user.username}`,
+        code: `WH-${user.username.toUpperCase().substring(0, 8)}`,
+        address: '',
+        city: '',
+        zipCode: '',
+        country: 'IT',
+        isActive: true,
+        resellerId: user.id,
+        repairCenterId: null,
+      });
+      
+      setActivityEntity(res, { type: 'users', id: user.id });
+      res.status(201).json({ ...user, password: undefined });
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+
+  // Update sub-reseller (for franchising/GDO parent resellers)
+  app.patch("/api/reseller/sub-resellers/:id", requireRole("reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      // Only franchising/gdo resellers can update sub-resellers
+      if (req.user.resellerCategory !== 'franchising' && req.user.resellerCategory !== 'gdo') {
+        return res.status(403).send("Solo i rivenditori franchising/GDO possono modificare sub-rivenditori");
+      }
+      
+      const { id } = req.params;
+      
+      // Verify sub-reseller belongs to this parent
+      const childResellers = await storage.getChildResellers(req.user.id);
+      const subReseller = childResellers.find(r => r.id === id);
+      if (!subReseller) {
+        return res.status(404).send("Sub-rivenditore non trovato");
+      }
+      
+      const { fullName, email, phone, isActive, resellerCategory, password } = req.body;
+      
+      // Check for duplicate email if changing
+      if (email && email !== subReseller.email) {
+        const existingEmail = await storage.getUserByEmail(email);
+        if (existingEmail) {
+          return res.status(400).send("Email già registrata nel sistema");
+        }
+      }
+      
+      const updates: any = {};
+      if (fullName !== undefined) updates.fullName = fullName;
+      if (email !== undefined) updates.email = email;
+      if (phone !== undefined) updates.phone = phone;
+      if (isActive !== undefined) updates.isActive = isActive;
+      if (resellerCategory !== undefined) updates.resellerCategory = resellerCategory;
+      if (password) {
+        updates.password = await hashPassword(password);
+      }
+      
+      const updated = await storage.updateUser(id, updates);
+      
+      setActivityEntity(res, { type: 'users', id: updated.id });
+      res.json({ ...updated, password: undefined });
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+
+  // Delete sub-reseller (for franchising/GDO parent resellers)
+  app.delete("/api/reseller/sub-resellers/:id", requireRole("reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      // Only franchising/gdo resellers can delete sub-resellers
+      if (req.user.resellerCategory !== 'franchising' && req.user.resellerCategory !== 'gdo') {
+        return res.status(403).send("Solo i rivenditori franchising/GDO possono eliminare sub-rivenditori");
+      }
+      
+      const { id } = req.params;
+      
+      // Verify sub-reseller belongs to this parent
+      const childResellers = await storage.getChildResellers(req.user.id);
+      const subReseller = childResellers.find(r => r.id === id);
+      if (!subReseller) {
+        return res.status(404).send("Sub-rivenditore non trovato");
+      }
+      
+      // Check for active repairs
+      const allRepairs = await storage.listRepairOrders();
+      const subResellerRepairs = allRepairs.filter(r => r.resellerId === id);
+      const terminalStatuses = ["consegnato", "cancelled"];
+      const activeRepairs = subResellerRepairs.filter(r => !terminalStatuses.includes(r.status));
+      
+      if (activeRepairs.length > 0) {
+        return res.status(409).json({
+          error: "ACTIVE_REPAIRS",
+          message: `Impossibile eliminare: il sub-rivenditore ha ${activeRepairs.length} riparazione/i attiva/e`,
+          activeRepairsCount: activeRepairs.length
+        });
+      }
+      
+      // Check for repair centers
+      const repairCenters = await storage.getRepairCentersForReseller(id);
+      if (repairCenters.length > 0) {
+        return res.status(409).json({
+          error: "HAS_REPAIR_CENTERS",
+          message: `Impossibile eliminare: il sub-rivenditore ha ${repairCenters.length} centro/i di riparazione associati`,
+          repairCentersCount: repairCenters.length
+        });
+      }
+      
+      await storage.deleteUser(id);
+      
+      setActivityEntity(res, { type: 'users', id });
+      res.json({ success: true });
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
   // Get sub-resellers e-commerce data (for franchising/GDO resellers)
   app.get("/api/reseller/sub-resellers/ecommerce", requireRole("reseller"), async (req, res) => {
     try {
