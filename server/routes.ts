@@ -7197,6 +7197,16 @@ export function registerRoutes(app: Express): Server {
       } else if (req.user.role === 'reseller' || req.user.role === 'repair_center') {
         // Resellers and repair center staff see assigned tickets
         filters.assignedTo = req.user.id;
+      } else if (req.user.role === 'reseller_staff') {
+        // Check permission
+        const hasPermission = await storage.checkStaffPermission(req.user.id, 'tickets', 'read');
+        if (!hasPermission) {
+          return res.status(403).send("Non hai i permessi per visualizzare i ticket");
+        }
+        // Staff sees tickets of their parent reseller
+        if (req.user.resellerId) {
+          filters.assignedTo = req.user.resellerId;
+        }
       }
       // Admin sees all tickets (no filter)
       
@@ -7226,6 +7236,16 @@ export function registerRoutes(app: Express): Server {
       if (req.user.role === 'admin' || req.user.role === 'admin_staff') {
         // Admin can see all tickets
         hasAccess = true;
+      } else if (req.user.role === 'reseller_staff') {
+        // Check permission first
+        const hasPermission = await storage.checkStaffPermission(req.user.id, 'tickets', 'read');
+        if (hasPermission && req.user.resellerId) {
+          // Check if ticket belongs to parent reseller
+          if (ticket.initiatorId === req.user.resellerId || 
+              (ticket.targetType === 'reseller' && ticket.targetId === req.user.resellerId)) {
+            hasAccess = true;
+          }
+        }
       } else if (ticket.ticketType === 'internal') {
         // For internal tickets, check if user is initiator or target
         // User is initiator
@@ -9112,6 +9132,17 @@ export function registerRoutes(app: Express): Server {
         // Reseller sees invoices for their customers (respecting context switch)
         const context = getEffectiveContext(req);
         invoices = await storage.listInvoices({ resellerId: context.resellerId });
+      } else if (req.user.role === 'reseller_staff') {
+        // Reseller staff sees invoices if they have permission
+        const hasPermission = await storage.checkStaffPermission(req.user.id, 'invoices', 'read');
+        if (!hasPermission) {
+          return res.status(403).send("Non hai i permessi per visualizzare le fatture");
+        }
+        // Get parent reseller ID
+        if (!req.user.resellerId) {
+          return res.status(403).send("Staff non associato a un reseller");
+        }
+        invoices = await storage.listInvoices({ resellerId: req.user.resellerId });
       } else {
         // Repair Center: no access to invoices
         return res.status(403).send("Access denied");
@@ -9132,11 +9163,24 @@ export function registerRoutes(app: Express): Server {
         return res.status(404).send("Invoice not found");
       }
       
-      // Access control: admin sees all, customer sees own only
+      // Access control: admin sees all, customer sees own only, reseller/staff see their own
       if (req.user.role === 'customer' && invoice.customerId !== req.user.id) {
         return res.status(403).send("Access denied");
       }
-      if (req.user.role !== 'admin' && req.user.role !== 'customer') {
+      if (req.user.role === 'reseller') {
+        // Check if invoice belongs to reseller's customer
+        if (invoice.resellerId !== req.user.id) {
+          return res.status(403).send("Access denied");
+        }
+      } else if (req.user.role === 'reseller_staff') {
+        const hasPermission = await storage.checkStaffPermission(req.user.id, 'invoices', 'read');
+        if (!hasPermission) {
+          return res.status(403).send("Non hai i permessi per visualizzare questa fattura");
+        }
+        if (invoice.resellerId !== req.user.resellerId) {
+          return res.status(403).send("Access denied");
+        }
+      } else if (req.user.role !== 'admin' && req.user.role !== 'customer') {
         return res.status(403).send("Access denied");
       }
       
