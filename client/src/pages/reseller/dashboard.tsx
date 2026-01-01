@@ -115,15 +115,15 @@ export default function ResellerDashboard() {
   const kpiCards = [
     {
       title: "Riparazioni Attive",
-      value: stats?.overview.activeRepairs ?? 0,
+      value: stats?.overview?.activeRepairs ?? 0,
       icon: Wrench,
-      subtitle: `${stats?.overview.totalRepairs ?? 0} totali`,
+      subtitle: `${stats?.overview?.totalRepairs ?? 0} totali`,
       color: "text-blue-600",
       bg: "bg-blue-100 dark:bg-blue-900/30",
     },
     {
       title: "Clienti",
-      value: stats?.overview.totalCustomers ?? 0,
+      value: stats?.overview?.totalCustomers ?? 0,
       icon: Users,
       subtitle: "Clienti gestiti",
       color: "text-green-600",
@@ -131,7 +131,7 @@ export default function ResellerDashboard() {
     },
     {
       title: "Fatturato",
-      value: stats ? formatCurrency(stats.overview.totalRevenue) : "0,00 €",
+      value: formatCurrency(stats?.overview?.totalRevenue ?? 0),
       icon: TrendingUp,
       subtitle: "Da riparazioni completate",
       color: "text-yellow-600",
@@ -139,16 +139,16 @@ export default function ResellerDashboard() {
     },
     {
       title: "Stock Magazzino",
-      value: stats?.warehouse.totalStock ?? 0,
+      value: stats?.warehouse?.totalStock ?? 0,
       icon: Warehouse,
-      subtitle: stats?.warehouse.lowStockItems ? `${stats.warehouse.lowStockItems} sotto scorta` : "Tutto ok",
+      subtitle: stats?.warehouse?.lowStockItems ? `${stats.warehouse.lowStockItems} sotto scorta` : "Tutto ok",
       color: "text-amber-600",
       bg: "bg-amber-100 dark:bg-amber-900/30",
     },
   ];
 
   // Chart data using correct Italian status names
-  const repairsChartData = stats ? [
+  const repairsChartData = stats?.repairsByStatus ? [
     { name: "Ingressato", value: stats.repairsByStatus.ingressato },
     { name: "Diagnosi", value: stats.repairsByStatus.in_diagnosi },
     { name: "Prev. Emesso", value: stats.repairsByStatus.preventivo_emesso },
@@ -157,7 +157,7 @@ export default function ResellerDashboard() {
     { name: "Consegnato", value: stats.repairsByStatus.consegnato },
   ].filter(d => d.value > 0) : [];
 
-  const pieData = stats ? [
+  const pieData = stats?.repairsByStatus ? [
     { name: "In Lavorazione", value: (stats.repairsByStatus.ingressato || 0) + (stats.repairsByStatus.in_diagnosi || 0) + (stats.repairsByStatus.in_riparazione || 0) },
     { name: "In Attesa", value: (stats.repairsByStatus.preventivo_emesso || 0) + (stats.repairsByStatus.attesa_ricambi || 0) },
     { name: "Completate", value: stats.repairsByStatus.consegnato || 0 },
