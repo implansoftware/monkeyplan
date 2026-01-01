@@ -3645,20 +3645,13 @@ export function registerRoutes(app: Express): Server {
       });
       
       // Create automatic warehouse for new sub-reseller
-      const warehouse = await storage.createWarehouse({
-        name: `Magazzino ${user.fullName || user.username}`,
-        code: `WH-${user.username.toUpperCase().substring(0, 8)}`,
-        address: '',
-        city: '',
-        zipCode: '',
-        country: 'IT',
-        isActive: true,
-        resellerId: user.id,
-        repairCenterId: null,
-      });
+      await storage.ensureDefaultWarehouse('sub_reseller', user.id, user.fullName || user.username);
       
       setActivityEntity(res, { type: 'users', id: user.id });
-      res.status(201).json({ ...user, password: undefined });
+      
+      // Return user without password
+      const { password: _, ...safeUser } = user;
+      res.status(201).json(safeUser);
     } catch (error: any) {
       res.status(400).send(error.message);
     }
@@ -3683,6 +3676,7 @@ export function registerRoutes(app: Express): Server {
         return res.status(404).send("Sub-rivenditore non trovato");
       }
       
+      // Only allow specific safe fields to be updated - explicitly destructure and ignore dangerous fields
       const { fullName, email, phone, isActive, resellerCategory, password } = req.body;
       
       // Check for duplicate email if changing
@@ -3693,20 +3687,27 @@ export function registerRoutes(app: Express): Server {
         }
       }
       
-      const updates: any = {};
-      if (fullName !== undefined) updates.fullName = fullName;
-      if (email !== undefined) updates.email = email;
-      if (phone !== undefined) updates.phone = phone;
-      if (isActive !== undefined) updates.isActive = isActive;
-      if (resellerCategory !== undefined) updates.resellerCategory = resellerCategory;
-      if (password) {
+      // Build updates object with only whitelisted fields
+      const updates: Partial<Pick<typeof subReseller, 'fullName' | 'email' | 'phone' | 'isActive' | 'resellerCategory' | 'password'>> = {};
+      if (fullName !== undefined && typeof fullName === 'string') updates.fullName = fullName;
+      if (email !== undefined && typeof email === 'string') updates.email = email;
+      if (phone !== undefined) updates.phone = typeof phone === 'string' ? phone : null;
+      if (isActive !== undefined && typeof isActive === 'boolean') updates.isActive = isActive;
+      if (resellerCategory !== undefined && typeof resellerCategory === 'string' && 
+          ['standard', 'franchising', 'gdo'].includes(resellerCategory)) {
+        updates.resellerCategory = resellerCategory;
+      }
+      if (password && typeof password === 'string' && password.length >= 6) {
         updates.password = await hashPassword(password);
       }
       
       const updated = await storage.updateUser(id, updates);
       
       setActivityEntity(res, { type: 'users', id: updated.id });
-      res.json({ ...updated, password: undefined });
+      
+      // Return user without password
+      const { password: _, ...safeUser } = updated;
+      res.json(safeUser);
     } catch (error: any) {
       res.status(400).send(error.message);
     }
