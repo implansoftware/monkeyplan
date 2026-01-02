@@ -165,6 +165,12 @@ export default function ResellerUtilityServices() {
               <Building2 className="h-3.5 w-3.5" />
               {supplier?.name || "Fornitore"}
             </div>
+
+            {service.description && (
+              <p className="text-sm text-muted-foreground line-clamp-2">
+                {service.description}
+              </p>
+            )}
             
             <div className="flex items-center justify-between">
               <div>
