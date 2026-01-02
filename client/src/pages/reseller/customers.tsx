@@ -216,8 +216,8 @@ export default function ResellerCustomers() {
         <Card>
           <CardContent className="pt-4 pb-3">
             <div className="flex items-center gap-3">
-              <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center">
-                <Users className="h-4 w-4 text-primary" />
+              <div className="h-9 w-9 rounded-lg bg-primary text-primary-foreground flex items-center justify-center">
+                <Users className="h-4 w-4" />
               </div>
               <div>
                 <p className="text-2xl font-semibold tabular-nums">{customers.length}</p>
@@ -229,8 +229,8 @@ export default function ResellerCustomers() {
         <Card>
           <CardContent className="pt-4 pb-3">
             <div className="flex items-center gap-3">
-              <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center">
-                <UserCheck className="h-4 w-4 text-primary" />
+              <div className="h-9 w-9 rounded-lg bg-primary text-primary-foreground flex items-center justify-center">
+                <UserCheck className="h-4 w-4" />
               </div>
               <div>
                 <p className="text-2xl font-semibold tabular-nums">{activeCustomers}</p>
@@ -242,8 +242,8 @@ export default function ResellerCustomers() {
         <Card>
           <CardContent className="pt-4 pb-3">
             <div className="flex items-center gap-3">
-              <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center">
-                <Wrench className="h-4 w-4 text-primary" />
+              <div className="h-9 w-9 rounded-lg bg-primary text-primary-foreground flex items-center justify-center">
+                <Wrench className="h-4 w-4" />
               </div>
               <div>
                 <p className="text-2xl font-semibold tabular-nums">{totalRepairs}</p>
@@ -339,15 +339,15 @@ export default function ResellerCustomers() {
                         )}
                         <TableCell>
                           {customer.isActive ? (
-                            <Badge variant="outline" className="font-normal">Attivo</Badge>
+                            <Badge className="font-normal bg-primary/15 text-primary border-0">Attivo</Badge>
                           ) : (
                             <Badge variant="secondary" className="font-normal">Inattivo</Badge>
                           )}
                         </TableCell>
                         <TableCell>
-                          <span className="text-sm tabular-nums" data-testid={`badge-repairs-${customer.id}`}>
+                          <Badge variant="secondary" className="font-normal tabular-nums" data-testid={`badge-repairs-${customer.id}`}>
                             {customerRepairs.length}
-                          </span>
+                          </Badge>
                         </TableCell>
                         <TableCell className="pr-6 text-right">
                           <div className="flex items-center justify-end gap-1">
