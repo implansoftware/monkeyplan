@@ -662,7 +662,7 @@ export default function ResellerTeam() {
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-2xl p-0 overflow-hidden">
           {/* Dialog Hero Header */}
-          <div className="relative bg-gradient-to-br from-primary/5 via-primary/10 to-slate-100 dark:from-primary/10 dark:via-primary/5 dark:to-slate-900 p-6 border-b">
+          <DialogHeader className="relative bg-gradient-to-br from-primary/5 via-primary/10 to-slate-100 dark:from-primary/10 dark:via-primary/5 dark:to-slate-900 p-6 border-b space-y-0">
             <div className="absolute inset-0 opacity-[0.03]" style={{
               backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23000' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
             }} />
@@ -681,7 +681,7 @@ export default function ResellerTeam() {
                 </DialogDescription>
               </div>
             </div>
-          </div>
+          </DialogHeader>
 
           <Form {...form}>
             <form onSubmit={form.handleSubmit(handleSubmit)} className="p-6 space-y-4">
@@ -861,7 +861,7 @@ export default function ResellerTeam() {
       <Dialog open={permissionsDialogOpen} onOpenChange={setPermissionsDialogOpen}>
         <DialogContent className="max-w-3xl max-h-[80vh] p-0 overflow-hidden">
           {/* Dialog Hero Header */}
-          <div className="relative bg-gradient-to-br from-blue-500/5 via-blue-500/10 to-slate-100 dark:from-blue-500/10 dark:via-blue-500/5 dark:to-slate-900 p-6 border-b">
+          <DialogHeader className="relative bg-gradient-to-br from-blue-500/5 via-blue-500/10 to-slate-100 dark:from-blue-500/10 dark:via-blue-500/5 dark:to-slate-900 p-6 border-b space-y-0">
             <div className="absolute inset-0 opacity-[0.03]" style={{
               backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23000' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
             }} />
@@ -878,7 +878,7 @@ export default function ResellerTeam() {
                 </DialogDescription>
               </div>
             </div>
-          </div>
+          </DialogHeader>
 
           <div className="p-6 space-y-4 overflow-y-auto max-h-[50vh]">
             {MODULES.map((mod) => {
@@ -889,10 +889,13 @@ export default function ResellerTeam() {
                 <Card key={mod.id} className="overflow-hidden">
                   <CardHeader className="py-3 bg-muted/30">
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
+                      <div 
+                        className="flex items-center gap-3 cursor-pointer"
+                        onClick={() => toggleAllForModule(mod.id, !allChecked)}
+                      >
                         <Checkbox
                           checked={allChecked}
-                          onCheckedChange={(checked) => toggleAllForModule(mod.id, checked as boolean)}
+                          className="pointer-events-none"
                         />
                         <div>
                           <CardTitle className="text-sm font-medium">{mod.name}</CardTitle>
