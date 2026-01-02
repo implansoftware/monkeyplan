@@ -12217,6 +12217,150 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // GET /api/repair-orders/:id/labels - Generate labels PDF for repair order
+  app.get("/api/repair-orders/:id/labels", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const repairOrder = await storage.getRepairOrder(req.params.id);
+      if (!repairOrder) {
+        return res.status(404).send("Repair order not found");
+      }
+      
+      // RBAC
+      if (req.user.role === 'customer') {
+        return res.status(403).send("Access denied");
+      }
+      if (req.user.role === 'reseller') {
+        let hasAccess = repairOrder.resellerId === req.user.id;
+        if (!hasAccess && repairOrder.customerId) {
+          const customerForAccess = await storage.getUser(repairOrder.customerId);
+          hasAccess = !!(customerForAccess && customerForAccess.resellerId === req.user.id);
+        }
+        if (!hasAccess) return res.status(403).send("Access denied");
+      }
+      if (req.user.role === 'repair_center' && repairOrder.repairCenterId !== req.user.repairCenterId) {
+        return res.status(403).send("Access denied");
+      }
+      
+      // Get acceptance info
+      const acceptance = await storage.getRepairAcceptance(req.params.id);
+      
+      // Get device brand and model names
+      let brandName = repairOrder.brand || '';
+      let modelName = repairOrder.deviceModel || '';
+      
+      if (repairOrder.brand) {
+        const brand = await storage.getDeviceBrand(repairOrder.brand);
+        if (brand) brandName = brand.name;
+      }
+      
+      if (repairOrder.deviceModel) {
+        const model = await storage.getDeviceModel(repairOrder.deviceModel);
+        if (model) modelName = model.name;
+      }
+      
+      // Get device type name
+      let deviceTypeName = repairOrder.deviceType || '';
+      if (repairOrder.deviceType) {
+        const deviceType = await storage.getDeviceType(repairOrder.deviceType);
+        if (deviceType) deviceTypeName = deviceType.name;
+      }
+      
+      // Generate PDF with labels
+      const PDFDocument = (await import('pdfkit')).default;
+      // A4 page with 3 labels per row, 8 rows = 24 labels per page
+      // Label size approx: 70mm x 35mm (198pt x 99pt)
+      const doc = new PDFDocument({ margin: 20, size: 'A4' });
+      
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="etichette-${repairOrder.orderNumber}.pdf"`);
+      
+      doc.pipe(res);
+      
+      // Label dimensions (in points, 1 inch = 72 points)
+      const labelWidth = 180;  // ~63mm
+      const labelHeight = 90;  // ~32mm
+      const labelsPerRow = 3;
+      const rowsPerPage = 8;
+      const marginX = 20;
+      const marginY = 20;
+      const gapX = 10;
+      const gapY = 10;
+      
+      // Prepare label content
+      const orderNumber = repairOrder.orderNumber || 'N/A';
+      const deviceInfo = `${brandName} ${modelName}`.trim() || deviceTypeName || 'Dispositivo';
+      const imeiSerial = repairOrder.imei || repairOrder.serial || '';
+      
+      // Build accessories list
+      let accessoriesList: string[] = [];
+      if (acceptance?.accessories && acceptance.accessories.length > 0) {
+        accessoriesList = acceptance.accessories;
+      }
+      
+      // Generate 6 labels (2 rows x 3 columns)
+      const totalLabels = 6;
+      
+      for (let i = 0; i < totalLabels; i++) {
+        const col = i % labelsPerRow;
+        const row = Math.floor(i / labelsPerRow);
+        
+        const x = marginX + (col * (labelWidth + gapX));
+        const y = marginY + (row * (labelHeight + gapY));
+        
+        // Draw label border with rounded corners
+        doc.roundedRect(x, y, labelWidth, labelHeight, 5).stroke();
+        
+        // Header with order number (blue background)
+        doc.save();
+        doc.roundedRect(x, y, labelWidth, 18, 5);
+        doc.rect(x, y + 10, labelWidth, 8);
+        doc.clip();
+        doc.rect(x, y, labelWidth, 18).fill('#1e40af');
+        doc.restore();
+        
+        doc.fontSize(10).font('Helvetica-Bold').fillColor('white');
+        doc.text(orderNumber, x + 5, y + 4, { width: labelWidth - 10, align: 'center' });
+        
+        // Reset color
+        doc.fillColor('black');
+        
+        // Device info
+        doc.fontSize(8).font('Helvetica-Bold');
+        doc.text(deviceInfo.length > 25 ? deviceInfo.substring(0, 25) + '...' : deviceInfo, x + 5, y + 22, { width: labelWidth - 10 });
+        
+        // IMEI/Serial if available
+        if (imeiSerial) {
+          doc.fontSize(6).font('Helvetica');
+          doc.text(`ID: ${imeiSerial}`, x + 5, y + 33, { width: labelWidth - 10 });
+        }
+        
+        // Accessories (compact)
+        if (accessoriesList.length > 0) {
+          doc.fontSize(6).font('Helvetica');
+          const accY = imeiSerial ? y + 42 : y + 35;
+          doc.text('Include:', x + 5, accY, { width: labelWidth - 10 });
+          const accText = accessoriesList.slice(0, 3).join(', ');
+          doc.text(accText.length > 35 ? accText.substring(0, 35) + '...' : accText, x + 5, accY + 8, { width: labelWidth - 10 });
+        }
+        
+        // Date at bottom
+        const ingressDate = repairOrder.ingressatoAt ? new Date(repairOrder.ingressatoAt) : new Date(repairOrder.createdAt);
+        doc.fontSize(6).font('Helvetica');
+        doc.text(ingressDate.toLocaleDateString('it-IT'), x + 5, y + labelHeight - 12, { width: labelWidth - 10, align: 'right' });
+      }
+      
+      // Add instruction text at bottom
+      doc.fontSize(8).font('Helvetica').fillColor('#666666');
+      doc.text('Ritagliare le etichette lungo i bordi e applicare sul dispositivo e sugli accessori.', marginX, marginY + (2 * (labelHeight + gapY)) + 20, { align: 'center', width: 555 });
+      
+      doc.end();
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+
   // GET /api/repair-orders/:id/diagnosis-document - Generate diagnosis PDF document
   app.get("/api/repair-orders/:id/diagnosis-document", requireAuth, async (req, res) => {
     try {
