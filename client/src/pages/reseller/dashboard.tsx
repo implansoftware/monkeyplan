@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useQuery } from "@tanstack/react-query";
 import { ShoppingCart, Users, TrendingUp, FileText, Package, AlertTriangle, Zap, ArrowRightLeft, Network, ChevronRight } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -112,14 +112,14 @@ export default function ResellerDashboard() {
     return <Badge variant={config.variant}>{config.label}</Badge>;
   };
 
-  // Chart data using correct Italian status names
+  // Chart data
   const repairsChartData = stats?.repairsByStatus ? [
     { name: "Ingressato", value: stats.repairsByStatus.ingressato },
     { name: "Diagnosi", value: stats.repairsByStatus.in_diagnosi },
-    { name: "Prev. Emesso", value: stats.repairsByStatus.preventivo_emesso },
+    { name: "Prev.", value: stats.repairsByStatus.preventivo_emesso },
     { name: "In Rip.", value: stats.repairsByStatus.in_riparazione },
     { name: "Pronto", value: stats.repairsByStatus.pronto_ritiro },
-    { name: "Consegnato", value: stats.repairsByStatus.consegnato },
+    { name: "Conseg.", value: stats.repairsByStatus.consegnato },
   ].filter(d => d.value > 0) : [];
 
   const pieData = stats?.repairsByStatus ? [
@@ -130,178 +130,161 @@ export default function ResellerDashboard() {
   ].filter(d => d.value > 0) : [];
 
   const quickActions = [
-    { icon: PackageOpen, label: "Nuova Lavorazione", color: "text-orange-500", onClick: () => setAcceptanceDialogOpen(true) },
-    { icon: UserPlus, label: "Nuovo Cliente", color: "text-blue-500", onClick: () => setCustomerDialogOpen(true) },
-    { icon: CalendarPlus, label: "Appuntamento", color: "text-green-500", href: "/reseller/appointments" },
-    { icon: Warehouse, label: "Magazzino", color: "text-amber-500", href: "/reseller/warehouses" },
-    { icon: ArrowRightLeft, label: "Interscambio", color: "text-purple-500", href: "/reseller/transfer-requests" },
-    { icon: ShoppingCart, label: "Ordine B2B", color: "text-blue-500", href: "/reseller/b2b-catalog" },
-    { icon: Zap, label: "Pratiche Utility", color: "text-indigo-500", href: "/reseller/utility/practices" },
-    { icon: Building2, label: "Centri Rip.", color: "text-violet-500", href: "/reseller/repair-centers" },
-    { icon: Truck, label: "Fornitori", color: "text-teal-500", href: "/reseller/suppliers" },
-    { icon: Receipt, label: "Fatture", color: "text-red-500", href: "/reseller/invoices" },
+    { icon: PackageOpen, label: "Nuova Lavorazione", bg: "bg-gradient-to-br from-orange-500 to-amber-600", onClick: () => setAcceptanceDialogOpen(true) },
+    { icon: UserPlus, label: "Nuovo Cliente", bg: "bg-gradient-to-br from-blue-500 to-cyan-600", onClick: () => setCustomerDialogOpen(true) },
+    { icon: CalendarPlus, label: "Appuntamento", bg: "bg-gradient-to-br from-green-500 to-emerald-600", href: "/reseller/appointments" },
+    { icon: Warehouse, label: "Magazzino", bg: "bg-gradient-to-br from-amber-500 to-yellow-600", href: "/reseller/warehouses" },
+    { icon: ArrowRightLeft, label: "Interscambio", bg: "bg-gradient-to-br from-purple-500 to-violet-600", href: "/reseller/transfer-requests" },
+    { icon: ShoppingCart, label: "Ordine B2B", bg: "bg-gradient-to-br from-blue-600 to-indigo-700", href: "/reseller/b2b-catalog" },
+    { icon: Zap, label: "Pratiche Utility", bg: "bg-gradient-to-br from-indigo-500 to-purple-600", href: "/reseller/utility/practices" },
+    { icon: Building2, label: "Centri Rip.", bg: "bg-gradient-to-br from-violet-500 to-fuchsia-600", href: "/reseller/repair-centers" },
+    { icon: Truck, label: "Fornitori", bg: "bg-gradient-to-br from-teal-500 to-cyan-600", href: "/reseller/suppliers" },
+    { icon: Receipt, label: "Fatture", bg: "bg-gradient-to-br from-rose-500 to-pink-600", href: "/reseller/invoices" },
   ];
 
   return (
-    <div className="space-y-8" data-testid="page-reseller-dashboard">
-      {/* Header */}
-      <div>
+    <div className="space-y-6" data-testid="page-reseller-dashboard">
+      {/* Header with gradient background */}
+      <div className="relative -mx-6 -mt-6 px-6 pt-6 pb-8 bg-gradient-to-r from-primary/5 via-primary/10 to-transparent">
         <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
         <p className="text-muted-foreground mt-1">
           Panoramica delle tue attività
         </p>
       </div>
 
-      {/* Alerts - More prominent if present */}
+      {/* Alerts */}
       {(overdueInvoices.length > 0 || pendingInvoices.length > 0) && (
         <div className="flex flex-col sm:flex-row gap-3">
           {overdueInvoices.length > 0 && (
-            <div className="flex-1 flex items-center gap-4 p-4 rounded-xl bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800">
-              <div className="h-10 w-10 rounded-full bg-red-100 dark:bg-red-900/50 flex items-center justify-center flex-shrink-0">
-                <AlertTriangle className="h-5 w-5 text-red-600 dark:text-red-400" />
+            <div className="flex-1 flex items-center gap-4 p-4 rounded-xl bg-gradient-to-r from-red-500/10 to-red-500/5 border border-red-200 dark:border-red-800">
+              <div className="h-10 w-10 rounded-full bg-red-500 flex items-center justify-center flex-shrink-0 shadow-lg shadow-red-500/30">
+                <AlertTriangle className="h-5 w-5 text-white" />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="font-semibold text-red-900 dark:text-red-100">Fatture Scadute</p>
-                <p className="text-sm text-red-700 dark:text-red-300">{overdueInvoices.length} da saldare</p>
+                <p className="font-semibold">Fatture Scadute</p>
+                <p className="text-sm text-muted-foreground">{overdueInvoices.length} da saldare</p>
               </div>
               <Link href="/reseller/invoices">
-                <Button size="sm" variant="outline" className="border-red-300 dark:border-red-700">
-                  Vedi
-                </Button>
+                <Button size="sm">Vedi</Button>
               </Link>
             </div>
           )}
           {pendingInvoices.length > 0 && (
-            <div className="flex-1 flex items-center gap-4 p-4 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800">
-              <div className="h-10 w-10 rounded-full bg-amber-100 dark:bg-amber-900/50 flex items-center justify-center flex-shrink-0">
-                <FileText className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+            <div className="flex-1 flex items-center gap-4 p-4 rounded-xl bg-gradient-to-r from-amber-500/10 to-amber-500/5 border border-amber-200 dark:border-amber-800">
+              <div className="h-10 w-10 rounded-full bg-amber-500 flex items-center justify-center flex-shrink-0 shadow-lg shadow-amber-500/30">
+                <FileText className="h-5 w-5 text-white" />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="font-semibold text-amber-900 dark:text-amber-100">Fatture in Sospeso</p>
-                <p className="text-sm text-amber-700 dark:text-amber-300">{pendingInvoices.length} da pagare</p>
+                <p className="font-semibold">Fatture in Sospeso</p>
+                <p className="text-sm text-muted-foreground">{pendingInvoices.length} da pagare</p>
               </div>
               <Link href="/reseller/invoices">
-                <Button size="sm" variant="outline" className="border-amber-300 dark:border-amber-700">
-                  Vedi
-                </Button>
+                <Button size="sm" variant="outline">Vedi</Button>
               </Link>
             </div>
           )}
         </div>
       )}
 
-      {/* Main KPI Cards - Redesigned */}
+      {/* Main KPI Cards - Colorful Gradients */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Riparazioni Attive */}
-        <Card className="relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-blue-500/10 to-transparent rounded-bl-full" />
-          <CardContent className="pt-6">
-            <div className="flex items-start justify-between">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Riparazioni Attive</p>
-                {isLoading ? (
-                  <Skeleton className="h-9 w-16 mt-1" />
-                ) : (
-                  <p className="text-3xl font-bold mt-1" data-testid="text-active-repairs">
-                    {stats?.overview?.activeRepairs ?? 0}
-                  </p>
-                )}
-                <p className="text-xs text-muted-foreground mt-1">{stats?.overview?.totalRepairs ?? 0} totali</p>
-              </div>
-              <div className="h-12 w-12 rounded-xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
-                <Wrench className="h-6 w-6 text-blue-600 dark:text-blue-400" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Clienti */}
-        <Card className="relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-green-500/10 to-transparent rounded-bl-full" />
-          <CardContent className="pt-6">
-            <div className="flex items-start justify-between">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Clienti</p>
-                {isLoading ? (
-                  <Skeleton className="h-9 w-16 mt-1" />
-                ) : (
-                  <p className="text-3xl font-bold mt-1" data-testid="text-customers">
-                    {stats?.overview?.totalCustomers ?? 0}
-                  </p>
-                )}
-                <p className="text-xs text-muted-foreground mt-1">Clienti gestiti</p>
-              </div>
-              <div className="h-12 w-12 rounded-xl bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
-                <Users className="h-6 w-6 text-green-600 dark:text-green-400" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Fatturato */}
-        <Card className="relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-yellow-500/10 to-transparent rounded-bl-full" />
-          <CardContent className="pt-6">
-            <div className="flex items-start justify-between">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Fatturato</p>
-                {isLoading ? (
-                  <Skeleton className="h-9 w-24 mt-1" />
-                ) : (
-                  <p className="text-3xl font-bold mt-1" data-testid="text-revenue">
-                    {formatCurrency(stats?.overview?.totalRevenue ?? 0)}
-                  </p>
-                )}
-                <p className="text-xs text-muted-foreground mt-1">Da riparazioni</p>
-              </div>
-              <div className="h-12 w-12 rounded-xl bg-yellow-100 dark:bg-yellow-900/30 flex items-center justify-center">
-                <TrendingUp className="h-6 w-6 text-yellow-600 dark:text-yellow-400" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Stock */}
-        <Card className="relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-amber-500/10 to-transparent rounded-bl-full" />
-          <CardContent className="pt-6">
-            <div className="flex items-start justify-between">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Stock Magazzino</p>
-                {isLoading ? (
-                  <Skeleton className="h-9 w-16 mt-1" />
-                ) : (
-                  <p className="text-3xl font-bold mt-1" data-testid="text-stock">
-                    {stats?.warehouse?.totalStock ?? 0}
-                  </p>
-                )}
-                <p className="text-xs text-muted-foreground mt-1">
-                  {stats?.warehouse?.lowStockItems ? `${stats.warehouse.lowStockItems} sotto scorta` : "Articoli"}
+        {/* Riparazioni Attive - Blue */}
+        <div className="rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 p-5 text-white shadow-lg shadow-blue-500/20">
+          <div className="flex items-start justify-between">
+            <div>
+              <p className="text-sm font-medium text-blue-100">Riparazioni Attive</p>
+              {isLoading ? (
+                <Skeleton className="h-10 w-16 mt-2 bg-white/20" />
+              ) : (
+                <p className="text-4xl font-bold mt-2" data-testid="text-active-repairs">
+                  {stats?.overview?.activeRepairs ?? 0}
                 </p>
-              </div>
-              <div className="h-12 w-12 rounded-xl bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
-                <Warehouse className="h-6 w-6 text-amber-600 dark:text-amber-400" />
-              </div>
+              )}
+              <p className="text-xs text-blue-200 mt-1">{stats?.overview?.totalRepairs ?? 0} totali</p>
             </div>
-          </CardContent>
-        </Card>
+            <div className="h-12 w-12 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center">
+              <Wrench className="h-6 w-6 text-white" />
+            </div>
+          </div>
+        </div>
+
+        {/* Clienti - Green */}
+        <div className="rounded-xl bg-gradient-to-br from-emerald-500 to-green-600 p-5 text-white shadow-lg shadow-green-500/20">
+          <div className="flex items-start justify-between">
+            <div>
+              <p className="text-sm font-medium text-green-100">Clienti</p>
+              {isLoading ? (
+                <Skeleton className="h-10 w-16 mt-2 bg-white/20" />
+              ) : (
+                <p className="text-4xl font-bold mt-2" data-testid="text-customers">
+                  {stats?.overview?.totalCustomers ?? 0}
+                </p>
+              )}
+              <p className="text-xs text-green-200 mt-1">Clienti gestiti</p>
+            </div>
+            <div className="h-12 w-12 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center">
+              <Users className="h-6 w-6 text-white" />
+            </div>
+          </div>
+        </div>
+
+        {/* Fatturato - Yellow/Amber */}
+        <div className="rounded-xl bg-gradient-to-br from-amber-500 to-orange-500 p-5 text-white shadow-lg shadow-amber-500/20">
+          <div className="flex items-start justify-between">
+            <div>
+              <p className="text-sm font-medium text-amber-100">Fatturato</p>
+              {isLoading ? (
+                <Skeleton className="h-10 w-24 mt-2 bg-white/20" />
+              ) : (
+                <p className="text-3xl font-bold mt-2" data-testid="text-revenue">
+                  {formatCurrency(stats?.overview?.totalRevenue ?? 0)}
+                </p>
+              )}
+              <p className="text-xs text-amber-200 mt-1">Da riparazioni</p>
+            </div>
+            <div className="h-12 w-12 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center">
+              <TrendingUp className="h-6 w-6 text-white" />
+            </div>
+          </div>
+        </div>
+
+        {/* Stock - Purple */}
+        <div className="rounded-xl bg-gradient-to-br from-purple-500 to-violet-600 p-5 text-white shadow-lg shadow-purple-500/20">
+          <div className="flex items-start justify-between">
+            <div>
+              <p className="text-sm font-medium text-purple-100">Stock Magazzino</p>
+              {isLoading ? (
+                <Skeleton className="h-10 w-16 mt-2 bg-white/20" />
+              ) : (
+                <p className="text-4xl font-bold mt-2" data-testid="text-stock">
+                  {stats?.warehouse?.totalStock ?? 0}
+                </p>
+              )}
+              <p className="text-xs text-purple-200 mt-1">
+                {stats?.warehouse?.lowStockItems ? `${stats.warehouse.lowStockItems} sotto scorta` : "Articoli"}
+              </p>
+            </div>
+            <div className="h-12 w-12 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center">
+              <Warehouse className="h-6 w-6 text-white" />
+            </div>
+          </div>
+        </div>
       </div>
 
-      {/* Secondary Stats Row */}
+      {/* Secondary Stats Row - With colored left borders */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Interscambio */}
         <Link href="/reseller/transfer-requests" className="block">
-          <Card className="h-full hover-elevate cursor-pointer transition-all" data-testid="card-interscambio">
-            <CardContent className="pt-5 pb-4">
+          <Card className="h-full hover-elevate cursor-pointer border-l-4 border-l-purple-500" data-testid="card-interscambio">
+            <CardContent className="pt-4 pb-3">
               <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-lg bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center flex-shrink-0">
-                  <ArrowRightLeft className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+                <div className="h-10 w-10 rounded-lg bg-purple-500 flex items-center justify-center flex-shrink-0 shadow-md shadow-purple-500/30">
+                  <ArrowRightLeft className="h-5 w-5 text-white" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-2xl font-bold" data-testid="text-pending-transfers">
                     {stats?.interscambio?.pendingRequests ?? 0}
                   </p>
-                  <p className="text-xs text-muted-foreground truncate">Interscambio</p>
+                  <p className="text-xs text-muted-foreground">Interscambio</p>
                 </div>
                 <ChevronRight className="h-4 w-4 text-muted-foreground" />
               </div>
@@ -309,19 +292,18 @@ export default function ResellerDashboard() {
           </Card>
         </Link>
 
-        {/* B2B */}
         <Link href="/reseller/b2b-orders" className="block">
-          <Card className="h-full hover-elevate cursor-pointer transition-all" data-testid="card-b2b">
-            <CardContent className="pt-5 pb-4">
+          <Card className="h-full hover-elevate cursor-pointer border-l-4 border-l-blue-500" data-testid="card-b2b">
+            <CardContent className="pt-4 pb-3">
               <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center flex-shrink-0">
-                  <ShoppingCart className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                <div className="h-10 w-10 rounded-lg bg-blue-500 flex items-center justify-center flex-shrink-0 shadow-md shadow-blue-500/30">
+                  <ShoppingCart className="h-5 w-5 text-white" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-2xl font-bold" data-testid="text-pending-b2b">
                     {stats?.b2b?.pendingOrders ?? 0}
                   </p>
-                  <p className="text-xs text-muted-foreground truncate">Ordini B2B</p>
+                  <p className="text-xs text-muted-foreground">Ordini B2B</p>
                 </div>
                 <ChevronRight className="h-4 w-4 text-muted-foreground" />
               </div>
@@ -329,19 +311,18 @@ export default function ResellerDashboard() {
           </Card>
         </Link>
 
-        {/* Utility */}
         <Link href="/reseller/utility/practices" className="block">
-          <Card className="h-full hover-elevate cursor-pointer transition-all" data-testid="card-utility">
-            <CardContent className="pt-5 pb-4">
+          <Card className="h-full hover-elevate cursor-pointer border-l-4 border-l-indigo-500" data-testid="card-utility">
+            <CardContent className="pt-4 pb-3">
               <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-lg bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center flex-shrink-0">
-                  <Zap className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
+                <div className="h-10 w-10 rounded-lg bg-indigo-500 flex items-center justify-center flex-shrink-0 shadow-md shadow-indigo-500/30">
+                  <Zap className="h-5 w-5 text-white" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-2xl font-bold" data-testid="text-active-practices">
                     {stats?.utility?.activePractices ?? 0}
                   </p>
-                  <p className="text-xs text-muted-foreground truncate">Pratiche Utility</p>
+                  <p className="text-xs text-muted-foreground">Pratiche Utility</p>
                 </div>
                 <ChevronRight className="h-4 w-4 text-muted-foreground" />
               </div>
@@ -349,19 +330,18 @@ export default function ResellerDashboard() {
           </Card>
         </Link>
 
-        {/* Rete */}
         <Link href="/reseller/repair-centers" className="block">
-          <Card className="h-full hover-elevate cursor-pointer transition-all" data-testid="card-network-stats">
-            <CardContent className="pt-5 pb-4">
+          <Card className="h-full hover-elevate cursor-pointer border-l-4 border-l-violet-500" data-testid="card-network-stats">
+            <CardContent className="pt-4 pb-3">
               <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-lg bg-violet-100 dark:bg-violet-900/30 flex items-center justify-center flex-shrink-0">
-                  <Network className="h-5 w-5 text-violet-600 dark:text-violet-400" />
+                <div className="h-10 w-10 rounded-lg bg-violet-500 flex items-center justify-center flex-shrink-0 shadow-md shadow-violet-500/30">
+                  <Network className="h-5 w-5 text-white" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-2xl font-bold" data-testid="text-network-centers">
                     {stats?.network?.repairCenters ?? 0}
                   </p>
-                  <p className="text-xs text-muted-foreground truncate">Centri Riparazione</p>
+                  <p className="text-xs text-muted-foreground">Centri Riparazione</p>
                 </div>
                 <ChevronRight className="h-4 w-4 text-muted-foreground" />
               </div>
@@ -370,43 +350,45 @@ export default function ResellerDashboard() {
         </Link>
       </div>
 
-      {/* Quick Actions - Cleaner Grid */}
-      <Card>
-        <CardHeader className="pb-4">
-          <CardTitle className="text-lg">Azioni Rapide</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2">
-            {quickActions.map((action, index) => {
-              const content = (
-                <Button 
-                  variant="ghost" 
-                  className="w-full h-auto flex-col gap-2 py-4 px-2 hover:bg-muted/80" 
-                  onClick={action.onClick}
-                  data-testid={`button-quick-${index}`}
-                >
-                  <action.icon className={`h-5 w-5 ${action.color}`} />
+      {/* Quick Actions - Colorful Tiles */}
+      <div>
+        <h2 className="text-lg font-semibold mb-4">Azioni Rapide</h2>
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
+          {quickActions.map((action, index) => {
+            const content = (
+              <button 
+                onClick={action.onClick}
+                className={`w-full ${action.bg} rounded-xl p-4 text-white shadow-lg hover:shadow-xl transition-all hover:scale-[1.02] active:scale-[0.98]`}
+                data-testid={`button-quick-${index}`}
+              >
+                <div className="flex flex-col items-center gap-2">
+                  <div className="h-10 w-10 rounded-lg bg-white/20 backdrop-blur-sm flex items-center justify-center">
+                    <action.icon className="h-5 w-5 text-white" />
+                  </div>
                   <span className="text-xs font-medium text-center leading-tight">{action.label}</span>
-                </Button>
-              );
-              
-              return action.href ? (
-                <Link key={index} href={action.href}>{content}</Link>
-              ) : (
-                <div key={index}>{content}</div>
-              );
-            })}
-          </div>
-        </CardContent>
-      </Card>
+                </div>
+              </button>
+            );
+            
+            return action.href ? (
+              <Link key={index} href={action.href}>{content}</Link>
+            ) : (
+              <div key={index}>{content}</div>
+            );
+          })}
+        </div>
+      </div>
 
       {/* Charts & Recent Repairs Row */}
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
         {/* Charts - 2 columns */}
         <div className="xl:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
-          <Card>
+          <Card className="border-t-4 border-t-blue-500">
             <CardHeader className="pb-2">
-              <CardTitle className="text-base">Riparazioni per Stato</CardTitle>
+              <CardTitle className="text-base flex items-center gap-2">
+                <div className="h-2 w-2 rounded-full bg-blue-500" />
+                Riparazioni per Stato
+              </CardTitle>
             </CardHeader>
             <CardContent>
               {isLoading ? (
@@ -429,9 +411,12 @@ export default function ResellerDashboard() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="border-t-4 border-t-emerald-500">
             <CardHeader className="pb-2">
-              <CardTitle className="text-base">Stato Lavori</CardTitle>
+              <CardTitle className="text-base flex items-center gap-2">
+                <div className="h-2 w-2 rounded-full bg-emerald-500" />
+                Stato Lavori
+              </CardTitle>
             </CardHeader>
             <CardContent>
               {isLoading ? (
@@ -477,10 +462,13 @@ export default function ResellerDashboard() {
           </Card>
         </div>
 
-        {/* Recent Repairs - 1 column */}
-        <Card>
+        {/* Recent Repairs */}
+        <Card className="border-t-4 border-t-amber-500">
           <CardHeader className="flex flex-row items-center justify-between gap-1 pb-3">
-            <CardTitle className="text-base">Ultime Riparazioni</CardTitle>
+            <CardTitle className="text-base flex items-center gap-2">
+              <div className="h-2 w-2 rounded-full bg-amber-500" />
+              Ultime Riparazioni
+            </CardTitle>
             <Link href="/reseller/repairs">
               <Button variant="ghost" size="sm" className="text-xs">
                 Vedi tutte
@@ -499,12 +487,12 @@ export default function ResellerDashboard() {
                 {recentRepairs.map((repair) => (
                   <Link key={repair.id} href={`/reseller/repairs/${repair.id}`}>
                     <div
-                      className="flex items-center justify-between p-3 rounded-lg border hover:bg-muted/50 transition-colors cursor-pointer"
+                      className="flex items-center justify-between p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors cursor-pointer"
                       data-testid={`row-repair-${repair.id}`}
                     >
                       <div className="flex items-center gap-3 min-w-0">
-                        <div className="h-8 w-8 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
-                          <Wrench className="h-4 w-4 text-muted-foreground" />
+                        <div className="h-8 w-8 rounded-lg bg-amber-500/20 flex items-center justify-center flex-shrink-0">
+                          <Wrench className="h-4 w-4 text-amber-600" />
                         </div>
                         <div className="min-w-0">
                           <p className="font-medium font-mono text-sm truncate">{repair.orderNumber}</p>
