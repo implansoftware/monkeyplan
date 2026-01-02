@@ -9,7 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
-import { Users, Plus, Search, Edit, Trash2, Shield, UserCog, Eye, FilePlus, Pencil, Key, TrendingUp, UserCheck, ChevronRight } from "lucide-react";
+import { Users, Plus, Search, Edit, Trash2, Shield, UserCog, Eye, FilePlus, Pencil, Key, TrendingUp, UserCheck, ChevronRight, Check } from "lucide-react";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
@@ -830,14 +830,17 @@ export default function ResellerTeam() {
                         localPermissions[mod.id]?.canUpdate || 
                         localPermissions[mod.id]?.canDelete;
                       return (
-                        <div
+                        <button
+                          type="button"
                           key={mod.id}
-                          className={`flex items-center gap-2 p-2 rounded-lg border cursor-pointer transition-colors ${hasAny ? 'border-primary bg-primary/5' : 'hover:bg-muted/50'}`}
+                          className={`flex items-center gap-2 p-2 rounded-lg border cursor-pointer transition-colors text-left ${hasAny ? 'border-primary bg-primary/5' : 'hover:bg-muted/50'}`}
                           onClick={() => toggleAllForModule(mod.id, !hasAny)}
                         >
-                          <Checkbox checked={hasAny} className="pointer-events-none" />
+                          <div className={`h-4 w-4 rounded border flex items-center justify-center ${hasAny ? 'bg-primary border-primary' : 'border-input'}`}>
+                            {hasAny && <Check className="h-3 w-3 text-primary-foreground" />}
+                          </div>
                           <span className="text-sm">{mod.name}</span>
-                        </div>
+                        </button>
                       );
                     })}
                   </div>
