@@ -446,42 +446,39 @@ export function AppSidebar() {
   return (
     <Sidebar>
       <SidebarHeader className="p-4 border-b border-sidebar-border">
-        <div className="flex items-center gap-3">
-          {parentReseller?.logoUrl ? (
-            <Avatar className="h-8 w-8 rounded-lg">
+        {parentReseller?.logoUrl ? (
+          <div className="flex flex-col items-center gap-2">
+            <Avatar className="h-16 w-16 rounded-lg">
               <AvatarImage src={parentReseller.logoUrl} alt={parentReseller.ragioneSociale || parentReseller.fullName} className="object-contain" />
-              <AvatarFallback className="rounded-lg bg-primary text-primary-foreground text-xs">
+              <AvatarFallback className="rounded-lg bg-primary text-primary-foreground text-sm">
                 {getInitials(parentReseller.ragioneSociale || parentReseller.fullName)}
               </AvatarFallback>
             </Avatar>
-          ) : (
+            <div className="text-center">
+              <span className="font-semibold text-sm block">
+                {parentReseller.ragioneSociale || parentReseller.fullName}
+              </span>
+              <p className="text-xs text-muted-foreground capitalize">
+                {user.role.replace("_", " ")}
+              </p>
+            </div>
+          </div>
+        ) : (
+          <div className="flex items-center gap-3">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
               <Wrench className="h-4 w-4" />
             </div>
-          )}
-          <div className="min-w-0 flex-1">
-            {parentReseller?.logoUrl ? (
-              <>
-                <span className="font-semibold text-sm truncate block">
-                  {parentReseller.ragioneSociale || parentReseller.fullName}
-                </span>
-                <p className="text-xs text-muted-foreground capitalize">
-                  {user.role.replace("_", " ")}
-                </p>
-              </>
-            ) : (
-              <>
-                <div className="flex items-center gap-2">
-                  <span className="font-semibold text-sm">MonkeyPlan</span>
-                  <span className="text-[10px] text-primary font-medium px-1.5 py-0.5 rounded bg-primary/10">Beta v.23</span>
-                </div>
-                <p className="text-xs text-muted-foreground capitalize">
-                  {user.role.replace("_", " ")}
-                </p>
-              </>
-            )}
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2">
+                <span className="font-semibold text-sm">MonkeyPlan</span>
+                <span className="text-[10px] text-primary font-medium px-1.5 py-0.5 rounded bg-primary/10">Beta v.23</span>
+              </div>
+              <p className="text-xs text-muted-foreground capitalize">
+                {user.role.replace("_", " ")}
+              </p>
+            </div>
           </div>
-        </div>
+        )}
       </SidebarHeader>
 
       {isReseller && (
