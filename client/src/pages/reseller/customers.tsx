@@ -10,7 +10,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
-import { Users, Plus, Search, Mail, Building2, Wrench, Pencil, X, Check, Trash2, Phone, MapPin, FileText, UserCheck, Eye } from "lucide-react";
+import { Users, Plus, Search, Mail, Building2, Wrench, Pencil, X, Check, Trash2, Phone, UserCheck, Eye, ChevronRight } from "lucide-react";
 import { Link } from "wouter";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -93,7 +93,6 @@ export default function ResellerCustomers() {
     },
     onError: async (error: any) => {
       const errorMsg = error.message || "";
-      // Error format is "409: {json}" - extract JSON part after status code
       const jsonMatch = errorMsg.match(/^\d+:\s*(.+)$/);
       if (jsonMatch) {
         try {
@@ -104,7 +103,6 @@ export default function ResellerCustomers() {
               description: errorData.message,
               variant: "destructive" 
             });
-            // Keep dialog open so user can see what happened
             return;
           }
         } catch {
@@ -112,7 +110,6 @@ export default function ResellerCustomers() {
         }
       }
       toast({ title: "Errore", description: errorMsg, variant: "destructive" });
-      // Keep dialog open on all errors so user can retry or dismiss
     },
   });
 
@@ -188,13 +185,17 @@ export default function ResellerCustomers() {
     }
   };
 
+  const activeCustomers = customers.filter(c => c.isActive).length;
+  const totalRepairs = allRepairs.length;
+
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between gap-4">
+    <div className="space-y-6" data-testid="page-reseller-customers">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold mb-2">Clienti</h1>
-          <p className="text-muted-foreground">
-            Gestisci la tua base clienti e visualizza le loro riparazioni
+          <h1 className="text-2xl font-semibold tracking-tight">Clienti</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">
+            Gestisci la tua base clienti
           </p>
         </div>
         <ActionGuard module="customers" action="create">
@@ -210,155 +211,188 @@ export default function ResellerCustomers() {
         </ActionGuard>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Ricerca</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="relative">
-            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Cerca per nome, email o username..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-8"
-              data-testid="input-search"
-            />
-          </div>
-        </CardContent>
-      </Card>
+      {/* Stats Row */}
+      <div className="grid grid-cols-3 gap-4">
+        <Card>
+          <CardContent className="pt-4 pb-3">
+            <div className="flex items-center gap-3">
+              <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center">
+                <Users className="h-4 w-4 text-primary" />
+              </div>
+              <div>
+                <p className="text-2xl font-semibold tabular-nums">{customers.length}</p>
+                <p className="text-xs text-muted-foreground">Totali</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-4 pb-3">
+            <div className="flex items-center gap-3">
+              <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center">
+                <UserCheck className="h-4 w-4 text-primary" />
+              </div>
+              <div>
+                <p className="text-2xl font-semibold tabular-nums">{activeCustomers}</p>
+                <p className="text-xs text-muted-foreground">Attivi</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-4 pb-3">
+            <div className="flex items-center gap-3">
+              <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center">
+                <Wrench className="h-4 w-4 text-primary" />
+              </div>
+              <div>
+                <p className="text-2xl font-semibold tabular-nums">{totalRepairs}</p>
+                <p className="text-xs text-muted-foreground">Riparazioni</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
 
+      {/* Main Table Card */}
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Users className="h-5 w-5" />
-            Elenco Clienti ({filteredCustomers.length})
-          </CardTitle>
+        <CardHeader className="pb-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <CardTitle className="text-sm font-medium">Elenco Clienti</CardTitle>
+            <div className="relative w-full sm:w-72">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Cerca cliente..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9 h-9"
+                data-testid="input-search"
+              />
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
           {isLoading ? (
             <div className="space-y-2">
               {[1, 2, 3].map((i) => (
-                <Skeleton key={i} className="h-16 w-full" />
+                <Skeleton key={i} className="h-14 w-full" />
               ))}
             </div>
           ) : filteredCustomers.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              Nessun cliente trovato
+            <div className="text-center py-12 text-muted-foreground">
+              <Users className="h-10 w-10 mx-auto mb-3 opacity-20" />
+              <p className="text-sm">Nessun cliente trovato</p>
             </div>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Nome Completo</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Username</TableHead>
-                  {hasSubResellers && <TableHead>Sub-Reseller</TableHead>}
-                  <TableHead>Stato</TableHead>
-                  <TableHead>Centri Riparazione</TableHead>
-                  <TableHead>Riparazioni</TableHead>
-                  <TableHead>Azioni</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredCustomers.map((customer) => {
-                  const customerRepairs = getCustomerRepairs(customer.id);
-                  const subResellerName = getSubResellerName(customer.subResellerId);
-                  return (
-                    <TableRow key={customer.id} data-testid={`row-customer-${customer.id}`}>
-                      <TableCell className="font-medium" data-testid={`text-name-${customer.id}`}>
-                        {customer.fullName}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <Mail className="h-4 w-4 text-muted-foreground" />
-                          {customer.email}
-                        </div>
-                      </TableCell>
-                      <TableCell className="font-mono text-sm">{customer.username}</TableCell>
-                      {hasSubResellers && (
-                        <TableCell>
-                          {subResellerName ? (
-                            <Badge variant="secondary" className="text-xs" data-testid={`badge-sub-reseller-${customer.id}`}>
-                              <UserCheck className="h-3 w-3 mr-1" />
-                              {subResellerName}
-                            </Badge>
-                          ) : (
-                            <span className="text-muted-foreground text-sm">-</span>
-                          )}
+            <div className="overflow-x-auto -mx-6">
+              <Table>
+                <TableHeader>
+                  <TableRow className="hover:bg-transparent">
+                    <TableHead className="pl-6">Cliente</TableHead>
+                    <TableHead>Contatti</TableHead>
+                    {hasSubResellers && <TableHead>Sub-Reseller</TableHead>}
+                    <TableHead>Stato</TableHead>
+                    <TableHead>Riparazioni</TableHead>
+                    <TableHead className="pr-6 text-right">Azioni</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredCustomers.map((customer) => {
+                    const customerRepairs = getCustomerRepairs(customer.id);
+                    const subResellerName = getSubResellerName(customer.subResellerId);
+                    return (
+                      <TableRow key={customer.id} data-testid={`row-customer-${customer.id}`}>
+                        <TableCell className="pl-6">
+                          <div>
+                            <p className="font-medium" data-testid={`text-name-${customer.id}`}>
+                              {customer.fullName}
+                            </p>
+                            <p className="text-xs text-muted-foreground font-mono">
+                              @{customer.username}
+                            </p>
+                          </div>
                         </TableCell>
-                      )}
-                      <TableCell>
-                        {customer.isActive ? (
-                          <Badge variant="outline">Attivo</Badge>
-                        ) : (
-                          <Badge variant="destructive">Disattivato</Badge>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        {customer.assignedRepairCenters && customer.assignedRepairCenters.length > 0 ? (
-                          <div className="flex flex-wrap gap-1">
-                            {customer.assignedRepairCenters.slice(0, 2).map((rc) => (
-                              <Badge key={rc.id} variant="secondary" className="text-xs" data-testid={`badge-repair-center-${rc.id}`}>
-                                <Wrench className="h-3 w-3 mr-1" />
-                                {rc.name}
-                              </Badge>
-                            ))}
-                            {customer.assignedRepairCenters.length > 2 && (
-                              <Badge variant="outline" className="text-xs">
-                                +{customer.assignedRepairCenters.length - 2}
-                              </Badge>
+                        <TableCell>
+                          <div className="space-y-0.5">
+                            <div className="flex items-center gap-1.5 text-sm">
+                              <Mail className="h-3 w-3 text-muted-foreground" />
+                              <span className="truncate max-w-[180px]">{customer.email}</span>
+                            </div>
+                            {customer.phone && (
+                              <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                                <Phone className="h-3 w-3" />
+                                <span>{customer.phone}</span>
+                              </div>
                             )}
                           </div>
-                        ) : (
-                          <span className="text-muted-foreground text-sm">Nessuno</span>
+                        </TableCell>
+                        {hasSubResellers && (
+                          <TableCell>
+                            {subResellerName ? (
+                              <span className="text-sm" data-testid={`badge-sub-reseller-${customer.id}`}>
+                                {subResellerName}
+                              </span>
+                            ) : (
+                              <span className="text-muted-foreground text-sm">-</span>
+                            )}
+                          </TableCell>
                         )}
-                      </TableCell>
-                      <TableCell>
-                        <Badge data-testid={`badge-repairs-${customer.id}`}>
-                          {customerRepairs.length} riparazioni
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <Link href={`/reseller/customers/${customer.id}`}>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              data-testid={`button-view-${customer.id}`}
-                            >
-                              <Eye className="h-4 w-4 mr-1" />
-                              Dettagli
-                            </Button>
-                          </Link>
-                          <ActionGuard module="customers" action="delete">
-                            <Button
-                              variant="destructive"
-                              size="icon"
-                              onClick={() => handleDeleteClick(customer)}
-                              title="Elimina cliente"
-                              data-testid={`button-delete-${customer.id}`}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </ActionGuard>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
+                        <TableCell>
+                          {customer.isActive ? (
+                            <Badge variant="outline" className="font-normal">Attivo</Badge>
+                          ) : (
+                            <Badge variant="secondary" className="font-normal">Inattivo</Badge>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <span className="text-sm tabular-nums" data-testid={`badge-repairs-${customer.id}`}>
+                            {customerRepairs.length}
+                          </span>
+                        </TableCell>
+                        <TableCell className="pr-6 text-right">
+                          <div className="flex items-center justify-end gap-1">
+                            <Link href={`/reseller/customers/${customer.id}`}>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-8"
+                                data-testid={`button-view-${customer.id}`}
+                              >
+                                Dettagli
+                                <ChevronRight className="h-4 w-4 ml-1" />
+                              </Button>
+                            </Link>
+                            <ActionGuard module="customers" action="delete">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                                onClick={() => handleDeleteClick(customer)}
+                                title="Elimina cliente"
+                                data-testid={`button-delete-${customer.id}`}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </ActionGuard>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </div>
           )}
         </CardContent>
       </Card>
 
+      {/* Customer Detail Dialog */}
       {selectedCustomer && (
         <Dialog open={!!selectedCustomer} onOpenChange={() => { setSelectedCustomer(null); setIsEditing(false); }}>
           <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <div className="flex items-center justify-between gap-4">
-                <DialogTitle>Dettagli Cliente: {selectedCustomer.fullName}</DialogTitle>
+                <DialogTitle>{selectedCustomer.fullName}</DialogTitle>
                 {!isEditing && (
                   <ActionGuard module="customers" action="update">
                     <Button variant="outline" size="sm" onClick={() => startEditing(selectedCustomer)} data-testid="button-edit-customer">
@@ -409,7 +443,7 @@ export default function ResellerCustomers() {
                         onCheckedChange={(checked) => setEditForm(prev => ({ ...prev, isActive: checked }))}
                         data-testid="switch-edit-isActive"
                       />
-                      <span className="text-sm">{editForm.isActive ? "Attivo" : "Disattivato"}</span>
+                      <span className="text-sm">{editForm.isActive ? "Attivo" : "Inattivo"}</span>
                     </div>
                   </div>
                 </div>
@@ -443,155 +477,133 @@ export default function ResellerCustomers() {
                 
                 <DialogFooter className="gap-2">
                   <Button variant="outline" onClick={cancelEditing} data-testid="button-cancel-edit">
-                    <X className="h-4 w-4 mr-1" />
                     Annulla
                   </Button>
                   <Button onClick={saveEditing} disabled={updateCustomerMutation.isPending} data-testid="button-save-edit">
-                    <Check className="h-4 w-4 mr-1" />
-                    {updateCustomerMutation.isPending ? "Salvataggio..." : "Salva"}
+                    {updateCustomerMutation.isPending ? "Salvataggio..." : "Salva Modifiche"}
                   </Button>
                 </DialogFooter>
               </div>
             ) : (
               <Tabs defaultValue="info" className="w-full">
                 <TabsList className="grid w-full grid-cols-3">
-                  <TabsTrigger value="info" data-testid="tab-customer-info">
-                    <Users className="h-4 w-4 mr-1" />
-                    Informazioni
-                  </TabsTrigger>
-                  <TabsTrigger value="branches" data-testid="tab-customer-branches">
-                    <Building2 className="h-4 w-4 mr-1" />
-                    Filiali
-                  </TabsTrigger>
-                  <TabsTrigger value="repairs" data-testid="tab-customer-repairs">
-                    Riparazioni
-                  </TabsTrigger>
+                  <TabsTrigger value="info" data-testid="tab-customer-info">Informazioni</TabsTrigger>
+                  <TabsTrigger value="branches" data-testid="tab-customer-branches">Filiali</TabsTrigger>
+                  <TabsTrigger value="repairs" data-testid="tab-customer-repairs">Riparazioni</TabsTrigger>
                 </TabsList>
                 
                 <TabsContent value="info" className="space-y-4 mt-4">
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <Label>Email</Label>
-                      <p className="text-sm text-muted-foreground">{selectedCustomer.email}</p>
+                      <Label className="text-xs text-muted-foreground">Email</Label>
+                      <p className="text-sm">{selectedCustomer.email}</p>
                     </div>
                     <div>
-                      <Label>Username</Label>
-                      <p className="text-sm text-muted-foreground">{selectedCustomer.username}</p>
+                      <Label className="text-xs text-muted-foreground">Username</Label>
+                      <p className="text-sm font-mono">@{selectedCustomer.username}</p>
                     </div>
                     <div>
-                      <Label className="flex items-center gap-1">
-                        <Phone className="h-3 w-3" />
-                        Telefono
-                      </Label>
-                      <p className="text-sm text-muted-foreground">
-                        {selectedCustomer.phone || <span className="italic">Non specificato</span>}
+                      <Label className="text-xs text-muted-foreground">Telefono</Label>
+                      <p className="text-sm">
+                        {selectedCustomer.phone || <span className="text-muted-foreground">-</span>}
                       </p>
                     </div>
                     <div>
-                      <Label>Stato</Label>
-                      <p className="text-sm text-muted-foreground">
-                        {selectedCustomer.isActive ? "Attivo" : "Disattivato"}
+                      <Label className="text-xs text-muted-foreground">Stato</Label>
+                      <p className="text-sm">
+                        {selectedCustomer.isActive ? "Attivo" : "Inattivo"}
                       </p>
                     </div>
                     <div>
-                      <Label>Data Registrazione</Label>
-                      <p className="text-sm text-muted-foreground">
-                        {format(new Date(selectedCustomer.createdAt), "dd/MM/yyyy HH:mm")}
+                      <Label className="text-xs text-muted-foreground">Data Registrazione</Label>
+                      <p className="text-sm">
+                        {format(new Date(selectedCustomer.createdAt), "dd/MM/yyyy")}
                       </p>
                     </div>
                     {hasSubResellers && (
                       <div>
-                        <Label className="flex items-center gap-1">
-                          <UserCheck className="h-3 w-3" />
-                          Sub-Reseller
-                        </Label>
-                        <p className="text-sm text-muted-foreground">
-                          {getSubResellerName(selectedCustomer.subResellerId) || <span className="italic">Nessuno</span>}
+                        <Label className="text-xs text-muted-foreground">Sub-Reseller</Label>
+                        <p className="text-sm">
+                          {getSubResellerName(selectedCustomer.subResellerId) || <span className="text-muted-foreground">-</span>}
                         </p>
                       </div>
                     )}
                   </div>
 
-                  <div className="pt-4 border-t">
-                    <Label className="flex items-center gap-2 mb-2">
-                      <Wrench className="h-4 w-4" />
-                      Centri Riparazione Assegnati
-                    </Label>
-                    {selectedCustomer.assignedRepairCenters && selectedCustomer.assignedRepairCenters.length > 0 ? (
+                  {selectedCustomer.assignedRepairCenters && selectedCustomer.assignedRepairCenters.length > 0 && (
+                    <div className="pt-4 border-t">
+                      <Label className="text-xs text-muted-foreground mb-2 block">Centri Riparazione</Label>
                       <div className="flex flex-wrap gap-2">
                         {selectedCustomer.assignedRepairCenters.map((rc) => (
                           <Badge key={rc.id} variant="secondary" data-testid={`badge-detail-repair-center-${rc.id}`}>
-                            <Wrench className="h-3 w-3 mr-1" />
                             {rc.name}
                           </Badge>
                         ))}
                       </div>
-                    ) : (
-                      <p className="text-sm text-muted-foreground">Nessun centro di riparazione assegnato</p>
-                    )}
-                  </div>
+                    </div>
+                  )}
                 </TabsContent>
 
-              <TabsContent value="branches" className="mt-4">
-                <CustomerBranchManager 
-                  customerId={selectedCustomer.id} 
-                  customerName={selectedCustomer.fullName}
-                />
-              </TabsContent>
+                <TabsContent value="branches" className="mt-4">
+                  <CustomerBranchManager 
+                    customerId={selectedCustomer.id} 
+                    customerName={selectedCustomer.fullName}
+                  />
+                </TabsContent>
 
-              <TabsContent value="repairs" className="mt-4">
-                {getCustomerRepairs(selectedCustomer.id).length === 0 ? (
-                  <p className="text-sm text-muted-foreground py-8 text-center">Nessuna riparazione registrata</p>
-                ) : (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Numero Ordine</TableHead>
-                        <TableHead>Dispositivo</TableHead>
-                        <TableHead>Stato</TableHead>
-                        <TableHead>Data</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {getCustomerRepairs(selectedCustomer.id).map((repair) => (
-                        <TableRow key={repair.id}>
-                          <TableCell className="font-medium">{repair.orderNumber}</TableCell>
-                          <TableCell>
-                            {repair.deviceType} - {repair.deviceModel}
-                          </TableCell>
-                          <TableCell>{getStatusBadge(repair.status)}</TableCell>
-                          <TableCell>{format(new Date(repair.createdAt), "dd/MM/yyyy")}</TableCell>
+                <TabsContent value="repairs" className="mt-4">
+                  {getCustomerRepairs(selectedCustomer.id).length === 0 ? (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <Wrench className="h-8 w-8 mx-auto mb-2 opacity-20" />
+                      <p className="text-sm">Nessuna riparazione</p>
+                    </div>
+                  ) : (
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Ordine</TableHead>
+                          <TableHead>Dispositivo</TableHead>
+                          <TableHead>Stato</TableHead>
+                          <TableHead>Data</TableHead>
                         </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                )}
-              </TabsContent>
+                      </TableHeader>
+                      <TableBody>
+                        {getCustomerRepairs(selectedCustomer.id).map((repair) => (
+                          <TableRow key={repair.id}>
+                            <TableCell className="font-mono text-sm">{repair.orderNumber}</TableCell>
+                            <TableCell>{repair.deviceType}</TableCell>
+                            <TableCell>{getStatusBadge(repair.status)}</TableCell>
+                            <TableCell className="text-sm text-muted-foreground">
+                              {format(new Date(repair.createdAt), "dd/MM/yy")}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  )}
+                </TabsContent>
               </Tabs>
             )}
           </DialogContent>
         </Dialog>
       )}
 
+      {/* Delete Confirmation Dialog */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Conferma Eliminazione</AlertDialogTitle>
+            <AlertDialogTitle>Eliminare questo cliente?</AlertDialogTitle>
             <AlertDialogDescription>
-              Sei sicuro di voler eliminare il cliente <strong>{customerToDelete?.fullName}</strong>?
-              <br /><br />
-              Questa azione non può essere annullata. Tutti i dati del cliente verranno eliminati permanentemente.
+              Stai per eliminare <strong>{customerToDelete?.fullName}</strong>. 
+              Questa azione non può essere annullata.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setCustomerToDelete(null)}>
-              Annulla
-            </AlertDialogCancel>
+            <AlertDialogCancel>Annulla</AlertDialogCancel>
             <AlertDialogAction
               onClick={confirmDelete}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               disabled={deleteCustomerMutation.isPending}
-              data-testid="button-confirm-delete"
             >
               {deleteCustomerMutation.isPending ? "Eliminazione..." : "Elimina"}
             </AlertDialogAction>
