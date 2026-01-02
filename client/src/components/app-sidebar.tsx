@@ -311,6 +311,21 @@ export function AppSidebar() {
   });
   const pendingTransferRequestsCount = transferRequestsSummary?.pendingCount || 0;
 
+  // Query active integrations to filter sidebar suppliers
+  const { data: activeIntegrations = [] } = useQuery<{ code: string; isActive: boolean }[]>({
+    queryKey: ["/api/external-integrations"],
+    enabled: isReseller || isResellerStaff,
+  });
+  
+  // Filter integrated suppliers based on active integrations
+  const activeSupplierCodes = activeIntegrations
+    .filter(integration => integration.isActive)
+    .map(integration => integration.code);
+  
+  const filteredIntegratedSuppliers = integratedSuppliers.filter(
+    supplier => activeSupplierCodes.includes(supplier.key)
+  );
+
   // Build menu items dynamically based on sub-resellers and permissions
   const items = useMemo(() => {
     // For reseller_staff, use reseller menu items
@@ -382,7 +397,7 @@ export function AppSidebar() {
       }
     }
     if (isReseller || isResellerStaff) {
-      for (const supplier of integratedSuppliers) {
+      for (const supplier of filteredIntegratedSuppliers) {
         if (location.startsWith(supplier.basePath)) {
           return "Fornitori";
         }
@@ -531,14 +546,14 @@ export function AppSidebar() {
                         );
                       })}
                       
-                      {group === "Fornitori" && (isReseller || isResellerStaff) && canAccessModule("suppliers") && (
+                      {group === "Fornitori" && (isReseller || isResellerStaff) && canAccessModule("suppliers") && filteredIntegratedSuppliers.length > 0 && (
                         <>
                           <div className="my-2 mx-2 border-t border-sidebar-border" />
                           <div className="px-4 py-1 text-xs font-medium text-muted-foreground flex items-center gap-1">
                             <ExternalLink className="h-3 w-3" />
                             Fornitori Integrati
                           </div>
-                          {integratedSuppliers.map((supplier) => {
+                          {filteredIntegratedSuppliers.map((supplier) => {
                             const isSupplierActive = location.startsWith(supplier.basePath);
                             const isSupplierOpen = openSuppliers[supplier.key] ?? isSupplierActive;
                             
