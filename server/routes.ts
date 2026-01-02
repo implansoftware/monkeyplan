@@ -12922,9 +12922,14 @@ export function registerRoutes(app: Express): Server {
         return res.status(404).send("User not found");
       }
       
+      // Resellers can update their own fiscal data
+      const resellerFiscalFields = ['phone', 'ragioneSociale', 'partitaIva', 'codiceFiscale', 'indirizzo', 'citta', 'cap', 'provincia', 'iban', 'codiceUnivoco', 'pec'] as const;
+      
       const allowedUpdates = req.user.role === 'admin' 
-        ? ['username', 'email', 'fullName', 'role', 'isActive', 'repairCenterId', 'resellerCategory', 'resellerId', 'parentResellerId'] as const
-        : ['email', 'fullName'] as const; // Non-admin can only update own profile fields
+        ? ['username', 'email', 'fullName', 'role', 'isActive', 'repairCenterId', 'resellerCategory', 'resellerId', 'parentResellerId', ...resellerFiscalFields] as const
+        : req.user.role === 'reseller' 
+          ? ['email', 'fullName', ...resellerFiscalFields] as const
+          : ['email', 'fullName'] as const; // Non-admin/non-reseller can only update basic profile fields
       
       const updates: any = {};
       

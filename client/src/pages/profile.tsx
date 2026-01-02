@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
-import { User, Mail, Shield, Upload, Trash2, Building2 } from "lucide-react";
+import { User, Mail, Shield, Upload, Trash2, Building2, FileText, Phone, MapPin, CreditCard } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { User as UserType } from "@shared/schema";
 
@@ -16,15 +16,29 @@ export default function ProfilePage() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [isEditing, setIsEditing] = useState(false);
+  const [isEditingFiscal, setIsEditingFiscal] = useState(false);
   const [formData, setFormData] = useState({
     fullName: user?.fullName || "",
     email: user?.email || "",
+    phone: user?.phone || "",
+  });
+  const [fiscalData, setFiscalData] = useState({
+    ragioneSociale: user?.ragioneSociale || "",
+    partitaIva: user?.partitaIva || "",
+    codiceFiscale: user?.codiceFiscale || "",
+    indirizzo: user?.indirizzo || "",
+    citta: user?.citta || "",
+    cap: user?.cap || "",
+    provincia: user?.provincia || "",
+    iban: user?.iban || "",
+    codiceUnivoco: user?.codiceUnivoco || "",
+    pec: user?.pec || "",
   });
   const [isUploadingLogo, setIsUploadingLogo] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const updateMutation = useMutation({
-    mutationFn: async (data: { fullName: string; email: string }) => {
+    mutationFn: async (data: Partial<UserType>) => {
       if (!user) throw new Error("User not authenticated");
       const res = await apiRequest("PATCH", `/api/users/${user.id}`, data);
       return await res.json();
@@ -32,6 +46,7 @@ export default function ProfilePage() {
     onSuccess: (updatedUser: UserType) => {
       queryClient.setQueryData(["/api/user"], updatedUser);
       setIsEditing(false);
+      setIsEditingFiscal(false);
       toast({
         title: "Profilo aggiornato",
         description: "Le modifiche sono state salvate con successo",
@@ -140,8 +155,30 @@ export default function ProfilePage() {
     setFormData({
       fullName: user?.fullName || "",
       email: user?.email || "",
+      phone: user?.phone || "",
     });
     setIsEditing(false);
+  };
+
+  const handleFiscalSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    updateMutation.mutate(fiscalData);
+  };
+
+  const handleFiscalCancel = () => {
+    setFiscalData({
+      ragioneSociale: user?.ragioneSociale || "",
+      partitaIva: user?.partitaIva || "",
+      codiceFiscale: user?.codiceFiscale || "",
+      indirizzo: user?.indirizzo || "",
+      citta: user?.citta || "",
+      cap: user?.cap || "",
+      provincia: user?.provincia || "",
+      iban: user?.iban || "",
+      codiceUnivoco: user?.codiceUnivoco || "",
+      pec: user?.pec || "",
+    });
+    setIsEditingFiscal(false);
   };
 
   const getRoleBadgeVariant = (role: string) => {
@@ -248,6 +285,22 @@ export default function ProfilePage() {
               </div>
 
               <div className="grid gap-2">
+                <Label htmlFor="phone" className="flex items-center gap-2">
+                  <Phone className="h-4 w-4" />
+                  Telefono
+                </Label>
+                <Input
+                  id="phone"
+                  type="tel"
+                  value={formData.phone}
+                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                  disabled={!isEditing}
+                  className={!isEditing ? "bg-muted" : ""}
+                  data-testid="input-phone"
+                />
+              </div>
+
+              <div className="grid gap-2">
                 <Label className="flex items-center gap-2">
                   <Shield className="h-4 w-4" />
                   Ruolo
@@ -348,6 +401,187 @@ export default function ProfilePage() {
                 data-testid="input-logo-file"
               />
             </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {user.role === "reseller" && (
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  <FileText className="h-5 w-5" />
+                  Dati Fiscali e Fatturazione
+                </CardTitle>
+                <CardDescription>Gestisci i dati fiscali della tua azienda</CardDescription>
+              </div>
+              {!isEditingFiscal && (
+                <Button onClick={() => setIsEditingFiscal(true)} data-testid="button-edit-fiscal">
+                  Modifica
+                </Button>
+              )}
+            </div>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleFiscalSubmit} className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid gap-2 md:col-span-2">
+                  <Label htmlFor="ragioneSociale">Ragione Sociale</Label>
+                  <Input
+                    id="ragioneSociale"
+                    value={fiscalData.ragioneSociale}
+                    onChange={(e) => setFiscalData({ ...fiscalData, ragioneSociale: e.target.value })}
+                    disabled={!isEditingFiscal}
+                    className={!isEditingFiscal ? "bg-muted" : ""}
+                    data-testid="input-ragioneSociale"
+                  />
+                </div>
+                
+                <div className="grid gap-2">
+                  <Label htmlFor="partitaIva">Partita IVA</Label>
+                  <Input
+                    id="partitaIva"
+                    value={fiscalData.partitaIva}
+                    onChange={(e) => setFiscalData({ ...fiscalData, partitaIva: e.target.value })}
+                    disabled={!isEditingFiscal}
+                    className={!isEditingFiscal ? "bg-muted" : ""}
+                    data-testid="input-partitaIva"
+                  />
+                </div>
+                
+                <div className="grid gap-2">
+                  <Label htmlFor="codiceFiscale">Codice Fiscale</Label>
+                  <Input
+                    id="codiceFiscale"
+                    value={fiscalData.codiceFiscale}
+                    onChange={(e) => setFiscalData({ ...fiscalData, codiceFiscale: e.target.value })}
+                    disabled={!isEditingFiscal}
+                    className={!isEditingFiscal ? "bg-muted" : ""}
+                    data-testid="input-codiceFiscale"
+                  />
+                </div>
+
+                <div className="grid gap-2 md:col-span-2">
+                  <Label htmlFor="indirizzo" className="flex items-center gap-2">
+                    <MapPin className="h-4 w-4" />
+                    Indirizzo
+                  </Label>
+                  <Input
+                    id="indirizzo"
+                    value={fiscalData.indirizzo}
+                    onChange={(e) => setFiscalData({ ...fiscalData, indirizzo: e.target.value })}
+                    disabled={!isEditingFiscal}
+                    className={!isEditingFiscal ? "bg-muted" : ""}
+                    data-testid="input-indirizzo"
+                  />
+                </div>
+
+                <div className="grid gap-2">
+                  <Label htmlFor="citta">Città</Label>
+                  <Input
+                    id="citta"
+                    value={fiscalData.citta}
+                    onChange={(e) => setFiscalData({ ...fiscalData, citta: e.target.value })}
+                    disabled={!isEditingFiscal}
+                    className={!isEditingFiscal ? "bg-muted" : ""}
+                    data-testid="input-citta"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="grid gap-2">
+                    <Label htmlFor="cap">CAP</Label>
+                    <Input
+                      id="cap"
+                      value={fiscalData.cap}
+                      onChange={(e) => setFiscalData({ ...fiscalData, cap: e.target.value })}
+                      disabled={!isEditingFiscal}
+                      className={!isEditingFiscal ? "bg-muted" : ""}
+                      data-testid="input-cap"
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="provincia">Provincia</Label>
+                    <Input
+                      id="provincia"
+                      value={fiscalData.provincia}
+                      onChange={(e) => setFiscalData({ ...fiscalData, provincia: e.target.value })}
+                      disabled={!isEditingFiscal}
+                      className={!isEditingFiscal ? "bg-muted" : ""}
+                      maxLength={2}
+                      placeholder="ES: MI"
+                      data-testid="input-provincia"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid gap-2 md:col-span-2">
+                  <Label htmlFor="iban" className="flex items-center gap-2">
+                    <CreditCard className="h-4 w-4" />
+                    IBAN
+                  </Label>
+                  <Input
+                    id="iban"
+                    value={fiscalData.iban}
+                    onChange={(e) => setFiscalData({ ...fiscalData, iban: e.target.value.toUpperCase() })}
+                    disabled={!isEditingFiscal}
+                    className={!isEditingFiscal ? "bg-muted" : ""}
+                    placeholder="IT00X0000000000000000000000"
+                    data-testid="input-iban"
+                  />
+                </div>
+
+                <div className="grid gap-2">
+                  <Label htmlFor="codiceUnivoco">Codice SDI</Label>
+                  <Input
+                    id="codiceUnivoco"
+                    value={fiscalData.codiceUnivoco}
+                    onChange={(e) => setFiscalData({ ...fiscalData, codiceUnivoco: e.target.value.toUpperCase() })}
+                    disabled={!isEditingFiscal}
+                    className={!isEditingFiscal ? "bg-muted" : ""}
+                    maxLength={7}
+                    placeholder="0000000"
+                    data-testid="input-codiceUnivoco"
+                  />
+                </div>
+
+                <div className="grid gap-2">
+                  <Label htmlFor="pec">PEC</Label>
+                  <Input
+                    id="pec"
+                    type="email"
+                    value={fiscalData.pec}
+                    onChange={(e) => setFiscalData({ ...fiscalData, pec: e.target.value })}
+                    disabled={!isEditingFiscal}
+                    className={!isEditingFiscal ? "bg-muted" : ""}
+                    placeholder="esempio@pec.it"
+                    data-testid="input-pec"
+                  />
+                </div>
+              </div>
+
+              {isEditingFiscal && (
+                <div className="flex gap-2 pt-4">
+                  <Button
+                    type="submit"
+                    disabled={updateMutation.isPending}
+                    data-testid="button-save-fiscal"
+                  >
+                    {updateMutation.isPending ? "Salvataggio..." : "Salva Modifiche"}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleFiscalCancel}
+                    disabled={updateMutation.isPending}
+                    data-testid="button-cancel-fiscal"
+                  >
+                    Annulla
+                  </Button>
+                </div>
+              )}
+            </form>
           </CardContent>
         </Card>
       )}
