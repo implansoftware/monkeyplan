@@ -300,7 +300,7 @@ export default function ResellerSuppliers() {
             <Badge variant="secondary">{externalIntegrations.length}</Badge>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
             {externalIntegrations.map((integration) => {
               const isSifar = integration.code === 'sifar';
               const isTrovausati = integration.code === 'trovausati';
@@ -310,60 +310,55 @@ export default function ResellerSuppliers() {
               return (
                 <Card 
                   key={integration.id} 
-                  className={`border-2 ${isConfigured ? 'border-primary/20 bg-gradient-to-r from-primary/5 to-transparent' : 'border-muted'}`}
+                  className={`relative overflow-hidden transition-all duration-200 hover:shadow-md ${
+                    isConfigured 
+                      ? 'border-green-200 dark:border-green-800 bg-gradient-to-br from-green-50/50 to-transparent dark:from-green-950/20' 
+                      : 'border-border hover:border-primary/30'
+                  }`}
                   data-testid={`card-integration-${integration.code}`}
                 >
+                  {isConfigured && (
+                    <div className="absolute top-0 right-0 w-16 h-16 overflow-hidden">
+                      <div className="absolute top-2 right-[-20px] w-[80px] bg-green-500 text-white text-[10px] font-medium py-0.5 text-center rotate-45 shadow-sm">
+                        Attivo
+                      </div>
+                    </div>
+                  )}
                   <CardHeader className="pb-3">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
+                    <div className="flex items-start gap-4">
+                      <div className={`flex-shrink-0 p-3 rounded-xl ${
+                        isConfigured 
+                          ? 'bg-green-100 dark:bg-green-900/30' 
+                          : 'bg-muted'
+                      }`}>
                         {integration.logoUrl ? (
                           <img 
                             src={integration.logoUrl} 
                             alt={integration.name}
-                            className="h-10 w-10 rounded-lg object-contain bg-white p-1"
+                            className="h-8 w-8 object-contain"
                           />
                         ) : (
-                          <div className="p-2 bg-primary/10 rounded-lg">
-                            <Zap className="h-6 w-6 text-primary" />
-                          </div>
+                          <Zap className={`h-8 w-8 ${isConfigured ? 'text-green-600 dark:text-green-400' : 'text-muted-foreground'}`} />
                         )}
-                        <div>
-                          <CardTitle className="flex items-center gap-2 text-base">
-                            {integration.name}
-                            <Badge variant="secondary" className="gap-1 text-xs">
-                              <Zap className="h-3 w-3" />
-                              API
-                            </Badge>
-                          </CardTitle>
-                          {integration.description && (
-                            <CardDescription className="text-sm">
-                              {integration.description}
-                            </CardDescription>
-                          )}
-                        </div>
                       </div>
-                      {isKnownIntegration && (
-                        isConfigured ? (
-                          <Badge variant="default" className="gap-1" data-testid={`badge-${integration.code}-status`}>
-                            <CheckCircle className="h-3 w-3" />
-                            Configurato
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <CardTitle className="text-base font-semibold">
+                            {integration.name}
+                          </CardTitle>
+                          <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-5 font-medium">
+                            API
                           </Badge>
-                        ) : (
-                          <Badge variant="outline" className="gap-1 text-orange-600 border-orange-300" data-testid={`badge-${integration.code}-status`}>
-                            <AlertTriangle className="h-3 w-3" />
-                            Da configurare
-                          </Badge>
-                        )
-                      )}
-                      {!isKnownIntegration && (
-                        <Badge variant="outline" className="gap-1">
-                          <Info className="h-3 w-3" />
-                          Prossimamente
-                        </Badge>
-                      )}
+                        </div>
+                        {integration.description && (
+                          <CardDescription className="text-xs mt-1 line-clamp-2">
+                            {integration.description}
+                          </CardDescription>
+                        )}
+                      </div>
                     </div>
                   </CardHeader>
-                  <CardContent>
+                  <CardContent className="pt-0">
                     {isSifar ? (
                       isConfigured ? (
                         <div className="space-y-4">
@@ -399,15 +394,15 @@ export default function ResellerSuppliers() {
                           </div>
                         </div>
                       ) : (
-                        <div className="space-y-4">
-                          <Alert>
-                            <AlertTriangle className="h-4 w-4" />
-                            <AlertDescription>
-                              Configura le credenziali SIFAR per iniziare a ordinare ricambi direttamente dal catalogo.
-                            </AlertDescription>
-                          </Alert>
+                        <div className="space-y-3">
+                          <div className="flex items-start gap-2 p-3 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800">
+                            <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+                            <p className="text-xs text-amber-800 dark:text-amber-200">
+                              Configura le credenziali per ordinare ricambi dal catalogo SIFAR.
+                            </p>
+                          </div>
                           <Link href="/reseller/sifar/settings">
-                            <Button data-testid="button-sifar-configure">
+                            <Button size="sm" className="w-full" data-testid="button-sifar-configure">
                               <Settings className="h-4 w-4 mr-2" />
                               Configura SIFAR
                             </Button>
@@ -437,15 +432,15 @@ export default function ResellerSuppliers() {
                           </div>
                         </div>
                       ) : (
-                        <div className="space-y-4">
-                          <Alert>
-                            <AlertTriangle className="h-4 w-4" />
-                            <AlertDescription>
-                              Configura le credenziali TrovaUsati per accedere a valutazioni dispositivi e marketplace usato.
-                            </AlertDescription>
-                          </Alert>
+                        <div className="space-y-3">
+                          <div className="flex items-start gap-2 p-3 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800">
+                            <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+                            <p className="text-xs text-amber-800 dark:text-amber-200">
+                              Configura le credenziali per accedere a valutazioni e marketplace usato.
+                            </p>
+                          </div>
                           <Link href="/reseller/trovausati/settings">
-                            <Button data-testid="button-trovausati-configure">
+                            <Button size="sm" className="w-full" data-testid="button-trovausati-configure">
                               <Settings className="h-4 w-4 mr-2" />
                               Configura TrovaUsati
                             </Button>
@@ -453,20 +448,27 @@ export default function ResellerSuppliers() {
                         </div>
                       )
                     ) : (
-                      <div className="text-sm text-muted-foreground">
-                        <p>Questa integrazione sarà disponibile a breve.</p>
-                        {integration.supportsCatalog && (
-                          <div className="flex items-center gap-1 mt-2">
-                            <Package className="h-4 w-4" />
-                            <span>Supporta catalogo prodotti</span>
-                          </div>
-                        )}
-                        {integration.supportsOrdering && (
-                          <div className="flex items-center gap-1 mt-1">
-                            <ShoppingCart className="h-4 w-4" />
-                            <span>Supporta invio ordini</span>
-                          </div>
-                        )}
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-2 p-3 rounded-lg bg-muted/50 border border-dashed">
+                          <Info className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                          <p className="text-xs text-muted-foreground">
+                            Questa integrazione sarà disponibile a breve.
+                          </p>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          {integration.supportsCatalog && (
+                            <Badge variant="outline" className="text-[10px] gap-1">
+                              <Package className="h-3 w-3" />
+                              Catalogo prodotti
+                            </Badge>
+                          )}
+                          {integration.supportsOrdering && (
+                            <Badge variant="outline" className="text-[10px] gap-1">
+                              <ShoppingCart className="h-3 w-3" />
+                              Invio ordini
+                            </Badge>
+                          )}
+                        </div>
                       </div>
                     )}
                   </CardContent>
