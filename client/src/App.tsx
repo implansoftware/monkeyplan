@@ -1,4 +1,4 @@
-import { Switch, Route } from "wouter";
+import { Switch, Route, useLocation } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -378,40 +378,58 @@ function Router() {
   );
 }
 
-export default function App() {
+function AppLayout() {
   const style = {
     "--sidebar-width": "16rem",
     "--sidebar-width-icon": "3rem",
   };
 
   return (
+    <SidebarProvider style={style as React.CSSProperties}>
+      <div className="flex h-screen w-full">
+        <AppSidebar />
+        <div className="flex flex-col flex-1 overflow-hidden">
+          <header className="flex items-center justify-between p-4 border-b border-border">
+            <SidebarTrigger data-testid="button-sidebar-toggle" />
+            <div className="flex items-center gap-2">
+              <NotificationBell />
+              <ThemeToggle />
+            </div>
+          </header>
+          <main className="flex-1 overflow-y-auto p-6">
+            <div className="max-w-7xl mx-auto">
+              <Router />
+            </div>
+          </main>
+        </div>
+      </div>
+    </SidebarProvider>
+  );
+}
+
+export default function App() {
+  return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <AuthProvider>
           <TicketNotificationsProvider>
-            <SidebarProvider style={style as React.CSSProperties}>
-              <div className="flex h-screen w-full">
-                <AppSidebar />
-                <div className="flex flex-col flex-1 overflow-hidden">
-                  <header className="flex items-center justify-between p-4 border-b border-border">
-                    <SidebarTrigger data-testid="button-sidebar-toggle" />
-                    <div className="flex items-center gap-2">
-                      <NotificationBell />
-                      <ThemeToggle />
-                    </div>
-                  </header>
-                  <main className="flex-1 overflow-y-auto p-6">
-                    <div className="max-w-7xl mx-auto">
-                      <Router />
-                    </div>
-                  </main>
-                </div>
-              </div>
-            </SidebarProvider>
+            <AppContent />
             <Toaster />
           </TicketNotificationsProvider>
         </AuthProvider>
       </TooltipProvider>
     </QueryClientProvider>
   );
+}
+
+function AppContent() {
+  const [location] = useLocation();
+  
+  // Auth page renders without sidebar/header
+  if (location === "/auth") {
+    return <AuthPage />;
+  }
+  
+  // All other pages use the main layout with sidebar
+  return <AppLayout />;
 }
