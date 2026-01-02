@@ -8,19 +8,17 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   Wrench, 
-  Shield, 
-  Building, 
-  Users, 
   Store, 
   CheckCircle, 
-  Smartphone,
   Lock,
   Mail,
   User,
   Phone,
+  Building,
   FileText,
   ArrowRight,
-  Sparkles
+  Clock,
+  ShieldCheck
 } from "lucide-react";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
@@ -60,7 +58,7 @@ export default function AuthPage() {
         setResellerPending(true);
         toast({
           title: "Registrazione completata",
-          description: "Il tuo account è in attesa di approvazione da parte dell'amministratore.",
+          description: "Il tuo account è in attesa di approvazione.",
         });
       }
     },
@@ -98,153 +96,69 @@ export default function AuthPage() {
   };
 
   return (
-    <div className="min-h-screen flex">
-      {/* Left Panel - Branding & Features */}
-      <div className="hidden lg:flex lg:w-1/2 xl:w-[55%] bg-gradient-to-br from-primary via-primary/95 to-primary/80 relative overflow-hidden">
-        {/* Decorative elements */}
-        <div className="absolute inset-0 overflow-hidden">
-          <div className="absolute -top-1/4 -left-1/4 w-[600px] h-[600px] bg-white/5 rounded-full blur-3xl" />
-          <div className="absolute -bottom-1/4 -right-1/4 w-[500px] h-[500px] bg-white/5 rounded-full blur-3xl" />
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-white/3 rounded-full blur-3xl" />
-        </div>
-        
-        {/* Grid pattern overlay */}
-        <div className="absolute inset-0 opacity-[0.03]" style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
-        }} />
-        
-        <div className="relative z-10 flex flex-col justify-between p-12 xl:p-16 w-full">
-          {/* Logo & Title */}
-          <div className="flex items-center gap-4">
-            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/15 backdrop-blur-sm border border-white/20 shadow-xl">
-              <Wrench className="h-7 w-7 text-white" />
+    <div className="min-h-screen flex flex-col bg-gradient-to-b from-background to-muted/30">
+      {/* Header */}
+      <header className="w-full py-6 px-6">
+        <div className="max-w-6xl mx-auto flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary">
+              <Wrench className="h-5 w-5 text-primary-foreground" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-white tracking-tight">MonkeyPlan</h1>
-              <p className="text-white/60 text-sm font-medium">Beta v.22.5</p>
+              <span className="font-bold text-xl">MonkeyPlan</span>
+              <span className="text-xs text-muted-foreground ml-2">Beta</span>
             </div>
-          </div>
-
-          {/* Main Content */}
-          <div className="space-y-10">
-            <div className="space-y-4">
-              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 backdrop-blur-sm border border-white/20">
-                <Sparkles className="h-4 w-4 text-yellow-300" />
-                <span className="text-sm font-medium text-white">Design 2025</span>
-              </div>
-              <h2 className="text-4xl xl:text-5xl font-bold text-white leading-tight">
-                La gestione delle riparazioni,<br />
-                <span className="text-white/80">semplificata.</span>
-              </h2>
-              <p className="text-lg text-white/70 max-w-lg leading-relaxed">
-                Piattaforma completa per centri di riparazione, rivenditori e clienti. 
-                Tutto in un unico sistema, a prova di errore.
-              </p>
-            </div>
-
-            {/* Features Grid */}
-            <div className="grid grid-cols-2 gap-4">
-              <FeatureCard 
-                icon={Shield} 
-                title="Multi-Ruolo" 
-                description="Dashboard personalizzate per ogni utente"
-              />
-              <FeatureCard 
-                icon={Building} 
-                title="Gestione Completa" 
-                description="Lavorazioni, magazzino e fatturazione"
-              />
-              <FeatureCard 
-                icon={Users} 
-                title="Collaborazione" 
-                description="Chat e ticket in tempo reale"
-              />
-              <FeatureCard 
-                icon={Smartphone} 
-                title="Mobile Ready" 
-                description="Perfetto su ogni dispositivo"
-              />
-            </div>
-          </div>
-
-          {/* Footer */}
-          <div className="text-white/40 text-sm">
-            2025 MonkeyPlan. Tutti i diritti riservati.
           </div>
         </div>
-      </div>
+      </header>
 
-      {/* Right Panel - Auth Forms */}
-      <div className="flex-1 flex items-center justify-center p-6 md:p-10 bg-background">
-        <div className="w-full max-w-[440px]">
-          {/* Mobile Logo */}
-          <div className="lg:hidden mb-10 text-center">
-            <div className="inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-primary mb-4 shadow-lg">
-              <Wrench className="h-8 w-8 text-primary-foreground" />
-            </div>
-            <h1 className="text-2xl font-bold">MonkeyPlan</h1>
-            <p className="text-muted-foreground text-sm mt-1">Beta v.22.5</p>
-          </div>
-
+      {/* Main Content */}
+      <main className="flex-1 flex items-center justify-center px-6 py-8">
+        <div className="w-full max-w-md">
           <Tabs defaultValue="login" className="w-full">
-            <TabsList className="grid w-full grid-cols-3 h-12 p-1 bg-muted/50 rounded-xl mb-6">
-              <TabsTrigger 
-                value="login" 
-                data-testid="tab-login"
-                className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm text-sm font-medium"
-              >
+            <TabsList className="grid w-full grid-cols-3 h-11 mb-6">
+              <TabsTrigger value="login" data-testid="tab-login" className="text-sm">
                 Accedi
               </TabsTrigger>
-              <TabsTrigger 
-                value="customer" 
-                data-testid="tab-customer"
-                className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm text-sm font-medium"
-              >
+              <TabsTrigger value="customer" data-testid="tab-customer" className="text-sm">
                 Cliente
               </TabsTrigger>
-              <TabsTrigger 
-                value="reseller" 
-                data-testid="tab-reseller"
-                className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm text-sm font-medium"
-              >
-                Rivenditore
+              <TabsTrigger value="reseller" data-testid="tab-reseller" className="text-sm">
+                Business
               </TabsTrigger>
             </TabsList>
 
+            {/* LOGIN TAB */}
             <TabsContent value="login" className="mt-0">
-              <Card className="border-0 shadow-none bg-transparent">
-                <CardContent className="p-0 space-y-6">
-                  <div className="space-y-2">
-                    <h2 className="text-2xl font-bold tracking-tight">Bentornato</h2>
-                    <p className="text-muted-foreground">
-                      Inserisci le tue credenziali per accedere
+              <Card>
+                <CardContent className="pt-6 space-y-6">
+                  <div className="text-center space-y-2">
+                    <h1 className="text-2xl font-bold">Accedi al tuo account</h1>
+                    <p className="text-sm text-muted-foreground">
+                      Gestisci riparazioni, magazzino e clienti
                     </p>
                   </div>
 
                   <form onSubmit={handleLogin} className="space-y-4">
                     <div className="space-y-2">
-                      <Label htmlFor="login-username" className="text-sm font-medium">
-                        Username o Email
-                      </Label>
+                      <Label htmlFor="login-username">Username o Email</Label>
                       <div className="relative">
-                        <User className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                        <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                         <Input
                           id="login-username"
                           data-testid="input-login-username"
-                          placeholder="nome@esempio.it"
+                          placeholder="nome@azienda.it"
                           value={loginData.username}
                           onChange={(e) => setLoginData({ ...loginData, username: e.target.value })}
-                          className="h-12 pl-11 text-base rounded-xl border-input/50 focus:border-primary"
+                          className="pl-10"
                           required
                         />
                       </div>
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="login-password" className="text-sm font-medium">
-                        Password
-                      </Label>
+                      <Label htmlFor="login-password">Password</Label>
                       <div className="relative">
-                        <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                        <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                         <Input
                           id="login-password"
                           type="password"
@@ -252,21 +166,21 @@ export default function AuthPage() {
                           placeholder="La tua password"
                           value={loginData.password}
                           onChange={(e) => setLoginData({ ...loginData, password: e.target.value })}
-                          className="h-12 pl-11 text-base rounded-xl border-input/50 focus:border-primary"
+                          className="pl-10"
                           required
                         />
                       </div>
                     </div>
                     <Button
                       type="submit"
-                      className="w-full h-12 text-base font-semibold rounded-xl shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 transition-all"
+                      className="w-full"
                       disabled={loginMutation.isPending}
                       data-testid="button-login"
                     >
                       {loginMutation.isPending ? (
                         <span className="flex items-center gap-2">
                           <span className="h-4 w-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                          Accesso in corso...
+                          Accesso...
                         </span>
                       ) : (
                         <span className="flex items-center gap-2">
@@ -276,40 +190,52 @@ export default function AuthPage() {
                       )}
                     </Button>
                   </form>
+
+                  <div className="flex items-center justify-center gap-6 pt-2 text-xs text-muted-foreground">
+                    <span className="flex items-center gap-1">
+                      <ShieldCheck className="h-3.5 w-3.5" />
+                      Connessione sicura
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <Clock className="h-3.5 w-3.5" />
+                      Supporto 24/7
+                    </span>
+                  </div>
                 </CardContent>
               </Card>
             </TabsContent>
 
+            {/* CUSTOMER TAB */}
             <TabsContent value="customer" className="mt-0">
-              <Card className="border-0 shadow-none bg-transparent">
-                <CardContent className="p-0 space-y-6">
-                  <div className="space-y-2">
-                    <h2 className="text-2xl font-bold tracking-tight">Crea Account Cliente</h2>
-                    <p className="text-muted-foreground">
-                      Registrati per gestire le tue riparazioni
+              <Card>
+                <CardContent className="pt-6 space-y-6">
+                  <div className="text-center space-y-2">
+                    <h1 className="text-2xl font-bold">Registrati come Cliente</h1>
+                    <p className="text-sm text-muted-foreground">
+                      Traccia lo stato delle tue riparazioni in tempo reale
                     </p>
                   </div>
 
                   <form onSubmit={handleCustomerRegister} className="space-y-4">
                     <div className="space-y-2">
-                      <Label htmlFor="customer-fullname" className="text-sm font-medium">Nome Completo</Label>
+                      <Label htmlFor="customer-fullname">Nome e Cognome</Label>
                       <div className="relative">
-                        <User className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                        <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                         <Input
                           id="customer-fullname"
                           data-testid="input-customer-fullname"
                           placeholder="Mario Rossi"
                           value={customerData.fullName}
                           onChange={(e) => setCustomerData({ ...customerData, fullName: e.target.value })}
-                          className="h-12 pl-11 text-base rounded-xl border-input/50"
+                          className="pl-10"
                           required
                         />
                       </div>
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="customer-email" className="text-sm font-medium">Email</Label>
+                      <Label htmlFor="customer-email">Email</Label>
                       <div className="relative">
-                        <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                        <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                         <Input
                           id="customer-email"
                           type="email"
@@ -317,45 +243,39 @@ export default function AuthPage() {
                           placeholder="mario@esempio.it"
                           value={customerData.email}
                           onChange={(e) => setCustomerData({ ...customerData, email: e.target.value })}
-                          className="h-12 pl-11 text-base rounded-xl border-input/50"
+                          className="pl-10"
                           required
                         />
                       </div>
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="customer-username" className="text-sm font-medium">Username</Label>
-                      <div className="relative">
-                        <User className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-2">
+                        <Label htmlFor="customer-username">Username</Label>
                         <Input
                           id="customer-username"
                           data-testid="input-customer-username"
                           placeholder="mariorossi"
                           value={customerData.username}
                           onChange={(e) => setCustomerData({ ...customerData, username: e.target.value })}
-                          className="h-12 pl-11 text-base rounded-xl border-input/50"
                           required
                         />
                       </div>
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="customer-password" className="text-sm font-medium">Password</Label>
-                      <div className="relative">
-                        <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                      <div className="space-y-2">
+                        <Label htmlFor="customer-password">Password</Label>
                         <Input
                           id="customer-password"
                           type="password"
                           data-testid="input-customer-password"
-                          placeholder="Minimo 6 caratteri"
+                          placeholder="Min. 6 caratteri"
                           value={customerData.password}
                           onChange={(e) => setCustomerData({ ...customerData, password: e.target.value })}
-                          className="h-12 pl-11 text-base rounded-xl border-input/50"
                           required
                         />
                       </div>
                     </div>
                     <Button
                       type="submit"
-                      className="w-full h-12 text-base font-semibold rounded-xl shadow-lg shadow-primary/25"
+                      className="w-full"
                       disabled={registerMutation.isPending}
                       data-testid="button-customer-register"
                     >
@@ -366,7 +286,7 @@ export default function AuthPage() {
                         </span>
                       ) : (
                         <span className="flex items-center gap-2">
-                          Registrati
+                          Crea Account
                           <ArrowRight className="h-4 w-4" />
                         </span>
                       )}
@@ -376,24 +296,24 @@ export default function AuthPage() {
               </Card>
             </TabsContent>
 
+            {/* BUSINESS/RESELLER TAB */}
             <TabsContent value="reseller" className="mt-0">
-              <Card className="border-0 shadow-none bg-transparent">
-                <CardContent className="p-0 space-y-6">
+              <Card>
+                <CardContent className="pt-6 space-y-5">
                   {resellerPending ? (
-                    <div className="text-center py-10 space-y-6">
-                      <div className="inline-flex h-20 w-20 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/30">
-                        <CheckCircle className="h-10 w-10 text-green-600 dark:text-green-400" />
+                    <div className="text-center py-8 space-y-4">
+                      <div className="inline-flex h-16 w-16 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/30">
+                        <CheckCircle className="h-8 w-8 text-green-600 dark:text-green-400" />
                       </div>
                       <div className="space-y-2">
                         <h3 className="text-xl font-bold">Richiesta Inviata</h3>
-                        <p className="text-muted-foreground max-w-sm mx-auto">
-                          La tua richiesta è in attesa di approvazione. Riceverai una notifica quando sarà elaborata.
+                        <p className="text-sm text-muted-foreground max-w-xs mx-auto">
+                          Ti contatteremo entro 24 ore per attivare il tuo account business.
                         </p>
                       </div>
                       <Button 
                         variant="outline" 
                         onClick={() => setResellerPending(false)}
-                        className="h-11 rounded-xl"
                         data-testid="button-reseller-new-request"
                       >
                         Nuova Richiesta
@@ -401,144 +321,145 @@ export default function AuthPage() {
                     </div>
                   ) : (
                     <>
-                      <div className="space-y-2">
-                        <div className="flex items-center gap-2">
-                          <Store className="h-5 w-5 text-primary" />
-                          <h2 className="text-2xl font-bold tracking-tight">Diventa Rivenditore</h2>
+                      <div className="text-center space-y-2">
+                        <div className="inline-flex items-center gap-2 text-primary">
+                          <Store className="h-5 w-5" />
+                          <h1 className="text-2xl font-bold">Account Business</h1>
                         </div>
-                        <p className="text-muted-foreground">
-                          La registrazione richiede approvazione
+                        <p className="text-sm text-muted-foreground">
+                          Per rivenditori e centri di riparazione
                         </p>
                       </div>
 
-                      <form onSubmit={handleResellerRegister} className="space-y-4">
+                      <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg p-3">
+                        <p className="text-xs text-amber-800 dark:text-amber-200 text-center">
+                          La registrazione business richiede verifica. Sarai contattato entro 24h.
+                        </p>
+                      </div>
+
+                      <form onSubmit={handleResellerRegister} className="space-y-3">
                         <div className="grid grid-cols-2 gap-3">
-                          <div className="space-y-2">
-                            <Label htmlFor="reseller-fullname" className="text-sm font-medium">Nome Referente</Label>
+                          <div className="space-y-1.5">
+                            <Label htmlFor="reseller-fullname" className="text-xs">Referente</Label>
                             <div className="relative">
-                              <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                              <User className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
                               <Input
                                 id="reseller-fullname"
                                 data-testid="input-reseller-fullname"
-                                placeholder="Mario Rossi"
+                                placeholder="Nome Cognome"
                                 value={resellerData.fullName}
                                 onChange={(e) => setResellerData({ ...resellerData, fullName: e.target.value })}
-                                className="h-11 pl-10 text-sm rounded-xl border-input/50"
+                                className="pl-8 h-9 text-sm"
                                 required
                               />
                             </div>
                           </div>
-                          <div className="space-y-2">
-                            <Label htmlFor="reseller-phone" className="text-sm font-medium">Telefono</Label>
+                          <div className="space-y-1.5">
+                            <Label htmlFor="reseller-phone" className="text-xs">Telefono</Label>
                             <div className="relative">
-                              <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                              <Phone className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
                               <Input
                                 id="reseller-phone"
                                 data-testid="input-reseller-phone"
                                 placeholder="+39 333..."
                                 value={resellerData.phone}
                                 onChange={(e) => setResellerData({ ...resellerData, phone: e.target.value })}
-                                className="h-11 pl-10 text-sm rounded-xl border-input/50"
+                                className="pl-8 h-9 text-sm"
                               />
                             </div>
                           </div>
                         </div>
                         
-                        <div className="space-y-2">
-                          <Label htmlFor="reseller-ragione-sociale" className="text-sm font-medium">Ragione Sociale</Label>
+                        <div className="space-y-1.5">
+                          <Label htmlFor="reseller-ragione-sociale" className="text-xs">Ragione Sociale</Label>
                           <div className="relative">
-                            <Building className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                            <Building className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
                             <Input
                               id="reseller-ragione-sociale"
                               data-testid="input-reseller-ragione-sociale"
                               placeholder="Nome Azienda S.r.l."
                               value={resellerData.ragioneSociale}
                               onChange={(e) => setResellerData({ ...resellerData, ragioneSociale: e.target.value })}
-                              className="h-11 pl-10 text-sm rounded-xl border-input/50"
-                            />
-                          </div>
-                        </div>
-                        
-                        <div className="space-y-2">
-                          <Label htmlFor="reseller-partita-iva" className="text-sm font-medium">Partita IVA</Label>
-                          <div className="relative">
-                            <FileText className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                            <Input
-                              id="reseller-partita-iva"
-                              data-testid="input-reseller-partita-iva"
-                              placeholder="IT12345678901"
-                              value={resellerData.partitaIva}
-                              onChange={(e) => setResellerData({ ...resellerData, partitaIva: e.target.value })}
-                              className="h-11 pl-10 text-sm rounded-xl border-input/50"
-                            />
-                          </div>
-                        </div>
-                        
-                        <div className="space-y-2">
-                          <Label htmlFor="reseller-email" className="text-sm font-medium">Email</Label>
-                          <div className="relative">
-                            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                            <Input
-                              id="reseller-email"
-                              type="email"
-                              data-testid="input-reseller-email"
-                              placeholder="info@azienda.it"
-                              value={resellerData.email}
-                              onChange={(e) => setResellerData({ ...resellerData, email: e.target.value })}
-                              className="h-11 pl-10 text-sm rounded-xl border-input/50"
-                              required
+                              className="pl-8 h-9 text-sm"
                             />
                           </div>
                         </div>
                         
                         <div className="grid grid-cols-2 gap-3">
-                          <div className="space-y-2">
-                            <Label htmlFor="reseller-username" className="text-sm font-medium">Username</Label>
+                          <div className="space-y-1.5">
+                            <Label htmlFor="reseller-partita-iva" className="text-xs">Partita IVA</Label>
                             <div className="relative">
-                              <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                              <FileText className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
                               <Input
-                                id="reseller-username"
-                                data-testid="input-reseller-username"
-                                placeholder="username"
-                                value={resellerData.username}
-                                onChange={(e) => setResellerData({ ...resellerData, username: e.target.value })}
-                                className="h-11 pl-10 text-sm rounded-xl border-input/50"
-                                required
+                                id="reseller-partita-iva"
+                                data-testid="input-reseller-partita-iva"
+                                placeholder="IT12345678901"
+                                value={resellerData.partitaIva}
+                                onChange={(e) => setResellerData({ ...resellerData, partitaIva: e.target.value })}
+                                className="pl-8 h-9 text-sm"
                               />
                             </div>
                           </div>
-                          <div className="space-y-2">
-                            <Label htmlFor="reseller-password" className="text-sm font-medium">Password</Label>
+                          <div className="space-y-1.5">
+                            <Label htmlFor="reseller-email" className="text-xs">Email Aziendale</Label>
                             <div className="relative">
-                              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                              <Mail className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
                               <Input
-                                id="reseller-password"
-                                type="password"
-                                data-testid="input-reseller-password"
-                                placeholder="Min. 6 caratteri"
-                                value={resellerData.password}
-                                onChange={(e) => setResellerData({ ...resellerData, password: e.target.value })}
-                                className="h-11 pl-10 text-sm rounded-xl border-input/50"
+                                id="reseller-email"
+                                type="email"
+                                data-testid="input-reseller-email"
+                                placeholder="info@azienda.it"
+                                value={resellerData.email}
+                                onChange={(e) => setResellerData({ ...resellerData, email: e.target.value })}
+                                className="pl-8 h-9 text-sm"
                                 required
                               />
                             </div>
                           </div>
                         </div>
                         
+                        <div className="grid grid-cols-2 gap-3">
+                          <div className="space-y-1.5">
+                            <Label htmlFor="reseller-username" className="text-xs">Username</Label>
+                            <Input
+                              id="reseller-username"
+                              data-testid="input-reseller-username"
+                              placeholder="username"
+                              value={resellerData.username}
+                              onChange={(e) => setResellerData({ ...resellerData, username: e.target.value })}
+                              className="h-9 text-sm"
+                              required
+                            />
+                          </div>
+                          <div className="space-y-1.5">
+                            <Label htmlFor="reseller-password" className="text-xs">Password</Label>
+                            <Input
+                              id="reseller-password"
+                              type="password"
+                              data-testid="input-reseller-password"
+                              placeholder="Min. 6 caratteri"
+                              value={resellerData.password}
+                              onChange={(e) => setResellerData({ ...resellerData, password: e.target.value })}
+                              className="h-9 text-sm"
+                              required
+                            />
+                          </div>
+                        </div>
+                        
                         <Button
                           type="submit"
-                          className="w-full h-12 text-base font-semibold rounded-xl shadow-lg shadow-primary/25"
+                          className="w-full"
                           disabled={resellerRegisterMutation.isPending}
                           data-testid="button-reseller-register"
                         >
                           {resellerRegisterMutation.isPending ? (
                             <span className="flex items-center gap-2">
                               <span className="h-4 w-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                              Invio richiesta...
+                              Invio...
                             </span>
                           ) : (
                             <span className="flex items-center gap-2">
-                              Richiedi Account
+                              Richiedi Accesso Business
                               <ArrowRight className="h-4 w-4" />
                             </span>
                           )}
@@ -550,29 +471,13 @@ export default function AuthPage() {
               </Card>
             </TabsContent>
           </Tabs>
-
-          {/* Mobile Footer */}
-          <p className="lg:hidden text-center text-xs text-muted-foreground mt-8">
-            2025 MonkeyPlan. Tutti i diritti riservati.
-          </p>
         </div>
-      </div>
-    </div>
-  );
-}
+      </main>
 
-function FeatureCard({ icon: Icon, title, description }: { 
-  icon: typeof Shield; 
-  title: string; 
-  description: string;
-}) {
-  return (
-    <div className="p-4 rounded-2xl bg-white/10 backdrop-blur-sm border border-white/10 hover:bg-white/15 transition-colors">
-      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/15 mb-3">
-        <Icon className="h-5 w-5 text-white" />
-      </div>
-      <h3 className="font-semibold text-white mb-1">{title}</h3>
-      <p className="text-sm text-white/60 leading-relaxed">{description}</p>
+      {/* Footer */}
+      <footer className="py-4 text-center text-xs text-muted-foreground">
+        <p>MonkeyPlan - Gestione Riparazioni Elettroniche</p>
+      </footer>
     </div>
   );
 }
