@@ -55,12 +55,25 @@ const formatCurrency = (cents: number | null) => {
 
 const calculateCommission = (service: UtilityService): number => {
   let commission = 0;
+  
+  // Commissione fissa (per canone mensile)
   if (service.commissionFixed) {
     commission += service.commissionFixed / 100;
   }
-  if (service.commissionPercent && service.monthlyPriceCents) {
-    commission += (service.monthlyPriceCents / 100) * (service.commissionPercent / 100);
+  
+  // Commissione una tantum (per attivazione)
+  if (service.commissionOneTime) {
+    commission += service.commissionOneTime / 100;
   }
+  
+  // Commissione percentuale: applica su prezzo mensile o, se assente, su costo attivazione
+  if (service.commissionPercent) {
+    const baseCents = service.monthlyPriceCents || service.activationFeeCents;
+    if (baseCents) {
+      commission += (baseCents / 100) * (service.commissionPercent / 100);
+    }
+  }
+  
   return commission;
 };
 
@@ -155,8 +168,12 @@ export default function ResellerUtilityServices() {
             
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs text-muted-foreground">Prezzo mensile</p>
-                <p className="text-lg font-semibold">{formatCurrency(service.monthlyPriceCents)}</p>
+                <p className="text-xs text-muted-foreground">
+                  {service.monthlyPriceCents ? "Prezzo mensile" : "Costo attivazione"}
+                </p>
+                <p className="text-lg font-semibold">
+                  {formatCurrency(service.monthlyPriceCents || service.activationFeeCents)}
+                </p>
               </div>
               <Badge className={categoryColors[service.category]}>
                 {categoryLabels[service.category]}
@@ -177,7 +194,7 @@ export default function ResellerUtilityServices() {
               {service.commissionPercent && (
                 <div className="flex items-center gap-1 mt-1 text-xs text-green-600 dark:text-green-400">
                   <Percent className="h-3 w-3" />
-                  {service.commissionPercent}% del canone mensile
+                  {service.commissionPercent}% {service.monthlyPriceCents ? "del canone mensile" : "del costo attivazione"}
                 </div>
               )}
             </div>
