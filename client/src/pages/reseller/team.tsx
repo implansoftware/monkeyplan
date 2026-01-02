@@ -660,20 +660,31 @@ export default function ResellerTeam() {
 
       {/* Create/Edit Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>
-              {isEditing ? "Modifica Collaboratore" : "Nuovo Collaboratore"}
-            </DialogTitle>
-            <DialogDescription>
-              {isEditing
-                ? "Modifica i dati del collaboratore"
-                : "Inserisci i dati del nuovo membro del team"}
-            </DialogDescription>
-          </DialogHeader>
+        <DialogContent className="max-w-2xl p-0 overflow-hidden">
+          {/* Dialog Hero Header */}
+          <div className="relative bg-gradient-to-br from-primary/5 via-primary/10 to-slate-100 dark:from-primary/10 dark:via-primary/5 dark:to-slate-900 p-6 border-b">
+            <div className="absolute inset-0 opacity-[0.03]" style={{
+              backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23000' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+            }} />
+            <div className="relative flex items-center gap-4">
+              <div className="h-12 w-12 rounded-xl bg-primary text-primary-foreground flex items-center justify-center shadow-lg shadow-primary/25">
+                {isEditing ? <Edit className="h-6 w-6" /> : <Plus className="h-6 w-6" />}
+              </div>
+              <div>
+                <DialogTitle className="text-xl font-bold">
+                  {isEditing ? "Modifica Collaboratore" : "Nuovo Collaboratore"}
+                </DialogTitle>
+                <DialogDescription className="mt-0.5">
+                  {isEditing
+                    ? "Modifica i dati del collaboratore"
+                    : "Inserisci i dati del nuovo membro del team"}
+                </DialogDescription>
+              </div>
+            </div>
+          </div>
 
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+            <form onSubmit={form.handleSubmit(handleSubmit)} className="p-6 space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
@@ -848,18 +859,28 @@ export default function ResellerTeam() {
 
       {/* Permissions Dialog */}
       <Dialog open={permissionsDialogOpen} onOpenChange={setPermissionsDialogOpen}>
-        <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Shield className="h-5 w-5" />
-              Permessi di {selectedMember?.fullName}
-            </DialogTitle>
-            <DialogDescription>
-              Configura i permessi per ogni modulo dell'applicazione
-            </DialogDescription>
-          </DialogHeader>
+        <DialogContent className="max-w-3xl max-h-[80vh] p-0 overflow-hidden">
+          {/* Dialog Hero Header */}
+          <div className="relative bg-gradient-to-br from-blue-500/5 via-blue-500/10 to-slate-100 dark:from-blue-500/10 dark:via-blue-500/5 dark:to-slate-900 p-6 border-b">
+            <div className="absolute inset-0 opacity-[0.03]" style={{
+              backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23000' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+            }} />
+            <div className="relative flex items-center gap-4">
+              <div className="h-12 w-12 rounded-xl bg-blue-500 text-white flex items-center justify-center shadow-lg shadow-blue-500/25">
+                <Shield className="h-6 w-6" />
+              </div>
+              <div>
+                <DialogTitle className="text-xl font-bold">
+                  Permessi di {selectedMember?.fullName}
+                </DialogTitle>
+                <DialogDescription className="mt-0.5">
+                  Configura i permessi per ogni modulo dell'applicazione
+                </DialogDescription>
+              </div>
+            </div>
+          </div>
 
-          <div className="space-y-4">
+          <div className="p-6 space-y-4 overflow-y-auto max-h-[50vh]">
             {MODULES.map((mod) => {
               const perms = localPermissions[mod.id] || {};
               const allChecked = perms.canRead && perms.canCreate && perms.canUpdate && perms.canDelete;
@@ -904,14 +925,16 @@ export default function ResellerTeam() {
             })}
           </div>
 
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setPermissionsDialogOpen(false)}>
-              Annulla
-            </Button>
-            <Button onClick={handleSavePermissions} disabled={updateMutation.isPending}>
-              {updateMutation.isPending ? "Salvataggio..." : "Salva Permessi"}
-            </Button>
-          </DialogFooter>
+          <div className="p-6 pt-0 border-t bg-muted/30">
+            <DialogFooter className="pt-4">
+              <Button variant="outline" onClick={() => setPermissionsDialogOpen(false)}>
+                Annulla
+              </Button>
+              <Button onClick={handleSavePermissions} disabled={updateMutation.isPending} className="shadow-lg shadow-primary/25">
+                {updateMutation.isPending ? "Salvataggio..." : "Salva Permessi"}
+              </Button>
+            </DialogFooter>
+          </div>
         </DialogContent>
       </Dialog>
 
