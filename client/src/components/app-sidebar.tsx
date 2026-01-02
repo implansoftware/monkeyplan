@@ -59,7 +59,7 @@ import {
 import { useAuth } from "@/hooks/use-auth";
 import { useStaffPermissions, getRequiredModuleForUrl } from "@/hooks/use-staff-permissions";
 import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Link, useLocation } from "wouter";
 import { ContextSwitcher } from "@/components/ContextSwitcher";
 
@@ -296,6 +296,13 @@ export function AppSidebar() {
   const isReseller = user?.role === "reseller";
   const isResellerStaff = user?.role === "reseller_staff";
   const isFranchisingOrGdo = user?.resellerCategory === "franchising" || user?.resellerCategory === "gdo";
+  const hasParentReseller = !!(user as any)?.parentResellerId;
+
+  // Query parent reseller info for sub-resellers (to show their logo)
+  const { data: parentReseller } = useQuery<{ id: string; fullName: string; logoUrl: string | null; ragioneSociale: string | null }>({
+    queryKey: ["/api/my-parent-reseller"],
+    enabled: hasParentReseller,
+  });
 
   // Query sub-resellers for franchising/gdo resellers
   const { data: subResellers = [] } = useQuery<any[]>({
@@ -440,17 +447,39 @@ export function AppSidebar() {
     <Sidebar>
       <SidebarHeader className="p-4 border-b border-sidebar-border">
         <div className="flex items-center gap-3">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-            <Wrench className="h-4 w-4" />
-          </div>
-          <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-2">
-              <span className="font-semibold text-sm">MonkeyPlan</span>
-              <span className="text-[10px] text-primary font-medium px-1.5 py-0.5 rounded bg-primary/10">Beta v.23</span>
+          {parentReseller?.logoUrl ? (
+            <Avatar className="h-8 w-8 rounded-lg">
+              <AvatarImage src={parentReseller.logoUrl} alt={parentReseller.ragioneSociale || parentReseller.fullName} className="object-contain" />
+              <AvatarFallback className="rounded-lg bg-primary text-primary-foreground text-xs">
+                {getInitials(parentReseller.ragioneSociale || parentReseller.fullName)}
+              </AvatarFallback>
+            </Avatar>
+          ) : (
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+              <Wrench className="h-4 w-4" />
             </div>
-            <p className="text-xs text-muted-foreground capitalize">
-              {user.role.replace("_", " ")}
-            </p>
+          )}
+          <div className="min-w-0 flex-1">
+            {parentReseller?.logoUrl ? (
+              <>
+                <span className="font-semibold text-sm truncate block">
+                  {parentReseller.ragioneSociale || parentReseller.fullName}
+                </span>
+                <p className="text-xs text-muted-foreground capitalize">
+                  {user.role.replace("_", " ")}
+                </p>
+              </>
+            ) : (
+              <>
+                <div className="flex items-center gap-2">
+                  <span className="font-semibold text-sm">MonkeyPlan</span>
+                  <span className="text-[10px] text-primary font-medium px-1.5 py-0.5 rounded bg-primary/10">Beta v.23</span>
+                </div>
+                <p className="text-xs text-muted-foreground capitalize">
+                  {user.role.replace("_", " ")}
+                </p>
+              </>
+            )}
           </div>
         </div>
       </SidebarHeader>

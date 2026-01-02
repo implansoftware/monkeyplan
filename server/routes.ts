@@ -12804,6 +12804,32 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // GET /api/my-parent-reseller - Get parent reseller info for sub-resellers
+  app.get("/api/my-parent-reseller", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const parentResellerId = (req.user as any).parentResellerId;
+      if (!parentResellerId) {
+        return res.status(404).json({ error: "No parent reseller" });
+      }
+      
+      const parentReseller = await storage.getUser(parentResellerId);
+      if (!parentReseller || parentReseller.role !== 'reseller') {
+        return res.status(404).json({ error: "Parent reseller not found" });
+      }
+      
+      res.json({
+        id: parentReseller.id,
+        fullName: parentReseller.fullName,
+        logoUrl: parentReseller.logoUrl,
+        ragioneSociale: parentReseller.ragioneSociale,
+      });
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
   // GET /api/resellers - List all resellers (users with role 'reseller')
   app.get("/api/resellers", requireAuth, requireRole("admin"), async (req, res) => {
     try {
