@@ -2,121 +2,151 @@
 
 ## Design Approach
 
-**System-Based Approach**: This platform requires a productivity-focused design system optimized for data-dense enterprise applications. Drawing inspiration from Linear, Vercel Dashboard, and modern SaaS platforms that excel at information hierarchy and user efficiency.
+**System-Based**: Productivity-focused design inspired by Linear, Vercel Dashboard, and Apple's interface guidelines. Optimized for "scimmia-proof" simplicity - if a monkey could use it, anyone can.
 
 **Core Principles**:
-- **Clarity Over Creativity**: Information must be instantly scannable
-- **Role-Based Consistency**: Similar patterns across different user dashboards
-- **Data Density Without Clutter**: Efficient use of space for tables, forms, and metrics
-- **Professional Trust**: Convey reliability and competence
+- **Apple-Level Simplicity**: Every interaction should feel obvious and delightful
+- **Fool-Proof Design**: Large touch targets (min 44px), clear labels, confirmation for destructive actions
+- **Modern 2025 Aesthetic**: Subtle gradients, elegant shadows, refined micro-interactions
+- **Information Clarity**: Scannable layouts with strong visual hierarchy
+- **Mobile-First Excellence**: Perfect experience on both mobile and desktop
 
 ---
 
 ## Typography System
 
-**Font Stack**: Inter (Google Fonts) for all text - exceptional readability at small sizes, professional appearance
+**Font Stack**: Inter (Google Fonts) - optimal readability at all sizes
 
 **Hierarchy**:
-- **Page Titles**: text-2xl font-semibold (Dashboard, Gestione Centri, etc.)
-- **Section Headers**: text-lg font-semibold
-- **Card/Widget Titles**: text-base font-medium
-- **Body Text**: text-sm font-normal
-- **Labels/Captions**: text-xs font-medium uppercase tracking-wide
-- **Data Tables**: text-sm font-normal (headers font-medium)
-- **Buttons**: text-sm font-medium
+- **Page Titles**: text-3xl font-bold (Dashboard, Gestione Centri)
+- **Section Headers**: text-xl font-semibold
+- **Card Titles**: text-lg font-semibold
+- **Body Text**: text-base font-normal
+- **Labels**: text-sm font-medium
+- **Captions**: text-xs font-medium text-gray-600
+- **Buttons**: text-base font-semibold (large touch targets)
 
 ---
 
 ## Layout System
 
-**Spacing Primitives**: Use Tailwind units of **2, 3, 4, 6, 8, 12** for consistent rhythm
-- Component padding: p-4 or p-6
-- Section spacing: space-y-6 or space-y-8
-- Card gaps: gap-4
-- Form field spacing: space-y-3
+**Spacing**: Tailwind units of **3, 4, 6, 8, 12, 16** for generous breathing room
+- Component padding: p-6 or p-8
+- Section gaps: space-y-8 or space-y-12
+- Card spacing: gap-6
+- Form fields: space-y-4
 
-**Grid Structure**:
-- **Sidebar Navigation**: Fixed 256px width (w-64) on desktop, collapsible to icons on tablet
-- **Main Content Area**: flex-1 with max-width constraints (max-w-7xl) centered with padding
-- **Dashboard Cards**: Grid layout - grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6
-- **Data Tables**: Full-width within content container with horizontal scroll on mobile
+**Structure**:
+- **Sidebar**: 280px (w-70) with rounded corners and subtle shadow, collapsible on mobile
+- **Content Area**: max-w-7xl centered, px-6 lg:px-8
+- **Dashboard Grid**: grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6
+- **Mobile Navigation**: Bottom tab bar with large icons and labels
+
+---
+
+## Visual Design Language
+
+**Modern Touches**:
+- **Subtle Gradients**: Background gradients from gray-50 to gray-100 on cards, brand gradients on primary CTAs
+- **Layered Shadows**: Multiple shadow layers for depth - shadow-sm on cards, shadow-lg on modals, shadow-xl on dropdowns
+- **Rounded Corners**: rounded-xl on cards, rounded-lg on buttons, rounded-full on avatars
+- **Glass Effects**: backdrop-blur-md on overlays and floating elements
+- **Border Treatments**: border border-gray-200 with hover states showing border-gray-300
+
+**Color Strategy** (will be defined separately):
+- Clear status indicators with accessible contrast ratios
+- Distinct states for success, warning, error, info
+- Muted backgrounds to let content shine
 
 ---
 
 ## Component Library
 
 ### Navigation
-- **Sidebar**: Vertical navigation with role-specific menu items, collapsible sections for sub-menus
-- **Top Bar**: User profile dropdown, notifications bell, quick actions, breadcrumb trail
-- **Menu Items**: Icon + label, active state with subtle indicator (border-l-2 on selected item)
+- **Sidebar**: Icons with labels, grouped sections with subtle dividers, active state with gradient background
+- **Top Bar**: User avatar (w-10 h-10), notification badge, search bar with rounded-full styling
+- **Mobile Bottom Nav**: 5 primary tabs with large icons (w-6 h-6) and labels
 
-### Dashboard Widgets
-- **Stat Cards**: Compact metric displays with icon, number (text-3xl font-bold), label, and optional trend indicator
-- **Quick Action Cards**: Prominent CTAs for common tasks ("Nuovo Ticket", "Aggiungi Lavorazione")
-- **Recent Activity**: List view with timestamps, user avatars, action descriptions
+### Dashboard Elements
+- **Stat Cards**: Large numbers (text-4xl font-bold), trend arrows, subtle gradient backgrounds, shadow-md elevation
+- **Quick Actions**: Prominent gradient buttons (h-14) with icons, descriptive labels, shadow-lg on hover
+- **Activity Feed**: Timeline design with connecting lines, user avatars, timestamps, card-based entries
 
 ### Data Tables
-- **Structure**: Sticky header, alternating row backgrounds for readability, hover states on rows
-- **Actions**: Icon buttons in final column (edit, view, delete), bulk actions toolbar when rows selected
-- **Pagination**: Bottom-aligned with page size selector, showing "1-20 of 150 results"
-- **Filters**: Top-aligned filter bar with dropdowns, search input, date range pickers
+- **Desktop**: Sticky headers, row hover with subtle background change, shadow-sm on container
+- **Mobile**: Card-based view with key info prominently displayed, expandable for details
+- **Actions**: Icon buttons (w-10 h-10), tooltip on hover, dropdown menu for multiple actions
+- **Filters**: Pill-shaped filter buttons with counts, slide-out panel for advanced filters
 
 ### Forms
-- **Layout**: Single column on mobile, 2-column grid on desktop for related fields (grid-cols-2 gap-4)
-- **Input Groups**: Label above input, helper text below, error messages in validation state
-- **Field Types**: Text inputs with border, select dropdowns, date pickers, file upload with drag-drop zone
-- **Actions**: Primary button (right-aligned), secondary/cancel (left-aligned), destructive actions require confirmation
+- **Input Fields**: Large height (h-12), rounded-lg borders, focus ring with brand color, floating labels
+- **Dropdowns**: Custom styled with icons, search capability for long lists
+- **File Upload**: Drag-drop zone with dashed border, preview thumbnails, progress indicators
+- **Buttons**: Primary (gradient, shadow-lg, h-12), Secondary (border, h-12), Destructive (red gradient)
+- **Validation**: Inline error messages, success checkmarks, helpful hints below fields
 
-### Tickets & Chat
-- **Ticket List**: Card-based view with status badges, priority indicators, timestamp, assignee avatar
-- **Ticket Detail**: Split view - left: conversation thread, right: metadata sidebar (status, priority, assignee)
-- **LiveChat Interface**: Fixed bottom-right bubble, expandable panel (w-96 h-[500px]), message bubbles with timestamps
-- **Message Input**: Bottom-fixed with emoji picker, file attachment, send button
+### Tickets & Communication
+- **Ticket Cards**: Status badge top-right, priority color strip on left, large clickable area
+- **Detail View**: Full-screen on mobile, split-panel on desktop (60/40 conversation/metadata)
+- **LiveChat**: Bottom-right bubble (w-14 h-14 rounded-full shadow-xl), expands to w-[400px] h-[600px] panel
+- **Messages**: Bubbles with tails, sender avatar, timestamps, delivered/read indicators
 
-### Status Indicators
-- **Badges**: Rounded-full px-3 py-1 text-xs font-medium (for order status, ticket status, payment status)
-- **Progress Bars**: Thin height (h-2), rounded corners, showing completion percentage
-- **Availability Dots**: Small circles (w-2 h-2) next to names for online/offline status
+### Status & Feedback
+- **Badges**: rounded-full px-4 py-1.5 text-sm font-semibold with status-specific backgrounds
+- **Toast Notifications**: Top-right slide-in with icon, message, action button, auto-dismiss
+- **Loading States**: Skeleton screens with pulse animation, spinner for quick actions
+- **Empty States**: Centered illustration icon, encouraging message, primary CTA button
 
-### Modals & Overlays
-- **Modal Container**: max-w-2xl centered, overlay backdrop with blur
-- **Confirmation Dialogs**: Compact (max-w-md) with clear action buttons
-- **Slide-overs**: Right-side panel (w-96) for detail views and quick edits
-
----
-
-## Responsive Behavior
-
-**Breakpoints**:
-- Mobile: Base styles, stacked layouts, full-width cards
-- Tablet (md:): 2-column grids, persistent sidebar (icon-only)
-- Desktop (lg:): 3-4 column grids, full sidebar with labels
-- Wide (xl:): Max content width, optimal table column display
-
-**Mobile Adaptations**:
-- Navigation: Bottom tab bar for primary sections
-- Tables: Horizontal scroll or card-based list view toggle
-- Forms: Full-width inputs, larger touch targets (min-h-12)
-- Dashboard: Single column cards with swipe gestures
+### Overlays
+- **Modals**: Centered max-w-2xl, backdrop-blur-md background, shadow-2xl, rounded-2xl corners
+- **Slide-overs**: Right-side w-[480px] panel, backdrop blur, close button top-right
+- **Confirmation Dialogs**: max-w-md, large buttons (h-12) with clear labels (Conferma/Annulla)
 
 ---
 
 ## Animations
 
-**Minimal & Purposeful**:
-- Page transitions: None (instant navigation)
-- Dropdown menus: Simple fade-in (duration-150)
-- Modal appearance: Fade + scale (duration-200)
-- Loading states: Subtle pulse on skeleton screens
-- Notifications: Slide-in from top-right (duration-300)
-- No scroll animations or parallax effects
+**Smooth & Purposeful** (duration-300 as default):
+- **Page Navigation**: Subtle fade-in for content
+- **Modals**: Scale from 95% to 100% + fade backdrop
+- **Dropdowns**: Slide-down with fade (duration-200)
+- **Buttons**: Scale to 98% on press, smooth color transitions on hover
+- **Cards**: Subtle lift on hover (transform translate-y-[-2px] + shadow increase)
+- **Status Changes**: Color transition + scale pulse for badges
+- **Loading**: Smooth pulse on skeletons, rotating spinner
 
 ---
 
-## Images
+## Mobile Excellence
 
-**Usage Strategy**:
-- **User Avatars**: Circular (w-8 h-8 to w-12 h-12), fallback to initials with consistent system
-- **Product Images**: Square thumbnails in inventory (w-16 h-16), larger in detail views (w-32 h-32)
-- **Empty States**: Simple illustrative icons (not full images) with helpful text
-- **No Hero Images**: This is a web application, not marketing site - focus on data and functionality
+**Touch Optimization**:
+- Minimum touch target: 44px × 44px (use p-3 on icons for larger hit area)
+- Bottom-aligned primary actions for thumb reach
+- Swipe gestures: delete, archive, navigate between views
+- Pull-to-refresh on lists and feeds
+
+**Responsive Patterns**:
+- **Tables → Cards**: Automatic transformation with key data visible
+- **Multi-column → Single**: Stack gracefully with maintained hierarchy
+- **Sidebar → Bottom Nav**: Switch at md: breakpoint
+- **Forms**: Full-width inputs, stacked buttons, larger spacing
+
+---
+
+## Images & Assets
+
+**Icons**: Heroicons (outline for navigation, solid for actions) via CDN
+**Avatars**: Circular with gradient fallbacks showing initials, sizes w-8 to w-12
+**Product Images**: Square thumbnails (w-20 h-20) with rounded-lg, lightbox view on click
+**Empty States**: Simple icon illustrations from Heroicons, no custom graphics
+**No Hero Images**: Application interface focuses on functionality and data
+
+---
+
+## Accessibility
+
+- WCAG AA contrast ratios minimum
+- Keyboard navigation with visible focus states (ring-2)
+- Screen reader labels on icon-only buttons
+- Error states with both color and icon indicators
+- Large text option support (scales from text-base)
