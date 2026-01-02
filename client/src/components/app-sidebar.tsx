@@ -311,19 +311,15 @@ export function AppSidebar() {
   });
   const pendingTransferRequestsCount = transferRequestsSummary?.pendingCount || 0;
 
-  // Query active integrations to filter sidebar suppliers
-  const { data: activeIntegrations = [] } = useQuery<{ code: string; isActive: boolean }[]>({
-    queryKey: ["/api/external-integrations"],
+  // Query configured integrations (only those with reseller credentials)
+  const { data: configuredIntegrationCodes = [] } = useQuery<string[]>({
+    queryKey: ["/api/reseller/configured-integrations"],
     enabled: isReseller || isResellerStaff,
   });
   
-  // Filter integrated suppliers based on active integrations
-  const activeSupplierCodes = activeIntegrations
-    .filter(integration => integration.isActive)
-    .map(integration => integration.code);
-  
+  // Filter integrated suppliers based on configured integrations
   const filteredIntegratedSuppliers = integratedSuppliers.filter(
-    supplier => activeSupplierCodes.includes(supplier.key)
+    supplier => configuredIntegrationCodes.includes(supplier.key)
   );
 
   // Build menu items dynamically based on sub-resellers and permissions

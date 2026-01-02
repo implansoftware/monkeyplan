@@ -16658,6 +16658,39 @@ export function registerRoutes(app: Express): Server {
 
   // ============ EXTERNAL INTEGRATIONS (INTEGRAZIONI ESTERNE) ============
 
+  // GET /api/reseller/configured-integrations - Get integrations that reseller has configured credentials for
+  app.get("/api/reseller/configured-integrations", requireAuth, requireRole("reseller", "reseller_staff"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const resellerId = req.user.role === 'reseller' ? req.user.id : req.user.resellerId;
+      if (!resellerId) return res.status(400).send("Reseller ID non trovato");
+      
+      // Check which integrations the reseller has configured
+      const configuredCodes: string[] = [];
+      
+      // Check SIFAR credentials
+      const sifarCred = await storage.getSifarCredentialByReseller(resellerId);
+      if (sifarCred) configuredCodes.push("sifar");
+      
+      // Check Foneday credentials
+      const fonedayCred = await storage.getFonedayCredentialByReseller(resellerId);
+      if (fonedayCred) configuredCodes.push("foneday");
+      
+      // Check TrovaUsati credentials
+      const trovausatiCred = await storage.getTrovausatiCredentialByReseller(resellerId);
+      if (trovausatiCred) configuredCodes.push("trovausati");
+      
+      // Check MobileSentrix credentials
+      const mobilesentrixCred = await storage.getMobilesentrixCredentialByReseller(resellerId);
+      if (mobilesentrixCred) configuredCodes.push("mobilesentrix");
+      
+      res.json(configuredCodes);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
   // GET /api/external-integrations - List all integrations (admins get all, resellers get active only)
   app.get("/api/external-integrations", requireAuth, requireRole("admin", "reseller", "reseller_staff"), async (req, res) => {
     try {
