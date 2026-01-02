@@ -89,7 +89,6 @@ const menuItems = {
     { title: "Fatture", url: "/admin/invoices", icon: FileText, group: "Fatturazione" },
     // E-commerce - Catalogo
     { title: "Assegnazione Reseller", url: "/admin/product-assignments", icon: Store, group: "E-commerce" },
-    { title: "Marketplace", url: "/marketplace", icon: Store, group: "E-commerce" },
     // E-commerce - Ordini
     { title: "Ordini Clienti", url: "/admin/sales-orders", icon: ShoppingCart, group: "E-commerce" },
     { title: "Ordini Reseller", url: "/admin/b2b-orders", icon: Network, group: "E-commerce" },
@@ -136,7 +135,6 @@ const menuItems = {
     { title: "Fatture", url: "/admin/invoices", icon: FileText, group: "Fatturazione" },
     // E-commerce - Catalogo
     { title: "Assegnazione Reseller", url: "/admin/product-assignments", icon: Store, group: "E-commerce" },
-    { title: "Marketplace", url: "/marketplace", icon: Store, group: "E-commerce" },
     // E-commerce - Ordini
     { title: "Ordini Clienti", url: "/admin/sales-orders", icon: ShoppingCart, group: "E-commerce" },
     // E-commerce - Resi
