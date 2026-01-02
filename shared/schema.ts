@@ -1535,6 +1535,7 @@ export const repairAcceptance = pgTable("repair_acceptance", {
   accessoriesRemoved: boolean("accessories_removed"), // Conferma rimozione accessori non necessari
   acceptedBy: varchar("accepted_by").notNull(), // ID utente che ha fatto l'accettazione
   acceptedAt: timestamp("accepted_at").notNull().defaultNow(),
+  labelDocumentUrl: text("label_document_url"), // URL documento etichette generato
 });
 
 // Repair Order Attachments (Photos and documents for repair orders)
