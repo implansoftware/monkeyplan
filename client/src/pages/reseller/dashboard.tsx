@@ -130,19 +130,11 @@ export default function ResellerDashboard() {
   return (
     <div className="space-y-6" data-testid="page-reseller-dashboard">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Dashboard</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">
-            Panoramica delle attività
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button onClick={() => setAcceptanceDialogOpen(true)} data-testid="button-new-repair">
-            <PackageOpen className="h-4 w-4 mr-2" />
-            Nuova Lavorazione
-          </Button>
-        </div>
+      <div>
+        <h1 className="text-2xl font-semibold tracking-tight">Dashboard</h1>
+        <p className="text-sm text-muted-foreground mt-0.5">
+          Panoramica delle attività
+        </p>
       </div>
 
       {/* Alerts */}
@@ -340,6 +332,14 @@ export default function ResellerDashboard() {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-5 gap-2">
+            <Button 
+              className="h-auto py-3 px-3 flex flex-col items-center gap-1.5 text-xs font-normal"
+              onClick={() => setAcceptanceDialogOpen(true)}
+              data-testid="button-quick-new-repair"
+            >
+              <PackageOpen className="h-4 w-4" />
+              <span>Nuova Lavorazione</span>
+            </Button>
             <Button 
               variant="outline" 
               className="h-auto py-3 px-3 flex flex-col items-center gap-1.5 text-xs font-normal"
