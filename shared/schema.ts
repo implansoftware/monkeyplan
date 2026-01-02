@@ -2722,7 +2722,9 @@ export const utilityServices = pgTable("utility_services", {
   category: utilityCategoryEnum("category").notNull(),
   
   // Pricing
+  priceType: text("price_type").default("mensile"), // "mensile" o "forfait"
   monthlyPriceCents: integer("monthly_price_cents"), // Canone mensile in centesimi
+  flatPriceCents: integer("flat_price_cents"), // Prezzo forfait in centesimi
   activationFeeCents: integer("activation_fee_cents"), // Costo attivazione in centesimi
   
   // Commissioni per questo servizio (override fornitore)
