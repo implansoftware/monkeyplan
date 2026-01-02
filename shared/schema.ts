@@ -503,6 +503,7 @@ export const users = pgTable("users", {
   iban: text("iban"),
   codiceUnivoco: text("codice_univoco"), // Codice SDI per fatturazione elettronica
   pec: text("pec"),
+  logoUrl: text("logo_url"), // URL del logo per reseller
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
