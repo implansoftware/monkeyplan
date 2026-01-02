@@ -134,7 +134,7 @@ export default function AdminUtilityServices() {
       commissionPercent: commissionPercent ? parseFloat(commissionPercent) : null,
       commissionFixed: commissionFixed ? Math.round(parseFloat(commissionFixed) * 100) : null,
       commissionOneTime: commissionOneTime ? Math.round(parseFloat(commissionOneTime) * 100) : null,
-      contractMonths: contractMonths ? parseInt(contractMonths) : 24,
+      contractMonths: contractMonths && contractMonths.trim() !== "" ? parseInt(contractMonths) : null,
       isActive: isActive,
     };
 
