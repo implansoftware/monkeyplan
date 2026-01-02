@@ -835,7 +835,7 @@ export default function ResellerTeam() {
                           className={`flex items-center gap-2 p-2 rounded-lg border cursor-pointer transition-colors ${hasAny ? 'border-primary bg-primary/5' : 'hover:bg-muted/50'}`}
                           onClick={() => toggleAllForModule(mod.id, !hasAny)}
                         >
-                          <Checkbox checked={hasAny} />
+                          <Checkbox checked={hasAny} className="pointer-events-none" />
                           <span className="text-sm">{mod.name}</span>
                         </div>
                       );
@@ -912,7 +912,7 @@ export default function ResellerTeam() {
                             className={`flex items-center gap-2 p-2 rounded-lg border cursor-pointer transition-colors ${isChecked ? 'border-primary bg-primary/5' : 'hover:bg-muted/50'}`}
                             onClick={() => togglePermission(mod.id, action.id)}
                           >
-                            <Checkbox checked={isChecked} />
+                            <Checkbox checked={isChecked} className="pointer-events-none" />
                             <Icon className="h-3 w-3" />
                             <span className="text-xs">{action.label}</span>
                           </div>
