@@ -53,7 +53,7 @@ interface UtilityPracticeWizardProps {
 
 type WizardStep = "type" | "service" | "customer" | "pricing" | "review";
 type ItemType = "service" | "product" | "service_with_products";
-type PriceType = "mensile" | "forfait";
+type PriceType = "mensile" | "forfait" | "attivazione";
 
 interface PracticeProductItem {
   productId: string;
@@ -109,6 +109,7 @@ export function UtilityPracticeWizard({ open, onOpenChange, onSuccess }: Utility
   const [selectedPriceType, setSelectedPriceType] = useState<PriceType>("mensile");
   const [monthlyPrice, setMonthlyPrice] = useState("");
   const [flatPrice, setFlatPrice] = useState("");
+  const [activationPrice, setActivationPrice] = useState("");
   const [commission, setCommission] = useState("");
   const [supplierReference, setSupplierReference] = useState("");
   const [selectedStatus, setSelectedStatus] = useState<string>("bozza");
@@ -187,11 +188,19 @@ export function UtilityPracticeWizard({ open, onOpenChange, onSuccess }: Utility
       if (selectedService.flatPriceCents) {
         setFlatPrice((selectedService.flatPriceCents / 100).toFixed(2));
       }
+      if (selectedService.activationFeeCents) {
+        setActivationPrice((selectedService.activationFeeCents / 100).toFixed(2));
+      }
       // Calcolo commissione: priorità a commissionFixed, altrimenti calcola da percentuale
       if (selectedService.commissionFixed) {
         setCommission((selectedService.commissionFixed / 100).toFixed(2));
-      } else if (selectedService.commissionPercent && selectedService.monthlyPriceCents) {
-        const commissionCents = (selectedService.monthlyPriceCents * selectedService.commissionPercent) / 100;
+      } else if (selectedService.commissionOneTime) {
+        // Per servizi con solo attivazione, usa commissionOneTime
+        setCommission((selectedService.commissionOneTime / 100).toFixed(2));
+      } else if (selectedService.commissionPercent) {
+        // Calcola commissione su prezzo mensile o attivazione
+        const baseCents = selectedService.monthlyPriceCents || selectedService.activationFeeCents || 0;
+        const commissionCents = (baseCents * selectedService.commissionPercent) / 100;
         setCommission((commissionCents / 100).toFixed(2));
       }
     }
@@ -215,6 +224,7 @@ export function UtilityPracticeWizard({ open, onOpenChange, onSuccess }: Utility
     setSelectedPriceType("mensile");
     setMonthlyPrice("");
     setFlatPrice("");
+    setActivationPrice("");
     setCommission("");
     setSupplierReference("");
     setSelectedStatus("bozza");
@@ -478,6 +488,7 @@ export function UtilityPracticeWizard({ open, onOpenChange, onSuccess }: Utility
       case "pricing":
         if (selectedPriceType === "mensile" && !monthlyPrice) return false;
         if (selectedPriceType === "forfait" && !flatPrice) return false;
+        if (selectedPriceType === "attivazione" && !activationPrice) return false;
         return true;
       case "review":
         return true;
@@ -545,9 +556,12 @@ export function UtilityPracticeWizard({ open, onOpenChange, onSuccess }: Utility
     if (selectedPriceType === "mensile") {
       const price = parseFloat(monthlyPrice) || 0;
       data.monthlyPriceCents = Math.round(price * 100);
-    } else {
+    } else if (selectedPriceType === "forfait") {
       const price = parseFloat(flatPrice) || 0;
       data.flatPriceCents = Math.round(price * 100);
+    } else if (selectedPriceType === "attivazione") {
+      const price = parseFloat(activationPrice) || 0;
+      data.activationFeeCents = Math.round(price * 100);
     }
 
     if (commission) {
@@ -1287,7 +1301,7 @@ export function UtilityPracticeWizard({ open, onOpenChange, onSuccess }: Utility
       <div className="space-y-4">
         <div>
           <Label className="mb-2 block">Tipo Prezzo</Label>
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-3 gap-2">
             <Button
               type="button"
               variant={selectedPriceType === "mensile" ? "default" : "outline"}
@@ -1312,11 +1326,23 @@ export function UtilityPracticeWizard({ open, onOpenChange, onSuccess }: Utility
                 <span>Forfait</span>
               </div>
             </Button>
+            <Button
+              type="button"
+              variant={selectedPriceType === "attivazione" ? "default" : "outline"}
+              onClick={() => setSelectedPriceType("attivazione")}
+              className="h-auto py-4"
+              data-testid="button-price-attivazione"
+            >
+              <div className="flex flex-col items-center gap-2">
+                <Euro className="h-6 w-6" />
+                <span>Attivazione</span>
+              </div>
+            </Button>
           </div>
         </div>
 
         <div className="grid grid-cols-2 gap-4">
-          {selectedPriceType === "mensile" ? (
+          {selectedPriceType === "mensile" && (
             <div className="space-y-2">
               <Label>Prezzo Mensile (EUR) *</Label>
               <Input
@@ -1333,7 +1359,8 @@ export function UtilityPracticeWizard({ open, onOpenChange, onSuccess }: Utility
                 <p className="text-xs text-muted-foreground">Prezzo definito dal listino</p>
               )}
             </div>
-          ) : (
+          )}
+          {selectedPriceType === "forfait" && (
             <div className="space-y-2">
               <Label>Prezzo Forfait (EUR) *</Label>
               <Input
@@ -1344,6 +1371,24 @@ export function UtilityPracticeWizard({ open, onOpenChange, onSuccess }: Utility
                 onChange={(e) => setFlatPrice(e.target.value)}
                 placeholder="0.00"
                 data-testid="input-flat-price"
+                disabled={!!selectedServiceId && !useCustomService}
+              />
+              {selectedServiceId && !useCustomService && (
+                <p className="text-xs text-muted-foreground">Prezzo definito dal listino</p>
+              )}
+            </div>
+          )}
+          {selectedPriceType === "attivazione" && (
+            <div className="space-y-2">
+              <Label>Costo Attivazione (EUR) *</Label>
+              <Input
+                type="number"
+                step="0.01"
+                min="0"
+                value={activationPrice}
+                onChange={(e) => setActivationPrice(e.target.value)}
+                placeholder="0.00"
+                data-testid="input-activation-price"
                 disabled={!!selectedServiceId && !useCustomService}
               />
               {selectedServiceId && !useCustomService && (
@@ -1508,14 +1553,19 @@ export function UtilityPracticeWizard({ open, onOpenChange, onSuccess }: Utility
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <p className="text-xs text-muted-foreground">Tipo</p>
-                <p className="font-medium">{selectedPriceType === "mensile" ? "Mensile" : "Forfait"}</p>
+                <p className="font-medium">
+                  {selectedPriceType === "mensile" ? "Mensile" : 
+                   selectedPriceType === "forfait" ? "Forfait" : "Solo Attivazione"}
+                </p>
               </div>
               <div>
                 <p className="text-xs text-muted-foreground">Importo</p>
                 <p className="font-medium text-lg">
                   {selectedPriceType === "mensile" 
                     ? `${monthlyPrice || "0"}€/mese`
-                    : `${flatPrice || "0"}€`}
+                    : selectedPriceType === "forfait"
+                    ? `${flatPrice || "0"}€`
+                    : `${activationPrice || "0"}€ (una tantum)`}
                 </p>
               </div>
               {commission && (
