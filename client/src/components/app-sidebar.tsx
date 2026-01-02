@@ -438,11 +438,14 @@ export function AppSidebar() {
     <Sidebar>
       <SidebarHeader className="p-4 border-b border-sidebar-border">
         <div className="flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-md bg-sidebar-primary text-sidebar-primary-foreground">
-            <Wrench className="h-5 w-5" />
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+            <Wrench className="h-4 w-4" />
           </div>
-          <div>
-            <h2 className="text-lg font-semibold">Monkey Plan <span className="text-red-500">Beta v.22.5</span></h2>
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2">
+              <span className="font-semibold text-sm">MonkeyPlan</span>
+              <span className="text-[10px] text-primary font-medium px-1.5 py-0.5 rounded bg-primary/10">Beta</span>
+            </div>
             <p className="text-xs text-muted-foreground capitalize">
               {user.role.replace("_", " ")}
             </p>
@@ -451,7 +454,7 @@ export function AppSidebar() {
       </SidebarHeader>
 
       {isReseller && (
-        <div className="py-3 border-b border-sidebar-border">
+        <div className="py-2 border-b border-sidebar-border">
           <ContextSwitcher />
         </div>
       )}
@@ -608,29 +611,28 @@ export function AppSidebar() {
         })}
       </SidebarContent>
 
-      <SidebarFooter className="p-4 border-t border-sidebar-border">
-        <div className="flex items-center gap-3 mb-3">
-          <Avatar className="h-8 w-8">
-            <AvatarFallback className="text-xs">
+      <SidebarFooter className="p-3 border-t border-sidebar-border">
+        <div className="flex items-center gap-2">
+          <Avatar className="h-7 w-7">
+            <AvatarFallback className="text-[10px] bg-muted">
               {getInitials(user.fullName)}
             </AvatarFallback>
           </Avatar>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium truncate">{user.fullName}</p>
-            <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+            <p className="text-xs font-medium truncate">{user.fullName}</p>
+            <p className="text-[10px] text-muted-foreground truncate">{user.email}</p>
           </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7 flex-shrink-0"
+            onClick={() => logoutMutation.mutate()}
+            disabled={logoutMutation.isPending}
+            data-testid="button-logout"
+          >
+            <LogOut className="h-3.5 w-3.5" />
+          </Button>
         </div>
-        <Button
-          variant="outline"
-          size="sm"
-          className="w-full"
-          onClick={() => logoutMutation.mutate()}
-          disabled={logoutMutation.isPending}
-          data-testid="button-logout"
-        >
-          <LogOut className="h-4 w-4 mr-2" />
-          Logout
-        </Button>
       </SidebarFooter>
     </Sidebar>
   );
