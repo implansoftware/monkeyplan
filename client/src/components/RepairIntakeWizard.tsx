@@ -485,15 +485,15 @@ export function RepairIntakeWizard({
       const res = await apiRequest("POST", "/api/repair-orders", payload);
       return res.json();
     },
-    onSuccess: (data: { id: string; orderNumber: string }) => {
+    onSuccess: (data: { order: { id: string; orderNumber: string } }) => {
       toast({
         title: "Riparazione creata",
         description: "La nuova riparazione è stata registrata con successo",
       });
       queryClient.invalidateQueries({ queryKey: ["/api/repair-orders"] });
-      setCreatedOrder({ id: data.id, orderNumber: data.orderNumber });
+      setCreatedOrder({ id: data.order.id, orderNumber: data.order.orderNumber });
       setCurrentStep(5);
-      onSuccess?.(data);
+      onSuccess?.(data.order);
     },
     onError: (error: any) => {
       toast({
