@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Link } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { User, InsertUser } from "@shared/schema";
@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { Plus, Search, Pencil, Store, Users, UsersRound, Trash2, Building2, Eye, ChevronLeft, ChevronRight, Check, User as UserIcon, KeyRound, FileText, Settings } from "lucide-react";
+import { Plus, Search, Pencil, Store, Users, UsersRound, Trash2, Building2, Eye, ChevronLeft, ChevronRight, Check, User as UserIcon, KeyRound, FileText, Settings, Upload, Loader2, X } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Switch } from "@/components/ui/switch";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -40,6 +40,9 @@ export default function AdminResellers() {
   const [resellerToResetPassword, setResellerToResetPassword] = useState<Omit<User, 'password'> | null>(null);
   const [newPassword, setNewPassword] = useState("");
   const [wizardStep, setWizardStep] = useState(1);
+  const [logoUploading, setLogoUploading] = useState(false);
+  const [logoDeleting, setLogoDeleting] = useState(false);
+  const logoInputRef = useRef<HTMLInputElement>(null);
   const [formData, setFormData] = useState({
     username: "",
     password: "",
@@ -181,6 +184,63 @@ export default function AdminResellers() {
   const confirmDelete = () => {
     if (resellerToDelete) {
       deleteResellerMutation.mutate(resellerToDelete.id);
+    }
+  };
+
+  const handleLogoUpload = async (file: File) => {
+    if (!editingReseller) return;
+    
+    const validTypes = ['image/jpeg', 'image/png', 'image/webp'];
+    if (!validTypes.includes(file.type)) {
+      toast({ title: "Errore", description: "Formato non valido. Usa JPEG, PNG o WebP", variant: "destructive" });
+      return;
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      toast({ title: "Errore", description: "File troppo grande. Max 2MB", variant: "destructive" });
+      return;
+    }
+
+    setLogoUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append('logo', file);
+      
+      const res = await fetch(`/api/resellers/${editingReseller.id}/logo`, {
+        method: 'POST',
+        body: formData,
+        credentials: 'include',
+      });
+      
+      if (!res.ok) throw new Error(await res.text());
+      
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/resellers"] });
+      toast({ title: "Logo caricato", description: "Il logo è stato aggiornato" });
+    } catch (error: any) {
+      toast({ title: "Errore", description: error.message || "Impossibile caricare il logo", variant: "destructive" });
+    } finally {
+      setLogoUploading(false);
+      if (logoInputRef.current) logoInputRef.current.value = '';
+    }
+  };
+
+  const handleLogoDelete = async () => {
+    if (!editingReseller) return;
+    
+    setLogoDeleting(true);
+    try {
+      const res = await fetch(`/api/resellers/${editingReseller.id}/logo`, {
+        method: 'DELETE',
+        credentials: 'include',
+      });
+      
+      if (!res.ok) throw new Error(await res.text());
+      
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/resellers"] });
+      toast({ title: "Logo rimosso", description: "Il logo è stato eliminato" });
+    } catch (error: any) {
+      toast({ title: "Errore", description: error.message || "Impossibile eliminare il logo", variant: "destructive" });
+    } finally {
+      setLogoDeleting(false);
     }
   };
 
@@ -423,6 +483,73 @@ export default function AdminResellers() {
                         data-testid="input-phone" 
                       />
                     </div>
+                    
+                    {editingReseller && (
+                      <div className="space-y-2 pt-2 border-t">
+                        <Label>Logo Aziendale</Label>
+                        <div className="flex items-center gap-4">
+                          <Avatar className="h-16 w-16 border">
+                            {resellers.find(r => r.id === editingReseller.id)?.logoUrl ? (
+                              <AvatarImage 
+                                src={resellers.find(r => r.id === editingReseller.id)?.logoUrl || ''} 
+                                alt={editingReseller.fullName} 
+                                className="object-contain" 
+                              />
+                            ) : null}
+                            <AvatarFallback className="text-lg">
+                              {editingReseller.fullName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="flex flex-col gap-2">
+                            <input
+                              ref={logoInputRef}
+                              type="file"
+                              accept="image/jpeg,image/png,image/webp"
+                              className="hidden"
+                              onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (file) handleLogoUpload(file);
+                              }}
+                              data-testid="input-logo-file"
+                            />
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => logoInputRef.current?.click()}
+                              disabled={logoUploading}
+                              data-testid="button-upload-logo"
+                            >
+                              {logoUploading ? (
+                                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                              ) : (
+                                <Upload className="h-4 w-4 mr-2" />
+                              )}
+                              {resellers.find(r => r.id === editingReseller.id)?.logoUrl ? 'Cambia Logo' : 'Carica Logo'}
+                            </Button>
+                            {resellers.find(r => r.id === editingReseller.id)?.logoUrl && (
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={handleLogoDelete}
+                                disabled={logoDeleting}
+                                className="text-destructive hover:text-destructive"
+                                data-testid="button-delete-logo"
+                              >
+                                {logoDeleting ? (
+                                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                ) : (
+                                  <X className="h-4 w-4 mr-2" />
+                                )}
+                                Rimuovi Logo
+                              </Button>
+                            )}
+                          </div>
+                        </div>
+                        <p className="text-xs text-muted-foreground">Max 2MB. Formati: JPEG, PNG, WebP</p>
+                      </div>
+                    )}
                   </div>
                 )}
 
