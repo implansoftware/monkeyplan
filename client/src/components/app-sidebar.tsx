@@ -39,6 +39,7 @@ import {
   Inbox,
   Send,
   ArrowRightLeft,
+  UserCircle,
 } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useState, Fragment, useMemo } from "react";
@@ -193,6 +194,7 @@ const menuItems = {
     { title: "Le Mie Vendite", url: "/reseller/marketplace-sales", icon: TrendingUp, group: "Marketplace P2P" },
     { title: "Ticket", url: "/reseller/tickets", icon: Ticket, group: "Assistenza" },
     { title: "Guide", url: "/reseller/guide", icon: FileText, group: "Assistenza" },
+    { title: "Profilo", url: "/profile", icon: UserCircle, group: "Account" },
   ],
   repair_center: [
     { title: "Dashboard", url: "/repair-center", icon: LayoutDashboard, group: "Principale" },
