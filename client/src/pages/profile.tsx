@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -6,8 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
-import { User, Mail, Shield } from "lucide-react";
+import { User, Mail, Shield, Upload, Trash2, Building2 } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { User as UserType } from "@shared/schema";
 
@@ -19,6 +20,8 @@ export default function ProfilePage() {
     fullName: user?.fullName || "",
     email: user?.email || "",
   });
+  const [isUploadingLogo, setIsUploadingLogo] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const updateMutation = useMutation({
     mutationFn: async (data: { fullName: string; email: string }) => {
@@ -42,6 +45,91 @@ export default function ProfilePage() {
       });
     },
   });
+
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+
+    const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
+    if (!allowedTypes.includes(file.type)) {
+      toast({
+        title: "Formato non supportato",
+        description: "Usa un'immagine JPEG, PNG o WebP",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (file.size > 2 * 1024 * 1024) {
+      toast({
+        title: "File troppo grande",
+        description: "L'immagine non può superare i 2MB",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsUploadingLogo(true);
+    try {
+      const formData = new FormData();
+      formData.append("logo", file);
+
+      const res = await fetch(`/api/resellers/${user.id}/logo`, {
+        method: "POST",
+        body: formData,
+        credentials: "include",
+      });
+
+      if (!res.ok) {
+        throw new Error(await res.text());
+      }
+
+      await res.json();
+      queryClient.invalidateQueries({ queryKey: ["/api/user"] });
+      toast({
+        title: "Logo caricato",
+        description: "Il logo è stato aggiornato con successo",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Errore",
+        description: error.message || "Impossibile caricare il logo",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUploadingLogo(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    }
+  };
+
+  const handleDeleteLogo = async () => {
+    if (!user) return;
+    
+    try {
+      const res = await fetch(`/api/resellers/${user.id}/logo`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+
+      if (!res.ok) {
+        throw new Error(await res.text());
+      }
+
+      queryClient.invalidateQueries({ queryKey: ["/api/user"] });
+      toast({
+        title: "Logo rimosso",
+        description: "Il logo è stato eliminato",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Errore",
+        description: error.message || "Impossibile eliminare il logo",
+        variant: "destructive",
+      });
+    }
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -198,6 +286,71 @@ export default function ProfilePage() {
           </form>
         </CardContent>
       </Card>
+
+      {user.role === "reseller" && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Building2 className="h-5 w-5" />
+              Logo Aziendale
+            </CardTitle>
+            <CardDescription>
+              Carica il logo della tua azienda per personalizzare la tua presenza sulla piattaforma
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center gap-6">
+              <Avatar className="h-24 w-24 rounded-lg border-2 border-dashed border-muted-foreground/25">
+                {user.logoUrl ? (
+                  <AvatarImage src={user.logoUrl} alt="Logo aziendale" className="object-contain" />
+                ) : null}
+                <AvatarFallback className="rounded-lg bg-muted text-muted-foreground">
+                  <Building2 className="h-10 w-10" />
+                </AvatarFallback>
+              </Avatar>
+              
+              <div className="flex-1 space-y-3">
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={isUploadingLogo}
+                    data-testid="button-upload-logo"
+                  >
+                    <Upload className="h-4 w-4 mr-2" />
+                    {isUploadingLogo ? "Caricamento..." : user.logoUrl ? "Cambia Logo" : "Carica Logo"}
+                  </Button>
+                  {user.logoUrl && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleDeleteLogo}
+                      className="text-destructive hover:text-destructive"
+                      data-testid="button-delete-logo"
+                    >
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      Rimuovi
+                    </Button>
+                  )}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Formati supportati: JPEG, PNG, WebP. Dimensione massima: 2MB
+                </p>
+              </div>
+              
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                onChange={handleLogoUpload}
+                className="hidden"
+                data-testid="input-logo-file"
+              />
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <Card>
         <CardHeader>

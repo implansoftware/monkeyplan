@@ -10,6 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Plus, Search, Pencil, Store, Users, UsersRound, Trash2, Building2, Eye, ChevronLeft, ChevronRight, Check, User as UserIcon, KeyRound, FileText, Settings } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Switch } from "@/components/ui/switch";
@@ -673,7 +674,17 @@ export default function AdminResellers() {
                 {filteredResellers.map((reseller) => (
                   <TableRow key={reseller.id} data-testid={`row-reseller-${reseller.id}`}>
                     <TableCell className="font-medium" data-testid={`text-fullName-${reseller.id}`}>
-                      {reseller.fullName}
+                      <div className="flex items-center gap-3">
+                        <Avatar className="h-8 w-8">
+                          {reseller.logoUrl ? (
+                            <AvatarImage src={reseller.logoUrl} alt={reseller.fullName} className="object-contain" />
+                          ) : null}
+                          <AvatarFallback className="text-xs">
+                            {reseller.fullName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                        <span>{reseller.fullName}</span>
+                      </div>
                     </TableCell>
                     <TableCell data-testid={`text-email-${reseller.id}`}>{reseller.email}</TableCell>
                     <TableCell data-testid={`text-phone-${reseller.id}`}>{reseller.phone || "-"}</TableCell>

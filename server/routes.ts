@@ -3516,6 +3516,98 @@ export function registerRoutes(app: Express): Server {
 
   // ============ RESELLER ROUTES ============
 
+  // Reseller Logo Upload - Upload logo for reseller
+  app.post("/api/resellers/:id/logo", requireAuth, upload.single("logo"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const resellerId = req.params.id;
+      
+      // Only the reseller themselves or an admin can upload logo
+      if (req.user.role !== 'admin' && req.user.id !== resellerId) {
+        return res.status(403).send("Non autorizzato a modificare questo profilo");
+      }
+      
+      const reseller = await storage.getUser(resellerId);
+      if (!reseller || reseller.role !== 'reseller') {
+        return res.status(404).send("Rivenditore non trovato");
+      }
+      
+      if (!req.file) {
+        return res.status(400).send("Nessun file caricato");
+      }
+      
+      const allowedMimeTypes = ["image/jpeg", "image/png", "image/webp"];
+      if (!allowedMimeTypes.includes(req.file.mimetype)) {
+        return res.status(400).send("Formato immagine non supportato. Usa JPEG, PNG o WebP.");
+      }
+      
+      const maxSize = 2 * 1024 * 1024; // 2MB
+      if (req.file.size > maxSize) {
+        return res.status(400).send("Immagine troppo grande. Massimo 2MB.");
+      }
+      
+      const ext = req.file.originalname.split(".").pop() || "jpg";
+      const objectPath = `resellers/${resellerId}/logo.${ext}`;
+      
+      const privateObjectDir = objectStorage.getPrivateObjectDir();
+      const fullPath = `${privateObjectDir}/${objectPath}`;
+      const { bucketName, objectName } = parseObjectPath(fullPath);
+      const bucket = objectStorageClient.bucket(bucketName);
+      const file = bucket.file(objectName);
+      
+      await file.save(req.file.buffer, {
+        metadata: { contentType: req.file.mimetype }
+      });
+      
+      const logoUrl = `/objects/${objectPath}`;
+      
+      await storage.updateUser(resellerId, { logoUrl });
+      
+      res.json({ logoUrl });
+    } catch (error: any) {
+      console.error("Error uploading reseller logo:", error);
+      res.status(500).send(error.message);
+    }
+  });
+
+  // Delete reseller logo
+  app.delete("/api/resellers/:id/logo", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const resellerId = req.params.id;
+      
+      // Only the reseller themselves or an admin can delete logo
+      if (req.user.role !== 'admin' && req.user.id !== resellerId) {
+        return res.status(403).send("Non autorizzato a modificare questo profilo");
+      }
+      
+      // Get current user to find existing logo path
+      const reseller = await storage.getUser(resellerId);
+      if (reseller?.logoUrl) {
+        try {
+          // Extract object path from URL and delete from storage
+          const objectPath = reseller.logoUrl.replace('/objects/', '');
+          const privateObjectDir = objectStorage.getPrivateObjectDir();
+          const fullPath = `${privateObjectDir}/${objectPath}`;
+          const { bucketName, objectName } = parseObjectPath(fullPath);
+          const bucket = objectStorageClient.bucket(bucketName);
+          const file = bucket.file(objectName);
+          await file.delete().catch(() => {}); // Ignore errors if file doesn't exist
+        } catch (deleteError) {
+          console.error("Error deleting logo file:", deleteError);
+        }
+      }
+      
+      await storage.updateUser(resellerId, { logoUrl: null });
+      
+      res.sendStatus(204);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
   // Helper to get effective reseller/repair center ID based on context switching
   function getEffectiveContext(req: Request): { resellerId: string; repairCenterId?: string; isActingAs: boolean } {
     const actingAs = (req.session as any).actingAs;
