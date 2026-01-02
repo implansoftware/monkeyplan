@@ -154,18 +154,14 @@ export function ContextSwitcher() {
     : 'all';
 
   return (
-    <div className="flex flex-col gap-1.5 px-3" data-testid="context-switcher">
-      <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground font-medium uppercase tracking-wide">
-        <Users className="h-3 w-3" />
-        <span>Visualizza come</span>
-      </div>
+    <div className="px-4" data-testid="context-switcher">
       <Select 
         value={currentValue} 
         onValueChange={handleValueChange}
         disabled={setContextMutation.isPending || clearContextMutation.isPending}
       >
         <SelectTrigger 
-          className="w-full h-8 text-sm"
+          className="w-full h-9 text-xs bg-muted/50 border-0"
           data-testid="select-context-trigger"
         >
           <SelectValue placeholder="Seleziona contesto" />
@@ -173,14 +169,14 @@ export function ContextSwitcher() {
         <SelectContent>
           <SelectItem value="all" data-testid="select-context-all">
             <div className="flex items-center gap-2 whitespace-nowrap">
-              <Store className="h-4 w-4 flex-shrink-0" />
+              <Store className="h-3.5 w-3.5 flex-shrink-0 text-muted-foreground" />
               <span>Tutti i miei dati</span>
             </div>
           </SelectItem>
           
           {options && options.childResellers.length > 0 && (
             <>
-              <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground">
+              <div className="px-2 py-1.5 text-[10px] font-medium text-muted-foreground uppercase tracking-wide">
                 Sub-Rivenditori
               </div>
               {options.childResellers.map((reseller) => (
@@ -190,7 +186,7 @@ export function ContextSwitcher() {
                   data-testid={`select-context-reseller-${reseller.id}`}
                 >
                   <div className="flex items-center gap-2 whitespace-nowrap">
-                    <Store className="h-4 w-4 flex-shrink-0" />
+                    <Store className="h-3.5 w-3.5 flex-shrink-0 text-muted-foreground" />
                     <span className="truncate">{reseller.name}</span>
                   </div>
                 </SelectItem>
@@ -200,7 +196,7 @@ export function ContextSwitcher() {
           
           {options && options.repairCenters.length > 0 && (
             <>
-              <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground">
+              <div className="px-2 py-1.5 text-[10px] font-medium text-muted-foreground uppercase tracking-wide">
                 Centri di Riparazione
               </div>
               {options.repairCenters.map((center) => (
@@ -210,7 +206,7 @@ export function ContextSwitcher() {
                   data-testid={`select-context-center-${center.id}`}
                 >
                   <div className="flex items-center gap-2 whitespace-nowrap">
-                    <Building className="h-4 w-4 flex-shrink-0" />
+                    <Building className="h-3.5 w-3.5 flex-shrink-0 text-muted-foreground" />
                     <span className="truncate">{center.name}</span>
                   </div>
                 </SelectItem>
@@ -221,14 +217,9 @@ export function ContextSwitcher() {
       </Select>
       
       {context?.actingAs && (
-        <div className="text-[11px] text-amber-600 dark:text-amber-400 flex items-center gap-1.5 mt-1">
-          {context.actingAs.type === 'reseller' ? (
-            <Store className="h-3 w-3 flex-shrink-0" />
-          ) : (
-            <Building className="h-3 w-3 flex-shrink-0" />
-          )}
-          <span className="truncate">Visualizzando: {context.actingAs.name}</span>
-        </div>
+        <p className="text-[10px] text-muted-foreground mt-1.5 truncate px-1">
+          Visualizzando: {context.actingAs.name}
+        </p>
       )}
     </div>
   );
