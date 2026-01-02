@@ -16,6 +16,8 @@ import { format } from "date-fns";
 import { it } from "date-fns/locale";
 import { CustomerWizardDialog } from "@/components/CustomerWizardDialog";
 import { RepairIntakeWizard } from "@/components/RepairIntakeWizard";
+import { useAuth } from "@/hooks/use-auth";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 
 type ResellerStats = {
   overview: {
@@ -68,10 +70,21 @@ const CHART_COLORS = ['hsl(var(--primary))', 'hsl(var(--muted-foreground))', 'hs
 export default function ResellerDashboard() {
   const [customerDialogOpen, setCustomerDialogOpen] = useState(false);
   const [acceptanceDialogOpen, setAcceptanceDialogOpen] = useState(false);
+  const { user } = useAuth();
+  const hasParentReseller = !!(user as any)?.parentResellerId;
+
+  const { data: parentReseller } = useQuery<{ id: string; fullName: string; logoUrl: string | null; ragioneSociale: string | null }>({
+    queryKey: ["/api/my-parent-reseller"],
+    enabled: hasParentReseller,
+  });
 
   const { data: stats, isLoading } = useQuery<ResellerStats>({
     queryKey: ["/api/stats"],
   });
+
+  const getInitials = (name: string) => {
+    return name.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2);
+  };
 
   const { data: repairs = [] } = useQuery<RepairOrder[]>({
     queryKey: ["/api/reseller/repairs"],
@@ -161,6 +174,27 @@ export default function ResellerDashboard() {
           </Button>
         </div>
       </div>
+
+      {/* Parent Reseller Banner */}
+      {parentReseller && (
+        <div className="flex items-center gap-4 p-4 rounded-xl border bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 border-blue-200/50 dark:border-blue-800/50">
+          <Avatar className="h-12 w-12 rounded-lg border-2 border-blue-200 dark:border-blue-700">
+            {parentReseller.logoUrl ? (
+              <AvatarImage src={parentReseller.logoUrl} alt={parentReseller.ragioneSociale || parentReseller.fullName} className="object-contain" />
+            ) : null}
+            <AvatarFallback className="rounded-lg bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 font-semibold">
+              {getInitials(parentReseller.ragioneSociale || parentReseller.fullName)}
+            </AvatarFallback>
+          </Avatar>
+          <div className="flex-1 min-w-0">
+            <p className="text-xs font-medium text-blue-600 dark:text-blue-400 uppercase tracking-wider mb-0.5">Fai parte della rete</p>
+            <p className="font-semibold text-foreground truncate" data-testid="text-parent-reseller-name">
+              {parentReseller.ragioneSociale || parentReseller.fullName}
+            </p>
+          </div>
+          <Network className="h-6 w-6 text-blue-500/50" />
+        </div>
+      )}
 
       {/* Alerts */}
       {(overdueInvoices.length > 0 || pendingInvoices.length > 0) && (
