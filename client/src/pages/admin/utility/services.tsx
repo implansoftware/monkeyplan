@@ -513,7 +513,8 @@ export default function AdminUtilityServices() {
                     id="contractMonths"
                     name="contractMonths"
                     type="number"
-                    defaultValue={editingService?.contractMonths || 24}
+                    defaultValue={editingService?.contractMonths ?? ""}
+                    placeholder="es. 24"
                     data-testid="input-contract-months"
                   />
                 </div>
