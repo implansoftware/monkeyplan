@@ -12267,26 +12267,21 @@ export function registerRoutes(app: Express): Server {
         if (deviceType) deviceTypeName = deviceType.name;
       }
       
-      // Generate PDF with labels
+      // Generate PDF with single large label
       const PDFDocument = (await import('pdfkit')).default;
-      // A4 page with 3 labels per row, 8 rows = 24 labels per page
-      // Label size approx: 70mm x 35mm (198pt x 99pt)
-      const doc = new PDFDocument({ margin: 20, size: 'A4' });
+      const doc = new PDFDocument({ margin: 40, size: 'A4' });
       
       res.setHeader('Content-Type', 'application/pdf');
-      res.setHeader('Content-Disposition', `attachment; filename="etichette-${repairOrder.orderNumber}.pdf"`);
+      res.setHeader('Content-Disposition', `attachment; filename="etichetta-${repairOrder.orderNumber}.pdf"`);
       
       doc.pipe(res);
       
-      // Label dimensions (in points, 1 inch = 72 points)
-      const labelWidth = 180;  // ~63mm
-      const labelHeight = 90;  // ~32mm
-      const labelsPerRow = 3;
-      const rowsPerPage = 8;
-      const marginX = 20;
-      const marginY = 20;
-      const gapX = 10;
-      const gapY = 10;
+      // Large label dimensions - centered on A4 page
+      const pageWidth = 595; // A4 width in points
+      const labelWidth = 400;
+      const labelHeight = 250;
+      const x = (pageWidth - labelWidth) / 2;
+      const y = 80;
       
       // Prepare label content
       const orderNumber = repairOrder.orderNumber || 'N/A';
@@ -12299,61 +12294,58 @@ export function registerRoutes(app: Express): Server {
         accessoriesList = acceptance.accessories;
       }
       
-      // Generate 6 labels (2 rows x 3 columns)
-      const totalLabels = 6;
+      // Draw label border with rounded corners
+      doc.roundedRect(x, y, labelWidth, labelHeight, 10).stroke('#cccccc');
       
-      for (let i = 0; i < totalLabels; i++) {
-        const col = i % labelsPerRow;
-        const row = Math.floor(i / labelsPerRow);
-        
-        const x = marginX + (col * (labelWidth + gapX));
-        const y = marginY + (row * (labelHeight + gapY));
-        
-        // Draw label border with rounded corners
-        doc.roundedRect(x, y, labelWidth, labelHeight, 5).stroke();
-        
-        // Header with order number (blue background)
-        doc.save();
-        doc.roundedRect(x, y, labelWidth, 18, 5);
-        doc.rect(x, y + 10, labelWidth, 8);
-        doc.clip();
-        doc.rect(x, y, labelWidth, 18).fill('#1e40af');
-        doc.restore();
-        
-        doc.fontSize(10).font('Helvetica-Bold').fillColor('white');
-        doc.text(orderNumber, x + 5, y + 4, { width: labelWidth - 10, align: 'center' });
-        
-        // Reset color
-        doc.fillColor('black');
-        
-        // Device info
-        doc.fontSize(8).font('Helvetica-Bold');
-        doc.text(deviceInfo.length > 25 ? deviceInfo.substring(0, 25) + '...' : deviceInfo, x + 5, y + 22, { width: labelWidth - 10 });
-        
-        // IMEI/Serial if available
-        if (imeiSerial) {
-          doc.fontSize(6).font('Helvetica');
-          doc.text(`ID: ${imeiSerial}`, x + 5, y + 33, { width: labelWidth - 10 });
-        }
-        
-        // Accessories (compact)
-        if (accessoriesList.length > 0) {
-          doc.fontSize(6).font('Helvetica');
-          const accY = imeiSerial ? y + 42 : y + 35;
-          doc.text('Include:', x + 5, accY, { width: labelWidth - 10 });
-          const accText = accessoriesList.slice(0, 3).join(', ');
-          doc.text(accText.length > 35 ? accText.substring(0, 35) + '...' : accText, x + 5, accY + 8, { width: labelWidth - 10 });
-        }
-        
-        // Date at bottom
-        const ingressDate = repairOrder.ingressatoAt ? new Date(repairOrder.ingressatoAt) : new Date(repairOrder.createdAt);
-        doc.fontSize(6).font('Helvetica');
-        doc.text(ingressDate.toLocaleDateString('it-IT'), x + 5, y + labelHeight - 12, { width: labelWidth - 10, align: 'right' });
+      // Header with order number (blue background)
+      doc.save();
+      doc.roundedRect(x, y, labelWidth, 50, 10);
+      doc.rect(x, y + 25, labelWidth, 25);
+      doc.clip();
+      doc.rect(x, y, labelWidth, 50).fill('#1e40af');
+      doc.restore();
+      
+      doc.fontSize(24).font('Helvetica-Bold').fillColor('white');
+      doc.text(orderNumber, x + 10, y + 14, { width: labelWidth - 20, align: 'center' });
+      
+      // Reset color
+      doc.fillColor('black');
+      
+      // Device info
+      doc.fontSize(18).font('Helvetica-Bold');
+      doc.text(deviceInfo, x + 20, y + 65, { width: labelWidth - 40 });
+      
+      // IMEI/Serial if available
+      let currentY = y + 95;
+      if (imeiSerial) {
+        doc.fontSize(12).font('Helvetica');
+        doc.text(`ID: ${imeiSerial}`, x + 20, currentY, { width: labelWidth - 40 });
+        currentY += 20;
       }
       
-      // Add instruction text at bottom
-      doc.fontSize(8).font('Helvetica').fillColor('#666666');
-      doc.text('Ritagliare le etichette lungo i bordi e applicare sul dispositivo e sugli accessori.', marginX, marginY + (2 * (labelHeight + gapY)) + 20, { align: 'center', width: 555 });
+      // Accessories list
+      if (accessoriesList.length > 0) {
+        doc.fontSize(11).font('Helvetica-Bold');
+        doc.text('Accessori inclusi:', x + 20, currentY, { width: labelWidth - 40 });
+        currentY += 18;
+        doc.fontSize(10).font('Helvetica');
+        accessoriesList.forEach((acc) => {
+          doc.text(`• ${acc}`, x + 25, currentY, { width: labelWidth - 50 });
+          currentY += 14;
+        });
+      } else {
+        doc.fontSize(11).font('Helvetica');
+        doc.text('Nessun accessorio incluso', x + 20, currentY, { width: labelWidth - 40 });
+      }
+      
+      // Date at bottom right
+      const ingressDate = repairOrder.ingressatoAt ? new Date(repairOrder.ingressatoAt) : new Date(repairOrder.createdAt);
+      doc.fontSize(10).font('Helvetica').fillColor('#666666');
+      doc.text(`Data ingresso: ${ingressDate.toLocaleDateString('it-IT')}`, x + 20, y + labelHeight - 30, { width: labelWidth - 40, align: 'right' });
+      
+      // Footer instruction
+      doc.fontSize(9).font('Helvetica').fillColor('#888888');
+      doc.text('Applicare questa etichetta sul dispositivo', x, y + labelHeight + 20, { width: labelWidth, align: 'center' });
       
       doc.end();
     } catch (error: any) {
