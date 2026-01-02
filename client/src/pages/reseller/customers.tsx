@@ -10,7 +10,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
-import { Users, Plus, Search, Mail, Building2, Wrench, Pencil, X, Check, Trash2, Phone, UserCheck, Eye, ChevronRight } from "lucide-react";
+import { Users, Plus, Search, Mail, Building2, Wrench, Pencil, X, Check, Trash2, Phone, UserCheck, Eye, ChevronRight, TrendingUp, Filter } from "lucide-react";
 import { Link } from "wouter";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -25,8 +25,11 @@ type CustomerWithRepairCenters = User & {
   assignedRepairCenters?: RepairCenter[];
 };
 
+type FilterType = "all" | "active" | "inactive";
+
 export default function ResellerCustomers() {
   const [searchQuery, setSearchQuery] = useState("");
+  const [activeFilter, setActiveFilter] = useState<FilterType>("all");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState<CustomerWithRepairCenters | null>(null);
   const [isEditing, setIsEditing] = useState(false);
@@ -106,7 +109,6 @@ export default function ResellerCustomers() {
             return;
           }
         } catch {
-          // Not JSON, continue to generic error
         }
       }
       toast({ title: "Errore", description: errorMsg, variant: "destructive" });
@@ -164,12 +166,6 @@ export default function ResellerCustomers() {
     }));
   };
 
-  const filteredCustomers = customers.filter((customer) =>
-    customer.fullName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    customer.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    customer.username.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
   const getCustomerRepairs = (customerId: string) => {
     return allRepairs.filter(repair => repair.customerId === customerId);
   };
@@ -186,68 +182,108 @@ export default function ResellerCustomers() {
   };
 
   const activeCustomers = customers.filter(c => c.isActive).length;
+  const inactiveCustomers = customers.filter(c => !c.isActive).length;
   const totalRepairs = allRepairs.length;
+
+  const filteredCustomers = customers
+    .filter((customer) => {
+      if (activeFilter === "active") return customer.isActive;
+      if (activeFilter === "inactive") return !customer.isActive;
+      return true;
+    })
+    .filter((customer) =>
+      customer.fullName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      customer.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      customer.username.toLowerCase().includes(searchQuery.toLowerCase())
+    );
 
   return (
     <div className="space-y-6" data-testid="page-reseller-customers">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Clienti</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">
-            Gestisci la tua base clienti
-          </p>
+      {/* Hero Header */}
+      <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-primary/5 via-primary/10 to-slate-100 dark:from-primary/10 dark:via-primary/5 dark:to-slate-900 p-6 border">
+        <div className="absolute inset-0 opacity-[0.03]" style={{
+          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23000' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+        }} />
+        <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-3 mb-1">
+              <div className="h-10 w-10 rounded-xl bg-primary text-primary-foreground flex items-center justify-center shadow-lg shadow-primary/25">
+                <Users className="h-5 w-5" />
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold tracking-tight">Clienti</h1>
+                <p className="text-sm text-muted-foreground">
+                  Gestisci la tua base clienti
+                </p>
+              </div>
+            </div>
+          </div>
+          <ActionGuard module="customers" action="create">
+            <Button onClick={() => setDialogOpen(true)} className="shadow-lg shadow-primary/25" data-testid="button-new-customer">
+              <Plus className="h-4 w-4 mr-2" />
+              Nuovo Cliente
+            </Button>
+            <CustomerWizardDialog 
+              open={dialogOpen} 
+              onOpenChange={setDialogOpen}
+              onSuccess={handleCustomerCreated}
+            />
+          </ActionGuard>
         </div>
-        <ActionGuard module="customers" action="create">
-          <Button onClick={() => setDialogOpen(true)} data-testid="button-new-customer">
-            <Plus className="h-4 w-4 mr-2" />
-            Nuovo Cliente
-          </Button>
-          <CustomerWizardDialog 
-            open={dialogOpen} 
-            onOpenChange={setDialogOpen}
-            onSuccess={handleCustomerCreated}
-          />
-        </ActionGuard>
       </div>
 
       {/* Stats Row */}
-      <div className="grid grid-cols-3 gap-4">
-        <Card>
-          <CardContent className="pt-4 pb-3">
-            <div className="flex items-center gap-3">
-              <div className="h-9 w-9 rounded-lg bg-primary text-primary-foreground flex items-center justify-center">
-                <Users className="h-4 w-4" />
-              </div>
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <Card className="relative overflow-hidden group hover:shadow-md transition-shadow">
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent" />
+          <CardContent className="relative pt-5 pb-4">
+            <div className="flex items-center justify-between">
               <div>
-                <p className="text-2xl font-semibold tabular-nums">{customers.length}</p>
-                <p className="text-xs text-muted-foreground">Totali</p>
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">Totale Clienti</p>
+                <p className="text-3xl font-bold tabular-nums">{customers.length}</p>
+                <div className="flex items-center gap-1 mt-1">
+                  <TrendingUp className="h-3 w-3 text-emerald-500" />
+                  <span className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">+12% questo mese</span>
+                </div>
+              </div>
+              <div className="h-12 w-12 rounded-xl bg-primary text-primary-foreground flex items-center justify-center shadow-lg shadow-primary/20">
+                <Users className="h-6 w-6" />
               </div>
             </div>
           </CardContent>
         </Card>
-        <Card>
-          <CardContent className="pt-4 pb-3">
-            <div className="flex items-center gap-3">
-              <div className="h-9 w-9 rounded-lg bg-primary text-primary-foreground flex items-center justify-center">
-                <UserCheck className="h-4 w-4" />
-              </div>
+
+        <Card className="relative overflow-hidden group hover:shadow-md transition-shadow">
+          <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-transparent" />
+          <CardContent className="relative pt-5 pb-4">
+            <div className="flex items-center justify-between">
               <div>
-                <p className="text-2xl font-semibold tabular-nums">{activeCustomers}</p>
-                <p className="text-xs text-muted-foreground">Attivi</p>
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">Clienti Attivi</p>
+                <p className="text-3xl font-bold tabular-nums text-emerald-600 dark:text-emerald-400">{activeCustomers}</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {customers.length > 0 ? Math.round((activeCustomers / customers.length) * 100) : 0}% del totale
+                </p>
+              </div>
+              <div className="h-12 w-12 rounded-xl bg-emerald-500 text-white flex items-center justify-center shadow-lg shadow-emerald-500/20">
+                <UserCheck className="h-6 w-6" />
               </div>
             </div>
           </CardContent>
         </Card>
-        <Card>
-          <CardContent className="pt-4 pb-3">
-            <div className="flex items-center gap-3">
-              <div className="h-9 w-9 rounded-lg bg-primary text-primary-foreground flex items-center justify-center">
-                <Wrench className="h-4 w-4" />
-              </div>
+
+        <Card className="relative overflow-hidden group hover:shadow-md transition-shadow">
+          <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-transparent" />
+          <CardContent className="relative pt-5 pb-4">
+            <div className="flex items-center justify-between">
               <div>
-                <p className="text-2xl font-semibold tabular-nums">{totalRepairs}</p>
-                <p className="text-xs text-muted-foreground">Riparazioni</p>
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">Riparazioni Totali</p>
+                <p className="text-3xl font-bold tabular-nums text-blue-600 dark:text-blue-400">{totalRepairs}</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Media {customers.length > 0 ? (totalRepairs / customers.length).toFixed(1) : 0} per cliente
+                </p>
+              </div>
+              <div className="h-12 w-12 rounded-xl bg-blue-500 text-white flex items-center justify-center shadow-lg shadow-blue-500/20">
+                <Wrench className="h-6 w-6" />
               </div>
             </div>
           </CardContent>
@@ -255,54 +291,107 @@ export default function ResellerCustomers() {
       </div>
 
       {/* Main Table Card */}
-      <Card>
-        <CardHeader className="pb-4">
+      <Card className="overflow-hidden">
+        <CardHeader className="pb-4 border-b bg-muted/30">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <CardTitle className="text-sm font-medium">Elenco Clienti</CardTitle>
-            <div className="relative w-full sm:w-72">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Cerca cliente..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9 h-9"
-                data-testid="input-search"
-              />
+            <div className="flex items-center gap-3">
+              <CardTitle className="text-base font-semibold">Elenco Clienti</CardTitle>
+              <Badge variant="secondary" className="font-normal">
+                {filteredCustomers.length} risultati
+              </Badge>
+            </div>
+            <div className="flex items-center gap-3">
+              {/* Filter Pills */}
+              <div className="flex items-center gap-1 p-1 bg-muted rounded-lg">
+                <Button
+                  variant={activeFilter === "all" ? "default" : "ghost"}
+                  size="sm"
+                  className="h-7 text-xs px-3"
+                  onClick={() => setActiveFilter("all")}
+                >
+                  Tutti
+                  <Badge variant="secondary" className="ml-1.5 h-4 px-1 text-[10px]">{customers.length}</Badge>
+                </Button>
+                <Button
+                  variant={activeFilter === "active" ? "default" : "ghost"}
+                  size="sm"
+                  className="h-7 text-xs px-3"
+                  onClick={() => setActiveFilter("active")}
+                >
+                  Attivi
+                  <Badge variant="secondary" className="ml-1.5 h-4 px-1 text-[10px]">{activeCustomers}</Badge>
+                </Button>
+                <Button
+                  variant={activeFilter === "inactive" ? "default" : "ghost"}
+                  size="sm"
+                  className="h-7 text-xs px-3"
+                  onClick={() => setActiveFilter("inactive")}
+                >
+                  Inattivi
+                  <Badge variant="secondary" className="ml-1.5 h-4 px-1 text-[10px]">{inactiveCustomers}</Badge>
+                </Button>
+              </div>
+              <div className="relative w-64">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Cerca cliente..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-9 h-9 bg-background"
+                  data-testid="input-search"
+                />
+              </div>
             </div>
           </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-0">
           {isLoading ? (
-            <div className="space-y-2">
+            <div className="p-6 space-y-3">
               {[1, 2, 3].map((i) => (
-                <Skeleton key={i} className="h-14 w-full" />
+                <Skeleton key={i} className="h-16 w-full" />
               ))}
             </div>
           ) : filteredCustomers.length === 0 ? (
-            <div className="text-center py-12 text-muted-foreground">
-              <Users className="h-10 w-10 mx-auto mb-3 opacity-20" />
-              <p className="text-sm">Nessun cliente trovato</p>
+            <div className="py-16 text-center">
+              <div className="mx-auto w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">
+                <Users className="h-8 w-8 text-muted-foreground" />
+              </div>
+              <h3 className="font-medium mb-1">Nessun cliente trovato</h3>
+              <p className="text-sm text-muted-foreground max-w-sm mx-auto">
+                {searchQuery ? "Prova a modificare i criteri di ricerca" : "Inizia aggiungendo il tuo primo cliente"}
+              </p>
+              {!searchQuery && (
+                <Button className="mt-4" onClick={() => setDialogOpen(true)}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Aggiungi Cliente
+                </Button>
+              )}
             </div>
           ) : (
-            <div className="overflow-x-auto -mx-6">
+            <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
-                  <TableRow className="hover:bg-transparent">
-                    <TableHead className="pl-6">Cliente</TableHead>
+                  <TableRow className="hover:bg-transparent bg-muted/50">
+                    <TableHead className="pl-6 w-[250px]">Cliente</TableHead>
                     <TableHead>Contatti</TableHead>
                     {hasSubResellers && <TableHead>Sub-Reseller</TableHead>}
-                    <TableHead>Stato</TableHead>
-                    <TableHead>Riparazioni</TableHead>
+                    <TableHead className="text-center">Stato</TableHead>
+                    <TableHead className="text-center">Riparazioni</TableHead>
                     <TableHead className="pr-6 text-right">Azioni</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredCustomers.map((customer) => {
+                  {filteredCustomers.map((customer, index) => {
                     const customerRepairs = getCustomerRepairs(customer.id);
                     const subResellerName = getSubResellerName(customer.subResellerId);
                     return (
-                      <TableRow key={customer.id} data-testid={`row-customer-${customer.id}`}>
-                        <TableCell className="pl-6">
+                      <TableRow 
+                        key={customer.id} 
+                        data-testid={`row-customer-${customer.id}`}
+                        className={`group ${index % 2 === 0 ? 'bg-background' : 'bg-muted/20'}`}
+                      >
+                        <TableCell className="pl-6 relative">
+                          <div className={`absolute left-0 top-2 bottom-2 w-1 rounded-r-full ${customer.isActive ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-600'}`} />
                           <div>
                             <p className="font-medium" data-testid={`text-name-${customer.id}`}>
                               {customer.fullName}
@@ -316,7 +405,7 @@ export default function ResellerCustomers() {
                           <div className="space-y-0.5">
                             <div className="flex items-center gap-1.5 text-sm">
                               <Mail className="h-3 w-3 text-muted-foreground" />
-                              <span className="truncate max-w-[180px]">{customer.email}</span>
+                              <span className="truncate max-w-[200px]">{customer.email}</span>
                             </div>
                             {customer.phone && (
                               <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
@@ -329,28 +418,30 @@ export default function ResellerCustomers() {
                         {hasSubResellers && (
                           <TableCell>
                             {subResellerName ? (
-                              <span className="text-sm" data-testid={`badge-sub-reseller-${customer.id}`}>
+                              <Badge variant="outline" className="font-normal" data-testid={`badge-sub-reseller-${customer.id}`}>
                                 {subResellerName}
-                              </span>
+                              </Badge>
                             ) : (
                               <span className="text-muted-foreground text-sm">-</span>
                             )}
                           </TableCell>
                         )}
-                        <TableCell>
+                        <TableCell className="text-center">
                           {customer.isActive ? (
-                            <Badge className="font-normal bg-primary/15 text-primary border-0">Attivo</Badge>
+                            <Badge className="bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-0 font-normal">
+                              Attivo
+                            </Badge>
                           ) : (
                             <Badge variant="secondary" className="font-normal">Inattivo</Badge>
                           )}
                         </TableCell>
-                        <TableCell>
-                          <Badge variant="secondary" className="font-normal tabular-nums" data-testid={`badge-repairs-${customer.id}`}>
+                        <TableCell className="text-center">
+                          <Badge variant="outline" className="font-normal tabular-nums" data-testid={`badge-repairs-${customer.id}`}>
                             {customerRepairs.length}
                           </Badge>
                         </TableCell>
                         <TableCell className="pr-6 text-right">
-                          <div className="flex items-center justify-end gap-1">
+                          <div className="flex items-center justify-end gap-1 opacity-70 group-hover:opacity-100 transition-opacity">
                             <Link href={`/reseller/customers/${customer.id}`}>
                               <Button
                                 variant="ghost"
