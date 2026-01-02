@@ -38,7 +38,7 @@ import {
   User, Smartphone, ClipboardCheck, CheckCircle2, 
   ChevronRight, ChevronLeft, Loader2, Plus, Search,
   Monitor, Tablet, Laptop, Tv, Gamepad2, Watch, Headphones, Printer,
-  AlertCircle, UserPlus, X, Mail, Phone, Building, Store
+  AlertCircle, UserPlus, X, Mail, Phone, Building, Store, Download, Tag, PartyPopper
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -83,6 +83,7 @@ const STEPS = [
   { id: 2, name: "Dispositivo", icon: Smartphone },
   { id: 3, name: "Condizioni", icon: ClipboardCheck },
   { id: 4, name: "Conferma", icon: CheckCircle2 },
+  { id: 5, name: "Completato", icon: PartyPopper },
 ];
 
 const DEVICE_TYPE_ICONS: Record<string, any> = {
@@ -121,6 +122,7 @@ export function RepairIntakeWizard({
   const [newModelName, setNewModelName] = useState("");
   const [selectedResellerId, setSelectedResellerId] = useState("");
   const [selectedSubResellerId, setSelectedSubResellerId] = useState("");
+  const [createdOrder, setCreatedOrder] = useState<{ id: string; orderNumber: string } | null>(null);
   const dialogContentRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -165,6 +167,7 @@ export function RepairIntakeWizard({
       setNewBrandName("");
       setShowNewModelForm(false);
       setNewModelName("");
+      setCreatedOrder(null);
       form.reset();
     }
   }, [open, form]);
@@ -480,15 +483,16 @@ export function RepairIntakeWizard({
       payload.acceptance = acceptance;
 
       const res = await apiRequest("POST", "/api/repair-orders", payload);
-      return res;
+      return res.json();
     },
-    onSuccess: (data) => {
+    onSuccess: (data: { id: string; orderNumber: string }) => {
       toast({
         title: "Riparazione creata",
         description: "La nuova riparazione è stata registrata con successo",
       });
       queryClient.invalidateQueries({ queryKey: ["/api/repair-orders"] });
-      onOpenChange(false);
+      setCreatedOrder({ id: data.id, orderNumber: data.orderNumber });
+      setCurrentStep(5);
       onSuccess?.(data);
     },
     onError: (error: any) => {
@@ -542,9 +546,10 @@ export function RepairIntakeWizard({
           <DialogTitle className="text-xl">Nuova Riparazione</DialogTitle>
         </DialogHeader>
 
-        {/* Step Indicator */}
+        {/* Step Indicator - show only first 4 steps (step 5 is success screen) */}
+        {currentStep < 5 && (
         <div className="flex items-center justify-between mb-6">
-          {STEPS.map((step, index) => {
+          {STEPS.slice(0, 4).map((step, index) => {
             const Icon = step.icon;
             const isActive = currentStep === step.id;
             const isCompleted = currentStep > step.id;
@@ -574,7 +579,7 @@ export function RepairIntakeWizard({
                     {step.name}
                   </span>
                 </div>
-                {index < STEPS.length - 1 && (
+                {index < 3 && (
                   <div className={cn(
                     "w-12 h-0.5 mx-2",
                     isCompleted ? "bg-primary/50" : "bg-muted"
@@ -584,6 +589,7 @@ export function RepairIntakeWizard({
             );
           })}
         </div>
+        )}
 
         <Form {...form}>
           <form className="space-y-4">
@@ -1554,50 +1560,109 @@ export function RepairIntakeWizard({
                 )}
               </div>
             )}
+
+            {/* Step 5: Success - Download Documents */}
+            {currentStep === 5 && createdOrder && (
+              <div className="space-y-6">
+                <div className="text-center mb-6">
+                  <div className="mx-auto w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mb-4">
+                    <PartyPopper className="h-8 w-8 text-green-600 dark:text-green-400" />
+                  </div>
+                  <h3 className="text-xl font-semibold text-green-600 dark:text-green-400">Riparazione Creata!</h3>
+                  <p className="text-muted-foreground mt-1">
+                    Ordine <span className="font-mono font-semibold">{createdOrder.orderNumber}</span> registrato con successo
+                  </p>
+                </div>
+
+                <Card>
+                  <CardContent className="p-4">
+                    <p className="text-sm font-medium mb-3">Scarica i documenti:</p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <Button
+                        variant="outline"
+                        className="w-full justify-start"
+                        onClick={() => window.open(`/api/repair-orders/${createdOrder.id}/intake-document`, '_blank')}
+                        data-testid="button-download-acceptance-wizard"
+                      >
+                        <Download className="mr-2 h-4 w-4" />
+                        Documento Accettazione
+                      </Button>
+                      <Button
+                        className="w-full justify-start bg-blue-600 hover:bg-blue-700"
+                        onClick={() => window.open(`/api/repair-orders/${createdOrder.id}/labels`, '_blank')}
+                        data-testid="button-download-labels-wizard"
+                      >
+                        <Tag className="mr-2 h-4 w-4" />
+                        Stampa Etichette
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <p className="text-xs text-center text-muted-foreground">
+                  Puoi sempre scaricare questi documenti dalla pagina dettaglio riparazione
+                </p>
+              </div>
+            )}
           </form>
         </Form>
 
         {/* Navigation Buttons */}
-        <div className="flex justify-between mt-6 pt-4 border-t">
-          <Button
-            variant="outline"
-            onClick={handleBack}
-            disabled={currentStep === 1}
-            data-testid="button-wizard-back"
-          >
-            <ChevronLeft className="h-4 w-4 mr-1" />
-            Indietro
-          </Button>
+        {currentStep < 5 && (
+          <div className="flex justify-between mt-6 pt-4 border-t">
+            <Button
+              variant="outline"
+              onClick={handleBack}
+              disabled={currentStep === 1}
+              data-testid="button-wizard-back"
+            >
+              <ChevronLeft className="h-4 w-4 mr-1" />
+              Indietro
+            </Button>
 
-          {currentStep < 4 ? (
+            {currentStep < 4 ? (
+              <Button
+                onClick={handleNext}
+                disabled={!canGoNext()}
+                data-testid="button-wizard-next"
+              >
+                Avanti
+                <ChevronRight className="h-4 w-4 ml-1" />
+              </Button>
+            ) : (
+              <Button
+                onClick={handleSubmit}
+                disabled={createMutation.isPending}
+                data-testid="button-wizard-confirm"
+              >
+                {createMutation.isPending ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Creazione...
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle2 className="h-4 w-4 mr-2" />
+                    Crea Riparazione
+                  </>
+                )}
+              </Button>
+            )}
+          </div>
+        )}
+
+        {/* Close button for Step 5 */}
+        {currentStep === 5 && (
+          <div className="flex justify-center mt-6 pt-4 border-t">
             <Button
-              onClick={handleNext}
-              disabled={!canGoNext()}
-              data-testid="button-wizard-next"
+              onClick={() => onOpenChange(false)}
+              data-testid="button-wizard-close"
             >
-              Avanti
-              <ChevronRight className="h-4 w-4 ml-1" />
+              <CheckCircle2 className="h-4 w-4 mr-2" />
+              Chiudi
             </Button>
-          ) : (
-            <Button
-              onClick={handleSubmit}
-              disabled={createMutation.isPending}
-              data-testid="button-wizard-confirm"
-            >
-              {createMutation.isPending ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Creazione...
-                </>
-              ) : (
-                <>
-                  <CheckCircle2 className="h-4 w-4 mr-2" />
-                  Crea Riparazione
-                </>
-              )}
-            </Button>
-          )}
-        </div>
+          </div>
+        )}
       </DialogContent>
     </Dialog>
   );

@@ -37,7 +37,7 @@ import {
   Wrench, Euro, FileText, Paperclip, Calendar, Package, ClipboardList,
   ClipboardCheck, PackageCheck, Play, CheckCircle, Stethoscope, Receipt,
   Download, User, ArrowRight, Circle, CheckCircle2, AlertCircle, AlertTriangle, Gift, Shield, SkipForward,
-  HardDrive, Building2, Clock, Truck, Loader2, XCircle, CalendarCheck, ArrowLeft, ShoppingBag, Smartphone
+  HardDrive, Building2, Clock, Truck, Loader2, XCircle, CalendarCheck, ArrowLeft, ShoppingBag, Smartphone, Tag
 } from "lucide-react";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
@@ -1326,6 +1326,15 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
                   >
                     <Download className="mr-2 h-4 w-4" />
                     Accettazione
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => window.open(`/api/repair-orders/${repairOrderId}/labels`, '_blank')}
+                    disabled={!acceptance}
+                    data-testid="button-download-labels"
+                  >
+                    <Tag className="mr-2 h-4 w-4" />
+                    Etichette
                   </Button>
                   <Button
                     variant="outline"
