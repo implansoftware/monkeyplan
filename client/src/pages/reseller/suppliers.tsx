@@ -136,6 +136,16 @@ export default function ResellerSuppliers() {
     enabled: !!trovausatiCredential,
   });
 
+  // Query Foneday credentials
+  const { data: fonedayCredential } = useQuery<{ id: string; isActive: boolean } | null>({
+    queryKey: ["/api/foneday/credentials"],
+  });
+
+  // Query MobileSentrix credentials
+  const { data: mobilesentrixCredential } = useQuery<{ id: string; isActive: boolean } | null>({
+    queryKey: ["/api/mobilesentrix/credentials"],
+  });
+
   const createMutation = useMutation({
     mutationFn: async (data: SupplierFormData) => {
       return apiRequest("POST", "/api/reseller/suppliers", {
@@ -259,6 +269,8 @@ export default function ResellerSuppliers() {
   const sifarStoreCount = sifarStores.length;
   const trovausatiConfigured = !!trovausatiCredential;
   const trovausatiShopCount = trovausatiShops.length;
+  const fonedayConfigured = !!fonedayCredential;
+  const mobilesentrixConfigured = !!mobilesentrixCredential;
 
   if (isLoading) {
     return (
@@ -304,8 +316,14 @@ export default function ResellerSuppliers() {
             {externalIntegrations.map((integration) => {
               const isSifar = integration.code === 'sifar';
               const isTrovausati = integration.code === 'trovausati';
-              const isKnownIntegration = isSifar || isTrovausati;
-              const isConfigured = isSifar ? sifarConfigured : (isTrovausati ? trovausatiConfigured : false);
+              const isFoneday = integration.code === 'foneday';
+              const isMobilesentrix = integration.code === 'mobilesentrix';
+              const isKnownIntegration = isSifar || isTrovausati || isFoneday || isMobilesentrix;
+              const isConfigured = isSifar ? sifarConfigured 
+                : isTrovausati ? trovausatiConfigured 
+                : isFoneday ? fonedayConfigured 
+                : isMobilesentrix ? mobilesentrixConfigured 
+                : false;
               
               return (
                 <Card 
@@ -443,6 +461,92 @@ export default function ResellerSuppliers() {
                             <Button size="sm" className="w-full" data-testid="button-trovausati-configure">
                               <Settings className="h-4 w-4 mr-2" />
                               Configura TrovaUsati
+                            </Button>
+                          </Link>
+                        </div>
+                      )
+                    ) : isFoneday ? (
+                      isConfigured ? (
+                        <div className="space-y-3">
+                          <div className="flex items-center gap-2 p-2 rounded-lg bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800">
+                            <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400 flex-shrink-0" />
+                            <p className="text-xs text-green-800 dark:text-green-200">
+                              Credenziali API configurate correttamente.
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <Link href="/reseller/foneday/catalog">
+                              <Button variant="default" size="sm" data-testid="button-foneday-catalog">
+                                <Package className="h-4 w-4 mr-2" />
+                                Catalogo
+                              </Button>
+                            </Link>
+                            <Link href="/reseller/foneday/cart">
+                              <Button variant="outline" size="sm" data-testid="button-foneday-cart">
+                                <ShoppingCart className="h-4 w-4 mr-2" />
+                                Carrello
+                              </Button>
+                            </Link>
+                            <Link href="/reseller/foneday/settings">
+                              <Button variant="ghost" size="sm" data-testid="button-foneday-settings">
+                                <Settings className="h-4 w-4 mr-2" />
+                                Impostazioni
+                              </Button>
+                            </Link>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="space-y-3">
+                          <div className="flex items-start gap-2 p-3 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800">
+                            <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+                            <p className="text-xs text-amber-800 dark:text-amber-200">
+                              Configura il tuo API Token per ordinare ricambi da Foneday.
+                            </p>
+                          </div>
+                          <Link href="/reseller/foneday/settings">
+                            <Button size="sm" className="w-full" data-testid="button-foneday-configure">
+                              <Settings className="h-4 w-4 mr-2" />
+                              Configura Foneday
+                            </Button>
+                          </Link>
+                        </div>
+                      )
+                    ) : isMobilesentrix ? (
+                      isConfigured ? (
+                        <div className="space-y-3">
+                          <div className="flex items-center gap-2 p-2 rounded-lg bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800">
+                            <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400 flex-shrink-0" />
+                            <p className="text-xs text-green-800 dark:text-green-200">
+                              Credenziali API configurate correttamente.
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <Link href="/reseller/mobilesentrix/catalog">
+                              <Button variant="default" size="sm" data-testid="button-mobilesentrix-catalog">
+                                <Package className="h-4 w-4 mr-2" />
+                                Catalogo
+                              </Button>
+                            </Link>
+                            <Link href="/reseller/mobilesentrix/settings">
+                              <Button variant="ghost" size="sm" data-testid="button-mobilesentrix-settings">
+                                <Settings className="h-4 w-4 mr-2" />
+                                Impostazioni
+                              </Button>
+                            </Link>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="space-y-3">
+                          <div className="flex items-start gap-2 p-3 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800">
+                            <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+                            <p className="text-xs text-amber-800 dark:text-amber-200">
+                              Configura le credenziali per ordinare ricambi da MobileSentrix.
+                            </p>
+                          </div>
+                          <Link href="/reseller/mobilesentrix/settings">
+                            <Button size="sm" className="w-full" data-testid="button-mobilesentrix-configure">
+                              <Settings className="h-4 w-4 mr-2" />
+                              Configura MobileSentrix
                             </Button>
                           </Link>
                         </div>
