@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useQuery } from "@tanstack/react-query";
-import { ShoppingCart, Users, TrendingUp, FileText, Package, AlertCircle, Zap, ArrowRightLeft, Network, ChevronRight, ExternalLink } from "lucide-react";
+import { ShoppingCart, Users, TrendingUp, FileText, Package, AlertCircle, Zap, ArrowRightLeft, Network, ChevronRight, ExternalLink, LayoutDashboard } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -93,22 +93,29 @@ export default function ResellerDashboard() {
   const overdueInvoices = invoices.filter(inv => inv.paymentStatus === 'overdue');
 
   const getStatusBadge = (status: string) => {
-    const statusMap: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
-      pending: { label: "In Attesa", variant: "outline" },
-      ingressato: { label: "Ingressato", variant: "secondary" },
-      in_diagnosi: { label: "In Diagnosi", variant: "secondary" },
-      preventivo_emesso: { label: "Prev. Emesso", variant: "outline" },
-      preventivo_accettato: { label: "Prev. OK", variant: "default" },
-      preventivo_rifiutato: { label: "Prev. Rifiutato", variant: "destructive" },
-      attesa_ricambi: { label: "Attesa Ricambi", variant: "outline" },
-      in_riparazione: { label: "In Riparazione", variant: "default" },
-      in_test: { label: "In Test", variant: "default" },
-      pronto_ritiro: { label: "Pronto", variant: "default" },
-      consegnato: { label: "Consegnato", variant: "secondary" },
-      cancelled: { label: "Annullato", variant: "destructive" },
+    const statusMap: Record<string, { label: string; color: string }> = {
+      pending: { label: "In Attesa", color: "#94a3b8" },
+      ingressato: { label: "Ingressato", color: "#6366f1" },
+      in_diagnosi: { label: "In Diagnosi", color: "#8b5cf6" },
+      preventivo_emesso: { label: "Prev. Emesso", color: "#f59e0b" },
+      preventivo_accettato: { label: "Prev. OK", color: "#22c55e" },
+      preventivo_rifiutato: { label: "Prev. Rifiutato", color: "#ef4444" },
+      attesa_ricambi: { label: "Attesa Ricambi", color: "#f97316" },
+      in_riparazione: { label: "In Riparazione", color: "#3b82f6" },
+      in_test: { label: "In Test", color: "#06b6d4" },
+      pronto_ritiro: { label: "Pronto", color: "#10b981" },
+      consegnato: { label: "Consegnato", color: "#64748b" },
+      cancelled: { label: "Annullato", color: "#dc2626" },
     };
-    const config = statusMap[status] || { label: status, variant: "outline" as const };
-    return <Badge variant={config.variant}>{config.label}</Badge>;
+    const config = statusMap[status] || { label: status, color: "#94a3b8" };
+    return (
+      <Badge 
+        className="font-normal border-0"
+        style={{ backgroundColor: config.color + "20", color: config.color }}
+      >
+        {config.label}
+      </Badge>
+    );
   };
 
   const repairsChartData = stats?.repairsByStatus ? [
@@ -129,36 +136,66 @@ export default function ResellerDashboard() {
 
   return (
     <div className="space-y-6" data-testid="page-reseller-dashboard">
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Dashboard</h1>
-        <p className="text-sm text-muted-foreground mt-0.5">
-          Panoramica delle attività
-        </p>
+      {/* Hero Header */}
+      <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-primary/5 via-primary/10 to-slate-100 dark:from-primary/10 dark:via-primary/5 dark:to-slate-900 p-6 border">
+        <div className="absolute inset-0 opacity-[0.03]" style={{
+          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23000' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+        }} />
+        <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-3 mb-1">
+              <div className="h-10 w-10 rounded-xl bg-primary text-primary-foreground flex items-center justify-center shadow-lg shadow-primary/25">
+                <LayoutDashboard className="h-5 w-5" />
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
+                <p className="text-sm text-muted-foreground">
+                  Panoramica delle attività
+                </p>
+              </div>
+            </div>
+          </div>
+          <Button onClick={() => setAcceptanceDialogOpen(true)} className="shadow-lg shadow-primary/25" data-testid="button-new-repair">
+            <PackageOpen className="h-4 w-4 mr-2" />
+            Nuova Lavorazione
+          </Button>
+        </div>
       </div>
 
       {/* Alerts */}
       {(overdueInvoices.length > 0 || pendingInvoices.length > 0) && (
         <div className="flex flex-col sm:flex-row gap-3">
           {overdueInvoices.length > 0 && (
-            <div className="flex-1 flex items-center gap-3 p-3 rounded-lg border border-destructive/30 bg-destructive/5">
-              <AlertCircle className="h-4 w-4 text-destructive flex-shrink-0" />
+            <div className="flex-1 flex items-center gap-3 p-4 rounded-xl border border-destructive/30 bg-destructive/5">
+              <div className="h-9 w-9 rounded-lg bg-destructive/10 flex items-center justify-center">
+                <AlertCircle className="h-4 w-4 text-destructive" />
+              </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium">{overdueInvoices.length} fatture scadute</p>
+                <p className="text-sm font-semibold">{overdueInvoices.length} fatture scadute</p>
+                <p className="text-xs text-muted-foreground">Richiedono attenzione immediata</p>
               </div>
               <Link href="/reseller/invoices">
-                <Button size="sm" variant="outline">Visualizza</Button>
+                <Button size="sm" variant="outline" className="border-destructive/30 hover:bg-destructive/10">
+                  Visualizza
+                  <ChevronRight className="h-4 w-4 ml-1" />
+                </Button>
               </Link>
             </div>
           )}
           {pendingInvoices.length > 0 && (
-            <div className="flex-1 flex items-center gap-3 p-3 rounded-lg border border-border bg-muted/30">
-              <FileText className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+            <div className="flex-1 flex items-center gap-3 p-4 rounded-xl border bg-muted/30">
+              <div className="h-9 w-9 rounded-lg bg-muted flex items-center justify-center">
+                <FileText className="h-4 w-4 text-muted-foreground" />
+              </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium">{pendingInvoices.length} fatture in sospeso</p>
+                <p className="text-sm font-semibold">{pendingInvoices.length} fatture in sospeso</p>
+                <p className="text-xs text-muted-foreground">In attesa di pagamento</p>
               </div>
               <Link href="/reseller/invoices">
-                <Button size="sm" variant="ghost">Visualizza</Button>
+                <Button size="sm" variant="ghost">
+                  Visualizza
+                  <ChevronRight className="h-4 w-4 ml-1" />
+                </Button>
               </Link>
             </div>
           )}
@@ -167,87 +204,98 @@ export default function ResellerDashboard() {
 
       {/* Main KPI Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card data-testid="card-kpi-repairs">
-          <CardContent className="pt-5 pb-4">
+        <Card className="relative overflow-hidden group hover:shadow-md transition-shadow" data-testid="card-kpi-repairs">
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent" />
+          <CardContent className="relative pt-5 pb-4">
             <div className="flex items-center justify-between">
-              <div className="space-y-1">
-                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Riparazioni Attive</p>
+              <div>
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">Riparazioni Attive</p>
                 {isLoading ? (
-                  <Skeleton className="h-8 w-14" />
+                  <Skeleton className="h-9 w-16" />
                 ) : (
-                  <p className="text-3xl font-semibold tabular-nums" data-testid="text-active-repairs">
+                  <p className="text-3xl font-bold tabular-nums" data-testid="text-active-repairs">
                     {stats?.overview?.activeRepairs ?? 0}
                   </p>
                 )}
-                <p className="text-xs text-muted-foreground">{stats?.overview?.totalRepairs ?? 0} totali</p>
+                <div className="flex items-center gap-1 mt-1">
+                  <TrendingUp className="h-3 w-3 text-emerald-500" />
+                  <span className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">
+                    {stats?.overview?.totalRepairs ?? 0} totali
+                  </span>
+                </div>
               </div>
-              <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                <Wrench className="h-5 w-5 text-primary" />
+              <div className="h-12 w-12 rounded-xl bg-primary text-primary-foreground flex items-center justify-center shadow-lg shadow-primary/20">
+                <Wrench className="h-6 w-6" />
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card data-testid="card-kpi-customers">
-          <CardContent className="pt-5 pb-4">
+        <Card className="relative overflow-hidden group hover:shadow-md transition-shadow" data-testid="card-kpi-customers">
+          <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-transparent" />
+          <CardContent className="relative pt-5 pb-4">
             <div className="flex items-center justify-between">
-              <div className="space-y-1">
-                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Clienti</p>
+              <div>
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">Clienti</p>
                 {isLoading ? (
-                  <Skeleton className="h-8 w-14" />
+                  <Skeleton className="h-9 w-16" />
                 ) : (
-                  <p className="text-3xl font-semibold tabular-nums" data-testid="text-customers">
+                  <p className="text-3xl font-bold tabular-nums text-emerald-600 dark:text-emerald-400" data-testid="text-customers">
                     {stats?.overview?.totalCustomers ?? 0}
                   </p>
                 )}
-                <p className="text-xs text-muted-foreground">Gestiti</p>
+                <p className="text-xs text-muted-foreground mt-1">Gestiti attivamente</p>
               </div>
-              <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                <Users className="h-5 w-5 text-primary" />
+              <div className="h-12 w-12 rounded-xl bg-emerald-500 text-white flex items-center justify-center shadow-lg shadow-emerald-500/20">
+                <Users className="h-6 w-6" />
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card data-testid="card-kpi-revenue">
-          <CardContent className="pt-5 pb-4">
+        <Card className="relative overflow-hidden group hover:shadow-md transition-shadow" data-testid="card-kpi-revenue">
+          <div className="absolute inset-0 bg-gradient-to-br from-amber-500/5 to-transparent" />
+          <CardContent className="relative pt-5 pb-4">
             <div className="flex items-center justify-between">
-              <div className="space-y-1">
-                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Fatturato</p>
+              <div>
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">Fatturato</p>
                 {isLoading ? (
-                  <Skeleton className="h-8 w-20" />
+                  <Skeleton className="h-9 w-24" />
                 ) : (
-                  <p className="text-2xl font-semibold tabular-nums" data-testid="text-revenue">
+                  <p className="text-2xl font-bold tabular-nums text-amber-600 dark:text-amber-400" data-testid="text-revenue">
                     {formatCurrency(stats?.overview?.totalRevenue ?? 0)}
                   </p>
                 )}
-                <p className="text-xs text-muted-foreground">Riparazioni</p>
+                <p className="text-xs text-muted-foreground mt-1">Da riparazioni</p>
               </div>
-              <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                <TrendingUp className="h-5 w-5 text-primary" />
+              <div className="h-12 w-12 rounded-xl bg-amber-500 text-white flex items-center justify-center shadow-lg shadow-amber-500/20">
+                <TrendingUp className="h-6 w-6" />
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card data-testid="card-kpi-stock">
-          <CardContent className="pt-5 pb-4">
+        <Card className="relative overflow-hidden group hover:shadow-md transition-shadow" data-testid="card-kpi-stock">
+          <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-transparent" />
+          <CardContent className="relative pt-5 pb-4">
             <div className="flex items-center justify-between">
-              <div className="space-y-1">
-                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Stock</p>
+              <div>
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">Stock</p>
                 {isLoading ? (
-                  <Skeleton className="h-8 w-14" />
+                  <Skeleton className="h-9 w-16" />
                 ) : (
-                  <p className="text-3xl font-semibold tabular-nums" data-testid="text-stock">
+                  <p className="text-3xl font-bold tabular-nums text-blue-600 dark:text-blue-400" data-testid="text-stock">
                     {stats?.warehouse?.totalStock ?? 0}
                   </p>
                 )}
-                <p className="text-xs text-muted-foreground">
-                  {stats?.warehouse?.lowStockItems ? `${stats.warehouse.lowStockItems} sotto scorta` : "Articoli"}
+                <p className="text-xs text-muted-foreground mt-1">
+                  {stats?.warehouse?.lowStockItems ? (
+                    <span className="text-amber-600 dark:text-amber-400">{stats.warehouse.lowStockItems} sotto scorta</span>
+                  ) : "Articoli in magazzino"}
                 </p>
               </div>
-              <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                <Warehouse className="h-5 w-5 text-primary" />
+              <div className="h-12 w-12 rounded-xl bg-blue-500 text-white flex items-center justify-center shadow-lg shadow-blue-500/20">
+                <Warehouse className="h-6 w-6" />
               </div>
             </div>
           </CardContent>
@@ -257,13 +305,15 @@ export default function ResellerDashboard() {
       {/* Secondary Metrics */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <Link href="/reseller/transfer-requests" className="block group">
-          <Card className="h-full transition-colors hover:border-primary/50" data-testid="card-interscambio">
+          <Card className="h-full transition-all hover:shadow-md hover:border-primary/50" data-testid="card-interscambio">
             <CardContent className="pt-4 pb-3">
               <div className="flex items-center gap-3">
-                <ArrowRightLeft className="h-4 w-4 text-muted-foreground" />
+                <div className="h-9 w-9 rounded-lg bg-violet-500/10 flex items-center justify-center">
+                  <ArrowRightLeft className="h-4 w-4 text-violet-500" />
+                </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-xs text-muted-foreground">Interscambio</p>
-                  <p className="text-lg font-semibold tabular-nums" data-testid="text-pending-transfers">
+                  <p className="text-xl font-bold tabular-nums" data-testid="text-pending-transfers">
                     {stats?.interscambio?.pendingRequests ?? 0}
                   </p>
                 </div>
@@ -274,13 +324,15 @@ export default function ResellerDashboard() {
         </Link>
 
         <Link href="/reseller/b2b-orders" className="block group">
-          <Card className="h-full transition-colors hover:border-primary/50" data-testid="card-b2b">
+          <Card className="h-full transition-all hover:shadow-md hover:border-primary/50" data-testid="card-b2b">
             <CardContent className="pt-4 pb-3">
               <div className="flex items-center gap-3">
-                <ShoppingCart className="h-4 w-4 text-muted-foreground" />
+                <div className="h-9 w-9 rounded-lg bg-orange-500/10 flex items-center justify-center">
+                  <ShoppingCart className="h-4 w-4 text-orange-500" />
+                </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-xs text-muted-foreground">Ordini B2B</p>
-                  <p className="text-lg font-semibold tabular-nums" data-testid="text-pending-b2b">
+                  <p className="text-xl font-bold tabular-nums" data-testid="text-pending-b2b">
                     {stats?.b2b?.pendingOrders ?? 0}
                   </p>
                 </div>
@@ -291,13 +343,15 @@ export default function ResellerDashboard() {
         </Link>
 
         <Link href="/reseller/utility/practices" className="block group">
-          <Card className="h-full transition-colors hover:border-primary/50" data-testid="card-utility">
+          <Card className="h-full transition-all hover:shadow-md hover:border-primary/50" data-testid="card-utility">
             <CardContent className="pt-4 pb-3">
               <div className="flex items-center gap-3">
-                <Zap className="h-4 w-4 text-muted-foreground" />
+                <div className="h-9 w-9 rounded-lg bg-yellow-500/10 flex items-center justify-center">
+                  <Zap className="h-4 w-4 text-yellow-500" />
+                </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-xs text-muted-foreground">Pratiche Utility</p>
-                  <p className="text-lg font-semibold tabular-nums" data-testid="text-active-practices">
+                  <p className="text-xl font-bold tabular-nums" data-testid="text-active-practices">
                     {stats?.utility?.activePractices ?? 0}
                   </p>
                 </div>
@@ -308,13 +362,15 @@ export default function ResellerDashboard() {
         </Link>
 
         <Link href="/reseller/repair-centers" className="block group">
-          <Card className="h-full transition-colors hover:border-primary/50" data-testid="card-network-stats">
+          <Card className="h-full transition-all hover:shadow-md hover:border-primary/50" data-testid="card-network-stats">
             <CardContent className="pt-4 pb-3">
               <div className="flex items-center gap-3">
-                <Network className="h-4 w-4 text-muted-foreground" />
+                <div className="h-9 w-9 rounded-lg bg-cyan-500/10 flex items-center justify-center">
+                  <Network className="h-4 w-4 text-cyan-500" />
+                </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-xs text-muted-foreground">Centri Riparazione</p>
-                  <p className="text-lg font-semibold tabular-nums" data-testid="text-network-centers">
+                  <p className="text-xl font-bold tabular-nums" data-testid="text-network-centers">
                     {stats?.network?.repairCenters ?? 0}
                   </p>
                 </div>
@@ -326,81 +382,83 @@ export default function ResellerDashboard() {
       </div>
 
       {/* Quick Actions */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-sm font-medium">Azioni Rapide</CardTitle>
+      <Card className="overflow-hidden">
+        <CardHeader className="pb-3 border-b bg-muted/30">
+          <CardTitle className="text-base font-semibold">Azioni Rapide</CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-5 gap-2">
+        <CardContent className="pt-4">
+          <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-3">
             <Button 
-              className="h-auto py-3 px-3 flex flex-col items-center gap-1.5 text-xs font-normal"
+              className="h-auto py-4 px-3 flex flex-col items-center gap-2 shadow-md shadow-primary/20"
               onClick={() => setAcceptanceDialogOpen(true)}
               data-testid="button-quick-new-repair"
             >
-              <PackageOpen className="h-4 w-4" />
-              <span>Nuova Lavorazione</span>
+              <PackageOpen className="h-5 w-5" />
+              <span className="text-xs font-medium">Nuova Lavorazione</span>
             </Button>
             <Button 
               variant="outline" 
-              className="h-auto py-3 px-3 flex flex-col items-center gap-1.5 text-xs font-normal"
+              className="h-auto py-4 px-3 flex flex-col items-center gap-2 hover:bg-primary/5 hover:border-primary/30"
               onClick={() => setCustomerDialogOpen(true)}
               data-testid="button-quick-customer"
             >
-              <UserPlus className="h-4 w-4 text-muted-foreground" />
-              <span>Nuovo Cliente</span>
+              <UserPlus className="h-5 w-5 text-emerald-500" />
+              <span className="text-xs font-medium">Nuovo Cliente</span>
             </Button>
             <Link href="/reseller/appointments">
-              <Button variant="outline" className="w-full h-auto py-3 px-3 flex flex-col items-center gap-1.5 text-xs font-normal" data-testid="button-quick-appointment">
-                <CalendarPlus className="h-4 w-4 text-muted-foreground" />
-                <span>Appuntamento</span>
+              <Button variant="outline" className="w-full h-auto py-4 px-3 flex flex-col items-center gap-2 hover:bg-primary/5 hover:border-primary/30" data-testid="button-quick-appointment">
+                <CalendarPlus className="h-5 w-5 text-blue-500" />
+                <span className="text-xs font-medium">Appuntamento</span>
               </Button>
             </Link>
             <Link href="/reseller/warehouses">
-              <Button variant="outline" className="w-full h-auto py-3 px-3 flex flex-col items-center gap-1.5 text-xs font-normal" data-testid="button-quick-warehouse">
-                <Warehouse className="h-4 w-4 text-muted-foreground" />
-                <span>Magazzino</span>
+              <Button variant="outline" className="w-full h-auto py-4 px-3 flex flex-col items-center gap-2 hover:bg-primary/5 hover:border-primary/30" data-testid="button-quick-warehouse">
+                <Warehouse className="h-5 w-5 text-violet-500" />
+                <span className="text-xs font-medium">Magazzino</span>
               </Button>
             </Link>
             <Link href="/reseller/b2b-catalog">
-              <Button variant="outline" className="w-full h-auto py-3 px-3 flex flex-col items-center gap-1.5 text-xs font-normal" data-testid="button-quick-b2b">
-                <ShoppingCart className="h-4 w-4 text-muted-foreground" />
-                <span>Ordine B2B</span>
+              <Button variant="outline" className="w-full h-auto py-4 px-3 flex flex-col items-center gap-2 hover:bg-primary/5 hover:border-primary/30" data-testid="button-quick-b2b">
+                <ShoppingCart className="h-5 w-5 text-orange-500" />
+                <span className="text-xs font-medium">Ordine B2B</span>
               </Button>
             </Link>
             <Link href="/reseller/suppliers">
-              <Button variant="outline" className="w-full h-auto py-3 px-3 flex flex-col items-center gap-1.5 text-xs font-normal" data-testid="button-quick-suppliers">
-                <Truck className="h-4 w-4 text-muted-foreground" />
-                <span>Fornitori</span>
+              <Button variant="outline" className="w-full h-auto py-4 px-3 flex flex-col items-center gap-2 hover:bg-primary/5 hover:border-primary/30" data-testid="button-quick-suppliers">
+                <Truck className="h-5 w-5 text-amber-500" />
+                <span className="text-xs font-medium">Fornitori</span>
               </Button>
             </Link>
+          </div>
+          <div className="grid grid-cols-5 gap-2 mt-3 pt-3 border-t">
             <Link href="/reseller/transfer-requests">
-              <Button variant="outline" className="w-full h-auto py-3 px-3 flex flex-col items-center gap-1.5 text-xs font-normal" data-testid="button-quick-interscambio">
-                <ArrowRightLeft className="h-4 w-4 text-muted-foreground" />
-                <span>Interscambio</span>
+              <Button variant="ghost" size="sm" className="w-full h-auto py-2 flex flex-col items-center gap-1 text-muted-foreground hover:text-foreground" data-testid="button-quick-interscambio">
+                <ArrowRightLeft className="h-4 w-4" />
+                <span className="text-[10px]">Interscambio</span>
               </Button>
             </Link>
             <Link href="/reseller/utility/practices">
-              <Button variant="outline" className="w-full h-auto py-3 px-3 flex flex-col items-center gap-1.5 text-xs font-normal" data-testid="button-quick-practices">
-                <Zap className="h-4 w-4 text-muted-foreground" />
-                <span>Pratiche</span>
+              <Button variant="ghost" size="sm" className="w-full h-auto py-2 flex flex-col items-center gap-1 text-muted-foreground hover:text-foreground" data-testid="button-quick-practices">
+                <Zap className="h-4 w-4" />
+                <span className="text-[10px]">Pratiche</span>
               </Button>
             </Link>
             <Link href="/reseller/repair-centers">
-              <Button variant="outline" className="w-full h-auto py-3 px-3 flex flex-col items-center gap-1.5 text-xs font-normal" data-testid="button-quick-centers">
-                <Building2 className="h-4 w-4 text-muted-foreground" />
-                <span>Centri Rip.</span>
+              <Button variant="ghost" size="sm" className="w-full h-auto py-2 flex flex-col items-center gap-1 text-muted-foreground hover:text-foreground" data-testid="button-quick-centers">
+                <Building2 className="h-4 w-4" />
+                <span className="text-[10px]">Centri Rip.</span>
               </Button>
             </Link>
             <Link href="/reseller/invoices">
-              <Button variant="outline" className="w-full h-auto py-3 px-3 flex flex-col items-center gap-1.5 text-xs font-normal" data-testid="button-quick-invoices">
-                <Receipt className="h-4 w-4 text-muted-foreground" />
-                <span>Fatture</span>
+              <Button variant="ghost" size="sm" className="w-full h-auto py-2 flex flex-col items-center gap-1 text-muted-foreground hover:text-foreground" data-testid="button-quick-invoices">
+                <Receipt className="h-4 w-4" />
+                <span className="text-[10px]">Fatture</span>
               </Button>
             </Link>
             <Link href="/reseller/repairs">
-              <Button variant="outline" className="w-full h-auto py-3 px-3 flex flex-col items-center gap-1.5 text-xs font-normal" data-testid="button-quick-repairs">
-                <ExternalLink className="h-4 w-4 text-muted-foreground" />
-                <span>Tutte Rip.</span>
+              <Button variant="ghost" size="sm" className="w-full h-auto py-2 flex flex-col items-center gap-1 text-muted-foreground hover:text-foreground" data-testid="button-quick-repairs">
+                <ExternalLink className="h-4 w-4" />
+                <span className="text-[10px]">Tutte Rip.</span>
               </Button>
             </Link>
           </div>
@@ -410,11 +468,11 @@ export default function ResellerDashboard() {
       {/* Charts & Recent Repairs */}
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
         <div className="xl:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">Riparazioni per Stato</CardTitle>
+          <Card className="overflow-hidden">
+            <CardHeader className="pb-2 border-b bg-muted/30">
+              <CardTitle className="text-sm font-semibold">Riparazioni per Stato</CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="pt-4">
               {isLoading ? (
                 <Skeleton className="h-48 w-full" />
               ) : repairsChartData.length > 0 ? (
@@ -427,26 +485,28 @@ export default function ResellerDashboard() {
                       contentStyle={{ 
                         backgroundColor: 'hsl(var(--card))', 
                         border: '1px solid hsl(var(--border))',
-                        borderRadius: '6px',
-                        fontSize: '12px'
+                        borderRadius: '8px',
+                        fontSize: '12px',
+                        boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
                       }} 
                     />
-                    <Bar dataKey="value" fill="hsl(var(--primary))" radius={[3, 3, 0, 0]} />
+                    <Bar dataKey="value" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               ) : (
-                <div className="h-48 flex items-center justify-center text-muted-foreground text-sm">
-                  Nessun dato disponibile
+                <div className="h-48 flex flex-col items-center justify-center text-muted-foreground">
+                  <Wrench className="h-8 w-8 mb-2 opacity-20" />
+                  <p className="text-sm">Nessun dato disponibile</p>
                 </div>
               )}
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">Stato Lavori</CardTitle>
+          <Card className="overflow-hidden">
+            <CardHeader className="pb-2 border-b bg-muted/30">
+              <CardTitle className="text-sm font-semibold">Stato Lavori</CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="pt-4">
               {isLoading ? (
                 <Skeleton className="h-48 w-full" />
               ) : pieData.length > 0 ? (
@@ -470,8 +530,9 @@ export default function ResellerDashboard() {
                         contentStyle={{ 
                           backgroundColor: 'hsl(var(--card))', 
                           border: '1px solid hsl(var(--border))',
-                          borderRadius: '6px',
-                          fontSize: '12px'
+                          borderRadius: '8px',
+                          fontSize: '12px',
+                          boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
                         }} 
                       />
                     </PieChart>
@@ -480,7 +541,7 @@ export default function ResellerDashboard() {
                     {pieData.map((entry, index) => (
                       <div key={entry.name} className="flex items-center gap-1.5 text-xs">
                         <div 
-                          className="h-2 w-2 rounded-full" 
+                          className="h-2.5 w-2.5 rounded-full" 
                           style={{ backgroundColor: CHART_COLORS[index % CHART_COLORS.length] }}
                         />
                         <span className="text-muted-foreground">{entry.name}</span>
@@ -489,17 +550,18 @@ export default function ResellerDashboard() {
                   </div>
                 </>
               ) : (
-                <div className="h-48 flex items-center justify-center text-muted-foreground text-sm">
-                  Nessun dato disponibile
+                <div className="h-48 flex flex-col items-center justify-center text-muted-foreground">
+                  <Package className="h-8 w-8 mb-2 opacity-20" />
+                  <p className="text-sm">Nessun dato disponibile</p>
                 </div>
               )}
             </CardContent>
           </Card>
         </div>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between gap-1 pb-3">
-            <CardTitle className="text-sm font-medium">Ultime Riparazioni</CardTitle>
+        <Card className="overflow-hidden">
+          <CardHeader className="flex flex-row items-center justify-between gap-1 pb-3 border-b bg-muted/30">
+            <CardTitle className="text-sm font-semibold">Ultime Riparazioni</CardTitle>
             <Link href="/reseller/repairs">
               <Button variant="ghost" size="sm" className="h-7 text-xs">
                 Tutte
@@ -507,34 +569,37 @@ export default function ResellerDashboard() {
               </Button>
             </Link>
           </CardHeader>
-          <CardContent className="pb-3">
+          <CardContent className="p-0">
             {recentRepairs.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                <Package className="h-8 w-8 mx-auto mb-2 opacity-30" />
-                <p className="text-sm">Nessuna riparazione</p>
+              <div className="text-center py-12 text-muted-foreground">
+                <Package className="h-10 w-10 mx-auto mb-3 opacity-20" />
+                <p className="text-sm font-medium mb-1">Nessuna riparazione</p>
+                <p className="text-xs text-muted-foreground">Inizia creando una nuova lavorazione</p>
               </div>
             ) : (
-              <div className="space-y-1">
-                {recentRepairs.map((repair) => (
-                  <Link key={repair.id} href={`/reseller/repairs/${repair.id}`}>
-                    <div
-                      className="flex items-center justify-between py-2.5 px-2 -mx-2 rounded hover:bg-muted/50 transition-colors cursor-pointer"
-                      data-testid={`row-repair-${repair.id}`}
+              <div className="divide-y">
+                {recentRepairs.map((repair, index) => (
+                  <Link href={`/reseller/repairs/${repair.id}`} key={repair.id}>
+                    <div 
+                      className={`flex items-center gap-3 px-4 py-3 hover:bg-muted/50 transition-colors cursor-pointer group ${index % 2 === 0 ? 'bg-background' : 'bg-muted/20'}`}
+                      data-testid={`recent-repair-${repair.id}`}
                     >
-                      <div className="flex items-center gap-2.5 min-w-0">
-                        <div className="h-7 w-7 rounded bg-muted flex items-center justify-center flex-shrink-0">
-                          <Wrench className="h-3.5 w-3.5 text-muted-foreground" />
+                      <div className={`w-1 h-10 rounded-full ${repair.status === 'consegnato' ? 'bg-slate-400' : 'bg-primary'}`} />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className="font-mono text-xs text-muted-foreground">{repair.orderNumber || repair.id.substring(0, 8)}</span>
+                          {getStatusBadge(repair.status)}
                         </div>
-                        <div className="min-w-0">
-                          <p className="text-sm font-medium font-mono truncate">{repair.orderNumber}</p>
-                          <p className="text-xs text-muted-foreground truncate">{repair.deviceType}</p>
-                        </div>
+                        <p className="text-sm truncate mt-0.5">
+                          {repair.brand && <span className="font-medium">{repair.brand}</span>}
+                          {repair.deviceModel && <span className="text-muted-foreground"> {repair.deviceModel}</span>}
+                        </p>
                       </div>
-                      <div className="flex items-center gap-2 flex-shrink-0 ml-2">
-                        <span className="text-xs text-muted-foreground hidden sm:block">
+                      <div className="text-right shrink-0">
+                        <p className="text-xs text-muted-foreground">
                           {format(new Date(repair.createdAt), "dd/MM", { locale: it })}
-                        </span>
-                        {getStatusBadge(repair.status)}
+                        </p>
+                        <ChevronRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity mt-1 ml-auto" />
                       </div>
                     </div>
                   </Link>
@@ -551,10 +616,10 @@ export default function ResellerDashboard() {
         onOpenChange={setCustomerDialogOpen}
         onSuccess={() => setCustomerDialogOpen(false)}
       />
+      
       <RepairIntakeWizard 
         open={acceptanceDialogOpen} 
         onOpenChange={setAcceptanceDialogOpen}
-        onSuccess={() => setAcceptanceDialogOpen(false)}
       />
     </div>
   );
