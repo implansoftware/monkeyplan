@@ -9,7 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
-import { Users, Plus, Search, Edit, Trash2, Shield, UserCog, Eye, FilePlus, Pencil, Key } from "lucide-react";
+import { Users, Plus, Search, Edit, Trash2, Shield, UserCog, Eye, FilePlus, Pencil, Key, TrendingUp, UserCheck, ChevronRight } from "lucide-react";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
@@ -86,8 +86,11 @@ const staffFormSchema = z.object({
 
 type StaffFormValues = z.infer<typeof staffFormSchema>;
 
+type FilterType = "all" | "active" | "inactive";
+
 export default function ResellerTeam() {
   const [searchQuery, setSearchQuery] = useState("");
+  const [activeFilter, setActiveFilter] = useState<FilterType>("all");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [permissionsDialogOpen, setPermissionsDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -220,11 +223,21 @@ export default function ResellerTeam() {
     },
   });
 
-  const filteredMembers = staffMembers.filter((member) =>
-    member.fullName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    member.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    member.username.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const activeMembers = staffMembers.filter(m => m.isActive).length;
+  const inactiveMembers = staffMembers.filter(m => !m.isActive).length;
+  const totalPermissions = staffMembers.reduce((acc, m) => acc + getPermissionCount(m), 0);
+
+  const filteredMembers = staffMembers
+    .filter((member) => {
+      if (activeFilter === "active") return member.isActive;
+      if (activeFilter === "inactive") return !member.isActive;
+      return true;
+    })
+    .filter((member) =>
+      member.fullName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      member.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      member.username.toLowerCase().includes(searchQuery.toLowerCase())
+    );
 
   const openCreateDialog = () => {
     setIsEditing(false);
@@ -340,7 +353,7 @@ export default function ResellerTeam() {
     }));
   };
 
-  const getPermissionCount = (member: StaffMember) => {
+  function getPermissionCount(member: StaffMember) {
     let count = 0;
     member.permissions.forEach((p) => {
       if (p.canRead) count++;
@@ -349,181 +362,303 @@ export default function ResellerTeam() {
       if (p.canDelete) count++;
     });
     return count;
-  };
+  }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-semibold mb-2">Gestione Team</h1>
-          <p className="text-muted-foreground">
-            Aggiungi collaboratori al tuo team e configura i loro permessi per modulo
-          </p>
+    <div className="space-y-6" data-testid="page-reseller-team">
+      {/* Hero Header */}
+      <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-primary/5 via-primary/10 to-slate-100 dark:from-primary/10 dark:via-primary/5 dark:to-slate-900 p-6 border">
+        <div className="absolute inset-0 opacity-[0.03]" style={{
+          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23000' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+        }} />
+        <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-3 mb-1">
+              <div className="h-10 w-10 rounded-xl bg-primary text-primary-foreground flex items-center justify-center shadow-lg shadow-primary/25">
+                <Users className="h-5 w-5" />
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold tracking-tight">Gestione Team</h1>
+                <p className="text-sm text-muted-foreground">
+                  Collaboratori e permessi
+                </p>
+              </div>
+            </div>
+          </div>
+          <Button onClick={openCreateDialog} className="shadow-lg shadow-primary/25" data-testid="button-new-staff">
+            <Plus className="h-4 w-4 mr-2" />
+            Nuovo Collaboratore
+          </Button>
         </div>
-        <Button onClick={openCreateDialog} data-testid="button-new-staff">
-          <Plus className="h-4 w-4 mr-2" />
-          Nuovo Collaboratore
-        </Button>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Ricerca</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="relative">
-            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Cerca per nome, email o username..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-8"
-              data-testid="input-search"
-            />
-          </div>
-        </CardContent>
-      </Card>
+      {/* Stats Row */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <Card className="relative overflow-hidden group hover:shadow-md transition-shadow">
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent" />
+          <CardContent className="relative pt-5 pb-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">Totale Membri</p>
+                <p className="text-3xl font-bold tabular-nums">{staffMembers.length}</p>
+                <div className="flex items-center gap-1 mt-1">
+                  <TrendingUp className="h-3 w-3 text-emerald-500" />
+                  <span className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">Team attivo</span>
+                </div>
+              </div>
+              <div className="h-12 w-12 rounded-xl bg-primary text-primary-foreground flex items-center justify-center shadow-lg shadow-primary/20">
+                <Users className="h-6 w-6" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Users className="h-5 w-5" />
-            Membri del Team ({filteredMembers.length})
-          </CardTitle>
+        <Card className="relative overflow-hidden group hover:shadow-md transition-shadow">
+          <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-transparent" />
+          <CardContent className="relative pt-5 pb-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">Membri Attivi</p>
+                <p className="text-3xl font-bold tabular-nums text-emerald-600 dark:text-emerald-400">{activeMembers}</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {staffMembers.length > 0 ? Math.round((activeMembers / staffMembers.length) * 100) : 0}% del totale
+                </p>
+              </div>
+              <div className="h-12 w-12 rounded-xl bg-emerald-500 text-white flex items-center justify-center shadow-lg shadow-emerald-500/20">
+                <UserCheck className="h-6 w-6" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="relative overflow-hidden group hover:shadow-md transition-shadow">
+          <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-transparent" />
+          <CardContent className="relative pt-5 pb-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">Permessi Totali</p>
+                <p className="text-3xl font-bold tabular-nums text-blue-600 dark:text-blue-400">{totalPermissions}</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Media {staffMembers.length > 0 ? (totalPermissions / staffMembers.length).toFixed(1) : 0} per membro
+                </p>
+              </div>
+              <div className="h-12 w-12 rounded-xl bg-blue-500 text-white flex items-center justify-center shadow-lg shadow-blue-500/20">
+                <Shield className="h-6 w-6" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Main Table Card */}
+      <Card className="overflow-hidden">
+        <CardHeader className="pb-4 border-b bg-muted/30">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <CardTitle className="text-base font-semibold">Membri del Team</CardTitle>
+              <Badge variant="secondary" className="font-normal">
+                {filteredMembers.length} risultati
+              </Badge>
+            </div>
+            <div className="flex items-center gap-3">
+              {/* Filter Pills */}
+              <div className="flex items-center gap-1 p-1 bg-muted rounded-lg">
+                <Button
+                  variant={activeFilter === "all" ? "default" : "ghost"}
+                  size="sm"
+                  className="h-7 text-xs px-3"
+                  onClick={() => setActiveFilter("all")}
+                >
+                  Tutti
+                  <Badge variant="secondary" className="ml-1.5 h-4 px-1 text-[10px]">{staffMembers.length}</Badge>
+                </Button>
+                <Button
+                  variant={activeFilter === "active" ? "default" : "ghost"}
+                  size="sm"
+                  className="h-7 text-xs px-3"
+                  onClick={() => setActiveFilter("active")}
+                >
+                  Attivi
+                  <Badge variant="secondary" className="ml-1.5 h-4 px-1 text-[10px]">{activeMembers}</Badge>
+                </Button>
+                <Button
+                  variant={activeFilter === "inactive" ? "default" : "ghost"}
+                  size="sm"
+                  className="h-7 text-xs px-3"
+                  onClick={() => setActiveFilter("inactive")}
+                >
+                  Inattivi
+                  <Badge variant="secondary" className="ml-1.5 h-4 px-1 text-[10px]">{inactiveMembers}</Badge>
+                </Button>
+              </div>
+              <div className="relative w-64">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Cerca collaboratore..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-9 h-9 bg-background"
+                  data-testid="input-search"
+                />
+              </div>
+            </div>
+          </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-0">
           {isLoading ? (
-            <div className="space-y-2">
+            <div className="p-6 space-y-3">
               {[1, 2, 3].map((i) => (
                 <Skeleton key={i} className="h-16 w-full" />
               ))}
             </div>
           ) : filteredMembers.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              {staffMembers.length === 0
-                ? "Nessun collaboratore nel team. Aggiungi il primo membro!"
-                : "Nessun collaboratore trovato"}
+            <div className="py-16 text-center">
+              <div className="mx-auto w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">
+                <Users className="h-8 w-8 text-muted-foreground" />
+              </div>
+              <h3 className="font-medium mb-1">Nessun collaboratore trovato</h3>
+              <p className="text-sm text-muted-foreground max-w-sm mx-auto">
+                {searchQuery ? "Prova a modificare i criteri di ricerca" : "Inizia aggiungendo il tuo primo collaboratore"}
+              </p>
+              {!searchQuery && (
+                <Button className="mt-4" onClick={openCreateDialog}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Aggiungi Collaboratore
+                </Button>
+              )}
             </div>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Nome Completo</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Username</TableHead>
-                  <TableHead>Stato</TableHead>
-                  <TableHead>Permessi</TableHead>
-                  <TableHead>Centri Assegnati</TableHead>
-                  <TableHead>Sotto-Rivenditori</TableHead>
-                  <TableHead>Data Creazione</TableHead>
-                  <TableHead>Azioni</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredMembers.map((member) => (
-                  <TableRow key={member.id} data-testid={`row-staff-${member.id}`}>
-                    <TableCell className="font-medium" data-testid={`text-name-${member.id}`}>
-                      {member.fullName}
-                    </TableCell>
-                    <TableCell>{member.email}</TableCell>
-                    <TableCell className="font-mono text-sm">{member.username}</TableCell>
-                    <TableCell>
-                      {member.isActive ? (
-                        <Badge variant="outline">Attivo</Badge>
-                      ) : (
-                        <Badge variant="destructive">Disattivato</Badge>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="secondary" data-testid={`badge-permissions-${member.id}`}>
-                        {getPermissionCount(member)} permessi
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      {member.assignedRepairCenters && member.assignedRepairCenters.length > 0 ? (
-                        <div className="flex flex-wrap gap-1">
-                          {member.assignedRepairCenters.map((rc) => (
-                            <Badge key={rc.id} variant="outline" data-testid={`badge-center-${member.id}-${rc.id}`}>
-                              {rc.name}
-                            </Badge>
-                          ))}
-                        </div>
-                      ) : (
-                        <span className="text-muted-foreground text-sm">-</span>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      {member.assignedSubResellerIds && member.assignedSubResellerIds.length > 0 ? (
-                        <div className="flex flex-wrap gap-1">
-                          {member.assignedSubResellerIds.map((subResellerId) => {
-                            const subReseller = subResellers.find(sr => sr.id === subResellerId);
-                            return (
-                              <Badge key={subResellerId} variant="outline" data-testid={`badge-subreseller-${member.id}-${subResellerId}`}>
-                                {subReseller?.ragioneSociale || subReseller?.fullName || "Sotto-rivenditore"}
-                              </Badge>
-                            );
-                          })}
-                        </div>
-                      ) : (
-                        <span className="text-muted-foreground text-sm">-</span>
-                      )}
-                    </TableCell>
-                    <TableCell>{format(new Date(member.createdAt), "dd/MM/yyyy")}</TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-1">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => openPermissionsDialog(member)}
-                          title="Gestisci permessi"
-                          data-testid={`button-permissions-${member.id}`}
-                        >
-                          <Shield className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => openEditDialog(member)}
-                          title="Modifica utente"
-                          data-testid={`button-edit-${member.id}`}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => {
-                            setSelectedMember(member);
-                            setNewPassword("");
-                            setResetPasswordDialogOpen(true);
-                          }}
-                          title="Reset password"
-                          data-testid={`button-reset-password-${member.id}`}
-                        >
-                          <Key className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => {
-                            setSelectedMember(member);
-                            setDeleteDialogOpen(true);
-                          }}
-                          title="Elimina utente"
-                          data-testid={`button-delete-${member.id}`}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow className="hover:bg-transparent bg-muted/50">
+                    <TableHead className="pl-6 w-[200px]">Collaboratore</TableHead>
+                    <TableHead>Contatti</TableHead>
+                    <TableHead className="text-center">Stato</TableHead>
+                    <TableHead className="text-center">Permessi</TableHead>
+                    <TableHead>Centri Assegnati</TableHead>
+                    <TableHead className="pr-6 text-right">Azioni</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {filteredMembers.map((member, index) => (
+                    <TableRow 
+                      key={member.id} 
+                      data-testid={`row-staff-${member.id}`}
+                      className={`group ${index % 2 === 0 ? 'bg-background' : 'bg-muted/20'}`}
+                    >
+                      <TableCell className="pl-6 relative">
+                        <div className={`absolute left-0 top-2 bottom-2 w-1 rounded-r-full ${member.isActive ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-600'}`} />
+                        <div>
+                          <p className="font-medium" data-testid={`text-name-${member.id}`}>
+                            {member.fullName}
+                          </p>
+                          <p className="text-xs text-muted-foreground font-mono">
+                            @{member.username}
+                          </p>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="space-y-0.5">
+                          <p className="text-sm truncate max-w-[200px]">{member.email}</p>
+                          {member.phone && (
+                            <p className="text-xs text-muted-foreground">{member.phone}</p>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-center">
+                        {member.isActive ? (
+                          <Badge className="bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-0 font-normal">
+                            Attivo
+                          </Badge>
+                        ) : (
+                          <Badge variant="secondary" className="font-normal">Inattivo</Badge>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-center">
+                        <Badge variant="outline" className="font-normal tabular-nums" data-testid={`badge-permissions-${member.id}`}>
+                          {getPermissionCount(member)} permessi
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        {member.assignedRepairCenters && member.assignedRepairCenters.length > 0 ? (
+                          <div className="flex flex-wrap gap-1">
+                            {member.assignedRepairCenters.slice(0, 2).map((rc) => (
+                              <Badge key={rc.id} variant="outline" className="text-xs font-normal" data-testid={`badge-center-${member.id}-${rc.id}`}>
+                                {rc.name}
+                              </Badge>
+                            ))}
+                            {member.assignedRepairCenters.length > 2 && (
+                              <Badge variant="secondary" className="text-xs font-normal">
+                                +{member.assignedRepairCenters.length - 2}
+                              </Badge>
+                            )}
+                          </div>
+                        ) : (
+                          <span className="text-muted-foreground text-sm">-</span>
+                        )}
+                      </TableCell>
+                      <TableCell className="pr-6 text-right">
+                        <div className="flex items-center justify-end gap-1 opacity-70 group-hover:opacity-100 transition-opacity">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={() => openPermissionsDialog(member)}
+                            title="Gestisci permessi"
+                            data-testid={`button-permissions-${member.id}`}
+                          >
+                            <Shield className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={() => openEditDialog(member)}
+                            title="Modifica"
+                            data-testid={`button-edit-${member.id}`}
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={() => {
+                              setSelectedMember(member);
+                              setNewPassword("");
+                              setResetPasswordDialogOpen(true);
+                            }}
+                            title="Reset password"
+                            data-testid={`button-reset-password-${member.id}`}
+                          >
+                            <Key className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                            onClick={() => {
+                              setSelectedMember(member);
+                              setDeleteDialogOpen(true);
+                            }}
+                            title="Elimina"
+                            data-testid={`button-delete-${member.id}`}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           )}
         </CardContent>
       </Card>
 
+      {/* Create/Edit Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
@@ -616,102 +751,84 @@ export default function ResellerTeam() {
               </div>
 
               {repairCenters.length > 0 && (
-                <div className="space-y-3">
-                  <Label className="text-base font-medium">Centri di Riparazione Assegnati</Label>
-                  <p className="text-sm text-muted-foreground">
-                    Seleziona i centri a cui questo collaboratore avrà accesso
-                  </p>
-                  <div className="border rounded-lg p-4 max-h-40 overflow-y-auto">
-                    <div className="space-y-2">
-                      {repairCenters.map((center) => (
-                        <div key={center.id} className="flex items-center space-x-2">
-                          <Checkbox
-                            id={`center-${center.id}`}
-                            checked={localRepairCenterIds.includes(center.id)}
-                            onCheckedChange={(checked) => {
-                              if (checked) {
-                                setLocalRepairCenterIds([...localRepairCenterIds, center.id]);
-                              } else {
-                                setLocalRepairCenterIds(localRepairCenterIds.filter(id => id !== center.id));
-                              }
-                            }}
-                            data-testid={`checkbox-center-${center.id}`}
-                          />
-                          <label
-                            htmlFor={`center-${center.id}`}
-                            className="text-sm font-medium leading-none cursor-pointer"
-                          >
-                            {center.name}
-                          </label>
-                        </div>
-                      ))}
-                    </div>
+                <div className="space-y-2 pt-4 border-t">
+                  <Label>Centri Riparazione Assegnati</Label>
+                  <div className="flex flex-wrap gap-2">
+                    {repairCenters.map((rc) => {
+                      const isSelected = localRepairCenterIds.includes(rc.id);
+                      return (
+                        <Badge
+                          key={rc.id}
+                          variant={isSelected ? "default" : "outline"}
+                          className="cursor-pointer"
+                          onClick={() => {
+                            if (isSelected) {
+                              setLocalRepairCenterIds(prev => prev.filter(id => id !== rc.id));
+                            } else {
+                              setLocalRepairCenterIds(prev => [...prev, rc.id]);
+                            }
+                          }}
+                          data-testid={`badge-select-center-${rc.id}`}
+                        >
+                          {rc.name}
+                        </Badge>
+                      );
+                    })}
                   </div>
                 </div>
               )}
 
               {subResellers.length > 0 && (
-                <div className="space-y-3">
-                  <Label className="text-base font-medium">Sotto-Rivenditori Assegnati</Label>
-                  <p className="text-sm text-muted-foreground">
-                    Seleziona i sotto-rivenditori a cui questo collaboratore avrà accesso
-                  </p>
-                  <div className="border rounded-lg p-4 max-h-40 overflow-y-auto">
-                    <div className="space-y-2">
-                      {subResellers.map((subReseller) => (
-                        <div key={subReseller.id} className="flex items-center space-x-2">
-                          <Checkbox
-                            id={`subreseller-${subReseller.id}`}
-                            checked={localSubResellerIds.includes(subReseller.id)}
-                            onCheckedChange={(checked) => {
-                              if (checked) {
-                                setLocalSubResellerIds([...localSubResellerIds, subReseller.id]);
-                              } else {
-                                setLocalSubResellerIds(localSubResellerIds.filter(id => id !== subReseller.id));
-                              }
-                            }}
-                            data-testid={`checkbox-subreseller-${subReseller.id}`}
-                          />
-                          <label
-                            htmlFor={`subreseller-${subReseller.id}`}
-                            className="text-sm font-medium leading-none cursor-pointer"
-                          >
-                            {subReseller.ragioneSociale || subReseller.fullName}
-                          </label>
-                        </div>
-                      ))}
-                    </div>
+                <div className="space-y-2 pt-4 border-t">
+                  <Label>Sotto-Rivenditori Assegnati</Label>
+                  <div className="flex flex-wrap gap-2">
+                    {subResellers.map((sr) => {
+                      const isSelected = localSubResellerIds.includes(sr.id);
+                      return (
+                        <Badge
+                          key={sr.id}
+                          variant={isSelected ? "default" : "outline"}
+                          className="cursor-pointer"
+                          onClick={() => {
+                            if (isSelected) {
+                              setLocalSubResellerIds(prev => prev.filter(id => id !== sr.id));
+                            } else {
+                              setLocalSubResellerIds(prev => [...prev, sr.id]);
+                            }
+                          }}
+                          data-testid={`badge-select-subreseller-${sr.id}`}
+                        >
+                          {sr.ragioneSociale || sr.fullName}
+                        </Badge>
+                      );
+                    })}
                   </div>
                 </div>
               )}
 
               {!isEditing && (
-                <div className="space-y-3">
-                  <Label className="text-base font-medium">Permessi Iniziali</Label>
+                <div className="space-y-3 pt-4 border-t">
+                  <Label>Permessi Iniziali</Label>
                   <p className="text-sm text-muted-foreground">
-                    Puoi configurare i permessi dettagliati dopo la creazione
+                    Seleziona i moduli a cui il collaboratore avrà accesso
                   </p>
-                  <div className="border rounded-lg p-4 max-h-60 overflow-y-auto">
-                    <div className="space-y-2">
-                      {MODULES.map((module) => (
-                        <div key={module.id} className="flex items-center justify-between py-2 border-b last:border-0">
-                          <div>
-                            <div className="font-medium text-sm">{module.name}</div>
-                            <div className="text-xs text-muted-foreground">{module.description}</div>
-                          </div>
-                          <Switch
-                            checked={
-                              localPermissions[module.id]?.canRead &&
-                              localPermissions[module.id]?.canCreate &&
-                              localPermissions[module.id]?.canUpdate &&
-                              localPermissions[module.id]?.canDelete
-                            }
-                            onCheckedChange={(checked) => toggleAllForModule(module.id, checked)}
-                            data-testid={`switch-module-${module.id}`}
-                          />
+                  <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto">
+                    {MODULES.map((mod) => {
+                      const hasAny = localPermissions[mod.id]?.canRead || 
+                        localPermissions[mod.id]?.canCreate || 
+                        localPermissions[mod.id]?.canUpdate || 
+                        localPermissions[mod.id]?.canDelete;
+                      return (
+                        <div
+                          key={mod.id}
+                          className={`flex items-center gap-2 p-2 rounded-lg border cursor-pointer transition-colors ${hasAny ? 'border-primary bg-primary/5' : 'hover:bg-muted/50'}`}
+                          onClick={() => toggleAllForModule(mod.id, !hasAny)}
+                        >
+                          <Checkbox checked={hasAny} />
+                          <span className="text-sm">{mod.name}</span>
                         </div>
-                      ))}
-                    </div>
+                      );
+                    })}
                   </div>
                 </div>
               )}
@@ -720,12 +837,8 @@ export default function ResellerTeam() {
                 <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
                   Annulla
                 </Button>
-                <Button
-                  type="submit"
-                  disabled={createMutation.isPending || updateMutation.isPending}
-                  data-testid="button-save-staff"
-                >
-                  {isEditing ? "Salva Modifiche" : "Crea Collaboratore"}
+                <Button type="submit" disabled={createMutation.isPending || updateMutation.isPending}>
+                  {createMutation.isPending || updateMutation.isPending ? "Salvataggio..." : isEditing ? "Salva Modifiche" : "Crea Collaboratore"}
                 </Button>
               </DialogFooter>
             </form>
@@ -733,95 +846,83 @@ export default function ResellerTeam() {
         </DialogContent>
       </Dialog>
 
+      {/* Permissions Dialog */}
       <Dialog open={permissionsDialogOpen} onOpenChange={setPermissionsDialogOpen}>
-        <DialogContent className="max-w-4xl max-h-[80vh] overflow-hidden flex flex-col">
+        <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <UserCog className="h-5 w-5" />
+              <Shield className="h-5 w-5" />
               Permessi di {selectedMember?.fullName}
             </DialogTitle>
             <DialogDescription>
-              Configura i permessi per ogni modulo. Seleziona le azioni consentite.
+              Configura i permessi per ogni modulo dell'applicazione
             </DialogDescription>
           </DialogHeader>
 
-          <div className="flex-1 overflow-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-[250px]">Modulo</TableHead>
-                  {PERMISSION_ACTIONS.map((action) => (
-                    <TableHead key={action.id} className="text-center w-[100px]">
-                      <div className="flex flex-col items-center gap-1">
-                        <action.icon className="h-4 w-4" />
-                        <span className="text-xs">{action.label}</span>
-                      </div>
-                    </TableHead>
-                  ))}
-                  <TableHead className="text-center w-[100px]">Tutti</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {MODULES.map((module) => {
-                  const modulePerms = localPermissions[module.id] || {};
-                  const allChecked =
-                    modulePerms.canRead &&
-                    modulePerms.canCreate &&
-                    modulePerms.canUpdate &&
-                    modulePerms.canDelete;
-
-                  return (
-                    <TableRow key={module.id}>
-                      <TableCell>
-                        <div>
-                          <div className="font-medium">{module.name}</div>
-                          <div className="text-xs text-muted-foreground">{module.description}</div>
-                        </div>
-                      </TableCell>
-                      {PERMISSION_ACTIONS.map((action) => (
-                        <TableCell key={action.id} className="text-center">
-                          <Checkbox
-                            checked={modulePerms[action.id] || false}
-                            onCheckedChange={() => togglePermission(module.id, action.id)}
-                            data-testid={`checkbox-${module.id}-${action.id}`}
-                          />
-                        </TableCell>
-                      ))}
-                      <TableCell className="text-center">
+          <div className="space-y-4">
+            {MODULES.map((mod) => {
+              const perms = localPermissions[mod.id] || {};
+              const allChecked = perms.canRead && perms.canCreate && perms.canUpdate && perms.canDelete;
+              
+              return (
+                <Card key={mod.id} className="overflow-hidden">
+                  <CardHeader className="py-3 bg-muted/30">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
                         <Checkbox
                           checked={allChecked}
-                          onCheckedChange={(checked) => toggleAllForModule(module.id, !!checked)}
-                          data-testid={`checkbox-${module.id}-all`}
+                          onCheckedChange={(checked) => toggleAllForModule(mod.id, checked as boolean)}
                         />
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
+                        <div>
+                          <CardTitle className="text-sm font-medium">{mod.name}</CardTitle>
+                          <CardDescription className="text-xs">{mod.description}</CardDescription>
+                        </div>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="py-3">
+                    <div className="grid grid-cols-4 gap-3">
+                      {PERMISSION_ACTIONS.map((action) => {
+                        const Icon = action.icon;
+                        const isChecked = perms[action.id as keyof typeof perms] || false;
+                        return (
+                          <div
+                            key={action.id}
+                            className={`flex items-center gap-2 p-2 rounded-lg border cursor-pointer transition-colors ${isChecked ? 'border-primary bg-primary/5' : 'hover:bg-muted/50'}`}
+                            onClick={() => togglePermission(mod.id, action.id)}
+                          >
+                            <Checkbox checked={isChecked} />
+                            <Icon className="h-3 w-3" />
+                            <span className="text-xs">{action.label}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
 
-          <DialogFooter className="pt-4 border-t">
+          <DialogFooter>
             <Button variant="outline" onClick={() => setPermissionsDialogOpen(false)}>
               Annulla
             </Button>
-            <Button
-              onClick={handleSavePermissions}
-              disabled={updateMutation.isPending}
-              data-testid="button-save-permissions"
-            >
-              Salva Permessi
+            <Button onClick={handleSavePermissions} disabled={updateMutation.isPending}>
+              {updateMutation.isPending ? "Salvataggio..." : "Salva Permessi"}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
+      {/* Delete Confirmation Dialog */}
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Conferma Eliminazione</DialogTitle>
+            <DialogTitle>Elimina Collaboratore</DialogTitle>
             <DialogDescription>
-              Sei sicuro di voler eliminare {selectedMember?.fullName} dal team? Questa azione non può essere annullata.
+              Sei sicuro di voler eliminare <strong>{selectedMember?.fullName}</strong>?
+              Questa azione non può essere annullata.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
@@ -832,23 +933,23 @@ export default function ResellerTeam() {
               variant="destructive"
               onClick={() => selectedMember && deleteMutation.mutate(selectedMember.id)}
               disabled={deleteMutation.isPending}
-              data-testid="button-confirm-delete"
             >
-              Elimina
+              {deleteMutation.isPending ? "Eliminazione..." : "Elimina"}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
+      {/* Reset Password Dialog */}
       <Dialog open={resetPasswordDialogOpen} onOpenChange={setResetPasswordDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Reimposta Password</DialogTitle>
+            <DialogTitle>Reset Password</DialogTitle>
             <DialogDescription>
-              Imposta una nuova password per {selectedMember?.fullName}. Il collaboratore dovrà usare questa password per accedere.
+              Imposta una nuova password per <strong>{selectedMember?.fullName}</strong>
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 py-4">
+          <div className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="new-password">Nuova Password</Label>
               <Input
@@ -859,9 +960,6 @@ export default function ResellerTeam() {
                 placeholder="Inserisci la nuova password"
                 data-testid="input-new-password"
               />
-              <p className="text-sm text-muted-foreground">
-                La password deve contenere almeno 4 caratteri
-              </p>
             </div>
           </div>
           <DialogFooter>
@@ -870,10 +968,9 @@ export default function ResellerTeam() {
             </Button>
             <Button
               onClick={() => selectedMember && resetPasswordMutation.mutate({ id: selectedMember.id, newPassword })}
-              disabled={resetPasswordMutation.isPending || newPassword.length < 4}
-              data-testid="button-confirm-reset-password"
+              disabled={resetPasswordMutation.isPending || newPassword.length < 6}
             >
-              Reimposta Password
+              {resetPasswordMutation.isPending ? "Salvataggio..." : "Reimposta Password"}
             </Button>
           </DialogFooter>
         </DialogContent>
