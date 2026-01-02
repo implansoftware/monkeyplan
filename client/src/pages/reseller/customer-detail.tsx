@@ -5,27 +5,28 @@ import { User, RepairOrder, SalesOrder, BillingData, UtilityPractice, RepairCent
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
 import { 
   ArrowLeft, 
-  User as UserIcon, 
   Mail, 
   Phone, 
   Building2, 
   Wrench, 
   ShoppingCart, 
   FileText,
-  Calendar,
-  Eye,
   Zap,
   UserCheck,
   Pencil,
-  Check
+  Check,
+  ChevronRight
 } from "lucide-react";
 import { getStatusConfig } from "@/lib/repair-status-config";
 import { queryClient, apiRequest } from "@/lib/queryClient";
@@ -89,8 +90,12 @@ export default function ResellerCustomerDetail() {
     return (
       <div className="space-y-6" data-testid="page-customer-detail-loading">
         <Skeleton className="h-8 w-64" />
-        <Skeleton className="h-48 w-full" />
-        <Skeleton className="h-96 w-full" />
+        <div className="grid grid-cols-4 gap-4">
+          {[1, 2, 3, 4].map((i) => (
+            <Skeleton key={i} className="h-20" />
+          ))}
+        </div>
+        <Skeleton className="h-64 w-full" />
       </div>
     );
   }
@@ -101,12 +106,13 @@ export default function ResellerCustomerDetail() {
         <Link href="/reseller/customers">
           <Button variant="ghost" size="sm" data-testid="button-back-to-customers">
             <ArrowLeft className="h-4 w-4 mr-2" />
-            Torna ai clienti
+            Clienti
           </Button>
         </Link>
         <Card>
-          <CardContent className="py-8 text-center text-muted-foreground">
-            Cliente non trovato
+          <CardContent className="py-12 text-center text-muted-foreground">
+            <Building2 className="h-10 w-10 mx-auto mb-3 opacity-20" />
+            <p>Cliente non trovato</p>
           </CardContent>
         </Card>
       </div>
@@ -117,211 +123,257 @@ export default function ResellerCustomerDetail() {
 
   return (
     <div className="space-y-6" data-testid="page-customer-detail">
-      <div className="flex items-center gap-4 flex-wrap">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center gap-4">
         <Link href="/reseller/customers">
-          <Button variant="ghost" size="sm" data-testid="button-back-to-customers">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Torna ai clienti
+          <Button variant="ghost" size="sm" className="w-fit" data-testid="button-back-to-customers">
+            <ArrowLeft className="h-4 w-4 mr-1" />
+            Clienti
           </Button>
         </Link>
         <div className="flex-1">
-          <h1 className="text-2xl font-semibold" data-testid="text-customer-name">
-            {customer.fullName}
-          </h1>
-          <p className="text-muted-foreground">Dettagli cliente</p>
+          <div className="flex items-center gap-3">
+            <h1 className="text-2xl font-semibold tracking-tight" data-testid="text-customer-name">
+              {customer.fullName}
+            </h1>
+            <Badge variant={customer.isActive ? "outline" : "secondary"} className="font-normal" data-testid="badge-customer-status">
+              {customer.isActive ? "Attivo" : "Inattivo"}
+            </Badge>
+          </div>
+          <p className="text-sm text-muted-foreground mt-0.5 font-mono">@{customer.username}</p>
         </div>
-        <Badge variant={customer.isActive ? "default" : "secondary"} data-testid="badge-customer-status">
-          {customer.isActive ? "Attivo" : "Inattivo"}
-        </Badge>
-        <Button 
-          variant="outline" 
-          size="sm"
-          onClick={() => setEditDialogOpen(true)}
-          data-testid="button-edit-customer"
-        >
+        <Button variant="outline" size="sm" onClick={() => setEditDialogOpen(true)} data-testid="button-edit-customer">
           <Pencil className="h-4 w-4 mr-2" />
           Modifica
         </Button>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2">
+      {/* Stats Row */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <UserIcon className="h-5 w-5" />
-              Informazioni Personali
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <p className="text-sm text-muted-foreground">Username</p>
-                <p className="font-medium" data-testid="text-customer-username">{customer.username}</p>
+          <CardContent className="pt-4 pb-3">
+            <div className="flex items-center gap-3">
+              <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center">
+                <Wrench className="h-4 w-4 text-primary" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">Email</p>
-                <p className="font-medium flex items-center gap-2" data-testid="text-customer-email">
-                  <Mail className="h-4 w-4 text-muted-foreground" />
-                  {customer.email}
-                </p>
-              </div>
-              {customer.phone && (
-                <div>
-                  <p className="text-sm text-muted-foreground">Telefono</p>
-                  <p className="font-medium flex items-center gap-2" data-testid="text-customer-phone">
-                    <Phone className="h-4 w-4 text-muted-foreground" />
-                    {customer.phone}
-                  </p>
-                </div>
-              )}
-              <div>
-                <p className="text-sm text-muted-foreground">Data Registrazione</p>
-                <p className="font-medium flex items-center gap-2" data-testid="text-customer-created">
-                  <Calendar className="h-4 w-4 text-muted-foreground" />
-                  {format(new Date(customer.createdAt), "dd MMMM yyyy", { locale: it })}
-                </p>
+                <p className="text-2xl font-semibold tabular-nums">{repairOrders.length}</p>
+                <p className="text-xs text-muted-foreground">Riparazioni</p>
               </div>
             </div>
-            {subReseller && (
-              <div className="pt-4 border-t">
-                <p className="text-sm text-muted-foreground">Sub-Reseller Assegnato</p>
-                <p className="font-medium flex items-center gap-2" data-testid="text-customer-sub-reseller">
-                  <UserCheck className="h-4 w-4 text-muted-foreground" />
-                  {subReseller.fullName}
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-4 pb-3">
+            <div className="flex items-center gap-3">
+              <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center">
+                <ShoppingCart className="h-4 w-4 text-primary" />
+              </div>
+              <div>
+                <p className="text-2xl font-semibold tabular-nums">{salesOrders.length}</p>
+                <p className="text-xs text-muted-foreground">Ordini</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-4 pb-3">
+            <div className="flex items-center gap-3">
+              <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center">
+                <Zap className="h-4 w-4 text-primary" />
+              </div>
+              <div>
+                <p className="text-2xl font-semibold tabular-nums">{utilityPractices.length}</p>
+                <p className="text-xs text-muted-foreground">Pratiche Utility</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-4 pb-3">
+            <div className="flex items-center gap-3">
+              <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center">
+                <FileText className="h-4 w-4 text-primary" />
+              </div>
+              <div>
+                <p className="text-2xl font-semibold tabular-nums">
+                  {billingData ? "1" : "0"}
                 </p>
+                <p className="text-xs text-muted-foreground">Dati Fatt.</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Info Cards */}
+      <div className="grid gap-4 md:grid-cols-2">
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium">Contatti</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="flex items-center gap-3">
+              <Mail className="h-4 w-4 text-muted-foreground shrink-0" />
+              <span className="text-sm" data-testid="text-customer-email">{customer.email}</span>
+            </div>
+            {customer.phone && (
+              <div className="flex items-center gap-3">
+                <Phone className="h-4 w-4 text-muted-foreground shrink-0" />
+                <span className="text-sm" data-testid="text-customer-phone">{customer.phone}</span>
               </div>
             )}
+            {subReseller && (
+              <div className="flex items-center gap-3 pt-2 border-t">
+                <UserCheck className="h-4 w-4 text-muted-foreground shrink-0" />
+                <div>
+                  <p className="text-xs text-muted-foreground">Sub-Reseller</p>
+                  <p className="text-sm" data-testid="text-customer-sub-reseller">{subReseller.fullName}</p>
+                </div>
+              </div>
+            )}
+            <div className="pt-2 border-t">
+              <p className="text-xs text-muted-foreground">Registrato il</p>
+              <p className="text-sm" data-testid="text-customer-created">
+                {format(new Date(customer.createdAt), "dd MMMM yyyy", { locale: it })}
+              </p>
+            </div>
           </CardContent>
         </Card>
 
         {billingData && (
           <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <FileText className="h-5 w-5" />
-                Dati di Fatturazione
-              </CardTitle>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-medium">Fatturazione</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-3">
+            <CardContent className="space-y-2 text-sm">
               {billingData.companyName && (
                 <div>
-                  <p className="text-sm text-muted-foreground">Ragione Sociale</p>
-                  <p className="font-medium" data-testid="text-billing-company">{billingData.companyName}</p>
+                  <p className="text-xs text-muted-foreground">Ragione Sociale</p>
+                  <p data-testid="text-billing-company">{billingData.companyName}</p>
                 </div>
               )}
-              {billingData.fiscalCode && (
-                <div>
-                  <p className="text-sm text-muted-foreground">Codice Fiscale</p>
-                  <p className="font-medium" data-testid="text-billing-cf">{billingData.fiscalCode}</p>
-                </div>
-              )}
-              {billingData.vatNumber && (
-                <div>
-                  <p className="text-sm text-muted-foreground">Partita IVA</p>
-                  <p className="font-medium" data-testid="text-billing-piva">{billingData.vatNumber}</p>
-                </div>
-              )}
+              <div className="grid grid-cols-2 gap-3">
+                {billingData.fiscalCode && (
+                  <div>
+                    <p className="text-xs text-muted-foreground">C.F.</p>
+                    <p className="font-mono" data-testid="text-billing-cf">{billingData.fiscalCode}</p>
+                  </div>
+                )}
+                {billingData.vatNumber && (
+                  <div>
+                    <p className="text-xs text-muted-foreground">P.IVA</p>
+                    <p className="font-mono" data-testid="text-billing-piva">{billingData.vatNumber}</p>
+                  </div>
+                )}
+              </div>
               {billingData.address && (
-                <div>
-                  <p className="text-sm text-muted-foreground">Indirizzo</p>
-                  <p className="font-medium" data-testid="text-billing-address">
+                <div className="pt-2 border-t">
+                  <p className="text-xs text-muted-foreground">Indirizzo</p>
+                  <p data-testid="text-billing-address">
                     {billingData.address}
                     {billingData.zipCode && `, ${billingData.zipCode}`}
                     {billingData.city && ` ${billingData.city}`}
                   </p>
                 </div>
               )}
-              {billingData.pec && (
-                <div>
-                  <p className="text-sm text-muted-foreground">PEC</p>
-                  <p className="font-medium" data-testid="text-billing-pec">{billingData.pec}</p>
-                </div>
-              )}
-              {billingData.codiceUnivoco && (
-                <div>
-                  <p className="text-sm text-muted-foreground">Codice Destinatario (SDI)</p>
-                  <p className="font-medium" data-testid="text-billing-sdi">{billingData.codiceUnivoco}</p>
+              {(billingData.pec || billingData.codiceUnivoco) && (
+                <div className="grid grid-cols-2 gap-3 pt-2 border-t">
+                  {billingData.pec && (
+                    <div>
+                      <p className="text-xs text-muted-foreground">PEC</p>
+                      <p className="truncate" data-testid="text-billing-pec">{billingData.pec}</p>
+                    </div>
+                  )}
+                  {billingData.codiceUnivoco && (
+                    <div>
+                      <p className="text-xs text-muted-foreground">SDI</p>
+                      <p className="font-mono" data-testid="text-billing-sdi">{billingData.codiceUnivoco}</p>
+                    </div>
+                  )}
                 </div>
               )}
             </CardContent>
           </Card>
         )}
-
       </div>
 
+      {/* Tabs */}
       <Tabs defaultValue="repairs" className="w-full">
-        <TabsList>
-          <TabsTrigger value="repairs" className="gap-2" data-testid="tab-repairs">
-            <Wrench className="h-4 w-4" />
-            Riparazioni ({repairOrders.length})
+        <TabsList className="h-9">
+          <TabsTrigger value="repairs" className="text-xs gap-1.5" data-testid="tab-repairs">
+            <Wrench className="h-3.5 w-3.5" />
+            Riparazioni
+            <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-xs">{repairOrders.length}</Badge>
           </TabsTrigger>
-          <TabsTrigger value="orders" className="gap-2" data-testid="tab-orders">
-            <ShoppingCart className="h-4 w-4" />
-            Ordini ({salesOrders.length})
+          <TabsTrigger value="orders" className="text-xs gap-1.5" data-testid="tab-orders">
+            <ShoppingCart className="h-3.5 w-3.5" />
+            Ordini
+            <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-xs">{salesOrders.length}</Badge>
           </TabsTrigger>
-          <TabsTrigger value="utility" className="gap-2" data-testid="tab-utility">
-            <Zap className="h-4 w-4" />
-            Pratiche Utility ({utilityPractices.length})
+          <TabsTrigger value="utility" className="text-xs gap-1.5" data-testid="tab-utility">
+            <Zap className="h-3.5 w-3.5" />
+            Utility
+            <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-xs">{utilityPractices.length}</Badge>
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="repairs">
+        <TabsContent value="repairs" className="mt-4">
           <Card>
             <CardContent className="p-0">
               {repairOrders.length === 0 ? (
-                <div className="py-8 text-center text-muted-foreground">
-                  Nessuna riparazione trovata
+                <div className="py-12 text-center text-muted-foreground">
+                  <Wrench className="h-8 w-8 mx-auto mb-2 opacity-20" />
+                  <p className="text-sm">Nessuna riparazione</p>
                 </div>
               ) : (
                 <div className="overflow-x-auto">
                   <Table>
                     <TableHeader>
-                      <TableRow>
-                        <TableHead>ID</TableHead>
+                      <TableRow className="hover:bg-transparent">
+                        <TableHead className="pl-6">ID</TableHead>
                         <TableHead>Dispositivo</TableHead>
                         <TableHead>Problema</TableHead>
                         <TableHead>Stato</TableHead>
-                        <TableHead>Data Creazione</TableHead>
-                        <TableHead className="text-right">Azioni</TableHead>
+                        <TableHead>Data</TableHead>
+                        <TableHead className="pr-6 text-right">Azioni</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {repairOrders.map((order) => {
                         const statusConfig = getStatusConfig(order.status);
                         return (
-                          <TableRow 
-                            key={order.id} 
-                            data-testid={`row-repair-${order.id}`}
-                            className="cursor-pointer hover-elevate"
-                            onClick={() => setLocation(`/reseller/repairs/${order.id}`)}
-                          >
-                            <TableCell className="font-mono text-sm underline-offset-4 hover:underline">
+                          <TableRow key={order.id} data-testid={`row-repair-${order.id}`}>
+                            <TableCell className="pl-6 font-mono text-sm">
                               {order.id.substring(0, 8)}
                             </TableCell>
                             <TableCell>
-                              {order.brand} {order.deviceModel}
+                              <span className="font-medium">{order.brand}</span>
+                              <span className="text-muted-foreground ml-1">{order.deviceModel}</span>
                             </TableCell>
-                            <TableCell className="max-w-[200px] truncate">
+                            <TableCell className="max-w-[180px] truncate text-muted-foreground">
                               {order.issueDescription}
                             </TableCell>
                             <TableCell>
                               <Badge 
                                 variant="secondary"
+                                className="font-normal"
                                 style={{ 
-                                  backgroundColor: statusConfig.color + "20",
+                                  backgroundColor: statusConfig.color + "15",
                                   color: statusConfig.color 
                                 }}
                               >
                                 {statusConfig.label}
                               </Badge>
                             </TableCell>
-                            <TableCell>
-                              {format(new Date(order.createdAt), "dd/MM/yyyy", { locale: it })}
+                            <TableCell className="text-sm text-muted-foreground">
+                              {format(new Date(order.createdAt), "dd/MM/yy")}
                             </TableCell>
-                            <TableCell className="text-right">
+                            <TableCell className="pr-6 text-right">
                               <Link href={`/reseller/repairs/${order.id}`}>
-                                <Button size="icon" variant="ghost" data-testid={`button-view-repair-${order.id}`}>
-                                  <Eye className="h-4 w-4" />
+                                <Button variant="ghost" size="sm" className="h-8" data-testid={`button-view-repair-${order.id}`}>
+                                  Dettagli
+                                  <ChevronRight className="h-4 w-4 ml-1" />
                                 </Button>
                               </Link>
                             </TableCell>
@@ -336,47 +388,44 @@ export default function ResellerCustomerDetail() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="orders">
+        <TabsContent value="orders" className="mt-4">
           <Card>
             <CardContent className="p-0">
               {salesOrders.length === 0 ? (
-                <div className="py-8 text-center text-muted-foreground">
-                  Nessun ordine trovato
+                <div className="py-12 text-center text-muted-foreground">
+                  <ShoppingCart className="h-8 w-8 mx-auto mb-2 opacity-20" />
+                  <p className="text-sm">Nessun ordine</p>
                 </div>
               ) : (
                 <div className="overflow-x-auto">
                   <Table>
                     <TableHeader>
-                      <TableRow>
-                        <TableHead>Numero Ordine</TableHead>
+                      <TableRow className="hover:bg-transparent">
+                        <TableHead className="pl-6">Ordine</TableHead>
                         <TableHead>Stato</TableHead>
                         <TableHead>Totale</TableHead>
                         <TableHead>Data</TableHead>
-                        <TableHead className="text-right">Azioni</TableHead>
+                        <TableHead className="pr-6 text-right">Azioni</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {salesOrders.map((order) => (
-                        <TableRow 
-                          key={order.id} 
-                          data-testid={`row-order-${order.id}`}
-                          className="cursor-pointer hover-elevate"
-                          onClick={() => setLocation(`/reseller/sales-orders/${order.id}`)}
-                        >
-                          <TableCell className="font-mono underline-offset-4 hover:underline">{order.orderNumber}</TableCell>
+                        <TableRow key={order.id} data-testid={`row-order-${order.id}`}>
+                          <TableCell className="pl-6 font-mono">{order.orderNumber}</TableCell>
                           <TableCell>
-                            <Badge variant="secondary">{order.status}</Badge>
+                            <Badge variant="secondary" className="font-normal">{order.status}</Badge>
                           </TableCell>
-                          <TableCell>
+                          <TableCell className="tabular-nums">
                             €{Number(order.total).toFixed(2)}
                           </TableCell>
-                          <TableCell>
-                            {format(new Date(order.createdAt), "dd/MM/yyyy", { locale: it })}
+                          <TableCell className="text-sm text-muted-foreground">
+                            {format(new Date(order.createdAt), "dd/MM/yy")}
                           </TableCell>
-                          <TableCell className="text-right">
+                          <TableCell className="pr-6 text-right">
                             <Link href={`/reseller/sales-orders/${order.id}`}>
-                              <Button size="icon" variant="ghost" data-testid={`button-view-order-${order.id}`}>
-                                <Eye className="h-4 w-4" />
+                              <Button variant="ghost" size="sm" className="h-8" data-testid={`button-view-order-${order.id}`}>
+                                Dettagli
+                                <ChevronRight className="h-4 w-4 ml-1" />
                               </Button>
                             </Link>
                           </TableCell>
@@ -390,47 +439,44 @@ export default function ResellerCustomerDetail() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="utility">
+        <TabsContent value="utility" className="mt-4">
           <Card>
             <CardContent className="p-0">
               {utilityPractices.length === 0 ? (
-                <div className="py-8 text-center text-muted-foreground">
-                  Nessuna pratica utility trovata
+                <div className="py-12 text-center text-muted-foreground">
+                  <Zap className="h-8 w-8 mx-auto mb-2 opacity-20" />
+                  <p className="text-sm">Nessuna pratica utility</p>
                 </div>
               ) : (
                 <div className="overflow-x-auto">
                   <Table>
                     <TableHeader>
-                      <TableRow>
-                        <TableHead>Numero Pratica</TableHead>
+                      <TableRow className="hover:bg-transparent">
+                        <TableHead className="pl-6">Pratica</TableHead>
                         <TableHead>Fornitore</TableHead>
                         <TableHead>Servizio</TableHead>
                         <TableHead>Stato</TableHead>
                         <TableHead>Data</TableHead>
-                        <TableHead className="text-right">Azioni</TableHead>
+                        <TableHead className="pr-6 text-right">Azioni</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {utilityPractices.map((practice) => (
-                        <TableRow 
-                          key={practice.id} 
-                          data-testid={`row-utility-${practice.id}`}
-                          className="cursor-pointer hover-elevate"
-                          onClick={() => setLocation(`/reseller/utility/practices/${practice.id}`)}
-                        >
-                          <TableCell className="font-mono underline-offset-4 hover:underline">{practice.practiceNumber}</TableCell>
+                        <TableRow key={practice.id} data-testid={`row-utility-${practice.id}`}>
+                          <TableCell className="pl-6 font-mono">{practice.practiceNumber}</TableCell>
                           <TableCell>{practice.supplierName || practice.temporarySupplierName || "-"}</TableCell>
                           <TableCell>{practice.serviceName || practice.customServiceName || "-"}</TableCell>
                           <TableCell>
-                            <Badge variant="secondary">{practice.status}</Badge>
+                            <Badge variant="secondary" className="font-normal">{practice.status}</Badge>
                           </TableCell>
-                          <TableCell>
-                            {format(new Date(practice.createdAt), "dd/MM/yyyy", { locale: it })}
+                          <TableCell className="text-sm text-muted-foreground">
+                            {format(new Date(practice.createdAt), "dd/MM/yy")}
                           </TableCell>
-                          <TableCell className="text-right">
+                          <TableCell className="pr-6 text-right">
                             <Link href={`/reseller/utility/practices/${practice.id}`}>
-                              <Button size="icon" variant="ghost" data-testid={`button-view-utility-${practice.id}`}>
-                                <Eye className="h-4 w-4" />
+                              <Button variant="ghost" size="sm" className="h-8" data-testid={`button-view-utility-${practice.id}`}>
+                                Dettagli
+                                <ChevronRight className="h-4 w-4 ml-1" />
                               </Button>
                             </Link>
                           </TableCell>
@@ -445,17 +491,14 @@ export default function ResellerCustomerDetail() {
         </TabsContent>
       </Tabs>
 
+      {/* Edit Dialog */}
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>Modifica Cliente</DialogTitle>
-            <DialogDescription>
-              Modifica i dati del cliente {customer.fullName}
-            </DialogDescription>
           </DialogHeader>
           <CustomerEditForm
             customer={customer}
-            billingData={billingData}
             repairCenters={repairCenters}
             onSave={(formData) => updateCustomerMutation.mutate(formData)}
             onCancel={() => setEditDialogOpen(false)}
@@ -473,14 +516,12 @@ type CustomerWithRepairCenters = User & {
 
 function CustomerEditForm({
   customer,
-  billingData,
   repairCenters,
   onSave,
   onCancel,
   isPending,
 }: {
   customer: CustomerWithRepairCenters;
-  billingData: BillingData | null;
   repairCenters: RepairCenter[];
   onSave: (data: Record<string, unknown>) => void;
   onCancel: () => void;
@@ -511,69 +552,52 @@ function CustomerEditForm({
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="space-y-2">
-        <label htmlFor="fullName" className="text-sm font-medium">
-          Nome Completo
-        </label>
-        <input
+        <Label htmlFor="fullName">Nome Completo</Label>
+        <Input
           id="fullName"
-          type="text"
           value={formData.fullName}
           onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
-          className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
           required
           data-testid="input-edit-fullName"
         />
       </div>
 
       <div className="space-y-2">
-        <label htmlFor="email" className="text-sm font-medium">
-          Email
-        </label>
-        <input
+        <Label htmlFor="email">Email</Label>
+        <Input
           id="email"
           type="email"
           value={formData.email}
           onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-          className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
           required
           data-testid="input-edit-email"
         />
       </div>
 
       <div className="space-y-2">
-        <label htmlFor="phone" className="text-sm font-medium">
-          Telefono
-        </label>
-        <input
+        <Label htmlFor="phone">Telefono</Label>
+        <Input
           id="phone"
           type="tel"
           value={formData.phone}
           onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-          className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
           data-testid="input-edit-phone"
         />
       </div>
 
-      <div className="flex items-center gap-2">
-        <input
+      <div className="flex items-center justify-between">
+        <Label htmlFor="isActive">Cliente Attivo</Label>
+        <Switch
           id="isActive"
-          type="checkbox"
           checked={formData.isActive}
-          onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
-          className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+          onCheckedChange={(checked) => setFormData({ ...formData, isActive: checked })}
           data-testid="input-edit-isActive"
         />
-        <label htmlFor="isActive" className="text-sm font-medium">
-          Cliente attivo
-        </label>
       </div>
 
       {repairCenters.length > 0 && (
-        <div className="pt-4 border-t">
-          <label className="flex items-center gap-2 mb-3 text-sm font-medium">
-            <Wrench className="h-4 w-4" />
-            Centri Riparazione Assegnati
-          </label>
+        <div className="space-y-2 pt-3 border-t">
+          <Label>Centri Riparazione</Label>
           <div className="flex flex-wrap gap-2">
             {repairCenters.map((rc) => {
               const isSelected = formData.repairCenterIds.includes(rc.id);
@@ -594,14 +618,14 @@ function CustomerEditForm({
         </div>
       )}
 
-      <div className="flex justify-end gap-2 pt-4">
-        <Button type="button" variant="outline" onClick={onCancel} data-testid="button-cancel-edit">
+      <DialogFooter className="gap-2 pt-4">
+        <Button type="button" variant="outline" onClick={onCancel}>
           Annulla
         </Button>
-        <Button type="submit" disabled={isPending} data-testid="button-save-edit">
-          {isPending ? "Salvataggio..." : "Salva"}
+        <Button type="submit" disabled={isPending}>
+          {isPending ? "Salvataggio..." : "Salva Modifiche"}
         </Button>
-      </div>
+      </DialogFooter>
     </form>
   );
 }
