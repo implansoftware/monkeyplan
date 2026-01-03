@@ -80,7 +80,7 @@ export function DeliveryDialog({
   });
   const [technicianSignature, setTechnicianSignature] = useState<SignatureData>({
     signature: null,
-    signerName: currentUser ? `${currentUser.firstName || ""} ${currentUser.lastName || ""}`.trim() : "",
+    signerName: currentUser?.fullName || "",
   });
 
   const { data: existingDelivery } = useQuery<RepairDelivery | null>({
@@ -242,20 +242,26 @@ export function DeliveryDialog({
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <PackageCheck className="h-5 w-5 text-green-600" />
-              Consegna Completata
+          <DialogHeader className="relative pb-4">
+            <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/10 via-emerald-500/5 to-transparent rounded-t-lg -m-6 mb-0 p-6" />
+            <DialogTitle className="relative flex items-center gap-3">
+              <div className="h-10 w-10 rounded-xl bg-emerald-500/10 flex items-center justify-center shadow-lg shadow-emerald-500/20">
+                <PackageCheck className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+              </div>
+              <div>
+                <span className="text-lg font-semibold">Consegna Completata</span>
+                <DialogDescription className="mt-0.5">
+                  Questo dispositivo è già stato consegnato
+                </DialogDescription>
+              </div>
             </DialogTitle>
-            <DialogDescription>
-              Questo dispositivo è già stato consegnato
-            </DialogDescription>
           </DialogHeader>
 
-          <Card>
-            <CardContent className="pt-6 space-y-4">
+          <Card className="relative overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-transparent pointer-events-none" />
+            <CardContent className="relative pt-6 space-y-4">
               <div className="flex items-center gap-3">
-                <Badge variant="default" className="gap-1">
+                <Badge variant="default" className="gap-1 bg-emerald-600">
                   <CheckCircle className="h-3 w-3" />
                   Consegnato
                 </Badge>
@@ -338,14 +344,19 @@ export function DeliveryDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <PackageCheck className="h-5 w-5" />
-            Completa Consegna
+        <DialogHeader className="relative pb-4">
+          <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/10 via-emerald-500/5 to-transparent rounded-t-lg -m-6 mb-0 p-6" />
+          <DialogTitle className="relative flex items-center gap-3">
+            <div className="h-10 w-10 rounded-xl bg-emerald-500/10 flex items-center justify-center shadow-lg shadow-emerald-500/20">
+              <PackageCheck className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+            </div>
+            <div>
+              <span className="text-lg font-semibold">Completa Consegna</span>
+              <DialogDescription className="mt-0.5">
+                Registra la consegna del dispositivo al cliente
+              </DialogDescription>
+            </div>
           </DialogTitle>
-          <DialogDescription>
-            Registra la consegna del dispositivo al cliente
-          </DialogDescription>
         </DialogHeader>
 
         <ScrollArea className="flex-1 pr-4">

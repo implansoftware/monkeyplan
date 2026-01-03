@@ -144,20 +144,31 @@ export function RepairLogDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <ClipboardList className="h-5 w-5" />
-            Log Attività Riparazione
+        <DialogHeader className="relative pb-4">
+          <div className="absolute inset-0 bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-transparent rounded-t-lg -m-6 mb-0 p-6" />
+          <DialogTitle className="relative flex items-center gap-3">
+            <div className="h-10 w-10 rounded-xl bg-amber-500/10 flex items-center justify-center shadow-lg shadow-amber-500/20">
+              <ClipboardList className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+            </div>
+            <div>
+              <span className="text-lg font-semibold">Log Attività Riparazione</span>
+              <DialogDescription className="mt-0.5">
+                Traccia le attività del tecnico e l'avanzamento della riparazione
+              </DialogDescription>
+            </div>
           </DialogTitle>
-          <DialogDescription>
-            Traccia le attività del tecnico e l'avanzamento della riparazione
-          </DialogDescription>
         </DialogHeader>
 
         {logs.length > 0 && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Storico Attività</CardTitle>
+          <Card className="relative overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-br from-amber-500/5 to-transparent pointer-events-none" />
+            <CardHeader className="relative">
+              <CardTitle className="text-base flex items-center gap-2">
+                <div className="h-6 w-6 rounded-md bg-amber-500/10 flex items-center justify-center">
+                  <Clock className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
+                </div>
+                Storico Attività
+              </CardTitle>
             </CardHeader>
             <CardContent>
               <ScrollArea className="h-[200px] pr-4">
@@ -195,9 +206,15 @@ export function RepairLogDialog({
           </Card>
         )}
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Aggiungi Nuova Voce</CardTitle>
+        <Card className="relative overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-transparent pointer-events-none" />
+          <CardHeader className="relative">
+            <CardTitle className="text-base flex items-center gap-2">
+              <div className="h-6 w-6 rounded-md bg-blue-500/10 flex items-center justify-center">
+                <Wrench className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
+              </div>
+              Aggiungi Nuova Voce
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <Form {...form}>

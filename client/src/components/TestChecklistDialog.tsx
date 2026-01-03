@@ -187,14 +187,19 @@ export function TestChecklistDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <ClipboardCheck className="h-5 w-5" />
-            Checklist Collaudo Dispositivo
+        <DialogHeader className="relative pb-4">
+          <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/10 via-emerald-500/5 to-transparent rounded-t-lg -m-6 mb-0 p-6" />
+          <DialogTitle className="relative flex items-center gap-3">
+            <div className="h-10 w-10 rounded-xl bg-emerald-500/10 flex items-center justify-center shadow-lg shadow-emerald-500/20">
+              <ClipboardCheck className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+            </div>
+            <div>
+              <span className="text-lg font-semibold">Checklist Collaudo Dispositivo</span>
+              <DialogDescription className="mt-0.5">
+                Esegui e registra i test funzionali del dispositivo
+              </DialogDescription>
+            </div>
           </DialogTitle>
-          <DialogDescription>
-            Esegui e registra i test funzionali del dispositivo
-          </DialogDescription>
         </DialogHeader>
 
         <div className="flex gap-2 mb-4">
@@ -211,9 +216,15 @@ export function TestChecklistDialog({
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Test Funzionali</CardTitle>
+            <Card className="relative overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-transparent pointer-events-none" />
+              <CardHeader className="relative">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <div className="h-6 w-6 rounded-md bg-emerald-500/10 flex items-center justify-center">
+                    <Smartphone className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+                  </div>
+                  Test Funzionali
+                </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-2 gap-4">
@@ -225,7 +236,7 @@ export function TestChecklistDialog({
                         key={item.key}
                         className={`p-3 border rounded-lg transition-colors ${
                           value === true
-                            ? "border-green-500 bg-green-50 dark:bg-green-950/20"
+                            ? "border-emerald-500 bg-emerald-50 dark:bg-emerald-950/20"
                             : value === false
                             ? "border-red-500 bg-red-50 dark:bg-red-950/20"
                             : ""
@@ -280,9 +291,15 @@ export function TestChecklistDialog({
               </CardContent>
             </Card>
 
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Risultato Generale</CardTitle>
+            <Card className="relative overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-transparent pointer-events-none" />
+              <CardHeader className="relative">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <div className="h-6 w-6 rounded-md bg-blue-500/10 flex items-center justify-center">
+                    <ClipboardCheck className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
+                  </div>
+                  Risultato Generale
+                </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <FormField

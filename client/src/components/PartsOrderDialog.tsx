@@ -328,14 +328,19 @@ export function PartsOrderDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Package className="h-5 w-5" />
-            Gestione Ordini Ricambi
+        <DialogHeader className="relative pb-4">
+          <div className="absolute inset-0 bg-gradient-to-r from-orange-500/10 via-orange-500/5 to-transparent rounded-t-lg -m-6 mb-0 p-6" />
+          <DialogTitle className="relative flex items-center gap-3">
+            <div className="h-10 w-10 rounded-xl bg-orange-500/10 flex items-center justify-center shadow-lg shadow-orange-500/20">
+              <Package className="h-5 w-5 text-orange-600 dark:text-orange-400" />
+            </div>
+            <div>
+              <span className="text-lg font-semibold">Gestione Ordini Ricambi</span>
+              <DialogDescription className="mt-0.5">
+                Crea ordini raggruppati per i ricambi della riparazione
+              </DialogDescription>
+            </div>
           </DialogTitle>
-          <DialogDescription>
-            Crea ordini raggruppati per i ricambi della riparazione
-          </DialogDescription>
         </DialogHeader>
 
         <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "order" | "existing")}>
@@ -358,10 +363,13 @@ export function PartsOrderDialog({
 
           <TabsContent value="order" className="space-y-4 mt-4">
             {availableQuoteParts.length > 0 && (
-              <Card className="border-primary/30 bg-primary/5">
-                <CardHeader className="pb-3">
+              <Card className="relative overflow-hidden border-orange-500/30">
+                <div className="absolute inset-0 bg-gradient-to-br from-orange-500/5 to-transparent pointer-events-none" />
+                <CardHeader className="relative pb-3">
                   <CardTitle className="text-base flex items-center gap-2">
-                    <FileText className="h-4 w-4 text-primary" />
+                    <div className="h-6 w-6 rounded-md bg-orange-500/10 flex items-center justify-center">
+                      <FileText className="h-3.5 w-3.5 text-orange-600 dark:text-orange-400" />
+                    </div>
                     Ricambi dal Preventivo
                   </CardTitle>
                   <p className="text-sm text-muted-foreground">
@@ -411,9 +419,12 @@ export function PartsOrderDialog({
             )}
 
             {availableQuoteParts.length === 0 && cart.length === 0 && (
-              <Card>
-                <CardContent className="py-8 text-center text-muted-foreground">
-                  <Package className="h-12 w-12 mx-auto mb-4 opacity-50" />
+              <Card className="relative overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-br from-slate-500/5 to-transparent pointer-events-none" />
+                <CardContent className="relative py-8 text-center text-muted-foreground">
+                  <div className="h-12 w-12 rounded-xl bg-slate-500/10 flex items-center justify-center mx-auto mb-4">
+                    <Package className="h-6 w-6 text-slate-400" />
+                  </div>
                   <p>Nessun ricambio disponibile dal preventivo.</p>
                   <p className="text-sm mt-2">Tutti i ricambi sono già stati ordinati.</p>
                 </CardContent>
@@ -421,10 +432,13 @@ export function PartsOrderDialog({
             )}
 
             {cart.length > 0 && (
-              <Card>
-                <CardHeader>
+              <Card className="relative overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-transparent pointer-events-none" />
+                <CardHeader className="relative">
                   <CardTitle className="text-base flex items-center gap-2">
-                    <ShoppingCart className="h-4 w-4" />
+                    <div className="h-6 w-6 rounded-md bg-blue-500/10 flex items-center justify-center">
+                      <ShoppingCart className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
+                    </div>
                     Carrello ({cart.length} articoli)
                   </CardTitle>
                 </CardHeader>
@@ -471,41 +485,50 @@ export function PartsOrderDialog({
             )}
 
             {cart.length > 0 && (
-              <Card>
-                <CardHeader>
+              <Card className="relative overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-transparent pointer-events-none" />
+                <CardHeader className="relative">
                   <CardTitle className="text-base flex items-center gap-2">
-                    <Building className="h-4 w-4" />
+                    <div className="h-6 w-6 rounded-md bg-emerald-500/10 flex items-center justify-center">
+                      <Building className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+                    </div>
                     Destinatario Ordine
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="grid grid-cols-2 gap-4">
                     <Card 
-                      className={`cursor-pointer transition-all ${
+                      className={`relative overflow-hidden cursor-pointer transition-all ${
                         destinationType === "external_supplier" 
-                          ? "border-primary ring-2 ring-primary/20" 
+                          ? "border-orange-500 ring-2 ring-orange-500/20" 
                           : "hover-elevate"
                       }`}
                       onClick={() => setDestinationType("external_supplier")}
                       data-testid="option-external-supplier"
                     >
-                      <CardContent className="p-4 text-center">
-                        <Truck className="h-8 w-8 mx-auto mb-2 text-primary" />
+                      <div className="absolute inset-0 bg-gradient-to-br from-orange-500/5 to-transparent pointer-events-none" />
+                      <CardContent className="relative p-4 text-center">
+                        <div className="h-10 w-10 rounded-xl bg-orange-500/10 flex items-center justify-center mx-auto mb-2">
+                          <Truck className="h-5 w-5 text-orange-600 dark:text-orange-400" />
+                        </div>
                         <h4 className="font-medium">Fornitore Esterno</h4>
                         <p className="text-xs text-muted-foreground">Ordina da un fornitore</p>
                       </CardContent>
                     </Card>
                     <Card 
-                      className={`cursor-pointer transition-all ${
+                      className={`relative overflow-hidden cursor-pointer transition-all ${
                         destinationType === "internal_warehouse" 
-                          ? "border-primary ring-2 ring-primary/20" 
+                          ? "border-blue-500 ring-2 ring-blue-500/20" 
                           : "hover-elevate"
                       }`}
                       onClick={() => setDestinationType("internal_warehouse")}
                       data-testid="option-internal-warehouse"
                     >
-                      <CardContent className="p-4 text-center">
-                        <Warehouse className="h-8 w-8 mx-auto mb-2 text-primary" />
+                      <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-transparent pointer-events-none" />
+                      <CardContent className="relative p-4 text-center">
+                        <div className="h-10 w-10 rounded-xl bg-blue-500/10 flex items-center justify-center mx-auto mb-2">
+                          <Warehouse className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                        </div>
                         <h4 className="font-medium">Magazzino Interno</h4>
                         <p className="text-xs text-muted-foreground">Trasferimento da magazzino</p>
                       </CardContent>

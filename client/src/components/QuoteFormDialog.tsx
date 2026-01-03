@@ -257,21 +257,32 @@ export function QuoteFormDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <FileText className="h-5 w-5" />
-            Crea Preventivo
+        <DialogHeader className="relative pb-4">
+          <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 via-blue-500/5 to-transparent rounded-t-lg -m-6 mb-0 p-6" />
+          <DialogTitle className="relative flex items-center gap-3">
+            <div className="h-10 w-10 rounded-xl bg-blue-500/10 flex items-center justify-center shadow-lg shadow-blue-500/20">
+              <FileText className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+            </div>
+            <div>
+              <span className="text-lg font-semibold">Crea Preventivo</span>
+              <DialogDescription className="mt-0.5">
+                Crea un preventivo con i costi di ricambi e manodopera
+              </DialogDescription>
+            </div>
           </DialogTitle>
-          <DialogDescription>
-            Crea un preventivo con i costi di ricambi e manodopera
-          </DialogDescription>
         </DialogHeader>
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            <Card>
-              <CardHeader className="space-y-3">
-                <CardTitle className="text-base">Ricambi e Servizi</CardTitle>
+            <Card className="relative overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-transparent pointer-events-none" />
+              <CardHeader className="relative space-y-3">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <div className="h-6 w-6 rounded-md bg-blue-500/10 flex items-center justify-center">
+                    <Package className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
+                  </div>
+                  Ricambi e Servizi
+                </CardTitle>
                 <div className="flex flex-col gap-2">
                   <p className="text-sm text-muted-foreground">
                     Seleziona prima il magazzino di riferimento per cercare i prodotti disponibili:
@@ -425,10 +436,13 @@ export function QuoteFormDialog({
               </CardContent>
             </Card>
 
-            <Card>
-              <CardHeader>
+            <Card className="relative overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-transparent pointer-events-none" />
+              <CardHeader className="relative">
                 <CardTitle className="text-base flex items-center gap-2">
-                  <Calculator className="h-4 w-4" />
+                  <div className="h-6 w-6 rounded-md bg-emerald-500/10 flex items-center justify-center">
+                    <Calculator className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+                  </div>
                   Manodopera e Totali
                 </CardTitle>
               </CardHeader>
@@ -544,9 +558,15 @@ export function QuoteFormDialog({
               </CardContent>
             </Card>
 
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Dettagli Aggiuntivi</CardTitle>
+            <Card className="relative overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-br from-slate-500/5 to-transparent pointer-events-none" />
+              <CardHeader className="relative">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <div className="h-6 w-6 rounded-md bg-slate-500/10 flex items-center justify-center">
+                    <Info className="h-3.5 w-3.5 text-slate-600 dark:text-slate-400" />
+                  </div>
+                  Dettagli Aggiuntivi
+                </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <FormField

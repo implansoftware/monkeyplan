@@ -545,23 +545,34 @@ export function DiagnosisFormDialog({
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Stethoscope className="h-5 w-5" />
-            {isEditMode ? "Modifica Diagnosi Tecnica" : "Diagnosi Tecnica"}
+        <DialogHeader className="relative pb-4">
+          <div className="absolute inset-0 bg-gradient-to-r from-violet-500/10 via-violet-500/5 to-transparent rounded-t-lg -m-6 mb-0 p-6" />
+          <DialogTitle className="relative flex items-center gap-3">
+            <div className="h-10 w-10 rounded-xl bg-violet-500/10 flex items-center justify-center shadow-lg shadow-violet-500/20">
+              <Stethoscope className="h-5 w-5 text-violet-600 dark:text-violet-400" />
+            </div>
+            <div>
+              <span className="text-lg font-semibold">{isEditMode ? "Modifica Diagnosi Tecnica" : "Diagnosi Tecnica"}</span>
+              <DialogDescription className="mt-0.5">
+                {isEditMode 
+                  ? "Modifica i risultati della diagnosi tecnica per questa lavorazione"
+                  : "Registra i risultati della diagnosi tecnica per questa lavorazione"}
+              </DialogDescription>
+            </div>
           </DialogTitle>
-          <DialogDescription>
-            {isEditMode 
-              ? "Modifica i risultati della diagnosi tecnica per questa lavorazione"
-              : "Registra i risultati della diagnosi tecnica per questa lavorazione"}
-          </DialogDescription>
         </DialogHeader>
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Risultati Diagnosi</CardTitle>
+            <Card className="relative overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-br from-violet-500/5 to-transparent pointer-events-none" />
+              <CardHeader className="relative">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <div className="h-6 w-6 rounded-md bg-violet-500/10 flex items-center justify-center">
+                    <AlertCircle className="h-3.5 w-3.5 text-violet-600 dark:text-violet-400" />
+                  </div>
+                  Risultati Diagnosi
+                </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <FormField
@@ -745,9 +756,15 @@ export function DiagnosisFormDialog({
               </CardContent>
             </Card>
 
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Valutazione</CardTitle>
+            <Card className="relative overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-transparent pointer-events-none" />
+              <CardHeader className="relative">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <div className="h-6 w-6 rounded-md bg-blue-500/10 flex items-center justify-center">
+                    <Scan className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
+                  </div>
+                  Valutazione
+                </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <FormField
@@ -852,10 +869,13 @@ export function DiagnosisFormDialog({
               </CardContent>
             </Card>
 
-            <Card>
-              <CardHeader>
+            <Card className="relative overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-br from-amber-500/5 to-transparent pointer-events-none" />
+              <CardHeader className="relative">
                 <CardTitle className="text-base flex items-center gap-2">
-                  <Stethoscope className="h-5 w-5" />
+                  <div className="h-6 w-6 rounded-md bg-amber-500/10 flex items-center justify-center">
+                    <Stethoscope className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
+                  </div>
                   Esito Diagnosi
                 </CardTitle>
               </CardHeader>
@@ -873,13 +893,13 @@ export function DiagnosisFormDialog({
                         <div
                           className={`flex flex-col items-center gap-3 p-4 rounded-lg border-2 cursor-pointer transition-all ${
                             field.value === "riparabile"
-                              ? "border-green-500 bg-green-500/10"
+                              ? "border-emerald-500 bg-emerald-500/10"
                               : "border-muted hover:bg-muted/50"
                           }`}
                           onClick={() => field.onChange("riparabile")}
                           data-testid="outcome-riparabile"
                         >
-                          <CheckCircle2 className={`h-12 w-12 ${field.value === "riparabile" ? "text-green-500" : "text-muted-foreground"}`} />
+                          <CheckCircle2 className={`h-12 w-12 ${field.value === "riparabile" ? "text-emerald-500" : "text-muted-foreground"}`} />
                           <div className="text-center">
                             <div className="font-semibold">Riparabile</div>
                             <div className="text-xs text-muted-foreground">Il dispositivo può essere riparato</div>
@@ -1196,14 +1216,14 @@ export function DiagnosisFormDialog({
                       name="suggestedDeviceIds"
                       render={({ field }) => (
                         <FormItem>
-                          <div className="bg-green-500/10 p-3 rounded-lg border border-green-500/30 mt-4">
+                          <div className="bg-emerald-500/10 p-3 rounded-lg border border-emerald-500/30 mt-4">
                             <div className="flex items-center gap-2 mb-2">
-                              <Smartphone className="h-5 w-5 text-green-600" />
-                              <FormLabel className="font-semibold text-green-700 dark:text-green-300">
+                              <Smartphone className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+                              <FormLabel className="font-semibold text-emerald-700 dark:text-emerald-300">
                                 Suggerisci Smartphone Sostitutivi
                               </FormLabel>
                             </div>
-                            <FormDescription className="text-green-600 dark:text-green-400 mb-3">
+                            <FormDescription className="text-emerald-600 dark:text-emerald-400 mb-3">
                               Seleziona smartphone dal tuo catalogo da proporre al cliente come sostituzione
                             </FormDescription>
                             
@@ -1220,7 +1240,7 @@ export function DiagnosisFormDialog({
                                       key={product.id}
                                       className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all ${
                                         isSelected
-                                          ? "border-green-500 bg-green-500/10"
+                                          ? "border-emerald-500 bg-emerald-500/10"
                                           : "border-muted hover:bg-muted/50"
                                       }`}
                                       onClick={() => {
@@ -1234,7 +1254,7 @@ export function DiagnosisFormDialog({
                                       data-testid={`suggested-device-${product.id}`}
                                     >
                                       <div className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 ${
-                                        isSelected ? "bg-green-500 border-green-500" : "border-muted-foreground"
+                                        isSelected ? "bg-emerald-500 border-emerald-500" : "border-muted-foreground"
                                       }`}>
                                         {isSelected && <span className="text-white text-xs">✓</span>}
                                       </div>
@@ -1251,7 +1271,7 @@ export function DiagnosisFormDialog({
                                           {product.brand} {product.model && `- ${product.model}`}
                                         </div>
                                       </div>
-                                      <div className="text-sm font-semibold text-green-600">
+                                      <div className="text-sm font-semibold text-emerald-600 dark:text-emerald-400">
                                         €{((product.unitPrice || product.basePrice || 0) / 100).toFixed(2)}
                                       </div>
                                     </div>
@@ -1261,7 +1281,7 @@ export function DiagnosisFormDialog({
                             )}
                             
                             {field.value && field.value.length > 0 && (
-                              <p className="text-xs text-green-600 mt-2">
+                              <p className="text-xs text-emerald-600 dark:text-emerald-400 mt-2">
                                 {field.value.length} smartphone selezionat{field.value.length === 1 ? 'o' : 'i'}
                               </p>
                             )}

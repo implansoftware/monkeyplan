@@ -107,20 +107,25 @@ export function DataRecoveryDialog({
       onOpenChange(value);
     }}>
       <DialogContent className="max-w-lg max-h-[90vh] overflow-hidden flex flex-col">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <HardDrive className="h-5 w-5 text-blue-500" />
-            Avvia Recupero Dati
+        <DialogHeader className="relative pb-4">
+          <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 via-blue-500/5 to-transparent rounded-t-lg -m-6 mb-0 p-6" />
+          <DialogTitle className="relative flex items-center gap-3">
+            <div className="h-10 w-10 rounded-xl bg-blue-500/10 flex items-center justify-center shadow-lg shadow-blue-500/20">
+              <HardDrive className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+            </div>
+            <div>
+              <span className="text-lg font-semibold">Avvia Recupero Dati</span>
+              <DialogDescription className="mt-0.5">
+                {deviceDescription || "Assegna il recupero dati a un tecnico del laboratorio"}
+              </DialogDescription>
+            </div>
           </DialogTitle>
-          <DialogDescription>
-            {deviceDescription || "Assegna il recupero dati a un tecnico del laboratorio"}
-          </DialogDescription>
         </DialogHeader>
 
         <ScrollArea className="flex-1 pr-4">
           <div className="space-y-6">
-            <div className="flex items-center gap-3 p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
-              <User className="h-8 w-8 text-green-600" />
+            <div className="flex items-center gap-3 p-4 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg border border-emerald-200 dark:border-emerald-800">
+              <User className="h-8 w-8 text-emerald-600 dark:text-emerald-400" />
               <div>
                 <h3 className="font-semibold">Recupero Dati Interno</h3>
                 <p className="text-sm text-muted-foreground">
