@@ -2310,6 +2310,131 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Find repair centers without user accounts (orphans)
+  app.get("/api/admin/repair-centers/orphans", requireRole("admin"), async (req, res) => {
+    try {
+      const allCenters = await storage.listRepairCenters();
+      const allUsers = await storage.listUsers();
+      
+      // Find centers that don't have a user with repairCenterId pointing to them
+      const userCenterIds = new Set(
+        allUsers
+          .filter(u => u.role === 'repair_center' && u.repairCenterId)
+          .map(u => u.repairCenterId)
+      );
+      
+      const orphanCenters = allCenters.filter(center => !userCenterIds.has(center.id));
+      
+      res.json({
+        totalCenters: allCenters.length,
+        orphanCount: orphanCenters.length,
+        orphans: orphanCenters.map(c => ({
+          id: c.id,
+          name: c.name,
+          email: c.email,
+          phone: c.phone,
+          city: c.city,
+          resellerId: c.resellerId,
+        })),
+      });
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // Backfill missing user accounts for repair centers
+  app.post("/api/admin/repair-centers/backfill-accounts", requireRole("admin"), async (req, res) => {
+    try {
+      const allCenters = await storage.listRepairCenters();
+      const allUsers = await storage.listUsers();
+      
+      // Find orphan centers
+      const userCenterIds = new Set(
+        allUsers
+          .filter(u => u.role === 'repair_center' && u.repairCenterId)
+          .map(u => u.repairCenterId)
+      );
+      
+      const orphanCenters = allCenters.filter(center => !userCenterIds.has(center.id));
+      
+      if (orphanCenters.length === 0) {
+        return res.json({ message: "Nessun centro orfano trovato", created: [] });
+      }
+      
+      const createdAccounts: Array<{
+        centerId: string;
+        centerName: string;
+        username: string;
+        email: string;
+        tempPassword: string;
+      }> = [];
+      
+      const errors: Array<{ centerId: string; centerName: string; error: string }> = [];
+      
+      for (const center of orphanCenters) {
+        try {
+          // Check if email already exists
+          const existingEmail = await storage.getUserByEmail(center.email);
+          if (existingEmail) {
+            errors.push({
+              centerId: center.id,
+              centerName: center.name,
+              error: `Email ${center.email} già in uso da un altro utente`,
+            });
+            continue;
+          }
+          
+          // Generate username
+          const emailUsername = center.email.split('@')[0].replace(/[^a-zA-Z0-9]/g, '_');
+          const username = `rc_${emailUsername}_${Date.now().toString(36)}`;
+          
+          // Generate temporary password
+          const tempPassword = randomBytes(8).toString('hex');
+          const hashedPassword = await hashPassword(tempPassword);
+          
+          // Create user account
+          await storage.createUser({
+            username,
+            email: center.email,
+            password: hashedPassword,
+            fullName: center.name,
+            role: 'repair_center',
+            repairCenterId: center.id,
+            phone: center.phone || null,
+            address: center.address || null,
+            city: center.city || null,
+            province: center.provincia || null,
+            postalCode: center.cap || null,
+          });
+          
+          createdAccounts.push({
+            centerId: center.id,
+            centerName: center.name,
+            username,
+            email: center.email,
+            tempPassword,
+          });
+          
+          console.log(`[BACKFILL] Created account for repair center: ${center.name} (${center.id})`);
+        } catch (err: any) {
+          errors.push({
+            centerId: center.id,
+            centerName: center.name,
+            error: err.message,
+          });
+        }
+      }
+      
+      res.json({
+        message: `Creati ${createdAccounts.length} account su ${orphanCenters.length} centri orfani`,
+        created: createdAccounts,
+        errors,
+      });
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
   // Get repair center overview with all related entities (for admin detail view)
   app.get("/api/admin/repair-centers/:id/overview", requireRole("admin"), async (req, res) => {
     try {
