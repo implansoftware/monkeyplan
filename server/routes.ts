@@ -12267,21 +12267,25 @@ export function registerRoutes(app: Express): Server {
         if (deviceType) deviceTypeName = deviceType.name;
       }
       
-      // Generate PDF with single large label
+      // Generate PDF with 6 labels (2x3 grid) + 2 barcodes each
       const PDFDocument = (await import('pdfkit')).default;
-      const doc = new PDFDocument({ margin: 40, size: 'A4' });
+      const bwipjs = await import('bwip-js');
+      
+      const doc = new PDFDocument({ margin: 20, size: 'A4' });
       
       res.setHeader('Content-Type', 'application/pdf');
-      res.setHeader('Content-Disposition', `attachment; filename="etichetta-${repairOrder.orderNumber}.pdf"`);
+      res.setHeader('Content-Disposition', `attachment; filename="etichette-${repairOrder.orderNumber}.pdf"`);
       
       doc.pipe(res);
       
-      // Large label dimensions - centered on A4 page
-      const pageWidth = 595; // A4 width in points
-      const labelWidth = 400;
-      const labelHeight = 250;
-      const x = (pageWidth - labelWidth) / 2;
-      const y = 80;
+      // Label dimensions for 2x3 grid on A4
+      const labelWidth = 180;
+      const labelHeight = 130; // Increased height for barcodes
+      const labelsPerRow = 3;
+      const marginX = 20;
+      const marginY = 20;
+      const gapX = 10;
+      const gapY = 15;
       
       // Prepare label content
       const orderNumber = repairOrder.orderNumber || 'N/A';
@@ -12294,58 +12298,126 @@ export function registerRoutes(app: Express): Server {
         accessoriesList = acceptance.accessories;
       }
       
-      // Draw label border with rounded corners
-      doc.roundedRect(x, y, labelWidth, labelHeight, 10).stroke('#cccccc');
+      // Build barcode URLs
+      const baseUrl = process.env.REPLIT_DEV_DOMAIN 
+        ? `https://${process.env.REPLIT_DEV_DOMAIN}`
+        : process.env.REPLIT_DOMAINS?.split(',')[0] 
+          ? `https://${process.env.REPLIT_DOMAINS.split(',')[0]}`
+          : 'https://monkeyplan.it';
       
-      // Header with order number (blue background)
-      doc.save();
-      doc.roundedRect(x, y, labelWidth, 50, 10);
-      doc.rect(x, y + 25, labelWidth, 25);
-      doc.clip();
-      doc.rect(x, y, labelWidth, 50).fill('#1e40af');
-      doc.restore();
+      const operatorUrl = `${baseUrl}/repair-orders/${repairOrder.id}`;
+      const customerUrl = `${baseUrl}/tracking/${repairOrder.orderNumber}`;
       
-      doc.fontSize(24).font('Helvetica-Bold').fillColor('white');
-      doc.text(orderNumber, x + 10, y + 14, { width: labelWidth - 20, align: 'center' });
+      // Generate barcodes as PNG buffers
+      let operatorBarcodePng: Buffer | null = null;
+      let customerBarcodePng: Buffer | null = null;
       
-      // Reset color
-      doc.fillColor('black');
-      
-      // Device info
-      doc.fontSize(18).font('Helvetica-Bold');
-      doc.text(deviceInfo, x + 20, y + 65, { width: labelWidth - 40 });
-      
-      // IMEI/Serial if available
-      let currentY = y + 95;
-      if (imeiSerial) {
-        doc.fontSize(12).font('Helvetica');
-        doc.text(`ID: ${imeiSerial}`, x + 20, currentY, { width: labelWidth - 40 });
-        currentY += 20;
-      }
-      
-      // Accessories list
-      if (accessoriesList.length > 0) {
-        doc.fontSize(11).font('Helvetica-Bold');
-        doc.text('Accessori inclusi:', x + 20, currentY, { width: labelWidth - 40 });
-        currentY += 18;
-        doc.fontSize(10).font('Helvetica');
-        accessoriesList.forEach((acc) => {
-          doc.text(`• ${acc}`, x + 25, currentY, { width: labelWidth - 50 });
-          currentY += 14;
+      try {
+        operatorBarcodePng = await bwipjs.default.toBuffer({
+          bcid: 'code128',
+          text: repairOrder.id,
+          scale: 2,
+          height: 8,
+          includetext: false,
         });
-      } else {
-        doc.fontSize(11).font('Helvetica');
-        doc.text('Nessun accessorio incluso', x + 20, currentY, { width: labelWidth - 40 });
+      } catch (e) {
+        console.error('Error generating operator barcode:', e);
       }
       
-      // Date at bottom right
-      const ingressDate = repairOrder.ingressatoAt ? new Date(repairOrder.ingressatoAt) : new Date(repairOrder.createdAt);
-      doc.fontSize(10).font('Helvetica').fillColor('#666666');
-      doc.text(`Data ingresso: ${ingressDate.toLocaleDateString('it-IT')}`, x + 20, y + labelHeight - 30, { width: labelWidth - 40, align: 'right' });
+      try {
+        customerBarcodePng = await bwipjs.default.toBuffer({
+          bcid: 'code128',
+          text: repairOrder.orderNumber || repairOrder.id,
+          scale: 2,
+          height: 8,
+          includetext: false,
+        });
+      } catch (e) {
+        console.error('Error generating customer barcode:', e);
+      }
       
-      // Footer instruction
-      doc.fontSize(9).font('Helvetica').fillColor('#888888');
-      doc.text('Applicare questa etichetta sul dispositivo', x, y + labelHeight + 20, { width: labelWidth, align: 'center' });
+      // Generate 6 labels (2 rows x 3 columns)
+      const totalLabels = 6;
+      
+      for (let i = 0; i < totalLabels; i++) {
+        const col = i % labelsPerRow;
+        const row = Math.floor(i / labelsPerRow);
+        
+        const x = marginX + (col * (labelWidth + gapX));
+        const y = marginY + (row * (labelHeight + gapY));
+        
+        // Draw label border with rounded corners
+        doc.roundedRect(x, y, labelWidth, labelHeight, 5).stroke('#cccccc');
+        
+        // Header with order number (blue background)
+        doc.save();
+        doc.roundedRect(x, y, labelWidth, 18, 5);
+        doc.rect(x, y + 10, labelWidth, 8);
+        doc.clip();
+        doc.rect(x, y, labelWidth, 18).fill('#1e40af');
+        doc.restore();
+        
+        doc.fontSize(9).font('Helvetica-Bold').fillColor('white');
+        doc.text(orderNumber, x + 5, y + 5, { width: labelWidth - 10, align: 'center' });
+        
+        // Reset color
+        doc.fillColor('black');
+        
+        // Device info
+        doc.fontSize(7).font('Helvetica-Bold');
+        const deviceDisplay = deviceInfo.length > 28 ? deviceInfo.substring(0, 28) + '...' : deviceInfo;
+        doc.text(deviceDisplay, x + 5, y + 22, { width: labelWidth - 10 });
+        
+        // IMEI/Serial if available (compact)
+        let textY = y + 32;
+        if (imeiSerial) {
+          doc.fontSize(5).font('Helvetica');
+          doc.text(`ID: ${imeiSerial}`, x + 5, textY, { width: labelWidth - 10 });
+          textY += 8;
+        }
+        
+        // Accessories (very compact - just count)
+        if (accessoriesList.length > 0) {
+          doc.fontSize(5).font('Helvetica');
+          const accText = accessoriesList.length <= 2 
+            ? accessoriesList.join(', ')
+            : `${accessoriesList.slice(0, 2).join(', ')} +${accessoriesList.length - 2}`;
+          doc.text(`Acc: ${accText}`, x + 5, textY, { width: labelWidth - 10 });
+        }
+        
+        // Barcodes section - side by side at bottom
+        const barcodeY = y + 55;
+        const barcodeWidth = 75;
+        const barcodeHeight = 25;
+        
+        // Operator barcode (left)
+        doc.fontSize(4).font('Helvetica').fillColor('#666666');
+        doc.text('OPERATORE', x + 8, barcodeY, { width: barcodeWidth, align: 'center' });
+        
+        if (operatorBarcodePng) {
+          doc.image(operatorBarcodePng, x + 8, barcodeY + 6, { width: barcodeWidth, height: barcodeHeight });
+        } else {
+          doc.rect(x + 8, barcodeY + 6, barcodeWidth, barcodeHeight).stroke('#ccc');
+        }
+        
+        // Customer barcode (right)
+        doc.text('CLIENTE', x + labelWidth - barcodeWidth - 8, barcodeY, { width: barcodeWidth, align: 'center' });
+        
+        if (customerBarcodePng) {
+          doc.image(customerBarcodePng, x + labelWidth - barcodeWidth - 8, barcodeY + 6, { width: barcodeWidth, height: barcodeHeight });
+        } else {
+          doc.rect(x + labelWidth - barcodeWidth - 8, barcodeY + 6, barcodeWidth, barcodeHeight).stroke('#ccc');
+        }
+        
+        // Date at very bottom
+        const ingressDate = repairOrder.ingressatoAt ? new Date(repairOrder.ingressatoAt) : new Date(repairOrder.createdAt);
+        doc.fontSize(5).font('Helvetica').fillColor('#888888');
+        doc.text(ingressDate.toLocaleDateString('it-IT'), x + 5, y + labelHeight - 12, { width: labelWidth - 10, align: 'right' });
+      }
+      
+      // Add instruction text at bottom
+      doc.fontSize(8).font('Helvetica').fillColor('#666666');
+      doc.text('Ritagliare le etichette lungo i bordi e applicare sul dispositivo e sugli accessori.', marginX, marginY + (2 * (labelHeight + gapY)) + 15, { align: 'center', width: 555 });
       
       doc.end();
     } catch (error: any) {
