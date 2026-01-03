@@ -12308,32 +12308,30 @@ export function registerRoutes(app: Express): Server {
       const operatorUrl = `${baseUrl}/repair-orders/${repairOrder.id}`;
       const customerUrl = `${baseUrl}/tracking/${repairOrder.orderNumber}`;
       
-      // Generate barcodes as PNG buffers
-      let operatorBarcodePng: Buffer | null = null;
-      let customerBarcodePng: Buffer | null = null;
+      // Generate QR codes as PNG buffers (encode full URLs for direct access)
+      let operatorQrPng: Buffer | null = null;
+      let customerQrPng: Buffer | null = null;
       
       try {
-        operatorBarcodePng = await bwipjs.default.toBuffer({
-          bcid: 'code128',
-          text: repairOrder.id,
+        operatorQrPng = await bwipjs.default.toBuffer({
+          bcid: 'qrcode',
+          text: operatorUrl,
           scale: 2,
-          height: 8,
-          includetext: false,
+          eclevel: 'M',
         });
       } catch (e) {
-        console.error('Error generating operator barcode:', e);
+        console.error('Error generating operator QR code:', e);
       }
       
       try {
-        customerBarcodePng = await bwipjs.default.toBuffer({
-          bcid: 'code128',
-          text: repairOrder.orderNumber || repairOrder.id,
+        customerQrPng = await bwipjs.default.toBuffer({
+          bcid: 'qrcode',
+          text: customerUrl,
           scale: 2,
-          height: 8,
-          includetext: false,
+          eclevel: 'M',
         });
       } catch (e) {
-        console.error('Error generating customer barcode:', e);
+        console.error('Error generating customer QR code:', e);
       }
       
       // Generate 6 labels (2 rows x 3 columns)
@@ -12385,28 +12383,27 @@ export function registerRoutes(app: Express): Server {
           doc.text(`Acc: ${accText}`, x + 5, textY, { width: labelWidth - 10 });
         }
         
-        // Barcodes section - side by side at bottom
-        const barcodeY = y + 55;
-        const barcodeWidth = 75;
-        const barcodeHeight = 25;
+        // QR codes section - side by side at bottom
+        const qrY = y + 50;
+        const qrSize = 45; // Square QR codes
         
-        // Operator barcode (left)
+        // Operator QR code (left)
         doc.fontSize(4).font('Helvetica').fillColor('#666666');
-        doc.text('OPERATORE', x + 8, barcodeY, { width: barcodeWidth, align: 'center' });
+        doc.text('OPERATORE', x + 10, qrY, { width: qrSize + 10, align: 'center' });
         
-        if (operatorBarcodePng) {
-          doc.image(operatorBarcodePng, x + 8, barcodeY + 6, { width: barcodeWidth, height: barcodeHeight });
+        if (operatorQrPng) {
+          doc.image(operatorQrPng, x + 10, qrY + 6, { width: qrSize, height: qrSize });
         } else {
-          doc.rect(x + 8, barcodeY + 6, barcodeWidth, barcodeHeight).stroke('#ccc');
+          doc.rect(x + 10, qrY + 6, qrSize, qrSize).stroke('#ccc');
         }
         
-        // Customer barcode (right)
-        doc.text('CLIENTE', x + labelWidth - barcodeWidth - 8, barcodeY, { width: barcodeWidth, align: 'center' });
+        // Customer QR code (right)
+        doc.text('CLIENTE', x + labelWidth - qrSize - 20, qrY, { width: qrSize + 10, align: 'center' });
         
-        if (customerBarcodePng) {
-          doc.image(customerBarcodePng, x + labelWidth - barcodeWidth - 8, barcodeY + 6, { width: barcodeWidth, height: barcodeHeight });
+        if (customerQrPng) {
+          doc.image(customerQrPng, x + labelWidth - qrSize - 20, qrY + 6, { width: qrSize, height: qrSize });
         } else {
-          doc.rect(x + labelWidth - barcodeWidth - 8, barcodeY + 6, barcodeWidth, barcodeHeight).stroke('#ccc');
+          doc.rect(x + labelWidth - qrSize - 20, qrY + 6, qrSize, qrSize).stroke('#ccc');
         }
         
         // Date at very bottom
