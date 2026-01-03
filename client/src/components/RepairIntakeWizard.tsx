@@ -25,7 +25,6 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import {
@@ -542,42 +541,27 @@ export function RepairIntakeWizard({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent ref={dialogContentRef} className="max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
-        <DialogHeader className="relative pb-4 flex-shrink-0">
-          <div className="absolute inset-0 bg-gradient-to-r from-primary/10 via-primary/5 to-transparent rounded-t-lg -m-6 mb-0 p-6" />
-          <DialogTitle className="relative flex items-center gap-3">
-            <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center shadow-lg shadow-primary/20">
-              <Smartphone className="h-5 w-5 text-primary" />
-            </div>
-            <div>
-              <span className="text-lg font-semibold">Nuova Riparazione</span>
-              <p className="text-sm text-muted-foreground mt-0.5">
-                {currentStep === 1 && "Seleziona il cliente"}
-                {currentStep === 2 && "Informazioni dispositivo"}
-                {currentStep === 3 && "Condizioni e accessori"}
-                {currentStep === 4 && "Conferma e crea"}
-                {currentStep === 5 && "Riparazione creata"}
-              </p>
-            </div>
-          </DialogTitle>
+      <DialogContent ref={dialogContentRef} className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="text-xl">Nuova Riparazione</DialogTitle>
         </DialogHeader>
 
         {/* Step Indicator - show only first 4 steps (step 5 is success screen) */}
         {currentStep < 5 && (
-        <div className="flex items-center justify-between mb-4 px-1 flex-shrink-0">
+        <div className="flex items-center justify-between mb-6">
           {STEPS.slice(0, 4).map((step, index) => {
             const Icon = step.icon;
             const isActive = currentStep === step.id;
             const isCompleted = currentStep > step.id;
             
             return (
-              <div key={step.id} className="flex items-center flex-1">
-                <div className="flex flex-col items-center flex-shrink-0">
+              <div key={step.id} className="flex items-center">
+                <div className="flex flex-col items-center">
                   <div
                     className={cn(
-                      "w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center transition-all duration-300",
-                      isActive && "bg-primary text-primary-foreground shadow-lg shadow-primary/30 scale-105",
-                      isCompleted && "bg-emerald-500 text-white shadow-md shadow-emerald-500/20",
+                      "w-10 h-10 rounded-full flex items-center justify-center transition-colors",
+                      isActive && "bg-primary text-primary-foreground",
+                      isCompleted && "bg-primary/20 text-primary",
                       !isActive && !isCompleted && "bg-muted text-muted-foreground"
                     )}
                   >
@@ -588,18 +572,17 @@ export function RepairIntakeWizard({
                     )}
                   </div>
                   <span className={cn(
-                    "text-xs mt-1.5 font-medium text-center hidden sm:block",
+                    "text-xs mt-1 font-medium",
                     isActive && "text-primary",
-                    isCompleted && "text-emerald-600 dark:text-emerald-400",
-                    !isActive && !isCompleted && "text-muted-foreground"
+                    !isActive && "text-muted-foreground"
                   )}>
                     {step.name}
                   </span>
                 </div>
                 {index < 3 && (
                   <div className={cn(
-                    "flex-1 h-0.5 mx-1 sm:mx-2 min-w-[16px]",
-                    isCompleted ? "bg-emerald-500" : "bg-muted"
+                    "w-12 h-0.5 mx-2",
+                    isCompleted ? "bg-primary/50" : "bg-muted"
                   )} />
                 )}
               </div>
@@ -608,27 +591,22 @@ export function RepairIntakeWizard({
         </div>
         )}
 
-        <ScrollArea className="flex-1 pr-4">
         <Form {...form}>
           <form className="space-y-4">
             {/* Step 1: Customer Selection */}
             {currentStep === 1 && (
               <div className="space-y-4">
-                <Card className="relative overflow-hidden border-0 bg-gradient-to-br from-primary/5 to-transparent">
-                  <CardContent className="p-4 text-center">
-                    <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center mx-auto mb-3">
-                      <User className="h-6 w-6 text-primary" />
-                    </div>
-                    <h3 className="text-lg font-semibold">
-                      {showNewCustomerForm ? "Nuovo Cliente" : "Seleziona il Cliente"}
-                    </h3>
-                    <p className="text-sm text-muted-foreground">
-                      {showNewCustomerForm 
-                        ? "Inserisci i dati del nuovo cliente" 
-                        : "Cerca e seleziona il cliente per questa riparazione"}
-                    </p>
-                  </CardContent>
-                </Card>
+                <div className="text-center mb-4">
+                  <User className="h-12 w-12 mx-auto text-primary mb-2" />
+                  <h3 className="text-lg font-semibold">
+                    {showNewCustomerForm ? "Nuovo Cliente" : "Seleziona il Cliente"}
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    {showNewCustomerForm 
+                      ? "Inserisci i dati del nuovo cliente" 
+                      : "Cerca e seleziona il cliente per questa riparazione"}
+                  </p>
+                </div>
 
                 {!showNewCustomerForm ? (
                   <>
@@ -963,17 +941,13 @@ export function RepairIntakeWizard({
             {/* Step 2: Device Info */}
             {currentStep === 2 && (
               <div className="space-y-4">
-                <Card className="relative overflow-hidden border-0 bg-gradient-to-br from-blue-500/5 to-transparent">
-                  <CardContent className="p-4 text-center">
-                    <div className="h-12 w-12 rounded-xl bg-blue-500/10 flex items-center justify-center mx-auto mb-3">
-                      <Smartphone className="h-6 w-6 text-blue-600 dark:text-blue-400" />
-                    </div>
-                    <h3 className="text-lg font-semibold">Dati Dispositivo</h3>
-                    <p className="text-sm text-muted-foreground">
-                      Seleziona il tipo di dispositivo e descrivi il problema
-                    </p>
-                  </CardContent>
-                </Card>
+                <div className="text-center mb-4">
+                  <Smartphone className="h-12 w-12 mx-auto text-primary mb-2" />
+                  <h3 className="text-lg font-semibold">Dati Dispositivo</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Seleziona il tipo di dispositivo e descrivi il problema
+                  </p>
+                </div>
 
                 {/* Device Type Selection */}
                 <FormField
@@ -1365,17 +1339,13 @@ export function RepairIntakeWizard({
             {/* Step 3: Conditions */}
             {currentStep === 3 && (
               <div className="space-y-4">
-                <Card className="relative overflow-hidden border-0 bg-gradient-to-br from-amber-500/5 to-transparent">
-                  <CardContent className="p-4 text-center">
-                    <div className="h-12 w-12 rounded-xl bg-amber-500/10 flex items-center justify-center mx-auto mb-3">
-                      <ClipboardCheck className="h-6 w-6 text-amber-600 dark:text-amber-400" />
-                    </div>
-                    <h3 className="text-lg font-semibold">Condizioni e Accessori</h3>
-                    <p className="text-sm text-muted-foreground">
-                      Documenta lo stato del dispositivo (opzionale)
-                    </p>
-                  </CardContent>
-                </Card>
+                <div className="text-center mb-4">
+                  <ClipboardCheck className="h-12 w-12 mx-auto text-primary mb-2" />
+                  <h3 className="text-lg font-semibold">Condizioni e Accessori</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Documenta lo stato del dispositivo (opzionale)
+                  </p>
+                </div>
 
                 {/* Aesthetic Condition */}
                 <FormField
@@ -1472,22 +1442,17 @@ export function RepairIntakeWizard({
             {/* Step 4: Summary */}
             {currentStep === 4 && (
               <div className="space-y-4">
-                <Card className="relative overflow-hidden border-0 bg-gradient-to-br from-violet-500/5 to-transparent">
-                  <CardContent className="p-4 text-center">
-                    <div className="h-12 w-12 rounded-xl bg-violet-500/10 flex items-center justify-center mx-auto mb-3">
-                      <CheckCircle2 className="h-6 w-6 text-violet-600 dark:text-violet-400" />
-                    </div>
-                    <h3 className="text-lg font-semibold">Conferma Dati</h3>
-                    <p className="text-sm text-muted-foreground">
-                      Verifica i dati e conferma la creazione
-                    </p>
-                  </CardContent>
-                </Card>
+                <div className="text-center mb-4">
+                  <CheckCircle2 className="h-12 w-12 mx-auto text-primary mb-2" />
+                  <h3 className="text-lg font-semibold">Conferma Dati</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Verifica i dati e conferma la creazione
+                  </p>
+                </div>
 
                 {/* Summary Card */}
-                <Card className="relative overflow-hidden">
-                  <div className="absolute inset-0 bg-gradient-to-br from-violet-500/5 to-transparent pointer-events-none" />
-                  <CardContent className="p-4 space-y-3 relative">
+                <Card>
+                  <CardContent className="p-4 space-y-3">
                     {/* Customer */}
                     <div className="flex items-start gap-3">
                       <User className="h-5 w-5 text-muted-foreground mt-0.5" />
@@ -1599,27 +1564,19 @@ export function RepairIntakeWizard({
             {/* Step 5: Success - Download Documents */}
             {currentStep === 5 && createdOrder && (
               <div className="space-y-6">
-                <Card className="relative overflow-hidden border-0 bg-gradient-to-br from-emerald-500/10 to-transparent">
-                  <CardContent className="p-6 text-center">
-                    <div className="mx-auto w-16 h-16 bg-emerald-500/10 rounded-full flex items-center justify-center mb-4">
-                      <PartyPopper className="h-8 w-8 text-emerald-600 dark:text-emerald-400" />
-                    </div>
-                    <h3 className="text-xl font-semibold text-emerald-600 dark:text-emerald-400">Riparazione Creata!</h3>
-                    <p className="text-muted-foreground mt-1">
-                      Ordine <span className="font-mono font-semibold">{createdOrder.orderNumber}</span> registrato con successo
-                    </p>
-                  </CardContent>
-                </Card>
+                <div className="text-center mb-6">
+                  <div className="mx-auto w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mb-4">
+                    <PartyPopper className="h-8 w-8 text-green-600 dark:text-green-400" />
+                  </div>
+                  <h3 className="text-xl font-semibold text-green-600 dark:text-green-400">Riparazione Creata!</h3>
+                  <p className="text-muted-foreground mt-1">
+                    Ordine <span className="font-mono font-semibold">{createdOrder.orderNumber}</span> registrato con successo
+                  </p>
+                </div>
 
-                <Card className="relative overflow-hidden">
-                  <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-transparent pointer-events-none" />
-                  <CardContent className="p-4 relative">
-                    <div className="flex items-center gap-2 mb-4">
-                      <div className="h-6 w-6 rounded-md bg-emerald-500/10 flex items-center justify-center">
-                        <Download className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
-                      </div>
-                      <p className="text-sm font-medium">Scarica i documenti</p>
-                    </div>
+                <Card>
+                  <CardContent className="p-4">
+                    <p className="text-sm font-medium mb-3">Scarica i documenti:</p>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <Button
                         variant="outline"
@@ -1649,7 +1606,6 @@ export function RepairIntakeWizard({
             )}
           </form>
         </Form>
-        </ScrollArea>
 
         {/* Navigation Buttons */}
         {currentStep < 5 && (
