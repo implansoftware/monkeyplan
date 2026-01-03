@@ -20380,8 +20380,8 @@ export function registerRoutes(app: Express): Server {
         return res.json({ suggestions: [] });
       }
       
-      // Mapbox Searchbox API v1 - designed for autocomplete
-      const url = `https://api.mapbox.com/search/searchbox/v1/suggest?q=${encodeURIComponent(query)}&access_token=${mapboxToken}&session_token=${sessionToken}&country=IT&language=it&limit=5&types=address,street,place,locality,neighborhood`;
+      // Mapbox Searchbox API v1 - designed for autocomplete (worldwide)
+      const url = `https://api.mapbox.com/search/searchbox/v1/suggest?q=${encodeURIComponent(query)}&access_token=${mapboxToken}&session_token=${sessionToken}&language=it&limit=5&types=address,street,place,locality,neighborhood`;
       
       const response = await fetch(url);
       
