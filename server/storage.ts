@@ -43,7 +43,7 @@ import {
   SifarCredential, InsertSifarCredential, SifarStore, InsertSifarStore,
   TrovausatiCredential, InsertTrovausatiCredential, TrovausatiShop, InsertTrovausatiShop,
   TrovausatiOrder, InsertTrovausatiOrder, trovausatiCredentials, trovausatiShops, trovausatiOrders,
-  FonedayCredential, InsertFonedayCredential, FonedayOrder, InsertFonedayOrder,
+  FonedayCredential, InsertFonedayCredential, FonedayOrder, InsertFonedayOrder, FonedayProductsCache, InsertFonedayProductsCache,
   MobilesentrixCredential, InsertMobilesentrixCredential, MobilesentrixOrder, InsertMobilesentrixOrder,
   ExternalIntegration, InsertExternalIntegration, externalIntegrations,
   ServiceItem, InsertServiceItem, ServiceItemPrice, InsertServiceItemPrice,
@@ -63,7 +63,7 @@ import {
   utilityPracticeDocuments, utilityPracticeTasks, utilityPracticeNotes,
   utilityPracticeTimeline, utilityPracticeStateHistory,
   sifarCredentials, sifarStores,
-  fonedayCredentials, fonedayOrders,
+  fonedayCredentials, fonedayOrders, fonedayProductsCache,
   mobilesentrixCredentials, mobilesentrixOrders,
   serviceItems, serviceItemPrices, productPrices,
   resellerProducts, ResellerProduct, InsertResellerProduct,
@@ -639,6 +639,12 @@ export interface IStorage {
   getFonedayOrder(id: string): Promise<FonedayOrder | undefined>;
   createFonedayOrder(order: InsertFonedayOrder): Promise<FonedayOrder>;
   updateFonedayOrder(id: string, updates: Partial<InsertFonedayOrder>): Promise<FonedayOrder>;
+  
+  // Foneday Products Cache
+  getFonedayProductsCache(resellerId: string): Promise<FonedayProductsCache | undefined>;
+  createFonedayProductsCache(cache: InsertFonedayProductsCache): Promise<FonedayProductsCache>;
+  updateFonedayProductsCache(id: string, updates: Partial<InsertFonedayProductsCache>): Promise<FonedayProductsCache>;
+  deleteFonedayProductsCache(resellerId: string): Promise<void>;
   
   // MobileSentrix Integration
   getMobilesentrixCredentialByReseller(resellerId: string): Promise<MobilesentrixCredential | undefined>;
@@ -5695,6 +5701,35 @@ export class DatabaseStorage implements IStorage {
       .where(eq(fonedayOrders.id, id))
       .returning();
     return updated;
+  }
+
+  // Foneday Products Cache
+  async getFonedayProductsCache(resellerId: string): Promise<FonedayProductsCache | undefined> {
+    const [cache] = await db.select()
+      .from(fonedayProductsCache)
+      .where(eq(fonedayProductsCache.resellerId, resellerId))
+      .limit(1);
+    return cache;
+  }
+
+  async createFonedayProductsCache(cache: InsertFonedayProductsCache): Promise<FonedayProductsCache> {
+    const [created] = await db.insert(fonedayProductsCache)
+      .values(cache)
+      .returning();
+    return created;
+  }
+
+  async updateFonedayProductsCache(id: string, updates: Partial<InsertFonedayProductsCache>): Promise<FonedayProductsCache> {
+    const [updated] = await db.update(fonedayProductsCache)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(fonedayProductsCache.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteFonedayProductsCache(resellerId: string): Promise<void> {
+    await db.delete(fonedayProductsCache)
+      .where(eq(fonedayProductsCache.resellerId, resellerId));
   }
 
   // ==========================================

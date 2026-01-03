@@ -19864,7 +19864,7 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  // GET /api/foneday/catalog/products - Search Foneday products (with caching)
+  // GET /api/foneday/catalog/products - Search Foneday products (with persistent DB caching)
   app.get("/api/foneday/catalog/products", requireAuth, requireRole("reseller"), async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
@@ -19878,11 +19878,56 @@ export function registerRoutes(app: Express): Server {
       const page = req.query.page ? Number(req.query.page) : 1;
       const perPage = req.query.per_page ? Number(req.query.per_page) : 20;
       
-      // Check cache first
+      // Check persistent DB cache first
+      const cache = await storage.getFonedayProductsCache(req.user.id);
+      
+      if (cache && cache.syncStatus === "success" && new Date(cache.expiresAt) > new Date()) {
+        // Cache is valid - filter products locally
+        try {
+          const allProducts = JSON.parse(cache.productsData);
+          const searchLower = search.toLowerCase();
+          
+          // Filter products by search query
+          let filteredProducts = allProducts;
+          if (search.length >= 2) {
+            filteredProducts = allProducts.filter((p: any) => {
+              const searchFields = [
+                p.name || p.title || "",
+                p.sku || "",
+                p.brand || p.model_brand || "",
+                p.model || p.suitable_for || "",
+                p.description || "",
+                p.category_name || p.category || "",
+              ].join(" ").toLowerCase();
+              return searchFields.includes(searchLower);
+            });
+          }
+          
+          // Paginate results
+          const total = filteredProducts.length;
+          const startIndex = (page - 1) * perPage;
+          const paginatedProducts = filteredProducts.slice(startIndex, startIndex + perPage);
+          
+          return res.json({
+            products: paginatedProducts,
+            total,
+            page,
+            per_page: perPage,
+            cached: true,
+            lastSyncAt: cache.lastSyncAt,
+            expiresAt: cache.expiresAt,
+          });
+        } catch (parseError) {
+          console.error("Error parsing cached products:", parseError);
+        }
+      }
+      
+      // Cache miss or expired - fetch from API (slower)
+      // First check in-memory cache for recent searches
       const cacheKey = getFonedayCacheKey(req.user.id, search, page, perPage);
       const cachedData = getFonedayFromCache(cacheKey);
       if (cachedData) {
-        return res.json(cachedData);
+        return res.json({ ...cachedData, cached: false });
       }
       
       const { createFonedayService } = await import("./fonedayService");
@@ -19896,10 +19941,143 @@ export function registerRoutes(app: Express): Server {
         per_page: perPage,
       });
       
-      // Cache the result
+      // Cache in memory for recent searches
       setFonedayCache(cacheKey, products);
       
-      res.json(products);
+      res.json({ ...products, cached: false });
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+  
+  // GET /api/foneday/catalog/cache-status - Get cache status
+  app.get("/api/foneday/catalog/cache-status", requireAuth, requireRole("reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const credential = await storage.getFonedayCredentialByReseller(req.user.id);
+      if (!credential) {
+        return res.status(404).send("Credenziali Foneday non configurate");
+      }
+      
+      const cache = await storage.getFonedayProductsCache(req.user.id);
+      
+      if (!cache) {
+        return res.json({
+          hasCache: false,
+          syncStatus: null,
+          lastSyncAt: null,
+          expiresAt: null,
+          totalProducts: 0,
+          isExpired: true,
+        });
+      }
+      
+      const isExpired = new Date(cache.expiresAt) <= new Date();
+      
+      res.json({
+        hasCache: true,
+        syncStatus: cache.syncStatus,
+        lastSyncAt: cache.lastSyncAt,
+        expiresAt: cache.expiresAt,
+        totalProducts: cache.totalProducts,
+        syncDurationMs: cache.syncDurationMs,
+        syncError: cache.syncError,
+        isExpired,
+      });
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+  
+  // POST /api/foneday/catalog/sync - Manually trigger catalog sync
+  app.post("/api/foneday/catalog/sync", requireAuth, requireRole("reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const credential = await storage.getFonedayCredentialByReseller(req.user.id);
+      if (!credential) {
+        return res.status(404).send("Credenziali Foneday non configurate");
+      }
+      
+      // Check if sync is already in progress
+      const existingCache = await storage.getFonedayProductsCache(req.user.id);
+      if (existingCache && existingCache.syncStatus === "syncing") {
+        return res.status(409).send("Sincronizzazione già in corso");
+      }
+      
+      // Mark as syncing
+      const now = new Date();
+      const expiresAt = new Date(now.getTime() + 24 * 60 * 60 * 1000); // 24 hours
+      
+      if (existingCache) {
+        await storage.updateFonedayProductsCache(existingCache.id, {
+          syncStatus: "syncing",
+          syncError: null,
+        });
+      }
+      
+      const startTime = Date.now();
+      
+      try {
+        const { createFonedayService } = await import("./fonedayService");
+        const fonedayService = createFonedayService(credential);
+        
+        // Fetch ALL products (no pagination, get everything)
+        const result = await fonedayService.searchProducts({
+          query: "",
+          per_page: 10000, // Get all products
+        });
+        
+        const syncDurationMs = Date.now() - startTime;
+        const productsData = JSON.stringify(result.products);
+        
+        if (existingCache) {
+          await storage.updateFonedayProductsCache(existingCache.id, {
+            productsData,
+            totalProducts: result.products.length,
+            lastSyncAt: now,
+            expiresAt,
+            syncDurationMs,
+            syncStatus: "success",
+            syncError: null,
+          });
+        } else {
+          await storage.createFonedayProductsCache({
+            resellerId: req.user.id,
+            productsData,
+            totalProducts: result.products.length,
+            lastSyncAt: now,
+            expiresAt,
+            syncDurationMs,
+            syncStatus: "success",
+            syncError: null,
+          });
+        }
+        
+        res.json({
+          success: true,
+          totalProducts: result.products.length,
+          syncDurationMs,
+          expiresAt,
+        });
+      } catch (syncError: any) {
+        const syncDurationMs = Date.now() - startTime;
+        
+        if (existingCache) {
+          await storage.updateFonedayProductsCache(existingCache.id, {
+            syncStatus: "error",
+            syncError: syncError.message,
+            syncDurationMs,
+          });
+        }
+        
+        res.status(500).json({
+          success: false,
+          error: syncError.message,
+          syncDurationMs,
+        });
+      }
     } catch (error: any) {
       res.status(400).send(error.message);
     }

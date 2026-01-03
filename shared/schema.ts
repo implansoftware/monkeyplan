@@ -2430,6 +2430,28 @@ export const fonedayOrders = pgTable("foneday_orders", {
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 
+// Cache prodotti Foneday (persistente per velocizzare ricerche)
+export const fonedayProductsCache = pgTable("foneday_products_cache", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  resellerId: varchar("reseller_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  
+  // Dati cache
+  productsData: text("products_data").notNull(), // JSON array di tutti i prodotti
+  totalProducts: integer("total_products").notNull().default(0),
+  
+  // Timing
+  lastSyncAt: timestamp("last_sync_at").notNull().defaultNow(),
+  expiresAt: timestamp("expires_at").notNull(), // Quando scade (default 24h)
+  syncDurationMs: integer("sync_duration_ms"), // Durata sync in ms
+  
+  // Status
+  syncStatus: text("sync_status").notNull().default("success"), // "success" | "error" | "syncing"
+  syncError: text("sync_error"), // Messaggio errore se fallito
+  
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
 // ============ MOBILESENTRIX INTEGRATION ============
 
 // Credenziali MobileSentrix per reseller (OAuth 1.0 style)
@@ -4581,6 +4603,12 @@ export const insertFonedayOrderSchema = createInsertSchema(fonedayOrders).omit({
   updatedAt: true,
 });
 
+export const insertFonedayProductsCacheSchema = createInsertSchema(fonedayProductsCache).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 // MobileSentrix schemas
 export const insertMobilesentrixCredentialSchema = createInsertSchema(mobilesentrixCredentials).omit({
   id: true,
@@ -5197,6 +5225,9 @@ export type InsertFonedayCredential = z.infer<typeof insertFonedayCredentialSche
 
 export type FonedayOrder = typeof fonedayOrders.$inferSelect;
 export type InsertFonedayOrder = z.infer<typeof insertFonedayOrderSchema>;
+
+export type FonedayProductsCache = typeof fonedayProductsCache.$inferSelect;
+export type InsertFonedayProductsCache = z.infer<typeof insertFonedayProductsCacheSchema>;
 
 // MobileSentrix types
 export type MobilesentrixCredential = typeof mobilesentrixCredentials.$inferSelect;
