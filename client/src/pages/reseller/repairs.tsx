@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { RepairOrder, RepairCenter } from "@shared/schema";
-import { Building, Download, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from "lucide-react";
+import { Building, Download, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, CheckCircle2, PackageCheck, Play } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -203,27 +203,136 @@ export default function ResellerRepairs() {
     }
   };
 
+  // Calculate stats
+  const totalRepairs = total || repairs.length;
+  const inProgressRepairs = repairs.filter(r => ['in_diagnosi', 'in_riparazione', 'in_test'].includes(r.status)).length;
+  const readyForPickup = repairs.filter(r => r.status === 'pronto_ritiro').length;
+  const completedToday = repairs.filter(r => {
+    if (r.status !== 'consegnato') return false;
+    const today = new Date();
+    const repairDate = new Date(r.updatedAt);
+    return repairDate.toDateString() === today.toDateString();
+  }).length;
+
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-semibold mb-2">Le Mie Lavorazioni</h1>
-          <p className="text-muted-foreground">
-            Monitora le riparazioni dei tuoi clienti
-          </p>
+    <div className="space-y-6" data-testid="page-reseller-repairs">
+      {/* Hero Header */}
+      <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-primary/5 via-primary/10 to-slate-100 dark:from-primary/10 dark:via-primary/5 dark:to-slate-900 p-6 border">
+        <div className="absolute inset-0 opacity-[0.03]" style={{
+          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23000' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+        }} />
+        <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-xl bg-primary text-primary-foreground flex items-center justify-center shadow-lg shadow-primary/25">
+              <Wrench className="h-5 w-5" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold tracking-tight">Lavorazioni</h1>
+              <p className="text-sm text-muted-foreground">
+                Monitora e gestisci tutte le riparazioni
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-3 flex-wrap">
+            <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as "table" | "kanban")}>
+              <TabsList>
+                <TabsTrigger value="table" className="gap-2" data-testid="toggle-table-view">
+                  <TableIcon className="h-4 w-4" />
+                  Tabella
+                </TabsTrigger>
+                <TabsTrigger value="kanban" className="gap-2" data-testid="toggle-kanban-view">
+                  <LayoutGrid className="h-4 w-4" />
+                  Kanban
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
+            <ActionGuard module="repairs" action="create">
+              <Button
+                onClick={() => setWizardOpen(true)}
+                className="shadow-lg shadow-primary/25"
+                data-testid="button-new-acceptance-hero"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Nuovo Ingresso
+              </Button>
+            </ActionGuard>
+          </div>
         </div>
-        <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as "table" | "kanban")}>
-          <TabsList>
-            <TabsTrigger value="table" className="gap-2" data-testid="toggle-table-view">
-              <TableIcon className="h-4 w-4" />
-              Tavolo
-            </TabsTrigger>
-            <TabsTrigger value="kanban" className="gap-2" data-testid="toggle-kanban-view">
-              <LayoutGrid className="h-4 w-4" />
-              Kanban
-            </TabsTrigger>
-          </TabsList>
-        </Tabs>
+      </div>
+
+      {/* Stats Row */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <Card className="relative overflow-hidden group hover:shadow-md transition-shadow">
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent" />
+          <CardContent className="relative pt-5 pb-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">Totale Lavorazioni</p>
+                <p className="text-3xl font-bold tabular-nums">{totalRepairs}</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {repairs.length > 0 ? `Pagina ${page}/${totalPages}` : 'Nessun filtro'}
+                </p>
+              </div>
+              <div className="h-12 w-12 rounded-xl bg-primary text-primary-foreground flex items-center justify-center shadow-lg shadow-primary/20">
+                <Wrench className="h-6 w-6" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="relative overflow-hidden group hover:shadow-md transition-shadow">
+          <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-transparent" />
+          <CardContent className="relative pt-5 pb-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">In Lavorazione</p>
+                <p className="text-3xl font-bold tabular-nums text-blue-600 dark:text-blue-400">{inProgressRepairs}</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Diagnosi, riparazione, test
+                </p>
+              </div>
+              <div className="h-12 w-12 rounded-xl bg-blue-500 text-white flex items-center justify-center shadow-lg shadow-blue-500/20">
+                <Play className="h-6 w-6" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="relative overflow-hidden group hover:shadow-md transition-shadow">
+          <div className="absolute inset-0 bg-gradient-to-br from-amber-500/5 to-transparent" />
+          <CardContent className="relative pt-5 pb-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">Pronte Ritiro</p>
+                <p className="text-3xl font-bold tabular-nums text-amber-600 dark:text-amber-400">{readyForPickup}</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  In attesa del cliente
+                </p>
+              </div>
+              <div className="h-12 w-12 rounded-xl bg-amber-500 text-white flex items-center justify-center shadow-lg shadow-amber-500/20">
+                <PackageCheck className="h-6 w-6" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="relative overflow-hidden group hover:shadow-md transition-shadow">
+          <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-transparent" />
+          <CardContent className="relative pt-5 pb-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">Consegnate Oggi</p>
+                <p className="text-3xl font-bold tabular-nums text-emerald-600 dark:text-emerald-400">{completedToday}</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Riparazioni completate
+                </p>
+              </div>
+              <div className="h-12 w-12 rounded-xl bg-emerald-500 text-white flex items-center justify-center shadow-lg shadow-emerald-500/20">
+                <CheckCircle2 className="h-6 w-6" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       <Card>
@@ -335,15 +444,6 @@ export default function ResellerRepairs() {
                 />
               </PopoverContent>
             </Popover>
-            <ActionGuard module="repairs" action="create">
-              <Button
-                onClick={() => setWizardOpen(true)}
-                data-testid="button-new-acceptance"
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                Nuovo ingresso
-              </Button>
-            </ActionGuard>
             <Button
               onClick={handleExport}
               disabled={isExporting || repairs.length === 0}

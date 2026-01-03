@@ -706,126 +706,141 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
   const currentStepIndex = getCurrentStepIndex(repair.status);
 
   return (
-    <div className="space-y-6 p-6">
-      <div className="flex items-center gap-4 flex-wrap">
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => setLocation(backPath)}
-          data-testid="button-back"
-        >
-          <ArrowLeft className="h-5 w-5" />
-        </Button>
-        <div className="flex-1 min-w-0">
-          <h1 className="text-2xl font-bold truncate" data-testid="text-page-title">
-            Dettaglio Riparazione
-          </h1>
-          <p className="text-muted-foreground" data-testid="text-order-number">
-            Ordine #{repair.orderNumber}
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          {getStatusBadge(repair.status)}
+    <div className="space-y-6" data-testid="page-repair-detail">
+      {/* Hero Header */}
+      <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-primary/5 via-primary/10 to-slate-100 dark:from-primary/10 dark:via-primary/5 dark:to-slate-900 p-6 border">
+        <div className="absolute inset-0 opacity-[0.03]" style={{
+          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23000' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+        }} />
+        <div className="relative">
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+            <div className="flex items-start gap-4">
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => setLocation(backPath)}
+                className="shrink-0 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm"
+                data-testid="button-back"
+              >
+                <ArrowLeft className="h-5 w-5" />
+              </Button>
+              <div>
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="h-12 w-12 rounded-xl bg-primary text-primary-foreground flex items-center justify-center shadow-lg shadow-primary/25">
+                    <Wrench className="h-6 w-6" />
+                  </div>
+                  <div>
+                    <h1 className="text-2xl font-bold tracking-tight" data-testid="text-page-title">
+                      Lavorazione #{repair.orderNumber}
+                    </h1>
+                    <p className="text-sm text-muted-foreground" data-testid="text-order-number">
+                      {repair.deviceType} - {repair.deviceModel}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="flex items-center gap-3 flex-wrap">
+              {getStatusBadge(repair.status)}
+              {getSLADisplay()}
+            </div>
+          </div>
         </div>
       </div>
 
       <div className="space-y-6">
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <span className="text-sm font-medium text-muted-foreground">Tempo SLA</span>
-            {getSLADisplay()}
-          </div>
-        </div>
 
         {canViewWorkflow && (
-          <Card data-testid="card-workflow">
-            <CardHeader className="pb-3">
+          <Card data-testid="card-workflow" className="relative overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-br from-primary/3 to-transparent pointer-events-none" />
+            <CardHeader className="pb-3 relative">
               <CardTitle className="text-base flex items-center gap-2">
-                <Wrench className="h-4 w-4" />
-                Flusso di Lavoro
+                <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                  <Wrench className="h-4 w-4 text-primary" />
+                </div>
+                <span>Flusso di Lavoro</span>
+                <Badge variant="outline" className="ml-auto">
+                  Fase {currentStepIndex + 1} di {workflowSteps.length}
+                </Badge>
               </CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-5 gap-2 mb-4">
-                {workflowSteps.slice(0, 5).map((step, index) => {
-                  const isCompleted = index < currentStepIndex;
-                  const isCurrent = index === currentStepIndex;
-                  const Icon = step.icon;
-                  
-                  return (
-                    <div
-                      key={step.key}
-                      className={`flex flex-col items-center p-2 rounded-lg border transition-colors ${
-                        isCurrent 
-                          ? 'border-primary bg-primary/10' 
-                          : isCompleted 
-                            ? 'border-green-500 bg-green-50 dark:bg-green-950' 
-                            : 'border-muted bg-muted/30'
-                      }`}
-                      data-testid={`workflow-step-${step.key}`}
-                    >
-                      <div className={`rounded-full p-2 ${
-                        isCurrent 
-                          ? 'bg-primary text-primary-foreground' 
-                          : isCompleted 
-                            ? 'bg-green-500 text-white' 
-                            : 'bg-muted text-muted-foreground'
-                      }`}>
-                        {isCompleted ? <CheckCircle2 className="h-4 w-4" /> : <Icon className="h-4 w-4" />}
-                      </div>
-                      <span className={`text-xs mt-1 text-center ${
-                        isCurrent ? 'font-medium' : ''
-                      }`}>
-                        {step.label}
-                      </span>
-                    </div>
-                  );
-                })}
+            <CardContent className="relative">
+              {/* Progress Bar */}
+              <div className="mb-6">
+                <div className="flex items-center justify-between text-xs text-muted-foreground mb-2">
+                  <span>Avanzamento</span>
+                  <span>{Math.round((currentStepIndex / (workflowSteps.length - 1)) * 100)}%</span>
+                </div>
+                <div className="h-2 bg-muted rounded-full overflow-hidden">
+                  <div 
+                    className="h-full bg-gradient-to-r from-primary to-primary/80 rounded-full transition-all duration-500"
+                    style={{ width: `${(currentStepIndex / (workflowSteps.length - 1)) * 100}%` }}
+                  />
+                </div>
               </div>
-              <div className="grid grid-cols-4 gap-2">
-                {workflowSteps.slice(5).map((step, index) => {
-                  const actualIndex = index + 5;
-                  const isCompleted = actualIndex < currentStepIndex;
-                  const isCurrent = actualIndex === currentStepIndex;
-                  const Icon = step.icon;
-                  
-                  return (
-                    <div
-                      key={step.key}
-                      className={`flex flex-col items-center p-2 rounded-lg border transition-colors ${
-                        isCurrent 
-                          ? 'border-primary bg-primary/10' 
-                          : isCompleted 
-                            ? 'border-green-500 bg-green-50 dark:bg-green-950' 
-                            : 'border-muted bg-muted/30'
-                      }`}
-                      data-testid={`workflow-step-${step.key}`}
-                    >
-                      <div className={`rounded-full p-2 ${
-                        isCurrent 
-                          ? 'bg-primary text-primary-foreground' 
-                          : isCompleted 
-                            ? 'bg-green-500 text-white' 
-                            : 'bg-muted text-muted-foreground'
-                      }`}>
-                        {isCompleted ? <CheckCircle2 className="h-4 w-4" /> : <Icon className="h-4 w-4" />}
+
+              {/* Workflow Steps - Horizontal Stepper */}
+              <div className="relative">
+                {/* Connection Line */}
+                <div className="absolute top-6 left-6 right-6 h-0.5 bg-muted hidden sm:block" />
+                <div 
+                  className="absolute top-6 left-6 h-0.5 bg-gradient-to-r from-emerald-500 to-primary transition-all duration-500 hidden sm:block"
+                  style={{ width: `calc(${(currentStepIndex / (workflowSteps.length - 1)) * 100}% - 24px)` }}
+                />
+                
+                <div className="grid grid-cols-3 sm:grid-cols-5 lg:grid-cols-9 gap-3">
+                  {workflowSteps.map((step, index) => {
+                    const isCompleted = index < currentStepIndex;
+                    const isCurrent = index === currentStepIndex;
+                    const Icon = step.icon;
+                    
+                    return (
+                      <div
+                        key={step.key}
+                        className="flex flex-col items-center relative group"
+                        data-testid={`workflow-step-${step.key}`}
+                      >
+                        <div className={`relative z-10 h-12 w-12 rounded-xl flex items-center justify-center transition-all duration-300 ${
+                          isCurrent 
+                            ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/30 scale-110 ring-4 ring-primary/20' 
+                            : isCompleted 
+                              ? 'bg-emerald-500 text-white shadow-md shadow-emerald-500/20' 
+                              : 'bg-muted text-muted-foreground'
+                        }`}>
+                          {isCompleted ? (
+                            <CheckCircle2 className="h-5 w-5" />
+                          ) : (
+                            <Icon className="h-5 w-5" />
+                          )}
+                        </div>
+                        <span className={`text-xs mt-2 text-center font-medium ${
+                          isCurrent 
+                            ? 'text-primary' 
+                            : isCompleted 
+                              ? 'text-emerald-600 dark:text-emerald-400' 
+                              : 'text-muted-foreground'
+                        }`}>
+                          {step.label}
+                        </span>
+                        {isCurrent && (
+                          <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-primary animate-pulse" />
+                        )}
                       </div>
-                      <span className={`text-xs mt-1 text-center ${
-                        isCurrent ? 'font-medium' : ''
-                      }`}>
-                        {step.label}
-                      </span>
-                    </div>
-                  );
-                })}
+                    );
+                  })}
+                </div>
               </div>
 
               {canManageWorkflow && (
-                <div className="mt-4 pt-4 border-t space-y-3">
-                  <p className="text-sm font-medium flex items-center gap-2">
-                    <AlertCircle className="h-4 w-4" />
-                    PROSSIMO PASSO
-                  </p>
+                <div className="mt-6 pt-6 border-t space-y-4">
+                  <div className="flex items-center gap-2">
+                    <div className="h-6 w-6 rounded-md bg-amber-500/10 flex items-center justify-center">
+                      <AlertTriangle className="h-3.5 w-3.5 text-amber-600" />
+                    </div>
+                    <p className="text-sm font-semibold uppercase tracking-wide text-amber-600 dark:text-amber-400">
+                      Prossimo Passo
+                    </p>
+                  </div>
                   
                   {repair.status === 'ingressato' && (
                     <div className="bg-muted/50 rounded-lg p-4 space-y-3">
@@ -1370,44 +1385,47 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
         )}
 
         <div className="grid gap-6 md:grid-cols-2">
-          <Card data-testid="card-device">
-            <CardHeader className="pb-3">
+          <Card data-testid="card-device" className="relative overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-transparent pointer-events-none" />
+            <CardHeader className="pb-3 relative">
               <CardTitle className="text-base flex items-center gap-2">
-                <Wrench className="h-4 w-4" />
-                Dispositivo
+                <div className="h-8 w-8 rounded-lg bg-blue-500/10 flex items-center justify-center">
+                  <Smartphone className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                </div>
+                <span>Dispositivo</span>
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-3">
+            <CardContent className="relative space-y-4">
               <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <span className="text-sm text-muted-foreground">Tipo</span>
-                  <p className="font-medium">{repair.deviceType}</p>
+                <div className="bg-muted/30 rounded-lg p-3">
+                  <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Tipo</span>
+                  <p className="font-semibold mt-1">{repair.deviceType}</p>
                 </div>
-                <div>
-                  <span className="text-sm text-muted-foreground">Marca</span>
-                  <p className="font-medium">{repair.brand || "-"}</p>
+                <div className="bg-muted/30 rounded-lg p-3">
+                  <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Marca</span>
+                  <p className="font-semibold mt-1">{repair.brand || "-"}</p>
                 </div>
               </div>
-              <div>
-                <span className="text-sm text-muted-foreground">Modello</span>
-                <p className="font-medium">{repair.deviceModel}</p>
+              <div className="bg-muted/30 rounded-lg p-3">
+                <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Modello</span>
+                <p className="font-semibold mt-1">{repair.deviceModel}</p>
               </div>
-              <div>
-                <span className="text-sm text-muted-foreground">Problema</span>
-                <p className="font-medium">{repair.issueDescription}</p>
+              <div className="bg-amber-500/5 border border-amber-500/20 rounded-lg p-3">
+                <span className="text-xs font-medium text-amber-600 dark:text-amber-400 uppercase tracking-wider">Problema Segnalato</span>
+                <p className="font-medium mt-1 text-sm">{repair.issueDescription}</p>
               </div>
               {(repair.imei || repair.serial) && (
                 <div className="grid grid-cols-2 gap-4">
                   {repair.imei && (
-                    <div>
-                      <span className="text-sm text-muted-foreground">IMEI</span>
-                      <p className="font-medium font-mono text-sm">{repair.imei}</p>
+                    <div className="bg-muted/30 rounded-lg p-3">
+                      <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">IMEI</span>
+                      <p className="font-mono text-sm mt-1">{repair.imei}</p>
                     </div>
                   )}
                   {repair.serial && (
-                    <div>
-                      <span className="text-sm text-muted-foreground">Seriale</span>
-                      <p className="font-medium font-mono text-sm">{repair.serial}</p>
+                    <div className="bg-muted/30 rounded-lg p-3">
+                      <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Seriale</span>
+                      <p className="font-mono text-sm mt-1">{repair.serial}</p>
                     </div>
                   )}
                 </div>
@@ -1416,11 +1434,14 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
           </Card>
 
           {/* Repair Center Card - visible to all roles */}
-          <Card data-testid="card-repair-center">
-            <CardHeader className="pb-3">
+          <Card data-testid="card-repair-center" className="relative overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-transparent pointer-events-none" />
+            <CardHeader className="pb-3 relative">
               <CardTitle className="text-base flex items-center gap-2">
-                <Building2 className="h-4 w-4" />
-                Centro di Riparazione
+                <div className="h-8 w-8 rounded-lg bg-emerald-500/10 flex items-center justify-center">
+                  <Building2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                </div>
+                <span>Centro di Riparazione</span>
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
