@@ -19877,6 +19877,8 @@ export function registerRoutes(app: Express): Server {
       const search = (req.query.search as string) || "";
       const page = req.query.page ? Number(req.query.page) : 1;
       const perPage = req.query.per_page ? Number(req.query.per_page) : 20;
+      const categoryId = req.query.category_id ? Number(req.query.category_id) : undefined;
+      const brand = req.query.brand as string | undefined;
       
       // Check persistent DB cache first
       const cache = await storage.getFonedayProductsCache(req.user.id);
@@ -19887,10 +19889,12 @@ export function registerRoutes(app: Express): Server {
           const allProducts = JSON.parse(cache.productsData);
           const searchLower = search.toLowerCase();
           
-          // Filter products by search query
+          // Filter products by all criteria
           let filteredProducts = allProducts;
+          
+          // Filter by search query
           if (search.length >= 2) {
-            filteredProducts = allProducts.filter((p: any) => {
+            filteredProducts = filteredProducts.filter((p: any) => {
               const searchFields = [
                 p.name || p.title || "",
                 p.sku || "",
@@ -19901,6 +19905,22 @@ export function registerRoutes(app: Express): Server {
               ].join(" ").toLowerCase();
               return searchFields.includes(searchLower);
             });
+          }
+          
+          // Filter by category
+          if (categoryId) {
+            filteredProducts = filteredProducts.filter((p: any) => 
+              p.category_id === categoryId || 
+              Number(p.category_id) === categoryId
+            );
+          }
+          
+          // Filter by brand
+          if (brand) {
+            const brandLower = brand.toLowerCase();
+            filteredProducts = filteredProducts.filter((p: any) => 
+              (p.brand || p.model_brand || "").toLowerCase() === brandLower
+            );
           }
           
           // Paginate results

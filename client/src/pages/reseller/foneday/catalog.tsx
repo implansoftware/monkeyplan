@@ -9,9 +9,12 @@ import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import {
-  Package, Search, ShoppingCart, Plus, Minus, Loader2, Settings, AlertTriangle, Image
+  Package, Search, ShoppingCart, Plus, Minus, Loader2, Settings, AlertTriangle, Image, RefreshCw, CheckCircle2, Clock, XCircle
 } from "lucide-react";
 import { Link } from "wouter";
+import { queryClient } from "@/lib/queryClient";
+import { formatDistanceToNow } from "date-fns";
+import { it } from "date-fns/locale";
 
 type FonedayProduct = {
   id: string | number;
@@ -48,6 +51,17 @@ type FonedayCredential = {
   isActive: boolean;
 };
 
+type CacheStatus = {
+  hasCache: boolean;
+  syncStatus: "success" | "syncing" | "error" | null;
+  lastSyncAt: string | null;
+  expiresAt: string | null;
+  totalProducts: number;
+  syncDurationMs: number | null;
+  syncError: string | null;
+  isExpired: boolean;
+};
+
 export default function FonedayCatalogPage() {
   const { toast } = useToast();
   const [searchQuery, setSearchQuery] = useState("");
@@ -61,6 +75,37 @@ export default function FonedayCatalogPage() {
 
   const { data: credential, isLoading: loadingCredential } = useQuery<FonedayCredential | null>({
     queryKey: ["/api/foneday/credentials"],
+  });
+
+  const { data: cacheStatus, refetch: refetchCacheStatus } = useQuery<CacheStatus>({
+    queryKey: ["/api/foneday/catalog/cache-status"],
+    enabled: !!credential?.isActive,
+    refetchInterval: (query) => {
+      const data = query.state.data as CacheStatus | undefined;
+      return data?.syncStatus === "syncing" ? 2000 : false;
+    },
+  });
+
+  const syncCacheMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest("POST", "/api/foneday/catalog/sync", {});
+      return res.json();
+    },
+    onMutate: () => {
+      toast({ title: "Sincronizzazione avviata", description: "Questo potrebbe richiedere qualche minuto..." });
+    },
+    onSuccess: (data) => {
+      refetchCacheStatus();
+      queryClient.invalidateQueries({ queryKey: ["/api/foneday/catalog/products"] });
+      toast({ 
+        title: "Sincronizzazione completata", 
+        description: `${data.totalProducts} prodotti caricati in ${Math.round(data.syncDurationMs / 1000)}s` 
+      });
+    },
+    onError: (error: Error) => {
+      refetchCacheStatus();
+      toast({ title: "Errore sincronizzazione", description: error.message, variant: "destructive" });
+    },
   });
   
   useEffect(() => {
@@ -231,13 +276,64 @@ export default function FonedayCatalogPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Search className="h-5 w-5" />
-            Cerca Prodotti
-          </CardTitle>
-          <CardDescription>
-            Cerca per nome, SKU, modello o descrizione
-          </CardDescription>
+          <div className="flex items-center justify-between flex-wrap gap-4">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <Search className="h-5 w-5" />
+                Cerca Prodotti
+              </CardTitle>
+              <CardDescription>
+                Cerca per nome, SKU, modello o descrizione
+              </CardDescription>
+            </div>
+            <div className="flex items-center gap-3">
+              {cacheStatus && (
+                <div className="flex items-center gap-2 text-sm">
+                  {cacheStatus.syncStatus === "success" && !cacheStatus.isExpired && (
+                    <>
+                      <CheckCircle2 className="h-4 w-4 text-green-500" />
+                      <span className="text-muted-foreground">
+                        {cacheStatus.totalProducts} prodotti in cache
+                      </span>
+                      {cacheStatus.lastSyncAt && (
+                        <span className="text-xs text-muted-foreground/70">
+                          (sync {formatDistanceToNow(new Date(cacheStatus.lastSyncAt), { addSuffix: true, locale: it })})
+                        </span>
+                      )}
+                    </>
+                  )}
+                  {cacheStatus.syncStatus === "syncing" && (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin text-blue-500" />
+                      <span className="text-blue-600">Sincronizzazione in corso...</span>
+                    </>
+                  )}
+                  {cacheStatus.syncStatus === "error" && (
+                    <>
+                      <XCircle className="h-4 w-4 text-red-500" />
+                      <span className="text-red-600">Errore sync</span>
+                    </>
+                  )}
+                  {(!cacheStatus.hasCache || cacheStatus.isExpired) && cacheStatus.syncStatus !== "syncing" && (
+                    <>
+                      <Clock className="h-4 w-4 text-amber-500" />
+                      <span className="text-amber-600">Cache scaduta o assente</span>
+                    </>
+                  )}
+                </div>
+              )}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => syncCacheMutation.mutate()}
+                disabled={syncCacheMutation.isPending || cacheStatus?.syncStatus === "syncing"}
+                data-testid="button-sync-cache"
+              >
+                <RefreshCw className={`h-4 w-4 mr-2 ${cacheStatus?.syncStatus === "syncing" ? "animate-spin" : ""}`} />
+                {cacheStatus?.hasCache && !cacheStatus.isExpired ? "Aggiorna" : "Sincronizza"}
+              </Button>
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
           <div className="relative max-w-xl">
