@@ -6424,6 +6424,50 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Reseller Repair Centers - reset password for a repair center
+  app.post("/api/reseller/repair-centers/:id/reset-password", requireRole("reseller", "reseller_staff"), requireModulePermission("repair_centers", "update"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Non autorizzato");
+      
+      const centerId = req.params.id;
+      const { newPassword } = req.body;
+      
+      if (!newPassword || newPassword.length < 6) {
+        return res.status(400).send("La password deve contenere almeno 6 caratteri");
+      }
+
+      // Verify this center belongs to the reseller
+      const existingCenter = await storage.getRepairCenter(centerId);
+      if (!existingCenter) {
+        return res.status(404).send("Centro di riparazione non trovato");
+      }
+      
+      // Check ownership - reseller must own this center
+      const effectiveResellerId = req.user.parentResellerId || req.user.id;
+      if (existingCenter.resellerId !== effectiveResellerId) {
+        return res.status(403).send("Non autorizzato a modificare questo centro");
+      }
+
+      // Find the user associated with this repair center
+      const allUsers = await storage.listUsers();
+      const repairCenterUser = allUsers.find(u => u.role === 'repair_center' && u.repairCenterId === centerId);
+      
+      if (!repairCenterUser) {
+        return res.status(404).send("Account utente del centro non trovato. Contatta l'amministratore.");
+      }
+
+      // Hash and update password
+      const hashedPassword = await hashPassword(newPassword);
+      await storage.updateUser(repairCenterUser.id, { password: hashedPassword });
+
+      setActivityEntity(res, { type: 'users', id: repairCenterUser.id });
+      res.json({ message: "Password aggiornata con successo" });
+    } catch (error: any) {
+      console.error("Error resetting repair center password:", error);
+      res.status(500).send(error.message);
+    }
+  });
+
   // Reseller Suppliers - view global suppliers (admin) + own suppliers
   app.get("/api/reseller/suppliers", requireRole("reseller", "reseller_staff"), requireModulePermission("suppliers", "read"), async (req, res) => {
     try {
