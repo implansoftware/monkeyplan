@@ -14,7 +14,7 @@ export default function RepairLink() {
   const [redirecting, setRedirecting] = useState(false);
 
   const { data, isLoading, error, isError } = useQuery<{ redirectPath: string }>({
-    queryKey: ["/api/repair-orders", repairId, "redirect"],
+    queryKey: [`/api/repair-orders/${repairId}/redirect`],
     enabled: !!repairId && !!user && !authLoading,
   });
 
