@@ -6119,6 +6119,12 @@ export function registerRoutes(app: Express): Server {
       
       const validated = validationResult.data;
 
+      // Check if password was provided for the user account
+      const userPassword = req.body.password;
+      if (!userPassword || userPassword.length < 6) {
+        return res.status(400).send("Password richiesta (minimo 6 caratteri) per creare l'account del centro");
+      }
+
       const center = await storage.createRepairCenter({
         name: validated.name,
         address: validated.address,
@@ -6136,6 +6142,26 @@ export function registerRoutes(app: Express): Server {
         iban: validated.iban || null,
         codiceUnivoco: validated.codiceUnivoco || null,
         pec: validated.pec || null,
+      });
+      
+      // Create user account for the repair center
+      const hashedPassword = await hashPassword(userPassword);
+      // Generate username from email (before @)
+      const emailUsername = validated.email.split('@')[0].replace(/[^a-zA-Z0-9]/g, '_');
+      const username = `rc_${emailUsername}_${Date.now().toString(36)}`;
+      
+      await storage.createUser({
+        username,
+        email: validated.email,
+        password: hashedPassword,
+        fullName: validated.name,
+        role: 'repair_center',
+        repairCenterId: center.id,
+        phone: validated.phone || null,
+        address: validated.address || null,
+        city: validated.city || null,
+        province: validated.provincia || null,
+        postalCode: validated.cap || null,
       });
       
       setActivityEntity(res, { type: 'repair-centers', id: center.id });

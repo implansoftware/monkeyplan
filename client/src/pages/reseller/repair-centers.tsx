@@ -62,6 +62,7 @@ export default function ResellerRepairCenters() {
     name: "",
     phone: "",
     email: "",
+    password: "",
     ragioneSociale: "",
     partitaIva: "",
     codiceFiscale: "",
@@ -138,6 +139,7 @@ export default function ResellerRepairCenters() {
       name: "",
       phone: "",
       email: "",
+      password: "",
       ragioneSociale: "",
       partitaIva: "",
       codiceFiscale: "",
@@ -155,7 +157,7 @@ export default function ResellerRepairCenters() {
 
   const canProceedToNextStep = () => {
     switch (wizardStep) {
-      case 1: return formData.name && formData.email && formData.phone;
+      case 1: return formData.name && formData.email && formData.phone && (!editingCenter ? formData.password.length >= 6 : true);
       case 2: return addressData.address && addressData.city;
       case 3: return true;
       case 4: return true;
@@ -245,6 +247,7 @@ export default function ResellerRepairCenters() {
         provincia: addressData.provincia?.trim() || null,
         phone: formData.phone,
         email: formData.email,
+        password: formData.password,
         isActive: true,
         hourlyRateCents: hourlyRateCentsValue,
         ...(subResellers.length > 0 ? { subResellerId: selectedSubResellerId } : {}),
@@ -347,6 +350,22 @@ export default function ResellerRepairCenters() {
                         data-testid="input-phone" 
                       />
                     </div>
+                    {!editingCenter && (
+                      <div className="space-y-2">
+                        <Label htmlFor="password">Password Account * (min 6 caratteri)</Label>
+                        <Input 
+                          id="password"
+                          type="password"
+                          value={formData.password}
+                          onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
+                          placeholder="Password per accesso al centro"
+                          data-testid="input-password" 
+                        />
+                        <p className="text-xs text-muted-foreground">
+                          Questa password verrà usata dal centro per accedere al sistema
+                        </p>
+                      </div>
+                    )}
                   </div>
                 )}
 
