@@ -6442,8 +6442,10 @@ export function registerRoutes(app: Express): Server {
         return res.status(404).send("Centro di riparazione non trovato");
       }
       
-      // Check ownership - reseller must own this center
-      const effectiveResellerId = req.user.parentResellerId || req.user.id;
+      // Check ownership - reseller/sub-reseller must own this center
+      // For reseller_staff: use parentResellerId (they work for a reseller)
+      // For reseller (including sub-resellers): use their own id
+      const effectiveResellerId = req.user.role === "reseller_staff" ? req.user.parentResellerId : req.user.id;
       if (existingCenter.resellerId !== effectiveResellerId) {
         return res.status(403).send("Non autorizzato a modificare questo centro");
       }

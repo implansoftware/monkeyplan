@@ -9,7 +9,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Plus, Search, MapPin, Phone, Mail, Pencil, Trash2, Building, Clock, ChevronLeft, ChevronRight, Check, FileText, Settings, Network, Users, Eye, UserCheck } from "lucide-react";
+import { Plus, Search, MapPin, Phone, Mail, Pencil, Trash2, Building, Clock, ChevronLeft, ChevronRight, Check, FileText, Settings, Network, Users, Eye, UserCheck, KeyRound } from "lucide-react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { User } from "@shared/schema";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -58,6 +59,9 @@ export default function ResellerRepairCenters() {
   const [wizardStep, setWizardStep] = useState(1);
   const [expandedSubResellers, setExpandedSubResellers] = useState<Record<string, boolean>>({});
   const [selectedSubResellerId, setSelectedSubResellerId] = useState<string | null>(null);
+  const [resetPasswordDialogOpen, setResetPasswordDialogOpen] = useState(false);
+  const [centerToResetPassword, setCenterToResetPassword] = useState<RepairCenter | null>(null);
+  const [newPassword, setNewPassword] = useState("");
   const [formData, setFormData] = useState({
     name: "",
     phone: "",
@@ -132,6 +136,34 @@ export default function ResellerRepairCenters() {
       toast({ title: "Errore", description: error.message, variant: "destructive" });
     },
   });
+
+  const resetPasswordMutation = useMutation({
+    mutationFn: async ({ id, newPassword }: { id: string; newPassword: string }) => {
+      const res = await apiRequest("POST", `/api/reseller/repair-centers/${id}/reset-password`, { newPassword });
+      return await res.json();
+    },
+    onSuccess: () => {
+      toast({ title: "Password aggiornata con successo" });
+      setResetPasswordDialogOpen(false);
+      setCenterToResetPassword(null);
+      setNewPassword("");
+    },
+    onError: (error: Error) => {
+      toast({ title: "Errore", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const handleResetPasswordClick = (center: RepairCenter) => {
+    setCenterToResetPassword(center);
+    setNewPassword("");
+    setResetPasswordDialogOpen(true);
+  };
+
+  const confirmResetPassword = () => {
+    if (centerToResetPassword && newPassword.length >= 6) {
+      resetPasswordMutation.mutate({ id: centerToResetPassword.id, newPassword });
+    }
+  };
 
   const resetWizard = () => {
     setWizardStep(1);
@@ -728,6 +760,15 @@ export default function ResellerRepairCenters() {
                         <Button
                           variant="ghost"
                           size="icon"
+                          onClick={() => handleResetPasswordClick(center)}
+                          title="Reimposta Password"
+                          data-testid={`button-reset-password-${center.id}`}
+                        >
+                          <KeyRound className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
                           onClick={() => {
                             if (confirm("Sei sicuro di voler eliminare questo centro di riparazione?")) {
                               deleteCenterMutation.mutate(center.id);
@@ -880,6 +921,51 @@ export default function ResellerRepairCenters() {
           </CardContent>
         </Card>
       )}
+
+      {/* Dialog per reset password */}
+      <AlertDialog open={resetPasswordDialogOpen} onOpenChange={setResetPasswordDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <KeyRound className="h-5 w-5" />
+              Reimposta Password
+            </AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-4">
+                <p>Inserisci la nuova password per il centro <strong>{centerToResetPassword?.name}</strong>.</p>
+                <div className="space-y-2">
+                  <Label htmlFor="newPassword">Nuova Password</Label>
+                  <Input
+                    id="newPassword"
+                    type="text"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    placeholder="Minimo 6 caratteri"
+                    data-testid="input-new-password"
+                  />
+                  {newPassword.length > 0 && newPassword.length < 6 && (
+                    <p className="text-sm text-destructive">La password deve contenere almeno 6 caratteri</p>
+                  )}
+                </div>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => {
+              setCenterToResetPassword(null);
+              setNewPassword("");
+            }}>
+              Annulla
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmResetPassword}
+              disabled={newPassword.length < 6 || resetPasswordMutation.isPending}
+            >
+              {resetPasswordMutation.isPending ? "Aggiornamento..." : "Aggiorna Password"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
