@@ -2213,7 +2213,39 @@ export function registerRoutes(app: Express): Server {
         }
       }
       
+      // Check if password was provided for the user account
+      const userPassword = req.body.password;
+      if (!userPassword || userPassword.length < 6) {
+        return res.status(400).send("Password richiesta (minimo 6 caratteri) per creare l'account del centro");
+      }
+      
+      // Check for duplicate email
+      const existingEmail = await storage.getUserByEmail(validatedData.email);
+      if (existingEmail) {
+        return res.status(400).send("Email già registrata nel sistema");
+      }
+      
       const center = await storage.createRepairCenter(validatedData);
+      
+      // Create user account for the repair center
+      const hashedPassword = await hashPassword(userPassword);
+      const emailUsername = validatedData.email.split('@')[0].replace(/[^a-zA-Z0-9]/g, '_');
+      const username = `rc_${emailUsername}_${Date.now().toString(36)}`;
+      
+      await storage.createUser({
+        username,
+        email: validatedData.email,
+        password: hashedPassword,
+        fullName: validatedData.name,
+        role: 'repair_center',
+        repairCenterId: center.id,
+        phone: validatedData.phone || null,
+        address: validatedData.address || null,
+        city: validatedData.city || null,
+        province: validatedData.provincia || null,
+        postalCode: validatedData.cap || null,
+      });
+      
       setActivityEntity(res, { type: 'repair-centers', id: center.id });
       res.status(201).json(center);
     } catch (error: any) {
