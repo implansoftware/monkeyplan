@@ -294,30 +294,44 @@ export default function ResellerRepairCenters() {
     center.city.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  const activeCenters = centers.filter(c => c.isActive).length;
+
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-semibold mb-2">I Miei Centri di Riparazione</h1>
-          <p className="text-muted-foreground">
-            Gestisci i tuoi centri di riparazione
-          </p>
-        </div>
-        <Dialog open={dialogOpen} onOpenChange={(open) => {
-          setDialogOpen(open);
-          if (!open) {
-            setEditingCenter(null);
-            resetWizard();
-          }
-        }}>
-          <ActionGuard module="repair_centers" action="create">
-            <DialogTrigger asChild>
-              <Button onClick={() => resetWizard()} data-testid="button-new-center">
-                <Plus className="h-4 w-4 mr-2" />
-                Nuovo Centro
-              </Button>
-            </DialogTrigger>
-          </ActionGuard>
+    <div className="space-y-6" data-testid="page-reseller-repair-centers">
+      {/* Hero Header */}
+      <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-primary/5 via-primary/10 to-slate-100 dark:from-primary/10 dark:via-primary/5 dark:to-slate-900 p-6 border">
+        <div className="absolute inset-0 opacity-[0.03]" style={{
+          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23000' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+        }} />
+        <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-3 mb-1">
+              <div className="h-10 w-10 rounded-xl bg-primary text-primary-foreground flex items-center justify-center shadow-lg shadow-primary/25">
+                <Building className="h-5 w-5" />
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold tracking-tight">Centri di Riparazione</h1>
+                <p className="text-sm text-muted-foreground">
+                  Gestisci i tuoi centri di riparazione
+                </p>
+              </div>
+            </div>
+          </div>
+          <Dialog open={dialogOpen} onOpenChange={(open) => {
+            setDialogOpen(open);
+            if (!open) {
+              setEditingCenter(null);
+              resetWizard();
+            }
+          }}>
+            <ActionGuard module="repair_centers" action="create">
+              <DialogTrigger asChild>
+                <Button onClick={() => resetWizard()} className="shadow-lg shadow-primary/25" data-testid="button-new-center">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Nuovo Centro
+                </Button>
+              </DialogTrigger>
+            </ActionGuard>
           <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto" data-testid="dialog-center-form">
             <DialogHeader>
               <DialogTitle>{editingCenter ? "Modifica Centro" : "Nuovo Centro di Riparazione"}</DialogTitle>
@@ -647,6 +661,64 @@ export default function ResellerRepairCenters() {
             </div>
           </DialogContent>
         </Dialog>
+        </div>
+      </div>
+
+      {/* Stats Row */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <Card className="relative overflow-hidden group hover:shadow-md transition-shadow">
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent" />
+          <CardContent className="relative pt-5 pb-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">Totale Centri</p>
+                <p className="text-3xl font-bold tabular-nums">{centers.length}</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {hasSubResellers && `+${totalNetworkCenters} nella rete`}
+                </p>
+              </div>
+              <div className="h-12 w-12 rounded-xl bg-primary text-primary-foreground flex items-center justify-center shadow-lg shadow-primary/20">
+                <Building className="h-6 w-6" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="relative overflow-hidden group hover:shadow-md transition-shadow">
+          <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-transparent" />
+          <CardContent className="relative pt-5 pb-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">Centri Attivi</p>
+                <p className="text-3xl font-bold tabular-nums text-emerald-600 dark:text-emerald-400">{activeCenters}</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {centers.length > 0 ? Math.round((activeCenters / centers.length) * 100) : 0}% operativi
+                </p>
+              </div>
+              <div className="h-12 w-12 rounded-xl bg-emerald-500 text-white flex items-center justify-center shadow-lg shadow-emerald-500/20">
+                <UserCheck className="h-6 w-6" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="relative overflow-hidden group hover:shadow-md transition-shadow">
+          <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-transparent" />
+          <CardContent className="relative pt-5 pb-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">Rete Sub-Reseller</p>
+                <p className="text-3xl font-bold tabular-nums text-blue-600 dark:text-blue-400">{totalNetworkCenters}</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Centri gestiti da {subResellersCenters.length} sub-reseller
+                </p>
+              </div>
+              <div className="h-12 w-12 rounded-xl bg-blue-500 text-white flex items-center justify-center shadow-lg shadow-blue-500/20">
+                <Network className="h-6 w-6" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       <Card>
