@@ -9,7 +9,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Search, MapPin, Phone, Mail, Pencil, Trash2, Building, Store, Clock, ChevronLeft, ChevronRight, Check, FileText, Settings, Eye, KeyRound } from "lucide-react";
+import { Plus, Search, MapPin, Phone, Mail, Pencil, Trash2, Building, Store, Clock, ChevronLeft, ChevronRight, Check, FileText, Settings, Eye, KeyRound, AlertTriangle, UserPlus } from "lucide-react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Link } from "wouter";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -36,6 +37,11 @@ export default function AdminRepairCenters() {
   const [resetPasswordDialogOpen, setResetPasswordDialogOpen] = useState(false);
   const [centerToResetPassword, setCenterToResetPassword] = useState<RepairCenter | null>(null);
   const [newPassword, setNewPassword] = useState("");
+  const [backfillDialogOpen, setBackfillDialogOpen] = useState(false);
+  const [backfillResult, setBackfillResult] = useState<{
+    created: Array<{ centerId: string; centerName: string; username: string; email: string; tempPassword: string }>;
+    errors: Array<{ centerId: string; centerName: string; error: string }>;
+  } | null>(null);
   const [formData, setFormData] = useState({
     name: "",
     phone: "",
@@ -62,6 +68,11 @@ export default function AdminRepairCenters() {
   const { data: subResellers = [] } = useQuery<User[]>({
     queryKey: ["/api/admin/resellers", selectedResellerId, "sub-resellers"],
     enabled: !!selectedResellerId,
+  });
+
+  // Query per centri orfani (senza account utente)
+  const { data: orphansData } = useQuery<{ totalCenters: number; orphanCount: number; orphans: any[] }>({
+    queryKey: ["/api/admin/repair-centers/orphans"],
   });
 
   const createCenterMutation = useMutation({
@@ -120,6 +131,24 @@ export default function AdminRepairCenters() {
       setResetPasswordDialogOpen(false);
       setCenterToResetPassword(null);
       setNewPassword("");
+    },
+    onError: (error: Error) => {
+      toast({ title: "Errore", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const backfillAccountsMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest("POST", "/api/admin/repair-centers/backfill-accounts", {});
+      return await res.json();
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/repair-centers/orphans"] });
+      setBackfillResult(data);
+      toast({ 
+        title: "Account creati", 
+        description: `Creati ${data.created.length} account` 
+      });
     },
     onError: (error: Error) => {
       toast({ title: "Errore", description: error.message, variant: "destructive" });
@@ -246,13 +275,24 @@ export default function AdminRepairCenters() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between gap-4">
+      <div className="flex items-center justify-between gap-4 flex-wrap">
         <div>
           <h1 className="text-2xl font-semibold mb-2">Centri di Riparazione</h1>
           <p className="text-muted-foreground">
             Gestisci tutti i centri di riparazione della rete
           </p>
         </div>
+        <div className="flex items-center gap-2 flex-wrap">
+          {orphansData && orphansData.orphanCount > 0 && (
+            <Button 
+              variant="outline" 
+              onClick={() => setBackfillDialogOpen(true)}
+              data-testid="button-backfill-accounts"
+            >
+              <AlertTriangle className="h-4 w-4 mr-2 text-orange-500" />
+              {orphansData.orphanCount} centri senza account
+            </Button>
+          )}
         <Dialog open={dialogOpen} onOpenChange={(open) => {
           setDialogOpen(open);
           if (!open) {
@@ -592,7 +632,83 @@ export default function AdminRepairCenters() {
             </div>
           </DialogContent>
         </Dialog>
+        </div>
       </div>
+
+      {/* Dialog per backfill account mancanti */}
+      <AlertDialog open={backfillDialogOpen} onOpenChange={setBackfillDialogOpen}>
+        <AlertDialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <UserPlus className="h-5 w-5" />
+              Centri senza Account
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {backfillResult ? (
+                <div className="space-y-4 text-left">
+                  <p className="font-medium text-foreground">
+                    {backfillResult.created.length > 0 
+                      ? `Creati ${backfillResult.created.length} account. Salva le credenziali!`
+                      : "Nessun account creato."}
+                  </p>
+                  {backfillResult.created.length > 0 && (
+                    <div className="border rounded-md overflow-hidden">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Centro</TableHead>
+                            <TableHead>Username</TableHead>
+                            <TableHead>Password</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {backfillResult.created.map((acc) => (
+                            <TableRow key={acc.centerId}>
+                              <TableCell className="font-medium">{acc.centerName}</TableCell>
+                              <TableCell className="font-mono text-sm">{acc.username}</TableCell>
+                              <TableCell className="font-mono text-sm bg-yellow-100 dark:bg-yellow-900">
+                                {acc.tempPassword}
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  )}
+                  {backfillResult.errors.length > 0 && (
+                    <div className="border border-destructive rounded-md p-3">
+                      <p className="font-medium text-destructive mb-2">Errori:</p>
+                      {backfillResult.errors.map((err, i) => (
+                        <p key={i} className="text-sm">{err.centerName}: {err.error}</p>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="space-y-3 text-left">
+                  <p>Sono stati trovati <strong>{orphansData?.orphanCount || 0} centri</strong> senza account utente.</p>
+                  <p>Questi centri sono stati creati prima del fix e non possono accedere al sistema.</p>
+                  <p>Cliccando "Crea Account" verranno generati automaticamente username e password temporanee per ogni centro.</p>
+                  <p className="text-orange-600 font-medium">Importante: Dovrai salvare e comunicare le password ai centri!</p>
+                </div>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setBackfillResult(null)}>
+              {backfillResult ? "Chiudi" : "Annulla"}
+            </AlertDialogCancel>
+            {!backfillResult && (
+              <AlertDialogAction 
+                onClick={() => backfillAccountsMutation.mutate()}
+                disabled={backfillAccountsMutation.isPending}
+              >
+                {backfillAccountsMutation.isPending ? "Creazione..." : "Crea Account"}
+              </AlertDialogAction>
+            )}
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <Card>
         <CardHeader>
