@@ -169,6 +169,9 @@ import ShopMarketplace from "@/pages/shop/marketplace";
 import MarketplaceProductDetail from "@/pages/shop/marketplace-product-detail";
 import ShopAdminProductDetail from "@/pages/shop/admin/product-detail";
 
+// Public pages (no auth required)
+import PublicTrack from "@/pages/public/track";
+
 // Reseller sales orders, shipments, payments and returns
 import ResellerSalesOrders from "@/pages/reseller/sales-orders";
 import ResellerShopCatalog from "@/pages/reseller/shop-catalog";
@@ -373,6 +376,9 @@ function Router() {
       <Route path="/shop/:resellerId/cart" component={ShopCart} />
       <ProtectedRoute path="/shop/:resellerId/checkout" component={ShopCheckout} />
       
+      {/* Public tracking page (no auth) */}
+      <Route path="/track/:orderNumber" component={PublicTrack} />
+      
       <Route component={NotFound} />
     </Switch>
   );
@@ -428,6 +434,11 @@ function AppContent() {
   // Auth page renders without sidebar/header
   if (location === "/auth") {
     return <AuthPage />;
+  }
+  
+  // Public tracking page renders without sidebar/header
+  if (location.startsWith("/track/")) {
+    return <PublicTrack />;
   }
   
   // All other pages use the main layout with sidebar

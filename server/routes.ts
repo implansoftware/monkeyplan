@@ -619,6 +619,40 @@ export function registerRoutes(app: Express): Server {
   });
 
   // ==========================================
+  // PUBLIC TRACKING ENDPOINT (no auth required)
+  // ==========================================
+  
+  // Public tracking page - returns limited repair info by order number
+  app.get("/api/public/track/:orderNumber", async (req, res) => {
+    try {
+      const { orderNumber } = req.params;
+      
+      // Find repair order by order number
+      const allOrders = await storage.listRepairOrders();
+      const repair = allOrders.find(r => r.orderNumber === orderNumber);
+      
+      if (!repair) {
+        return res.status(404).json({ error: "Riparazione non trovata" });
+      }
+      
+      // Return only public-safe information (no customer details, no internal notes)
+      res.json({
+        orderNumber: repair.orderNumber,
+        status: repair.status,
+        deviceBrand: repair.deviceBrand,
+        deviceModel: repair.deviceModel,
+        deviceColor: repair.deviceColor,
+        problemDescription: repair.problemDescription,
+        createdAt: repair.createdAt,
+        ingressatoAt: repair.ingressatoAt,
+        estimatedCompletionDate: repair.estimatedCompletionDate,
+      });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // ==========================================
   // PUBLIC SERVICE CATALOG ENDPOINTS (for Quote creation)
   // ==========================================
   
@@ -12305,8 +12339,8 @@ export function registerRoutes(app: Express): Server {
           ? `https://${process.env.REPLIT_DOMAINS.split(',')[0]}`
           : 'https://monkeyplan.it';
       
-      const operatorUrl = `${baseUrl}/repair-orders/${repairOrder.id}`;
-      const customerUrl = `${baseUrl}/tracking/${repairOrder.orderNumber}`;
+      const operatorUrl = `${baseUrl}/reseller/repairs/${repairOrder.id}`;
+      const customerUrl = `${baseUrl}/track/${repairOrder.orderNumber}`;
       
       // Generate QR codes as PNG buffers (encode full URLs for direct access)
       let operatorQrPng: Buffer | null = null;
