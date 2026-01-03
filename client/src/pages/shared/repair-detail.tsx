@@ -769,12 +769,12 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
               <div className="mb-6">
                 <div className="flex items-center justify-between text-xs text-muted-foreground mb-2">
                   <span>Avanzamento</span>
-                  <span>{Math.round((currentStepIndex / (workflowSteps.length - 1)) * 100)}%</span>
+                  <span>{Math.round(((currentStepIndex + 1) / workflowSteps.length) * 100)}%</span>
                 </div>
                 <div className="h-2 bg-muted rounded-full overflow-hidden">
                   <div 
                     className="h-full bg-gradient-to-r from-primary to-primary/80 rounded-full transition-all duration-500"
-                    style={{ width: `${(currentStepIndex / (workflowSteps.length - 1)) * 100}%` }}
+                    style={{ width: `${((currentStepIndex + 1) / workflowSteps.length) * 100}%` }}
                   />
                 </div>
               </div>
@@ -785,13 +785,13 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
                 <div className="absolute top-6 left-6 right-6 h-0.5 bg-muted hidden sm:block" />
                 <div 
                   className="absolute top-6 left-6 h-0.5 bg-gradient-to-r from-emerald-500 to-primary transition-all duration-500 hidden sm:block"
-                  style={{ width: `calc(${(currentStepIndex / (workflowSteps.length - 1)) * 100}% - 24px)` }}
+                  style={{ width: `calc(${((currentStepIndex + 1) / workflowSteps.length) * 100}% - 24px)` }}
                 />
                 
                 <div className="grid grid-cols-3 sm:grid-cols-5 lg:grid-cols-9 gap-3">
                   {workflowSteps.map((step, index) => {
-                    const isCompleted = index < currentStepIndex;
-                    const isCurrent = index === currentStepIndex;
+                    const isCompleted = index <= currentStepIndex;
+                    const isCurrent = index === currentStepIndex + 1;
                     const Icon = step.icon;
                     
                     return (
