@@ -1731,6 +1731,16 @@ export function registerRoutes(app: Express): Server {
         resellerCategory,
       });
       
+      // Auto-create warehouse for new active resellers
+      if (user.role === 'reseller' && user.isActive) {
+        try {
+          await storage.ensureDefaultWarehouse('reseller', user.id, user.fullName || user.username);
+          console.log(`[WAREHOUSE] Auto-created warehouse for new reseller: ${user.id}`);
+        } catch (warehouseError) {
+          console.error(`[WAREHOUSE] Failed to create warehouse for reseller ${user.id}:`, warehouseError);
+        }
+      }
+      
       setActivityEntity(res, { type: 'users', id: user.id });
       res.status(201).json(user);
     } catch (error: any) {
