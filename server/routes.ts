@@ -7141,6 +7141,73 @@ export function registerRoutes(app: Express): Server {
 
   // ============ REPAIR ORDERS - ROLE-NEUTRAL DETAIL ============
   
+  // Redirect endpoint for QR codes - returns the correct path based on user role
+  app.get("/api/repair-orders/:id/redirect", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Unauthorized" });
+      
+      const repairOrder = await storage.getRepairOrder(req.params.id);
+      if (!repairOrder) return res.status(404).json({ error: "Repair order not found" });
+      
+      // Check access and determine redirect path based on role
+      const userId = req.user.id;
+      const role = req.user.role;
+      
+      // Admin has access to all
+      if (role === 'admin') {
+        return res.json({ redirectPath: `/admin/repairs/${req.params.id}` });
+      }
+      
+      // Reseller staff - check if belongs to the reseller
+      if (role === 'reseller_staff') {
+        const staffUser = await storage.getUser(userId);
+        if (staffUser?.resellerId === repairOrder.resellerId) {
+          return res.json({ redirectPath: `/reseller/repairs/${req.params.id}` });
+        }
+        // Also check if customer belongs to their reseller
+        if (repairOrder.customerId) {
+          const customer = await storage.getUser(repairOrder.customerId);
+          if (customer?.resellerId === staffUser?.resellerId) {
+            return res.json({ redirectPath: `/reseller/repairs/${req.params.id}` });
+          }
+        }
+      }
+      
+      // Reseller - check ownership or customer relationship
+      if (role === 'reseller') {
+        if (repairOrder.resellerId === userId) {
+          return res.json({ redirectPath: `/reseller/repairs/${req.params.id}` });
+        }
+        // Check if customer belongs to reseller
+        if (repairOrder.customerId) {
+          const customer = await storage.getUser(repairOrder.customerId);
+          if (customer?.resellerId === userId) {
+            return res.json({ redirectPath: `/reseller/repairs/${req.params.id}` });
+          }
+        }
+      }
+      
+      // Repair center
+      if (role === 'repair_center') {
+        if (repairOrder.repairCenterId === req.user.repairCenterId) {
+          return res.json({ redirectPath: `/repair-center/repairs/${req.params.id}` });
+        }
+      }
+      
+      // Customer
+      if (role === 'customer') {
+        if (repairOrder.customerId === userId) {
+          return res.json({ redirectPath: `/customer/repairs/${req.params.id}` });
+        }
+      }
+      
+      // No access
+      return res.status(403).json({ error: "Non hai accesso a questa riparazione" });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   // Get repair order details (role-neutral endpoint with ACL check)
   app.get("/api/repair-orders/:id", requireAuth, async (req, res) => {
     try {
@@ -12339,7 +12406,7 @@ export function registerRoutes(app: Express): Server {
           ? `https://${process.env.REPLIT_DOMAINS.split(',')[0]}`
           : 'https://monkeyplan.it';
       
-      const operatorUrl = `${baseUrl}/reseller/repairs/${repairOrder.id}`;
+      const operatorUrl = `${baseUrl}/repair-link/${repairOrder.id}`;
       const customerUrl = `${baseUrl}/track/${repairOrder.orderNumber}`;
       
       // Generate QR codes as PNG buffers (encode full URLs for direct access)

@@ -171,6 +171,7 @@ import ShopAdminProductDetail from "@/pages/shop/admin/product-detail";
 
 // Public pages (no auth required)
 import PublicTrack from "@/pages/public/track";
+import RepairLink from "@/pages/public/repair-link";
 
 // Reseller sales orders, shipments, payments and returns
 import ResellerSalesOrders from "@/pages/reseller/sales-orders";
@@ -376,8 +377,9 @@ function Router() {
       <Route path="/shop/:resellerId/cart" component={ShopCart} />
       <ProtectedRoute path="/shop/:resellerId/checkout" component={ShopCheckout} />
       
-      {/* Public tracking page (no auth) */}
+      {/* Public pages */}
       <Route path="/track/:orderNumber" component={PublicTrack} />
+      <Route path="/repair-link/:id" component={RepairLink} />
       
       <Route component={NotFound} />
     </Switch>
@@ -436,9 +438,14 @@ function AppContent() {
     return <AuthPage />;
   }
   
-  // Public tracking page renders without sidebar/header
+  // Public pages render without sidebar/header
   if (location.startsWith("/track/")) {
     return <PublicTrack />;
+  }
+  
+  // Repair link bridge page (handles auth redirect)
+  if (location.startsWith("/repair-link/")) {
+    return <RepairLink />;
   }
   
   // All other pages use the main layout with sidebar
