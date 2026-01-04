@@ -7727,13 +7727,21 @@ export function registerRoutes(app: Express): Server {
         return res.status(400).send("La richiesta non è in transito");
       }
       
-      const updated = await storage.updateRemoteRepairRequest(req.params.id, {
+      // Prima imposta lo stato received
+      await storage.updateRemoteRepairRequest(req.params.id, {
         status: 'received',
         receivedAt: new Date()
       });
       
-      setActivityEntity(res, { type: 'remote_repair_requests', id: updated.id });
-      res.json(updated);
+      // Poi crea automaticamente la lavorazione
+      const { repairOrder, remoteRequest } = await storage.createRepairFromRemoteRequest(req.params.id);
+      
+      setActivityEntity(res, { type: 'remote_repair_requests', id: remoteRequest.id });
+      res.json({ 
+        remoteRequest, 
+        repairOrder,
+        message: `Lavorazione ${repairOrder.orderNumber} creata automaticamente`
+      });
     } catch (error: any) {
       res.status(500).send(error.message);
     }
