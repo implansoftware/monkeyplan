@@ -336,6 +336,14 @@ export function AppSidebar() {
   });
   const pendingTransferRequestsCount = transferRequestsSummary?.pendingCount || 0;
 
+  // Query pending remote repair requests count for badge (reseller/reseller_staff)
+  const { data: remoteRequestsSummary } = useQuery<{ count: number }>({
+    queryKey: ["/api/reseller/remote-requests/pending-count"],
+    enabled: user?.role === "reseller" || user?.role === "reseller_staff" || user?.role === "sub_reseller",
+    refetchInterval: 30000, // Refresh every 30 seconds
+  });
+  const pendingRemoteRequestsCount = remoteRequestsSummary?.count || 0;
+
   // Query configured integrations (only those with reseller credentials)
   const { data: configuredIntegrationCodes = [] } = useQuery<string[]>({
     queryKey: ["/api/reseller/configured-integrations"],
@@ -556,6 +564,14 @@ export function AppSidebar() {
                         {pendingTransferRequestsCount}
                       </span>
                     )}
+                    {group === "Assistenza" && pendingRemoteRequestsCount > 0 && !isOpen && (
+                      <span 
+                        className="flex h-5 min-w-5 items-center justify-center rounded-full bg-destructive text-destructive-foreground text-xs font-medium px-1.5"
+                        data-testid="badge-pending-remote-requests-group"
+                      >
+                        {pendingRemoteRequestsCount}
+                      </span>
+                    )}
                     <ChevronRight className={`h-4 w-4 transition-transform duration-200 ${isOpen ? "rotate-90" : ""}`} />
                   </SidebarMenuButton>
                 </CollapsibleTrigger>
@@ -564,7 +580,8 @@ export function AppSidebar() {
                     <SidebarMenu className="ml-4 border-l border-sidebar-border">
                       {groupItems.map((item) => {
                         const isActive = location === item.url || location.startsWith(item.url + "/");
-                        const showBadge = item.url === "/reseller/transfer-requests" && pendingTransferRequestsCount > 0;
+                        const showTransferBadge = item.url === "/reseller/transfer-requests" && pendingTransferRequestsCount > 0;
+                        const showRemoteBadge = item.url === "/reseller/remote-requests" && pendingRemoteRequestsCount > 0;
                         return (
                           <SidebarMenuItem key={item.title}>
                             <SidebarMenuButton asChild isActive={isActive} className="pl-4">
@@ -575,12 +592,20 @@ export function AppSidebar() {
                               >
                                 <item.icon className="h-4 w-4" />
                                 <span className="flex-1">{item.title}</span>
-                                {showBadge && (
+                                {showTransferBadge && (
                                   <span 
                                     className="flex h-5 min-w-5 items-center justify-center rounded-full bg-destructive text-destructive-foreground text-xs font-medium px-1.5"
                                     data-testid="badge-pending-transfer-requests"
                                   >
                                     {pendingTransferRequestsCount}
+                                  </span>
+                                )}
+                                {showRemoteBadge && (
+                                  <span 
+                                    className="flex h-5 min-w-5 items-center justify-center rounded-full bg-destructive text-destructive-foreground text-xs font-medium px-1.5"
+                                    data-testid="badge-pending-remote-requests"
+                                  >
+                                    {pendingRemoteRequestsCount}
                                   </span>
                                 )}
                               </Link>
