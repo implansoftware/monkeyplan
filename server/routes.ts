@@ -7792,10 +7792,19 @@ export function registerRoutes(app: Express): Server {
       }
       
       const { assignedCenterId } = req.body;
-      
+
+      // The frontend sends repair_center table ID, but we need the user ID
+      // Find the user with role 'repair_center' that has this repairCenterId
+      const allUsers = await storage.listUsers();
+      const centerUser = allUsers.find(u => u.role === 'repair_center' && u.repairCenterId === assignedCenterId);
+
+      if (!centerUser) {
+        return res.status(400).send("Centro di riparazione non trovato o senza utente associato");
+      }
+
       const updated = await storage.updateRemoteRepairRequest(req.params.id, {
         status: 'assigned',
-        assignedCenterId
+        assignedCenterId: centerUser.id // Use user ID, not repair_center table ID
       });
       
       setActivityEntity(res, { type: 'remote_repair_requests', id: updated.id });
