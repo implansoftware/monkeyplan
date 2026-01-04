@@ -122,12 +122,12 @@ export default function TrovausatiValutatorePage() {
   });
 
   const { data: models = [], isLoading: loadingModels, refetch: refetchModels } = useQuery<DeviceModel[]>({
-    queryKey: ["/api/trovausati/models", searchTerm],
+    queryKey: [`/api/trovausati/models?search=${encodeURIComponent(searchTerm)}`],
     enabled: !!credential?.storesIsActive && searchTerm.length >= 2,
   });
 
   const { data: couponsData, isLoading: loadingCoupons, refetch: refetchCoupons } = useQuery<{ coupons: Coupon[]; pagination?: any }>({
-    queryKey: ["/api/trovausati/coupons", couponPage, couponStatusFilter],
+    queryKey: [`/api/trovausati/coupons?page=${couponPage}&status=${couponStatusFilter}`],
     enabled: !!credential?.storesIsActive && activeTab === "coupon",
   });
 
