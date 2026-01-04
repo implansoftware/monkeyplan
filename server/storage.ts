@@ -8036,6 +8036,14 @@ export class DatabaseStorage implements IStorage {
     
     return `${prefix}${String(nextNum).padStart(5, '0')}`;
   }
+
+  async getResellerRemoteRequestPendingCount(resellerId: string): Promise<number> {
+    const result = await db.execute(sql`
+      SELECT COUNT(*) as count FROM remote_repair_requests 
+      WHERE reseller_id = ${resellerId} AND status = 'pending'
+    `);
+    return parseInt((result.rows[0] as any)?.count) || 0;
+  }
 }
 
 export const storage = new DatabaseStorage();
