@@ -7588,20 +7588,23 @@ export function registerRoutes(app: Express): Server {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
-      // Get repair center for this user
+      // Get repair center for this user (needed for requestedCenterId lookup)
       const repairCenters = await storage.listRepairCentersForStaff(req.user.id);
       const repairCenter = repairCenters[0];
       
-      if (!repairCenter) return res.status(403).send("Nessun centro di riparazione associato");
-      
+      // Get requests assigned to this user (assignedCenterId now stores user ID)
       const requests = await storage.listRemoteRepairRequests({
-        assignedCenterId: repairCenter.id
+        assignedCenterId: req.user.id
       });
       
       // Also get requests where this center was requested but not yet assigned
-      const requestedRequests = await storage.listRemoteRepairRequests({
-        requestedCenterId: repairCenter.id
-      });
+      // (requestedCenterId still uses repair_centers.id for customer preference)
+      let requestedRequests: any[] = [];
+      if (repairCenter) {
+        requestedRequests = await storage.listRemoteRepairRequests({
+          requestedCenterId: repairCenter.id
+        });
+      }
       
       // Merge and deduplicate
       const allRequests = [...requests];
@@ -7630,7 +7633,7 @@ export function registerRoutes(app: Express): Server {
       
       if (!repairCenter) return res.status(403).send("Nessun centro di riparazione associato");
       
-      if (request.assignedCenterId && request.assignedCenterId !== repairCenter.id) {
+      if (request.assignedCenterId && request.assignedCenterId !== req.user.id) {
         return res.status(403).send("Richiesta assegnata ad un altro centro");
       }
       
@@ -7640,7 +7643,7 @@ export function registerRoutes(app: Express): Server {
       
       const updated = await storage.updateRemoteRepairRequest(req.params.id, {
         status: 'accepted',
-        assignedCenterId: repairCenter.id
+        assignedCenterId: req.user.id
       });
       
       setActivityEntity(res, { type: 'remote_repair_requests', id: updated.id });
@@ -7690,7 +7693,7 @@ export function registerRoutes(app: Express): Server {
       const repairCenters = await storage.listRepairCentersForStaff(req.user.id);
       const repairCenter = repairCenters[0];
       
-      if (!repairCenter || request.assignedCenterId !== repairCenter.id) {
+      if (request.assignedCenterId !== req.user.id) {
         return res.status(403).send("Accesso non autorizzato");
       }
       
@@ -7726,7 +7729,7 @@ export function registerRoutes(app: Express): Server {
       const repairCenters = await storage.listRepairCentersForStaff(req.user.id);
       const repairCenter = repairCenters[0];
       
-      if (!repairCenter || request.assignedCenterId !== repairCenter.id) {
+      if (request.assignedCenterId !== req.user.id) {
         return res.status(403).send("Accesso non autorizzato");
       }
       
