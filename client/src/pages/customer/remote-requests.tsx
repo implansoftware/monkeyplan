@@ -12,7 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Loader2, Plus, Package, Truck, Check, X, Clock, Send, Phone, MapPin } from "lucide-react";
-import type { RemoteRepairRequest, RepairCenter, DeviceType, DeviceBrand } from "@shared/schema";
+import type { RemoteRepairRequest, RepairCenter, DeviceType, DeviceBrand, DeviceModel } from "@shared/schema";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
 
@@ -67,6 +67,15 @@ export default function CustomerRemoteRequests() {
   const { data: deviceBrands } = useQuery<DeviceBrand[]>({
     queryKey: ["/api/device-brands"],
   });
+
+  const { data: deviceModels } = useQuery<DeviceModel[]>({
+    queryKey: ["/api/device-models"],
+  });
+
+  // Filter models by selected brand
+  const filteredModels = (deviceModels || []).filter(
+    (model) => model.brandId === newRequest.brand
+  );
 
   const createMutation = useMutation({
     mutationFn: async (data: typeof newRequest & { requestedCenterId: string | null }) => {
@@ -203,7 +212,7 @@ export default function CustomerRemoteRequests() {
                   <Label htmlFor="brand">Marca</Label>
                   <Select
                     value={newRequest.brand}
-                    onValueChange={(value) => setNewRequest({ ...newRequest, brand: value })}
+                    onValueChange={(value) => setNewRequest({ ...newRequest, brand: value, model: "" })}
                   >
                     <SelectTrigger data-testid="select-brand">
                       <SelectValue placeholder="Seleziona marca" />
@@ -220,13 +229,23 @@ export default function CustomerRemoteRequests() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="model">Modello</Label>
-                <Input
-                  id="model"
-                  value={newRequest.model}
-                  onChange={(e) => setNewRequest({ ...newRequest, model: e.target.value })}
-                  placeholder="es. iPhone 14 Pro"
-                  data-testid="input-model"
-                />
+                <Select
+                  value={newRequest.model || "none"}
+                  onValueChange={(value) => setNewRequest({ ...newRequest, model: value === "none" ? "" : value })}
+                  disabled={!newRequest.brand}
+                >
+                  <SelectTrigger data-testid="select-model">
+                    <SelectValue placeholder={newRequest.brand ? "Seleziona modello" : "Seleziona prima la marca"} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Seleziona modello</SelectItem>
+                    {filteredModels.map((model) => (
+                      <SelectItem key={model.id} value={model.modelName}>
+                        {model.modelName}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
