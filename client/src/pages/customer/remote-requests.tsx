@@ -565,6 +565,14 @@ export default function CustomerRemoteRequests() {
                     </p>
                   </div>
                 )}
+                {request.status === 'repair_created' && request.repairOrderId && (
+                  <div className="mt-4 p-3 bg-green-100 dark:bg-green-900/30 rounded-md">
+                    <p className="text-sm font-medium text-green-700 dark:text-green-300 flex items-center gap-2">
+                      <Check className="h-4 w-4" />
+                      La riparazione è stata avviata! Il centro di riparazione sta lavorando al tuo dispositivo.
+                    </p>
+                  </div>
+                )}
               </CardContent>
             </Card>
           ))}

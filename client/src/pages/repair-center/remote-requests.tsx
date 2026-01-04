@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -51,8 +52,9 @@ export default function RepairCenterRemoteRequests() {
       const res = await apiRequest("PATCH", `/api/repair-center/remote-requests/${id}/accept`, {});
       return await res.json();
     },
-    onSuccess: () => {
+    onSuccess: (data: any) => {
       queryClient.invalidateQueries({ queryKey: ["/api/repair-center/remote-requests"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/repair-center/repairs"] });
       toast({
         title: "Richiesta accettata",
         description: "La richiesta è stata accettata con successo",
@@ -72,8 +74,9 @@ export default function RepairCenterRemoteRequests() {
       const res = await apiRequest("PATCH", `/api/repair-center/remote-requests/${id}/reject`, { rejectionReason: reason });
       return await res.json();
     },
-    onSuccess: () => {
+    onSuccess: (data: any) => {
       queryClient.invalidateQueries({ queryKey: ["/api/repair-center/remote-requests"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/repair-center/repairs"] });
       setIsRejectOpen(false);
       setSelectedRequest(null);
       setRejectionReason("");
@@ -96,8 +99,9 @@ export default function RepairCenterRemoteRequests() {
       const res = await apiRequest("PATCH", `/api/repair-center/remote-requests/${id}/ready-for-shipping`, data);
       return await res.json();
     },
-    onSuccess: () => {
+    onSuccess: (data: any) => {
       queryClient.invalidateQueries({ queryKey: ["/api/repair-center/remote-requests"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/repair-center/repairs"] });
       setIsReadyOpen(false);
       setSelectedRequest(null);
       setShippingAddress({
@@ -126,11 +130,12 @@ export default function RepairCenterRemoteRequests() {
       const res = await apiRequest("PATCH", `/api/repair-center/remote-requests/${id}/received`, {});
       return await res.json();
     },
-    onSuccess: () => {
+    onSuccess: (data: any) => {
       queryClient.invalidateQueries({ queryKey: ["/api/repair-center/remote-requests"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/repair-center/repairs"] });
       toast({
         title: "Dispositivo ricevuto",
-        description: "Il dispositivo è stato contrassegnato come ricevuto",
+        description: data.repairOrder ? `Lavorazione ${data.repairOrder.orderNumber} creata` : "Dispositivo contrassegnato come ricevuto",
       });
     },
     onError: (error: Error) => {
@@ -388,9 +393,18 @@ export default function RepairCenterRemoteRequests() {
                             {statusLabels[request.status]?.label}
                           </Badge>
                         </div>
-                        <span className="text-sm text-muted-foreground">
-                          {request.brand} {request.model}
-                        </span>
+                        <div className="flex items-center gap-3">
+                          <span className="text-sm text-muted-foreground">
+                            {request.brand} {request.model}
+                          </span>
+                          {request.repairOrderId && request.status === 'repair_created' && (
+                            <Link href={`/repair-center/repairs/${request.repairOrderId}`}>
+                              <Button size="sm" variant="outline" data-testid={`button-view-repair-${request.id}`}>
+                                Vai alla Lavorazione
+                              </Button>
+                            </Link>
+                          )}
+                        </div>
                       </div>
                     </CardHeader>
                   </Card>
