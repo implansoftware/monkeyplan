@@ -128,6 +128,19 @@ export const appointmentStatusEnum = pgEnum("appointment_status", [
   "no_show",           // Cliente non presentato
 ]);
 
+// Remote Repair Request Status - Stato richieste riparazione a distanza
+export const remoteRepairRequestStatusEnum = pgEnum("remote_repair_request_status", [
+  "pending",           // In attesa di assegnazione/accettazione
+  "assigned",          // Assegnato a un centro (in attesa accettazione)
+  "accepted",          // Accettato dal centro
+  "rejected",          // Rifiutato dal centro
+  "awaiting_shipment", // In attesa spedizione da parte del cliente
+  "in_transit",        // Dispositivo in transito
+  "received",          // Dispositivo ricevuto dal centro
+  "repair_created",    // Riparazione creata (workflow avviato)
+  "cancelled",         // Annullato
+]);
+
 export const dataRecoveryEventTypeEnum = pgEnum("data_recovery_event_type", [
   "created",           // Job creato
   "assigned",          // Assegnato
@@ -1548,6 +1561,52 @@ export const repairAttachments = pgTable("repair_attachments", {
   fileSize: integer("file_size").notNull(), // Size in bytes
   uploadedBy: varchar("uploaded_by").notNull(),
   uploadedAt: timestamp("uploaded_at").notNull().defaultNow(),
+});
+
+// Remote Repair Requests - Richieste di riparazione a distanza
+export const remoteRepairRequests = pgTable("remote_repair_requests", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  requestNumber: text("request_number").notNull().unique(), // Numero progressivo richiesta
+  customerId: varchar("customer_id").notNull().references(() => users.id),
+  resellerId: varchar("reseller_id").notNull().references(() => users.id),
+  subResellerId: varchar("sub_reseller_id").references(() => users.id), // Sotto-rivenditore (opzionale)
+  requestedCenterId: varchar("requested_center_id").references(() => users.id), // Centro richiesto dal cliente (opzionale)
+  assignedCenterId: varchar("assigned_center_id").references(() => users.id), // Centro assegnato
+  
+  // Informazioni dispositivo
+  deviceType: text("device_type").notNull(), // smartphone, tablet, laptop, etc.
+  brand: text("brand").notNull(),
+  model: text("model").notNull(),
+  deviceModelId: varchar("device_model_id"), // FK to device catalog (opzionale)
+  imei: text("imei"), // IMEI o seriale
+  serial: text("serial"),
+  issueDescription: text("issue_description").notNull(), // Descrizione problema
+  photos: text("photos").array(), // Array URL foto del dispositivo
+  
+  // Stato e workflow
+  status: remoteRepairRequestStatusEnum("status").notNull().default("pending"),
+  rejectionReason: text("rejection_reason"), // Motivo rifiuto (se rejected)
+  forwardedFrom: varchar("forwarded_from").references(() => users.id), // Centro che ha inoltrato
+  forwardReason: text("forward_reason"), // Motivo inoltro
+  
+  // Spedizione
+  customerAddress: text("customer_address"), // Indirizzo mittente cliente
+  customerCity: text("customer_city"),
+  customerCap: text("customer_cap"),
+  customerProvince: text("customer_province"),
+  courierName: text("courier_name"), // Nome corriere
+  trackingNumber: text("tracking_number"), // Numero tracking
+  shippedAt: timestamp("shipped_at"), // Data spedizione cliente
+  receivedAt: timestamp("received_at"), // Data ricezione centro
+  
+  // Link alla riparazione creata
+  repairOrderId: varchar("repair_order_id").references(() => repairOrders.id),
+  
+  // Note e timestamps
+  customerNotes: text("customer_notes"), // Note aggiuntive cliente
+  centerNotes: text("center_notes"), // Note del centro
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 
 // Repair Diagnostics (Technical diagnosis by repair center)
@@ -4060,6 +4119,36 @@ export const customerProfileUpdateSchema = z.object({
 
 export type CustomerProfileUpdate = z.infer<typeof customerProfileUpdateSchema>;
 
+// Remote Repair Request Schemas
+export const insertRemoteRepairRequestSchema = createInsertSchema(remoteRepairRequests).omit({
+  id: true,
+  requestNumber: true,
+  status: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const updateRemoteRepairRequestSchema = z.object({
+  status: z.enum(["pending", "assigned", "accepted", "rejected", "awaiting_shipment", "in_transit", "received", "repair_created", "cancelled"]).optional(),
+  assignedCenterId: z.string().optional().nullable(),
+  rejectionReason: z.string().optional().nullable(),
+  forwardedFrom: z.string().optional().nullable(),
+  forwardReason: z.string().optional().nullable(),
+  courierName: z.string().optional().nullable(),
+  trackingNumber: z.string().optional().nullable(),
+  shippedAt: z.date().optional().nullable(),
+  receivedAt: z.date().optional().nullable(),
+  repairOrderId: z.string().optional().nullable(),
+  centerNotes: z.string().optional().nullable(),
+  customerAddress: z.string().optional().nullable(),
+  customerCity: z.string().optional().nullable(),
+  customerCap: z.string().optional().nullable(),
+  customerProvince: z.string().optional().nullable(),
+});
+
+export type InsertRemoteRepairRequest = z.infer<typeof insertRemoteRepairRequestSchema>;
+export type UpdateRemoteRepairRequest = z.infer<typeof updateRemoteRepairRequestSchema>;
+
 export const insertRepairCenterSchema = createInsertSchema(repairCenters).omit({
   id: true,
   createdAt: true,
@@ -4927,6 +5016,8 @@ export type InsertInventoryStock = z.infer<typeof insertInventoryStockSchema>;
 
 export type RepairOrder = typeof repairOrders.$inferSelect;
 export type InsertRepairOrder = z.infer<typeof insertRepairOrderSchema>;
+
+export type RemoteRepairRequest = typeof remoteRepairRequests.$inferSelect;
 
 export type DeviceType = typeof deviceTypes.$inferSelect;
 export type InsertDeviceType = z.infer<typeof insertDeviceTypeSchema>;
