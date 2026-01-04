@@ -940,6 +940,8 @@ export interface IStorage {
   createRemoteRepairRequest(data: InsertRemoteRepairRequest): Promise<RemoteRepairRequest>;
   updateRemoteRepairRequest(id: string, updates: UpdateRemoteRepairRequest): Promise<RemoteRepairRequest>;
   generateRemoteRequestNumber(): Promise<string>;
+  getResellerRemoteRequestPendingCount(resellerId: string): Promise<number>;
+  createRepairFromRemoteRequest(remoteRequestId: string): Promise<{ repairOrder: RepairOrder; remoteRequest: RemoteRepairRequest }>;
   
   sessionStore: session.Store;
 }
@@ -8043,6 +8045,58 @@ export class DatabaseStorage implements IStorage {
       WHERE reseller_id = ${resellerId} AND status = 'pending'
     `);
     return parseInt((result.rows[0] as any)?.count) || 0;
+  }
+
+  async createRepairFromRemoteRequest(remoteRequestId: string): Promise<{ repairOrder: RepairOrder; remoteRequest: RemoteRepairRequest }> {
+    const request = await this.getRemoteRepairRequest(remoteRequestId);
+    if (!request) {
+      throw new Error("Richiesta remota non trovata");
+    }
+    
+    if (request.status !== 'received') {
+      throw new Error("La richiesta deve essere nello stato 'received' per creare la lavorazione");
+    }
+    
+    if (request.repairOrderId) {
+      throw new Error("La lavorazione è già stata creata per questa richiesta");
+    }
+    
+    const count = await db.select().from(repairOrders);
+    const orderNumber = `ORD-${Date.now()}-${count.length + 1}`;
+    
+    const [repairOrder] = await db.insert(repairOrders).values({
+      orderNumber,
+      customerId: request.customerId,
+      resellerId: request.resellerId,
+      repairCenterId: request.assignedCenterId,
+      deviceType: request.deviceType,
+      deviceModel: request.model,
+      brand: request.brand,
+      deviceModelId: request.deviceModelId,
+      imei: request.imei,
+      serial: request.serial,
+      issueDescription: request.issueDescription,
+      status: 'ingressato',
+      ingressatoAt: new Date(),
+      notes: `Creato da richiesta remota ${request.requestNumber}`,
+    }).returning();
+    
+    await this.createRepairOrderStateHistory({
+      repairOrderId: repairOrder.id,
+      status: 'ingressato' as any,
+      enteredAt: new Date(),
+    });
+    
+    const [updatedRequest] = await db.update(remoteRepairRequests)
+      .set({
+        repairOrderId: repairOrder.id,
+        status: 'repair_created',
+        updatedAt: new Date(),
+      })
+      .where(eq(remoteRepairRequests.id, remoteRequestId))
+      .returning();
+    
+    return { repairOrder, remoteRequest: updatedRequest };
   }
 }
 
