@@ -7636,9 +7636,17 @@ export function registerRoutes(app: Express): Server {
         return res.status(400).send("Impossibile accettare la richiesta in questo stato");
       }
       
+      // Get repair center address to auto-fill shipping destination
+      const repairCenter = await storage.getRepairCenter((req.user as any).repairCenterId);
+      
+      // Automatically transition to awaiting_shipment with center's address
       const updated = await storage.updateRemoteRepairRequest(req.params.id, {
-        status: 'accepted',
-        assignedCenterId: req.user.id
+        status: 'awaiting_shipment',
+        assignedCenterId: req.user.id,
+        customerAddress: repairCenter?.address || null,
+        customerCity: repairCenter?.city || null,
+        customerCap: repairCenter?.cap || null,
+        customerProvince: repairCenter?.provincia || null
       });
       
       setActivityEntity(res, { type: 'remote_repair_requests', id: updated.id });

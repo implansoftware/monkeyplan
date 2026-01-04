@@ -333,12 +333,6 @@ export default function RepairCenterRemoteRequests() {
                           </CardDescription>
                         </div>
                         <div className="flex gap-2">
-                          {request.status === 'accepted' && (
-                            <Button onClick={() => openReadyDialog(request)} data-testid={`button-ready-${request.id}`}>
-                              <MapPin className="h-4 w-4 mr-2" />
-                              Richiedi Spedizione
-                            </Button>
-                          )}
                           {request.status === 'in_transit' && (
                             <Button
                               onClick={() => receivedMutation.mutate(request.id)}
