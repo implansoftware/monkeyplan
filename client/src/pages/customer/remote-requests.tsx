@@ -482,10 +482,20 @@ export default function CustomerRemoteRequests() {
                     </CardDescription>
                   </div>
                   {request.status === 'awaiting_shipment' && (
-                    <Button onClick={() => openShippingDialog(request)} data-testid={`button-ship-${request.id}`}>
-                      <Truck className="h-4 w-4 mr-2" />
-                      Invia Dati Spedizione
-                    </Button>
+                    <div className="flex gap-2">
+                      <Button 
+                        variant="outline"
+                        onClick={() => window.open(`/api/customer/remote-requests/${request.id}/ddt`, '_blank')}
+                        data-testid={`button-download-ddt-${request.id}`}
+                      >
+                        <Package className="h-4 w-4 mr-2" />
+                        Scarica DDT
+                      </Button>
+                      <Button onClick={() => openShippingDialog(request)} data-testid={`button-ship-${request.id}`}>
+                        <Truck className="h-4 w-4 mr-2" />
+                        Invia Dati Spedizione
+                      </Button>
+                    </div>
                   )}
                 </div>
               </CardHeader>

@@ -7455,7 +7455,49 @@ export function registerRoutes(app: Express): Server {
       const requests = await storage.listRemoteRepairRequests({
         customerId: req.user.id
       });
-      res.json(requests);
+      
+      // Enrich with signed photo URLs and center data
+      const enrichedRequests = await Promise.all(requests.map(async (r) => {
+        // Generate signed URLs for photos
+        let photoUrls: string[] = [];
+        if (r.photos && r.photos.length > 0) {
+          photoUrls = await Promise.all(
+            r.photos.map(async (photoKey: string) => {
+              try {
+                return await getSignedDownloadUrl(photoKey);
+              } catch {
+                return photoKey;
+              }
+            })
+          );
+        }
+        
+        // Get assigned center info for display
+        let centerName = null;
+        let centerData: any = null;
+        if (r.assignedCenterId) {
+          // Get the repair center user to find their repairCenterId
+          const centerUser = await storage.getUser(r.assignedCenterId);
+          if (centerUser?.repairCenterId) {
+            const repairCenter = await storage.getRepairCenter(centerUser.repairCenterId);
+            centerName = repairCenter?.name || null;
+            centerData = repairCenter;
+          }
+        }
+        
+        return {
+          ...r,
+          photos: photoUrls,
+          centerName,
+          centerAddress: centerData?.address || null,
+          centerCity: centerData?.city || null,
+          centerCap: centerData?.cap || null,
+          centerProvince: centerData?.provincia || null,
+          centerPhone: centerData?.phone || null
+        };
+      }));
+      
+      res.json(enrichedRequests);
     } catch (error: any) {
       res.status(500).send(error.message);
     }
@@ -7530,6 +7572,72 @@ export function registerRoutes(app: Express): Server {
       setActivityEntity(res, { type: 'remote_repair_requests', id: updated.id });
       res.json(updated);
     } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // Generate DDT for remote repair request
+  app.get("/api/customer/remote-requests/:id/ddt", requireRole("customer"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const request = await storage.getRemoteRepairRequest(req.params.id);
+      if (!request) return res.status(404).send("Richiesta non trovata");
+      
+      // Verify ownership
+      if (request.customerId !== req.user.id) {
+        return res.status(403).send("Accesso non autorizzato");
+      }
+      
+      // Only allow DDT download when status is awaiting_shipment or later
+      if (request.status === 'pending' || request.status === 'assigned' || request.status === 'rejected' || request.status === 'cancelled') {
+        return res.status(400).send("DDT non disponibile per questo stato");
+      }
+      
+      // Get customer (sender) data
+      const customer = await storage.getUser(request.customerId);
+      
+      // Get repair center (recipient) data - assignedCenterId stores user ID
+      const centerUser = request.assignedCenterId ? await storage.getUser(request.assignedCenterId) : null;
+      const repairCenter = centerUser?.repairCenterId ? await storage.getRepairCenter(centerUser.repairCenterId) : null;
+      
+      // Generate DDT
+      const ddtData: TransferDdtData = {
+        ddtNumber: `DDT-${request.requestNumber}`,
+        requestNumber: request.requestNumber,
+        shippedAt: new Date(),
+        trackingNumber: request.trackingNumber || '-',
+        trackingCarrier: request.courierName || '-',
+        sender: {
+          name: customer?.username || customer?.email || 'Cliente',
+          phone: customer?.phone || undefined,
+          email: customer?.email || undefined,
+        },
+        recipient: {
+          name: repairCenter?.name || centerUser?.username || 'Centro Riparazione',
+          address: request.customerAddress || repairCenter?.address || undefined,
+          city: request.customerCity || repairCenter?.city || undefined,
+          postalCode: request.customerCap || repairCenter?.cap || undefined,
+          province: request.customerProvince || repairCenter?.provincia || undefined,
+          phone: repairCenter?.phone || undefined,
+          email: repairCenter?.email || undefined,
+        },
+        items: [{
+          description: `${request.brand} ${request.model}`,
+          quantity: 1,
+          imei: request.imei || undefined,
+          serial: request.serial || undefined,
+          notes: request.issueDescription || undefined,
+        }],
+      };
+      
+      const pdfBuffer = await generateTransferDDT(ddtData);
+      
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="DDT-${request.requestNumber}.pdf"`);
+      res.send(pdfBuffer);
+    } catch (error: any) {
+      console.error('Error generating DDT:', error);
       res.status(500).send(error.message);
     }
   });
