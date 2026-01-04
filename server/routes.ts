@@ -7527,6 +7527,55 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Customer Remote Requests - Upload photos
+  app.post("/api/customer/remote-requests/upload-photos", requireRole("customer"), upload.array("photos", 5), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const files = req.files as Express.Multer.File[];
+      if (!files || files.length === 0) {
+        return res.status(400).send("Nessun file caricato");
+      }
+      
+      const allowedMimeTypes = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+      const photoUrls: string[] = [];
+      
+      for (const file of files) {
+        if (!allowedMimeTypes.includes(file.mimetype)) {
+          return res.status(400).send("Formato immagine non supportato. Usa JPEG, PNG, WebP o GIF.");
+        }
+        
+        const maxSize = 10 * 1024 * 1024;
+        if (file.size > maxSize) {
+          return res.status(400).send("Immagine troppo grande. Massimo 10MB.");
+        }
+        
+        const ext = file.originalname.split(".").pop() || "jpg";
+        const objectPath = `remote-requests/${req.user.id}/${Date.now()}-${Math.random().toString(36).substr(2, 9)}.${ext}`;
+        
+        const privateObjectDir = objectStorage.getPrivateObjectDir();
+        const fullPath = `${privateObjectDir}/${objectPath}`;
+        const { bucketName, objectName } = parseObjectPath(fullPath);
+        const bucket = objectStorageClient.bucket(bucketName);
+        const gcsFile = bucket.file(objectName);
+        
+        await gcsFile.save(file.buffer, {
+          metadata: {
+            contentType: file.mimetype,
+          },
+        });
+        
+        // Return the relative path for storage
+        photoUrls.push(`/objects/${objectPath}`);
+      }
+      
+      res.json({ photos: photoUrls });
+    } catch (error: any) {
+      console.error("Error uploading photos:", error);
+      res.status(500).send(error.message);
+    }
+  });
+
   // Repair Center endpoints
   app.get("/api/repair-center/remote-requests", requireRole("repair_center"), async (req, res) => {
     try {

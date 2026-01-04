@@ -11,7 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, Plus, Package, Truck, Check, X, Clock, Send, Phone, MapPin } from "lucide-react";
+import { Loader2, Plus, Package, Truck, Check, X, Clock, Send, Phone, MapPin, Upload, Image } from "lucide-react";
 import type { RemoteRepairRequest, RepairCenter, DeviceType, DeviceBrand, DeviceModel } from "@shared/schema";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
@@ -37,7 +37,8 @@ export default function CustomerRemoteRequests() {
 
   const [newRequest, setNewRequest] = useState({
     deviceType: "",
-    brand: "",
+    brandId: "", // ID for filtering models
+    brand: "", // Name for database
     model: "",
     imei: "",
     serial: "",
@@ -51,6 +52,11 @@ export default function CustomerRemoteRequests() {
     courierName: "",
     trackingNumber: "",
   });
+
+  const [selectedPhotos, setSelectedPhotos] = useState<File[]>([]);
+  const [photoPreviewUrls, setPhotoPreviewUrls] = useState<string[]>([]);
+  const [uploadedPhotoUrls, setUploadedPhotoUrls] = useState<string[]>([]);
+  const [isUploading, setIsUploading] = useState(false);
 
   const { data: requests, isLoading } = useQuery<RemoteRepairRequest[]>({
     queryKey: ["/api/customer/remote-requests"],
@@ -74,7 +80,7 @@ export default function CustomerRemoteRequests() {
 
   // Filter models by selected brand
   const filteredModels = (deviceModels || []).filter(
-    (model) => model.brandId === newRequest.brand
+    (model) => model.brandId === newRequest.brandId
   );
 
   const createMutation = useMutation({
@@ -87,6 +93,7 @@ export default function CustomerRemoteRequests() {
       setIsNewRequestOpen(false);
       setNewRequest({
         deviceType: "",
+        brandId: "",
         brand: "",
         model: "",
         imei: "",
@@ -96,6 +103,11 @@ export default function CustomerRemoteRequests() {
         resellerId: user?.resellerId || "",
         requestedCenterId: "",
       });
+      // Reset photos
+      setSelectedPhotos([]);
+      photoPreviewUrls.forEach(url => URL.revokeObjectURL(url));
+      setPhotoPreviewUrls([]);
+      setUploadedPhotoUrls([]);
       toast({
         title: "Richiesta inviata",
         description: "La tua richiesta di riparazione remota è stata inviata con successo",
@@ -134,13 +146,83 @@ export default function CustomerRemoteRequests() {
     },
   });
 
-  const handleCreateRequest = (e: React.FormEvent) => {
+  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length > 5) {
+      toast({
+        title: "Troppi file",
+        description: "Puoi caricare al massimo 5 foto",
+        variant: "destructive",
+      });
+      return;
+    }
+    setSelectedPhotos(files);
+    // Create preview URLs
+    const urls = files.map(file => URL.createObjectURL(file));
+    setPhotoPreviewUrls(urls);
+  };
+
+  const removePhoto = (index: number) => {
+    const newPhotos = [...selectedPhotos];
+    newPhotos.splice(index, 1);
+    setSelectedPhotos(newPhotos);
+    
+    const newUrls = [...photoPreviewUrls];
+    URL.revokeObjectURL(newUrls[index]);
+    newUrls.splice(index, 1);
+    setPhotoPreviewUrls(newUrls);
+  };
+
+  const uploadPhotos = async (): Promise<string[]> => {
+    if (selectedPhotos.length === 0) return [];
+    
+    setIsUploading(true);
+    try {
+      const formData = new FormData();
+      selectedPhotos.forEach(photo => {
+        formData.append("photos", photo);
+      });
+      
+      const response = await fetch("/api/customer/remote-requests/upload-photos", {
+        method: "POST",
+        body: formData,
+        credentials: "include",
+      });
+      
+      if (!response.ok) {
+        throw new Error(await response.text());
+      }
+      
+      const { photos } = await response.json();
+      return photos;
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleCreateRequest = async (e: React.FormEvent) => {
     e.preventDefault();
-    const dataToSend = {
-      ...newRequest,
-      requestedCenterId: newRequest.requestedCenterId === "none" || newRequest.requestedCenterId === "" ? null : newRequest.requestedCenterId,
-    };
-    createMutation.mutate(dataToSend);
+    
+    try {
+      // First upload photos if any
+      let photoUrls: string[] = [];
+      if (selectedPhotos.length > 0) {
+        photoUrls = await uploadPhotos();
+      }
+      
+      const dataToSend = {
+        ...newRequest,
+        requestedCenterId: newRequest.requestedCenterId === "none" || newRequest.requestedCenterId === "" ? null : newRequest.requestedCenterId,
+        photos: photoUrls.length > 0 ? photoUrls : undefined,
+      };
+      createMutation.mutate(dataToSend);
+    } catch (error: any) {
+      toast({
+        title: "Errore upload foto",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
   };
 
   const handleShippingSubmit = (e: React.FormEvent) => {
@@ -211,15 +293,24 @@ export default function CustomerRemoteRequests() {
                 <div className="space-y-2">
                   <Label htmlFor="brand">Marca</Label>
                   <Select
-                    value={newRequest.brand}
-                    onValueChange={(value) => setNewRequest({ ...newRequest, brand: value, model: "" })}
+                    value={newRequest.brandId || "none"}
+                    onValueChange={(value) => {
+                      const selectedBrand = deviceBrands?.find(b => b.id === value);
+                      setNewRequest({ 
+                        ...newRequest, 
+                        brandId: value === "none" ? "" : value,
+                        brand: selectedBrand?.name || "", 
+                        model: "" 
+                      });
+                    }}
                   >
                     <SelectTrigger data-testid="select-brand">
                       <SelectValue placeholder="Seleziona marca" />
                     </SelectTrigger>
                     <SelectContent>
+                      <SelectItem value="none">Seleziona marca</SelectItem>
                       {deviceBrands?.map((brand) => (
-                        <SelectItem key={brand.id} value={brand.name}>
+                        <SelectItem key={brand.id} value={brand.id}>
                           {brand.name}
                         </SelectItem>
                       ))}
@@ -232,10 +323,10 @@ export default function CustomerRemoteRequests() {
                 <Select
                   value={newRequest.model || "none"}
                   onValueChange={(value) => setNewRequest({ ...newRequest, model: value === "none" ? "" : value })}
-                  disabled={!newRequest.brand}
+                  disabled={!newRequest.brandId}
                 >
                   <SelectTrigger data-testid="select-model">
-                    <SelectValue placeholder={newRequest.brand ? "Seleziona modello" : "Seleziona prima la marca"} />
+                    <SelectValue placeholder={newRequest.brandId ? "Seleziona modello" : "Seleziona prima la marca"} />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="none">Seleziona modello</SelectItem>
@@ -291,6 +382,51 @@ export default function CustomerRemoteRequests() {
                   data-testid="input-customer-notes"
                 />
               </div>
+              <div className="space-y-2">
+                <Label>Foto del Dispositivo (opzionale, max 5)</Label>
+                <div className="flex items-center gap-2">
+                  <label className="cursor-pointer">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      onChange={handlePhotoChange}
+                      className="hidden"
+                      data-testid="input-photos"
+                    />
+                    <div className="flex items-center gap-2 px-4 py-2 border rounded-md hover-elevate">
+                      <Upload className="h-4 w-4" />
+                      <span>Seleziona foto</span>
+                    </div>
+                  </label>
+                  {selectedPhotos.length > 0 && (
+                    <span className="text-sm text-muted-foreground">
+                      {selectedPhotos.length} foto selezionate
+                    </span>
+                  )}
+                </div>
+                {photoPreviewUrls.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {photoPreviewUrls.map((url, index) => (
+                      <div key={index} className="relative group">
+                        <img
+                          src={url}
+                          alt={`Preview ${index + 1}`}
+                          className="w-20 h-20 object-cover rounded-md border"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => removePhoto(index)}
+                          className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                          data-testid={`button-remove-photo-${index}`}
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
               {repairCenters && repairCenters.length > 0 && (
                 <div className="space-y-2">
                   <Label htmlFor="requestedCenterId">Centro di Riparazione Preferito (opzionale)</Label>
@@ -316,7 +452,7 @@ export default function CustomerRemoteRequests() {
                 <Button type="button" variant="outline" onClick={() => setIsNewRequestOpen(false)}>
                   Annulla
                 </Button>
-                <Button type="submit" disabled={createMutation.isPending} data-testid="button-submit-request">
+                <Button type="submit" disabled={createMutation.isPending || isUploading} data-testid="button-submit-request">
                   {createMutation.isPending ? (
                     <>
                       <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -403,6 +539,31 @@ export default function CustomerRemoteRequests() {
                   <p className="text-sm text-muted-foreground">Problema</p>
                   <p className="text-sm">{request.issueDescription}</p>
                 </div>
+                {request.photos && request.photos.length > 0 && (
+                  <div className="mt-4">
+                    <p className="text-sm text-muted-foreground flex items-center gap-1 mb-2">
+                      <Image className="h-3 w-3" /> Foto del dispositivo
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      {request.photos.map((photo, index) => (
+                        <a
+                          key={index}
+                          href={photo}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="block"
+                        >
+                          <img
+                            src={photo}
+                            alt={`Foto ${index + 1}`}
+                            className="w-24 h-24 object-cover rounded-md border hover:opacity-80 transition-opacity"
+                            data-testid={`img-photo-${request.id}-${index}`}
+                          />
+                        </a>
+                      ))}
+                    </div>
+                  </div>
+                )}
                 {request.rejectionReason && (
                   <div className="mt-4 p-3 bg-destructive/10 rounded-md">
                     <p className="text-sm text-muted-foreground">Motivo Rifiuto</p>

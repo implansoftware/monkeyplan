@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { Loader2, Package, Truck, Check, X, Clock, Building2, UserCheck } from "lucide-react";
+import { Loader2, Package, Truck, Check, X, Clock, Building2, UserCheck, Image } from "lucide-react";
 import type { RemoteRepairRequest, RepairCenter } from "@shared/schema";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
@@ -182,6 +182,35 @@ export default function ResellerRemoteRequests() {
                           <p className="text-sm text-muted-foreground">Problema</p>
                           <p className="text-sm truncate">{request.issueDescription}</p>
                         </div>
+                        {request.photos && request.photos.length > 0 && (
+                          <div className="mt-2">
+                            <p className="text-sm text-muted-foreground flex items-center gap-1 mb-1">
+                              <Image className="h-3 w-3" /> {request.photos.length} foto
+                            </p>
+                            <div className="flex flex-wrap gap-1">
+                              {request.photos.slice(0, 3).map((photo, index) => (
+                                <a
+                                  key={index}
+                                  href={photo}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="block"
+                                >
+                                  <img
+                                    src={photo}
+                                    alt={`Foto ${index + 1}`}
+                                    className="w-16 h-16 object-cover rounded-md border hover:opacity-80 transition-opacity"
+                                  />
+                                </a>
+                              ))}
+                              {request.photos.length > 3 && (
+                                <span className="text-xs text-muted-foreground self-center ml-1">
+                                  +{request.photos.length - 3}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        )}
                         {request.requestedCenterId && (
                           <div>
                             <p className="text-sm text-muted-foreground">Centro Preferito</p>

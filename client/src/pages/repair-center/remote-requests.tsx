@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Loader2, Package, Truck, Check, X, Clock, CheckCircle2, XCircle, PackageCheck, MapPin } from "lucide-react";
+import { Loader2, Package, Truck, Check, X, Clock, CheckCircle2, XCircle, PackageCheck, MapPin, Image } from "lucide-react";
 import type { RemoteRepairRequest } from "@shared/schema";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
@@ -268,6 +268,30 @@ export default function RepairCenterRemoteRequests() {
                         <p className="text-sm text-muted-foreground">Problema</p>
                         <p className="text-sm">{request.issueDescription}</p>
                       </div>
+                      {request.photos && request.photos.length > 0 && (
+                        <div className="mt-4">
+                          <p className="text-sm text-muted-foreground flex items-center gap-1 mb-2">
+                            <Image className="h-3 w-3" /> Foto del dispositivo
+                          </p>
+                          <div className="flex flex-wrap gap-2">
+                            {request.photos.map((photo, index) => (
+                              <a
+                                key={index}
+                                href={photo}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="block"
+                              >
+                                <img
+                                  src={photo}
+                                  alt={`Foto ${index + 1}`}
+                                  className="w-24 h-24 object-cover rounded-md border hover:opacity-80 transition-opacity"
+                                />
+                              </a>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                       {request.customerNotes && (
                         <div className="mt-2">
                           <p className="text-sm text-muted-foreground">Note cliente</p>
