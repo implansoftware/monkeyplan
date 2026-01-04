@@ -84,7 +84,7 @@ export default function CustomerRemoteRequests() {
   );
 
   const createMutation = useMutation({
-    mutationFn: async (data: typeof newRequest & { requestedCenterId: string | null }) => {
+    mutationFn: async (data: Omit<typeof newRequest, 'requestedCenterId'> & { requestedCenterId: string | null; photos?: string[] }) => {
       const res = await apiRequest("POST", "/api/customer/remote-requests", data);
       return await res.json();
     },
@@ -427,27 +427,6 @@ export default function CustomerRemoteRequests() {
                   </div>
                 )}
               </div>
-              {repairCenters && repairCenters.length > 0 && (
-                <div className="space-y-2">
-                  <Label htmlFor="requestedCenterId">Centro di Riparazione Preferito (opzionale)</Label>
-                  <Select
-                    value={newRequest.requestedCenterId}
-                    onValueChange={(value) => setNewRequest({ ...newRequest, requestedCenterId: value })}
-                  >
-                    <SelectTrigger data-testid="select-repair-center">
-                      <SelectValue placeholder="Nessuna preferenza" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">Nessuna preferenza</SelectItem>
-                      {repairCenters.map((center) => (
-                        <SelectItem key={center.id} value={center.id}>
-                          {center.name} - {center.city}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
               <DialogFooter>
                 <Button type="button" variant="outline" onClick={() => setIsNewRequestOpen(false)}>
                   Annulla
