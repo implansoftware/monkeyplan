@@ -339,7 +339,7 @@ export function AppSidebar() {
   // Query pending remote repair requests count for badge (reseller/reseller_staff)
   const { data: remoteRequestsSummary } = useQuery<{ count: number }>({
     queryKey: ["/api/reseller/remote-requests/pending-count"],
-    enabled: user?.role === "reseller" || user?.role === "reseller_staff" || user?.role === "sub_reseller",
+    enabled: user?.role === "reseller" || user?.role === "reseller_staff",
     refetchInterval: 30000, // Refresh every 30 seconds
   });
   const pendingRemoteRequestsCount = remoteRequestsSummary?.count || 0;

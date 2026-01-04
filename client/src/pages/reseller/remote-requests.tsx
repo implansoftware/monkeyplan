@@ -48,6 +48,7 @@ export default function ResellerRemoteRequests() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/reseller/remote-requests"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/reseller/remote-requests/pending-count"] });
       setIsAssignOpen(false);
       setSelectedRequest(null);
       setSelectedCenterId("");
