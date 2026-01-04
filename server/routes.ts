@@ -15026,7 +15026,7 @@ export function registerRoutes(app: Express): Server {
         }
         if (req.user.resellerId) {
           const reseller = await storage.getUser(req.user.resellerId);
-          stats.assignedReseller = reseller ? { id: reseller.id, name: reseller.firstName + ' ' + reseller.lastName, businessName: reseller.businessName } : null;
+          stats.assignedReseller = reseller ? { id: reseller.id, name: reseller.businessName || ((reseller.firstName || '') + ' ' + (reseller.lastName || '')).trim() || reseller.email, businessName: reseller.businessName } : null;
         }
       }
       
