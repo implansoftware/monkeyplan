@@ -11,6 +11,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Label } from "@/components/ui/label";
 import { Loader2, Package, Truck, Check, X, Clock, Building2, UserCheck, Image } from "lucide-react";
 import type { RemoteRepairRequest, RepairCenter } from "@shared/schema";
+
+type RepairCenterWithUserId = RepairCenter & { userId: string | null };
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
 
@@ -37,7 +39,7 @@ export default function ResellerRemoteRequests() {
     queryKey: ["/api/reseller/remote-requests"],
   });
 
-  const { data: repairCenters } = useQuery<RepairCenter[]>({
+  const { data: repairCenters } = useQuery<RepairCenterWithUserId[]>({
     queryKey: ["/api/reseller/repair-centers"],
   });
 
@@ -249,7 +251,7 @@ export default function ResellerRemoteRequests() {
                           <span>{request.brand} {request.model}</span>
                           <span className="text-muted-foreground">
                             <Building2 className="h-4 w-4 inline mr-1" />
-                            {repairCenters?.find(c => c.id === request.assignedCenterId)?.name || "N/D"}
+                            {repairCenters?.find(c => c.userId === request.assignedCenterId)?.name || "N/D"}
                           </span>
                         </div>
                       </div>
@@ -281,7 +283,7 @@ export default function ResellerRemoteRequests() {
                           <span>{request.brand} {request.model}</span>
                           <span className="text-muted-foreground">
                             <Building2 className="h-4 w-4 inline mr-1" />
-                            {repairCenters?.find(c => c.id === request.assignedCenterId)?.name || "N/D"}
+                            {repairCenters?.find(c => c.userId === request.assignedCenterId)?.name || "N/D"}
                           </span>
                         </div>
                       </div>

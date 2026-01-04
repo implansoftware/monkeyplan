@@ -6246,7 +6246,14 @@ export function registerRoutes(app: Express): Server {
         resellerCenters = resellerCenters.filter(c => c.id === context.repairCenterId);
       }
       
-      res.json(resellerCenters);
+      // Add userId for each center (needed for remote request assignment lookup)
+      const allUsers = await storage.listUsers();
+      const centersWithUserId = resellerCenters.map(center => {
+        const centerUser = allUsers.find(u => u.role === 'repair_center' && u.repairCenterId === center.id);
+        return { ...center, userId: centerUser?.id || null };
+      });
+      
+      res.json(centersWithUserId);
     } catch (error: any) {
       res.status(500).send(error.message);
     }
