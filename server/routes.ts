@@ -15022,11 +15022,11 @@ export function registerRoutes(app: Express): Server {
         // Add assigned center and reseller info
         if (req.user.repairCenterId) {
           const repairCenter = await storage.getRepairCenter(req.user.repairCenterId);
-          stats.assignedCenter = repairCenter ? { id: repairCenter.id, name: repairCenter.name } : null;
+          stats.assignedCenter = repairCenter ? { id: repairCenter.id, name: repairCenter.name, phone: repairCenter.phone, address: repairCenter.address, logoUrl: repairCenter.logoUrl } : null;
         }
         if (req.user.resellerId) {
           const reseller = await storage.getUser(req.user.resellerId);
-          stats.assignedReseller = reseller ? { id: reseller.id, name: reseller.businessName || ((reseller.firstName || '') + ' ' + (reseller.lastName || '')).trim() || reseller.email, businessName: reseller.businessName } : null;
+          stats.assignedReseller = reseller ? { id: reseller.id, name: reseller.businessName || ((reseller.firstName || '') + ' ' + (reseller.lastName || '')).trim() || reseller.email, businessName: reseller.businessName, phone: reseller.phone, logoUrl: reseller.logoUrl, address: reseller.address } : null;
         }
       }
       

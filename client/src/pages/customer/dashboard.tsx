@@ -1,6 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useQuery } from "@tanstack/react-query";
-import { Wrench, Ticket, CheckCircle, Clock, Building2, Store } from "lucide-react";
+import { Wrench, Ticket, CheckCircle, Clock, Building2, Store, Phone, MapPin } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
@@ -29,11 +30,17 @@ type CustomerStats = {
   assignedCenter?: {
     id: string;
     name: string;
+    phone?: string;
+    address?: string;
+    logoUrl?: string;
   } | null;
   assignedReseller?: {
     id: string;
     name: string;
     businessName?: string;
+    phone?: string;
+    logoUrl?: string;
+    address?: string;
   } | null;
 };
 
@@ -111,24 +118,70 @@ export default function CustomerDashboard() {
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {stats?.assignedReseller && (
-                <div className="flex items-start gap-3 p-3 rounded-md bg-muted/50">
-                  <Store className="h-5 w-5 text-primary mt-0.5" />
-                  <div>
+                <div className="flex items-start gap-4 p-4 rounded-md bg-muted/50">
+                  {stats.assignedReseller.logoUrl ? (
+                    <Avatar className="h-14 w-14">
+                      <AvatarImage src={stats.assignedReseller.logoUrl} alt="Logo rivenditore" />
+                      <AvatarFallback><Store className="h-6 w-6" /></AvatarFallback>
+                    </Avatar>
+                  ) : (
+                    <div className="h-14 w-14 rounded-full bg-primary/10 flex items-center justify-center">
+                      <Store className="h-6 w-6 text-primary" />
+                    </div>
+                  )}
+                  <div className="flex-1 space-y-1">
                     <p className="text-sm text-muted-foreground">Rivenditore</p>
-                    <p className="font-medium" data-testid="text-assigned-reseller">
+                    <p className="font-semibold text-lg" data-testid="text-assigned-reseller">
                       {stats.assignedReseller.businessName || stats.assignedReseller.name}
                     </p>
+                    {stats.assignedReseller.phone && (
+                      <p className="text-sm flex items-center gap-1.5 text-muted-foreground">
+                        <Phone className="h-3.5 w-3.5" />
+                        <a href={`tel:${stats.assignedReseller.phone}`} className="hover:text-foreground">
+                          {stats.assignedReseller.phone}
+                        </a>
+                      </p>
+                    )}
+                    {stats.assignedReseller.address && (
+                      <p className="text-sm flex items-center gap-1.5 text-muted-foreground">
+                        <MapPin className="h-3.5 w-3.5" />
+                        {stats.assignedReseller.address}
+                      </p>
+                    )}
                   </div>
                 </div>
               )}
               {stats?.assignedCenter && (
-                <div className="flex items-start gap-3 p-3 rounded-md bg-muted/50">
-                  <Building2 className="h-5 w-5 text-primary mt-0.5" />
-                  <div>
+                <div className="flex items-start gap-4 p-4 rounded-md bg-muted/50">
+                  {stats.assignedCenter.logoUrl ? (
+                    <Avatar className="h-14 w-14">
+                      <AvatarImage src={stats.assignedCenter.logoUrl} alt="Logo centro" />
+                      <AvatarFallback><Building2 className="h-6 w-6" /></AvatarFallback>
+                    </Avatar>
+                  ) : (
+                    <div className="h-14 w-14 rounded-full bg-primary/10 flex items-center justify-center">
+                      <Building2 className="h-6 w-6 text-primary" />
+                    </div>
+                  )}
+                  <div className="flex-1 space-y-1">
                     <p className="text-sm text-muted-foreground">Centro Riparazioni</p>
-                    <p className="font-medium" data-testid="text-assigned-center">
+                    <p className="font-semibold text-lg" data-testid="text-assigned-center">
                       {stats.assignedCenter.name}
                     </p>
+                    {stats.assignedCenter.phone && (
+                      <p className="text-sm flex items-center gap-1.5 text-muted-foreground">
+                        <Phone className="h-3.5 w-3.5" />
+                        <a href={`tel:${stats.assignedCenter.phone}`} className="hover:text-foreground">
+                          {stats.assignedCenter.phone}
+                        </a>
+                      </p>
+                    )}
+                    {stats.assignedCenter.address && (
+                      <p className="text-sm flex items-center gap-1.5 text-muted-foreground">
+                        <MapPin className="h-3.5 w-3.5" />
+                        {stats.assignedCenter.address}
+                      </p>
+                    )}
                   </div>
                 </div>
               )}
