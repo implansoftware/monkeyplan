@@ -40,6 +40,7 @@ import {
   Send,
   ArrowRightLeft,
   UserCircle,
+  Tag,
 } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useState, Fragment, useMemo } from "react";
@@ -257,6 +258,16 @@ const integratedSuppliers = [
     basePath: "/reseller/mobilesentrix",
     routes: [
       { title: "Catalogo", path: "/catalog", icon: Package },
+      { title: "Configurazione", path: "/settings", icon: Settings },
+    ],
+  },
+  {
+    key: "trovausati",
+    label: "TrovaUsati",
+    basePath: "/reseller/trovausati",
+    routes: [
+      { title: "Marketplace B2B", path: "/marketplace", icon: ShoppingCart },
+      { title: "Valutatore", path: "/valutatore", icon: Tag },
       { title: "Configurazione", path: "/settings", icon: Settings },
     ],
   },
