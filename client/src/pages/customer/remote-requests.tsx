@@ -69,7 +69,7 @@ export default function CustomerRemoteRequests() {
   });
 
   const createMutation = useMutation({
-    mutationFn: async (data: typeof newRequest) => {
+    mutationFn: async (data: typeof newRequest & { requestedCenterId: string | null }) => {
       const res = await apiRequest("POST", "/api/customer/remote-requests", data);
       return await res.json();
     },
@@ -129,7 +129,7 @@ export default function CustomerRemoteRequests() {
     e.preventDefault();
     const dataToSend = {
       ...newRequest,
-      requestedCenterId: newRequest.requestedCenterId === "none" ? "" : newRequest.requestedCenterId,
+      requestedCenterId: newRequest.requestedCenterId === "none" || newRequest.requestedCenterId === "" ? null : newRequest.requestedCenterId,
     };
     createMutation.mutate(dataToSend);
   };
