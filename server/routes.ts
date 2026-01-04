@@ -7627,12 +7627,7 @@ export function registerRoutes(app: Express): Server {
       const request = await storage.getRemoteRepairRequest(req.params.id);
       if (!request) return res.status(404).send("Richiesta non trovata");
       
-      // Verify this center can accept
-      const repairCenters = await storage.listRepairCentersForStaff(req.user.id);
-      const repairCenter = repairCenters[0];
-      
-      if (!repairCenter) return res.status(403).send("Nessun centro di riparazione associato");
-      
+      // Verify this center can accept (assignedCenterId contains user ID)
       if (request.assignedCenterId && request.assignedCenterId !== req.user.id) {
         return res.status(403).send("Richiesta assegnata ad un altro centro");
       }
@@ -7660,10 +7655,10 @@ export function registerRoutes(app: Express): Server {
       const request = await storage.getRemoteRepairRequest(req.params.id);
       if (!request) return res.status(404).send("Richiesta non trovata");
       
-      const repairCenters = await storage.listRepairCentersForStaff(req.user.id);
-      const repairCenter = repairCenters[0];
-      
-      if (!repairCenter) return res.status(403).send("Nessun centro di riparazione associato");
+      // Verify user can reject this request
+      if (request.assignedCenterId && request.assignedCenterId !== req.user.id) {
+        return res.status(403).send("Richiesta assegnata ad un altro centro");
+      }
       
       if (request.status !== 'pending' && request.status !== 'assigned') {
         return res.status(400).send("Impossibile rifiutare la richiesta in questo stato");
@@ -7689,9 +7684,6 @@ export function registerRoutes(app: Express): Server {
       
       const request = await storage.getRemoteRepairRequest(req.params.id);
       if (!request) return res.status(404).send("Richiesta non trovata");
-      
-      const repairCenters = await storage.listRepairCentersForStaff(req.user.id);
-      const repairCenter = repairCenters[0];
       
       if (request.assignedCenterId !== req.user.id) {
         return res.status(403).send("Accesso non autorizzato");
@@ -7725,9 +7717,6 @@ export function registerRoutes(app: Express): Server {
       
       const request = await storage.getRemoteRepairRequest(req.params.id);
       if (!request) return res.status(404).send("Richiesta non trovata");
-      
-      const repairCenters = await storage.listRepairCentersForStaff(req.user.id);
-      const repairCenter = repairCenters[0];
       
       if (request.assignedCenterId !== req.user.id) {
         return res.status(403).send("Accesso non autorizzato");
