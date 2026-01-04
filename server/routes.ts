@@ -7797,6 +7797,25 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+
+  // Get pending count for reseller notification badge
+  app.get("/api/reseller/remote-requests/pending-count", requireRole("reseller", "sub_reseller", "reseller_staff"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      let resellerId = req.user.id;
+      if (req.user.role === 'reseller_staff') {
+        resellerId = (req.user as any).resellerId;
+      } else if (req.user.role === 'sub_reseller') {
+        resellerId = (req.user as any).parentResellerId;
+      }
+      
+      const count = await storage.getResellerRemoteRequestPendingCount(resellerId);
+      res.json({ count });
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
   // Admin endpoints
   app.get("/api/admin/remote-requests", requireRole("admin"), async (req, res) => {
     try {
