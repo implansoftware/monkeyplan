@@ -347,22 +347,68 @@ export default function RepairCenterRemoteRequests() {
                       </div>
                     </CardHeader>
                     <CardContent>
-                      <div className="grid grid-cols-3 gap-4">
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div>
+                          <p className="text-sm text-muted-foreground">Cliente</p>
+                          <p className="font-medium">{request.customerName || '-'}</p>
+                          {request.customerEmail && (
+                            <p className="text-xs text-muted-foreground">{request.customerEmail}</p>
+                          )}
+                          {request.customerPhone && (
+                            <p className="text-xs text-muted-foreground">{request.customerPhone}</p>
+                          )}
+                        </div>
                         <div>
                           <p className="text-sm text-muted-foreground">Dispositivo</p>
                           <p className="font-medium">{request.brand} {request.model}</p>
+                          {request.imei && (
+                            <p className="text-xs text-muted-foreground">IMEI: {request.imei}</p>
+                          )}
                         </div>
                         <div>
                           <p className="text-sm text-muted-foreground">Problema</p>
-                          <p className="text-sm truncate">{request.issueDescription}</p>
+                          <p className="text-sm">{request.issueDescription}</p>
                         </div>
-                        {request.trackingNumber && (
-                          <div>
-                            <p className="text-sm text-muted-foreground">Tracking</p>
-                            <p className="font-medium">{request.courierName}: {request.trackingNumber}</p>
-                          </div>
-                        )}
+                        <div>
+                          <p className="text-sm text-muted-foreground">Indirizzo Spedizione</p>
+                          {request.customerAddress ? (
+                            <p className="text-sm">
+                              {request.customerAddress}, {request.customerCap} {request.customerCity} ({request.customerProvince})
+                            </p>
+                          ) : (
+                            <p className="text-sm text-muted-foreground">-</p>
+                          )}
+                        </div>
                       </div>
+                      {request.trackingNumber && (
+                        <div className="mt-3 p-2 bg-muted rounded-md">
+                          <p className="text-sm">
+                            <span className="font-medium">Tracking:</span> {request.courierName}: {request.trackingNumber}
+                          </p>
+                        </div>
+                      )}
+                      {request.photos && request.photos.length > 0 && (
+                        <div className="mt-3">
+                          <p className="text-sm text-muted-foreground mb-2">Foto dispositivo</p>
+                          <div className="flex gap-2 flex-wrap">
+                            {request.photos.map((photo: string, index: number) => (
+                              <a key={index} href={photo} target="_blank" rel="noopener noreferrer">
+                                <img
+                                  src={photo}
+                                  alt={`Foto ${index + 1}`}
+                                  className="w-20 h-20 object-cover rounded-md border hover:opacity-80 transition-opacity"
+                                />
+                              </a>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      {request.customerNotes && (
+                        <div className="mt-3">
+                          <p className="text-sm text-muted-foreground">Note cliente</p>
+                          <p className="text-sm">{request.customerNotes}</p>
+                        </div>
+                      )}
                     </CardContent>
                   </Card>
                 ))}
