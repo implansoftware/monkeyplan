@@ -7614,7 +7614,35 @@ export function registerRoutes(app: Express): Server {
         }
       }
       
-      res.json(allRequests);
+      // Enrich with customer data and signed photo URLs
+      const enrichedRequests = await Promise.all(allRequests.map(async (r) => {
+        // Get customer data
+        const customer = r.customerId ? await storage.getUser(r.customerId) : null;
+        
+        // Generate signed URLs for photos
+        let photoUrls: string[] = [];
+        if (r.photos && r.photos.length > 0) {
+          photoUrls = await Promise.all(
+            r.photos.map(async (photoKey: string) => {
+              try {
+                return await getSignedDownloadUrl(photoKey);
+              } catch {
+                return photoKey;
+              }
+            })
+          );
+        }
+        
+        return {
+          ...r,
+          customerName: customer?.username || customer?.email || null,
+          customerEmail: customer?.email || null,
+          customerPhone: customer?.phone || null,
+          photos: photoUrls
+        };
+      }));
+      
+      res.json(enrichedRequests);
     } catch (error: any) {
       res.status(500).send(error.message);
     }

@@ -249,7 +249,7 @@ export default function RepairCenterRemoteRequests() {
                       </div>
                     </CardHeader>
                     <CardContent>
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div>
                           <p className="text-sm text-muted-foreground">Dispositivo</p>
                           <p className="font-medium">{request.deviceType}</p>
@@ -347,7 +347,7 @@ export default function RepairCenterRemoteRequests() {
                       </div>
                     </CardHeader>
                     <CardContent>
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div>
                           <p className="text-sm text-muted-foreground">Cliente</p>
                           <p className="font-medium">{request.customerName || '-'}</p>
@@ -368,16 +368,6 @@ export default function RepairCenterRemoteRequests() {
                         <div>
                           <p className="text-sm text-muted-foreground">Problema</p>
                           <p className="text-sm">{request.issueDescription}</p>
-                        </div>
-                        <div>
-                          <p className="text-sm text-muted-foreground">Indirizzo Spedizione</p>
-                          {request.customerAddress ? (
-                            <p className="text-sm">
-                              {request.customerAddress}, {request.customerCap} {request.customerCity} ({request.customerProvince})
-                            </p>
-                          ) : (
-                            <p className="text-sm text-muted-foreground">-</p>
-                          )}
                         </div>
                       </div>
                       {request.trackingNumber && (
