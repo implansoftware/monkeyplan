@@ -102,7 +102,8 @@ import {
   marketplaceOrders, MarketplaceOrder, InsertMarketplaceOrder,
   marketplaceOrderItems, MarketplaceOrderItem, InsertMarketplaceOrderItem,
   transferRequests, TransferRequest, InsertTransferRequest,
-  transferRequestItems, TransferRequestItem, InsertTransferRequestItem
+  transferRequestItems, TransferRequestItem, InsertTransferRequestItem,
+  remoteRepairRequests, RemoteRepairRequest, InsertRemoteRepairRequest, UpdateRemoteRepairRequest
 } from "@shared/schema";
 import { db, pool } from "./db";
 import { eq, and, or, desc, lt, gt, gte, lte, sql, not, inArray, isNull, ilike } from "drizzle-orm";
@@ -925,6 +926,20 @@ export interface IStorage {
   // Marketplace Order Items
   listMarketplaceOrderItems(orderId: string): Promise<MarketplaceOrderItem[]>;
   createMarketplaceOrderItem(data: InsertMarketplaceOrderItem): Promise<MarketplaceOrderItem>;
+  
+  // Remote Repair Requests
+  listRemoteRepairRequests(filters?: { 
+    customerId?: string; 
+    resellerId?: string; 
+    subResellerId?: string;
+    assignedCenterId?: string; 
+    requestedCenterId?: string;
+    status?: string;
+  }): Promise<RemoteRepairRequest[]>;
+  getRemoteRepairRequest(id: string): Promise<RemoteRepairRequest | undefined>;
+  createRemoteRepairRequest(data: InsertRemoteRepairRequest): Promise<RemoteRepairRequest>;
+  updateRemoteRepairRequest(id: string, updates: UpdateRemoteRepairRequest): Promise<RemoteRepairRequest>;
+  generateRemoteRequestNumber(): Promise<string>;
   
   sessionStore: session.Store;
 }
@@ -7937,6 +7952,89 @@ export class DatabaseStorage implements IStorage {
       pendingOrders: parseInt(row?.pending_orders) || 0,
       activeCartItems: parseInt((cartCount.rows[0] as any)?.total) || 0,
     };
+  }
+
+  // Remote Repair Requests
+  async listRemoteRepairRequests(filters?: { 
+    customerId?: string; 
+    resellerId?: string; 
+    subResellerId?: string;
+    assignedCenterId?: string; 
+    requestedCenterId?: string;
+    status?: string;
+  }): Promise<RemoteRepairRequest[]> {
+    let query = db.select().from(remoteRepairRequests).orderBy(desc(remoteRepairRequests.createdAt));
+    const conditions = [];
+    
+    if (filters?.customerId) {
+      conditions.push(eq(remoteRepairRequests.customerId, filters.customerId));
+    }
+    if (filters?.resellerId) {
+      conditions.push(eq(remoteRepairRequests.resellerId, filters.resellerId));
+    }
+    if (filters?.subResellerId) {
+      conditions.push(eq(remoteRepairRequests.subResellerId, filters.subResellerId));
+    }
+    if (filters?.assignedCenterId) {
+      conditions.push(eq(remoteRepairRequests.assignedCenterId, filters.assignedCenterId));
+    }
+    if (filters?.requestedCenterId) {
+      conditions.push(eq(remoteRepairRequests.requestedCenterId, filters.requestedCenterId));
+    }
+    if (filters?.status) {
+      conditions.push(eq(remoteRepairRequests.status, filters.status as any));
+    }
+    
+    if (conditions.length > 0) {
+      query = query.where(and(...conditions)) as any;
+    }
+    
+    return query;
+  }
+
+  async getRemoteRepairRequest(id: string): Promise<RemoteRepairRequest | undefined> {
+    const [result] = await db.select().from(remoteRepairRequests).where(eq(remoteRepairRequests.id, id));
+    return result || undefined;
+  }
+
+  async createRemoteRepairRequest(data: InsertRemoteRepairRequest): Promise<RemoteRepairRequest> {
+    const requestNumber = await this.generateRemoteRequestNumber();
+    const [result] = await db.insert(remoteRepairRequests).values({
+      ...data,
+      requestNumber,
+    }).returning();
+    return result;
+  }
+
+  async updateRemoteRepairRequest(id: string, updates: UpdateRemoteRepairRequest): Promise<RemoteRepairRequest> {
+    const [result] = await db.update(remoteRepairRequests)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(remoteRepairRequests.id, id))
+      .returning();
+    return result;
+  }
+
+  async generateRemoteRequestNumber(): Promise<string> {
+    const year = new Date().getFullYear();
+    const prefix = `RRR-${year}-`;
+    
+    const latestResult = await db.execute(sql`
+      SELECT request_number FROM remote_repair_requests 
+      WHERE request_number LIKE ${prefix + '%'}
+      ORDER BY request_number DESC
+      LIMIT 1
+    `);
+    
+    let nextNum = 1;
+    if (latestResult.rows && latestResult.rows.length > 0) {
+      const lastNumber = (latestResult.rows[0] as any).request_number;
+      const match = lastNumber?.match(/RRR-\d{4}-(\d+)/);
+      if (match) {
+        nextNum = parseInt(match[1], 10) + 1;
+      }
+    }
+    
+    return `${prefix}${String(nextNum).padStart(5, '0')}`;
   }
 }
 
