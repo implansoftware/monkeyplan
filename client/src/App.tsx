@@ -162,6 +162,7 @@ import CustomerTicketDetail from "@/pages/customer/ticket-detail";
 import CustomerInvoices from "@/pages/customer/invoices";
 import CustomerOrders from "@/pages/customer/orders";
 import CustomerSalesReturns from "@/pages/customer/sales-returns";
+import CustomerProfile from "@/pages/customer/profile";
 
 // Shop pages (public)
 import ShopCatalog from "@/pages/shop/catalog";
@@ -370,6 +371,7 @@ function Router() {
       <ProtectedRoute path="/customer/orders/:id" component={CustomerOrders} />
       <ProtectedRoute path="/customer/orders" component={CustomerOrders} />
       <ProtectedRoute path="/customer/sales-returns" component={CustomerSalesReturns} />
+      <ProtectedRoute path="/customer/profile" component={CustomerProfile} />
       
       {/* Shop admin routes */}
       <ProtectedRoute path="/shop/admin/products/:id" component={ShopAdminProductDetail} />

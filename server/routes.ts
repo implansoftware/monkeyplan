@@ -7380,6 +7380,64 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // ============ CUSTOMER PROFILE ============
+  
+  app.get("/api/customer/profile", requireRole("customer"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const user = await storage.getUser(req.user.id);
+      if (!user) return res.status(404).send("User not found");
+      
+      // Return safe profile data (no password)
+      const { password: _, ...safeUser } = user;
+      res.json(safeUser);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  app.patch("/api/customer/profile", requireRole("customer"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const { customerProfileUpdateSchema } = await import("@shared/schema");
+      const validatedData = customerProfileUpdateSchema.parse(req.body);
+      
+      // Build update object only with provided fields
+      const updates: Record<string, any> = {};
+      if (validatedData.fullName !== undefined) updates.fullName = validatedData.fullName;
+      if (validatedData.email !== undefined) updates.email = validatedData.email;
+      if (validatedData.phone !== undefined) updates.phone = validatedData.phone;
+      if (validatedData.ragioneSociale !== undefined) updates.ragioneSociale = validatedData.ragioneSociale;
+      if (validatedData.partitaIva !== undefined) updates.partitaIva = validatedData.partitaIva;
+      if (validatedData.codiceFiscale !== undefined) updates.codiceFiscale = validatedData.codiceFiscale;
+      if (validatedData.indirizzo !== undefined) updates.indirizzo = validatedData.indirizzo;
+      if (validatedData.citta !== undefined) updates.citta = validatedData.citta;
+      if (validatedData.cap !== undefined) updates.cap = validatedData.cap;
+      if (validatedData.provincia !== undefined) updates.provincia = validatedData.provincia;
+      if (validatedData.pec !== undefined) updates.pec = validatedData.pec;
+      if (validatedData.codiceUnivoco !== undefined) updates.codiceUnivoco = validatedData.codiceUnivoco;
+      
+      if (Object.keys(updates).length === 0) {
+        return res.status(400).send("No valid fields to update");
+      }
+      
+      const updatedUser = await storage.updateUser(req.user.id, updates);
+      
+      setActivityEntity(res, { type: 'users', id: updatedUser.id });
+      
+      // Return safe profile data (no password)
+      const { password: _, ...safeUser } = updatedUser;
+      res.json(safeUser);
+    } catch (error: any) {
+      if (error.name === 'ZodError') {
+        return res.status(400).json({ message: "Dati non validi", errors: error.errors });
+      }
+      res.status(500).send(error.message);
+    }
+  });
+
   // ============ NOTIFICATIONS ============
   
   app.get("/api/notifications", requireAuth, async (req, res) => {

@@ -228,6 +228,7 @@ const menuItems = {
     { title: "Ordini", url: "/customer/orders", icon: ShoppingCart, group: "Acquisti" },
     { title: "Resi", url: "/customer/sales-returns", icon: RotateCcw, group: "Acquisti" },
     { title: "Ticket", url: "/customer/tickets", icon: Ticket, group: "Assistenza" },
+    { title: "Profilo", url: "/customer/profile", icon: UserCircle, group: "Account" },
   ],
 };
 
