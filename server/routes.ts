@@ -7438,6 +7438,336 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // ============ REMOTE REPAIR REQUESTS ============
+  
+  // Customer endpoints
+  app.get("/api/customer/remote-requests", requireRole("customer"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const requests = await storage.listRemoteRepairRequests({
+        customerId: req.user.id
+      });
+      res.json(requests);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  app.post("/api/customer/remote-requests", requireRole("customer"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const { insertRemoteRepairRequestSchema } = await import("@shared/schema");
+      const validatedData = insertRemoteRepairRequestSchema.parse({
+        ...req.body,
+        customerId: req.user.id,
+      });
+      
+      const request = await storage.createRemoteRepairRequest(validatedData);
+      
+      setActivityEntity(res, { type: 'remote_repair_requests', id: request.id });
+      res.status(201).json(request);
+    } catch (error: any) {
+      if (error.name === 'ZodError') {
+        return res.status(400).json({ message: "Dati non validi", errors: error.errors });
+      }
+      res.status(500).send(error.message);
+    }
+  });
+
+  app.get("/api/customer/remote-requests/:id", requireRole("customer"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const request = await storage.getRemoteRepairRequest(req.params.id);
+      if (!request) return res.status(404).send("Richiesta non trovata");
+      
+      // Verify ownership
+      if (request.customerId !== req.user.id) {
+        return res.status(403).send("Accesso non autorizzato");
+      }
+      
+      res.json(request);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  app.patch("/api/customer/remote-requests/:id/shipping", requireRole("customer"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const request = await storage.getRemoteRepairRequest(req.params.id);
+      if (!request) return res.status(404).send("Richiesta non trovata");
+      
+      // Verify ownership
+      if (request.customerId !== req.user.id) {
+        return res.status(403).send("Accesso non autorizzato");
+      }
+      
+      // Only allow updating shipping info when status is awaiting_shipment
+      if (request.status !== 'awaiting_shipment') {
+        return res.status(400).send("Impossibile aggiornare la spedizione in questo stato");
+      }
+      
+      const { courierName, trackingNumber } = req.body;
+      
+      const updated = await storage.updateRemoteRepairRequest(req.params.id, {
+        courierName,
+        trackingNumber,
+        shippedAt: new Date(),
+        status: 'in_transit'
+      });
+      
+      setActivityEntity(res, { type: 'remote_repair_requests', id: updated.id });
+      res.json(updated);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // Repair Center endpoints
+  app.get("/api/repair-center/remote-requests", requireRole("repair_center"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      // Get repair center for this user
+      const repairCenters = await storage.listRepairCentersForStaff(req.user.id);
+      const repairCenter = repairCenters[0];
+      
+      if (!repairCenter) return res.status(403).send("Nessun centro di riparazione associato");
+      
+      const requests = await storage.listRemoteRepairRequests({
+        assignedCenterId: repairCenter.id
+      });
+      
+      // Also get requests where this center was requested but not yet assigned
+      const requestedRequests = await storage.listRemoteRepairRequests({
+        requestedCenterId: repairCenter.id
+      });
+      
+      // Merge and deduplicate
+      const allRequests = [...requests];
+      for (const r of requestedRequests) {
+        if (!allRequests.find(ar => ar.id === r.id)) {
+          allRequests.push(r);
+        }
+      }
+      
+      res.json(allRequests);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  app.patch("/api/repair-center/remote-requests/:id/accept", requireRole("repair_center"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const request = await storage.getRemoteRepairRequest(req.params.id);
+      if (!request) return res.status(404).send("Richiesta non trovata");
+      
+      // Verify this center can accept
+      const repairCenters = await storage.listRepairCentersForStaff(req.user.id);
+      const repairCenter = repairCenters[0];
+      
+      if (!repairCenter) return res.status(403).send("Nessun centro di riparazione associato");
+      
+      if (request.assignedCenterId && request.assignedCenterId !== repairCenter.id) {
+        return res.status(403).send("Richiesta assegnata ad un altro centro");
+      }
+      
+      if (request.status !== 'pending' && request.status !== 'assigned') {
+        return res.status(400).send("Impossibile accettare la richiesta in questo stato");
+      }
+      
+      const updated = await storage.updateRemoteRepairRequest(req.params.id, {
+        status: 'accepted',
+        assignedCenterId: repairCenter.id
+      });
+      
+      setActivityEntity(res, { type: 'remote_repair_requests', id: updated.id });
+      res.json(updated);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  app.patch("/api/repair-center/remote-requests/:id/reject", requireRole("repair_center"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const request = await storage.getRemoteRepairRequest(req.params.id);
+      if (!request) return res.status(404).send("Richiesta non trovata");
+      
+      const repairCenters = await storage.listRepairCentersForStaff(req.user.id);
+      const repairCenter = repairCenters[0];
+      
+      if (!repairCenter) return res.status(403).send("Nessun centro di riparazione associato");
+      
+      if (request.status !== 'pending' && request.status !== 'assigned') {
+        return res.status(400).send("Impossibile rifiutare la richiesta in questo stato");
+      }
+      
+      const { rejectionReason } = req.body;
+      
+      const updated = await storage.updateRemoteRepairRequest(req.params.id, {
+        status: 'rejected',
+        rejectionReason
+      });
+      
+      setActivityEntity(res, { type: 'remote_repair_requests', id: updated.id });
+      res.json(updated);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  app.patch("/api/repair-center/remote-requests/:id/ready-for-shipping", requireRole("repair_center"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const request = await storage.getRemoteRepairRequest(req.params.id);
+      if (!request) return res.status(404).send("Richiesta non trovata");
+      
+      const repairCenters = await storage.listRepairCentersForStaff(req.user.id);
+      const repairCenter = repairCenters[0];
+      
+      if (!repairCenter || request.assignedCenterId !== repairCenter.id) {
+        return res.status(403).send("Accesso non autorizzato");
+      }
+      
+      if (request.status !== 'accepted') {
+        return res.status(400).send("La richiesta deve essere accettata prima di richiedere la spedizione");
+      }
+      
+      const { centerNotes, customerAddress, customerCity, customerCap, customerProvince } = req.body;
+      
+      const updated = await storage.updateRemoteRepairRequest(req.params.id, {
+        status: 'awaiting_shipment',
+        centerNotes,
+        customerAddress,
+        customerCity,
+        customerCap,
+        customerProvince
+      });
+      
+      setActivityEntity(res, { type: 'remote_repair_requests', id: updated.id });
+      res.json(updated);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  app.patch("/api/repair-center/remote-requests/:id/received", requireRole("repair_center"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const request = await storage.getRemoteRepairRequest(req.params.id);
+      if (!request) return res.status(404).send("Richiesta non trovata");
+      
+      const repairCenters = await storage.listRepairCentersForStaff(req.user.id);
+      const repairCenter = repairCenters[0];
+      
+      if (!repairCenter || request.assignedCenterId !== repairCenter.id) {
+        return res.status(403).send("Accesso non autorizzato");
+      }
+      
+      if (request.status !== 'in_transit') {
+        return res.status(400).send("La richiesta non è in transito");
+      }
+      
+      const updated = await storage.updateRemoteRepairRequest(req.params.id, {
+        status: 'received',
+        receivedAt: new Date()
+      });
+      
+      setActivityEntity(res, { type: 'remote_repair_requests', id: updated.id });
+      res.json(updated);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // Reseller endpoints
+  app.get("/api/reseller/remote-requests", requireRole("reseller", "sub_reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      let requests;
+      if (req.user.role === 'sub_reseller') {
+        requests = await storage.listRemoteRepairRequests({
+          subResellerId: req.user.id
+        });
+      } else {
+        requests = await storage.listRemoteRepairRequests({
+          resellerId: req.user.id
+        });
+      }
+      
+      res.json(requests);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  app.patch("/api/reseller/remote-requests/:id/assign", requireRole("reseller", "sub_reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const request = await storage.getRemoteRepairRequest(req.params.id);
+      if (!request) return res.status(404).send("Richiesta non trovata");
+      
+      // Verify this reseller can manage this request
+      if (req.user.role === 'sub_reseller') {
+        if (request.subResellerId !== req.user.id) {
+          return res.status(403).send("Accesso non autorizzato");
+        }
+      } else {
+        if (request.resellerId !== req.user.id) {
+          return res.status(403).send("Accesso non autorizzato");
+        }
+      }
+      
+      if (request.status !== 'pending') {
+        return res.status(400).send("La richiesta è già stata gestita");
+      }
+      
+      const { assignedCenterId } = req.body;
+      
+      const updated = await storage.updateRemoteRepairRequest(req.params.id, {
+        status: 'assigned',
+        assignedCenterId
+      });
+      
+      setActivityEntity(res, { type: 'remote_repair_requests', id: updated.id });
+      res.json(updated);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // Admin endpoints
+  app.get("/api/admin/remote-requests", requireRole("admin"), async (req, res) => {
+    try {
+      const requests = await storage.listRemoteRepairRequests();
+      res.json(requests);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  app.get("/api/admin/remote-requests/:id", requireRole("admin"), async (req, res) => {
+    try {
+      const request = await storage.getRemoteRepairRequest(req.params.id);
+      if (!request) return res.status(404).send("Richiesta non trovata");
+      res.json(request);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
   // ============ NOTIFICATIONS ============
   
   app.get("/api/notifications", requireAuth, async (req, res) => {
