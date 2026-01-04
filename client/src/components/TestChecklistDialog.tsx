@@ -219,12 +219,44 @@ export function TestChecklistDialog({
             <Card className="relative overflow-hidden">
               <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-transparent pointer-events-none" />
               <CardHeader className="relative">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <div className="h-6 w-6 rounded-md bg-emerald-500/10 flex items-center justify-center">
-                    <Smartphone className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+                <div className="flex items-center justify-between gap-4">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <div className="h-6 w-6 rounded-md bg-emerald-500/10 flex items-center justify-center">
+                      <Smartphone className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+                    </div>
+                    Test Funzionali
+                  </CardTitle>
+                  <div className="flex gap-2">
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="default"
+                      onClick={() => {
+                        testItems.forEach((item) => {
+                          form.setValue(item.key as any, true);
+                        });
+                      }}
+                      className="gap-1"
+                      data-testid="button-all-ok"
+                    >
+                      <CheckCircle className="h-3 w-3" /> Tutti OK
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="destructive"
+                      onClick={() => {
+                        testItems.forEach((item) => {
+                          form.setValue(item.key as any, false);
+                        });
+                      }}
+                      className="gap-1"
+                      data-testid="button-all-ko"
+                    >
+                      <XCircle className="h-3 w-3" /> Tutti KO
+                    </Button>
                   </div>
-                  Test Funzionali
-                </CardTitle>
+                </div>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-2 gap-4">
