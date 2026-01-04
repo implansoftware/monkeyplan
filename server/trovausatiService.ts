@@ -175,10 +175,19 @@ interface TrovausatiAccessToken {
 export class TrovausatiService {
   private credential: TrovausatiCredential;
   private shopId?: string;
+  private apiType: "resellers" | "stores";
 
-  constructor(credential: TrovausatiCredential, shopId?: string) {
+  constructor(credential: TrovausatiCredential, shopId?: string, apiType?: "resellers" | "stores") {
     this.credential = credential;
     this.shopId = shopId;
+    this.apiType = apiType || credential.apiType;
+  }
+
+  private getApiKey(): string {
+    if (this.apiType === "stores") {
+      return this.credential.storesApiKey || this.credential.apiKey || "";
+    }
+    return this.credential.marketplaceApiKey || this.credential.apiKey || "";
   }
 
   private async request<T>(
@@ -187,9 +196,21 @@ export class TrovausatiService {
     body?: Record<string, any>
   ): Promise<TrovausatiApiResponse<T>> {
     const url = `${TROVAUSATI_BASE_URL}/${endpoint}`;
+    const apiKey = this.getApiKey();
+    
+    if (!apiKey) {
+      return {
+        errors: {
+          code: "401",
+          status: "error",
+          title: "Missing API Key",
+          detail: `Token API ${this.apiType === "stores" ? "Valutatore" : "Marketplace"} non configurato`,
+        },
+      };
+    }
 
     const headers: Record<string, string> = {
-      "X-Authorization": this.credential.apiKey,
+      "X-Authorization": apiKey,
       "Content-Type": "application/json",
       "Accept": "application/vnd.api+json",
     };
@@ -456,6 +477,10 @@ export class TrovausatiService {
   }
 }
 
-export function createTrovausatiService(credential: TrovausatiCredential, shopId?: string): TrovausatiService {
-  return new TrovausatiService(credential, shopId);
+export function createTrovausatiService(
+  credential: TrovausatiCredential, 
+  shopId?: string, 
+  apiType?: "resellers" | "stores"
+): TrovausatiService {
+  return new TrovausatiService(credential, shopId, apiType);
 }

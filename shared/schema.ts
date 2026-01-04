@@ -2244,22 +2244,31 @@ export const trovausatiApiTypeEnum = pgEnum("trovausati_api_type", [
   "stores",      // API per GDS (valutazioni, coupon, scatole)
 ]);
 
-// Credenziali TrovaUsati per Reseller
+// Credenziali TrovaUsati per Reseller (supporta entrambe le API)
 export const trovausatiCredentials = pgTable("trovausati_credentials", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   resellerId: varchar("reseller_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   
-  // Tipo di API
+  // Tipo di API (legacy - mantenuto per compatibilità)
   apiType: trovausatiApiTypeEnum("api_type").notNull().default("resellers"),
   
-  // Credenziali TrovaUsati
-  apiKey: text("api_key").notNull(), // X-Authorization header
-  marketplaceId: text("marketplace_id"), // ID del marketplace (per API resellers)
+  // Credenziali API Marketplace B2B (resellers) - https://trovausati.it/api-docs/resellers.html
+  apiKey: text("api_key"), // Legacy - ora usa marketplaceApiKey
+  marketplaceApiKey: text("marketplace_api_key"), // Token API Marketplace B2B
+  marketplaceId: text("marketplace_id"), // ID del marketplace
   
-  // Stato
+  // Credenziali API Valutatore/Stores (permute) - https://trovausati.it/api-docs/stores.html
+  storesApiKey: text("stores_api_key"), // Token API Valutatore/Stores
+  
+  // Stato Marketplace
   isActive: boolean("is_active").notNull().default(true),
   lastTestAt: timestamp("last_test_at"),
   lastTestResult: text("last_test_result"),
+  
+  // Stato Valutatore
+  storesIsActive: boolean("stores_is_active").notNull().default(false),
+  storesLastTestAt: timestamp("stores_last_test_at"),
+  storesLastTestResult: text("stores_last_test_result"),
   
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
