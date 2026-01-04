@@ -448,7 +448,7 @@ export default function TrovausatiValutatorePage() {
                               <p className="text-xs text-muted-foreground">{condition.description}</p>
                             </div>
                             <span className="font-bold text-lg">
-                              €{(price / 100).toFixed(2)}
+                              €{price.toFixed(2)}
                             </span>
                           </div>
                         );
@@ -461,7 +461,7 @@ export default function TrovausatiValutatorePage() {
                         <AlertDescription>
                           <strong>Supervalutazione disponibile!</strong>
                           <br />
-                          +€{(valuation.attributes.supervaluation.attributes.price / 100).toFixed(2)} - {valuation.attributes.supervaluation.attributes.description}
+                          +€{valuation.attributes.supervaluation.attributes.price.toFixed(2)} - {valuation.attributes.supervaluation.attributes.description}
                         </AlertDescription>
                       </Alert>
                     )}
@@ -489,7 +489,7 @@ export default function TrovausatiValutatorePage() {
                     data-testid="button-emit-coupon"
                   >
                     <Ticket className="h-4 w-4 mr-2" />
-                    Emetti Coupon - €{(getPrice(selectedCondition) / 100).toFixed(2)}
+                    Emetti Coupon - €{getPrice(selectedCondition).toFixed(2)}
                   </Button>
                 </CardFooter>
               )}
@@ -569,7 +569,7 @@ export default function TrovausatiValutatorePage() {
                           </div>
                           <div className="text-right">
                             <p className="text-lg font-bold">
-                              €{(coupon.attributes.value / 100).toFixed(2)}
+                              €{coupon.attributes.value.toFixed(2)}
                             </p>
                             <p className="text-xs text-muted-foreground">
                               {new Date(coupon.attributes.created_at).toLocaleDateString("it-IT")}
@@ -615,7 +615,7 @@ export default function TrovausatiValutatorePage() {
                 <div className="flex justify-between text-lg">
                   <span className="font-semibold">Valore Coupon</span>
                   <span className="font-bold text-primary">
-                    €{(getPrice(selectedCondition) / 100).toFixed(2)}
+                    €{getPrice(selectedCondition).toFixed(2)}
                   </span>
                 </div>
               </div>
@@ -686,7 +686,7 @@ export default function TrovausatiValutatorePage() {
                   </div>
                   <div className="flex justify-between py-2 border-b">
                     <span className="text-muted-foreground">Valore</span>
-                    <span className="font-bold">€{(selectedCoupon.attributes.value / 100).toFixed(2)}</span>
+                    <span className="font-bold">€{selectedCoupon.attributes.value.toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between py-2 border-b">
                     <span className="text-muted-foreground">Dispositivo</span>
