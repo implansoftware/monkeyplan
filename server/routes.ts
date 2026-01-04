@@ -7757,6 +7757,27 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Repair Center Remote Requests - pending count for badge
+  app.get("/api/repair-center/remote-requests/pending-count", requireRole("repair_center"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      // Count requests assigned to this user that need attention (assigned or in_transit)
+      const requests = await storage.listRemoteRepairRequests({
+        assignedCenterId: req.user.id
+      });
+      
+      // Count only requests in states that need action: assigned, in_transit
+      const pendingCount = requests.filter(r => 
+        r.status === 'assigned' || r.status === 'in_transit'
+      ).length;
+      
+      res.json({ count: pendingCount });
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
   // Reseller endpoints
   app.get("/api/reseller/remote-requests", requireRole("reseller", "sub_reseller"), async (req, res) => {
     try {
