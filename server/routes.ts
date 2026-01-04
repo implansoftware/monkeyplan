@@ -16317,6 +16317,142 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // GET /api/trovausati/marketplace/orders - List marketplace orders
+  app.get("/api/trovausati/marketplace/orders", requireAuth, requireRole("admin", "reseller"), async (req, res) => {
+    try {
+      const resellerId = req.user!.role === 'admin' ? req.query.resellerId as string : req.user!.id;
+      if (!resellerId) {
+        return res.status(400).send("Reseller ID required");
+      }
+      
+      const credential = await storage.getTrovausatiCredentialByReseller(resellerId);
+      if (!credential) {
+        return res.status(404).send("Credenziali TrovaUsati non configurate");
+      }
+      
+      const { createTrovausatiService } = await import('./trovausatiService');
+      const service = createTrovausatiService(credential);
+      const orders = await service.getOrders(parseInt(req.query.page as string) || 0);
+      
+      res.json(orders);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // POST /api/trovausati/marketplace/orders - Create marketplace order (alias)
+  app.post("/api/trovausati/marketplace/orders", requireAuth, requireRole("admin", "reseller"), async (req, res) => {
+    try {
+      const resellerId = req.user!.role === 'admin' ? req.body.resellerId : req.user!.id;
+      if (!resellerId) {
+        return res.status(400).send("Reseller ID required");
+      }
+      
+      const credential = await storage.getTrovausatiCredentialByReseller(resellerId);
+      if (!credential) {
+        return res.status(404).send("Credenziali TrovaUsati non configurate");
+      }
+      
+      const { createTrovausatiService } = await import('./trovausatiService');
+      const service = createTrovausatiService(credential);
+      const order = await service.orderProducts(req.body.productIds, req.body.reference);
+      
+      await storage.createTrovausatiOrder({
+        credentialId: credential.id,
+        externalOrderId: order.id.toString(),
+        reference: order.attributes.reference,
+        status: order.attributes.status as any,
+        totalProducts: order.attributes.total_products,
+        totalCents: order.attributes.price,
+        addressData: JSON.stringify(order.attributes.address),
+        productsData: JSON.stringify(order.attributes.products),
+      });
+      
+      res.json(order);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // GET /api/trovausati/models/:id/valuation - Get model valuation prices
+  app.get("/api/trovausati/models/:id/valuation", requireAuth, requireRole("admin", "reseller", "reseller_staff"), async (req, res) => {
+    try {
+      const resellerId = req.user!.role === 'admin' ? req.query.resellerId as string : 
+        (req.user!.role === 'reseller' ? req.user!.id : req.user!.resellerId);
+      if (!resellerId) {
+        return res.status(400).send("Reseller ID required");
+      }
+      
+      const credential = await storage.getTrovausatiCredentialByReseller(resellerId);
+      if (!credential) {
+        return res.status(404).send("Credenziali TrovaUsati non configurate");
+      }
+      
+      const { createTrovausatiService } = await import('./trovausatiService');
+      const service = createTrovausatiService(credential, undefined, "stores");
+      const valuation = await service.getModelValuation(
+        parseInt(req.params.id),
+        req.query.ean as string
+      );
+      
+      res.json(valuation);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // POST /api/trovausati/coupons - Issue a new coupon (GDS)
+  app.post("/api/trovausati/coupons", requireAuth, requireRole("admin", "reseller", "reseller_staff"), async (req, res) => {
+    try {
+      const resellerId = req.user!.role === 'admin' ? req.body.resellerId : 
+        (req.user!.role === 'reseller' ? req.user!.id : req.user!.resellerId);
+      if (!resellerId) {
+        return res.status(400).send("Reseller ID required");
+      }
+      
+      const credential = await storage.getTrovausatiCredentialByReseller(resellerId);
+      if (!credential) {
+        return res.status(404).send("Credenziali TrovaUsati non configurate");
+      }
+      
+      const { modelId, condition, imeiOrSn, shopId, value } = req.body;
+      if (!modelId || !imeiOrSn || !shopId) {
+        return res.status(400).send("Campi obbligatori mancanti: modelId, imeiOrSn, shopId");
+      }
+      
+      // For now, we store the coupon locally since TrovaUsati API might handle this differently
+      // The actual coupon issuance via TrovaUsati would require their specific endpoint
+      const coupon = await storage.createTrovausatiCoupon({
+        credentialId: credential.id,
+        shopId: shopId,
+        modelId: modelId.toString(),
+        imeiOrSn: imeiOrSn,
+        condition: condition || "good",
+        valueCents: value || 0,
+        status: "issued",
+        couponCode: `TU-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`,
+      });
+      
+      // Return in TrovaUsati format for consistency
+      res.json({
+        type: "coupon",
+        id: coupon.id,
+        attributes: {
+          created_at: coupon.createdAt,
+          value: coupon.valueCents,
+          status: coupon.status,
+          coupon_code: coupon.couponCode,
+          brand: "", // Would need model lookup
+          model: "",
+          imei_or_sn: coupon.imeiOrSn,
+          shop_id: coupon.shopId,
+        }
+      });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   // GET /api/trovausati/shops - List TrovaUsati shops
   app.get("/api/trovausati/shops", requireAuth, requireRole("admin", "reseller"), async (req, res) => {
     try {
