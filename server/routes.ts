@@ -16318,9 +16318,10 @@ export function registerRoutes(app: Express): Server {
   });
 
   // GET /api/trovausati/marketplace/orders - List marketplace orders
-  app.get("/api/trovausati/marketplace/orders", requireAuth, requireRole("admin", "reseller"), async (req, res) => {
+  app.get("/api/trovausati/marketplace/orders", requireAuth, requireRole("admin", "reseller", "reseller_staff"), async (req, res) => {
     try {
-      const resellerId = req.user!.role === 'admin' ? req.query.resellerId as string : req.user!.id;
+      const resellerId = req.user!.role === 'admin' ? req.query.resellerId as string : 
+        (req.user!.role === 'reseller' ? req.user!.id : req.user!.resellerId);
       if (!resellerId) {
         return res.status(400).send("Reseller ID required");
       }
@@ -16341,9 +16342,10 @@ export function registerRoutes(app: Express): Server {
   });
 
   // POST /api/trovausati/marketplace/orders - Create marketplace order (alias)
-  app.post("/api/trovausati/marketplace/orders", requireAuth, requireRole("admin", "reseller"), async (req, res) => {
+  app.post("/api/trovausati/marketplace/orders", requireAuth, requireRole("admin", "reseller", "reseller_staff"), async (req, res) => {
     try {
-      const resellerId = req.user!.role === 'admin' ? req.body.resellerId : req.user!.id;
+      const resellerId = req.user!.role === 'admin' ? req.body.resellerId : 
+        (req.user!.role === 'reseller' ? req.user!.id : req.user!.resellerId);
       if (!resellerId) {
         return res.status(400).send("Reseller ID required");
       }

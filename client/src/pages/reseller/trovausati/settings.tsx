@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
+import { useLocation } from "wouter";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -44,6 +45,7 @@ interface TrovausatiShop {
 
 export default function TrovausatiSettingsPage() {
   const { toast } = useToast();
+  const [, navigate] = useLocation();
   const [marketplaceApiKey, setMarketplaceApiKey] = useState("");
   const [storesApiKey, setStoresApiKey] = useState("");
   const [marketplaceId, setMarketplaceId] = useState("");
@@ -660,7 +662,7 @@ export default function TrovausatiSettingsPage() {
                 variant="outline" 
                 className="h-auto py-4 flex flex-col gap-2" 
                 disabled={!hasMarketplaceKey || !credential.isActive}
-                onClick={() => window.location.href = "/reseller/trovausati/marketplace"}
+                onClick={() => navigate("/reseller/trovausati/marketplace")}
                 data-testid="link-marketplace"
               >
                 <ShoppingBag className="h-6 w-6" />
@@ -670,7 +672,7 @@ export default function TrovausatiSettingsPage() {
                 variant="outline" 
                 className="h-auto py-4 flex flex-col gap-2" 
                 disabled={!hasStoresKey || !credential.storesIsActive}
-                onClick={() => window.location.href = "/reseller/trovausati/valutatore"}
+                onClick={() => navigate("/reseller/trovausati/valutatore")}
                 data-testid="link-valuations"
               >
                 <Tag className="h-6 w-6" />
@@ -680,7 +682,7 @@ export default function TrovausatiSettingsPage() {
                 variant="outline" 
                 className="h-auto py-4 flex flex-col gap-2" 
                 disabled={!hasStoresKey || !credential.storesIsActive}
-                onClick={() => window.location.href = "/reseller/trovausati/valutatore"}
+                onClick={() => navigate("/reseller/trovausati/valutatore")}
                 data-testid="link-coupons"
               >
                 <CheckCircle className="h-6 w-6" />
