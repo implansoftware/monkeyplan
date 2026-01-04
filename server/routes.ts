@@ -15018,6 +15018,16 @@ export function registerRoutes(app: Express): Server {
         };
         stats.ticketsByStatus = ticketsByStatus;
         stats.repairsByStatus = repairsByStatus;
+        
+        // Add assigned center and reseller info
+        if (req.user.repairCenterId) {
+          const repairCenter = await storage.getRepairCenter(req.user.repairCenterId);
+          stats.assignedCenter = repairCenter ? { id: repairCenter.id, name: repairCenter.name } : null;
+        }
+        if (req.user.resellerId) {
+          const reseller = await storage.getUser(req.user.resellerId);
+          stats.assignedReseller = reseller ? { id: reseller.id, name: reseller.firstName + ' ' + reseller.lastName, businessName: reseller.businessName } : null;
+        }
       }
       
       res.json(stats);

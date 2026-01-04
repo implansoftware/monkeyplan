@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useQuery } from "@tanstack/react-query";
-import { Wrench, Ticket, CheckCircle, Clock } from "lucide-react";
+import { Wrench, Ticket, CheckCircle, Clock, Building2, Store } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
@@ -26,6 +26,15 @@ type CustomerStats = {
     completed: number;
     cancelled: number;
   };
+  assignedCenter?: {
+    id: string;
+    name: string;
+  } | null;
+  assignedReseller?: {
+    id: string;
+    name: string;
+    businessName?: string;
+  } | null;
 };
 
 const COLORS = ['hsl(var(--chart-1))', 'hsl(var(--chart-2))', 'hsl(var(--chart-3))', 'hsl(var(--chart-4))'];
@@ -92,6 +101,41 @@ export default function CustomerDashboard() {
           </Button>
         </Link>
       </div>
+
+      {/* Assignment Info */}
+      {(stats?.assignedCenter || stats?.assignedReseller) && (
+        <Card data-testid="card-assignment-info">
+          <CardHeader>
+            <CardTitle className="text-lg">I Tuoi Riferimenti</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {stats?.assignedReseller && (
+                <div className="flex items-start gap-3 p-3 rounded-md bg-muted/50">
+                  <Store className="h-5 w-5 text-primary mt-0.5" />
+                  <div>
+                    <p className="text-sm text-muted-foreground">Rivenditore</p>
+                    <p className="font-medium" data-testid="text-assigned-reseller">
+                      {stats.assignedReseller.businessName || stats.assignedReseller.name}
+                    </p>
+                  </div>
+                </div>
+              )}
+              {stats?.assignedCenter && (
+                <div className="flex items-start gap-3 p-3 rounded-md bg-muted/50">
+                  <Building2 className="h-5 w-5 text-primary mt-0.5" />
+                  <div>
+                    <p className="text-sm text-muted-foreground">Centro Riparazioni</p>
+                    <p className="font-medium" data-testid="text-assigned-center">
+                      {stats.assignedCenter.name}
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
