@@ -600,13 +600,26 @@ export default function CustomerRemoteRequests() {
           <form onSubmit={handleShippingSubmit} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="courierName">Nome Corriere</Label>
-              <Input
-                id="courierName"
+              <Select
                 value={shippingInfo.courierName}
-                onChange={(e) => setShippingInfo({ ...shippingInfo, courierName: e.target.value })}
-                placeholder="es. BRT, DHL, GLS..."
-                data-testid="input-courier-name"
-              />
+                onValueChange={(value) => setShippingInfo({ ...shippingInfo, courierName: value })}
+              >
+                <SelectTrigger data-testid="select-courier-name">
+                  <SelectValue placeholder="Seleziona corriere..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="BRT">BRT (Bartolini)</SelectItem>
+                  <SelectItem value="DHL">DHL</SelectItem>
+                  <SelectItem value="GLS">GLS</SelectItem>
+                  <SelectItem value="UPS">UPS</SelectItem>
+                  <SelectItem value="TNT">TNT</SelectItem>
+                  <SelectItem value="FedEx">FedEx</SelectItem>
+                  <SelectItem value="Poste Italiane">Poste Italiane</SelectItem>
+                  <SelectItem value="SDA">SDA</SelectItem>
+                  <SelectItem value="Nexive">Nexive</SelectItem>
+                  <SelectItem value="Altro">Altro</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             <div className="space-y-2">
               <Label htmlFor="trackingNumber">Numero Tracking</Label>
