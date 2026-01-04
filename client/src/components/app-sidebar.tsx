@@ -110,6 +110,7 @@ const menuItems = {
     { title: "Team Admin", url: "/admin/team", icon: UsersRound, group: "Sistema" },
     { title: "Ticket", url: "/admin/tickets", icon: Ticket, group: "Assistenza" },
     { title: "Live Chat", url: "/admin/chat", icon: MessageSquare, group: "Assistenza" },
+    { title: "Richieste Remote", url: "/admin/remote-requests", icon: Send, group: "Assistenza" },
   ],
   admin_staff: [
     { title: "Dashboard", url: "/", icon: LayoutDashboard, group: "Dashboard" },
@@ -195,6 +196,7 @@ const menuItems = {
     { title: "Le Mie Vendite", url: "/reseller/marketplace-sales", icon: TrendingUp, group: "Marketplace P2P" },
     { title: "Ticket", url: "/reseller/tickets", icon: Ticket, group: "Assistenza" },
     { title: "Guide", url: "/reseller/guide", icon: FileText, group: "Assistenza" },
+    { title: "Richieste Remote", url: "/reseller/remote-requests", icon: Send, group: "Assistenza" },
     { title: "Profilo", url: "/profile", icon: UserCircle, group: "Account" },
   ],
   repair_center: [
@@ -221,6 +223,7 @@ const menuItems = {
     { title: "Compensi", url: "/repair-center/utility/commissions", icon: Coins, group: "Utility" },
     { title: "Report Utility", url: "/repair-center/utility/reports", icon: PieChart, group: "Utility" },
     { title: "Ticket", url: "/repair-center/tickets", icon: Ticket, group: "Assistenza" },
+    { title: "Richieste Remote", url: "/repair-center/remote-requests", icon: Send, group: "Assistenza" },
   ],
   customer: [
     { title: "Dashboard", url: "/customer", icon: LayoutDashboard, group: "Principale" },
@@ -228,6 +231,7 @@ const menuItems = {
     { title: "Ordini", url: "/customer/orders", icon: ShoppingCart, group: "Acquisti" },
     { title: "Resi", url: "/customer/sales-returns", icon: RotateCcw, group: "Acquisti" },
     { title: "Ticket", url: "/customer/tickets", icon: Ticket, group: "Assistenza" },
+    { title: "Richieste Remote", url: "/customer/remote-requests", icon: Send, group: "Le mie riparazioni" },
     { title: "Profilo", url: "/customer/profile", icon: UserCircle, group: "Account" },
   ],
 };

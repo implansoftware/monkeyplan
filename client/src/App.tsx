@@ -152,6 +152,7 @@ import RepairCenterUtilityCommissions from "@/pages/repair-center/utility/commis
 import RepairCenterUtilityReports from "@/pages/repair-center/utility/reports";
 import RepairCenterTransferRequests from "@/pages/repair-center/transfer-requests";
 import RepairCenterTransferRequestsOverview from "@/pages/repair-center/transfer-requests-overview";
+import RepairCenterRemoteRequests from "@/pages/repair-center/remote-requests";
 
 // Customer pages
 import CustomerDashboard from "@/pages/customer/dashboard";
@@ -163,6 +164,7 @@ import CustomerInvoices from "@/pages/customer/invoices";
 import CustomerOrders from "@/pages/customer/orders";
 import CustomerSalesReturns from "@/pages/customer/sales-returns";
 import CustomerProfile from "@/pages/customer/profile";
+import CustomerRemoteRequests from "@/pages/customer/remote-requests";
 
 // Shop pages (public)
 import ShopCatalog from "@/pages/shop/catalog";
@@ -191,11 +193,13 @@ import ResellerRCB2BOrders from "@/pages/reseller/rc-b2b-orders";
 import AdminB2BOrders from "@/pages/admin/b2b-orders";
 import AdminRCB2BOrders from "@/pages/admin/rc-b2b-orders";
 import AdminB2BReturns from "@/pages/admin/b2b-returns";
+import AdminRemoteRequests from "@/pages/admin/remote-requests";
 
 // Reseller Marketplace (peer-to-peer)
 import ResellerMarketplace from "@/pages/reseller/marketplace";
 import ResellerMarketplaceOrders from "@/pages/reseller/marketplace-orders";
 import ResellerMarketplaceSales from "@/pages/reseller/marketplace-sales";
+import ResellerRemoteRequests from "@/pages/reseller/remote-requests";
 
 // Transfer requests
 import SubResellerTransferRequests from "@/pages/reseller/sub-reseller-transfer-requests";
@@ -264,6 +268,7 @@ function Router() {
       <ProtectedRoute path="/admin/b2b-orders" component={AdminB2BOrders} />
       <ProtectedRoute path="/admin/rc-b2b-orders" component={AdminRCB2BOrders} />
       <ProtectedRoute path="/admin/b2b-returns" component={AdminB2BReturns} />
+      <ProtectedRoute path="/admin/remote-requests" component={AdminRemoteRequests} />
       
       {/* Reseller routes - accessible by reseller and reseller_staff */}
       <ProtectedRoute path="/reseller" component={ResellerDashboard} allowedRoles={["reseller", "reseller_staff"]} />
@@ -327,6 +332,7 @@ function Router() {
       <ProtectedRoute path="/reseller/marketplace" component={ResellerMarketplace} allowedRoles={["reseller", "reseller_staff"]} />
       <ProtectedRoute path="/reseller/marketplace-orders" component={ResellerMarketplaceOrders} allowedRoles={["reseller", "reseller_staff"]} />
       <ProtectedRoute path="/reseller/marketplace-sales" component={ResellerMarketplaceSales} allowedRoles={["reseller", "reseller_staff"]} />
+      <ProtectedRoute path="/reseller/remote-requests" component={ResellerRemoteRequests} allowedRoles={["reseller", "sub_reseller"]} />
       <ProtectedRoute path="/reseller/sub-transfer-requests" component={SubResellerTransferRequests} allowedRoles={["reseller", "reseller_staff"]} />
       <ProtectedRoute path="/reseller/incoming-transfer-requests" component={IncomingTransferRequests} allowedRoles={["reseller", "reseller_staff"]} />
       <ProtectedRoute path="/reseller/transfer-requests" component={TransferRequests} allowedRoles={["reseller", "reseller_staff"]} />
@@ -358,6 +364,7 @@ function Router() {
       <ProtectedRoute path="/repair-center/utility/reports" component={RepairCenterUtilityReports} />
       <ProtectedRoute path="/repair-center/transfer-requests/overview" component={RepairCenterTransferRequestsOverview} />
       <ProtectedRoute path="/repair-center/transfer-requests" component={RepairCenterTransferRequests} />
+      <ProtectedRoute path="/repair-center/remote-requests" component={RepairCenterRemoteRequests} />
       <ProtectedRoute path="/repair-center/diagnostics" component={DiagnosisList} />
       <ProtectedRoute path="/repair-center/quotes" component={QuotesList} />
       
@@ -372,6 +379,7 @@ function Router() {
       <ProtectedRoute path="/customer/orders" component={CustomerOrders} />
       <ProtectedRoute path="/customer/sales-returns" component={CustomerSalesReturns} />
       <ProtectedRoute path="/customer/profile" component={CustomerProfile} />
+      <ProtectedRoute path="/customer/remote-requests" component={CustomerRemoteRequests} />
       
       {/* Shop admin routes */}
       <ProtectedRoute path="/shop/admin/products/:id" component={ShopAdminProductDetail} />
