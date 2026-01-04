@@ -5374,6 +5374,7 @@ export interface RepairOrderFilters {
   startDate?: string;
   endDate?: string;
   slaSeverity?: string;
+  deviceType?: string;
 }
 
 export interface PaginationParams {

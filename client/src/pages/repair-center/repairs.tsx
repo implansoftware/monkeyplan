@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useState, useEffect, useMemo } from "react";
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Search, Wrench, Plus, LayoutGrid, TableIcon } from "lucide-react";
+import { Search, Wrench, Plus, LayoutGrid, TableIcon, Smartphone, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -24,6 +24,8 @@ type RepairOrder = {
   repairCenterId: string | null;
   deviceType: string;
   deviceModel: string;
+  brand: string | null;
+  imei: string | null;
   issueDescription: string;
   status: string;
   estimatedCost: number | null;
@@ -31,19 +33,100 @@ type RepairOrder = {
   notes: string | null;
   createdAt: string;
   updatedAt: string;
+  customerName?: string | null;
+  slaSeverity?: "in_time" | "late" | "urgent" | null;
 };
+
+interface PaginatedRepairsResponse {
+  data: RepairOrder[];
+  page: number;
+  pageSize: number;
+  total: number;
+  totalPages: number;
+}
 
 export default function RepairCenterRepairs() {
   const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [deviceTypeFilter, setDeviceTypeFilter] = useState<string>("all");
   const [, setLocation] = useLocation();
   const [wizardOpen, setWizardOpen] = useState(false);
   const [viewMode, setViewMode] = useState<"table" | "kanban">("table");
+  const [page, setPage] = useState(1);
+  const [pageSize] = useState(25);
   const { toast } = useToast();
 
-  const { data: repairs = [], isLoading } = useQuery<RepairOrder[]>({
-    queryKey: ["/api/repair-orders"],
+  // Debounce search input
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchQuery);
+      setPage(1);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  // Reset page when filters change
+  useEffect(() => {
+    setPage(1);
+  }, [statusFilter, deviceTypeFilter]);
+
+  // Fetch device types for filter dropdown
+  const { data: deviceTypes = [] } = useQuery<Array<{ id: string; name: string }>>({
+    queryKey: ["/api/device-types"],
   });
+
+  // Paginated query for table view
+  const { data: paginatedData, isLoading: isLoadingTable } = useQuery<PaginatedRepairsResponse>({
+    queryKey: [
+      "/api/repair-center/repairs/paginated",
+      page,
+      pageSize,
+      statusFilter,
+      deviceTypeFilter,
+      debouncedSearch,
+    ],
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      params.append("page", page.toString());
+      params.append("pageSize", pageSize.toString());
+      if (statusFilter !== "all") params.append("status", statusFilter);
+      if (deviceTypeFilter !== "all") params.append("deviceType", deviceTypeFilter);
+      if (debouncedSearch) params.append("search", debouncedSearch);
+      
+      const res = await fetch(`/api/repair-center/repairs/paginated?${params.toString()}`, { credentials: "include" });
+      if (!res.ok) throw new Error("Failed to fetch repairs");
+      return res.json();
+    },
+    enabled: viewMode === "table",
+  });
+
+  // Full dataset query for kanban view
+  const { data: kanbanRepairs = [], isLoading: isLoadingKanban } = useQuery<RepairOrder[]>({
+    queryKey: ["/api/repair-orders"],
+    enabled: viewMode === "kanban",
+  });
+
+  // Apply client-side filtering for kanban
+  const filteredKanbanRepairs = useMemo(() => {
+    return kanbanRepairs.filter((repair) => {
+      const searchLower = debouncedSearch.toLowerCase();
+      const matchesSearch = !debouncedSearch || 
+        repair.orderNumber.toLowerCase().includes(searchLower) ||
+        repair.deviceModel.toLowerCase().includes(searchLower) ||
+        (repair.brand && repair.brand.toLowerCase().includes(searchLower)) ||
+        (repair.imei && repair.imei.toLowerCase().includes(searchLower)) ||
+        (repair.customerName && repair.customerName.toLowerCase().includes(searchLower));
+      const matchesStatus = statusFilter === "all" || repair.status === statusFilter;
+      const matchesDeviceType = deviceTypeFilter === "all" || repair.deviceType === deviceTypeFilter;
+      return matchesSearch && matchesStatus && matchesDeviceType;
+    });
+  }, [kanbanRepairs, debouncedSearch, statusFilter, deviceTypeFilter]);
+
+  const repairs = viewMode === "table" ? (paginatedData?.data || []) : filteredKanbanRepairs;
+  const isLoading = viewMode === "table" ? isLoadingTable : isLoadingKanban;
+  const total = paginatedData?.total || 0;
+  const totalPages = paginatedData?.totalPages || 1;
 
   const updateStatusMutation = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: string }) => {
@@ -52,19 +135,13 @@ export default function RepairCenterRepairs() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/repair-orders"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/repair-center/repairs/paginated"] });
       queryClient.invalidateQueries({ queryKey: ["/api/repair-center/stats"] });
       toast({ title: "Stato aggiornato" });
     },
     onError: (error: Error) => {
       toast({ title: "Errore", description: error.message, variant: "destructive" });
     },
-  });
-
-  const filteredRepairs = repairs.filter((repair) => {
-    const matchesSearch = repair.orderNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      repair.deviceModel.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesStatus = statusFilter === "all" || repair.status === statusFilter;
-    return matchesSearch && matchesStatus;
   });
 
   const getStatusBadge = (status: string) => {
@@ -163,6 +240,20 @@ export default function RepairCenterRepairs() {
                 <SelectItem value="cancelled">Annullato</SelectItem>
               </SelectContent>
             </Select>
+            <Select value={deviceTypeFilter} onValueChange={setDeviceTypeFilter}>
+              <SelectTrigger className="w-[180px]" data-testid="select-filter-device-type">
+                <Smartphone className="h-4 w-4 shrink-0" />
+                <SelectValue placeholder="Tipo dispositivo" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tutti i dispositivi</SelectItem>
+                {deviceTypes.map((type) => (
+                  <SelectItem key={type.id} value={type.name}>
+                    {type.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </CardContent>
       </Card>
@@ -171,13 +262,13 @@ export default function RepairCenterRepairs() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Wrench className="h-5 w-5" />
-            Riparazioni ({filteredRepairs.length})
+            Riparazioni ({viewMode === "table" ? total : repairs.length})
           </CardTitle>
         </CardHeader>
         <CardContent>
           {viewMode === "kanban" ? (
             <RepairsKanbanBoard
-              repairs={filteredRepairs as any}
+              repairs={repairs as any}
               isLoading={isLoading}
               onCardClick={(repairId) => {
                 setLocation(`/repair-center/repairs/${repairId}`);
@@ -189,7 +280,7 @@ export default function RepairCenterRepairs() {
                 <Skeleton key={i} className="h-16 w-full" />
               ))}
             </div>
-          ) : filteredRepairs.length === 0 ? (
+          ) : repairs.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
               Nessuna riparazione trovata
             </div>
@@ -205,7 +296,7 @@ export default function RepairCenterRepairs() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredRepairs.map((repair) => (
+                {repairs.map((repair) => (
                   <TableRow
                     key={repair.id}
                     data-testid={`row-repair-${repair.id}`}
@@ -249,6 +340,51 @@ export default function RepairCenterRepairs() {
             </Table>
           )}
         </CardContent>
+        {viewMode === "table" && totalPages > 1 && (
+          <CardFooter className="flex items-center justify-between border-t pt-4">
+            <div className="text-sm text-muted-foreground">
+              Pagina {page} di {totalPages} ({total} risultati)
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => setPage(1)}
+                disabled={page === 1}
+                data-testid="button-first-page"
+              >
+                <ChevronsLeft className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={page === 1}
+                data-testid="button-prev-page"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                disabled={page === totalPages}
+                data-testid="button-next-page"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => setPage(totalPages)}
+                disabled={page === totalPages}
+                data-testid="button-last-page"
+              >
+                <ChevronsRight className="h-4 w-4" />
+              </Button>
+            </div>
+          </CardFooter>
+        )}
       </Card>
 
       <RepairIntakeWizard

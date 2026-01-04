@@ -3161,6 +3161,7 @@ export function registerRoutes(app: Express): Server {
       if (req.query.priority && req.query.priority !== 'all') filters.priority = req.query.priority;
       if (req.query.repairCenterId && req.query.repairCenterId !== 'all') filters.repairCenterId = req.query.repairCenterId;
       if (req.query.resellerId && req.query.resellerId !== 'all') filters.resellerId = req.query.resellerId;
+      if (req.query.deviceType && req.query.deviceType !== 'all') filters.deviceType = req.query.deviceType;
       if (req.query.search) filters.search = req.query.search;
       if (req.query.startDate) filters.startDate = req.query.startDate;
       if (req.query.endDate) filters.endDate = req.query.endDate;
@@ -4355,6 +4356,7 @@ export function registerRoutes(app: Express): Server {
       
       if (req.query.status && req.query.status !== 'all') filters.status = req.query.status;
       if (req.query.repairCenterId && req.query.repairCenterId !== 'all') filters.repairCenterId = req.query.repairCenterId;
+      if (req.query.deviceType && req.query.deviceType !== 'all') filters.deviceType = req.query.deviceType;
       if (req.query.search) filters.search = req.query.search;
       if (req.query.startDate) filters.startDate = req.query.startDate;
       if (req.query.endDate) filters.endDate = req.query.endDate;
@@ -7087,6 +7089,75 @@ export function registerRoutes(app: Express): Server {
       if (!req.user) return res.status(401).send("Unauthorized");
       const repairs = await storage.listRepairOrders({ repairCenterId: req.user.repairCenterId || undefined });
       res.json(repairs);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // Paginated Repair Orders (Repair Center) - for advanced search and filtering
+  app.get("/api/repair-center/repairs/paginated", requireRole("repair_center"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      if (!req.user.repairCenterId) return res.json({ data: [], page: 1, pageSize: 25, total: 0, totalPages: 0 });
+      
+      const page = parseInt(req.query.page as string) || 1;
+      const pageSize = Math.min(parseInt(req.query.pageSize as string) || 25, 100);
+      
+      const filters: any = { repairCenterId: req.user.repairCenterId };
+      
+      if (req.query.status && req.query.status !== 'all') filters.status = req.query.status;
+      if (req.query.deviceType && req.query.deviceType !== 'all') filters.deviceType = req.query.deviceType;
+      if (req.query.search) filters.search = req.query.search;
+      if (req.query.startDate) filters.startDate = req.query.startDate;
+      if (req.query.endDate) filters.endDate = req.query.endDate;
+      
+      const result = await storage.listRepairOrdersPaginated({ page, pageSize, filters });
+      
+      // Enrich with customer names for display
+      const allUsers = await storage.listUsers();
+      const customersMap = new Map<string, { fullName: string | null; ragioneSociale: string | null }>();
+      
+      allUsers.forEach(u => {
+        if (u.role === 'customer') {
+          customersMap.set(u.id, { fullName: u.fullName, ragioneSociale: u.ragioneSociale });
+        }
+      });
+      
+      // Compute SLA for each order
+      const { loadSLAConfig, computeSLASeverity } = await import("./sla-utils");
+      const slaConfig = await loadSLAConfig();
+      
+      const enrichedData = await Promise.all(result.data.map(async (repair) => {
+        const currentState = await storage.getCurrentRepairOrderState(repair.id);
+        const stateEnteredAt = currentState?.enteredAt || repair.createdAt;
+        const { severity, minutesInState, phase } = computeSLASeverity(repair.status, stateEnteredAt, slaConfig);
+        
+        const customer = repair.customerId ? customersMap.get(repair.customerId) : null;
+        const customerName = customer?.ragioneSociale || customer?.fullName || null;
+        
+        return {
+          ...repair,
+          customerName,
+          slaSeverity: severity,
+          slaMinutesInState: minutesInState,
+          slaPhase: phase,
+          slaEnteredAt: stateEnteredAt.toISOString(),
+        };
+      }));
+      
+      // Apply SLA filter client-side
+      let filteredData = enrichedData;
+      if (req.query.slaSeverity && req.query.slaSeverity !== 'all') {
+        filteredData = enrichedData.filter(r => r.slaSeverity === req.query.slaSeverity);
+      }
+      
+      res.json({
+        data: filteredData,
+        page: result.page,
+        pageSize: result.pageSize,
+        total: result.total,
+        totalPages: result.totalPages,
+      });
     } catch (error: any) {
       res.status(500).send(error.message);
     }

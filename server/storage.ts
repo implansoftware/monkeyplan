@@ -1848,6 +1848,9 @@ export class DatabaseStorage implements IStorage {
       if (filters.customerId) {
         conditions.push(eq(repairOrders.customerId, filters.customerId));
       }
+      if (filters.deviceType && filters.deviceType !== 'all') {
+        conditions.push(eq(repairOrders.deviceType, filters.deviceType));
+      }
       if (filters.startDate) {
         conditions.push(gte(repairOrders.createdAt, new Date(filters.startDate)));
       }
@@ -1864,7 +1867,9 @@ export class DatabaseStorage implements IStorage {
             ilike(repairOrders.deviceModel, searchTerm),
             ilike(repairOrders.brand, searchTerm),
             ilike(repairOrders.serial, searchTerm),
-            ilike(repairOrders.imei, searchTerm)
+            ilike(repairOrders.imei, searchTerm),
+            ilike(repairOrders.deviceType, searchTerm),
+            sql`EXISTS (SELECT 1 FROM users WHERE users.id = ${repairOrders.customerId} AND (LOWER(users.full_name) LIKE ${searchTerm} OR LOWER(users.ragione_sociale) LIKE ${searchTerm}))`
           )
         );
       }

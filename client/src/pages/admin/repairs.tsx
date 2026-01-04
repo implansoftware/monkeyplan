@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Search, Wrench, Download, CalendarIcon, Plus, Stethoscope, Receipt, ClipboardCheck, Package, Play, TestTube, Truck, Eye, Clock, AlertTriangle, AlertCircle, LayoutGrid, TableIcon, Building, Store, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from "lucide-react";
+import { Search, Wrench, Download, CalendarIcon, Plus, Stethoscope, Receipt, ClipboardCheck, Package, Play, TestTube, Truck, Eye, Clock, AlertTriangle, AlertCircle, LayoutGrid, TableIcon, Building, Store, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Smartphone } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -48,6 +48,7 @@ export default function AdminRepairs() {
   const [slaFilter, setSlaFilter] = useState<string>("all");
   const [repairCenterFilter, setRepairCenterFilter] = useState<string>("all");
   const [resellerFilter, setResellerFilter] = useState<string>("all");
+  const [deviceTypeFilter, setDeviceTypeFilter] = useState<string>("all");
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
   const [isExporting, setIsExporting] = useState(false);
   const [wizardOpen, setWizardOpen] = useState(false);
@@ -69,10 +70,15 @@ export default function AdminRepairs() {
   // Reset page when filters change
   useEffect(() => {
     setPage(1);
-  }, [statusFilter, slaFilter, repairCenterFilter, resellerFilter, dateRange]);
+  }, [statusFilter, slaFilter, repairCenterFilter, resellerFilter, deviceTypeFilter, dateRange]);
 
   const { data: repairCenters = [] } = useQuery<RepairCenter[]>({
     queryKey: ["/api/repair-centers"],
+  });
+
+  // Fetch device types for filter dropdown
+  const { data: deviceTypes = [] } = useQuery<Array<{ id: string; name: string }>>({
+    queryKey: ["/api/device-types"],
   });
 
   // Fetch resellers for filter dropdown
@@ -102,6 +108,7 @@ export default function AdminRepairs() {
       slaFilter,
       repairCenterFilter,
       resellerFilter,
+      deviceTypeFilter,
       debouncedSearch,
       dateRange?.from?.toISOString(),
       dateRange?.to?.toISOString(),
@@ -114,6 +121,7 @@ export default function AdminRepairs() {
       if (slaFilter !== "all") params.append("slaSeverity", slaFilter);
       if (repairCenterFilter !== "all") params.append("repairCenterId", repairCenterFilter);
       if (resellerFilter !== "all") params.append("resellerId", resellerFilter);
+      if (deviceTypeFilter !== "all") params.append("deviceType", deviceTypeFilter);
       if (debouncedSearch) params.append("search", debouncedSearch);
       if (dateRange?.from) params.append("startDate", format(dateRange.from, "yyyy-MM-dd"));
       if (dateRange?.to) params.append("endDate", format(dateRange.to, "yyyy-MM-dd"));
@@ -145,11 +153,14 @@ export default function AdminRepairs() {
       const matchesSearch = !debouncedSearch || 
         repair.orderNumber.toLowerCase().includes(searchLower) ||
         repair.deviceModel.toLowerCase().includes(searchLower) ||
+        (repair.brand && repair.brand.toLowerCase().includes(searchLower)) ||
+        (repair.imei && repair.imei.toLowerCase().includes(searchLower)) ||
         (repair.customerName && repair.customerName.toLowerCase().includes(searchLower)) ||
         (repair.resellerName && repair.resellerName.toLowerCase().includes(searchLower));
       const matchesStatus = statusFilter === "all" || repair.status === statusFilter;
       const matchesRepairCenter = repairCenterFilter === "all" || repair.repairCenterId === repairCenterFilter;
       const matchesReseller = resellerFilter === "all" || repair.resellerId === resellerFilter;
+      const matchesDeviceType = deviceTypeFilter === "all" || repair.deviceType === deviceTypeFilter;
       
       let matchesDate = true;
       if (dateRange?.from) {
@@ -160,9 +171,9 @@ export default function AdminRepairs() {
         }
       }
       
-      return matchesSearch && matchesStatus && matchesRepairCenter && matchesReseller && matchesDate;
+      return matchesSearch && matchesStatus && matchesRepairCenter && matchesReseller && matchesDeviceType && matchesDate;
     });
-  }, [kanbanRepairs, debouncedSearch, statusFilter, repairCenterFilter, resellerFilter, dateRange]);
+  }, [kanbanRepairs, debouncedSearch, statusFilter, repairCenterFilter, resellerFilter, deviceTypeFilter, dateRange]);
 
   const repairs = viewMode === "table" ? (paginatedData?.data || []) : filteredKanbanRepairs;
   const totalPages = paginatedData?.totalPages || 1;
@@ -428,6 +439,20 @@ export default function AdminRepairs() {
                 {resellers.map((reseller) => (
                   <SelectItem key={reseller.id} value={reseller.id}>
                     {reseller.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={deviceTypeFilter} onValueChange={setDeviceTypeFilter}>
+              <SelectTrigger className="w-full sm:w-44" data-testid="select-filter-device-type">
+                <Smartphone className="h-4 w-4 shrink-0" />
+                <SelectValue placeholder="Tipo dispositivo" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tutti i dispositivi</SelectItem>
+                {deviceTypes.map((type) => (
+                  <SelectItem key={type.id} value={type.name}>
+                    {type.name}
                   </SelectItem>
                 ))}
               </SelectContent>
