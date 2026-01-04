@@ -127,7 +127,11 @@ export default function CustomerRemoteRequests() {
 
   const handleCreateRequest = (e: React.FormEvent) => {
     e.preventDefault();
-    createMutation.mutate(newRequest);
+    const dataToSend = {
+      ...newRequest,
+      requestedCenterId: newRequest.requestedCenterId === "none" ? "" : newRequest.requestedCenterId,
+    };
+    createMutation.mutate(dataToSend);
   };
 
   const handleShippingSubmit = (e: React.FormEvent) => {
@@ -279,7 +283,7 @@ export default function CustomerRemoteRequests() {
                       <SelectValue placeholder="Nessuna preferenza" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Nessuna preferenza</SelectItem>
+                      <SelectItem value="none">Nessuna preferenza</SelectItem>
                       {repairCenters.map((center) => (
                         <SelectItem key={center.id} value={center.id}>
                           {center.name} - {center.city}
