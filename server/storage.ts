@@ -8061,6 +8061,12 @@ export class DatabaseStorage implements IStorage {
       throw new Error("La lavorazione è già stata creata per questa richiesta");
     }
     
+    // Get the repair center ID from the assigned user (assignedCenterId stores user ID, not repair_center ID)
+    const centerUser = request.assignedCenterId ? await this.getUser(request.assignedCenterId) : null;
+    if (!centerUser?.repairCenterId) {
+      throw new Error("Centro di riparazione non trovato per l'utente assegnato");
+    }
+    
     const count = await db.select().from(repairOrders);
     const orderNumber = `ORD-${Date.now()}-${count.length + 1}`;
     
@@ -8068,7 +8074,7 @@ export class DatabaseStorage implements IStorage {
       orderNumber,
       customerId: request.customerId,
       resellerId: request.resellerId,
-      repairCenterId: request.assignedCenterId,
+      repairCenterId: centerUser.repairCenterId,
       deviceType: request.deviceType,
       deviceModel: request.model,
       brand: request.brand,
