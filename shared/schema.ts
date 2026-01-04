@@ -4042,6 +4042,24 @@ export const insertUserSchema = createInsertSchema(users).omit({
   resellerCategory: z.enum(["standard", "franchising", "gdo"]).nullable().optional(),
 });
 
+// Schema per aggiornamento profilo cliente (self-service)
+export const customerProfileUpdateSchema = z.object({
+  fullName: z.string().min(1, "Nome obbligatorio").optional(),
+  email: z.string().email("Email non valida").optional(),
+  phone: z.string().optional().nullable(),
+  ragioneSociale: z.string().optional().nullable(),
+  partitaIva: z.string().optional().nullable(),
+  codiceFiscale: z.string().optional().nullable(),
+  indirizzo: z.string().optional().nullable(),
+  citta: z.string().optional().nullable(),
+  cap: z.string().optional().nullable(),
+  provincia: z.string().optional().nullable(),
+  pec: z.string().email().optional().nullable().or(z.literal('')),
+  codiceUnivoco: z.string().optional().nullable(),
+});
+
+export type CustomerProfileUpdate = z.infer<typeof customerProfileUpdateSchema>;
+
 export const insertRepairCenterSchema = createInsertSchema(repairCenters).omit({
   id: true,
   createdAt: true,
