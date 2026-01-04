@@ -16095,8 +16095,11 @@ export function registerRoutes(app: Express): Server {
         resellerId,
         apiType: req.body.apiType || "resellers",
         apiKey: req.body.apiKey,
+        marketplaceApiKey: req.body.marketplaceApiKey,
+        storesApiKey: req.body.storesApiKey,
         marketplaceId: req.body.marketplaceId,
         isActive: true,
+        storesIsActive: req.body.storesIsActive ?? false,
       });
       
       res.status(201).json(credential);
@@ -16120,8 +16123,11 @@ export function registerRoutes(app: Express): Server {
       const updated = await storage.updateTrovausatiCredential(req.params.id, {
         apiType: req.body.apiType,
         apiKey: req.body.apiKey,
+        marketplaceApiKey: req.body.marketplaceApiKey,
+        storesApiKey: req.body.storesApiKey,
         marketplaceId: req.body.marketplaceId,
         isActive: req.body.isActive,
+        storesIsActive: req.body.storesIsActive,
       });
       
       res.json(updated);
@@ -16153,6 +16159,8 @@ export function registerRoutes(app: Express): Server {
   app.post("/api/trovausati/test", requireAuth, requireRole("admin", "reseller"), async (req, res) => {
     try {
       const resellerId = req.user!.role === 'admin' ? req.body.resellerId : req.user!.id;
+      const apiType = (req.body.apiType as "resellers" | "stores") || "resellers";
+      
       if (!resellerId) {
         return res.status(400).send("Reseller ID required");
       }
@@ -16162,18 +16170,29 @@ export function registerRoutes(app: Express): Server {
         return res.status(404).send("Credenziali TrovaUsati non configurate");
       }
       
-      if (!credential.isActive) {
-        return res.status(400).json({ success: false, message: "Credenziali disattivate" });
+      if (apiType === "resellers" && !credential.isActive) {
+        return res.status(400).json({ success: false, message: "Credenziali Marketplace disattivate" });
+      }
+      
+      if (apiType === "stores" && !credential.storesIsActive) {
+        return res.status(400).json({ success: false, message: "Credenziali Valutatore disattivate" });
       }
       
       const { createTrovausatiService } = await import('./trovausatiService');
-      const service = createTrovausatiService(credential);
+      const service = createTrovausatiService(credential, undefined, apiType);
       const result = await service.testConnection();
       
-      await storage.updateTrovausatiCredential(credential.id, {
-        lastTestAt: new Date(),
-        lastTestResult: result.success ? "success" : result.message,
-      });
+      if (apiType === "stores") {
+        await storage.updateTrovausatiCredential(credential.id, {
+          storesLastTestAt: new Date(),
+          storesLastTestResult: result.success ? "success" : result.message,
+        });
+      } else {
+        await storage.updateTrovausatiCredential(credential.id, {
+          lastTestAt: new Date(),
+          lastTestResult: result.success ? "success" : result.message,
+        });
+      }
       
       res.json(result);
     } catch (error: any) {

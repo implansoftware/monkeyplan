@@ -4,23 +4,29 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { Settings, Plus, Trash2, CheckCircle, XCircle, Store, Key, RefreshCcw, Loader2, AlertTriangle, ExternalLink } from "lucide-react";
+import { Settings, Plus, Trash2, CheckCircle, XCircle, Store, Key, RefreshCcw, Loader2, AlertTriangle, ExternalLink, ShoppingBag, Tag } from "lucide-react";
 
 interface TrovausatiCredential {
   id: string;
   resellerId: string;
   apiType: "resellers" | "stores";
-  apiKey: string;
+  apiKey: string | null;
+  marketplaceApiKey: string | null;
+  storesApiKey: string | null;
   marketplaceId: string | null;
   isActive: boolean;
+  storesIsActive: boolean;
   lastTestAt: string | null;
   lastTestResult: string | null;
+  storesLastTestAt: string | null;
+  storesLastTestResult: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -38,14 +44,16 @@ interface TrovausatiShop {
 
 export default function TrovausatiSettingsPage() {
   const { toast } = useToast();
-  const [apiKey, setApiKey] = useState("");
-  const [apiType, setApiType] = useState<"resellers" | "stores">("resellers");
+  const [marketplaceApiKey, setMarketplaceApiKey] = useState("");
+  const [storesApiKey, setStoresApiKey] = useState("");
   const [marketplaceId, setMarketplaceId] = useState("");
   const [newShopId, setNewShopId] = useState("");
   const [newShopName, setNewShopName] = useState("");
-  const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
+  const [marketplaceTestResult, setMarketplaceTestResult] = useState<{ success: boolean; message: string } | null>(null);
+  const [storesTestResult, setStoresTestResult] = useState<{ success: boolean; message: string } | null>(null);
   const [showAddShop, setShowAddShop] = useState(false);
   const [showEditCredential, setShowEditCredential] = useState(false);
+  const [editTab, setEditTab] = useState<"marketplace" | "stores">("marketplace");
 
   const { data: credential, isLoading: loadingCredential } = useQuery<TrovausatiCredential | null>({
     queryKey: ["/api/trovausati/credentials"],
@@ -59,15 +67,18 @@ export default function TrovausatiSettingsPage() {
   const saveCredentialsMutation = useMutation({
     mutationFn: async () => {
       const res = await apiRequest("POST", "/api/trovausati/credentials", {
-        apiKey,
-        apiType,
+        marketplaceApiKey: marketplaceApiKey || undefined,
+        storesApiKey: storesApiKey || undefined,
         marketplaceId: marketplaceId || null,
+        isActive: !!marketplaceApiKey,
+        storesIsActive: !!storesApiKey,
       });
       return res.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/trovausati/credentials"] });
-      setApiKey("");
+      setMarketplaceApiKey("");
+      setStoresApiKey("");
       setMarketplaceId("");
       toast({ title: "Credenziali salvate", description: "Le credenziali TrovaUsati sono state configurate" });
     },
@@ -80,15 +91,18 @@ export default function TrovausatiSettingsPage() {
     mutationFn: async () => {
       if (!credential) return;
       const res = await apiRequest("PUT", `/api/trovausati/credentials/${credential.id}`, {
-        apiKey: apiKey || undefined,
-        apiType,
-        marketplaceId: marketplaceId || null,
+        marketplaceApiKey: marketplaceApiKey || undefined,
+        storesApiKey: storesApiKey || undefined,
+        marketplaceId: marketplaceId || credential.marketplaceId,
+        isActive: marketplaceApiKey ? true : credential.isActive,
+        storesIsActive: storesApiKey ? true : credential.storesIsActive,
       });
       return res.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/trovausati/credentials"] });
-      setApiKey("");
+      setMarketplaceApiKey("");
+      setStoresApiKey("");
       setShowEditCredential(false);
       toast({ title: "Credenziali aggiornate", description: "Le credenziali TrovaUsati sono state aggiornate" });
     },
@@ -97,22 +111,59 @@ export default function TrovausatiSettingsPage() {
     },
   });
 
-  const testConnectionMutation = useMutation({
+  const toggleApiMutation = useMutation({
+    mutationFn: async ({ apiType, isActive }: { apiType: "marketplace" | "stores"; isActive: boolean }) => {
+      if (!credential) return;
+      const updates = apiType === "marketplace" 
+        ? { isActive }
+        : { storesIsActive: isActive };
+      const res = await apiRequest("PUT", `/api/trovausati/credentials/${credential.id}`, updates);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/trovausati/credentials"] });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Errore", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const testMarketplaceMutation = useMutation({
     mutationFn: async () => {
-      const res = await apiRequest("POST", "/api/trovausati/test", {});
+      const res = await apiRequest("POST", "/api/trovausati/test", { apiType: "resellers" });
       return res.json();
     },
     onSuccess: (data) => {
-      setTestResult(data);
+      setMarketplaceTestResult(data);
       queryClient.invalidateQueries({ queryKey: ["/api/trovausati/credentials"] });
       if (data.success) {
-        toast({ title: "Connessione riuscita", description: "La connessione a TrovaUsati funziona correttamente" });
+        toast({ title: "Connessione Marketplace riuscita", description: "La connessione al Marketplace B2B funziona" });
       } else {
         toast({ title: "Connessione fallita", description: data.message, variant: "destructive" });
       }
     },
     onError: (error: Error) => {
-      setTestResult({ success: false, message: error.message });
+      setMarketplaceTestResult({ success: false, message: error.message });
+      toast({ title: "Errore", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const testStoresMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest("POST", "/api/trovausati/test", { apiType: "stores" });
+      return res.json();
+    },
+    onSuccess: (data) => {
+      setStoresTestResult(data);
+      queryClient.invalidateQueries({ queryKey: ["/api/trovausati/credentials"] });
+      if (data.success) {
+        toast({ title: "Connessione Valutatore riuscita", description: "La connessione al Valutatore funziona" });
+      } else {
+        toast({ title: "Connessione fallita", description: data.message, variant: "destructive" });
+      }
+    },
+    onError: (error: Error) => {
+      setStoresTestResult({ success: false, message: error.message });
       toast({ title: "Errore", description: error.message, variant: "destructive" });
     },
   });
@@ -158,361 +209,558 @@ export default function TrovausatiSettingsPage() {
     );
   }
 
+  const hasMarketplaceKey = credential?.marketplaceApiKey || credential?.apiKey;
+  const hasStoresKey = credential?.storesApiKey;
+
   return (
     <div className="p-6 space-y-6">
       <div className="flex items-center gap-3">
         <Settings className="h-8 w-8" />
         <div>
           <h1 className="text-2xl font-bold">Configurazione TrovaUsati</h1>
-          <p className="text-muted-foreground">Gestisci le credenziali e i negozi per valutazioni dispositivi e marketplace usato</p>
+          <p className="text-muted-foreground">Gestisci le credenziali per Marketplace B2B e Valutatore dispositivi</p>
         </div>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Key className="h-5 w-5" />
-            Credenziali API
-          </CardTitle>
-          <CardDescription>
-            Inserisci la API Key fornita da TrovaUsati per abilitare l'integrazione con i servizi di valutazione e marketplace
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {credential ? (
-            <>
-              <Alert>
-                <CheckCircle className="h-4 w-4 text-green-600" />
-                <AlertDescription className="flex items-center justify-between">
-                  <span>
-                    Credenziali configurate - Tipo API: <Badge variant="outline">{credential.apiType === "resellers" ? "Rivenditori" : "Negozi/GDS"}</Badge>
-                    {credential.lastTestResult && (
-                      <span className="ml-2">
-                        Ultimo test: <Badge variant={credential.lastTestResult === "success" ? "default" : "destructive"}>{credential.lastTestResult}</Badge>
-                      </span>
-                    )}
-                  </span>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      setApiType(credential.apiType);
-                      setMarketplaceId(credential.marketplaceId || "");
-                      setShowEditCredential(true);
-                    }}
-                    data-testid="button-update-credentials"
-                  >
-                    Modifica
-                  </Button>
-                </AlertDescription>
-              </Alert>
+      {!credential ? (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Key className="h-5 w-5" />
+              Configurazione Iniziale
+            </CardTitle>
+            <CardDescription>
+              Configura le API Key di TrovaUsati. Puoi configurare una o entrambe le API.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <Alert variant="destructive">
+              <AlertTriangle className="h-4 w-4" />
+              <AlertDescription>
+                Nessuna credenziale configurata. Inserisci almeno una API Key per iniziare.
+              </AlertDescription>
+            </Alert>
 
-              <Dialog open={showEditCredential} onOpenChange={setShowEditCredential}>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Modifica Credenziali</DialogTitle>
-                    <DialogDescription>
-                      Aggiorna le credenziali TrovaUsati
-                    </DialogDescription>
-                  </DialogHeader>
-                  <div className="space-y-4 py-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="editApiKey">Nuova API Key (lascia vuoto per mantenere)</Label>
-                      <Input
-                        id="editApiKey"
-                        type="password"
-                        placeholder="Inserisci nuova API Key"
-                        value={apiKey}
-                        onChange={(e) => setApiKey(e.target.value)}
-                        data-testid="input-edit-api-key"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="editApiType">Tipo API</Label>
-                      <Select value={apiType} onValueChange={(v) => setApiType(v as "resellers" | "stores")}>
-                        <SelectTrigger data-testid="select-edit-api-type">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="resellers">Rivenditori (Marketplace/Ordini)</SelectItem>
-                          <SelectItem value="stores">Negozi/GDS (Valutazioni/Coupon)</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="editMarketplaceId">Marketplace ID (opzionale)</Label>
-                      <Input
-                        id="editMarketplaceId"
-                        placeholder="ID del marketplace"
-                        value={marketplaceId}
-                        onChange={(e) => setMarketplaceId(e.target.value)}
-                        data-testid="input-edit-marketplace-id"
-                      />
-                    </div>
-                  </div>
-                  <DialogFooter>
-                    <Button variant="outline" onClick={() => setShowEditCredential(false)}>
-                      Annulla
-                    </Button>
-                    <Button
-                      onClick={() => updateCredentialsMutation.mutate()}
-                      disabled={updateCredentialsMutation.isPending}
-                      data-testid="button-confirm-update-credentials"
-                    >
-                      {updateCredentialsMutation.isPending ? (
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      ) : null}
-                      Aggiorna
-                    </Button>
-                  </DialogFooter>
-                </DialogContent>
-              </Dialog>
-            </>
-          ) : (
-            <>
-              <Alert variant="destructive">
-                <AlertTriangle className="h-4 w-4" />
-                <AlertDescription>
-                  Nessuna credenziale configurata. Inserisci la API Key per iniziare.
-                </AlertDescription>
-              </Alert>
-
-              <div className="grid gap-4 md:grid-cols-2">
+            <div className="grid gap-6 md:grid-cols-2">
+              <div className="space-y-4 p-4 border rounded-lg">
+                <div className="flex items-center gap-2">
+                  <ShoppingBag className="h-5 w-5 text-blue-600" />
+                  <h3 className="font-semibold">Marketplace B2B</h3>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  Per acquisto dispositivi usati e ordini B2B
+                </p>
                 <div className="space-y-2">
-                  <Label htmlFor="apiKey">API Key *</Label>
+                  <Label htmlFor="marketplaceApiKey">Token API Marketplace</Label>
                   <Input
-                    id="apiKey"
+                    id="marketplaceApiKey"
                     type="password"
-                    placeholder="Inserisci la API Key"
-                    value={apiKey}
-                    onChange={(e) => setApiKey(e.target.value)}
-                    data-testid="input-api-key"
+                    placeholder="Inserisci il token API Marketplace"
+                    value={marketplaceApiKey}
+                    onChange={(e) => setMarketplaceApiKey(e.target.value)}
+                    data-testid="input-marketplace-api-key"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-4 p-4 border rounded-lg">
+                <div className="flex items-center gap-2">
+                  <Tag className="h-5 w-5 text-green-600" />
+                  <h3 className="font-semibold">Valutatore / Negozi</h3>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  Per valutazioni dispositivi, coupon e trade-in
+                </p>
+                <div className="space-y-2">
+                  <Label htmlFor="storesApiKey">Token API Valutatore</Label>
+                  <Input
+                    id="storesApiKey"
+                    type="password"
+                    placeholder="Inserisci il token API Valutatore"
+                    value={storesApiKey}
+                    onChange={(e) => setStoresApiKey(e.target.value)}
+                    data-testid="input-stores-api-key"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="marketplaceId">Marketplace ID (opzionale)</Label>
+              <Input
+                id="marketplaceId"
+                placeholder="ID del marketplace se disponibile"
+                value={marketplaceId}
+                onChange={(e) => setMarketplaceId(e.target.value)}
+                data-testid="input-marketplace-id"
+              />
+            </div>
+
+            <Button
+              onClick={() => saveCredentialsMutation.mutate()}
+              disabled={(!marketplaceApiKey && !storesApiKey) || saveCredentialsMutation.isPending}
+              data-testid="button-save-credentials"
+            >
+              {saveCredentialsMutation.isPending ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : null}
+              Salva Credenziali
+            </Button>
+          </CardContent>
+        </Card>
+      ) : (
+        <Tabs defaultValue="marketplace" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="marketplace" className="flex items-center gap-2" data-testid="tab-marketplace">
+              <ShoppingBag className="h-4 w-4" />
+              Marketplace B2B
+              {hasMarketplaceKey && <Badge variant={credential.isActive ? "default" : "secondary"} className="ml-1 text-xs">{credential.isActive ? "ON" : "OFF"}</Badge>}
+            </TabsTrigger>
+            <TabsTrigger value="valutatore" className="flex items-center gap-2" data-testid="tab-valutatore">
+              <Tag className="h-4 w-4" />
+              Valutatore
+              {hasStoresKey && <Badge variant={credential.storesIsActive ? "default" : "secondary"} className="ml-1 text-xs">{credential.storesIsActive ? "ON" : "OFF"}</Badge>}
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="marketplace" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <ShoppingBag className="h-5 w-5 text-blue-600" />
+                    API Marketplace B2B
+                  </div>
+                  {hasMarketplaceKey && (
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-muted-foreground">Attivo</span>
+                      <Switch
+                        checked={credential.isActive}
+                        onCheckedChange={(checked) => toggleApiMutation.mutate({ apiType: "marketplace", isActive: checked })}
+                        data-testid="switch-marketplace-active"
+                      />
+                    </div>
+                  )}
+                </CardTitle>
+                <CardDescription>
+                  Token per acquisto dispositivi usati e gestione ordini B2B sul marketplace TrovaUsati
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {hasMarketplaceKey ? (
+                  <>
+                    <Alert>
+                      <CheckCircle className="h-4 w-4 text-green-600" />
+                      <AlertDescription className="flex items-center justify-between">
+                        <span>
+                          Token Marketplace configurato
+                          {credential.lastTestResult && (
+                            <Badge variant={credential.lastTestResult === "success" ? "default" : "destructive"} className="ml-2">
+                              {credential.lastTestResult === "success" ? "Funzionante" : "Errore"}
+                            </Badge>
+                          )}
+                        </span>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            setEditTab("marketplace");
+                            setShowEditCredential(true);
+                          }}
+                          data-testid="button-update-marketplace"
+                        >
+                          Modifica Token
+                        </Button>
+                      </AlertDescription>
+                    </Alert>
+
+                    <div className="flex gap-2">
+                      <Button
+                        onClick={() => testMarketplaceMutation.mutate()}
+                        disabled={testMarketplaceMutation.isPending || !credential.isActive}
+                        data-testid="button-test-marketplace"
+                      >
+                        {testMarketplaceMutation.isPending ? (
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        ) : (
+                          <RefreshCcw className="h-4 w-4 mr-2" />
+                        )}
+                        Testa Connessione
+                      </Button>
+                    </div>
+
+                    {marketplaceTestResult && (
+                      <Alert variant={marketplaceTestResult.success ? "default" : "destructive"}>
+                        {marketplaceTestResult.success ? (
+                          <CheckCircle className="h-4 w-4 text-green-600" />
+                        ) : (
+                          <XCircle className="h-4 w-4" />
+                        )}
+                        <AlertDescription>{marketplaceTestResult.message}</AlertDescription>
+                      </Alert>
+                    )}
+                  </>
+                ) : (
+                  <Alert>
+                    <AlertTriangle className="h-4 w-4" />
+                    <AlertDescription className="flex items-center justify-between">
+                      <span>Token Marketplace non configurato</span>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setEditTab("marketplace");
+                          setShowEditCredential(true);
+                        }}
+                        data-testid="button-add-marketplace"
+                      >
+                        Configura
+                      </Button>
+                    </AlertDescription>
+                  </Alert>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="valutatore" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Tag className="h-5 w-5 text-green-600" />
+                    API Valutatore / Negozi
+                  </div>
+                  {hasStoresKey && (
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-muted-foreground">Attivo</span>
+                      <Switch
+                        checked={credential.storesIsActive}
+                        onCheckedChange={(checked) => toggleApiMutation.mutate({ apiType: "stores", isActive: checked })}
+                        data-testid="switch-stores-active"
+                      />
+                    </div>
+                  )}
+                </CardTitle>
+                <CardDescription>
+                  Token per valutazioni dispositivi, gestione coupon e operazioni trade-in in negozio
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {hasStoresKey ? (
+                  <>
+                    <Alert>
+                      <CheckCircle className="h-4 w-4 text-green-600" />
+                      <AlertDescription className="flex items-center justify-between">
+                        <span>
+                          Token Valutatore configurato
+                          {credential.storesLastTestResult && (
+                            <Badge variant={credential.storesLastTestResult === "success" ? "default" : "destructive"} className="ml-2">
+                              {credential.storesLastTestResult === "success" ? "Funzionante" : "Errore"}
+                            </Badge>
+                          )}
+                        </span>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            setEditTab("stores");
+                            setShowEditCredential(true);
+                          }}
+                          data-testid="button-update-stores"
+                        >
+                          Modifica Token
+                        </Button>
+                      </AlertDescription>
+                    </Alert>
+
+                    <div className="flex gap-2">
+                      <Button
+                        onClick={() => testStoresMutation.mutate()}
+                        disabled={testStoresMutation.isPending || !credential.storesIsActive}
+                        data-testid="button-test-stores"
+                      >
+                        {testStoresMutation.isPending ? (
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        ) : (
+                          <RefreshCcw className="h-4 w-4 mr-2" />
+                        )}
+                        Testa Connessione
+                      </Button>
+                    </div>
+
+                    {storesTestResult && (
+                      <Alert variant={storesTestResult.success ? "default" : "destructive"}>
+                        {storesTestResult.success ? (
+                          <CheckCircle className="h-4 w-4 text-green-600" />
+                        ) : (
+                          <XCircle className="h-4 w-4" />
+                        )}
+                        <AlertDescription>{storesTestResult.message}</AlertDescription>
+                      </Alert>
+                    )}
+                  </>
+                ) : (
+                  <Alert>
+                    <AlertTriangle className="h-4 w-4" />
+                    <AlertDescription className="flex items-center justify-between">
+                      <span>Token Valutatore non configurato</span>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setEditTab("stores");
+                          setShowEditCredential(true);
+                        }}
+                        data-testid="button-add-stores"
+                      >
+                        Configura
+                      </Button>
+                    </AlertDescription>
+                  </Alert>
+                )}
+              </CardContent>
+            </Card>
+
+            {hasStoresKey && (
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle className="flex items-center gap-2">
+                        <Store className="h-5 w-5" />
+                        Negozi TrovaUsati
+                      </CardTitle>
+                      <CardDescription>
+                        Configura i negozi per le operazioni in-store e coupon
+                      </CardDescription>
+                    </div>
+                    <Dialog open={showAddShop} onOpenChange={setShowAddShop}>
+                      <DialogTrigger asChild>
+                        <Button data-testid="button-add-shop">
+                          <Plus className="h-4 w-4 mr-2" />
+                          Aggiungi
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent>
+                        <DialogHeader>
+                          <DialogTitle>Aggiungi Negozio TrovaUsati</DialogTitle>
+                          <DialogDescription>
+                            Inserisci l'ID del negozio TrovaUsati da associare
+                          </DialogDescription>
+                        </DialogHeader>
+                        <div className="space-y-4 py-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="shopId">Shop ID *</Label>
+                            <Input
+                              id="shopId"
+                              placeholder="Es. 12345"
+                              value={newShopId}
+                              onChange={(e) => setNewShopId(e.target.value)}
+                              data-testid="input-new-shop-id"
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="shopName">Nome negozio (opzionale)</Label>
+                            <Input
+                              id="shopName"
+                              placeholder="Es. Negozio Principale"
+                              value={newShopName}
+                              onChange={(e) => setNewShopName(e.target.value)}
+                              data-testid="input-new-shop-name"
+                            />
+                          </div>
+                        </div>
+                        <DialogFooter>
+                          <Button variant="outline" onClick={() => setShowAddShop(false)}>
+                            Annulla
+                          </Button>
+                          <Button
+                            onClick={() => addShopMutation.mutate()}
+                            disabled={!newShopId || addShopMutation.isPending}
+                            data-testid="button-confirm-add-shop"
+                          >
+                            {addShopMutation.isPending ? (
+                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                            ) : null}
+                            Aggiungi
+                          </Button>
+                        </DialogFooter>
+                      </DialogContent>
+                    </Dialog>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  {loadingShops ? (
+                    <div className="flex items-center justify-center py-8">
+                      <Loader2 className="h-6 w-6 animate-spin" />
+                    </div>
+                  ) : shops.length === 0 ? (
+                    <div className="text-center py-8 text-muted-foreground">
+                      Nessun negozio configurato. Aggiungi un negozio per utilizzare le funzionalità in-store.
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      {shops.map((shop) => (
+                        <div
+                          key={shop.id}
+                          className="flex items-center justify-between p-3 border rounded-md"
+                          data-testid={`shop-item-${shop.id}`}
+                        >
+                          <div className="flex items-center gap-3">
+                            <Store className="h-5 w-5 text-muted-foreground" />
+                            <div>
+                              <div className="font-medium">
+                                {shop.shopName || `Negozio ${shop.shopId}`}
+                              </div>
+                              <div className="text-sm text-muted-foreground">
+                                Shop ID: {shop.shopId}
+                              </div>
+                            </div>
+                            {shop.isActive ? (
+                              <Badge variant="default">Attivo</Badge>
+                            ) : (
+                              <Badge variant="secondary">Disattivo</Badge>
+                            )}
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => deleteShopMutation.mutate(shop.id)}
+                            disabled={deleteShopMutation.isPending}
+                            data-testid={`button-delete-shop-${shop.id}`}
+                          >
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+          </TabsContent>
+        </Tabs>
+      )}
+
+      {credential && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <ExternalLink className="h-5 w-5" />
+              Link Rapidi
+            </CardTitle>
+            <CardDescription>
+              Accedi rapidamente alle funzionalità TrovaUsati
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-4 md:grid-cols-3">
+              <Button 
+                variant="outline" 
+                className="h-auto py-4 flex flex-col gap-2" 
+                disabled={!hasMarketplaceKey || !credential.isActive}
+                data-testid="link-marketplace"
+              >
+                <ShoppingBag className="h-6 w-6" />
+                <span>Marketplace B2B</span>
+              </Button>
+              <Button 
+                variant="outline" 
+                className="h-auto py-4 flex flex-col gap-2" 
+                disabled={!hasStoresKey || !credential.storesIsActive}
+                data-testid="link-valuations"
+              >
+                <Tag className="h-6 w-6" />
+                <span>Valutazioni</span>
+              </Button>
+              <Button 
+                variant="outline" 
+                className="h-auto py-4 flex flex-col gap-2" 
+                disabled={!hasStoresKey || !credential.storesIsActive}
+                data-testid="link-coupons"
+              >
+                <CheckCircle className="h-6 w-6" />
+                <span>Coupon GDS</span>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      <Dialog open={showEditCredential} onOpenChange={setShowEditCredential}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {editTab === "marketplace" ? "Modifica Token Marketplace" : "Modifica Token Valutatore"}
+            </DialogTitle>
+            <DialogDescription>
+              {editTab === "marketplace" 
+                ? "Aggiorna il token API per il Marketplace B2B"
+                : "Aggiorna il token API per il Valutatore/Negozi"}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            {editTab === "marketplace" ? (
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor="editMarketplaceApiKey">Token API Marketplace</Label>
+                  <Input
+                    id="editMarketplaceApiKey"
+                    type="password"
+                    placeholder="Inserisci nuovo token (vuoto = mantieni)"
+                    value={marketplaceApiKey}
+                    onChange={(e) => setMarketplaceApiKey(e.target.value)}
+                    data-testid="input-edit-marketplace-api-key"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="apiType">Tipo API</Label>
-                  <Select value={apiType} onValueChange={(v) => setApiType(v as "resellers" | "stores")}>
-                    <SelectTrigger data-testid="select-api-type">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="resellers">Rivenditori (Marketplace/Ordini)</SelectItem>
-                      <SelectItem value="stores">Negozi/GDS (Valutazioni/Coupon)</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <Label htmlFor="editMarketplaceId">Marketplace ID</Label>
+                  <Input
+                    id="editMarketplaceId"
+                    placeholder="ID marketplace"
+                    value={marketplaceId || credential?.marketplaceId || ""}
+                    onChange={(e) => setMarketplaceId(e.target.value)}
+                    data-testid="input-edit-marketplace-id"
+                  />
                 </div>
-              </div>
-
+              </>
+            ) : (
               <div className="space-y-2">
-                <Label htmlFor="marketplaceId">Marketplace ID (opzionale)</Label>
+                <Label htmlFor="editStoresApiKey">Token API Valutatore</Label>
                 <Input
-                  id="marketplaceId"
-                  placeholder="ID del marketplace (se disponibile)"
-                  value={marketplaceId}
-                  onChange={(e) => setMarketplaceId(e.target.value)}
-                  data-testid="input-marketplace-id"
+                  id="editStoresApiKey"
+                  type="password"
+                  placeholder="Inserisci nuovo token (vuoto = mantieni)"
+                  value={storesApiKey}
+                  onChange={(e) => setStoresApiKey(e.target.value)}
+                  data-testid="input-edit-stores-api-key"
                 />
               </div>
-
-              <Button
-                onClick={() => saveCredentialsMutation.mutate()}
-                disabled={!apiKey || saveCredentialsMutation.isPending}
-                data-testid="button-save-credentials"
-              >
-                {saveCredentialsMutation.isPending ? (
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                ) : null}
-                Salva Credenziali
-              </Button>
-            </>
-          )}
-        </CardContent>
-      </Card>
-
-      {credential && (
-        <>
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <RefreshCcw className="h-5 w-5" />
-                Test Connessione
-              </CardTitle>
-              <CardDescription>
-                Verifica che la connessione a TrovaUsati funzioni correttamente
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <Button
-                onClick={() => testConnectionMutation.mutate()}
-                disabled={testConnectionMutation.isPending}
-                data-testid="button-test-connection"
-              >
-                {testConnectionMutation.isPending ? (
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                ) : (
-                  <RefreshCcw className="h-4 w-4 mr-2" />
-                )}
-                Testa Connessione
-              </Button>
-
-              {testResult && (
-                <Alert variant={testResult.success ? "default" : "destructive"}>
-                  {testResult.success ? (
-                    <CheckCircle className="h-4 w-4 text-green-600" />
-                  ) : (
-                    <XCircle className="h-4 w-4" />
-                  )}
-                  <AlertDescription>{testResult.message}</AlertDescription>
-                </Alert>
-              )}
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle className="flex items-center gap-2">
-                    <Store className="h-5 w-5" />
-                    Negozi TrovaUsati
-                  </CardTitle>
-                  <CardDescription>
-                    Configura i negozi per le operazioni GDS e valutazioni in negozio
-                  </CardDescription>
-                </div>
-                <Dialog open={showAddShop} onOpenChange={setShowAddShop}>
-                  <DialogTrigger asChild>
-                    <Button data-testid="button-add-shop">
-                      <Plus className="h-4 w-4 mr-2" />
-                      Aggiungi
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>Aggiungi Negozio TrovaUsati</DialogTitle>
-                      <DialogDescription>
-                        Inserisci l'ID del negozio TrovaUsati da associare
-                      </DialogDescription>
-                    </DialogHeader>
-                    <div className="space-y-4 py-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="shopId">Shop ID *</Label>
-                        <Input
-                          id="shopId"
-                          placeholder="Es. 12345"
-                          value={newShopId}
-                          onChange={(e) => setNewShopId(e.target.value)}
-                          data-testid="input-new-shop-id"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="shopName">Nome negozio (opzionale)</Label>
-                        <Input
-                          id="shopName"
-                          placeholder="Es. Negozio Principale"
-                          value={newShopName}
-                          onChange={(e) => setNewShopName(e.target.value)}
-                          data-testid="input-new-shop-name"
-                        />
-                      </div>
-                    </div>
-                    <DialogFooter>
-                      <Button variant="outline" onClick={() => setShowAddShop(false)}>
-                        Annulla
-                      </Button>
-                      <Button
-                        onClick={() => addShopMutation.mutate()}
-                        disabled={!newShopId || addShopMutation.isPending}
-                        data-testid="button-confirm-add-shop"
-                      >
-                        {addShopMutation.isPending ? (
-                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                        ) : null}
-                        Aggiungi
-                      </Button>
-                    </DialogFooter>
-                  </DialogContent>
-                </Dialog>
-              </div>
-            </CardHeader>
-            <CardContent>
-              {loadingShops ? (
-                <div className="flex items-center justify-center py-8">
-                  <Loader2 className="h-6 w-6 animate-spin" />
-                </div>
-              ) : shops.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  Nessun negozio configurato. Aggiungi un negozio per utilizzare le funzionalità GDS.
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  {shops.map((shop) => (
-                    <div
-                      key={shop.id}
-                      className="flex items-center justify-between p-3 border rounded-md"
-                      data-testid={`shop-item-${shop.id}`}
-                    >
-                      <div className="flex items-center gap-3">
-                        <Store className="h-5 w-5 text-muted-foreground" />
-                        <div>
-                          <div className="font-medium">
-                            {shop.shopName || `Negozio ${shop.shopId}`}
-                          </div>
-                          <div className="text-sm text-muted-foreground">
-                            Shop ID: {shop.shopId}
-                          </div>
-                        </div>
-                        {shop.isActive ? (
-                          <Badge variant="default">Attivo</Badge>
-                        ) : (
-                          <Badge variant="secondary">Disattivo</Badge>
-                        )}
-                      </div>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => deleteShopMutation.mutate(shop.id)}
-                        disabled={deleteShopMutation.isPending}
-                        data-testid={`button-delete-shop-${shop.id}`}
-                      >
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <ExternalLink className="h-5 w-5" />
-                Link Rapidi
-              </CardTitle>
-              <CardDescription>
-                Accedi rapidamente alle funzionalità TrovaUsati
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid gap-4 md:grid-cols-3">
-                <Button variant="outline" className="h-auto py-4 flex flex-col gap-2" data-testid="link-marketplace">
-                  <Store className="h-6 w-6" />
-                  <span>Marketplace Usato</span>
-                </Button>
-                <Button variant="outline" className="h-auto py-4 flex flex-col gap-2" data-testid="link-valuations">
-                  <Key className="h-6 w-6" />
-                  <span>Valutazioni</span>
-                </Button>
-                <Button variant="outline" className="h-auto py-4 flex flex-col gap-2" data-testid="link-coupons">
-                  <CheckCircle className="h-6 w-6" />
-                  <span>Coupon GDS</span>
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </>
-      )}
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => {
+              setShowEditCredential(false);
+              setMarketplaceApiKey("");
+              setStoresApiKey("");
+              setMarketplaceId("");
+            }}>
+              Annulla
+            </Button>
+            <Button
+              onClick={() => updateCredentialsMutation.mutate()}
+              disabled={updateCredentialsMutation.isPending}
+              data-testid="button-confirm-update-credentials"
+            >
+              {updateCredentialsMutation.isPending ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : null}
+              Aggiorna
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
