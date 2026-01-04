@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -121,10 +121,23 @@ export default function TrovausatiValutatorePage() {
     enabled: !!credential?.storesIsActive,
   });
 
-  const { data: models = [], isLoading: loadingModels, refetch: refetchModels } = useQuery<DeviceModel[]>({
-    queryKey: [`/api/trovausati/models?search=${encodeURIComponent(searchTerm)}`],
-    enabled: !!credential?.storesIsActive && searchTerm.length >= 2,
+  // Load all models once, then filter client-side
+  const { data: allModels = [], isLoading: loadingModels } = useQuery<DeviceModel[]>({
+    queryKey: ["/api/trovausati/models"],
+    enabled: !!credential?.storesIsActive,
+    staleTime: 1000 * 60 * 10, // Cache for 10 minutes
   });
+
+  // Filter models based on search term
+  const models = useMemo(() => {
+    if (searchTerm.length < 2) return [];
+    const term = searchTerm.toLowerCase();
+    return allModels.filter(m => 
+      m.label?.toLowerCase().includes(term) ||
+      m.brand?.toLowerCase().includes(term) ||
+      m.model?.toLowerCase().includes(term)
+    ).slice(0, 50); // Limit to 50 results
+  }, [allModels, searchTerm]);
 
   const { data: couponsData, isLoading: loadingCoupons, refetch: refetchCoupons } = useQuery<{ coupons: Coupon[]; pagination?: any }>({
     queryKey: [`/api/trovausati/coupons?page=${couponPage}&status=${couponStatusFilter}`],
@@ -351,8 +364,7 @@ export default function TrovausatiValutatorePage() {
                         >
                           <Smartphone className="h-4 w-4 mr-2 flex-shrink-0" />
                           <div className="truncate">
-                            <span className="font-medium">{model.brand}</span>
-                            <span className="text-muted-foreground ml-1">{model.model}</span>
+                            <span className="font-medium">{model.label || `${model.brand} ${model.model}`}</span>
                           </div>
                           <ChevronRight className="h-4 w-4 ml-auto flex-shrink-0" />
                         </Button>
