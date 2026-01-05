@@ -13,7 +13,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader2, Check, X, Play, Calendar, Eye, Clock, User, Truck, MapPin, Download, Smartphone } from "lucide-react";
+import { Loader2, Check, X, Play, Calendar, Eye, Clock, User, Truck, MapPin, Download, Smartphone, Banknote, Building } from "lucide-react";
 import type { ServiceOrder, RepairCenter } from "@shared/schema";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
@@ -31,6 +31,17 @@ const statusLabels: Record<string, { label: string; variant: "default" | "second
   in_progress: { label: "In lavorazione", variant: "default" },
   completed: { label: "Completato", variant: "default" },
   cancelled: { label: "Annullato", variant: "destructive" },
+};
+
+const paymentStatusLabels: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
+  pending: { label: "Da pagare", variant: "secondary" },
+  paid: { label: "Pagato", variant: "default" },
+  cancelled: { label: "Annullato", variant: "destructive" },
+};
+
+const paymentMethodLabels: Record<string, { label: string; icon: string }> = {
+  in_person: { label: "In negozio", icon: "banknote" },
+  bank_transfer: { label: "Bonifico", icon: "building" },
 };
 
 export default function ResellerServiceOrders() {
@@ -253,6 +264,7 @@ export default function ResellerServiceOrders() {
                     <TableHead>Dispositivo</TableHead>
                     <TableHead>Consegna</TableHead>
                     <TableHead>Importo</TableHead>
+                    <TableHead>Pagamento</TableHead>
                     <TableHead>Stato</TableHead>
                     <TableHead>Azioni</TableHead>
                   </TableRow>
@@ -299,6 +311,21 @@ export default function ResellerServiceOrders() {
                         )}
                       </TableCell>
                       <TableCell>{formatPrice(order.priceCents)}</TableCell>
+                      <TableCell>
+                        <div className="flex flex-col gap-1">
+                          <div className="flex items-center gap-1 text-xs">
+                            {order.paymentMethod === "bank_transfer" ? (
+                              <Building className="w-3 h-3" />
+                            ) : (
+                              <Banknote className="w-3 h-3" />
+                            )}
+                            <span>{paymentMethodLabels[order.paymentMethod || "in_person"]?.label}</span>
+                          </div>
+                          <Badge variant={paymentStatusLabels[order.paymentStatus || "pending"]?.variant || "secondary"} className="text-xs w-fit">
+                            {paymentStatusLabels[order.paymentStatus || "pending"]?.label}
+                          </Badge>
+                        </div>
+                      </TableCell>
                       <TableCell>
                         <Badge variant={statusLabels[order.status]?.variant || "outline"}>
                           {statusLabels[order.status]?.label || order.status}

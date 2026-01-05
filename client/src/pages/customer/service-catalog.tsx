@@ -11,7 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, ShoppingCart, Search, Wrench, Clock, Check, X, Package, Truck, MapPin, Download } from "lucide-react";
+import { Loader2, ShoppingCart, Search, Wrench, Clock, Check, X, Package, Truck, MapPin, Download, Banknote, Building } from "lucide-react";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import type { ServiceItem, ServiceOrder, DeviceType, DeviceBrand, DeviceModel } from "@shared/schema";
 import { format } from "date-fns";
@@ -60,6 +60,7 @@ export default function CustomerServiceCatalog() {
     serial: "",
     issueDescription: "",
     customerNotes: "",
+    paymentMethod: "in_person" as "in_person" | "bank_transfer",
   });
 
   const { data: catalog, isLoading: catalogLoading } = useQuery<ServiceItemWithPrice[]>({
@@ -104,6 +105,7 @@ export default function CustomerServiceCatalog() {
         serial: "",
         issueDescription: "",
         customerNotes: "",
+        paymentMethod: "in_person",
       });
       toast({ title: "Ordine creato", description: "La tua richiesta è stata inviata al rivenditore" });
       setActiveTab("orders");
@@ -211,6 +213,7 @@ export default function CustomerServiceCatalog() {
       serial: orderForm.serial,
       issueDescription: orderForm.issueDescription,
       customerNotes: orderForm.customerNotes,
+      paymentMethod: orderForm.paymentMethod,
     });
   };
 
@@ -563,6 +566,34 @@ export default function CustomerServiceCatalog() {
                 rows={2}
                 data-testid="textarea-notes"
               />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Metodo di Pagamento</Label>
+              <RadioGroup
+                value={orderForm.paymentMethod}
+                onValueChange={(value: "in_person" | "bank_transfer") => 
+                  setOrderForm({ ...orderForm, paymentMethod: value })
+                }
+                className="flex flex-col gap-2"
+              >
+                <div className="flex items-center space-x-2 p-3 rounded-md border hover-elevate cursor-pointer"
+                     onClick={() => setOrderForm({ ...orderForm, paymentMethod: "in_person" })}>
+                  <RadioGroupItem value="in_person" id="payment-in-person" data-testid="radio-payment-in-person" />
+                  <Banknote className="h-4 w-4 text-muted-foreground" />
+                  <Label htmlFor="payment-in-person" className="cursor-pointer flex-1">
+                    Pagamento in negozio
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-2 p-3 rounded-md border hover-elevate cursor-pointer"
+                     onClick={() => setOrderForm({ ...orderForm, paymentMethod: "bank_transfer" })}>
+                  <RadioGroupItem value="bank_transfer" id="payment-bank-transfer" data-testid="radio-payment-bank-transfer" />
+                  <Building className="h-4 w-4 text-muted-foreground" />
+                  <Label htmlFor="payment-bank-transfer" className="cursor-pointer flex-1">
+                    Bonifico bancario
+                  </Label>
+                </div>
+              </RadioGroup>
             </div>
           </div>
 
