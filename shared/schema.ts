@@ -3222,6 +3222,14 @@ export const tickets = pgTable("tickets", {
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 
+// Ticket attachment type
+export type TicketAttachment = {
+  url: string;
+  filename: string;
+  mimeType: string;
+  size: number;
+};
+
 // Ticket Messages (conversation thread)
 export const ticketMessages = pgTable("ticket_messages", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -3229,6 +3237,7 @@ export const ticketMessages = pgTable("ticket_messages", {
   userId: varchar("user_id").notNull(),
   message: text("message").notNull(),
   isInternal: boolean("is_internal").notNull().default(false),
+  attachments: jsonb("attachments").$type<TicketAttachment[]>().default([]),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
@@ -5016,9 +5025,18 @@ export const updateTicketStatusSchema = z.object({
   status: z.enum(["open", "in_progress", "waiting_response", "resolved", "closed"]),
 });
 
+// Schema for ticket attachments
+export const ticketAttachmentSchema = z.object({
+  url: z.string().url(),
+  filename: z.string(),
+  mimeType: z.string(),
+  size: z.number(),
+});
+
 export const createTicketMessageSchema = z.object({
   message: z.string().min(1).trim(),
   isInternal: z.boolean().optional().default(false),
+  attachments: z.array(ticketAttachmentSchema).optional().default([]),
 });
 
 // Customer Registration Wizard Schemas
