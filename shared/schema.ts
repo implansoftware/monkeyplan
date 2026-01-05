@@ -3093,6 +3093,73 @@ export const serviceItemPrices = pgTable("service_item_prices", {
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 
+// Service Orders (Ordini Interventi da Clienti)
+export const serviceOrderStatusEnum = pgEnum("service_order_status", [
+  "pending",      // In attesa di approvazione
+  "accepted",     // Accettato dal rivenditore
+  "scheduled",    // Appuntamento fissato
+  "in_progress",  // In lavorazione
+  "completed",    // Completato
+  "cancelled",    // Annullato
+]);
+
+export const serviceOrders = pgTable("service_orders", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  orderNumber: text("order_number").notNull().unique(),
+  
+  // Attori
+  customerId: varchar("customer_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  resellerId: varchar("reseller_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  repairCenterId: varchar("repair_center_id").references(() => repairCenters.id, { onDelete: "set null" }),
+  
+  // Servizio richiesto
+  serviceItemId: varchar("service_item_id").notNull().references(() => serviceItems.id, { onDelete: "cascade" }),
+  priceCents: integer("price_cents").notNull(), // Prezzo snapshot al momento dell'ordine
+  
+  // Dispositivo (opzionale - può essere specificato dopo)
+  deviceType: text("device_type"),
+  deviceModelId: varchar("device_model_id").references(() => deviceModels.id),
+  brand: text("brand"),
+  model: text("model"),
+  imei: text("imei"),
+  serial: text("serial"),
+  
+  // Dettagli
+  issueDescription: text("issue_description"),
+  customerNotes: text("customer_notes"),
+  internalNotes: text("internal_notes"),
+  
+  // Stato e tracking
+  status: serviceOrderStatusEnum("status").notNull().default("pending"),
+  
+  // Riparazione collegata (quando completato)
+  repairOrderId: varchar("repair_order_id").references(() => repairOrders.id, { onDelete: "set null" }),
+  
+  // Timestamps
+  acceptedAt: timestamp("accepted_at"),
+  scheduledAt: timestamp("scheduled_at"),
+  completedAt: timestamp("completed_at"),
+  cancelledAt: timestamp("cancelled_at"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export const insertServiceOrderSchema = createInsertSchema(serviceOrders).omit({
+  id: true,
+  orderNumber: true,
+  status: true,
+  repairOrderId: true,
+  acceptedAt: true,
+  scheduledAt: true,
+  completedAt: true,
+  cancelledAt: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type ServiceOrder = typeof serviceOrders.$inferSelect;
+export type InsertServiceOrder = z.infer<typeof insertServiceOrderSchema>;
+
 // Support Tickets
 export const tickets = pgTable("tickets", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
