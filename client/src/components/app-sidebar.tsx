@@ -600,7 +600,7 @@ export function AppSidebar() {
                         {pendingRemoteRequestsCount + pendingTicketsCount}
                       </span>
                     )}
-                    {group === "Assistenza" && rcPendingRemoteRequestsCount > 0 && !isOpen && (
+                    {group === "Lavorazioni" && rcPendingRemoteRequestsCount > 0 && !isOpen && (
                       <span 
                         className="flex h-5 min-w-5 items-center justify-center rounded-full bg-destructive text-destructive-foreground text-xs font-medium px-1.5"
                         data-testid="badge-pending-rc-remote-requests-group"
