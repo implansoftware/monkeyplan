@@ -8525,8 +8525,7 @@ export function registerRoutes(app: Express): Server {
       res.status(500).send(error.message);
     }
   });
-
-  // Reseller: confirm device receipt and create repair order
+  // Reseller: confirm device receipt and create repair order with acceptance
   app.patch("/api/reseller/service-orders/:id/confirm-receipt", requireRole("reseller", "reseller_staff"), async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
@@ -8559,22 +8558,32 @@ export function registerRoutes(app: Express): Server {
         ? `Servizio: ${serviceItem.name} - ${order.issueDescription || 'Nessuna descrizione'}`
         : order.issueDescription || 'Servizio richiesto da catalogo';
       
-      // Create repair order from service order data
-      const repairOrder = await storage.createRepairOrder({
-        customerId: order.customerId,
-        resellerId: order.resellerId,
-        repairCenterId: order.repairCenterId || undefined,
-        deviceType: order.deviceType || 'smartphone',
-        deviceModel: order.model || order.brand || 'Dispositivo',
-        brand: order.brand || undefined,
-        deviceModelId: order.deviceModelId || undefined,
-        imei: order.imei || undefined,
-        serial: order.serial || undefined,
-        issueDescription: issueDescription,
-        status: 'ingressato',
-        notes: order.customerNotes || undefined,
-        ingressatoAt: new Date(),
-      });
+      // Prepare declaredDefects from service order
+      const declaredDefects: string[] = [];
+      if (serviceItem?.name) declaredDefects.push(serviceItem.name);
+      if (order.issueDescription) declaredDefects.push(order.issueDescription);
+      
+      // Create repair order WITH acceptance record
+      const { order: repairOrder, acceptance } = await storage.createRepairWithAcceptance(
+        {
+          customerId: order.customerId,
+          resellerId: order.resellerId,
+          repairCenterId: order.repairCenterId || undefined,
+          deviceType: order.deviceType || 'smartphone',
+          deviceModel: order.model || order.brand || 'Dispositivo',
+          brand: order.brand || undefined,
+          deviceModelId: order.deviceModelId || undefined,
+          imei: order.imei || undefined,
+          serial: order.serial || undefined,
+          issueDescription: issueDescription,
+          notes: order.customerNotes || undefined,
+        },
+        {
+          declaredDefects: declaredDefects.length > 0 ? declaredDefects : ['Da Service Order'],
+          aestheticCondition: 'Non verificato - accettazione automatica',
+          acceptedBy: req.user.id,
+        }
+      );
       
       // Link repair order to service order and update status
       const updated = await storage.updateServiceOrder(req.params.id, {
@@ -8584,11 +8593,12 @@ export function registerRoutes(app: Express): Server {
       });
       
       setActivityEntity(res, { type: 'service_orders', id: updated.id });
-      res.json({ serviceOrder: updated, repairOrder });
+      res.json({ serviceOrder: updated, repairOrder, acceptance });
     } catch (error: any) {
       res.status(500).send(error.message);
     }
   });
+
 
 
   // Reseller: download DDT for service order
