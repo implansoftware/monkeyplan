@@ -1408,6 +1408,70 @@ export function registerRoutes(app: Express): Server {
       res.status(500).send(error.message);
     }
   });
+  // Assign repair centers to a reseller
+  app.patch("/api/admin/resellers/:id/repair-centers", requireRole("admin"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Non autorizzato");
+      
+      const resellerId = req.params.id;
+      const { repairCenterIds } = req.body;
+      
+      if (!Array.isArray(repairCenterIds)) {
+        return res.status(400).send("repairCenterIds deve essere un array");
+      }
+      
+      // Verify reseller exists
+      const reseller = await storage.getUser(resellerId);
+      if (!reseller || reseller.role !== "reseller") {
+        return res.status(404).send("Rivenditore non trovato");
+      }
+      
+      // Get all repair centers
+      const allCenters = await storage.listRepairCenters();
+      
+      // Find centers currently assigned to this reseller
+      const currentlyAssigned = allCenters.filter(c => c.resellerId === resellerId);
+      const currentIds = currentlyAssigned.map(c => c.id);
+      
+      // Centers to unassign (currently assigned but not in new list)
+      const toUnassign = currentIds.filter(id => !repairCenterIds.includes(id));
+      
+      // Centers to assign (in new list but not currently assigned)
+      const toAssign = repairCenterIds.filter((id: string) => !currentIds.includes(id));
+      
+      // Verify all centers to assign exist and are either orphan or already assigned to this reseller
+      for (const centerId of toAssign) {
+        const center = allCenters.find(c => c.id === centerId);
+        if (!center) {
+          return res.status(404).send(`Centro di riparazione ${centerId} non trovato`);
+        }
+        if (center.resellerId && center.resellerId !== resellerId) {
+          return res.status(400).send(`Centro ${center.name} è già assegnato a un altro rivenditore`);
+        }
+      }
+      
+      // Unassign centers
+      for (const centerId of toUnassign) {
+        await storage.updateRepairCenter(centerId, { resellerId: null as any });
+      }
+      
+      // Assign centers
+      for (const centerId of toAssign) {
+        await storage.updateRepairCenter(centerId, { resellerId });
+      }
+      
+      // Return updated list
+      const updatedCenters = await storage.listRepairCenters();
+      const assignedCenters = updatedCenters.filter(c => c.resellerId === resellerId);
+      
+      setActivityEntity(res, { type: 'users', id: resellerId });
+      res.json({ assignedRepairCenters: assignedCenters });
+    } catch (error: any) {
+      console.error("Error assigning repair centers to reseller:", error);
+      res.status(500).send(error.message);
+    }
+  });
+
 
   // ============================================
   // Admin Reseller Team Management

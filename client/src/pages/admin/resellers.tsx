@@ -1,7 +1,7 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Link } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { User, InsertUser } from "@shared/schema";
+import { User, InsertUser, RepairCenter } from "@shared/schema";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -11,20 +11,23 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { Plus, Search, Pencil, Store, Users, UsersRound, Trash2, Building2, Eye, ChevronLeft, ChevronRight, Check, User as UserIcon, KeyRound, FileText, Settings, Upload, Loader2, X } from "lucide-react";
+import { Plus, Search, Pencil, Store, Users, UsersRound, Trash2, Building2, Eye, ChevronLeft, ChevronRight, Check, User as UserIcon, KeyRound, FileText, Settings, Upload, Loader2, X, Wrench } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Switch } from "@/components/ui/switch";
+import { Checkbox } from "@/components/ui/checkbox";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Progress } from "@/components/ui/progress";
 import { AddressAutocomplete } from "@/components/address-autocomplete";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 const WIZARD_STEPS = [
   { id: 1, title: "Credenziali", icon: KeyRound },
   { id: 2, title: "Info Base", icon: UserIcon },
   { id: 3, title: "Dati Fiscali", icon: FileText },
   { id: 4, title: "Configurazione", icon: Settings },
+  { id: 5, title: "Centri Rip.", icon: Wrench },
 ];
 
 export default function AdminResellers() {
@@ -56,6 +59,7 @@ export default function AdminResellers() {
     pec: "",
     iban: "",
   });
+  const [selectedRepairCenterIds, setSelectedRepairCenterIds] = useState<string[]>([]);
   const { toast } = useToast();
 
   type ResellerWithCount = Omit<User, 'password'> & { customerCount: number; staffCount: number; repairCenterCount: number };
@@ -63,6 +67,23 @@ export default function AdminResellers() {
   const { data: resellers = [], isLoading } = useQuery<ResellerWithCount[]>({
     queryKey: ["/api/admin/resellers"],
   });
+
+  const { data: allRepairCenters = [] } = useQuery<RepairCenter[]>({
+    queryKey: ["/api/admin/repair-centers"],
+  });
+
+  const availableRepairCenters = allRepairCenters.filter(rc => 
+    !rc.resellerId || rc.resellerId === editingReseller?.id
+  );
+
+  useEffect(() => {
+    if (editingReseller && allRepairCenters.length > 0) {
+      const assignedCenterIds = allRepairCenters
+        .filter(rc => rc.resellerId === editingReseller.id)
+        .map(rc => rc.id);
+      setSelectedRepairCenterIds(assignedCenterIds);
+    }
+  }, [editingReseller, allRepairCenters]);
 
   const createResellerMutation = useMutation({
     mutationFn: async (data: InsertUser) => {
@@ -94,6 +115,20 @@ export default function AdminResellers() {
     },
     onError: (error: Error) => {
       toast({ title: "Errore", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const assignRepairCentersMutation = useMutation({
+    mutationFn: async ({ resellerId, repairCenterIds }: { resellerId: string; repairCenterIds: string[] }) => {
+      const res = await apiRequest("PATCH", `/api/admin/resellers/${resellerId}/repair-centers`, { repairCenterIds });
+      return await res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/resellers"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/repair-centers"] });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Errore nell'assegnazione centri", description: error.message, variant: "destructive" });
     },
   });
 
@@ -267,6 +302,7 @@ export default function AdminResellers() {
     setAddressData({ indirizzo: "", citta: "", cap: "", provincia: "" });
     setSelectedCategory("standard");
     setSelectedParentResellerId("");
+    setSelectedRepairCenterIds([]);
   };
 
   const getStepsForMode = () => {
@@ -287,6 +323,7 @@ export default function AdminResellers() {
         case 2: return formData.fullName && formData.email;
         case 3: return true;
         case 4: return true;
+        case 5: return true;
         default: return true;
       }
     }
@@ -295,6 +332,7 @@ export default function AdminResellers() {
       case 2: return formData.fullName && formData.email;
       case 3: return true;
       case 4: return true;
+      case 5: return true;
       default: return true;
     }
   };
@@ -323,7 +361,7 @@ export default function AdminResellers() {
     return currentIdx === 0;
   };
 
-  const handleFinalSubmit = () => {
+  const handleFinalSubmit = async () => {
     const parentId = selectedCategory === 'standard' && selectedParentResellerId 
       ? selectedParentResellerId 
       : null;
@@ -350,7 +388,14 @@ export default function AdminResellers() {
         parentResellerId: parentId,
         ...fiscalData,
       };
-      updateResellerMutation.mutate({ id: editingReseller.id, data: updates });
+      updateResellerMutation.mutate({ id: editingReseller.id, data: updates }, {
+        onSuccess: () => {
+          assignRepairCentersMutation.mutate({ 
+            resellerId: editingReseller.id, 
+            repairCenterIds: selectedRepairCenterIds 
+          });
+        }
+      });
     } else {
       const userData: InsertUser = {
         username: formData.username,
@@ -364,7 +409,16 @@ export default function AdminResellers() {
         parentResellerId: parentId,
         ...fiscalData,
       };
-      createResellerMutation.mutate(userData);
+      createResellerMutation.mutate(userData, {
+        onSuccess: (newReseller) => {
+          if (selectedRepairCenterIds.length > 0) {
+            assignRepairCentersMutation.mutate({ 
+              resellerId: newReseller.id, 
+              repairCenterIds: selectedRepairCenterIds 
+            });
+          }
+        }
+      });
     }
   };
 
@@ -712,6 +766,64 @@ export default function AdminResellers() {
                     )}
                   </div>
                 )}
+
+                {wizardStep === 5 && (
+                  <div className="space-y-4">
+                    <p className="text-sm text-muted-foreground">
+                      Seleziona i centri di riparazione da assegnare a questo rivenditore.
+                      Sono disponibili solo i centri non ancora assegnati ad altri rivenditori.
+                    </p>
+                    {availableRepairCenters.length === 0 ? (
+                      <div className="text-center py-6 text-muted-foreground border rounded-md">
+                        <Wrench className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                        <p>Nessun centro di riparazione disponibile</p>
+                        <p className="text-xs mt-1">Tutti i centri sono già assegnati ad altri rivenditori</p>
+                      </div>
+                    ) : (
+                      <ScrollArea className="h-[240px] border rounded-md p-3">
+                        <div className="space-y-2">
+                          {availableRepairCenters.map((center) => (
+                            <div 
+                              key={center.id} 
+                              className="flex items-center gap-3 p-2 hover:bg-muted/50 rounded-md cursor-pointer"
+                              onClick={() => {
+                                setSelectedRepairCenterIds(prev => 
+                                  prev.includes(center.id) 
+                                    ? prev.filter(id => id !== center.id)
+                                    : [...prev, center.id]
+                                );
+                              }}
+                            >
+                              <Checkbox 
+                                checked={selectedRepairCenterIds.includes(center.id)}
+                                onCheckedChange={(checked) => {
+                                  setSelectedRepairCenterIds(prev => 
+                                    checked 
+                                      ? [...prev, center.id]
+                                      : prev.filter(id => id !== center.id)
+                                  );
+                                }}
+                                data-testid={`checkbox-rc-${center.id}`}
+                              />
+                              <div className="flex-1 min-w-0">
+                                <p className="font-medium truncate">{center.name}</p>
+                                <p className="text-xs text-muted-foreground truncate">
+                                  {center.city}{center.provincia ? ` (${center.provincia})` : ''}
+                                </p>
+                              </div>
+                              {center.resellerId === editingReseller?.id && (
+                                <Badge variant="secondary" className="text-xs">Assegnato</Badge>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </ScrollArea>
+                    )}
+                    <p className="text-xs text-muted-foreground">
+                      {selectedRepairCenterIds.length} centro/i selezionato/i
+                    </p>
+                  </div>
+                )}
               </div>
 
               <div className="flex justify-between pt-4 border-t">
@@ -893,6 +1005,10 @@ export default function AdminResellers() {
                             });
                             setSelectedCategory(reseller.resellerCategory || "standard");
                             setSelectedParentResellerId(reseller.parentResellerId || "");
+                            const assignedCenterIds = allRepairCenters
+                              .filter(rc => rc.resellerId === reseller.id)
+                              .map(rc => rc.id);
+                            setSelectedRepairCenterIds(assignedCenterIds);
                             setWizardStep(2);
                             setDialogOpen(true);
                           }}
