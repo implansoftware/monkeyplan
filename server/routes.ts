@@ -4664,6 +4664,9 @@ export function registerRoutes(app: Express): Server {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
+      // Get effective reseller context (for staff, use their reseller's ID)
+      const effectiveResellerId = req.user.role === 'reseller_staff' ? req.user.resellerId : req.user.id;
+      
       const baseSchema = insertUserSchema.pick({
         username: true,
         password: true,
@@ -4682,7 +4685,7 @@ export function registerRoutes(app: Express): Server {
       if (repairCenterIds.length > 0) {
         for (const centerId of repairCenterIds) {
           const center = await storage.getRepairCenter(centerId);
-          if (!center || center.resellerId !== req.user.id) {
+          if (!center || center.resellerId !== effectiveResellerId) {
             return res.status(403).send("Centro di riparazione non autorizzato");
           }
         }
@@ -4699,7 +4702,7 @@ export function registerRoutes(app: Express): Server {
         phone: validatedData.phone,
         isActive: validatedData.isActive,
         role: "customer", // Force customer role
-        resellerId: req.user.id, // Associate with the reseller
+        resellerId: effectiveResellerId, // Associate with the reseller (or staff's reseller)
         repairCenterId: repairCenterIds[0] || null, // Keep first one for backward compatibility
       });
       
@@ -4719,12 +4722,13 @@ export function registerRoutes(app: Express): Server {
   app.patch("/api/reseller/customers/:id", requireRole("reseller", "reseller_staff"), requireModulePermission("customers", "update"), async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
+      const effectiveResellerId = req.user.role === 'reseller_staff' ? req.user.resellerId : req.user.id;
       
       const customerId = req.params.id;
       
       // Verify customer exists and belongs to this reseller
       const existingCustomer = await storage.getUser(customerId);
-      if (!existingCustomer || existingCustomer.role !== "customer" || existingCustomer.resellerId !== req.user.id) {
+      if (!existingCustomer || existingCustomer.role !== "customer" || existingCustomer.resellerId !== effectiveResellerId) {
         return res.status(404).send("Cliente non trovato");
       }
       
@@ -4743,7 +4747,7 @@ export function registerRoutes(app: Express): Server {
       if (repairCenterIds && repairCenterIds.length > 0) {
         for (const centerId of repairCenterIds) {
           const center = await storage.getRepairCenter(centerId);
-          if (!center || center.resellerId !== req.user.id) {
+          if (!center || center.resellerId !== effectiveResellerId) {
             return res.status(403).send("Centro di riparazione non autorizzato");
           }
         }
@@ -4785,12 +4789,13 @@ export function registerRoutes(app: Express): Server {
   app.delete("/api/reseller/customers/:id", requireRole("reseller", "reseller_staff"), requireModulePermission("customers", "delete"), async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
+      const effectiveResellerId = req.user.role === 'reseller_staff' ? req.user.resellerId : req.user.id;
       
       const customerId = req.params.id;
       
       // Verify customer exists and belongs to this reseller
       const existingCustomer = await storage.getUser(customerId);
-      if (!existingCustomer || existingCustomer.role !== "customer" || existingCustomer.resellerId !== req.user.id) {
+      if (!existingCustomer || existingCustomer.role !== "customer" || existingCustomer.resellerId !== effectiveResellerId) {
         return res.status(404).send("Cliente non trovato");
       }
       
