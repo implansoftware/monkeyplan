@@ -8159,6 +8159,146 @@ export function registerRoutes(app: Express): Server {
       res.status(500).send(error.message);
     }
   });
+
+  // Customer: set delivery method for accepted order
+  app.patch("/api/customer/service-orders/:id/set-delivery", requireRole("customer"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const order = await storage.getServiceOrder(req.params.id);
+      if (!order) return res.status(404).send("Ordine non trovato");
+      if (order.customerId !== req.user.id) return res.status(403).send("Accesso non autorizzato");
+      
+      if (!['accepted', 'scheduled'].includes(order.status)) {
+        return res.status(400).send("Il metodo di consegna può essere impostato solo per ordini accettati");
+      }
+      
+      const { deliveryMethod, shippingAddress, shippingCity, shippingCap, shippingProvince, courierName, trackingNumber } = req.body;
+      
+      if (!deliveryMethod || !['in_person', 'shipping'].includes(deliveryMethod)) {
+        return res.status(400).send("Metodo di consegna non valido");
+      }
+      
+      let updateData: any = { deliveryMethod };
+      
+      if (deliveryMethod === 'shipping') {
+        if (!shippingAddress || !shippingCity || !shippingCap || !shippingProvince) {
+          return res.status(400).send("Dati indirizzo spedizione obbligatori");
+        }
+        
+        updateData = {
+          ...updateData,
+          shippingAddress,
+          shippingCity,
+          shippingCap,
+          shippingProvince,
+          courierName: courierName || null,
+          trackingNumber: trackingNumber || null,
+          shippedAt: new Date()
+        };
+        
+        // Generate DDT for shipping
+        const customer = await storage.getUser(req.user.id);
+        const reseller = await storage.getUser(order.resellerId);
+        
+        if (customer && reseller) {
+          const ddtData: TransferDdtData = {
+            documentNumber: `DDT-SVC-${order.orderNumber}`,
+            date: new Date(),
+            sender: {
+              name: customer.fullName || customer.username,
+              address: shippingAddress,
+              city: shippingCity,
+              cap: shippingCap,
+              province: shippingProvince
+            },
+            recipient: {
+              name: reseller.fullName || reseller.username,
+              address: reseller.address || '',
+              city: reseller.city || '',
+              cap: reseller.cap || '',
+              province: reseller.province || ''
+            },
+            items: [{
+              description: `Dispositivo per intervento ${order.orderNumber}`,
+              quantity: 1,
+              unit: 'pz'
+            }],
+            transportReason: 'Consegna per riparazione',
+            carrier: courierName || 'Cliente',
+            notes: `Ordine servizio: ${order.orderNumber}`
+          };
+          
+          const pdfBuffer = await generateTransferDDT(ddtData);
+          const fileName = `ddt-service-${order.orderNumber}-${Date.now()}.pdf`;
+          
+          // Store DDT in object storage
+          const { Storage } = await import("@google-cloud/storage");
+          const gcs = new Storage();
+          const bucketId = process.env.DEFAULT_OBJECT_STORAGE_BUCKET_ID;
+          if (bucketId) {
+            const bucket = gcs.bucket(bucketId);
+            const file = bucket.file(`.private/service-ddt/${fileName}`);
+            await file.save(pdfBuffer, { contentType: 'application/pdf' });
+            const ddtUrl = `.private/service-ddt/${fileName}`;
+            updateData.ddtUrl = ddtUrl;
+          }
+        }
+      }
+      
+      const updated = await storage.updateServiceOrder(req.params.id, updateData);
+      setActivityEntity(res, { type: 'service_orders', id: updated.id });
+      res.json(updated);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // Customer: update shipping tracking info
+  app.patch("/api/customer/service-orders/:id/update-tracking", requireRole("customer"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const order = await storage.getServiceOrder(req.params.id);
+      if (!order) return res.status(404).send("Ordine non trovato");
+      if (order.customerId !== req.user.id) return res.status(403).send("Accesso non autorizzato");
+      
+      if (order.deliveryMethod !== 'shipping') {
+        return res.status(400).send("Tracking disponibile solo per spedizioni");
+      }
+      
+      const { courierName, trackingNumber } = req.body;
+      
+      const updated = await storage.updateServiceOrder(req.params.id, {
+        courierName: courierName || order.courierName,
+        trackingNumber: trackingNumber || order.trackingNumber
+      });
+      
+      res.json(updated);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // Customer: download DDT for shipping
+  app.get("/api/customer/service-orders/:id/ddt", requireRole("customer"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const order = await storage.getServiceOrder(req.params.id);
+      if (!order) return res.status(404).send("Ordine non trovato");
+      if (order.customerId !== req.user.id) return res.status(403).send("Accesso non autorizzato");
+      
+      if (!order.ddtUrl) {
+        return res.status(404).send("DDT non disponibile");
+      }
+      
+      const signedUrl = await getSignedDownloadUrl(order.ddtUrl);
+      res.json({ url: signedUrl });
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
   
   // Reseller: list service orders from their customers
   app.get("/api/reseller/service-orders", requireRole("reseller", "reseller_staff"), async (req, res) => {
@@ -8342,6 +8482,65 @@ export function registerRoutes(app: Express): Server {
       
       setActivityEntity(res, { type: 'service_orders', id: updated.id });
       res.json(updated);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // Reseller: confirm device receipt
+  app.patch("/api/reseller/service-orders/:id/confirm-receipt", requireRole("reseller", "reseller_staff"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      let resellerId = req.user.id;
+      if (req.user.role === 'reseller_staff') {
+        resellerId = (req.user as any).resellerId;
+      }
+      
+      const order = await storage.getServiceOrder(req.params.id);
+      if (!order) return res.status(404).send("Ordine non trovato");
+      if (order.resellerId !== resellerId) return res.status(403).send("Accesso non autorizzato");
+      
+      if (!['accepted', 'scheduled'].includes(order.status)) {
+        return res.status(400).send("L'ordine non è in stato valido per confermare ricezione");
+      }
+      
+      if (!order.deliveryMethod) {
+        return res.status(400).send("Il cliente non ha ancora scelto il metodo di consegna");
+      }
+      
+      const updated = await storage.updateServiceOrder(req.params.id, {
+        deviceReceivedAt: new Date(),
+        status: 'in_progress'
+      });
+      
+      setActivityEntity(res, { type: 'service_orders', id: updated.id });
+      res.json(updated);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // Reseller: download DDT for service order
+  app.get("/api/reseller/service-orders/:id/ddt", requireRole("reseller", "reseller_staff"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      let resellerId = req.user.id;
+      if (req.user.role === 'reseller_staff') {
+        resellerId = (req.user as any).resellerId;
+      }
+      
+      const order = await storage.getServiceOrder(req.params.id);
+      if (!order) return res.status(404).send("Ordine non trovato");
+      if (order.resellerId !== resellerId) return res.status(403).send("Accesso non autorizzato");
+      
+      if (!order.ddtUrl) {
+        return res.status(404).send("DDT non disponibile");
+      }
+      
+      const signedUrl = await getSignedDownloadUrl(order.ddtUrl);
+      res.json({ url: signedUrl });
     } catch (error: any) {
       res.status(500).send(error.message);
     }

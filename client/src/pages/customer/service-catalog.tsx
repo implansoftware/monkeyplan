@@ -11,7 +11,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, ShoppingCart, Search, Wrench, Clock, Check, X, Package } from "lucide-react";
+import { Loader2, ShoppingCart, Search, Wrench, Clock, Check, X, Package, Truck, MapPin, Download } from "lucide-react";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import type { ServiceItem, ServiceOrder, DeviceType, DeviceBrand, DeviceModel } from "@shared/schema";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
@@ -38,6 +39,17 @@ export default function CustomerServiceCatalog() {
   const [selectedService, setSelectedService] = useState<ServiceItemWithPrice | null>(null);
   const [isOrderDialogOpen, setIsOrderDialogOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<"catalog" | "orders">("catalog");
+  const [isDeliveryDialogOpen, setIsDeliveryDialogOpen] = useState(false);
+  const [selectedOrderForDelivery, setSelectedOrderForDelivery] = useState<ServiceOrder | null>(null);
+  const [deliveryForm, setDeliveryForm] = useState({
+    deliveryMethod: "in_person" as "in_person" | "shipping",
+    shippingAddress: "",
+    shippingCity: "",
+    shippingCap: "",
+    shippingProvince: "",
+    courierName: "",
+    trackingNumber: "",
+  });
 
   const [orderForm, setOrderForm] = useState({
     deviceType: "",
@@ -114,6 +126,63 @@ export default function CustomerServiceCatalog() {
       toast({ title: "Errore", description: error.message, variant: "destructive" });
     },
   });
+
+  const setDeliveryMutation = useMutation({
+    mutationFn: async ({ orderId, data }: { orderId: string; data: any }) => {
+      const res = await apiRequest("PATCH", `/api/customer/service-orders/${orderId}/set-delivery`, data);
+      return await res.json();
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/customer/service-orders"] });
+      setIsDeliveryDialogOpen(false);
+      setSelectedOrderForDelivery(null);
+      setDeliveryForm({
+        deliveryMethod: "in_person",
+        shippingAddress: "",
+        shippingCity: "",
+        shippingCap: "",
+        shippingProvince: "",
+        courierName: "",
+        trackingNumber: "",
+      });
+      if (data.deliveryMethod === "shipping") {
+        toast({ title: "Spedizione confermata", description: "DDT generato. Puoi scaricarlo dalla scheda ordine." });
+      } else {
+        toast({ title: "Consegna di persona confermata", description: "Porta il dispositivo al rivenditore." });
+      }
+    },
+    onError: (error: Error) => {
+      toast({ title: "Errore", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const downloadDdtMutation = useMutation({
+    mutationFn: async (orderId: string) => {
+      const res = await apiRequest("GET", `/api/customer/service-orders/${orderId}/ddt`);
+      return await res.json();
+    },
+    onSuccess: (data) => {
+      if (data.url) {
+        window.open(data.url, "_blank");
+      }
+    },
+    onError: (error: Error) => {
+      toast({ title: "Errore", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const handleSetDelivery = (order: ServiceOrder) => {
+    setSelectedOrderForDelivery(order);
+    setIsDeliveryDialogOpen(true);
+  };
+
+  const handleSubmitDelivery = () => {
+    if (!selectedOrderForDelivery) return;
+    setDeliveryMutation.mutate({
+      orderId: selectedOrderForDelivery.id,
+      data: deliveryForm
+    });
+  };
 
   const filteredCatalog = (catalog || []).filter(item =>
     item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -296,8 +365,31 @@ export default function CustomerServiceCatalog() {
                         {format(new Date(order.scheduledAt), "dd MMM yyyy HH:mm", { locale: it })}
                       </p>
                     )}
-                    {order.status === "pending" && (
-                      <div className="pt-2">
+                    
+                    {order.deliveryMethod && (
+                      <div className="pt-2 border-t mt-2">
+                        <p className="text-sm font-medium flex items-center gap-2">
+                          {order.deliveryMethod === "shipping" ? (
+                            <><Truck className="w-4 h-4" /> Spedizione</>
+                          ) : (
+                            <><MapPin className="w-4 h-4" /> Consegna di persona</>
+                          )}
+                        </p>
+                        {order.deliveryMethod === "shipping" && order.trackingNumber && (
+                          <p className="text-sm text-muted-foreground">
+                            Tracking: {order.trackingNumber}
+                          </p>
+                        )}
+                        {order.deviceReceivedAt && (
+                          <Badge variant="default" className="mt-1">
+                            <Check className="w-3 h-3 mr-1" /> Dispositivo ricevuto
+                          </Badge>
+                        )}
+                      </div>
+                    )}
+                    
+                    <div className="pt-2 flex flex-wrap gap-2">
+                      {order.status === "pending" && (
                         <Button
                           variant="destructive"
                           size="sm"
@@ -312,8 +404,36 @@ export default function CustomerServiceCatalog() {
                           )}
                           Annulla
                         </Button>
-                      </div>
-                    )}
+                      )}
+                      
+                      {["accepted", "scheduled"].includes(order.status) && !order.deliveryMethod && (
+                        <Button
+                          size="sm"
+                          onClick={() => handleSetDelivery(order)}
+                          data-testid={`button-set-delivery-${order.id}`}
+                        >
+                          <Truck className="w-4 h-4 mr-2" />
+                          Scegli come consegnare
+                        </Button>
+                      )}
+                      
+                      {order.ddtUrl && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => downloadDdtMutation.mutate(order.id)}
+                          disabled={downloadDdtMutation.isPending}
+                          data-testid={`button-download-ddt-${order.id}`}
+                        >
+                          {downloadDdtMutation.isPending ? (
+                            <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                          ) : (
+                            <Download className="w-4 h-4 mr-2" />
+                          )}
+                          Scarica DDT
+                        </Button>
+                      )}
+                    </div>
                   </CardContent>
                 </Card>
               ))}
@@ -461,6 +581,147 @@ export default function CustomerServiceCatalog() {
                 <Check className="w-4 h-4 mr-2" />
               )}
               Conferma Ordine
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isDeliveryDialogOpen} onOpenChange={setIsDeliveryDialogOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Come vuoi consegnare il dispositivo?</DialogTitle>
+            <DialogDescription>
+              {selectedOrderForDelivery && (
+                <>Ordine {selectedOrderForDelivery.orderNumber}</>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-6">
+            <RadioGroup
+              value={deliveryForm.deliveryMethod}
+              onValueChange={(value: "in_person" | "shipping") => 
+                setDeliveryForm({ ...deliveryForm, deliveryMethod: value })
+              }
+            >
+              <div className="flex items-start space-x-3 p-4 border rounded-lg cursor-pointer hover-elevate">
+                <RadioGroupItem value="in_person" id="in_person" />
+                <div className="flex-1">
+                  <Label htmlFor="in_person" className="cursor-pointer font-medium flex items-center gap-2">
+                    <MapPin className="w-4 h-4" />
+                    Consegno di persona
+                  </Label>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Porta il dispositivo direttamente al rivenditore
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-start space-x-3 p-4 border rounded-lg cursor-pointer hover-elevate">
+                <RadioGroupItem value="shipping" id="shipping" />
+                <div className="flex-1">
+                  <Label htmlFor="shipping" className="cursor-pointer font-medium flex items-center gap-2">
+                    <Truck className="w-4 h-4" />
+                    Spedisco il dispositivo
+                  </Label>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Spedisci via corriere e ricevi un DDT automatico
+                  </p>
+                </div>
+              </div>
+            </RadioGroup>
+
+            {deliveryForm.deliveryMethod === "shipping" && (
+              <div className="space-y-4 border-t pt-4">
+                <h4 className="font-medium">Indirizzo di partenza</h4>
+                
+                <div className="space-y-2">
+                  <Label>Indirizzo *</Label>
+                  <Input
+                    value={deliveryForm.shippingAddress}
+                    onChange={(e) => setDeliveryForm({ ...deliveryForm, shippingAddress: e.target.value })}
+                    placeholder="Via/Piazza e numero civico"
+                    data-testid="input-shipping-address"
+                  />
+                </div>
+
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="space-y-2">
+                    <Label>Città *</Label>
+                    <Input
+                      value={deliveryForm.shippingCity}
+                      onChange={(e) => setDeliveryForm({ ...deliveryForm, shippingCity: e.target.value })}
+                      placeholder="Città"
+                      data-testid="input-shipping-city"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>CAP *</Label>
+                    <Input
+                      value={deliveryForm.shippingCap}
+                      onChange={(e) => setDeliveryForm({ ...deliveryForm, shippingCap: e.target.value })}
+                      placeholder="00000"
+                      data-testid="input-shipping-cap"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Provincia *</Label>
+                    <Input
+                      value={deliveryForm.shippingProvince}
+                      onChange={(e) => setDeliveryForm({ ...deliveryForm, shippingProvince: e.target.value })}
+                      placeholder="XX"
+                      maxLength={2}
+                      data-testid="input-shipping-province"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-2">
+                    <Label>Corriere (opzionale)</Label>
+                    <Input
+                      value={deliveryForm.courierName}
+                      onChange={(e) => setDeliveryForm({ ...deliveryForm, courierName: e.target.value })}
+                      placeholder="Nome corriere"
+                      data-testid="input-courier-name"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Tracking (opzionale)</Label>
+                    <Input
+                      value={deliveryForm.trackingNumber}
+                      onChange={(e) => setDeliveryForm({ ...deliveryForm, trackingNumber: e.target.value })}
+                      placeholder="Numero tracking"
+                      data-testid="input-tracking-number"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsDeliveryDialogOpen(false)}>
+              Annulla
+            </Button>
+            <Button
+              onClick={handleSubmitDelivery}
+              disabled={setDeliveryMutation.isPending || (
+                deliveryForm.deliveryMethod === "shipping" && (
+                  !deliveryForm.shippingAddress || 
+                  !deliveryForm.shippingCity || 
+                  !deliveryForm.shippingCap || 
+                  !deliveryForm.shippingProvince
+                )
+              )}
+              data-testid="button-confirm-delivery"
+            >
+              {setDeliveryMutation.isPending ? (
+                <Loader2 className="w-4 h-4 animate-spin mr-2" />
+              ) : (
+                <Check className="w-4 h-4 mr-2" />
+              )}
+              Conferma
             </Button>
           </DialogFooter>
         </DialogContent>

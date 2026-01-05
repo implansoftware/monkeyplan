@@ -13,7 +13,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader2, Check, X, Play, Calendar, Eye, Clock, User } from "lucide-react";
+import { Loader2, Check, X, Play, Calendar, Eye, Clock, User, Truck, MapPin, Package, Download } from "lucide-react";
 import type { ServiceOrder, RepairCenter } from "@shared/schema";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
@@ -114,6 +114,35 @@ export default function ResellerServiceOrders() {
     },
   });
 
+  const confirmReceiptMutation = useMutation({
+    mutationFn: async (orderId: string) => {
+      const res = await apiRequest("PATCH", `/api/reseller/service-orders/${orderId}/confirm-receipt`);
+      return await res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/reseller/service-orders"] });
+      toast({ title: "Ricezione confermata", description: "Dispositivo ricevuto, lavorazione avviata" });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Errore", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const downloadDdtMutation = useMutation({
+    mutationFn: async (orderId: string) => {
+      const res = await apiRequest("GET", `/api/reseller/service-orders/${orderId}/ddt`);
+      return await res.json();
+    },
+    onSuccess: (data) => {
+      if (data.url) {
+        window.open(data.url, "_blank");
+      }
+    },
+    onError: (error: Error) => {
+      toast({ title: "Errore", description: error.message, variant: "destructive" });
+    },
+  });
+
   const formatPrice = (cents: number) => {
     return (cents / 100).toLocaleString("it-IT", { style: "currency", currency: "EUR" });
   };
@@ -205,8 +234,8 @@ export default function ResellerServiceOrders() {
                     <TableHead>Cliente</TableHead>
                     <TableHead>Servizio</TableHead>
                     <TableHead>Dispositivo</TableHead>
+                    <TableHead>Consegna</TableHead>
                     <TableHead>Importo</TableHead>
-                    <TableHead>Data</TableHead>
                     <TableHead>Stato</TableHead>
                     <TableHead>Azioni</TableHead>
                   </TableRow>
@@ -234,10 +263,25 @@ export default function ResellerServiceOrders() {
                           <span className="text-muted-foreground">-</span>
                         )}
                       </TableCell>
-                      <TableCell>{formatPrice(order.priceCents)}</TableCell>
                       <TableCell>
-                        {format(new Date(order.createdAt), "dd/MM/yy HH:mm", { locale: it })}
+                        {order.deliveryMethod ? (
+                          <div className="flex items-center gap-1">
+                            {order.deliveryMethod === "shipping" ? (
+                              <><Truck className="w-3 h-3" /> Spedizione</>
+                            ) : (
+                              <><MapPin className="w-3 h-3" /> Di persona</>
+                            )}
+                            {order.deviceReceivedAt && (
+                              <Badge variant="outline" className="ml-1 text-xs">
+                                <Check className="w-2 h-2 mr-1" />Ricevuto
+                              </Badge>
+                            )}
+                          </div>
+                        ) : (
+                          <span className="text-muted-foreground text-xs">In attesa</span>
+                        )}
                       </TableCell>
+                      <TableCell>{formatPrice(order.priceCents)}</TableCell>
                       <TableCell>
                         <Badge variant={statusLabels[order.status]?.variant || "outline"}>
                           {statusLabels[order.status]?.label || order.status}
@@ -279,15 +323,30 @@ export default function ResellerServiceOrders() {
                             </>
                           )}
 
-                          {(order.status === "accepted" || order.status === "scheduled") && (
+                          {(order.status === "accepted" || order.status === "scheduled") && order.deliveryMethod && !order.deviceReceivedAt && (
                             <Button
                               variant="ghost"
                               size="icon"
-                              onClick={() => startMutation.mutate(order.id)}
-                              disabled={startMutation.isPending}
-                              data-testid={`button-start-${order.id}`}
+                              onClick={() => confirmReceiptMutation.mutate(order.id)}
+                              disabled={confirmReceiptMutation.isPending}
+                              title="Conferma ricezione dispositivo"
+                              data-testid={`button-confirm-receipt-${order.id}`}
                             >
-                              <Play className="w-4 h-4 text-blue-600" />
+                              <Package className="w-4 h-4 text-green-600" />
+                            </Button>
+                          )}
+
+
+                          {order.ddtUrl && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => downloadDdtMutation.mutate(order.id)}
+                              disabled={downloadDdtMutation.isPending}
+                              title="Scarica DDT"
+                              data-testid={`button-ddt-${order.id}`}
+                            >
+                              <Download className="w-4 h-4" />
                             </Button>
                           )}
 
@@ -363,6 +422,53 @@ export default function ResellerServiceOrders() {
                   </div>
                 )}
               </div>
+
+              {selectedOrder.deliveryMethod && (
+                <div className="border-t pt-4">
+                  <p className="text-muted-foreground text-sm mb-2">Metodo Consegna</p>
+                  <div className="flex items-center gap-2">
+                    {selectedOrder.deliveryMethod === "shipping" ? (
+                      <Badge variant="outline" className="flex items-center gap-1">
+                        <Truck className="w-3 h-3" /> Spedizione
+                      </Badge>
+                    ) : (
+                      <Badge variant="outline" className="flex items-center gap-1">
+                        <MapPin className="w-3 h-3" /> Consegna di persona
+                      </Badge>
+                    )}
+                    {selectedOrder.deviceReceivedAt && (
+                      <Badge variant="default" className="flex items-center gap-1">
+                        <Check className="w-3 h-3" /> Ricevuto {format(new Date(selectedOrder.deviceReceivedAt), "dd/MM/yy HH:mm", { locale: it })}
+                      </Badge>
+                    )}
+                  </div>
+                  {selectedOrder.deliveryMethod === "shipping" && (
+                    <div className="mt-2 text-sm space-y-1">
+                      {selectedOrder.shippingAddress && (
+                        <p><span className="text-muted-foreground">Indirizzo:</span> {selectedOrder.shippingAddress}, {selectedOrder.shippingCap} {selectedOrder.shippingCity} ({selectedOrder.shippingProvince})</p>
+                      )}
+                      {selectedOrder.courierName && (
+                        <p><span className="text-muted-foreground">Corriere:</span> {selectedOrder.courierName}</p>
+                      )}
+                      {selectedOrder.trackingNumber && (
+                        <p><span className="text-muted-foreground">Tracking:</span> {selectedOrder.trackingNumber}</p>
+                      )}
+                    </div>
+                  )}
+                  {selectedOrder.ddtUrl && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="mt-2"
+                      onClick={() => downloadDdtMutation.mutate(selectedOrder.id)}
+                      disabled={downloadDdtMutation.isPending}
+                    >
+                      <Download className="w-4 h-4 mr-2" />
+                      Scarica DDT
+                    </Button>
+                  )}
+                </div>
+              )}
 
               {selectedOrder.issueDescription && (
                 <div>
