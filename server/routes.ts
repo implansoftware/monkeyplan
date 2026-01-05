@@ -8487,6 +8487,45 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Reseller: schedule appointment (only after customer chooses in_person delivery)
+  app.patch("/api/reseller/service-orders/:id/schedule", requireRole("reseller", "reseller_staff"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      let resellerId = req.user.id;
+      if (req.user.role === 'reseller_staff') {
+        resellerId = (req.user as any).resellerId;
+      }
+      
+      const order = await storage.getServiceOrder(req.params.id);
+      if (!order) return res.status(404).send("Ordine non trovato");
+      if (order.resellerId !== resellerId) return res.status(403).send("Accesso non autorizzato");
+      
+      if (order.status !== 'accepted') {
+        return res.status(400).send("L'ordine deve essere in stato accettato per programmare");
+      }
+      
+      if (order.deliveryMethod !== 'in_person') {
+        return res.status(400).send("La programmazione appuntamento è solo per consegne di persona");
+      }
+      
+      const { scheduledAt } = req.body;
+      if (!scheduledAt) {
+        return res.status(400).send("Data appuntamento richiesta");
+      }
+      
+      const updated = await storage.updateServiceOrder(req.params.id, {
+        status: 'scheduled',
+        scheduledAt: new Date(scheduledAt)
+      });
+      
+      setActivityEntity(res, { type: 'service_orders', id: updated.id });
+      res.json(updated);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
   // Reseller: confirm device receipt
   app.patch("/api/reseller/service-orders/:id/confirm-receipt", requireRole("reseller", "reseller_staff"), async (req, res) => {
     try {
