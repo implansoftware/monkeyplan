@@ -8330,6 +8330,23 @@ export function registerRoutes(app: Express): Server {
   });
   
   // Reseller: get single service order
+  // Pending service orders count for badge
+  app.get("/api/reseller/service-orders/pending-count", requireRole("reseller", "reseller_staff"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      let resellerId = req.user.id;
+      if (req.user.role === 'reseller_staff') {
+        resellerId = (req.user as any).resellerId;
+      }
+      
+      const orders = await storage.listServiceOrders({ resellerId, status: 'pending' });
+      res.json({ count: orders.length });
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
   app.get("/api/reseller/service-orders/:id", requireRole("reseller", "reseller_staff"), async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
@@ -8627,22 +8644,6 @@ export function registerRoutes(app: Express): Server {
   });
   
   // Reseller: pending service orders count for badge
-  app.get("/api/reseller/service-orders/pending-count", requireRole("reseller", "reseller_staff"), async (req, res) => {
-    try {
-      if (!req.user) return res.status(401).send("Unauthorized");
-      
-      let resellerId = req.user.id;
-      if (req.user.role === 'reseller_staff') {
-        resellerId = (req.user as any).resellerId;
-      }
-      
-      const orders = await storage.listServiceOrders({ resellerId, status: 'pending' });
-      res.json({ count: orders.length });
-    } catch (error: any) {
-      res.status(500).send(error.message);
-    }
-  });
-  
   app.get("/api/notifications", requireAuth, async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
