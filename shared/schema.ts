@@ -3132,6 +3132,20 @@ export const serviceOrders = pgTable("service_orders", {
   // Stato e tracking
   status: serviceOrderStatusEnum("status").notNull().default("pending"),
   
+  // Metodo consegna dispositivo (scelto dal cliente dopo accettazione)
+  deliveryMethod: text("delivery_method"), // "in_person" | "shipping" | null
+  
+  // Dati spedizione (se deliveryMethod = "shipping")
+  shippingAddress: text("shipping_address"),
+  shippingCity: text("shipping_city"),
+  shippingCap: text("shipping_cap"),
+  shippingProvince: text("shipping_province"),
+  courierName: text("courier_name"),
+  trackingNumber: text("tracking_number"),
+  shippedAt: timestamp("shipped_at"),
+  deviceReceivedAt: timestamp("device_received_at"),
+  ddtUrl: text("ddt_url"),
+  
   // Riparazione collegata (quando completato)
   repairOrderId: varchar("repair_order_id").references(() => repairOrders.id, { onDelete: "set null" }),
   
@@ -3148,6 +3162,16 @@ export const insertServiceOrderSchema = createInsertSchema(serviceOrders).omit({
   id: true,
   orderNumber: true,
   status: true,
+  deliveryMethod: true,
+  shippingAddress: true,
+  shippingCity: true,
+  shippingCap: true,
+  shippingProvince: true,
+  courierName: true,
+  trackingNumber: true,
+  shippedAt: true,
+  deviceReceivedAt: true,
+  ddtUrl: true,
   repairOrderId: true,
   acceptedAt: true,
   scheduledAt: true,
