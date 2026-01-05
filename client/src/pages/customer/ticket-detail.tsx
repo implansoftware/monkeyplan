@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useRoute, useLocation } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { ArrowLeft, Send, Clock, User } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -41,6 +42,7 @@ export default function CustomerTicketDetail() {
   const ticketId = params?.id;
   const { toast } = useToast();
   const [replyMessage, setReplyMessage] = useState("");
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const { data: ticket, isLoading: ticketLoading } = useQuery<Ticket>({
     queryKey: ["/api/tickets", ticketId],
@@ -74,6 +76,12 @@ export default function CustomerTicketDetail() {
     retry: false,
   });
 
+  useEffect(() => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [messages]);
+
   const sendMessageMutation = useMutation({
     mutationFn: async (message: string) => {
       const res = await apiRequest("POST", `/api/tickets/${ticketId}/messages`, {
@@ -88,7 +96,6 @@ export default function CustomerTicketDetail() {
       toast({ title: "Messaggio inviato" });
     },
     onError: (error: Error) => {
-      // Extract server message (remove status code prefix)
       const serverMessage = error.message.replace(/^\d+:\s*/, '');
       
       toast({ 
@@ -97,7 +104,6 @@ export default function CustomerTicketDetail() {
         variant: "destructive" 
       });
       
-      // If ticket was closed, refresh ticket data to update UI
       if (serverMessage.toLowerCase().includes('closed')) {
         queryClient.invalidateQueries({ queryKey: ["/api/tickets", ticketId] });
       }
@@ -149,7 +155,6 @@ export default function CustomerTicketDetail() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex items-center gap-4">
         <Button
           variant="ghost"
@@ -171,7 +176,6 @@ export default function CustomerTicketDetail() {
         </div>
       </div>
 
-      {/* Ticket Info */}
       <Card>
         <CardHeader>
           <CardTitle>Dettagli Ticket</CardTitle>
@@ -199,7 +203,6 @@ export default function CustomerTicketDetail() {
         </CardContent>
       </Card>
 
-      {/* Messages Thread */}
       <Card>
         <CardHeader>
           <CardTitle>Conversazione</CardTitle>
@@ -215,30 +218,32 @@ export default function CustomerTicketDetail() {
               Nessun messaggio ancora. Scrivi il primo messaggio per iniziare la conversazione.
             </div>
           ) : (
-            <div className="space-y-4">
-              {messages.map((msg) => (
-                <div
-                  key={msg.id}
-                  className="border rounded-lg p-4 space-y-2"
-                  data-testid={`message-${msg.id}`}
-                >
-                  <div className="flex items-center gap-2 text-sm">
-                    <User className="h-4 w-4 text-muted-foreground" />
-                    <span className="font-medium">
-                      {msg.userId === ticket.customerId ? "Tu" : "Assistenza"}
-                    </span>
-                    <span className="text-muted-foreground">•</span>
-                    <span className="text-muted-foreground">
-                      {format(new Date(msg.createdAt), "dd/MM/yyyy HH:mm")}
-                    </span>
+            <ScrollArea className="h-[400px] pr-4">
+              <div className="space-y-4">
+                {messages.map((msg) => (
+                  <div
+                    key={msg.id}
+                    className="border rounded-lg p-4 space-y-2"
+                    data-testid={`message-${msg.id}`}
+                  >
+                    <div className="flex items-center gap-2 text-sm">
+                      <User className="h-4 w-4 text-muted-foreground" />
+                      <span className="font-medium">
+                        {msg.userId === ticket.customerId ? "Tu" : "Assistenza"}
+                      </span>
+                      <span className="text-muted-foreground">•</span>
+                      <span className="text-muted-foreground">
+                        {format(new Date(msg.createdAt), "dd/MM/yyyy HH:mm")}
+                      </span>
+                    </div>
+                    <p className="text-sm whitespace-pre-wrap">{msg.message}</p>
                   </div>
-                  <p className="text-sm whitespace-pre-wrap">{msg.message}</p>
-                </div>
-              ))}
-            </div>
+                ))}
+                <div ref={messagesEndRef} />
+              </div>
+            </ScrollArea>
           )}
 
-          {/* Reply Form */}
           {ticket.status !== "closed" && (
             <>
               <Separator />

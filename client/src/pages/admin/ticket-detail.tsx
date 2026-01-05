@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { ArrowLeft, Send, User, UserCog, AlertCircle } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -45,7 +46,6 @@ type StaffUser = {
   role: string;
 };
 
-// Shared UI components
 function getStatusBadge(status: string) {
   switch (status) {
     case "open": return <Badge>Aperto</Badge>;
@@ -64,13 +64,12 @@ function getPriorityBadge(priority: string) {
   }
 }
 
-// Admin ticket detail view WITH management controls
 function TicketDetailManageView({ basePath }: { basePath: string }) {
   const [location, setLocation] = useLocation();
   const { toast } = useToast();
   const { user } = useAuth();
+  const messagesEndRef = useRef<HTMLDivElement>(null);
   
-  // Extract ticketId from pathname
   const ticketIdMatch = location.match(/\/tickets\/([^/?]+)/);
   const ticketId = ticketIdMatch?.[1];
   
@@ -93,7 +92,12 @@ function TicketDetailManageView({ basePath }: { basePath: string }) {
     queryKey: ["/api/users/staff"],
   });
 
-  // Admin mutations (only in manage view)
+  useEffect(() => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [messages]);
+
   const updateStatusMutation = useMutation({
     mutationFn: async (status: string) => {
       const res = await apiRequest("PATCH", `/api/tickets/${ticketId}/status`, { status });
@@ -243,21 +247,24 @@ function TicketDetailManageView({ basePath }: { basePath: string }) {
               ) : messages.length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground">Nessun messaggio ancora.</div>
               ) : (
-                <div className="space-y-4">
-                  {messages.map((msg) => (
-                    <div key={msg.id} className={`border rounded-lg p-4 space-y-2 ${msg.isInternal ? 'border-amber-500/50 bg-amber-500/5' : ''}`} data-testid={`message-${msg.id}`}>
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2 text-sm">
-                          {msg.isInternal ? <UserCog className="h-4 w-4 text-amber-600" /> : <User className="h-4 w-4 text-muted-foreground" />}
-                          <span className="font-medium">{msg.userId === ticket.customerId ? "Cliente" : "Staff"}</span>
-                          {msg.isInternal && <Badge variant="outline" className="text-xs border-amber-500 text-amber-700">Nota interna</Badge>}
+                <ScrollArea className="h-[400px] pr-4">
+                  <div className="space-y-4">
+                    {messages.map((msg) => (
+                      <div key={msg.id} className={`border rounded-lg p-4 space-y-2 ${msg.isInternal ? 'border-amber-500/50 bg-amber-500/5' : ''}`} data-testid={`message-${msg.id}`}>
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2 text-sm">
+                            {msg.isInternal ? <UserCog className="h-4 w-4 text-amber-600" /> : <User className="h-4 w-4 text-muted-foreground" />}
+                            <span className="font-medium">{msg.userId === ticket.customerId ? "Cliente" : "Staff"}</span>
+                            {msg.isInternal && <Badge variant="outline" className="text-xs border-amber-500 text-amber-700">Nota interna</Badge>}
+                          </div>
+                          <span className="text-xs text-muted-foreground">{format(new Date(msg.createdAt), "dd/MM/yyyy HH:mm")}</span>
                         </div>
-                        <span className="text-xs text-muted-foreground">{format(new Date(msg.createdAt), "dd/MM/yyyy HH:mm")}</span>
+                        <p className="text-sm whitespace-pre-wrap">{msg.message}</p>
                       </div>
-                      <p className="text-sm whitespace-pre-wrap">{msg.message}</p>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                    <div ref={messagesEndRef} />
+                  </div>
+                </ScrollArea>
               )}
 
               {ticket.status !== "closed" && (
@@ -365,11 +372,11 @@ function TicketDetailManageView({ basePath }: { basePath: string }) {
   );
 }
 
-// Read-only ticket detail view WITHOUT management controls (for Reseller/RC)
 function TicketDetailReadView({ basePath }: { basePath: string }) {
   const [location, setLocation] = useLocation();
   const { toast } = useToast();
   const { user } = useAuth();
+  const messagesEndRef = useRef<HTMLDivElement>(null);
   
   const ticketIdMatch = location.match(/\/tickets\/([^/?]+)/);
   const ticketId = ticketIdMatch?.[1];
@@ -388,7 +395,12 @@ function TicketDetailReadView({ basePath }: { basePath: string }) {
     retry: false,
   });
 
-  // Only sendMessage mutation for read-only view (no internal notes capability)
+  useEffect(() => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [messages]);
+
   const sendMessageMutation = useMutation({
     mutationFn: async (message: string) => {
       const res = await apiRequest("POST", `/api/tickets/${ticketId}/messages`, { message, isInternal: false });
@@ -490,21 +502,24 @@ function TicketDetailReadView({ basePath }: { basePath: string }) {
               ) : messages.length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground">Nessun messaggio ancora.</div>
               ) : (
-                <div className="space-y-4">
-                  {messages.map((msg) => (
-                    <div key={msg.id} className={`border rounded-lg p-4 space-y-2 ${msg.isInternal ? 'border-amber-500/50 bg-amber-500/5' : ''}`} data-testid={`message-${msg.id}`}>
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2 text-sm">
-                          {msg.isInternal ? <UserCog className="h-4 w-4 text-amber-600" /> : <User className="h-4 w-4 text-muted-foreground" />}
-                          <span className="font-medium">{msg.userId === ticket.customerId ? "Cliente" : "Staff"}</span>
-                          {msg.isInternal && <Badge variant="outline" className="text-xs border-amber-500 text-amber-700">Nota interna</Badge>}
+                <ScrollArea className="h-[400px] pr-4">
+                  <div className="space-y-4">
+                    {messages.map((msg) => (
+                      <div key={msg.id} className={`border rounded-lg p-4 space-y-2 ${msg.isInternal ? 'border-amber-500/50 bg-amber-500/5' : ''}`} data-testid={`message-${msg.id}`}>
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2 text-sm">
+                            {msg.isInternal ? <UserCog className="h-4 w-4 text-amber-600" /> : <User className="h-4 w-4 text-muted-foreground" />}
+                            <span className="font-medium">{msg.userId === ticket.customerId ? "Cliente" : "Staff"}</span>
+                            {msg.isInternal && <Badge variant="outline" className="text-xs border-amber-500 text-amber-700">Nota interna</Badge>}
+                          </div>
+                          <span className="text-xs text-muted-foreground">{format(new Date(msg.createdAt), "dd/MM/yyyy HH:mm")}</span>
                         </div>
-                        <span className="text-xs text-muted-foreground">{format(new Date(msg.createdAt), "dd/MM/yyyy HH:mm")}</span>
+                        <p className="text-sm whitespace-pre-wrap">{msg.message}</p>
                       </div>
-                      <p className="text-sm whitespace-pre-wrap">{msg.message}</p>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                    <div ref={messagesEndRef} />
+                  </div>
+                </ScrollArea>
               )}
 
               {ticket.status !== "closed" && (
@@ -548,7 +563,6 @@ function TicketDetailReadView({ basePath }: { basePath: string }) {
   );
 }
 
-// Exports
 export default function AdminTicketDetail() {
   return <TicketDetailManageView basePath="/admin/tickets" />;
 }
