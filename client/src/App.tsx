@@ -118,6 +118,7 @@ import ResellerRepairCenterSchedules from "@/pages/reseller/repair-center-schedu
 import ResellerAppointments from "@/pages/reseller/appointments";
 import ResellerServiceCatalog from "@/pages/reseller/service-catalog";
 import ResellerTeam from "@/pages/reseller/team";
+import ResellerServiceOrders from "@/pages/reseller/service-orders";
 import ResellerSubResellers from "@/pages/reseller/sub-resellers";
 import ResellerDeviceCatalog from "@/pages/reseller/device-catalog";
 import ResellerRepairDetail from "@/pages/reseller/repair-detail";
@@ -165,6 +166,7 @@ import CustomerOrders from "@/pages/customer/orders";
 import CustomerSalesReturns from "@/pages/customer/sales-returns";
 import CustomerProfile from "@/pages/customer/profile";
 import CustomerRemoteRequests from "@/pages/customer/remote-requests";
+import CustomerServiceCatalog from "@/pages/customer/service-catalog";
 
 // Shop pages (public)
 import ShopCatalog from "@/pages/shop/catalog";
@@ -286,6 +288,7 @@ function Router() {
       <ProtectedRoute path="/reseller/service-catalog" component={ResellerServiceCatalog} allowedRoles={["reseller", "reseller_staff"]} />
       <ProtectedRoute path="/reseller/warehouses" component={AdminWarehouses} allowedRoles={["reseller", "reseller_staff"]} />
       <ProtectedRoute path="/reseller/network-warehouses" component={ResellerNetworkWarehouses} allowedRoles={["reseller", "reseller_staff"]} />
+      <ProtectedRoute path="/reseller/service-orders" component={ResellerServiceOrders} allowedRoles={["reseller", "reseller_staff"]} />
       <ProtectedRoute path="/reseller/products" component={ResellerProducts} allowedRoles={["reseller", "reseller_staff"]} />
       <ProtectedRoute path="/reseller/suppliers" component={ResellerSuppliers} allowedRoles={["reseller", "reseller_staff"]} />
       <ProtectedRoute path="/reseller/supplier-orders" component={ResellerSupplierOrders} allowedRoles={["reseller", "reseller_staff"]} />
@@ -380,6 +383,7 @@ function Router() {
       <ProtectedRoute path="/customer/sales-returns" component={CustomerSalesReturns} />
       <ProtectedRoute path="/customer/profile" component={CustomerProfile} />
       <ProtectedRoute path="/customer/remote-requests" component={CustomerRemoteRequests} />
+      <ProtectedRoute path="/customer/service-catalog" component={CustomerServiceCatalog} />
       
       {/* Shop admin routes */}
       <ProtectedRoute path="/shop/admin/products/:id" component={ShopAdminProductDetail} />

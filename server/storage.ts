@@ -103,7 +103,8 @@ import {
   marketplaceOrderItems, MarketplaceOrderItem, InsertMarketplaceOrderItem,
   transferRequests, TransferRequest, InsertTransferRequest,
   transferRequestItems, TransferRequestItem, InsertTransferRequestItem,
-  remoteRepairRequests, RemoteRepairRequest, InsertRemoteRepairRequest, UpdateRemoteRepairRequest
+  remoteRepairRequests, RemoteRepairRequest, InsertRemoteRepairRequest, UpdateRemoteRepairRequest,
+  serviceOrders, ServiceOrder, InsertServiceOrder
 } from "@shared/schema";
 import { db, pool } from "./db";
 import { eq, and, or, desc, lt, gt, gte, lte, sql, not, inArray, isNull, ilike } from "drizzle-orm";
@@ -942,6 +943,14 @@ export interface IStorage {
   generateRemoteRequestNumber(): Promise<string>;
   getResellerRemoteRequestPendingCount(resellerId: string): Promise<number>;
   createRepairFromRemoteRequest(remoteRequestId: string): Promise<{ repairOrder: RepairOrder; remoteRequest: RemoteRepairRequest }>;
+  
+  // Service Orders
+  listServiceOrders(filters?: { customerId?: string; resellerId?: string; repairCenterId?: string; status?: string }): Promise<ServiceOrder[]>;
+  getServiceOrder(id: string): Promise<ServiceOrder | undefined>;
+  getServiceOrderByNumber(orderNumber: string): Promise<ServiceOrder | undefined>;
+  createServiceOrder(data: InsertServiceOrder): Promise<ServiceOrder>;
+  updateServiceOrder(id: string, updates: Partial<ServiceOrder>): Promise<ServiceOrder>;
+  generateServiceOrderNumber(): Promise<string>;
   
   sessionStore: session.Store;
 }
@@ -8103,6 +8112,55 @@ export class DatabaseStorage implements IStorage {
       .returning();
     
     return { repairOrder, remoteRequest: updatedRequest };
+  }
+  
+  // Service Orders
+  async listServiceOrders(filters?: { customerId?: string; resellerId?: string; repairCenterId?: string; status?: string }): Promise<ServiceOrder[]> {
+    const conditions = [];
+    if (filters?.customerId) conditions.push(eq(serviceOrders.customerId, filters.customerId));
+    if (filters?.resellerId) conditions.push(eq(serviceOrders.resellerId, filters.resellerId));
+    if (filters?.repairCenterId) conditions.push(eq(serviceOrders.repairCenterId, filters.repairCenterId));
+    if (filters?.status) conditions.push(eq(serviceOrders.status, filters.status as any));
+    
+    return db.select().from(serviceOrders)
+      .where(conditions.length > 0 ? and(...conditions) : undefined)
+      .orderBy(desc(serviceOrders.createdAt));
+  }
+  
+  async getServiceOrder(id: string): Promise<ServiceOrder | undefined> {
+    const [order] = await db.select().from(serviceOrders).where(eq(serviceOrders.id, id));
+    return order || undefined;
+  }
+  
+  async getServiceOrderByNumber(orderNumber: string): Promise<ServiceOrder | undefined> {
+    const [order] = await db.select().from(serviceOrders).where(eq(serviceOrders.orderNumber, orderNumber));
+    return order || undefined;
+  }
+  
+  async createServiceOrder(data: InsertServiceOrder): Promise<ServiceOrder> {
+    const orderNumber = await this.generateServiceOrderNumber();
+    const [order] = await db.insert(serviceOrders).values({
+      ...data,
+      orderNumber,
+    }).returning();
+    return order;
+  }
+  
+  async updateServiceOrder(id: string, updates: Partial<ServiceOrder>): Promise<ServiceOrder> {
+    const [order] = await db.update(serviceOrders)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(serviceOrders.id, id))
+      .returning();
+    return order;
+  }
+  
+  async generateServiceOrderNumber(): Promise<string> {
+    const date = new Date();
+    const prefix = `SVC-${date.getFullYear()}${String(date.getMonth() + 1).padStart(2, '0')}`;
+    const existingOrders = await db.select().from(serviceOrders)
+      .where(ilike(serviceOrders.orderNumber, `${prefix}%`));
+    const nextNumber = existingOrders.length + 1;
+    return `${prefix}-${String(nextNumber).padStart(5, '0')}`;
   }
 }
 

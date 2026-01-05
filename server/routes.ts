@@ -8019,6 +8019,350 @@ export function registerRoutes(app: Express): Server {
   });
 
   // ============ NOTIFICATIONS ============
+
+  // ============ SERVICE ORDERS (Acquisto Interventi) ============
+  
+  // Customer: get service catalog from their reseller
+  app.get("/api/customer/service-catalog", requireRole("customer"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const resellerId = req.user.resellerId;
+      if (!resellerId) {
+        return res.status(400).send("Nessun rivenditore associato");
+      }
+      
+      
+      const items = await storage.listServiceItems();
+      const activeItems = items.filter(item => 
+        item.isActive && (item.createdBy === null || item.createdBy === resellerId)
+      );
+      
+      const itemsWithPrices = await Promise.all(activeItems.map(async (item) => {
+        const effectivePrice = await storage.getEffectiveServicePrice(
+          item.id, 
+          resellerId, 
+          undefined
+        );
+        return {
+          ...item,
+          effectivePriceCents: effectivePrice.priceCents,
+          effectiveLaborMinutes: effectivePrice.laborMinutes,
+          priceSource: effectivePrice.source
+        };
+      }));
+      
+      res.json(itemsWithPrices);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+  
+  // Customer: list their service orders
+  app.get("/api/customer/service-orders", requireRole("customer"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const orders = await storage.listServiceOrders({ customerId: req.user.id });
+      res.json(orders);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+  
+  // Customer: get single service order
+  app.get("/api/customer/service-orders/:id", requireRole("customer"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const order = await storage.getServiceOrder(req.params.id);
+      if (!order) return res.status(404).send("Ordine non trovato");
+      if (order.customerId !== req.user.id) return res.status(403).send("Accesso non autorizzato");
+      
+      res.json(order);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+  
+  // Customer: create service order
+  app.post("/api/customer/service-orders", requireRole("customer"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const resellerId = req.user.resellerId;
+      if (!resellerId) {
+        return res.status(400).send("Nessun rivenditore associato");
+      }
+      
+      const { serviceItemId, deviceType, deviceModelId, brand, model, imei, serial, issueDescription, customerNotes } = req.body;
+      
+      if (!serviceItemId) {
+        return res.status(400).send("Servizio richiesto");
+      }
+      
+      const serviceItem = await storage.getServiceItem(serviceItemId);
+      if (!serviceItem) {
+        return res.status(404).send("Servizio non trovato");
+      }
+      
+      // Verify service item is accessible to this reseller (global or created by reseller)
+      if (serviceItem.createdBy !== null && serviceItem.createdBy !== resellerId) {
+        return res.status(403).send("Servizio non disponibile");
+      }
+      
+      const effectivePrice = await storage.getEffectiveServicePrice(serviceItemId, resellerId, undefined);
+      
+      const order = await storage.createServiceOrder({
+        customerId: req.user.id,
+        resellerId,
+        serviceItemId,
+        priceCents: effectivePrice.priceCents,
+        deviceType,
+        deviceModelId,
+        brand,
+        model,
+        imei,
+        serial,
+        issueDescription,
+        customerNotes
+      });
+      
+      setActivityEntity(res, { type: 'service_orders', id: order.id });
+      res.status(201).json(order);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+  
+  // Customer: cancel service order (only if pending)
+  app.patch("/api/customer/service-orders/:id/cancel", requireRole("customer"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const order = await storage.getServiceOrder(req.params.id);
+      if (!order) return res.status(404).send("Ordine non trovato");
+      if (order.customerId !== req.user.id) return res.status(403).send("Accesso non autorizzato");
+      
+      if (order.status !== 'pending') {
+        return res.status(400).send("L'ordine non può essere annullato in questo stato");
+      }
+      
+      const updated = await storage.updateServiceOrder(req.params.id, {
+        status: 'cancelled',
+        cancelledAt: new Date()
+      });
+      
+      setActivityEntity(res, { type: 'service_orders', id: updated.id });
+      res.json(updated);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+  
+  // Reseller: list service orders from their customers
+  app.get("/api/reseller/service-orders", requireRole("reseller", "reseller_staff"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      let resellerId = req.user.id;
+      if (req.user.role === 'reseller_staff') {
+        resellerId = (req.user as any).resellerId;
+      }
+      
+      const orders = await storage.listServiceOrders({ resellerId });
+      
+      const ordersWithDetails = await Promise.all(orders.map(async (order) => {
+        const customer = await storage.getUser(order.customerId);
+        const serviceItem = await storage.getServiceItem(order.serviceItemId);
+        return {
+          ...order,
+          customerName: customer?.fullName || customer?.username || 'N/A',
+          serviceName: serviceItem?.name || 'N/A',
+          serviceCode: serviceItem?.code || 'N/A'
+        };
+      }));
+      
+      res.json(ordersWithDetails);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+  
+  // Reseller: get single service order
+  app.get("/api/reseller/service-orders/:id", requireRole("reseller", "reseller_staff"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      let resellerId = req.user.id;
+      if (req.user.role === 'reseller_staff') {
+        resellerId = (req.user as any).resellerId;
+      }
+      
+      const order = await storage.getServiceOrder(req.params.id);
+      if (!order) return res.status(404).send("Ordine non trovato");
+      if (order.resellerId !== resellerId) return res.status(403).send("Accesso non autorizzato");
+      
+      const customer = await storage.getUser(order.customerId);
+      const serviceItem = await storage.getServiceItem(order.serviceItemId);
+      
+      res.json({
+        ...order,
+        customerName: customer?.fullName || customer?.username || 'N/A',
+        serviceName: serviceItem?.name || 'N/A',
+        serviceCode: serviceItem?.code || 'N/A'
+      });
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+  
+  // Reseller: accept service order
+  app.patch("/api/reseller/service-orders/:id/accept", requireRole("reseller", "reseller_staff"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      let resellerId = req.user.id;
+      if (req.user.role === 'reseller_staff') {
+        resellerId = (req.user as any).resellerId;
+      }
+      
+      const order = await storage.getServiceOrder(req.params.id);
+      if (!order) return res.status(404).send("Ordine non trovato");
+      if (order.resellerId !== resellerId) return res.status(403).send("Accesso non autorizzato");
+      
+      if (order.status !== 'pending') {
+        return res.status(400).send("L'ordine non può essere accettato in questo stato");
+      }
+      
+      const { scheduledAt, repairCenterId, internalNotes } = req.body;
+      
+      const updated = await storage.updateServiceOrder(req.params.id, {
+        status: scheduledAt ? 'scheduled' : 'accepted',
+        acceptedAt: new Date(),
+        scheduledAt: scheduledAt ? new Date(scheduledAt) : undefined,
+        repairCenterId,
+        internalNotes
+      });
+      
+      setActivityEntity(res, { type: 'service_orders', id: updated.id });
+      res.json(updated);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+  
+  // Reseller: mark as in progress
+  app.patch("/api/reseller/service-orders/:id/start", requireRole("reseller", "reseller_staff"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      let resellerId = req.user.id;
+      if (req.user.role === 'reseller_staff') {
+        resellerId = (req.user as any).resellerId;
+      }
+      
+      const order = await storage.getServiceOrder(req.params.id);
+      if (!order) return res.status(404).send("Ordine non trovato");
+      if (order.resellerId !== resellerId) return res.status(403).send("Accesso non autorizzato");
+      
+      if (order.status !== 'accepted' && order.status !== 'scheduled') {
+        return res.status(400).send("L'ordine non può essere avviato in questo stato");
+      }
+      
+      const updated = await storage.updateServiceOrder(req.params.id, {
+        status: 'in_progress'
+      });
+      
+      setActivityEntity(res, { type: 'service_orders', id: updated.id });
+      res.json(updated);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+  
+  // Reseller: complete service order
+  app.patch("/api/reseller/service-orders/:id/complete", requireRole("reseller", "reseller_staff"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      let resellerId = req.user.id;
+      if (req.user.role === 'reseller_staff') {
+        resellerId = (req.user as any).resellerId;
+      }
+      
+      const order = await storage.getServiceOrder(req.params.id);
+      if (!order) return res.status(404).send("Ordine non trovato");
+      if (order.resellerId !== resellerId) return res.status(403).send("Accesso non autorizzato");
+      
+      if (order.status !== 'in_progress') {
+        return res.status(400).send("L'ordine non può essere completato in questo stato");
+      }
+      
+      const { internalNotes } = req.body;
+      
+      const updated = await storage.updateServiceOrder(req.params.id, {
+        status: 'completed',
+        completedAt: new Date(),
+        internalNotes: internalNotes || order.internalNotes
+      });
+      
+      setActivityEntity(res, { type: 'service_orders', id: updated.id });
+      res.json(updated);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+  
+  // Reseller: reject/cancel service order
+  app.patch("/api/reseller/service-orders/:id/cancel", requireRole("reseller", "reseller_staff"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      let resellerId = req.user.id;
+      if (req.user.role === 'reseller_staff') {
+        resellerId = (req.user as any).resellerId;
+      }
+      
+      const order = await storage.getServiceOrder(req.params.id);
+      if (!order) return res.status(404).send("Ordine non trovato");
+      if (order.resellerId !== resellerId) return res.status(403).send("Accesso non autorizzato");
+      
+      if (order.status === 'completed' || order.status === 'cancelled') {
+        return res.status(400).send("L'ordine non può essere annullato in questo stato");
+      }
+      
+      const { internalNotes } = req.body;
+      
+      const updated = await storage.updateServiceOrder(req.params.id, {
+        status: 'cancelled',
+        cancelledAt: new Date(),
+        internalNotes: internalNotes || order.internalNotes
+      });
+      
+      setActivityEntity(res, { type: 'service_orders', id: updated.id });
+      res.json(updated);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+  
+  // Reseller: pending service orders count for badge
+  app.get("/api/reseller/service-orders/pending-count", requireRole("reseller", "reseller_staff"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      let resellerId = req.user.id;
+      if (req.user.role === 'reseller_staff') {
+        resellerId = (req.user as any).resellerId;
+      }
+      
+      const orders = await storage.listServiceOrders({ resellerId, status: 'pending' });
+      res.json({ count: orders.length });
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
   
   app.get("/api/notifications", requireAuth, async (req, res) => {
     try {
