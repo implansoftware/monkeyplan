@@ -8352,6 +8352,24 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Pending customer tickets count for badge (reseller/reseller_staff)
+  app.get("/api/reseller/tickets/pending-count", requireRole("reseller", "reseller_staff"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      let resellerId = req.user.id;
+      if (req.user.role === 'reseller_staff') {
+        resellerId = (req.user as any).resellerId;
+      }
+      
+      // Get all open tickets from customers of this reseller
+      const tickets = await storage.listTickets({ resellerId, status: 'open' });
+      res.json({ count: tickets.length });
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
   app.get("/api/reseller/service-orders/:id", requireRole("reseller", "reseller_staff"), async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
@@ -9229,10 +9247,17 @@ export function registerRoutes(app: Express): Server {
           hasAccess = true;
         }
       } else {
-        // For support tickets (customer→admin)
-        hasAccess = 
-          ticket.customerId === req.user.id ||
-          ticket.assignedTo === req.user.id;
+        // For support tickets (customer→admin) - also visible to customer's reseller
+        if (ticket.customerId === req.user.id || ticket.assignedTo === req.user.id) {
+          hasAccess = true;
+        } else if (req.user.role === 'reseller' || req.user.role === 'reseller_staff') {
+          // Check if ticket belongs to a customer of this reseller
+          const customer = await storage.getUser(ticket.customerId);
+          const resellerId = req.user.role === 'reseller_staff' ? (req.user as any).resellerId : req.user.id;
+          if (customer && customer.resellerId === resellerId) {
+            hasAccess = true;
+          }
+        }
       }
       
       if (!hasAccess) return res.status(403).send("Accesso negato");
