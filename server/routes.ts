@@ -9567,10 +9567,19 @@ export function registerRoutes(app: Express): Server {
       if (!ticket) return res.status(404).send("Ticket not found");
       
       // Check access
-      const hasAccess = 
+      let hasAccess = 
         req.user.role === 'admin' ||
         ticket.customerId === req.user.id ||
         ticket.assignedTo === req.user.id;
+      
+      // Allow reseller to access their customers' tickets
+      if (!hasAccess && (req.user.role === 'reseller' || req.user.role === 'reseller_staff')) {
+        const customer = await storage.getUser(ticket.customerId);
+        const resellerId = req.user.role === 'reseller_staff' ? (req.user as any).resellerId : req.user.id;
+        if (customer && customer.resellerId === resellerId) {
+          hasAccess = true;
+        }
+      }
       
       if (!hasAccess) return res.status(403).send("Forbidden");
       
@@ -9596,10 +9605,19 @@ export function registerRoutes(app: Express): Server {
       if (!ticket) return res.status(404).send("Ticket not found");
       
       // Check access
-      const hasAccess = 
+      let hasAccess = 
         req.user.role === 'admin' ||
         ticket.customerId === req.user.id ||
         ticket.assignedTo === req.user.id;
+      
+      // Allow reseller to reply to their customers' tickets
+      if (!hasAccess && (req.user.role === 'reseller' || req.user.role === 'reseller_staff')) {
+        const customer = await storage.getUser(ticket.customerId);
+        const resellerId = req.user.role === 'reseller_staff' ? (req.user as any).resellerId : req.user.id;
+        if (customer && customer.resellerId === resellerId) {
+          hasAccess = true;
+        }
+      }
       
       if (!hasAccess) return res.status(403).send("Forbidden");
       
