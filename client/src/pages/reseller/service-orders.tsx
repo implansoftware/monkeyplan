@@ -13,7 +13,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader2, Check, X, Play, Calendar, Eye, Clock, User, Truck, MapPin, Package, Download } from "lucide-react";
+import { Loader2, Check, X, Play, Calendar, Eye, Clock, User, Truck, MapPin, Download, Smartphone } from "lucide-react";
 import type { ServiceOrder, RepairCenter } from "@shared/schema";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
@@ -357,14 +357,16 @@ export default function ResellerServiceOrders() {
 
                           {(order.status === "accepted" || order.status === "scheduled") && order.deliveryMethod && !order.deviceReceivedAt && (
                             <Button
-                              variant="ghost"
-                              size="icon"
+                              variant="outline"
+                              size="sm"
                               onClick={() => confirmReceiptMutation.mutate(order.id)}
                               disabled={confirmReceiptMutation.isPending}
-                              title="Conferma ricezione dispositivo"
+                              title="Conferma che il dispositivo è stato consegnato dal cliente"
                               data-testid={`button-confirm-receipt-${order.id}`}
+                              className="text-green-600 border-green-200 hover:bg-green-50 dark:hover:bg-green-950"
                             >
-                              <Package className="w-4 h-4 text-green-600" />
+                              <Smartphone className="w-4 h-4 mr-1" />
+                              Ricevuto
                             </Button>
                           )}
 
