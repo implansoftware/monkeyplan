@@ -8095,10 +8095,14 @@ export function registerRoutes(app: Express): Server {
         return res.status(400).send("Nessun rivenditore associato");
       }
       
-      const { serviceItemId, deviceType, deviceModelId, brand, model, imei, serial, issueDescription, customerNotes } = req.body;
+      const { serviceItemId, deviceType, deviceModelId, brand, model, imei, serial, issueDescription, customerNotes, paymentMethod } = req.body;
       
       if (!serviceItemId) {
         return res.status(400).send("Servizio richiesto");
+      }
+      
+      if (!paymentMethod || !['in_person', 'bank_transfer'].includes(paymentMethod)) {
+        return res.status(400).send("Metodo di pagamento richiesto (in_person o bank_transfer)");
       }
       
       const serviceItem = await storage.getServiceItem(serviceItemId);
@@ -8125,7 +8129,8 @@ export function registerRoutes(app: Express): Server {
         imei,
         serial,
         issueDescription,
-        customerNotes
+        customerNotes,
+        paymentMethod
       });
       
       setActivityEntity(res, { type: 'service_orders', id: order.id });
