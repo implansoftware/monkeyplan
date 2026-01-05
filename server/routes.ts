@@ -9153,14 +9153,17 @@ export function registerRoutes(app: Express): Server {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
-      const filters: { customerId?: string; assignedTo?: string; status?: string } = {};
+      const filters: { customerId?: string; assignedTo?: string; status?: string; resellerId?: string } = {};
       
       // Role-based filtering
       if (req.user.role === 'customer') {
         // Customers see only their own tickets
         filters.customerId = req.user.id;
-      } else if (req.user.role === 'reseller' || req.user.role === 'repair_center') {
-        // Resellers and repair center staff see assigned tickets
+      } else if (req.user.role === 'reseller') {
+        // Resellers see tickets from their customers
+        filters.resellerId = req.user.id;
+      } else if (req.user.role === 'repair_center') {
+        // Repair centers see assigned tickets
         filters.assignedTo = req.user.id;
       } else if (req.user.role === 'reseller_staff') {
         // Check permission
