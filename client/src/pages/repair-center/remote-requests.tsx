@@ -33,8 +33,12 @@ export default function RepairCenterRemoteRequests() {
   const { toast } = useToast();
   const [isRejectOpen, setIsRejectOpen] = useState(false);
   const [isReadyOpen, setIsReadyOpen] = useState(false);
+  const [isCancelOpen, setIsCancelOpen] = useState(false);
+  const [isForceReceivedOpen, setIsForceReceivedOpen] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState<RemoteRepairRequest | null>(null);
   const [rejectionReason, setRejectionReason] = useState("");
+  const [cancellationReason, setCancellationReason] = useState("");
+  const [forceReceivedNotes, setForceReceivedNotes] = useState("");
   const [shippingAddress, setShippingAddress] = useState({
     centerNotes: "",
     customerAddress: "",
@@ -136,6 +140,57 @@ export default function RepairCenterRemoteRequests() {
       toast({
         title: "Dispositivo ricevuto",
         description: data.repairOrder ? `Lavorazione ${data.repairOrder.orderNumber} creata` : "Dispositivo contrassegnato come ricevuto",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Errore",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const forceReceivedMutation = useMutation({
+    mutationFn: async ({ id, centerNotes }: { id: string; centerNotes?: string }) => {
+      const res = await apiRequest("PATCH", `/api/repair-center/remote-requests/${id}/force-received`, { centerNotes });
+      return await res.json();
+    },
+    onSuccess: (data: any) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/repair-center/remote-requests"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/repair-center/repairs"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/repair-center/remote-requests/pending-count"] });
+      setIsForceReceivedOpen(false);
+      setSelectedRequest(null);
+      setForceReceivedNotes("");
+      toast({
+        title: "Ricezione confermata",
+        description: data.repairOrder ? `Lavorazione ${data.repairOrder.orderNumber} creata` : "Ricezione forzata con successo",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Errore",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const cancelMutation = useMutation({
+    mutationFn: async ({ id, reason }: { id: string; reason?: string }) => {
+      const res = await apiRequest("PATCH", `/api/repair-center/remote-requests/${id}/cancel`, { cancellationReason: reason });
+      return await res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/repair-center/remote-requests"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/repair-center/remote-requests/pending-count"] });
+      setIsCancelOpen(false);
+      setSelectedRequest(null);
+      setCancellationReason("");
+      toast({
+        title: "Richiesta annullata",
+        description: "La richiesta è stata annullata",
       });
     },
     onError: (error: Error) => {
@@ -333,6 +388,31 @@ export default function RepairCenterRemoteRequests() {
                           </CardDescription>
                         </div>
                         <div className="flex gap-2">
+                          {request.status === 'awaiting_shipment' && (
+                            <>
+                              <Button
+                                variant="outline"
+                                onClick={() => {
+                                  setSelectedRequest(request);
+                                  setIsCancelOpen(true);
+                                }}
+                                data-testid={`button-cancel-${request.id}`}
+                              >
+                                <X className="h-4 w-4 mr-2" />
+                                Annulla
+                              </Button>
+                              <Button
+                                onClick={() => {
+                                  setSelectedRequest(request);
+                                  setIsForceReceivedOpen(true);
+                                }}
+                                data-testid={`button-force-received-${request.id}`}
+                              >
+                                <PackageCheck className="h-4 w-4 mr-2" />
+                                Conferma Manuale
+                              </Button>
+                            </>
+                          )}
                           {request.status === 'in_transit' && (
                             <Button
                               onClick={() => receivedMutation.mutate(request.id)}
@@ -557,6 +637,87 @@ export default function RepairCenterRemoteRequests() {
               </Button>
             </DialogFooter>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isCancelOpen} onOpenChange={setIsCancelOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Annulla Richiesta</DialogTitle>
+            <DialogDescription>
+              Il cliente non ha spedito il dispositivo. Vuoi annullare questa richiesta?
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="cancellationReason">Motivo (opzionale)</Label>
+              <Textarea
+                id="cancellationReason"
+                value={cancellationReason}
+                onChange={(e) => setCancellationReason(e.target.value)}
+                placeholder="Es: cliente non reperibile, richiesta scaduta..."
+                rows={3}
+                data-testid="input-cancellation-reason"
+              />
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setIsCancelOpen(false)}>
+                Indietro
+              </Button>
+              <Button 
+                variant="destructive" 
+                onClick={() => selectedRequest && cancelMutation.mutate({ id: selectedRequest.id, reason: cancellationReason })}
+                disabled={cancelMutation.isPending}
+                data-testid="button-confirm-cancel"
+              >
+                {cancelMutation.isPending ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  "Annulla Richiesta"
+                )}
+              </Button>
+            </DialogFooter>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isForceReceivedOpen} onOpenChange={setIsForceReceivedOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Conferma Ricezione Manuale</DialogTitle>
+            <DialogDescription>
+              Usa questa opzione se hai ricevuto il dispositivo ma il cliente non ha inserito i dati di spedizione nel sistema.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="forceReceivedNotes">Note (opzionale)</Label>
+              <Textarea
+                id="forceReceivedNotes"
+                value={forceReceivedNotes}
+                onChange={(e) => setForceReceivedNotes(e.target.value)}
+                placeholder="Es: dispositivo consegnato a mano..."
+                rows={3}
+                data-testid="input-force-received-notes"
+              />
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setIsForceReceivedOpen(false)}>
+                Indietro
+              </Button>
+              <Button 
+                onClick={() => selectedRequest && forceReceivedMutation.mutate({ id: selectedRequest.id, centerNotes: forceReceivedNotes })}
+                disabled={forceReceivedMutation.isPending}
+                data-testid="button-confirm-force-received"
+              >
+                {forceReceivedMutation.isPending ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  "Conferma Ricezione"
+                )}
+              </Button>
+            </DialogFooter>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
