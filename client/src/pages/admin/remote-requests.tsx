@@ -24,7 +24,7 @@ export default function AdminRemoteRequests() {
   });
 
   const { data: users } = useQuery<UserType[]>({
-    queryKey: ["/api/users"],
+    queryKey: ["/api/admin/users"],
   });
 
   const { data: repairCenters } = useQuery<RepairCenter[]>({
