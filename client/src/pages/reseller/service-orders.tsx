@@ -42,10 +42,11 @@ export default function ResellerServiceOrders() {
   const [activeTab, setActiveTab] = useState("pending");
 
   const [acceptForm, setAcceptForm] = useState({
-    scheduledAt: "",
     repairCenterId: "",
     internalNotes: "",
   });
+  const [isScheduleDialogOpen, setIsScheduleDialogOpen] = useState(false);
+  const [scheduleDate, setScheduleDate] = useState("");
 
   const { data: orders, isLoading } = useQuery<ServiceOrderWithDetails[]>({
     queryKey: ["/api/reseller/service-orders"],
@@ -64,8 +65,8 @@ export default function ResellerServiceOrders() {
       queryClient.invalidateQueries({ queryKey: ["/api/reseller/service-orders"] });
       setIsAcceptDialogOpen(false);
       setSelectedOrder(null);
-      setAcceptForm({ scheduledAt: "", repairCenterId: "", internalNotes: "" });
-      toast({ title: "Ordine accettato" });
+      setAcceptForm({ repairCenterId: "", internalNotes: "" });
+      toast({ title: "Ordine accettato", description: "In attesa scelta consegna dal cliente" });
     },
     onError: (error: Error) => {
       toast({ title: "Errore", description: error.message, variant: "destructive" });
@@ -143,6 +144,23 @@ export default function ResellerServiceOrders() {
     },
   });
 
+  const scheduleMutation = useMutation({
+    mutationFn: async ({ orderId, scheduledAt }: { orderId: string; scheduledAt: string }) => {
+      const res = await apiRequest("PATCH", `/api/reseller/service-orders/${orderId}/schedule`, { scheduledAt });
+      return await res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/reseller/service-orders"] });
+      setIsScheduleDialogOpen(false);
+      setSelectedOrder(null);
+      setScheduleDate("");
+      toast({ title: "Appuntamento programmato" });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Errore", description: error.message, variant: "destructive" });
+    },
+  });
+
   const formatPrice = (cents: number) => {
     return (cents / 100).toLocaleString("it-IT", { style: "currency", currency: "EUR" });
   };
@@ -173,7 +191,6 @@ export default function ResellerServiceOrders() {
     acceptMutation.mutate({
       orderId: selectedOrder.id,
       data: {
-        scheduledAt: acceptForm.scheduledAt || undefined,
         repairCenterId: acceptForm.repairCenterId || undefined,
         internalNotes: acceptForm.internalNotes || undefined,
       },
@@ -321,6 +338,21 @@ export default function ResellerServiceOrders() {
                                 <X className="w-4 h-4 text-red-600" />
                               </Button>
                             </>
+                          )}
+
+                          {order.status === "accepted" && order.deliveryMethod === "in_person" && !order.scheduledAt && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => {
+                                setSelectedOrder(order);
+                                setIsScheduleDialogOpen(true);
+                              }}
+                              title="Programma appuntamento"
+                              data-testid={`button-schedule-${order.id}`}
+                            >
+                              <Calendar className="w-4 h-4 text-blue-600" />
+                            </Button>
                           )}
 
                           {(order.status === "accepted" || order.status === "scheduled") && order.deliveryMethod && !order.deviceReceivedAt && (
@@ -512,16 +544,6 @@ export default function ResellerServiceOrders() {
 
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label>Programma Appuntamento (opzionale)</Label>
-              <Input
-                type="datetime-local"
-                value={acceptForm.scheduledAt}
-                onChange={(e) => setAcceptForm({ ...acceptForm, scheduledAt: e.target.value })}
-                data-testid="input-scheduled-at"
-              />
-            </div>
-
-            <div className="space-y-2">
               <Label>Assegna Centro Riparazione (opzionale)</Label>
               <Select
                 value={acceptForm.repairCenterId}
@@ -567,6 +589,51 @@ export default function ResellerServiceOrders() {
                 <Check className="w-4 h-4 mr-2" />
               )}
               Accetta
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isScheduleDialogOpen} onOpenChange={setIsScheduleDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Programma Appuntamento</DialogTitle>
+            <DialogDescription>
+              Seleziona data e ora per la consegna di persona - {selectedOrder?.orderNumber}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Data e Ora Appuntamento</Label>
+              <Input
+                type="datetime-local"
+                value={scheduleDate}
+                onChange={(e) => setScheduleDate(e.target.value)}
+                data-testid="input-schedule-date"
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsScheduleDialogOpen(false)}>
+              Annulla
+            </Button>
+            <Button
+              onClick={() => {
+                if (selectedOrder && scheduleDate) {
+                  scheduleMutation.mutate({ orderId: selectedOrder.id, scheduledAt: scheduleDate });
+                }
+              }}
+              disabled={scheduleMutation.isPending || !scheduleDate}
+              data-testid="button-confirm-schedule"
+            >
+              {scheduleMutation.isPending ? (
+                <Loader2 className="w-4 h-4 animate-spin mr-2" />
+              ) : (
+                <Calendar className="w-4 h-4 mr-2" />
+              )}
+              Conferma
             </Button>
           </DialogFooter>
         </DialogContent>
