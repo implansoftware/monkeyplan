@@ -201,8 +201,10 @@ const menuItems = {
   ],
   repair_center: [
     { title: "Dashboard", url: "/repair-center", icon: LayoutDashboard, group: "Principale" },
-    { title: "Lavorazioni", url: "/repair-center/repairs", icon: Wrench, group: "Principale" },
-    { title: "Appuntamenti", url: "/repair-center/appointments", icon: CalendarCheck, group: "Principale" },
+    { title: "Ticket", url: "/repair-center/tickets", icon: Ticket, group: "Assistenza" },
+    { title: "Richieste Remote", url: "/repair-center/remote-requests", icon: Send, group: "Assistenza" },
+    { title: "Lavorazioni", url: "/repair-center/repairs", icon: Wrench, group: "Lavorazioni" },
+    { title: "Appuntamenti", url: "/repair-center/appointments", icon: CalendarCheck, group: "Lavorazioni" },
     { title: "Magazzino", url: "/repair-center/warehouses", icon: Warehouse, group: "Magazzino" },
     { title: "Prodotti", url: "/repair-center/products", icon: Package, group: "Magazzino" },
     { title: "Dispositivi", url: "/repair-center/dispositivi", icon: Smartphone, group: "Cataloghi" },
@@ -222,8 +224,6 @@ const menuItems = {
     { title: "Pratiche", url: "/repair-center/utility/practices", icon: FileCheck, group: "Utility" },
     { title: "Compensi", url: "/repair-center/utility/commissions", icon: Coins, group: "Utility" },
     { title: "Report Utility", url: "/repair-center/utility/reports", icon: PieChart, group: "Utility" },
-    { title: "Ticket", url: "/repair-center/tickets", icon: Ticket, group: "Assistenza" },
-    { title: "Richieste Remote", url: "/repair-center/remote-requests", icon: Send, group: "Assistenza" },
   ],
   customer: [
     { title: "Dashboard", url: "/customer", icon: LayoutDashboard, group: "Principale" },
@@ -295,10 +295,12 @@ const groupIcons: Record<string, typeof LayoutDashboard> = {
   "Assistenza": Ticket,
   "Principale": LayoutDashboard,
   "Le mie riparazioni": Wrench,
+  "Lavorazioni": Wrench,
   "Cataloghi": Package,
   "Gestione": Settings,
   "Acquisti": ShoppingCart,
   "Marketplace": Store,
+  "Interscambio": ArrowRightLeft,
 };
 
 export function AppSidebar() {
