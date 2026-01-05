@@ -9616,6 +9616,85 @@ export function registerRoutes(app: Express): Server {
     }
   });
   
+  // Upload ticket attachment
+  app.post("/api/tickets/:id/attachments", requireAuth, upload.single('file'), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      if (!req.file) return res.status(400).send("No file uploaded");
+      
+      const ticket = await storage.getTicket(req.params.id);
+      if (!ticket) return res.status(404).send("Ticket not found");
+      
+      // Check access - same as messages
+      let hasAccess = 
+        req.user.role === 'admin' ||
+        ticket.customerId === req.user.id ||
+        ticket.assignedTo === req.user.id;
+      
+      // Allow reseller to upload to their customers' tickets
+      if (!hasAccess && (req.user.role === 'reseller' || req.user.role === 'reseller_staff')) {
+        const customer = await storage.getUser(ticket.customerId);
+        const resellerId = req.user.role === 'reseller_staff' ? (req.user as any).resellerId : req.user.id;
+        if (customer && customer.resellerId === resellerId) {
+          hasAccess = true;
+        }
+      }
+      
+      if (!hasAccess) return res.status(403).send("Forbidden");
+      
+      // Prevent uploads on closed tickets
+      if (ticket.status === 'closed') {
+        return res.status(400).send("Cannot add attachments to closed ticket");
+      }
+      
+      // Validate file size (max 10MB)
+      const maxSize = 10 * 1024 * 1024;
+      if (req.file.size > maxSize) {
+        return res.status(400).send("File size exceeds 10MB limit");
+      }
+      
+      // Generate unique object key
+      const objectId = randomUUID();
+      const privateDir = objectStorage.getPrivateObjectDir();
+      const objectKey = `${privateDir}/ticket-attachments/${req.params.id}/${objectId}`;
+      
+      // Parse bucket and object name
+      const { bucketName, objectName } = parseObjectPath(objectKey);
+      
+      // Upload to Google Cloud Storage
+      const bucket = objectStorageClient.bucket(bucketName);
+      const file = bucket.file(objectName);
+      
+      await file.save(req.file.buffer, {
+        contentType: req.file.mimetype,
+        metadata: {
+          metadata: {
+            originalName: req.file.originalname,
+            uploadedBy: req.user.id,
+            ticketId: req.params.id,
+          }
+        }
+      });
+      
+      // Generate signed URL for access (valid for 7 days)
+      const [signedUrl] = await file.getSignedUrl({
+        action: 'read',
+        expires: Date.now() + 7 * 24 * 60 * 60 * 1000,
+      });
+      
+      res.json({
+        url: signedUrl,
+        objectKey,
+        filename: req.file.originalname,
+        mimeType: req.file.mimetype,
+        size: req.file.size,
+      });
+    } catch (error: any) {
+      console.error("Error uploading ticket attachment:", error);
+      res.status(500).send(error.message);
+    }
+  });
+
   // Create ticket message (reply)
   app.post("/api/tickets/:id/messages", requireAuth, async (req, res) => {
     try {
@@ -9646,7 +9725,7 @@ export function registerRoutes(app: Express): Server {
         return res.status(400).send("Cannot reply to closed ticket");
       }
       
-      const { message, isInternal } = req.body;
+      const { message, isInternal, attachments } = req.body;
       if (!message || typeof message !== 'string' || message.trim().length === 0) {
         return res.status(400).send("Message is required");
       }
@@ -9657,11 +9736,20 @@ export function registerRoutes(app: Express): Server {
         messageIsInternal = isInternal === true;
       }
       
+      // Validate attachments if provided
+      const validAttachments = Array.isArray(attachments) ? attachments.filter((a: any) => 
+        a && typeof a.url === 'string' && 
+        typeof a.filename === 'string' && 
+        typeof a.mimeType === 'string' && 
+        typeof a.size === 'number'
+      ) : [];
+      
       const ticketMessage = await storage.createTicketMessage({
         ticketId: req.params.id,
         userId: req.user.id,
         message: message.trim(),
         isInternal: messageIsInternal,
+        attachments: validAttachments,
       });
       
       // Broadcast real-time update to other participants (not sender)
