@@ -3094,6 +3094,17 @@ export const serviceItemPrices = pgTable("service_item_prices", {
 });
 
 // Service Orders (Ordini Interventi da Clienti)
+export const serviceOrderPaymentMethodEnum = pgEnum("service_order_payment_method", [
+  "in_person",      // Pagamento in negozio
+  "bank_transfer",  // Bonifico bancario
+]);
+
+export const serviceOrderPaymentStatusEnum = pgEnum("service_order_payment_status", [
+  "pending",   // In attesa di pagamento
+  "paid",      // Pagato
+  "cancelled", // Annullato
+]);
+
 export const serviceOrderStatusEnum = pgEnum("service_order_status", [
   "pending",      // In attesa di approvazione
   "accepted",     // Accettato dal rivenditore
@@ -3132,6 +3143,10 @@ export const serviceOrders = pgTable("service_orders", {
   // Stato e tracking
   status: serviceOrderStatusEnum("status").notNull().default("pending"),
   
+  // Pagamento
+  paymentMethod: serviceOrderPaymentMethodEnum("payment_method").notNull(), // Scelto dal cliente al momento dell'ordine
+  paymentStatus: serviceOrderPaymentStatusEnum("payment_status").notNull().default("pending"),
+  
   // Metodo consegna dispositivo (scelto dal cliente dopo accettazione)
   deliveryMethod: text("delivery_method"), // "in_person" | "shipping" | null
   
@@ -3162,6 +3177,7 @@ export const insertServiceOrderSchema = createInsertSchema(serviceOrders).omit({
   id: true,
   orderNumber: true,
   status: true,
+  paymentStatus: true,
   deliveryMethod: true,
   shippingAddress: true,
   shippingCity: true,
