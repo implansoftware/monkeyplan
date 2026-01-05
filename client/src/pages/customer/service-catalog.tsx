@@ -83,6 +83,20 @@ export default function CustomerServiceCatalog() {
     queryKey: ["/api/device-models"],
   });
 
+  // Query per ottenere i dati del rivenditore (IBAN per bonifico)
+  const { data: myReseller } = useQuery<{
+    id: string;
+    fullName: string;
+    ragioneSociale: string | null;
+    iban: string | null;
+    email: string | null;
+    phone: string | null;
+  }>({
+    queryKey: ["/api/customer/my-reseller"],
+    enabled: !!user?.resellerId, // Solo se il cliente ha un reseller associato
+    retry: false, // Non ritentare se fallisce
+  });
+
   // Trova l'id del tipo dispositivo selezionato
   const selectedDeviceType = deviceTypes?.find(t => t.name === orderForm.deviceType);
   
@@ -369,6 +383,25 @@ export default function CustomerServiceCatalog() {
                     <p className="text-sm font-medium">
                       Importo: {formatPrice(order.priceCents)}
                     </p>
+                    
+                    {(order as any).paymentMethod === "bank_transfer" && (
+                      <div className="p-3 bg-muted rounded-md text-sm" data-testid={`bank-info-${order.id}`}>
+                        <p className="font-medium mb-1">Pagamento con bonifico</p>
+                        {myReseller ? (
+                          <>
+                            <p><span className="text-muted-foreground">Intestatario:</span> {myReseller.ragioneSociale || myReseller.fullName}</p>
+                            {myReseller.iban ? (
+                              <p><span className="text-muted-foreground">IBAN:</span> <span className="font-mono">{myReseller.iban}</span></p>
+                            ) : (
+                              <p className="text-amber-600">IBAN non ancora configurato - contatta il rivenditore</p>
+                            )}
+                          </>
+                        ) : (
+                          <p className="text-muted-foreground">Contatta il rivenditore per le coordinate bancarie</p>
+                        )}
+                      </div>
+                    )}
+                    
                     {order.scheduledAt && (
                       <p className="text-sm">
                         <span className="text-muted-foreground">Appuntamento:</span>{" "}
@@ -601,6 +634,20 @@ export default function CustomerServiceCatalog() {
                   </Label>
                 </div>
               </RadioGroup>
+
+              {orderForm.paymentMethod === "bank_transfer" && myReseller && (
+                <div className="mt-3 p-4 bg-muted rounded-lg border" data-testid="bank-transfer-info">
+                  <p className="text-sm font-medium mb-2">Coordinate bancarie per il bonifico:</p>
+                  <div className="space-y-1 text-sm">
+                    <p><span className="text-muted-foreground">Intestatario:</span> {myReseller.ragioneSociale || myReseller.fullName}</p>
+                    {myReseller.iban ? (
+                      <p><span className="text-muted-foreground">IBAN:</span> <span className="font-mono font-medium">{myReseller.iban}</span></p>
+                    ) : (
+                      <p className="text-amber-600">IBAN non configurato dal rivenditore</p>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
