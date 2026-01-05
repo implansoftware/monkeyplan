@@ -11,7 +11,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { ArrowLeft, Send, User, UserCog, AlertCircle, CheckCircle2 } from "lucide-react";
+import { ArrowLeft, Send, User, UserCog, AlertCircle, CheckCircle2, Paperclip, X, FileText, Image, File, Download } from "lucide-react";
+import { Input } from "@/components/ui/input";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -42,12 +43,20 @@ type Ticket = {
   updatedAt: string;
 };
 
+type TicketAttachment = {
+  url: string;
+  filename: string;
+  mimeType: string;
+  size: number;
+};
+
 type TicketMessage = {
   id: string;
   ticketId: string;
   userId: string;
   message: string;
   isInternal: boolean;
+  attachments?: TicketAttachment[];
   createdAt: string;
 };
 
@@ -64,6 +73,42 @@ function getStatusBadge(status: string) {
     case "closed": return <Badge variant="outline">Chiuso</Badge>;
     default: return <Badge variant="outline">{status}</Badge>;
   }
+}
+
+function getFileIcon(mimeType: string) {
+  if (mimeType.startsWith("image/")) return <Image className="h-4 w-4" />;
+  if (mimeType.includes("pdf")) return <FileText className="h-4 w-4" />;
+  return <File className="h-4 w-4" />;
+}
+
+function formatFileSize(bytes: number) {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function AttachmentList({ attachments }: { attachments?: TicketAttachment[] }) {
+  if (!attachments || attachments.length === 0) return null;
+  
+  return (
+    <div className="mt-2 space-y-1">
+      {attachments.map((att, idx) => (
+        <a
+          key={idx}
+          href={att.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center gap-2 p-2 rounded border bg-muted/50 hover:bg-muted text-sm"
+          data-testid={`attachment-${idx}`}
+        >
+          {getFileIcon(att.mimeType)}
+          <span className="flex-1 truncate">{att.filename}</span>
+          <span className="text-xs text-muted-foreground">{formatFileSize(att.size)}</span>
+          <Download className="h-3 w-3 text-muted-foreground" />
+        </a>
+      ))}
+    </div>
+  );
 }
 
 function getPriorityBadge(priority: string) {
@@ -86,6 +131,9 @@ function TicketDetailManageView({ basePath }: { basePath: string }) {
   
   const [replyMessage, setReplyMessage] = useState("");
   const [isInternalNote, setIsInternalNote] = useState(false);
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { data: ticket, isLoading: ticketLoading } = useQuery<Ticket>({
     queryKey: ["/api/tickets", ticketId],
@@ -155,14 +203,15 @@ function TicketDetailManageView({ basePath }: { basePath: string }) {
   });
 
   const sendMessageMutation = useMutation({
-    mutationFn: async ({ message, isInternal }: { message: string; isInternal: boolean }) => {
-      const res = await apiRequest("POST", `/api/tickets/${ticketId}/messages`, { message, isInternal });
+    mutationFn: async ({ message, isInternal, attachments }: { message: string; isInternal: boolean; attachments: TicketAttachment[] }) => {
+      const res = await apiRequest("POST", `/api/tickets/${ticketId}/messages`, { message, isInternal, attachments });
       return await res.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/tickets", ticketId, "messages"] });
       setReplyMessage("");
       setIsInternalNote(false);
+      setSelectedFiles([]);
       toast({ title: "Messaggio inviato" });
     },
     onError: (error: Error) => {
@@ -173,9 +222,66 @@ function TicketDetailManageView({ basePath }: { basePath: string }) {
     },
   });
 
-  const handleSendReply = () => {
+  const uploadFile = async (file: File): Promise<TicketAttachment> => {
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    const res = await fetch(`/api/tickets/${ticketId}/attachments`, {
+      method: 'POST',
+      body: formData,
+      credentials: 'include',
+    });
+    
+    if (!res.ok) {
+      throw new Error(await res.text());
+    }
+    
+    const data = await res.json();
+    return {
+      url: data.url,
+      filename: data.filename,
+      mimeType: data.mimeType,
+      size: data.size,
+    };
+  };
+
+  const handleSendReply = async () => {
     if (replyMessage.trim().length === 0) return;
-    sendMessageMutation.mutate({ message: replyMessage, isInternal: isInternalNote });
+    
+    setIsUploading(true);
+    try {
+      // Upload all selected files first
+      const uploadedAttachments: TicketAttachment[] = [];
+      for (const file of selectedFiles) {
+        const attachment = await uploadFile(file);
+        uploadedAttachments.push(attachment);
+      }
+      
+      // Then send the message with attachments
+      sendMessageMutation.mutate({ 
+        message: replyMessage, 
+        isInternal: isInternalNote,
+        attachments: uploadedAttachments 
+      });
+    } catch (error: any) {
+      toast({ title: "Errore upload", description: error.message, variant: "destructive" });
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    const validFiles = files.filter(f => f.size <= 10 * 1024 * 1024); // Max 10MB
+    if (validFiles.length !== files.length) {
+      toast({ title: "Attenzione", description: "Alcuni file superano il limite di 10MB", variant: "destructive" });
+    }
+    setSelectedFiles(prev => [...prev, ...validFiles]);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const removeFile = (index: number) => {
+    setSelectedFiles(prev => prev.filter((_, i) => i !== index));
   };
 
   if (ticketLoading) {
@@ -271,6 +377,7 @@ function TicketDetailManageView({ basePath }: { basePath: string }) {
                           <span className="text-xs text-muted-foreground">{format(new Date(msg.createdAt), "dd/MM/yyyy HH:mm")}</span>
                         </div>
                         <p className="text-sm whitespace-pre-wrap">{msg.message}</p>
+                        <AttachmentList attachments={msg.attachments} />
                       </div>
                     ))}
                     <div ref={messagesEndRef} />
@@ -298,10 +405,52 @@ function TicketDetailManageView({ basePath }: { basePath: string }) {
                       </div>
                     )}
                     <Textarea placeholder="Digita il tuo messaggio..." value={replyMessage} onChange={(e) => setReplyMessage(e.target.value)} rows={4} data-testid="textarea-reply" />
-                    <Button onClick={handleSendReply} disabled={sendMessageMutation.isPending || replyMessage.trim().length === 0} data-testid="button-send-reply">
-                      <Send className="h-4 w-4 mr-2" />
-                      {sendMessageMutation.isPending ? "Invio..." : isInternalNote ? "Aggiungi nota interna" : "Invia risposta"}
-                    </Button>
+                    
+                    {selectedFiles.length > 0 && (
+                      <div className="space-y-1">
+                        <Label className="text-xs text-muted-foreground">Allegati selezionati:</Label>
+                        {selectedFiles.map((file, idx) => (
+                          <div key={idx} className="flex items-center gap-2 p-2 rounded border bg-muted/50 text-sm">
+                            {getFileIcon(file.type)}
+                            <span className="flex-1 truncate">{file.name}</span>
+                            <span className="text-xs text-muted-foreground">{formatFileSize(file.size)}</span>
+                            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => removeFile(idx)} data-testid={`button-remove-file-${idx}`}>
+                              <X className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    
+                    <div className="flex items-center gap-2">
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        multiple
+                        onChange={handleFileSelect}
+                        className="hidden"
+                        accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt"
+                        data-testid="input-file"
+                      />
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={() => fileInputRef.current?.click()}
+                        disabled={isUploading}
+                        data-testid="button-add-attachment"
+                      >
+                        <Paperclip className="h-4 w-4 mr-2" />
+                        Allega file
+                      </Button>
+                      <Button 
+                        onClick={handleSendReply} 
+                        disabled={sendMessageMutation.isPending || isUploading || replyMessage.trim().length === 0} 
+                        data-testid="button-send-reply"
+                      >
+                        <Send className="h-4 w-4 mr-2" />
+                        {isUploading ? "Upload in corso..." : sendMessageMutation.isPending ? "Invio..." : isInternalNote ? "Aggiungi nota interna" : "Invia risposta"}
+                      </Button>
+                    </div>
                   </div>
                 </>
               )}
@@ -393,6 +542,9 @@ function TicketDetailReadView({ basePath }: { basePath: string }) {
   const ticketId = ticketIdMatch?.[1];
   
   const [replyMessage, setReplyMessage] = useState("");
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { data: ticket, isLoading: ticketLoading } = useQuery<Ticket>({
     queryKey: ["/api/tickets", ticketId],
@@ -413,13 +565,14 @@ function TicketDetailReadView({ basePath }: { basePath: string }) {
   }, [messages]);
 
   const sendMessageMutation = useMutation({
-    mutationFn: async (message: string) => {
-      const res = await apiRequest("POST", `/api/tickets/${ticketId}/messages`, { message, isInternal: false });
+    mutationFn: async ({ message, attachments }: { message: string; attachments: TicketAttachment[] }) => {
+      const res = await apiRequest("POST", `/api/tickets/${ticketId}/messages`, { message, isInternal: false, attachments });
       return await res.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/tickets", ticketId, "messages"] });
       setReplyMessage("");
+      setSelectedFiles([]);
       toast({ title: "Messaggio inviato" });
     },
     onError: (error: Error) => {
@@ -429,6 +582,43 @@ function TicketDetailReadView({ basePath }: { basePath: string }) {
       }
     },
   });
+
+  const uploadFile = async (file: File): Promise<TicketAttachment> => {
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    const res = await fetch(`/api/tickets/${ticketId}/attachments`, {
+      method: 'POST',
+      body: formData,
+      credentials: 'include',
+    });
+    
+    if (!res.ok) {
+      throw new Error(await res.text());
+    }
+    
+    const data = await res.json();
+    return {
+      url: data.url,
+      filename: data.filename,
+      mimeType: data.mimeType,
+      size: data.size,
+    };
+  };
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    const validFiles = files.filter(f => f.size <= 10 * 1024 * 1024);
+    if (validFiles.length !== files.length) {
+      toast({ title: "Attenzione", description: "Alcuni file superano il limite di 10MB", variant: "destructive" });
+    }
+    setSelectedFiles(prev => [...prev, ...validFiles]);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const removeFile = (index: number) => {
+    setSelectedFiles(prev => prev.filter((_, i) => i !== index));
+  };
 
   const closeTicketMutation = useMutation({
     mutationFn: async () => {
@@ -446,9 +636,26 @@ function TicketDetailReadView({ basePath }: { basePath: string }) {
     },
   });
 
-  const handleSendReply = () => {
+  const handleSendReply = async () => {
     if (replyMessage.trim().length === 0) return;
-    sendMessageMutation.mutate(replyMessage);
+    
+    setIsUploading(true);
+    try {
+      const uploadedAttachments: TicketAttachment[] = [];
+      for (const file of selectedFiles) {
+        const attachment = await uploadFile(file);
+        uploadedAttachments.push(attachment);
+      }
+      
+      sendMessageMutation.mutate({ 
+        message: replyMessage, 
+        attachments: uploadedAttachments 
+      });
+    } catch (error: any) {
+      toast({ title: "Errore upload", description: error.message, variant: "destructive" });
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   const isReseller = user?.role === 'reseller' || user?.role === 'reseller_staff';
@@ -545,6 +752,7 @@ function TicketDetailReadView({ basePath }: { basePath: string }) {
                           <span className="text-xs text-muted-foreground">{format(new Date(msg.createdAt), "dd/MM/yyyy HH:mm")}</span>
                         </div>
                         <p className="text-sm whitespace-pre-wrap">{msg.message}</p>
+                        <AttachmentList attachments={msg.attachments} />
                       </div>
                     ))}
                     <div ref={messagesEndRef} />
@@ -558,10 +766,52 @@ function TicketDetailReadView({ basePath }: { basePath: string }) {
                   <div className="space-y-3">
                     <Label>Scrivi una risposta</Label>
                     <Textarea placeholder="Digita il tuo messaggio..." value={replyMessage} onChange={(e) => setReplyMessage(e.target.value)} rows={4} data-testid="textarea-reply" />
-                    <Button onClick={handleSendReply} disabled={sendMessageMutation.isPending || replyMessage.trim().length === 0} data-testid="button-send-reply">
-                      <Send className="h-4 w-4 mr-2" />
-                      {sendMessageMutation.isPending ? "Invio..." : "Invia risposta"}
-                    </Button>
+                    
+                    {selectedFiles.length > 0 && (
+                      <div className="space-y-1">
+                        <Label className="text-xs text-muted-foreground">Allegati selezionati:</Label>
+                        {selectedFiles.map((file, idx) => (
+                          <div key={idx} className="flex items-center gap-2 p-2 rounded border bg-muted/50 text-sm">
+                            {getFileIcon(file.type)}
+                            <span className="flex-1 truncate">{file.name}</span>
+                            <span className="text-xs text-muted-foreground">{formatFileSize(file.size)}</span>
+                            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => removeFile(idx)} data-testid={`button-remove-file-${idx}`}>
+                              <X className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    
+                    <div className="flex items-center gap-2">
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        multiple
+                        onChange={handleFileSelect}
+                        className="hidden"
+                        accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt"
+                        data-testid="input-file"
+                      />
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={() => fileInputRef.current?.click()}
+                        disabled={isUploading}
+                        data-testid="button-add-attachment"
+                      >
+                        <Paperclip className="h-4 w-4 mr-2" />
+                        Allega file
+                      </Button>
+                      <Button 
+                        onClick={handleSendReply} 
+                        disabled={sendMessageMutation.isPending || isUploading || replyMessage.trim().length === 0} 
+                        data-testid="button-send-reply"
+                      >
+                        <Send className="h-4 w-4 mr-2" />
+                        {isUploading ? "Upload in corso..." : sendMessageMutation.isPending ? "Invio..." : "Invia risposta"}
+                      </Button>
+                    </div>
                   </div>
                 </>
               )}
