@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { ArrowLeft, Send, Clock, User } from "lucide-react";
+import { ArrowLeft, Send, Clock, User, Paperclip, FileText, Image, File, Download, X } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
@@ -27,14 +27,58 @@ type Ticket = {
   updatedAt: string;
 };
 
+type TicketAttachment = {
+  url: string;
+  filename: string;
+  mimeType: string;
+  size: number;
+};
+
 type TicketMessage = {
   id: string;
   ticketId: string;
   userId: string;
   message: string;
   isInternal: boolean;
+  attachments?: TicketAttachment[];
   createdAt: string;
 };
+
+function formatFileSize(bytes: number): string {
+  if (bytes < 1024) return bytes + ' B';
+  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+  return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+}
+
+function getFileIcon(mimeType: string) {
+  if (mimeType.startsWith('image/')) return <Image className="h-4 w-4" />;
+  if (mimeType.includes('pdf')) return <FileText className="h-4 w-4" />;
+  return <File className="h-4 w-4" />;
+}
+
+function AttachmentList({ attachments }: { attachments?: TicketAttachment[] }) {
+  if (!attachments || attachments.length === 0) return null;
+  
+  return (
+    <div className="mt-2 space-y-1">
+      {attachments.map((att, idx) => (
+        <a
+          key={idx}
+          href={att.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center gap-2 p-2 rounded border bg-muted/30 hover:bg-muted/50 transition-colors text-sm"
+          data-testid={`attachment-${idx}`}
+        >
+          {getFileIcon(att.mimeType)}
+          <span className="flex-1 truncate">{att.filename}</span>
+          <span className="text-xs text-muted-foreground">{formatFileSize(att.size)}</span>
+          <Download className="h-3 w-3 text-muted-foreground" />
+        </a>
+      ))}
+    </div>
+  );
+}
 
 export default function CustomerTicketDetail() {
   const [, params] = useRoute("/customer/tickets/:id");
@@ -237,6 +281,7 @@ export default function CustomerTicketDetail() {
                       </span>
                     </div>
                     <p className="text-sm whitespace-pre-wrap">{msg.message}</p>
+                    <AttachmentList attachments={msg.attachments} />
                   </div>
                 ))}
                 <div ref={messagesEndRef} />
