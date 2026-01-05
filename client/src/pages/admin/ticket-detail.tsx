@@ -11,7 +11,18 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { ArrowLeft, Send, User, UserCog, AlertCircle } from "lucide-react";
+import { ArrowLeft, Send, User, UserCog, AlertCircle, CheckCircle2 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
@@ -419,10 +430,29 @@ function TicketDetailReadView({ basePath }: { basePath: string }) {
     },
   });
 
+  const closeTicketMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest("PATCH", `/api/tickets/${ticketId}/status`, { status: "closed" });
+      return await res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/tickets", ticketId] });
+      queryClient.invalidateQueries({ queryKey: ["/api/tickets"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/reseller/tickets/pending-count"] });
+      toast({ title: "Ticket chiuso", description: "Il ticket è stato chiuso con successo" });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Errore", description: error.message.replace(/^\d+:\s*/, ''), variant: "destructive" });
+    },
+  });
+
   const handleSendReply = () => {
     if (replyMessage.trim().length === 0) return;
     sendMessageMutation.mutate(replyMessage);
   };
+
+  const isReseller = user?.role === 'reseller' || user?.role === 'reseller_staff';
+  const canCloseTicket = isReseller && ticket?.status !== 'closed';
 
   if (ticketLoading) {
     return (
@@ -545,7 +575,7 @@ function TicketDetailReadView({ basePath }: { basePath: string }) {
           </Card>
         </div>
 
-        <div>
+        <div className="space-y-6">
           <Card>
             <CardHeader>
               <CardTitle>Informazioni</CardTitle>
@@ -557,6 +587,46 @@ function TicketDetailReadView({ basePath }: { basePath: string }) {
               </div>
             </CardContent>
           </Card>
+
+          {canCloseTicket && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Azioni</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button 
+                      variant="destructive" 
+                      className="w-full"
+                      disabled={closeTicketMutation.isPending}
+                      data-testid="button-close-ticket"
+                    >
+                      <CheckCircle2 className="h-4 w-4 mr-2" />
+                      {closeTicketMutation.isPending ? "Chiusura in corso..." : "Chiudi Ticket"}
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Conferma chiusura ticket</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Sei sicuro di voler chiudere questo ticket? Una volta chiuso, il cliente non potrà più inviare messaggi.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel data-testid="button-cancel-close">Annulla</AlertDialogCancel>
+                      <AlertDialogAction 
+                        onClick={() => closeTicketMutation.mutate()}
+                        data-testid="button-confirm-close"
+                      >
+                        Conferma chiusura
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </CardContent>
+            </Card>
+          )}
         </div>
       </div>
     </div>

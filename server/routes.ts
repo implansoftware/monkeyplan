@@ -9431,22 +9431,16 @@ export function registerRoutes(app: Express): Server {
       
       // Check permissions based on role
       let canUpdate = false;
-      let isReseller = false;
       
       // Admin can do anything
       if (req.user.role === 'admin' || req.user.role === 'admin_staff') {
         canUpdate = true;
       }
-      // Assigned user can update
-      else if (ticket.assignedTo === req.user.id) {
-        canUpdate = true;
-      }
-      // Reseller can only CLOSE tickets from their customers
+      // Reseller/reseller_staff can ONLY close tickets from their customers (even if assigned)
       else if (req.user.role === 'reseller' || req.user.role === 'reseller_staff') {
         const customer = await storage.getUser(ticket.customerId);
         const resellerId = req.user.role === 'reseller_staff' ? (req.user as any).resellerId : req.user.id;
         if (customer && customer.resellerId === resellerId) {
-          isReseller = true;
           // Resellers can only close tickets, not reopen or set in_progress
           if (status === 'closed') {
             canUpdate = true;
@@ -9454,6 +9448,10 @@ export function registerRoutes(app: Express): Server {
             return res.status(403).send("I rivenditori possono solo chiudere i ticket");
           }
         }
+      }
+      // Non-reseller assigned user can update to any status
+      else if (ticket.assignedTo === req.user.id) {
+        canUpdate = true;
       }
       
       if (!canUpdate) return res.status(403).send("Forbidden");
