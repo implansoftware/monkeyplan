@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Search, Ticket, Clock, Plus, MessageSquare, Building2, Users } from "lucide-react";
+import { Search, Ticket, Clock, Plus, MessageSquare, Building2, Users, UserCircle } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -33,6 +33,7 @@ type TicketType = {
   targetId: string | null;
   createdAt: string;
   updatedAt: string;
+  customerName?: string;
 };
 
 type RepairCenter = {
@@ -44,6 +45,7 @@ export default function ResellerTickets() {
   const [, setLocation] = useLocation();
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [activeTab, setActiveTab] = useState<"customers" | "internal">("customers");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [newTicket, setNewTicket] = useState({
     subject: "",
@@ -54,8 +56,15 @@ export default function ResellerTickets() {
   });
   const { toast } = useToast();
 
+  // Ticket interni (tra business entities)
   const { data: internalTickets = [], isLoading: loadingInternal } = useQuery<TicketType[]>({
     queryKey: ["/api/internal-tickets"],
+    retry: false,
+  });
+
+  // Ticket dei clienti (support tickets)
+  const { data: customerTickets = [], isLoading: loadingCustomer } = useQuery<TicketType[]>({
+    queryKey: ["/api/tickets"],
     retry: false,
   });
 
@@ -89,7 +98,10 @@ export default function ResellerTickets() {
     },
   });
 
-  const filteredTickets = internalTickets.filter((ticket) => {
+  const currentTickets = activeTab === "customers" ? customerTickets : internalTickets;
+  const currentLoading = activeTab === "customers" ? loadingCustomer : loadingInternal;
+
+  const filteredTickets = currentTickets.filter((ticket) => {
     const matchesSearch = ticket.subject.toLowerCase().includes(searchQuery.toLowerCase()) ||
       ticket.ticketNumber.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesStatus = statusFilter === "all" || ticket.status === statusFilter;
@@ -123,13 +135,6 @@ export default function ResellerTickets() {
     return ticket.targetType;
   };
 
-  const getDirectionBadge = (ticket: TicketType, userId: string) => {
-    if (ticket.initiatorId === userId) {
-      return <Badge variant="outline" className="text-xs">Inviato</Badge>;
-    }
-    return <Badge className="text-xs">Ricevuto</Badge>;
-  };
-
   const handleSubmit = () => {
     if (!newTicket.subject || !newTicket.description) {
       toast({ 
@@ -156,125 +161,146 @@ export default function ResellerTickets() {
     <div className="space-y-6">
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="text-3xl font-bold">Ticket Interni</h1>
+          <h1 className="text-3xl font-bold">Gestione Ticket</h1>
           <p className="text-muted-foreground">
-            Comunica con Admin e Centri Riparazione
+            Ticket clienti e comunicazioni interne
           </p>
         </div>
         
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button data-testid="button-new-ticket">
-              <Plus className="h-4 w-4 mr-2" />
-              Nuovo Ticket
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-[500px]">
-            <DialogHeader>
-              <DialogTitle>Crea Nuovo Ticket</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4 mt-4">
-              <div className="space-y-2">
-                <Label>Destinatario *</Label>
-                <Select 
-                  value={newTicket.targetType} 
-                  onValueChange={(v) => setNewTicket({ ...newTicket, targetType: v, targetId: "" })}
-                >
-                  <SelectTrigger data-testid="select-target-type">
-                    <SelectValue placeholder="Seleziona destinatario" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="admin">
-                      <div className="flex items-center gap-2">
-                        <Building2 className="h-4 w-4" />
-                        Amministrazione
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="repair_center">
-                      <div className="flex items-center gap-2">
-                        <Users className="h-4 w-4" />
-                        Centro Riparazione
-                      </div>
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              {newTicket.targetType === "repair_center" && (
+        {activeTab === "internal" && (
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogTrigger asChild>
+              <Button data-testid="button-new-ticket">
+                <Plus className="h-4 w-4 mr-2" />
+                Nuovo Ticket
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[500px]">
+              <DialogHeader>
+                <DialogTitle>Crea Nuovo Ticket Interno</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4 mt-4">
                 <div className="space-y-2">
-                  <Label>Centro Riparazione *</Label>
+                  <Label>Destinatario *</Label>
                   <Select 
-                    value={newTicket.targetId} 
-                    onValueChange={(v) => setNewTicket({ ...newTicket, targetId: v })}
+                    value={newTicket.targetType} 
+                    onValueChange={(v) => setNewTicket({ ...newTicket, targetType: v, targetId: "" })}
                   >
-                    <SelectTrigger data-testid="select-repair-center">
-                      <SelectValue placeholder="Seleziona centro" />
+                    <SelectTrigger data-testid="select-target-type">
+                      <SelectValue placeholder="Seleziona destinatario" />
                     </SelectTrigger>
                     <SelectContent>
-                      {repairCenters.map((center) => (
-                        <SelectItem key={center.id} value={center.id}>
-                          {center.name}
-                        </SelectItem>
-                      ))}
+                      <SelectItem value="admin">
+                        <div className="flex items-center gap-2">
+                          <Building2 className="h-4 w-4" />
+                          Amministrazione
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="repair_center">
+                        <div className="flex items-center gap-2">
+                          <Users className="h-4 w-4" />
+                          Centro Riparazione
+                        </div>
+                      </SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
-              )}
-              
-              <div className="space-y-2">
-                <Label>Oggetto *</Label>
-                <Input
-                  value={newTicket.subject}
-                  onChange={(e) => setNewTicket({ ...newTicket, subject: e.target.value })}
-                  placeholder="Oggetto del ticket"
-                  data-testid="input-ticket-subject"
-                />
+                
+                {newTicket.targetType === "repair_center" && (
+                  <div className="space-y-2">
+                    <Label>Centro Riparazione *</Label>
+                    <Select 
+                      value={newTicket.targetId} 
+                      onValueChange={(v) => setNewTicket({ ...newTicket, targetId: v })}
+                    >
+                      <SelectTrigger data-testid="select-repair-center">
+                        <SelectValue placeholder="Seleziona centro" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {repairCenters.map((center) => (
+                          <SelectItem key={center.id} value={center.id}>
+                            {center.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+                
+                <div className="space-y-2">
+                  <Label>Oggetto *</Label>
+                  <Input
+                    value={newTicket.subject}
+                    onChange={(e) => setNewTicket({ ...newTicket, subject: e.target.value })}
+                    placeholder="Oggetto del ticket"
+                    data-testid="input-ticket-subject"
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label>Descrizione *</Label>
+                  <Textarea
+                    value={newTicket.description}
+                    onChange={(e) => setNewTicket({ ...newTicket, description: e.target.value })}
+                    placeholder="Descrivi il problema o la richiesta..."
+                    rows={4}
+                    data-testid="input-ticket-description"
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label>Priorità</Label>
+                  <Select 
+                    value={newTicket.priority} 
+                    onValueChange={(v) => setNewTicket({ ...newTicket, priority: v })}
+                  >
+                    <SelectTrigger data-testid="select-priority">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="low">Bassa</SelectItem>
+                      <SelectItem value="medium">Media</SelectItem>
+                      <SelectItem value="high">Alta</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div className="flex justify-end gap-2 pt-4">
+                  <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+                    Annulla
+                  </Button>
+                  <Button 
+                    onClick={handleSubmit} 
+                    disabled={createMutation.isPending}
+                    data-testid="button-submit-ticket"
+                  >
+                    {createMutation.isPending ? "Invio..." : "Invia Ticket"}
+                  </Button>
+                </div>
               </div>
-              
-              <div className="space-y-2">
-                <Label>Descrizione *</Label>
-                <Textarea
-                  value={newTicket.description}
-                  onChange={(e) => setNewTicket({ ...newTicket, description: e.target.value })}
-                  placeholder="Descrivi il problema o la richiesta..."
-                  rows={4}
-                  data-testid="input-ticket-description"
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label>Priorità</Label>
-                <Select 
-                  value={newTicket.priority} 
-                  onValueChange={(v) => setNewTicket({ ...newTicket, priority: v })}
-                >
-                  <SelectTrigger data-testid="select-priority">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="low">Bassa</SelectItem>
-                    <SelectItem value="medium">Media</SelectItem>
-                    <SelectItem value="high">Alta</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div className="flex justify-end gap-2 pt-4">
-                <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
-                  Annulla
-                </Button>
-                <Button 
-                  onClick={handleSubmit} 
-                  disabled={createMutation.isPending}
-                  data-testid="button-submit-ticket"
-                >
-                  {createMutation.isPending ? "Invio..." : "Invia Ticket"}
-                </Button>
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
+            </DialogContent>
+          </Dialog>
+        )}
       </div>
+
+      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "customers" | "internal")}>
+        <TabsList>
+          <TabsTrigger value="customers" className="flex items-center gap-2" data-testid="tab-customer-tickets">
+            <UserCircle className="h-4 w-4" />
+            Ticket Clienti
+            {customerTickets.length > 0 && (
+              <Badge variant="secondary" className="ml-1">{customerTickets.length}</Badge>
+            )}
+          </TabsTrigger>
+          <TabsTrigger value="internal" className="flex items-center gap-2" data-testid="tab-internal-tickets">
+            <MessageSquare className="h-4 w-4" />
+            Ticket Interni
+            {internalTickets.length > 0 && (
+              <Badge variant="secondary" className="ml-1">{internalTickets.length}</Badge>
+            )}
+          </TabsTrigger>
+        </TabsList>
+      </Tabs>
 
       <Card>
         <CardContent className="pt-6">
@@ -308,12 +334,21 @@ export default function ResellerTickets() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <MessageSquare className="h-5 w-5" />
-            Ticket Interni ({filteredTickets.length})
+            {activeTab === "customers" ? (
+              <>
+                <UserCircle className="h-5 w-5" />
+                Ticket Clienti ({filteredTickets.length})
+              </>
+            ) : (
+              <>
+                <MessageSquare className="h-5 w-5" />
+                Ticket Interni ({filteredTickets.length})
+              </>
+            )}
           </CardTitle>
         </CardHeader>
         <CardContent>
-          {loadingInternal ? (
+          {currentLoading ? (
             <div className="space-y-3">
               {[1, 2, 3].map((i) => (
                 <Skeleton key={i} className="h-24 w-full" />
@@ -321,17 +356,27 @@ export default function ResellerTickets() {
             </div>
           ) : filteredTickets.length === 0 ? (
             <div className="text-center py-12 text-muted-foreground">
-              <MessageSquare className="h-12 w-12 mx-auto mb-4 opacity-50" />
+              {activeTab === "customers" ? (
+                <UserCircle className="h-12 w-12 mx-auto mb-4 opacity-50" />
+              ) : (
+                <MessageSquare className="h-12 w-12 mx-auto mb-4 opacity-50" />
+              )}
               <p className="text-lg font-medium mb-1">
                 {searchQuery || statusFilter !== "all" 
                   ? "Nessun ticket trovato" 
-                  : "Nessun ticket interno"
+                  : activeTab === "customers" 
+                    ? "Nessun ticket dai clienti"
+                    : "Nessun ticket interno"
                 }
               </p>
               <p className="text-sm mb-4">
-                {!searchQuery && statusFilter === "all" && "Crea il tuo primo ticket per comunicare con Admin o i tuoi Centri Riparazione"}
+                {!searchQuery && statusFilter === "all" && (
+                  activeTab === "customers" 
+                    ? "I ticket di assistenza dei tuoi clienti appariranno qui"
+                    : "Crea il tuo primo ticket per comunicare con Admin o i tuoi Centri Riparazione"
+                )}
               </p>
-              {!searchQuery && statusFilter === "all" && (
+              {!searchQuery && statusFilter === "all" && activeTab === "internal" && (
                 <Button onClick={() => setIsDialogOpen(true)} data-testid="button-create-first-ticket">
                   <Plus className="h-4 w-4 mr-2" />
                   Crea Ticket
@@ -355,9 +400,16 @@ export default function ResellerTickets() {
                         </span>
                         {getStatusBadge(ticket.status)}
                         {getPriorityBadge(ticket.priority)}
-                        <Badge variant="outline" className="text-xs">
-                          → {getTargetLabel(ticket)}
-                        </Badge>
+                        {activeTab === "internal" && (
+                          <Badge variant="outline" className="text-xs">
+                            → {getTargetLabel(ticket)}
+                          </Badge>
+                        )}
+                        {activeTab === "customers" && ticket.ticketType === "support" && (
+                          <Badge variant="outline" className="text-xs">
+                            Supporto
+                          </Badge>
+                        )}
                       </div>
                       <h3 className="font-medium mb-1 truncate">{ticket.subject}</h3>
                       <p className="text-sm text-muted-foreground line-clamp-2">
