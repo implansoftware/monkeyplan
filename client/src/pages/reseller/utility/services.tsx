@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { UtilityService, UtilitySupplier } from "@shared/schema";
-import { Card, CardContent, CardHeader, CardFooter, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -213,13 +213,6 @@ export default function ResellerUtilityServices() {
             </div>
           </div>
         </CardContent>
-        <CardFooter className="pt-0">
-          <Button className="w-full gap-2" variant="default" data-testid={`button-propose-service-${service.id}`}>
-            <Sparkles className="h-4 w-4" />
-            Proponi al Cliente
-            <ArrowRight className="h-4 w-4" />
-          </Button>
-        </CardFooter>
       </Card>
     );
   };
