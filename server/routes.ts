@@ -7959,6 +7959,77 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Force received - when customer doesn't ship, center can force confirm
+  app.patch("/api/repair-center/remote-requests/:id/force-received", requireRole("repair_center"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const request = await storage.getRemoteRepairRequest(req.params.id);
+      if (!request) return res.status(404).send("Richiesta non trovata");
+      
+      if (request.assignedCenterId !== req.user.id) {
+        return res.status(403).send("Accesso non autorizzato");
+      }
+      
+      // Allow force receive only from awaiting_shipment status
+      if (request.status !== 'awaiting_shipment') {
+        return res.status(400).send("Questa azione è disponibile solo quando la richiesta è in attesa di spedizione");
+      }
+      
+      const { centerNotes } = req.body;
+      
+      // First update status to received
+      await storage.updateRemoteRepairRequest(req.params.id, {
+        status: 'received',
+        receivedAt: new Date(),
+        centerNotes: centerNotes || request.centerNotes
+      });
+      
+      // Then create the repair order automatically
+      const { repairOrder, remoteRequest } = await storage.createRepairFromRemoteRequest(req.params.id);
+      
+      setActivityEntity(res, { type: 'remote_repair_requests', id: remoteRequest.id });
+      res.json({ 
+        remoteRequest, 
+        repairOrder,
+        message: `Ricezione forzata. Lavorazione ${repairOrder.orderNumber} creata automaticamente`
+      });
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // Cancel request - when customer doesn't respond
+  app.patch("/api/repair-center/remote-requests/:id/cancel", requireRole("repair_center"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const request = await storage.getRemoteRepairRequest(req.params.id);
+      if (!request) return res.status(404).send("Richiesta non trovata");
+      
+      if (request.assignedCenterId !== req.user.id) {
+        return res.status(403).send("Accesso non autorizzato");
+      }
+      
+      // Allow cancel only from awaiting_shipment status
+      if (request.status !== 'awaiting_shipment') {
+        return res.status(400).send("Questa azione è disponibile solo quando la richiesta è in attesa di spedizione");
+      }
+      
+      const { cancellationReason } = req.body;
+      
+      const updated = await storage.updateRemoteRepairRequest(req.params.id, {
+        status: 'cancelled',
+        centerNotes: cancellationReason || 'Annullata dal centro per mancata spedizione del cliente'
+      });
+      
+      setActivityEntity(res, { type: 'remote_repair_requests', id: updated.id });
+      res.json(updated);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
   // Repair Center Remote Requests - pending count for badge
   app.get("/api/repair-center/remote-requests/pending-count", requireRole("repair_center"), async (req, res) => {
     try {
