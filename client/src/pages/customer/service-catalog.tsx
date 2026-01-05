@@ -83,8 +83,15 @@ export default function CustomerServiceCatalog() {
     queryKey: ["/api/device-models"],
   });
 
+  // Trova l'id del tipo dispositivo selezionato
+  const selectedDeviceType = deviceTypes?.find(t => t.name === orderForm.deviceType);
+  
   const filteredModels = (deviceModels || []).filter(
-    (model) => model.brandId === orderForm.brandId
+    (model) => {
+      const matchesBrand = model.brandId === orderForm.brandId;
+      const matchesType = !selectedDeviceType || model.typeId === selectedDeviceType.id;
+      return matchesBrand && matchesType;
+    }
   );
 
   const createOrderMutation = useMutation({
