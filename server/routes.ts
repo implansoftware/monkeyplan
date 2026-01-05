@@ -13770,6 +13770,18 @@ export function registerRoutes(app: Express): Server {
       if (delivery.notes) doc.text(`Note: ${delivery.notes}`, { align: 'left' });
       doc.moveDown(2);
       
+      // Warranty section
+      doc.fontSize(12).font('Helvetica-Bold').text('GARANZIA', { align: 'left' });
+      doc.fontSize(10).font('Helvetica');
+      const warrantyMonths = repairCenter?.warrantyMonths || 3;
+      const warrantyEndDate = new Date(delivery.deliveredAt);
+      warrantyEndDate.setMonth(warrantyEndDate.getMonth() + warrantyMonths);
+      doc.text(`Durata garanzia: ${warrantyMonths} mesi`, { align: 'left' });
+      doc.text(`Valida fino al: ${warrantyEndDate.toLocaleDateString('it-IT')}`, { align: 'left' });
+      doc.text('La garanzia copre esclusivamente la riparazione effettuata e i ricambi installati.', { align: 'left' });
+      doc.text('Sono esclusi dalla garanzia danni da urti, liquidi, manomissioni o uso improprio.', { align: 'left' });
+      doc.moveDown(2);
+      
       // Signature areas
       doc.fontSize(10).font('Helvetica');
       const signatureY = doc.y;
