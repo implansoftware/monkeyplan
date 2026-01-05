@@ -8526,7 +8526,7 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  // Reseller: confirm device receipt
+  // Reseller: confirm device receipt and create repair order
   app.patch("/api/reseller/service-orders/:id/confirm-receipt", requireRole("reseller", "reseller_staff"), async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
@@ -8540,7 +8540,7 @@ export function registerRoutes(app: Express): Server {
       if (!order) return res.status(404).send("Ordine non trovato");
       if (order.resellerId !== resellerId) return res.status(403).send("Accesso non autorizzato");
       
-      if (!['accepted', 'scheduled'].includes(order.status)) {
+      if (!["accepted", "scheduled"].includes(order.status)) {
         return res.status(400).send("L'ordine non è in stato valido per confermare ricezione");
       }
       
@@ -8548,17 +8548,48 @@ export function registerRoutes(app: Express): Server {
         return res.status(400).send("Il cliente non ha ancora scelto il metodo di consegna");
       }
       
+      // Check if repair order already exists (idempotency)
+      if (order.repairOrderId) {
+        return res.status(400).send("Ordine di riparazione già creato");
+      }
+      
+      // Get service item details for issueDescription
+      const serviceItem = await storage.getServiceItem(order.serviceItemId);
+      const issueDescription = serviceItem 
+        ? `Servizio: ${serviceItem.name} - ${order.issueDescription || 'Nessuna descrizione'}`
+        : order.issueDescription || 'Servizio richiesto da catalogo';
+      
+      // Create repair order from service order data
+      const repairOrder = await storage.createRepairOrder({
+        customerId: order.customerId,
+        resellerId: order.resellerId,
+        repairCenterId: order.repairCenterId || undefined,
+        deviceType: order.deviceType || 'smartphone',
+        deviceModel: order.model || order.brand || 'Dispositivo',
+        brand: order.brand || undefined,
+        deviceModelId: order.deviceModelId || undefined,
+        imei: order.imei || undefined,
+        serial: order.serial || undefined,
+        issueDescription: issueDescription,
+        status: 'ingressato',
+        notes: order.customerNotes || undefined,
+        ingressatoAt: new Date(),
+      });
+      
+      // Link repair order to service order and update status
       const updated = await storage.updateServiceOrder(req.params.id, {
         deviceReceivedAt: new Date(),
-        status: 'in_progress'
+        status: 'in_progress',
+        repairOrderId: repairOrder.id
       });
       
       setActivityEntity(res, { type: 'service_orders', id: updated.id });
-      res.json(updated);
+      res.json({ serviceOrder: updated, repairOrder });
     } catch (error: any) {
       res.status(500).send(error.message);
     }
   });
+
 
   // Reseller: download DDT for service order
   app.get("/api/reseller/service-orders/:id/ddt", requireRole("reseller", "reseller_staff"), async (req, res) => {
