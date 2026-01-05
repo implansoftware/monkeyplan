@@ -45,7 +45,7 @@ import {
   insertDeviceModelSchema,
   type Product
 } from "@shared/schema";
-import { ObjectStorageService, objectStorageClient, parseObjectPath } from "./objectStorage";
+import { ObjectStorageService, objectStorageClient, parseObjectPath, signObjectURL } from "./objectStorage";
 import { canAccessObject, ObjectPermission } from "./objectAcl";
 import { generateAndStoreReturnDocuments, getSignedDownloadUrl, generateTransferDDT, TransferDdtData } from "./services/shippingDocuments";
 import { calculateRepairPriority } from "./helpers/priorityCalculation";
@@ -9677,9 +9677,11 @@ export function registerRoutes(app: Express): Server {
       });
       
       // Generate signed URL for access (valid for 7 days)
-      const [signedUrl] = await file.getSignedUrl({
-        action: 'read',
-        expires: Date.now() + 7 * 24 * 60 * 60 * 1000,
+      const signedUrl = await signObjectURL({
+        bucketName,
+        objectName,
+        method: 'GET',
+        ttlSec: 7 * 24 * 60 * 60,
       });
       
       res.json({
