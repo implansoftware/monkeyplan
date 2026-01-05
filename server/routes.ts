@@ -9416,7 +9416,7 @@ export function registerRoutes(app: Express): Server {
     }
   }
   
-  // Update ticket status (admin and assigned users)
+  // Update ticket status (admin, assigned users, and resellers for their customers)
   app.patch("/api/tickets/:id/status", requireAuth, async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
@@ -9424,17 +9424,39 @@ export function registerRoutes(app: Express): Server {
       const ticket = await storage.getTicket(req.params.id);
       if (!ticket) return res.status(404).send("Ticket not found");
       
-      // Only admin or assigned user can update status
-      const canUpdate = 
-        req.user.role === 'admin' ||
-        ticket.assignedTo === req.user.id;
-      
-      if (!canUpdate) return res.status(403).send("Forbidden");
-      
       const { status } = req.body;
       if (!status || !['open', 'in_progress', 'closed'].includes(status)) {
         return res.status(400).send("Invalid status");
       }
+      
+      // Check permissions based on role
+      let canUpdate = false;
+      let isReseller = false;
+      
+      // Admin can do anything
+      if (req.user.role === 'admin' || req.user.role === 'admin_staff') {
+        canUpdate = true;
+      }
+      // Assigned user can update
+      else if (ticket.assignedTo === req.user.id) {
+        canUpdate = true;
+      }
+      // Reseller can only CLOSE tickets from their customers
+      else if (req.user.role === 'reseller' || req.user.role === 'reseller_staff') {
+        const customer = await storage.getUser(ticket.customerId);
+        const resellerId = req.user.role === 'reseller_staff' ? (req.user as any).resellerId : req.user.id;
+        if (customer && customer.resellerId === resellerId) {
+          isReseller = true;
+          // Resellers can only close tickets, not reopen or set in_progress
+          if (status === 'closed') {
+            canUpdate = true;
+          } else {
+            return res.status(403).send("I rivenditori possono solo chiudere i ticket");
+          }
+        }
+      }
+      
+      if (!canUpdate) return res.status(403).send("Forbidden");
       
       const updatedTicket = await storage.updateTicketStatus(req.params.id, status);
       setActivityEntity(res, { type: 'ticket', id: updatedTicket.id });
