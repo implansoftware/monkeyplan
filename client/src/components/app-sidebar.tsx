@@ -356,6 +356,14 @@ export function AppSidebar() {
   });
   const rcPendingRemoteRequestsCount = rcRemoteRequestsSummary?.count || 0;
 
+  // Query pending service orders count for badge (reseller/reseller_staff)
+  const { data: serviceOrdersSummary } = useQuery<{ count: number }>({
+    queryKey: ["/api/reseller/service-orders/pending-count"],
+    enabled: user?.role === "reseller" || user?.role === "reseller_staff",
+    refetchInterval: 30000, // Refresh every 30 seconds
+  });
+  const pendingServiceOrdersCount = serviceOrdersSummary?.count || 0;
+
   // Query configured integrations (only those with reseller credentials)
   const { data: configuredIntegrationCodes = [] } = useQuery<string[]>({
     queryKey: ["/api/reseller/configured-integrations"],
@@ -592,6 +600,14 @@ export function AppSidebar() {
                         {rcPendingRemoteRequestsCount}
                       </span>
                     )}
+                    {group === "Centri & Riparazioni" && pendingServiceOrdersCount > 0 && !isOpen && (
+                      <span 
+                        className="flex h-5 min-w-5 items-center justify-center rounded-full bg-destructive text-destructive-foreground text-xs font-medium px-1.5"
+                        data-testid="badge-pending-service-orders-group"
+                      >
+                        {pendingServiceOrdersCount}
+                      </span>
+                    )}
                     <ChevronRight className={`h-4 w-4 transition-transform duration-200 ${isOpen ? "rotate-90" : ""}`} />
                   </SidebarMenuButton>
                 </CollapsibleTrigger>
@@ -603,6 +619,7 @@ export function AppSidebar() {
                         const showTransferBadge = item.url === "/reseller/transfer-requests" && pendingTransferRequestsCount > 0;
                         const showRemoteBadge = item.url === "/reseller/remote-requests" && pendingRemoteRequestsCount > 0;
                         const showRcRemoteBadge = item.url === "/repair-center/remote-requests" && rcPendingRemoteRequestsCount > 0;
+                        const showServiceOrdersBadge = item.url === "/reseller/service-orders" && pendingServiceOrdersCount > 0;
                         return (
                           <SidebarMenuItem key={item.title}>
                             <SidebarMenuButton asChild isActive={isActive} className="pl-4">
@@ -635,6 +652,14 @@ export function AppSidebar() {
                                     data-testid="badge-pending-rc-remote-requests"
                                   >
                                     {rcPendingRemoteRequestsCount}
+                                  </span>
+                                )}
+                                {showServiceOrdersBadge && (
+                                  <span 
+                                    className="flex h-5 min-w-5 items-center justify-center rounded-full bg-destructive text-destructive-foreground text-xs font-medium px-1.5"
+                                    data-testid="badge-pending-service-orders"
+                                  >
+                                    {pendingServiceOrdersCount}
                                   </span>
                                 )}
                               </Link>
