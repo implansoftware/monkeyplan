@@ -8091,6 +8091,35 @@ export function registerRoutes(app: Express): Server {
 
   // ============ SERVICE ORDERS (Acquisto Interventi) ============
   
+  // Customer: get their reseller's payment info (IBAN, ragione sociale, etc.)
+  app.get("/api/customer/my-reseller", requireRole("customer"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const resellerId = req.user.resellerId;
+      if (!resellerId) {
+        return res.status(400).send("Nessun rivenditore associato");
+      }
+      
+      const reseller = await storage.getUser(resellerId);
+      if (!reseller) {
+        return res.status(404).send("Rivenditore non trovato");
+      }
+      
+      // Return only safe fields for customer to see
+      res.json({
+        id: reseller.id,
+        fullName: reseller.fullName,
+        ragioneSociale: reseller.ragioneSociale,
+        iban: reseller.iban,
+        email: reseller.email,
+        phone: reseller.phone,
+      });
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
   // Customer: get service catalog from their reseller
   app.get("/api/customer/service-catalog", requireRole("customer"), async (req, res) => {
     try {
