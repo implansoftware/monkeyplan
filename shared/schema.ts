@@ -5624,3 +5624,23 @@ export interface PaginationParams {
   page: number;
   pageSize: number;
 }
+
+// Operational Task Types (Task operativi per dashboard)
+export const operationalTaskTypeEnum = ["repair", "invoice", "stock", "b2b", "ticket", "customer", "quote"] as const;
+export type OperationalTaskType = typeof operationalTaskTypeEnum[number];
+
+export const operationalTaskPriorityEnum = ["alta", "media", "bassa"] as const;
+export type OperationalTaskPriority = typeof operationalTaskPriorityEnum[number];
+
+export interface OperationalTask {
+  id: string;
+  type: OperationalTaskType;
+  priority: OperationalTaskPriority;
+  title: string;
+  description: string;
+  actionLabel: string;
+  actionUrl: string;
+  dueDate?: string;
+  relatedId?: string;
+  createdAt: string;
+}

@@ -16292,6 +16292,335 @@ export function registerRoutes(app: Express): Server {
 
   // ============ WEBSOCKET FOR LIVECHAT & NOTIFICATIONS ============
 
+  // ============ OPERATIONAL TASKS ============
+
+  app.get("/api/operational-tasks", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const tasks: any[] = [];
+      const now = new Date();
+      const threeDaysAgo = new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000);
+      
+      if (req.user.role === 'reseller' || req.user.role === 'reseller_staff') {
+        const resellerId = req.user.role === 'reseller' ? req.user.id : (req.user as any).resellerId;
+        
+        // Get repairs needing action
+        const repairs = await storage.listRepairOrders({ resellerId });
+        
+        // Alta priorità: Riparazioni bloccate da più di 3 giorni
+        repairs.forEach(repair => {
+          const updatedAt = new Date(repair.updatedAt);
+          const isOld = updatedAt < threeDaysAgo;
+          
+          if (repair.status === 'ingressato' && isOld) {
+            tasks.push({
+              id: `repair-diagnosi-${repair.id}`,
+              type: 'repair',
+              priority: 'alta',
+              title: `Diagnosi in attesa: ${repair.ticketNumber}`,
+              description: `Il dispositivo è in attesa di diagnosi da ${Math.floor((now.getTime() - updatedAt.getTime()) / (1000 * 60 * 60 * 24))} giorni`,
+              actionLabel: 'Avvia diagnosi',
+              actionUrl: `/reseller/repairs/${repair.id}`,
+              relatedId: repair.id,
+              createdAt: repair.updatedAt,
+            });
+          }
+          
+          if (repair.status === 'in_diagnosi') {
+            tasks.push({
+              id: `repair-preventivo-${repair.id}`,
+              type: 'quote',
+              priority: isOld ? 'alta' : 'media',
+              title: `Preventivo da emettere: ${repair.ticketNumber}`,
+              description: `Diagnosi completata, emettere preventivo`,
+              actionLabel: 'Crea preventivo',
+              actionUrl: `/reseller/repairs/${repair.id}`,
+              relatedId: repair.id,
+              createdAt: repair.updatedAt,
+            });
+          }
+          
+          if (repair.status === 'pronto_ritiro') {
+            tasks.push({
+              id: `repair-ritiro-${repair.id}`,
+              type: 'repair',
+              priority: isOld ? 'media' : 'bassa',
+              title: `Pronto per ritiro: ${repair.ticketNumber}`,
+              description: `Contattare cliente per ritiro`,
+              actionLabel: 'Gestisci',
+              actionUrl: `/reseller/repairs/${repair.id}`,
+              relatedId: repair.id,
+              createdAt: repair.updatedAt,
+            });
+          }
+          
+          if (repair.status === 'attesa_ricambi') {
+            tasks.push({
+              id: `repair-ricambi-${repair.id}`,
+              type: 'repair',
+              priority: 'media',
+              title: `Attesa ricambi: ${repair.ticketNumber}`,
+              description: `Verificare stato ordine ricambi`,
+              actionLabel: 'Verifica',
+              actionUrl: `/reseller/repairs/${repair.id}`,
+              relatedId: repair.id,
+              createdAt: repair.updatedAt,
+            });
+          }
+        });
+        
+        // Fatture scadute e in scadenza
+        const invoices = await storage.listInvoices({ resellerId });
+        invoices.forEach(invoice => {
+          if (invoice.paymentStatus === 'overdue') {
+            tasks.push({
+              id: `invoice-overdue-${invoice.id}`,
+              type: 'invoice',
+              priority: 'alta',
+              title: `Fattura scaduta: ${invoice.invoiceNumber}`,
+              description: `Sollecitare pagamento cliente`,
+              actionLabel: 'Visualizza',
+              actionUrl: `/reseller/invoices`,
+              relatedId: invoice.id,
+              createdAt: invoice.createdAt,
+            });
+          } else if (invoice.paymentStatus === 'pending') {
+            const dueDate = invoice.dueDate ? new Date(invoice.dueDate) : null;
+            const isDueSoon = dueDate && (dueDate.getTime() - now.getTime()) < 7 * 24 * 60 * 60 * 1000;
+            if (isDueSoon) {
+              tasks.push({
+                id: `invoice-pending-${invoice.id}`,
+                type: 'invoice',
+                priority: 'media',
+                title: `Fattura in scadenza: ${invoice.invoiceNumber}`,
+                description: `Scadenza imminente`,
+                actionLabel: 'Visualizza',
+                actionUrl: `/reseller/invoices`,
+                dueDate: invoice.dueDate,
+                relatedId: invoice.id,
+                createdAt: invoice.createdAt,
+              });
+            }
+          }
+        });
+        
+        // Stock sotto scorta
+        try {
+          const warehouses = await storage.listWarehouses({ ownerId: resellerId, ownerType: 'reseller' });
+          for (const warehouse of warehouses) {
+            const stock = await storage.listWarehouseStock(warehouse.id);
+            const lowStockItems = stock.filter(s => s.quantity <= (s.minQuantity || 5));
+            if (lowStockItems.length > 0) {
+              tasks.push({
+                id: `stock-low-${warehouse.id}`,
+                type: 'stock',
+                priority: lowStockItems.length > 5 ? 'alta' : 'media',
+                title: `${lowStockItems.length} articoli sotto scorta`,
+                description: `Magazzino: ${warehouse.name}`,
+                actionLabel: 'Gestisci stock',
+                actionUrl: `/reseller/warehouse`,
+                relatedId: warehouse.id,
+                createdAt: now.toISOString(),
+              });
+            }
+          }
+        } catch (e) {}
+        
+        // Ordini B2B in attesa
+        try {
+          const b2bOrders = await storage.listResellerPurchaseOrders({ sellerId: resellerId });
+          const pendingB2B = b2bOrders.filter(o => o.status === 'pending');
+          pendingB2B.forEach(order => {
+            tasks.push({
+              id: `b2b-pending-${order.id}`,
+              type: 'b2b',
+              priority: 'media',
+              title: `Ordine B2B da confermare`,
+              description: `Ordine #${order.id.slice(0, 8)} in attesa approvazione`,
+              actionLabel: 'Gestisci',
+              actionUrl: `/reseller/b2b-orders`,
+              relatedId: order.id,
+              createdAt: order.createdAt,
+            });
+          });
+        } catch (e) {}
+        
+        // Ticket aperti
+        try {
+          const tickets = await storage.listTickets({ targetId: resellerId });
+          const openTickets = tickets.filter(t => t.status === 'open');
+          openTickets.forEach(ticket => {
+            tasks.push({
+              id: `ticket-open-${ticket.id}`,
+              type: 'ticket',
+              priority: 'media',
+              title: `Ticket aperto: ${ticket.subject}`,
+              description: `Richiede risposta`,
+              actionLabel: 'Rispondi',
+              actionUrl: `/reseller/tickets/${ticket.id}`,
+              relatedId: ticket.id,
+              createdAt: ticket.createdAt,
+            });
+          });
+        } catch (e) {}
+        
+      } else if (req.user.role === 'repair_center') {
+        const repairCenterId = req.user.id;
+        
+        // Get repairs needing action
+        const repairs = await storage.listRepairOrders({ repairCenterId });
+        
+        repairs.forEach(repair => {
+          const updatedAt = new Date(repair.updatedAt);
+          const isOld = updatedAt < threeDaysAgo;
+          
+          if (repair.status === 'ingressato' && isOld) {
+            tasks.push({
+              id: `repair-diagnosi-${repair.id}`,
+              type: 'repair',
+              priority: 'alta',
+              title: `Diagnosi in attesa: ${repair.ticketNumber}`,
+              description: `Il dispositivo è in attesa di diagnosi da ${Math.floor((now.getTime() - updatedAt.getTime()) / (1000 * 60 * 60 * 24))} giorni`,
+              actionLabel: 'Avvia diagnosi',
+              actionUrl: `/repair-center/repairs/${repair.id}`,
+              relatedId: repair.id,
+              createdAt: repair.updatedAt,
+            });
+          }
+          
+          if (repair.status === 'in_diagnosi') {
+            tasks.push({
+              id: `repair-preventivo-${repair.id}`,
+              type: 'quote',
+              priority: isOld ? 'alta' : 'media',
+              title: `Preventivo da emettere: ${repair.ticketNumber}`,
+              description: `Diagnosi completata, emettere preventivo`,
+              actionLabel: 'Crea preventivo',
+              actionUrl: `/repair-center/repairs/${repair.id}`,
+              relatedId: repair.id,
+              createdAt: repair.updatedAt,
+            });
+          }
+          
+          if (repair.status === 'pronto_ritiro') {
+            tasks.push({
+              id: `repair-ritiro-${repair.id}`,
+              type: 'repair',
+              priority: isOld ? 'media' : 'bassa',
+              title: `Pronto per ritiro: ${repair.ticketNumber}`,
+              description: `Contattare cliente per ritiro`,
+              actionLabel: 'Gestisci',
+              actionUrl: `/repair-center/repairs/${repair.id}`,
+              relatedId: repair.id,
+              createdAt: repair.updatedAt,
+            });
+          }
+          
+          if (repair.status === 'attesa_ricambi') {
+            tasks.push({
+              id: `repair-ricambi-${repair.id}`,
+              type: 'repair',
+              priority: 'media',
+              title: `Attesa ricambi: ${repair.ticketNumber}`,
+              description: `Verificare stato ordine ricambi`,
+              actionLabel: 'Verifica',
+              actionUrl: `/repair-center/repairs/${repair.id}`,
+              relatedId: repair.id,
+              createdAt: repair.updatedAt,
+            });
+          }
+        });
+        
+        // Fatture
+        const invoices = await storage.listInvoices({ repairCenterId });
+        invoices.forEach(invoice => {
+          if (invoice.paymentStatus === 'overdue') {
+            tasks.push({
+              id: `invoice-overdue-${invoice.id}`,
+              type: 'invoice',
+              priority: 'alta',
+              title: `Fattura scaduta: ${invoice.invoiceNumber}`,
+              description: `Sollecitare pagamento`,
+              actionLabel: 'Visualizza',
+              actionUrl: `/repair-center/invoices`,
+              relatedId: invoice.id,
+              createdAt: invoice.createdAt,
+            });
+          }
+        });
+        
+        // Stock sotto scorta
+        try {
+          const warehouses = await storage.listWarehouses({ ownerId: repairCenterId, ownerType: 'repair_center' });
+          for (const warehouse of warehouses) {
+            const stock = await storage.listWarehouseStock(warehouse.id);
+            const lowStockItems = stock.filter(s => s.quantity <= (s.minQuantity || 5));
+            if (lowStockItems.length > 0) {
+              tasks.push({
+                id: `stock-low-${warehouse.id}`,
+                type: 'stock',
+                priority: lowStockItems.length > 5 ? 'alta' : 'media',
+                title: `${lowStockItems.length} articoli sotto scorta`,
+                description: `Magazzino: ${warehouse.name}`,
+                actionLabel: 'Gestisci stock',
+                actionUrl: `/repair-center/warehouse`,
+                relatedId: warehouse.id,
+                createdAt: now.toISOString(),
+              });
+            }
+          }
+        } catch (e) {}
+        
+        // Ordini B2B
+        try {
+          const b2bOrders = await storage.listRepairCenterPurchaseOrders({ repairCenterId });
+          const pendingB2B = b2bOrders.filter(o => o.status === 'pending' || o.status === 'shipped');
+          pendingB2B.forEach(order => {
+            tasks.push({
+              id: `b2b-${order.status}-${order.id}`,
+              type: 'b2b',
+              priority: order.status === 'shipped' ? 'media' : 'bassa',
+              title: order.status === 'shipped' ? `Ordine B2B in arrivo` : `Ordine B2B in attesa`,
+              description: `Ordine #${order.id.slice(0, 8)}`,
+              actionLabel: order.status === 'shipped' ? 'Conferma ricezione' : 'Visualizza',
+              actionUrl: `/repair-center/b2b-orders`,
+              relatedId: order.id,
+              createdAt: order.createdAt,
+            });
+          });
+        } catch (e) {}
+        
+        // Ticket aperti
+        try {
+          const tickets = await storage.listTickets({ initiatorId: repairCenterId });
+          const openTickets = tickets.filter(t => t.status === 'open' || t.status === 'in_progress');
+          openTickets.slice(0, 3).forEach(ticket => {
+            tasks.push({
+              id: `ticket-${ticket.id}`,
+              type: 'ticket',
+              priority: 'bassa',
+              title: `Ticket: ${ticket.subject}`,
+              description: `Stato: ${ticket.status === 'open' ? 'Aperto' : 'In corso'}`,
+              actionLabel: 'Visualizza',
+              actionUrl: `/repair-center/tickets/${ticket.id}`,
+              relatedId: ticket.id,
+              createdAt: ticket.createdAt,
+            });
+          });
+        } catch (e) {}
+      }
+      
+      // Sort by priority (alta > media > bassa)
+      const priorityOrder = { alta: 0, media: 1, bassa: 2 };
+      tasks.sort((a, b) => priorityOrder[a.priority as keyof typeof priorityOrder] - priorityOrder[b.priority as keyof typeof priorityOrder]);
+      
+      res.json(tasks);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
   const httpServer = createServer(app);
   const wss = new WebSocketServer({ server: httpServer, path: '/ws' });
 

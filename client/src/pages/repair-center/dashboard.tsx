@@ -16,6 +16,7 @@ import { format } from "date-fns";
 import { it } from "date-fns/locale";
 import { CustomerWizardDialog } from "@/components/CustomerWizardDialog";
 import { RepairIntakeWizard } from "@/components/RepairIntakeWizard";
+import { OperationalTaskList } from "@/components/OperationalTaskList";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 
 type RepairCenterStats = {
@@ -475,6 +476,9 @@ export default function RepairCenterDashboard() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Operational Tasks */}
+      <OperationalTaskList maxItems={6} />
 
       {/* Charts & Recent Repairs */}
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
