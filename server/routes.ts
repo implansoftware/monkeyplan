@@ -16036,27 +16036,71 @@ export function registerRoutes(app: Express): Server {
         stats.transferRequestStats = transferRequestStats;
         
       } else if (req.user.role === 'repair_center') {
-        // Repair center sees own stats
+        // Repair center sees comprehensive dashboard stats (similar to reseller)
         if (!req.user.repairCenterId) {
           return res.json({
-            overview: { assignedRepairs: 0, completedRepairs: 0, assignedTickets: 0 },
-            repairsByStatus: { pending: 0, in_progress: 0, completed: 0, cancelled: 0 },
+            overview: { totalRepairs: 0, activeRepairs: 0, completedRepairs: 0, totalCustomers: 0, totalRevenue: 0 },
+            repairsByStatus: { ingressato: 0, in_diagnosi: 0, preventivo_emesso: 0, preventivo_accettato: 0, preventivo_rifiutato: 0, attesa_ricambi: 0, in_riparazione: 0, in_test: 0, pronto_ritiro: 0, consegnato: 0, cancelled: 0 },
+            warehouse: { totalStock: 0, lowStockItems: 0 },
+            b2b: { pendingOrders: 0, totalOrders: 0 },
             lowStockProducts: [],
           });
         }
         
-        const assignedRepairs = await storage.listRepairOrders({ repairCenterId: req.user.repairCenterId });
+        const repairCenterId = req.user.repairCenterId;
+        const assignedRepairs = await storage.listRepairOrders({ repairCenterId });
         const assignedTickets = await storage.listTickets({ assignedTo: req.user.id });
         
+        // Repairs by status using correct Italian enum values
         const repairsByStatus = {
-          pending: assignedRepairs.filter(r => r.status === 'pending').length,
-          in_progress: assignedRepairs.filter(r => r.status === 'in_progress').length,
-          completed: assignedRepairs.filter(r => r.status === 'completed').length,
+          ingressato: assignedRepairs.filter(r => r.status === 'ingressato').length,
+          in_diagnosi: assignedRepairs.filter(r => r.status === 'in_diagnosi').length,
+          preventivo_emesso: assignedRepairs.filter(r => r.status === 'preventivo_emesso').length,
+          preventivo_accettato: assignedRepairs.filter(r => r.status === 'preventivo_accettato').length,
+          preventivo_rifiutato: assignedRepairs.filter(r => r.status === 'preventivo_rifiutato').length,
+          attesa_ricambi: assignedRepairs.filter(r => r.status === 'attesa_ricambi').length,
+          in_riparazione: assignedRepairs.filter(r => r.status === 'in_riparazione').length,
+          in_test: assignedRepairs.filter(r => r.status === 'in_test').length,
+          pronto_ritiro: assignedRepairs.filter(r => r.status === 'pronto_ritiro').length,
+          consegnato: assignedRepairs.filter(r => r.status === 'consegnato').length,
           cancelled: assignedRepairs.filter(r => r.status === 'cancelled').length,
         };
         
-        // Get low stock alerts (quantity < 5)
-        const inventory = await storage.listInventoryStock(req.user.repairCenterId);
+        // Active repairs (all non-completed statuses)
+        const activeStatuses = ['ingressato', 'in_diagnosi', 'preventivo_emesso', 'preventivo_accettato', 'attesa_ricambi', 'in_riparazione', 'in_test', 'pronto_ritiro'];
+        const activeRepairs = assignedRepairs.filter(r => activeStatuses.includes(r.status)).length;
+        
+        // Get customers assigned to this repair center
+        const customerIds = await storage.listCustomerIdsForRepairCenter(repairCenterId);
+        
+        // Calculate revenue from completed orders
+        const completedOrders = assignedRepairs.filter(o => o.status === 'consegnato');
+        const revenue = completedOrders
+          .filter(o => o.finalCost)
+          .reduce((sum, o) => sum + (o.finalCost || 0), 0);
+        
+        // Get warehouse stats for this repair center
+        const warehouses = await storage.listWarehouses({ ownerId: repairCenterId, ownerType: 'repair_center' });
+        let totalStock = 0;
+        let lowStockItems = 0;
+        for (const warehouse of warehouses) {
+          const stock = await storage.listWarehouseStock(warehouse.id);
+          totalStock += stock.reduce((sum, s) => sum + s.quantity, 0);
+          lowStockItems += stock.filter(s => s.quantity < 5 && s.quantity > 0).length;
+        }
+        
+        // Get B2B orders received by this repair center (from reseller)
+        const repairCenter = await storage.getRepairCenter(repairCenterId);
+        let b2bOrders: any[] = [];
+        if (repairCenter?.resellerId) {
+          b2bOrders = await storage.listRepairCenterPurchaseOrders({ repairCenterId });
+        }
+        const pendingB2bOrders = b2bOrders.filter(o => 
+          ['pending', 'approved', 'shipped'].includes(o.status)
+        ).length;
+        
+        // Get low stock alerts (legacy inventory system)
+        const inventory = await storage.listInventoryStock(repairCenterId);
         const products = await Promise.all(inventory.map(item => storage.getProduct(item.productId)));
         const lowStockProducts = inventory
           .filter(item => item.quantity < 5)
@@ -16067,13 +16111,36 @@ export function registerRoutes(app: Express): Server {
           .filter(item => item.product);
         
         stats.overview = {
-          assignedRepairs: assignedRepairs.length,
-          completedRepairs: assignedRepairs.filter(r => r.status === 'completed').length,
+          totalRepairs: assignedRepairs.length,
+          activeRepairs: activeRepairs,
+          completedRepairs: completedOrders.length,
+          totalCustomers: customerIds.length,
+          totalRevenue: revenue,
           assignedTickets: assignedTickets.length,
         };
         stats.repairsByStatus = repairsByStatus;
+        stats.warehouse = {
+          totalStock: totalStock,
+          lowStockItems: lowStockItems,
+        };
+        stats.b2b = {
+          pendingOrders: pendingB2bOrders,
+          totalOrders: b2bOrders.length,
+        };
         stats.lowStockProducts = lowStockProducts;
         
+        // Add assigned reseller info
+        if (repairCenter?.resellerId) {
+          const reseller = await storage.getUser(repairCenter.resellerId);
+          stats.assignedReseller = reseller ? { 
+            id: reseller.id, 
+            fullName: reseller.fullName,
+            ragioneSociale: reseller.ragioneSociale,
+            logoUrl: reseller.logoUrl 
+          } : null;
+        }
+        
+      } else if (req.user.role === 'reseller') {
       } else if (req.user.role === 'reseller') {
         // Reseller sees comprehensive dashboard stats
         const context = getEffectiveContext(req);
