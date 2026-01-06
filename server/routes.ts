@@ -4540,6 +4540,11 @@ export function registerRoutes(app: Express): Server {
       });
       setActivityEntity(res, { type: 'repairs', id: repair.id });
       
+      // Auto-associate customer with repair center
+      if (validatedData.customerId && validatedData.repairCenterId) {
+        await storage.ensureCustomerRepairCenterAssociation(validatedData.customerId, validatedData.repairCenterId);
+      }
+      
       await storage.invalidateCache('overview_%');
       await storage.invalidateCache('centers_%');
       
@@ -8794,6 +8799,11 @@ export function registerRoutes(app: Express): Server {
         }
       );
       
+      
+      // Auto-associate customer with repair center from service order
+      if (order.customerId && order.repairCenterId) {
+        await storage.ensureCustomerRepairCenterAssociation(order.customerId, order.repairCenterId);
+      }
       // Link repair order to service order and update status
       const updated = await storage.updateServiceOrder(req.params.id, {
         deviceReceivedAt: new Date(),
@@ -10246,11 +10256,21 @@ export function registerRoutes(app: Express): Server {
         
         const { order, acceptance } = await storage.createRepairWithAcceptance(orderData, acceptanceData);
         
+        
+        // Auto-associate customer with repair center
+        if (orderData.customerId && orderData.repairCenterId) {
+          await storage.ensureCustomerRepairCenterAssociation(orderData.customerId, orderData.repairCenterId);
+        }
         setActivityEntity(res, { type: 'repair_order', id: order.id });
         res.json({ order, acceptance });
       } else {
         const order = await storage.createRepairOrder(orderData);
         
+        
+        // Auto-associate customer with repair center
+        if (orderData.customerId && orderData.repairCenterId) {
+          await storage.ensureCustomerRepairCenterAssociation(orderData.customerId, orderData.repairCenterId);
+        }
         setActivityEntity(res, { type: 'repair_order', id: order.id });
         res.json(order);
       }

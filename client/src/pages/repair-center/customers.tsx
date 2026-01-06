@@ -319,11 +319,11 @@ export default function RepairCenterCustomers() {
                       {customerDetail.repairs.slice(0, 10).map((repair) => (
                         <div key={repair.id} className="flex items-center justify-between p-3 bg-muted rounded-lg">
                           <div>
-                            <div className="font-medium">{repair.deviceType} - {repair.deviceBrand}</div>
+                            <div className="font-medium">{repair.deviceType} - {repair.deviceModel}</div>
                             <div className="text-sm text-muted-foreground">{repair.issueDescription?.slice(0, 50)}...</div>
                           </div>
                           <div className="text-right">
-                            <Badge variant={repair.status === 'delivered' ? 'default' : 'secondary'}>
+                            <Badge variant={repair.status === 'consegnato' ? 'default' : 'secondary'}>
                               {repair.status}
                             </Badge>
                             <div className="text-xs text-muted-foreground mt-1">

@@ -135,6 +135,8 @@ export interface IStorage {
   listRepairCentersForCustomer(customerId: string): Promise<RepairCenter[]>;
   setCustomerRepairCenters(customerId: string, repairCenterIds: string[]): Promise<void>;
   listAllCustomerRepairCenters(): Promise<CustomerRepairCenter[]>;
+  ensureCustomerRepairCenterAssociation(customerId: string, repairCenterId: string): Promise<void>;
+  listCustomerIdsForRepairCenter(repairCenterId: string): Promise<string[]>;
   
   // Staff-RepairCenter Many-to-Many
   listRepairCentersForStaff(staffId: string): Promise<RepairCenter[]>;
@@ -1154,6 +1156,28 @@ export class DatabaseStorage implements IStorage {
       .from(customerRepairCenters)
       .where(eq(customerRepairCenters.repairCenterId, repairCenterId));
     return results.map(r => r.customerId);
+  }
+
+  async ensureCustomerRepairCenterAssociation(customerId: string, repairCenterId: string): Promise<void> {
+    if (!customerId || !repairCenterId) return;
+    
+    // Check if association already exists
+    const existing = await db
+      .select()
+      .from(customerRepairCenters)
+      .where(and(
+        eq(customerRepairCenters.customerId, customerId),
+        eq(customerRepairCenters.repairCenterId, repairCenterId)
+      ))
+      .limit(1);
+    
+    // If not exists, create it
+    if (existing.length === 0) {
+      await db.insert(customerRepairCenters).values({
+        customerId,
+        repairCenterId,
+      });
+    }
   }
 
   // Staff-RepairCenter Many-to-Many
