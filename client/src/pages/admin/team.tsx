@@ -33,7 +33,7 @@ const ADMIN_MODULES = [
   { id: "utility", name: "Pratiche Utility", description: "Gestione pratiche utility" },
   { id: "reports", name: "Report", description: "Report e analytics" },
   { id: "settings", name: "Impostazioni", description: "Impostazioni sistema" },
-  { id: "service_catalog", name: "Catalogo Interventi", description: "Catalogo servizi e interventi" },
+  { id: "service_catalog", name: "Listino Prezzi", description: "Listino prezzi e interventi" },
 ];
 
 const PERMISSION_ACTIONS = [

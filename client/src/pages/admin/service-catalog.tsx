@@ -335,7 +335,7 @@ export default function AdminServiceCatalog() {
       <div className="flex items-center gap-3">
         <Wrench className="h-8 w-8 text-primary" />
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Catalogo Interventi</h1>
+          <h1 className="text-3xl font-bold tracking-tight">Listino Prezzi</h1>
           <p className="text-muted-foreground">
             Gestisci gli interventi standard e i listini prezzi
           </p>
@@ -346,7 +346,7 @@ export default function AdminServiceCatalog() {
         <TabsList>
           <TabsTrigger value="catalog" className="gap-2">
             <Package className="h-4 w-4" />
-            Catalogo Interventi
+            Interventi
           </TabsTrigger>
           <TabsTrigger value="prices" className="gap-2">
             <Euro className="h-4 w-4" />

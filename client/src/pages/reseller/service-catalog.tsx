@@ -406,7 +406,7 @@ export default function ResellerServiceCatalog() {
         <div>
           <h1 className="text-2xl font-bold flex items-center gap-2" data-testid="text-page-title">
             <Wrench className="h-6 w-6" />
-            Catalogo Interventi
+            Listino Prezzi
           </h1>
           <p className="text-muted-foreground">
             Gestisci i prezzi e crea i tuoi interventi personalizzati
