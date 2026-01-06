@@ -154,6 +154,7 @@ import RepairCenterUtilityReports from "@/pages/repair-center/utility/reports";
 import RepairCenterTransferRequests from "@/pages/repair-center/transfer-requests";
 import RepairCenterTransferRequestsOverview from "@/pages/repair-center/transfer-requests-overview";
 import RepairCenterRemoteRequests from "@/pages/repair-center/remote-requests";
+import RepairCenterCart from "@/pages/repair-center/cart";
 
 // Customer pages
 import CustomerDashboard from "@/pages/customer/dashboard";
@@ -349,6 +350,7 @@ function Router() {
       <ProtectedRoute path="/repair-center/products" component={RepairCenterProducts} />
       <ProtectedRoute path="/repair-center/b2b-catalog" component={RepairCenterB2BCatalog} />
       <ProtectedRoute path="/repair-center/b2b-orders" component={RepairCenterB2BOrders} />
+      <ProtectedRoute path="/repair-center/cart" component={RepairCenterCart} />
       <ProtectedRoute path="/repair-center/dispositivi" component={RepairCenterSmartphoneCatalog} />
       <ProtectedRoute path="/repair-center/accessory-catalog" component={RepairCenterAccessoryCatalog} />
       <ProtectedRoute path="/repair-center/spare-parts-catalog" component={RepairCenterSparePartsCatalog} />

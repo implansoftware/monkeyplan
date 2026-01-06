@@ -133,7 +133,7 @@ export default function RepairCenterSmartphoneCatalog() {
           </div>
         </div>
         {cartItemCount > 0 && (
-          <Button variant="outline" onClick={() => window.location.href = '/repair-center/b2b-catalog'} data-testid="button-view-cart">
+          <Button variant="outline" onClick={() => window.location.href = '/repair-center/cart'} data-testid="button-view-cart">
             <ShoppingCart className="h-4 w-4 mr-2" />
             Carrello ({cartItemCount}) - {formatPrice(cartTotal)}
           </Button>
