@@ -11,7 +11,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import { Network, Search, Users, Building, Store, ShoppingCart, Package, TrendingUp, DollarSign, Eye, Plus, Pencil, Trash2, Loader2, Copy } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
+import { Network, Search, Users, Building, Store, ShoppingCart, Package, TrendingUp, DollarSign, Eye, Plus, Pencil, Trash2, Loader2, Copy, KeyRound, User as UserIcon, FileText, Check, ChevronLeft, ChevronRight } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -22,6 +23,12 @@ import { Link } from "wouter";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
+
+const WIZARD_STEPS = [
+  { id: 1, title: "Credenziali", icon: KeyRound },
+  { id: 2, title: "Info Base", icon: UserIcon },
+  { id: 3, title: "Dati Fiscali", icon: FileText },
+];
 
 interface SubReseller {
   id: string;
@@ -113,8 +120,55 @@ export default function SubResellers() {
   const [deletingReseller, setDeletingReseller] = useState<SubReseller | null>(null);
   const [formData, setFormData] = useState<SubResellerFormData>(initialFormData);
   const [useParentData, setUseParentData] = useState(false);
+  const [wizardStep, setWizardStep] = useState(1);
   const { toast } = useToast();
   const { user: currentUser } = useAuth();
+
+  const currentSteps = editingReseller 
+    ? WIZARD_STEPS.filter(s => s.id !== 1)
+    : WIZARD_STEPS;
+  
+  const currentStepIndex = currentSteps.findIndex(s => s.id === wizardStep);
+  const progressPercent = currentStepIndex >= 0 ? ((currentStepIndex + 1) / currentSteps.length) * 100 : 0;
+
+  const isValidEmail = (email: string) => {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  };
+
+  const canProceedToNextStep = () => {
+    switch (wizardStep) {
+      case 1: 
+        return formData.username.trim().length >= 3 && 
+               formData.password.length >= 6;
+      case 2: 
+        return formData.fullName.trim() !== '' && 
+               formData.email.trim() !== '' && 
+               isValidEmail(formData.email);
+      case 3: 
+        return true;
+      default: 
+        return true;
+    }
+  };
+
+  const nextStep = () => {
+    if (wizardStep === 1) setWizardStep(2);
+    else if (wizardStep === 2) setWizardStep(3);
+  };
+
+  const prevStep = () => {
+    if (wizardStep === 3) setWizardStep(2);
+    else if (wizardStep === 2 && !editingReseller) setWizardStep(1);
+  };
+
+  const isLastStep = wizardStep === 3;
+  const isFirstStep = editingReseller ? wizardStep === 2 : wizardStep === 1;
+
+  const resetWizard = () => {
+    setWizardStep(1);
+    setFormData(initialFormData);
+    setUseParentData(false);
+  };
 
   const { data: subResellers = [], isLoading } = useQuery<SubReseller[]>({
     queryKey: ["/api/reseller/sub-resellers"],
@@ -203,14 +257,14 @@ export default function SubResellers() {
 
   const handleOpenCreate = () => {
     setEditingReseller(null);
-    setFormData(initialFormData);
-    setUseParentData(false);
+    resetWizard();
     setDialogOpen(true);
   };
 
   const handleOpenEdit = (reseller: SubReseller) => {
     setEditingReseller(reseller);
     setUseParentData(false);
+    setWizardStep(2);
     setFormData({
       username: reseller.username,
       email: reseller.email,
@@ -632,244 +686,281 @@ export default function SubResellers() {
         </TabsContent>
       </Tabs>
 
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh]" data-testid="dialog-subreseller-form">
+      <Dialog open={dialogOpen} onOpenChange={(open) => {
+        setDialogOpen(open);
+        if (!open) {
+          setEditingReseller(null);
+          resetWizard();
+        }
+      }}>
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto" data-testid="dialog-subreseller-form">
           <DialogHeader>
-            <DialogTitle>
-              {editingReseller ? "Modifica Sub-Reseller" : "Nuovo Sub-Reseller"}
-            </DialogTitle>
-            <DialogDescription>
-              {editingReseller 
-                ? "Modifica i dati del sub-reseller selezionato"
-                : "Inserisci i dati per creare un nuovo sub-reseller"}
-            </DialogDescription>
+            <DialogTitle>{editingReseller ? "Modifica Sub-Reseller" : "Nuovo Sub-Reseller"}</DialogTitle>
           </DialogHeader>
+          
+          <div className="space-y-4">
+            <div className="flex items-center justify-between gap-2 mb-2">
+              {currentSteps.map((step, idx) => {
+                const StepIcon = step.icon;
+                const isActive = step.id === wizardStep;
+                const isPast = currentSteps.findIndex(s => s.id === wizardStep) > idx;
+                return (
+                  <div key={step.id} className="flex flex-col items-center flex-1">
+                    <div 
+                      className={`w-10 h-10 rounded-full flex items-center justify-center border-2 transition-colors ${
+                        isActive ? 'bg-primary border-primary text-primary-foreground' : 
+                        isPast ? 'bg-primary/20 border-primary text-primary' : 
+                        'bg-muted border-muted-foreground/30 text-muted-foreground'
+                      }`}
+                    >
+                      {isPast ? <Check className="h-5 w-5" /> : <StepIcon className="h-5 w-5" />}
+                    </div>
+                    <span className={`text-xs mt-1 text-center ${isActive ? 'text-foreground font-medium' : 'text-muted-foreground'}`}>
+                      {step.title}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+            <Progress value={progressPercent} className="h-1" />
 
-          <ScrollArea className="max-h-[60vh] pr-4">
-            <div className="space-y-6">
-              <div className="space-y-4">
-                <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
-                  Dati Account
-                </h3>
-                
-                <div className="grid grid-cols-2 gap-4">
+            <div className="min-h-[300px]">
+              {wizardStep === 1 && !editingReseller && (
+                <div className="space-y-4">
+                  <p className="text-sm text-muted-foreground">Inserisci le credenziali di accesso per il nuovo sub-reseller.</p>
                   <div className="space-y-2">
                     <Label htmlFor="username">Username *</Label>
-                    <Input
-                      id="username"
+                    <Input 
+                      id="username" 
                       value={formData.username}
-                      onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-                      disabled={!!editingReseller}
-                      data-testid="input-username"
+                      onChange={(e) => setFormData(prev => ({ ...prev, username: e.target.value }))}
+                      data-testid="input-username" 
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="password">Password * (min. 6 caratteri)</Label>
+                    <Input 
+                      id="password" 
+                      type="password"
+                      value={formData.password}
+                      onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
+                      data-testid="input-password" 
+                    />
+                  </div>
+                </div>
+              )}
+
+              {wizardStep === 2 && (
+                <div className="space-y-4">
+                  <p className="text-sm text-muted-foreground">Informazioni di base del sub-reseller.</p>
+                  <div className="space-y-2">
+                    <Label htmlFor="fullName">Nome Completo *</Label>
+                    <Input 
+                      id="fullName"
+                      value={formData.fullName}
+                      onChange={(e) => setFormData(prev => ({ ...prev, fullName: e.target.value }))}
+                      data-testid="input-fullname" 
                     />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="email">Email *</Label>
-                    <Input
+                    <Input 
                       id="email"
                       type="email"
                       value={formData.email}
-                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                      data-testid="input-email"
+                      onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+                      data-testid="input-email" 
                     />
                   </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="fullName">Nome Completo *</Label>
-                  <Input
-                    id="fullName"
-                    value={formData.fullName}
-                    onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
-                    data-testid="input-fullname"
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="phone">Telefono</Label>
-                    <Input
-                      id="phone"
-                      value={formData.phone}
-                      onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                      data-testid="input-phone"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="category">Categoria</Label>
-                    <Select
-                      value={formData.resellerCategory}
-                      onValueChange={(value) => setFormData({ ...formData, resellerCategory: value })}
-                    >
-                      <SelectTrigger data-testid="select-category">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="standard">Standard</SelectItem>
-                        <SelectItem value="franchising">Franchising</SelectItem>
-                        <SelectItem value="gdo">GDO</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="password">
-                    Password {editingReseller ? "(lascia vuoto per non modificare)" : "*"}
-                  </Label>
-                  <Input
-                    id="password"
-                    type="password"
-                    value={formData.password}
-                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                    placeholder={editingReseller ? "Lascia vuoto per mantenere" : "Min. 6 caratteri"}
-                    data-testid="input-password"
-                  />
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="isActive">Attivo</Label>
-                  <Switch
-                    id="isActive"
-                    checked={formData.isActive}
-                    onCheckedChange={(checked) => setFormData({ ...formData, isActive: checked })}
-                    data-testid="switch-active"
-                  />
-                </div>
-              </div>
-
-              <Separator />
-
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
-                    Dati Fiscali
-                  </h3>
-                  {!editingReseller && (
-                    <div className="flex items-center gap-2">
-                      <Checkbox
-                        id="useParentData"
-                        checked={useParentData}
-                        onCheckedChange={(checked) => setUseParentData(checked === true)}
-                        data-testid="checkbox-use-parent-data"
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="phone">Telefono</Label>
+                      <Input 
+                        id="phone"
+                        value={formData.phone}
+                        onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
+                        data-testid="input-phone" 
                       />
-                      <Label htmlFor="useParentData" className="text-sm font-normal cursor-pointer flex items-center gap-1">
-                        <Copy className="h-3 w-3" />
-                        Usa i miei stessi dati fiscali
-                      </Label>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="category">Categoria</Label>
+                      <Select
+                        value={formData.resellerCategory}
+                        onValueChange={(value) => setFormData(prev => ({ ...prev, resellerCategory: value }))}
+                      >
+                        <SelectTrigger data-testid="select-category">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="standard">Standard</SelectItem>
+                          <SelectItem value="franchising">Franchising</SelectItem>
+                          <SelectItem value="gdo">GDO</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between pt-2">
+                    <Label htmlFor="isActive">Attivo</Label>
+                    <Switch
+                      id="isActive"
+                      checked={formData.isActive}
+                      onCheckedChange={(checked) => setFormData(prev => ({ ...prev, isActive: checked }))}
+                      data-testid="switch-active"
+                    />
+                  </div>
+                  {editingReseller && (
+                    <div className="space-y-2 pt-2 border-t">
+                      <Label htmlFor="password">Password (lascia vuoto per mantenere)</Label>
+                      <Input 
+                        id="password" 
+                        type="password"
+                        value={formData.password}
+                        onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
+                        placeholder="Lascia vuoto per mantenere"
+                        data-testid="input-password" 
+                      />
                     </div>
                   )}
                 </div>
+              )}
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="ragioneSociale">Ragione Sociale</Label>
-                    <Input
-                      id="ragioneSociale"
-                      value={formData.ragioneSociale}
-                      onChange={(e) => setFormData({ ...formData, ragioneSociale: e.target.value })}
-                      data-testid="input-ragione-sociale"
-                    />
+              {wizardStep === 3 && (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm text-muted-foreground">Dati fiscali e fatturazione (opzionali).</p>
+                    {!editingReseller && (
+                      <div className="flex items-center gap-2">
+                        <Checkbox
+                          id="useParentData"
+                          checked={useParentData}
+                          onCheckedChange={(checked) => setUseParentData(checked === true)}
+                          data-testid="checkbox-use-parent-data"
+                        />
+                        <Label htmlFor="useParentData" className="text-xs font-normal cursor-pointer flex items-center gap-1">
+                          <Copy className="h-3 w-3" />
+                          Copia i miei dati
+                        </Label>
+                      </div>
+                    )}
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="partitaIva">Partita IVA</Label>
-                    <Input
-                      id="partitaIva"
-                      value={formData.partitaIva}
-                      onChange={(e) => setFormData({ ...formData, partitaIva: e.target.value })}
-                      data-testid="input-partita-iva"
-                    />
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-2">
+                      <Label htmlFor="ragioneSociale">Ragione Sociale</Label>
+                      <Input 
+                        id="ragioneSociale"
+                        value={formData.ragioneSociale}
+                        onChange={(e) => setFormData(prev => ({ ...prev, ragioneSociale: e.target.value }))}
+                        data-testid="input-ragione-sociale" 
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="partitaIva">Partita IVA</Label>
+                      <Input 
+                        id="partitaIva"
+                        value={formData.partitaIva}
+                        onChange={(e) => setFormData(prev => ({ ...prev, partitaIva: e.target.value }))}
+                        data-testid="input-partita-iva" 
+                      />
+                    </div>
+                    <div className="space-y-2 col-span-2">
+                      <Label htmlFor="codiceFiscale">Codice Fiscale</Label>
+                      <Input 
+                        id="codiceFiscale"
+                        value={formData.codiceFiscale}
+                        onChange={(e) => setFormData(prev => ({ ...prev, codiceFiscale: e.target.value }))}
+                        data-testid="input-codice-fiscale" 
+                      />
+                    </div>
+                    <div className="space-y-2 col-span-2">
+                      <Label htmlFor="indirizzo">Indirizzo</Label>
+                      <Input 
+                        id="indirizzo"
+                        value={formData.indirizzo}
+                        onChange={(e) => setFormData(prev => ({ ...prev, indirizzo: e.target.value }))}
+                        data-testid="input-indirizzo" 
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="citta">Città</Label>
+                      <Input 
+                        id="citta"
+                        value={formData.citta}
+                        onChange={(e) => setFormData(prev => ({ ...prev, citta: e.target.value }))}
+                        data-testid="input-citta" 
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="space-y-2">
+                        <Label htmlFor="cap">CAP</Label>
+                        <Input 
+                          id="cap"
+                          value={formData.cap}
+                          onChange={(e) => setFormData(prev => ({ ...prev, cap: e.target.value }))}
+                          data-testid="input-cap" 
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="provincia">Prov.</Label>
+                        <Input 
+                          id="provincia"
+                          maxLength={2}
+                          value={formData.provincia}
+                          onChange={(e) => setFormData(prev => ({ ...prev, provincia: e.target.value }))}
+                          placeholder="XX"
+                          data-testid="input-provincia" 
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="codiceUnivoco">Codice SDI</Label>
+                      <Input 
+                        id="codiceUnivoco"
+                        maxLength={7}
+                        value={formData.codiceUnivoco}
+                        onChange={(e) => setFormData(prev => ({ ...prev, codiceUnivoco: e.target.value.toUpperCase() }))}
+                        placeholder="7 caratteri"
+                        data-testid="input-codice-univoco" 
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="pec">PEC</Label>
+                      <Input 
+                        id="pec"
+                        type="email"
+                        value={formData.pec}
+                        onChange={(e) => setFormData(prev => ({ ...prev, pec: e.target.value }))}
+                        placeholder="email@pec.it"
+                        data-testid="input-pec" 
+                      />
+                    </div>
                   </div>
                 </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="codiceFiscale">Codice Fiscale</Label>
-                  <Input
-                    id="codiceFiscale"
-                    value={formData.codiceFiscale}
-                    onChange={(e) => setFormData({ ...formData, codiceFiscale: e.target.value })}
-                    data-testid="input-codice-fiscale"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="indirizzo">Indirizzo</Label>
-                  <Input
-                    id="indirizzo"
-                    value={formData.indirizzo}
-                    onChange={(e) => setFormData({ ...formData, indirizzo: e.target.value })}
-                    data-testid="input-indirizzo"
-                  />
-                </div>
-
-                <div className="grid grid-cols-3 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="citta">Città</Label>
-                    <Input
-                      id="citta"
-                      value={formData.citta}
-                      onChange={(e) => setFormData({ ...formData, citta: e.target.value })}
-                      data-testid="input-citta"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="cap">CAP</Label>
-                    <Input
-                      id="cap"
-                      value={formData.cap}
-                      onChange={(e) => setFormData({ ...formData, cap: e.target.value })}
-                      data-testid="input-cap"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="provincia">Provincia</Label>
-                    <Input
-                      id="provincia"
-                      value={formData.provincia}
-                      onChange={(e) => setFormData({ ...formData, provincia: e.target.value })}
-                      placeholder="Es: MI"
-                      maxLength={2}
-                      data-testid="input-provincia"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="pec">PEC</Label>
-                    <Input
-                      id="pec"
-                      type="email"
-                      value={formData.pec}
-                      onChange={(e) => setFormData({ ...formData, pec: e.target.value })}
-                      data-testid="input-pec"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="codiceUnivoco">Codice Univoco (SDI)</Label>
-                    <Input
-                      id="codiceUnivoco"
-                      value={formData.codiceUnivoco}
-                      onChange={(e) => setFormData({ ...formData, codiceUnivoco: e.target.value.toUpperCase() })}
-                      placeholder="7 caratteri"
-                      maxLength={7}
-                      data-testid="input-codice-univoco"
-                    />
-                  </div>
-                </div>
-              </div>
+              )}
             </div>
-          </ScrollArea>
 
-          <DialogFooter>
-            <Button variant="outline" onClick={handleCloseDialog} data-testid="button-cancel">
-              Annulla
-            </Button>
-            <Button onClick={handleSubmit} disabled={isPending} data-testid="button-submit">
-              {isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-              {editingReseller ? "Salva Modifiche" : "Crea Sub-Reseller"}
-            </Button>
-          </DialogFooter>
+            <div className="flex justify-between pt-4 border-t">
+              <Button
+                variant="outline"
+                onClick={isFirstStep ? handleCloseDialog : prevStep}
+                data-testid="button-prev"
+              >
+                <ChevronLeft className="h-4 w-4 mr-1" />
+                {isFirstStep ? 'Annulla' : 'Indietro'}
+              </Button>
+              
+              {isLastStep ? (
+                <Button onClick={handleSubmit} disabled={isPending} data-testid="button-submit">
+                  {isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                  {editingReseller ? "Salva Modifiche" : "Crea Sub-Reseller"}
+                </Button>
+              ) : (
+                <Button onClick={nextStep} disabled={!canProceedToNextStep()} data-testid="button-next">
+                  Avanti
+                  <ChevronRight className="h-4 w-4 ml-1" />
+                </Button>
+              )}
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
 
