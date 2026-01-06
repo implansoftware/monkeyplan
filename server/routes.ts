@@ -16466,7 +16466,7 @@ export function registerRoutes(app: Express): Server {
         } catch (e) {}
         
       } else if (req.user.role === 'repair_center') {
-        const repairCenterId = req.user.id;
+        const repairCenterId = (req.user as any).repairCenterId;
         
         // Get repairs needing action
         const repairs = await storage.listRepairOrders({ repairCenterId });
