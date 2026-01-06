@@ -50,13 +50,7 @@ interface RepairIntakeWizardProps {
 
 // Wizard schema - includes acceptance flow fields
 const wizardSchema = z.object({
-  // Step 1: Customer & Assignment
-  customerId: z.string().min(1, "Seleziona un cliente"),
-  resellerId: z.string().optional(),
-  subResellerId: z.string().optional(),
-  repairCenterId: z.string().optional(),
-  
-  // Step 2: Device
+  // Step 1: Device
   deviceType: z.string().min(1, "Seleziona il tipo di dispositivo"),
   deviceBrandId: z.string().optional(),
   deviceModelId: z.string().optional(),
@@ -70,6 +64,12 @@ const wizardSchema = z.object({
   serialOnly: z.boolean().default(false),
   issueDescription: z.string().min(1, "Descrivi il problema"),
   
+  // Step 2: Customer & Assignment
+  customerId: z.string().min(1, "Seleziona un cliente"),
+  resellerId: z.string().optional(),
+  subResellerId: z.string().optional(),
+  repairCenterId: z.string().optional(),
+  
   // Step 3: Conditions
   aestheticCondition: z.string().optional(),
   accessories: z.array(z.string()).default([]),
@@ -79,8 +79,8 @@ const wizardSchema = z.object({
 type WizardData = z.infer<typeof wizardSchema>;
 
 const STEPS = [
-  { id: 1, name: "Cliente", icon: User },
-  { id: 2, name: "Dispositivo", icon: Smartphone },
+  { id: 1, name: "Dispositivo", icon: Smartphone },
+  { id: 2, name: "Cliente", icon: User },
   { id: 3, name: "Condizioni", icon: ClipboardCheck },
   { id: 4, name: "Conferma", icon: CheckCircle2 },
   { id: 5, name: "Completato", icon: PartyPopper },
@@ -507,9 +507,9 @@ export function RepairIntakeWizard({
   const canGoNext = () => {
     switch (currentStep) {
       case 1:
-        return !!form.watch("customerId");
-      case 2:
         return !!form.watch("deviceType") && !!form.watch("issueDescription");
+      case 2:
+        return !!form.watch("customerId");
       case 3:
         return true; // Optional step
       case 4:
@@ -593,8 +593,8 @@ export function RepairIntakeWizard({
 
         <Form {...form}>
           <form className="space-y-4">
-            {/* Step 1: Customer Selection */}
-            {currentStep === 1 && (
+            {/* Step 2: Customer Selection */}
+            {currentStep === 2 && (
               <div className="space-y-4">
                 <div className="text-center mb-4">
                   <User className="h-12 w-12 mx-auto text-primary mb-2" />
@@ -938,8 +938,8 @@ export function RepairIntakeWizard({
               </div>
             )}
 
-            {/* Step 2: Device Info */}
-            {currentStep === 2 && (
+            {/* Step 1: Device Info */}
+            {currentStep === 1 && (
               <div className="space-y-4">
                 <div className="text-center mb-4">
                   <Smartphone className="h-12 w-12 mx-auto text-primary mb-2" />
