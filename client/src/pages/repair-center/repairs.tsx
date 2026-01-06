@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardFooter } from "@/components/ui/card";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -7,16 +7,21 @@ import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Search, Wrench, Plus, LayoutGrid, TableIcon, Smartphone, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { Search, Wrench, Plus, LayoutGrid, TableIcon, Smartphone, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, CalendarIcon, Clock, AlertTriangle, AlertCircle, Eye, Play, PackageCheck, CheckCircle2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Skeleton } from "@/components/ui/skeleton";
-import { format } from "date-fns";
+import { format, formatDistanceToNow } from "date-fns";
+import { it } from "date-fns/locale";
+import type { DateRange } from "react-day-picker";
 import { RepairIntakeWizard } from "@/components/RepairIntakeWizard";
 import { useLocation } from "wouter";
 import { RepairsKanbanBoard } from "@/components/RepairsKanbanBoard";
 
-type RepairOrder = {
+interface RepairOrderWithSLA {
   id: string;
   orderNumber: string;
   customerId: string;
@@ -35,10 +40,14 @@ type RepairOrder = {
   updatedAt: string;
   customerName?: string | null;
   slaSeverity?: "in_time" | "late" | "urgent" | null;
-};
+  slaMinutesInState?: number;
+  slaPhase?: string | null;
+  slaEnteredAt?: string | null;
+  quoteTotalAmount?: number | null;
+}
 
 interface PaginatedRepairsResponse {
-  data: RepairOrder[];
+  data: RepairOrderWithSLA[];
   page: number;
   pageSize: number;
   total: number;
@@ -49,7 +58,9 @@ export default function RepairCenterRepairs() {
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [slaFilter, setSlaFilter] = useState<string>("all");
   const [deviceTypeFilter, setDeviceTypeFilter] = useState<string>("all");
+  const [dateRange, setDateRange] = useState<DateRange | undefined>();
   const [, setLocation] = useLocation();
   const [wizardOpen, setWizardOpen] = useState(false);
   const [viewMode, setViewMode] = useState<"table" | "kanban">("table");
@@ -57,7 +68,6 @@ export default function RepairCenterRepairs() {
   const [pageSize] = useState(25);
   const { toast } = useToast();
 
-  // Debounce search input
   useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedSearch(searchQuery);
@@ -66,33 +76,36 @@ export default function RepairCenterRepairs() {
     return () => clearTimeout(timer);
   }, [searchQuery]);
 
-  // Reset page when filters change
   useEffect(() => {
     setPage(1);
-  }, [statusFilter, deviceTypeFilter]);
+  }, [statusFilter, slaFilter, deviceTypeFilter, dateRange]);
 
-  // Fetch device types for filter dropdown
   const { data: deviceTypes = [] } = useQuery<Array<{ id: string; name: string }>>({
     queryKey: ["/api/device-types"],
   });
 
-  // Paginated query for table view
   const { data: paginatedData, isLoading: isLoadingTable } = useQuery<PaginatedRepairsResponse>({
     queryKey: [
       "/api/repair-center/repairs/paginated",
       page,
       pageSize,
       statusFilter,
+      slaFilter,
       deviceTypeFilter,
       debouncedSearch,
+      dateRange?.from?.toISOString(),
+      dateRange?.to?.toISOString(),
     ],
     queryFn: async () => {
       const params = new URLSearchParams();
       params.append("page", page.toString());
       params.append("pageSize", pageSize.toString());
       if (statusFilter !== "all") params.append("status", statusFilter);
+      if (slaFilter !== "all") params.append("slaSeverity", slaFilter);
       if (deviceTypeFilter !== "all") params.append("deviceType", deviceTypeFilter);
       if (debouncedSearch) params.append("search", debouncedSearch);
+      if (dateRange?.from) params.append("startDate", format(dateRange.from, "yyyy-MM-dd"));
+      if (dateRange?.to) params.append("endDate", format(dateRange.to, "yyyy-MM-dd"));
       
       const res = await fetch(`/api/repair-center/repairs/paginated?${params.toString()}`, { credentials: "include" });
       if (!res.ok) throw new Error("Failed to fetch repairs");
@@ -101,13 +114,18 @@ export default function RepairCenterRepairs() {
     enabled: viewMode === "table",
   });
 
-  // Full dataset query for kanban view
-  const { data: kanbanRepairs = [], isLoading: isLoadingKanban } = useQuery<RepairOrder[]>({
-    queryKey: ["/api/repair-orders"],
+  const { data: kanbanRepairs = [], isLoading: isLoadingKanban } = useQuery<RepairOrderWithSLA[]>({
+    queryKey: ["/api/repair-orders", { slaSeverity: slaFilter }],
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      if (slaFilter !== "all") params.append("slaSeverity", slaFilter);
+      const res = await fetch(`/api/repair-orders?${params.toString()}`, { credentials: "include" });
+      if (!res.ok) throw new Error("Failed to fetch repairs");
+      return res.json();
+    },
     enabled: viewMode === "kanban",
   });
 
-  // Apply client-side filtering for kanban
   const filteredKanbanRepairs = useMemo(() => {
     return kanbanRepairs.filter((repair) => {
       const searchLower = debouncedSearch.toLowerCase();
@@ -119,9 +137,19 @@ export default function RepairCenterRepairs() {
         (repair.customerName && repair.customerName.toLowerCase().includes(searchLower));
       const matchesStatus = statusFilter === "all" || repair.status === statusFilter;
       const matchesDeviceType = deviceTypeFilter === "all" || repair.deviceType === deviceTypeFilter;
-      return matchesSearch && matchesStatus && matchesDeviceType;
+      
+      let matchesDate = true;
+      if (dateRange?.from) {
+        const repairDate = new Date(repair.createdAt);
+        matchesDate = repairDate >= dateRange.from;
+        if (dateRange.to) {
+          matchesDate = matchesDate && repairDate <= dateRange.to;
+        }
+      }
+      
+      return matchesSearch && matchesStatus && matchesDeviceType && matchesDate;
     });
-  }, [kanbanRepairs, debouncedSearch, statusFilter, deviceTypeFilter]);
+  }, [kanbanRepairs, debouncedSearch, statusFilter, deviceTypeFilter, dateRange]);
 
   const repairs = viewMode === "table" ? (paginatedData?.data || []) : filteredKanbanRepairs;
   const isLoading = viewMode === "table" ? isLoadingTable : isLoadingKanban;
@@ -146,85 +174,168 @@ export default function RepairCenterRepairs() {
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case "ingressato": return <Badge variant="secondary" data-testid={`badge-status-ingressato`}>Ingressato</Badge>;
-      case "in_diagnosi": return <Badge variant="outline" data-testid={`badge-status-in_diagnosi`}>In Diagnosi</Badge>;
-      case "preventivo_emesso": return <Badge variant="outline" data-testid={`badge-status-preventivo_emesso`}>Preventivo Emesso</Badge>;
-      case "preventivo_accettato": return <Badge data-testid={`badge-status-preventivo_accettato`}>Preventivo Accettato</Badge>;
-      case "preventivo_rifiutato": return <Badge variant="destructive" data-testid={`badge-status-preventivo_rifiutato`}>Preventivo Rifiutato</Badge>;
-      case "attesa_ricambi": return <Badge variant="outline" data-testid={`badge-status-attesa_ricambi`}>Attesa Ricambi</Badge>;
-      case "in_riparazione": return <Badge data-testid={`badge-status-in_riparazione`}>In Riparazione</Badge>;
-      case "in_test": return <Badge data-testid={`badge-status-in_test`}>In Test</Badge>;
-      case "pronto_ritiro": return <Badge data-testid={`badge-status-pronto_ritiro`}>Pronto Ritiro</Badge>;
-      case "consegnato": return <Badge variant="outline" data-testid={`badge-status-consegnato`}>Consegnato</Badge>;
-      case "cancelled": return <Badge variant="destructive" data-testid={`badge-status-cancelled`}>Annullato</Badge>;
-      // Legacy stati
-      case "pending": return <Badge variant="secondary" data-testid={`badge-status-pending`}>In attesa</Badge>;
-      case "in_progress": return <Badge data-testid={`badge-status-in_progress`}>In lavorazione</Badge>;
-      case "completed": return <Badge variant="outline" data-testid={`badge-status-completed`}>Completata</Badge>;
-      case "delivered": return <Badge variant="outline" data-testid={`badge-status-delivered`}>Consegnata</Badge>;
+      case "ingressato": return <Badge variant="secondary">Ingressato</Badge>;
+      case "in_diagnosi": return <Badge variant="outline">In Diagnosi</Badge>;
+      case "preventivo_emesso": return <Badge variant="outline">Preventivo Emesso</Badge>;
+      case "preventivo_accettato": return <Badge>Preventivo Accettato</Badge>;
+      case "preventivo_rifiutato": return <Badge variant="destructive">Preventivo Rifiutato</Badge>;
+      case "attesa_ricambi": return <Badge variant="outline">Attesa Ricambi</Badge>;
+      case "in_riparazione": return <Badge>In Riparazione</Badge>;
+      case "in_test": return <Badge>In Test</Badge>;
+      case "pronto_ritiro": return <Badge>Pronto Ritiro</Badge>;
+      case "consegnato": return <Badge variant="outline">Consegnato</Badge>;
+      case "cancelled": return <Badge variant="destructive">Annullato</Badge>;
+      case "pending": return <Badge variant="secondary">In attesa</Badge>;
+      case "in_progress": return <Badge>In lavorazione</Badge>;
+      case "completed": return <Badge variant="outline">Completata</Badge>;
+      case "delivered": return <Badge variant="outline">Consegnata</Badge>;
       default: return <Badge variant="outline">{status}</Badge>;
     }
   };
 
-  const formatCurrency = (cents: number | null) => {
-    if (!cents) return "N/A";
-    return new Intl.NumberFormat("it-IT", {
-      style: "currency",
-      currency: "EUR",
-    }).format(cents / 100);
-  };
+  const totalRepairs = total || repairs.length;
+  const inProgressRepairs = repairs.filter(r => ['in_diagnosi', 'in_riparazione', 'in_test'].includes(r.status)).length;
+  const readyForPickup = repairs.filter(r => r.status === 'pronto_ritiro').length;
+  const completedToday = repairs.filter(r => {
+    if (r.status !== 'consegnato') return false;
+    const today = new Date();
+    const repairDate = new Date(r.updatedAt);
+    return repairDate.toDateString() === today.toDateString();
+  }).length;
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-semibold mb-2">Lavorazioni Assegnate</h1>
-          <p className="text-muted-foreground">
-            Gestisci tutte le riparazioni assegnate al tuo centro
-          </p>
+    <div className="space-y-6" data-testid="page-repair-center-repairs">
+      <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-primary/5 via-primary/10 to-slate-100 dark:from-primary/10 dark:via-primary/5 dark:to-slate-900 p-6 border">
+        <div className="absolute inset-0 opacity-[0.03]" style={{
+          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23000' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+        }} />
+        <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-xl bg-primary text-primary-foreground flex items-center justify-center shadow-lg shadow-primary/25">
+              <Wrench className="h-5 w-5" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold tracking-tight">Lavorazioni Assegnate</h1>
+              <p className="text-sm text-muted-foreground">
+                Gestisci tutte le riparazioni assegnate al tuo centro
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-3 flex-wrap">
+            <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as "table" | "kanban")}>
+              <TabsList>
+                <TabsTrigger value="table" className="gap-2" data-testid="toggle-table-view">
+                  <TableIcon className="h-4 w-4" />
+                  Tabella
+                </TabsTrigger>
+                <TabsTrigger value="kanban" className="gap-2" data-testid="toggle-kanban-view">
+                  <LayoutGrid className="h-4 w-4" />
+                  Kanban
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
+            <Button
+              onClick={() => setWizardOpen(true)}
+              className="shadow-lg shadow-primary/25"
+              data-testid="button-new-acceptance-hero"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Nuovo Ingresso
+            </Button>
+          </div>
         </div>
-        <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as "table" | "kanban")}>
-          <TabsList>
-            <TabsTrigger value="table" className="gap-2" data-testid="toggle-table-view">
-              <TableIcon className="h-4 w-4" />
-              Tavolo
-            </TabsTrigger>
-            <TabsTrigger value="kanban" className="gap-2" data-testid="toggle-kanban-view">
-              <LayoutGrid className="h-4 w-4" />
-              Kanban
-            </TabsTrigger>
-          </TabsList>
-        </Tabs>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <Card className="relative overflow-hidden group hover:shadow-md transition-shadow">
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent" />
+          <CardContent className="relative pt-5 pb-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">Totale Lavorazioni</p>
+                <p className="text-3xl font-bold tabular-nums">{totalRepairs}</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {repairs.length > 0 ? `Pagina ${page}/${totalPages}` : 'Nessun filtro'}
+                </p>
+              </div>
+              <div className="h-12 w-12 rounded-xl bg-primary text-primary-foreground flex items-center justify-center shadow-lg shadow-primary/20">
+                <Wrench className="h-6 w-6" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="relative overflow-hidden group hover:shadow-md transition-shadow">
+          <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-transparent" />
+          <CardContent className="relative pt-5 pb-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">In Lavorazione</p>
+                <p className="text-3xl font-bold tabular-nums text-blue-600 dark:text-blue-400">{inProgressRepairs}</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Diagnosi, riparazione, test
+                </p>
+              </div>
+              <div className="h-12 w-12 rounded-xl bg-blue-500 text-white flex items-center justify-center shadow-lg shadow-blue-500/20">
+                <Play className="h-6 w-6" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="relative overflow-hidden group hover:shadow-md transition-shadow">
+          <div className="absolute inset-0 bg-gradient-to-br from-amber-500/5 to-transparent" />
+          <CardContent className="relative pt-5 pb-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">Pronte Ritiro</p>
+                <p className="text-3xl font-bold tabular-nums text-amber-600 dark:text-amber-400">{readyForPickup}</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  In attesa del cliente
+                </p>
+              </div>
+              <div className="h-12 w-12 rounded-xl bg-amber-500 text-white flex items-center justify-center shadow-lg shadow-amber-500/20">
+                <PackageCheck className="h-6 w-6" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="relative overflow-hidden group hover:shadow-md transition-shadow">
+          <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-transparent" />
+          <CardContent className="relative pt-5 pb-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">Consegnate Oggi</p>
+                <p className="text-3xl font-bold tabular-nums text-emerald-600 dark:text-emerald-400">{completedToday}</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Riparazioni completate
+                </p>
+              </div>
+              <div className="h-12 w-12 rounded-xl bg-emerald-500 text-white flex items-center justify-center shadow-lg shadow-emerald-500/20">
+                <CheckCircle2 className="h-6 w-6" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       <Card>
         <CardHeader>
-          <div className="flex justify-between items-center gap-4">
-            <CardTitle>Filtri</CardTitle>
-            <Button
-              onClick={() => setWizardOpen(true)}
-              data-testid="button-new-acceptance"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Nuovo ingresso
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex gap-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+          <div className="flex flex-col sm:flex-row gap-4 flex-wrap">
+            <div className="flex-1 relative min-w-[200px]">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Cerca per numero ordine o modello..."
+                placeholder="Cerca lavorazione..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-8"
-                data-testid="input-search"
+                className="pl-9"
+                data-testid="input-search-repairs"
               />
             </div>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-[200px]" data-testid="select-status-filter">
-                <SelectValue placeholder="Stato" />
+              <SelectTrigger className="w-full sm:w-48" data-testid="select-filter-status">
+                <SelectValue />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Tutti gli stati</SelectItem>
@@ -232,6 +343,7 @@ export default function RepairCenterRepairs() {
                 <SelectItem value="in_diagnosi">In Diagnosi</SelectItem>
                 <SelectItem value="preventivo_emesso">Preventivo Emesso</SelectItem>
                 <SelectItem value="preventivo_accettato">Preventivo Accettato</SelectItem>
+                <SelectItem value="preventivo_rifiutato">Preventivo Rifiutato</SelectItem>
                 <SelectItem value="attesa_ricambi">Attesa Ricambi</SelectItem>
                 <SelectItem value="in_riparazione">In Riparazione</SelectItem>
                 <SelectItem value="in_test">In Test</SelectItem>
@@ -240,8 +352,39 @@ export default function RepairCenterRepairs() {
                 <SelectItem value="cancelled">Annullato</SelectItem>
               </SelectContent>
             </Select>
+            <Select value={slaFilter} onValueChange={setSlaFilter}>
+              <SelectTrigger className="w-full sm:w-40" data-testid="select-filter-sla">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">
+                  <span className="flex items-center gap-2">
+                    <Clock className="h-3 w-3" />
+                    Tutti SLA
+                  </span>
+                </SelectItem>
+                <SelectItem value="in_time">
+                  <span className="flex items-center gap-2">
+                    <Clock className="h-3 w-3 text-green-500" />
+                    In Tempo
+                  </span>
+                </SelectItem>
+                <SelectItem value="late">
+                  <span className="flex items-center gap-2">
+                    <AlertTriangle className="h-3 w-3 text-yellow-500" />
+                    In Ritardo
+                  </span>
+                </SelectItem>
+                <SelectItem value="urgent">
+                  <span className="flex items-center gap-2">
+                    <AlertCircle className="h-3 w-3 text-red-500" />
+                    Urgente
+                  </span>
+                </SelectItem>
+              </SelectContent>
+            </Select>
             <Select value={deviceTypeFilter} onValueChange={setDeviceTypeFilter}>
-              <SelectTrigger className="w-[180px]" data-testid="select-filter-device-type">
+              <SelectTrigger className="w-full sm:w-44" data-testid="select-filter-device-type">
                 <Smartphone className="h-4 w-4 shrink-0" />
                 <SelectValue placeholder="Tipo dispositivo" />
               </SelectTrigger>
@@ -254,45 +397,64 @@ export default function RepairCenterRepairs() {
                 ))}
               </SelectContent>
             </Select>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" className="w-full sm:w-64" data-testid="button-date-range">
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {dateRange?.from ? (
+                    dateRange.to ? (
+                      `${format(dateRange.from, "dd MMM yyyy", { locale: it })} - ${format(dateRange.to, "dd MMM yyyy", { locale: it })}`
+                    ) : (
+                      format(dateRange.from, "dd MMM yyyy", { locale: it })
+                    )
+                  ) : (
+                    "Seleziona periodo"
+                  )}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="end">
+                <Calendar
+                  mode="range"
+                  selected={dateRange}
+                  onSelect={setDateRange}
+                  numberOfMonths={2}
+                  locale={it}
+                />
+              </PopoverContent>
+            </Popover>
           </div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Wrench className="h-5 w-5" />
-            Riparazioni ({viewMode === "table" ? total : repairs.length})
-          </CardTitle>
         </CardHeader>
         <CardContent>
           {viewMode === "kanban" ? (
             <RepairsKanbanBoard
-              repairs={repairs as any}
+              repairs={filteredKanbanRepairs as any}
               isLoading={isLoading}
               onCardClick={(repairId) => {
                 setLocation(`/repair-center/repairs/${repairId}`);
               }}
             />
           ) : isLoading ? (
-            <div className="space-y-2">
-              {[1, 2, 3].map((i) => (
-                <Skeleton key={i} className="h-16 w-full" />
-              ))}
+            <div className="space-y-3">
+              <Skeleton className="h-16 w-full" />
+              <Skeleton className="h-16 w-full" />
+              <Skeleton className="h-16 w-full" />
             </div>
           ) : repairs.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              Nessuna riparazione trovata
+            <div className="text-center py-12 text-muted-foreground">
+              <Wrench className="h-12 w-12 mx-auto mb-4 opacity-20" />
+              <p>Nessuna lavorazione trovata</p>
             </div>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Numero Ordine</TableHead>
+                  <TableHead>Ordine</TableHead>
+                  <TableHead>Cliente</TableHead>
                   <TableHead>Dispositivo</TableHead>
                   <TableHead>Stato</TableHead>
-                  <TableHead>Data Creazione</TableHead>
-                  <TableHead>Azioni</TableHead>
+                  <TableHead>SLA</TableHead>
+                  <TableHead>Data</TableHead>
+                  <TableHead className="text-right">Azioni</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -300,39 +462,91 @@ export default function RepairCenterRepairs() {
                   <TableRow
                     key={repair.id}
                     data-testid={`row-repair-${repair.id}`}
-                    className="cursor-pointer hover-elevate"
+                    className="hover-elevate cursor-pointer"
                     onClick={() => {
                       setLocation(`/repair-center/repairs/${repair.id}`);
                     }}
                   >
-                    <TableCell className="font-medium" data-testid={`text-order-${repair.orderNumber}`}>
+                    <TableCell className="font-mono font-medium">
                       {repair.orderNumber}
+                    </TableCell>
+                    <TableCell className="max-w-[150px]">
+                      <span className="truncate block" title={repair.customerName || "—"}>
+                        {repair.customerName || "—"}
+                      </span>
                     </TableCell>
                     <TableCell>
                       <div>
-                        <div className="font-medium">{repair.deviceType}</div>
+                        <div className="font-medium capitalize">{repair.deviceType}</div>
                         <div className="text-sm text-muted-foreground">{repair.deviceModel}</div>
                       </div>
                     </TableCell>
-                    <TableCell>{getStatusBadge(repair.status)}</TableCell>
-                    <TableCell>{format(new Date(repair.createdAt), "dd/MM/yyyy")}</TableCell>
-                    <TableCell onClick={(e) => e.stopPropagation()}>
-                      <Select
-                        value={repair.status}
-                        onValueChange={(status) => updateStatusMutation.mutate({ id: repair.id, status })}
-                        disabled={updateStatusMutation.isPending}
-                      >
-                        <SelectTrigger className="w-[150px]" data-testid={`select-status-${repair.id}`}>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="pending">In attesa</SelectItem>
-                          <SelectItem value="in_progress">In lavorazione</SelectItem>
-                          <SelectItem value="completed">Completata</SelectItem>
-                          <SelectItem value="delivered">Consegnata</SelectItem>
-                          <SelectItem value="cancelled">Annullata</SelectItem>
-                        </SelectContent>
-                      </Select>
+                    <TableCell>
+                      {getStatusBadge(repair.status)}
+                    </TableCell>
+                    <TableCell>
+                      {repair.slaSeverity && (
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Badge 
+                              variant="outline" 
+                              className={
+                                repair.slaSeverity === "urgent" 
+                                  ? "bg-red-500/10 text-red-700 dark:text-red-400 border-red-300 dark:border-red-700 gap-1 animate-pulse"
+                                  : repair.slaSeverity === "late"
+                                  ? "bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 border-yellow-300 dark:border-yellow-700 gap-1"
+                                  : "bg-green-500/10 text-green-700 dark:text-green-400 border-green-300 dark:border-green-700 gap-1"
+                              }
+                              data-testid={`badge-sla-${repair.slaSeverity}`}
+                            >
+                              {repair.slaSeverity === "urgent" ? (
+                                <AlertCircle className="h-3 w-3" />
+                              ) : repair.slaSeverity === "late" ? (
+                                <AlertTriangle className="h-3 w-3" />
+                              ) : (
+                                <Clock className="h-3 w-3" />
+                              )}
+                            </Badge>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>
+                              {repair.slaPhase}: {
+                                (repair.slaMinutesInState || 0) >= 1440
+                                  ? `${Math.floor((repair.slaMinutesInState || 0) / 1440)} giorni ${Math.floor(((repair.slaMinutesInState || 0) % 1440) / 60)}h`
+                                  : (repair.slaMinutesInState || 0) >= 60
+                                  ? `${Math.floor((repair.slaMinutesInState || 0) / 60)}h ${(repair.slaMinutesInState || 0) % 60}m`
+                                  : `${repair.slaMinutesInState || 0} min`
+                              }
+                            </p>
+                          </TooltipContent>
+                        </Tooltip>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-sm text-muted-foreground">
+                      {formatDistanceToNow(new Date(repair.createdAt), { addSuffix: true, locale: it })}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center justify-end">
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              className="h-8 w-8"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setLocation(`/repair-center/repairs/${repair.id}`);
+                              }}
+                              data-testid={`button-view-repair-${repair.id}`}
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Dettagli</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -345,31 +559,32 @@ export default function RepairCenterRepairs() {
             <div className="text-sm text-muted-foreground">
               Pagina {page} di {totalPages} ({total} risultati)
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1">
               <Button
                 variant="outline"
                 size="icon"
                 onClick={() => setPage(1)}
                 disabled={page === 1}
-                data-testid="button-first-page"
+                data-testid="button-pagination-first"
               >
                 <ChevronsLeft className="h-4 w-4" />
               </Button>
               <Button
                 variant="outline"
                 size="icon"
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                onClick={() => setPage(p => Math.max(1, p - 1))}
                 disabled={page === 1}
-                data-testid="button-prev-page"
+                data-testid="button-pagination-prev"
               >
                 <ChevronLeft className="h-4 w-4" />
               </Button>
+              <span className="px-3 text-sm font-medium">{page}</span>
               <Button
                 variant="outline"
                 size="icon"
-                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                onClick={() => setPage(p => Math.min(totalPages, p + 1))}
                 disabled={page === totalPages}
-                data-testid="button-next-page"
+                data-testid="button-pagination-next"
               >
                 <ChevronRight className="h-4 w-4" />
               </Button>
@@ -378,7 +593,7 @@ export default function RepairCenterRepairs() {
                 size="icon"
                 onClick={() => setPage(totalPages)}
                 disabled={page === totalPages}
-                data-testid="button-last-page"
+                data-testid="button-pagination-last"
               >
                 <ChevronsRight className="h-4 w-4" />
               </Button>
@@ -392,6 +607,7 @@ export default function RepairCenterRepairs() {
         onOpenChange={setWizardOpen}
         onSuccess={() => {
           queryClient.invalidateQueries({ queryKey: ["/api/repair-orders"] });
+          queryClient.invalidateQueries({ queryKey: ["/api/repair-center/repairs/paginated"] });
           queryClient.invalidateQueries({ queryKey: ["/api/repair-center/stats"] });
         }}
       />
