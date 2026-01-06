@@ -409,7 +409,7 @@ export default function ResellerServiceCatalog() {
             Listino Prezzi
           </h1>
           <p className="text-muted-foreground">
-            Gestisci i prezzi e crea i tuoi interventi personalizzati
+            Gestisci i prezzi e crea le tue voci di listino personalizzate
           </p>
         </div>
       </div>
@@ -420,7 +420,7 @@ export default function ResellerServiceCatalog() {
             Catalogo Completo
           </TabsTrigger>
           <TabsTrigger value="my-items" data-testid="tab-my-items">
-            I Miei Interventi
+            Le Mie Voci
           </TabsTrigger>
         </TabsList>
 
@@ -595,9 +595,9 @@ export default function ResellerServiceCatalog() {
             <CardHeader className="pb-4">
               <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                  <CardTitle>I Miei Interventi</CardTitle>
+                  <CardTitle>Le Mie Voci di Listino</CardTitle>
                   <CardDescription>
-                    Interventi personalizzati creati da te
+                    Voci di listino personalizzate create da te
                   </CardDescription>
                 </div>
                 <div className="flex gap-2">
@@ -626,7 +626,7 @@ export default function ResellerServiceCatalog() {
                   </Select>
                   <Button onClick={() => openItemDialog()} data-testid="button-create-item">
                     <Plus className="h-4 w-4 mr-2" />
-                    Nuovo Intervento
+                    Nuova Voce
                   </Button>
                 </div>
               </div>
@@ -641,10 +641,10 @@ export default function ResellerServiceCatalog() {
               ) : filteredMyItems.length === 0 ? (
                 <div className="text-center py-12 text-muted-foreground">
                   <Wrench className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p className="mb-4">Non hai ancora creato interventi personalizzati</p>
+                  <p className="mb-4">Non hai ancora creato voci di listino personalizzate</p>
                   <Button onClick={() => openItemDialog()} data-testid="button-create-first-item">
                     <Plus className="h-4 w-4 mr-2" />
-                    Crea il Primo Intervento
+                    Crea la Prima Voce
                   </Button>
                 </div>
               ) : (
@@ -822,12 +822,12 @@ export default function ResellerServiceCatalog() {
         <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle>
-              {editingServiceItem ? "Modifica Intervento" : "Nuovo Intervento"}
+              {editingServiceItem ? "Modifica Voce" : "Nuova Voce di Listino"}
             </DialogTitle>
             <DialogDescription>
               {editingServiceItem 
-                ? "Modifica i dettagli dell'intervento" 
-                : "Crea un nuovo intervento personalizzato per il tuo catalogo"}
+                ? "Modifica i dettagli della voce di listino" 
+                : "Crea una nuova voce di listino personalizzata per il tuo catalogo"}
             </DialogDescription>
           </DialogHeader>
           
@@ -861,7 +861,7 @@ export default function ResellerServiceCatalog() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="itemName">Nome Intervento *</Label>
+              <Label htmlFor="itemName">Nome *</Label>
               <Input
                 id="itemName"
                 value={itemName}
