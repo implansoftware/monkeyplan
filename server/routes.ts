@@ -16308,6 +16308,18 @@ export function registerRoutes(app: Express): Server {
         // Get repairs needing action
         const repairs = await storage.listRepairOrders({ resellerId });
         
+        
+        // Build customer name map for display
+        const customerIds = [...new Set(repairs.map(r => r.customerId).filter(Boolean))];
+        const customerMap = new Map<string, string>();
+        for (const cid of customerIds) {
+          const customer = await storage.getUser(cid);
+          if (customer) {
+            customerMap.set(cid, customer.fullName || customer.username);
+          }
+        }
+        const getCustomerName = (cid: string) => customerMap.get(cid) || 'Cliente';
+
         // Alta priorità: Riparazioni bloccate da più di 3 giorni
         repairs.forEach(repair => {
           const updatedAt = new Date(repair.updatedAt);
@@ -16318,7 +16330,7 @@ export function registerRoutes(app: Express): Server {
               id: `repair-diagnosi-${repair.id}`,
               type: 'repair',
               priority: 'alta',
-              title: `Diagnosi in attesa: ${repair.orderNumber}`,
+              title: `Diagnosi in attesa: ${getCustomerName(repair.customerId)}`,
               description: `Il dispositivo è in attesa di diagnosi da ${Math.floor((now.getTime() - updatedAt.getTime()) / (1000 * 60 * 60 * 24))} giorni`,
               actionLabel: 'Avvia diagnosi',
               actionUrl: `/reseller/repairs/${repair.id}`,
@@ -16332,7 +16344,7 @@ export function registerRoutes(app: Express): Server {
               id: `repair-preventivo-${repair.id}`,
               type: 'quote',
               priority: isOld ? 'alta' : 'media',
-              title: `Preventivo da emettere: ${repair.orderNumber}`,
+              title: `Preventivo da emettere: ${getCustomerName(repair.customerId)}`,
               description: `Diagnosi completata, emettere preventivo`,
               actionLabel: 'Crea preventivo',
               actionUrl: `/reseller/repairs/${repair.id}`,
@@ -16346,7 +16358,7 @@ export function registerRoutes(app: Express): Server {
               id: `repair-ritiro-${repair.id}`,
               type: 'repair',
               priority: isOld ? 'media' : 'bassa',
-              title: `Pronto per ritiro: ${repair.orderNumber}`,
+              title: `Pronto per ritiro: ${getCustomerName(repair.customerId)}`,
               description: `Contattare cliente per ritiro`,
               actionLabel: 'Gestisci',
               actionUrl: `/reseller/repairs/${repair.id}`,
@@ -16360,7 +16372,7 @@ export function registerRoutes(app: Express): Server {
               id: `repair-ricambi-${repair.id}`,
               type: 'repair',
               priority: 'media',
-              title: `Attesa ricambi: ${repair.orderNumber}`,
+              title: `Attesa ricambi: ${getCustomerName(repair.customerId)}`,
               description: `Verificare stato ordine ricambi`,
               actionLabel: 'Verifica',
               actionUrl: `/reseller/repairs/${repair.id}`,
@@ -16471,6 +16483,18 @@ export function registerRoutes(app: Express): Server {
         // Get repairs needing action
         const repairs = await storage.listRepairOrders({ repairCenterId });
         
+        
+        // Build customer name map for display
+        const rcCustomerIds = [...new Set(repairs.map(r => r.customerId).filter(Boolean))];
+        const rcCustomerMap = new Map<string, string>();
+        for (const cid of rcCustomerIds) {
+          const customer = await storage.getUser(cid);
+          if (customer) {
+            rcCustomerMap.set(cid, customer.fullName || customer.username);
+          }
+        }
+        const getCustomerName = (cid: string) => rcCustomerMap.get(cid) || 'Cliente';
+
         repairs.forEach(repair => {
           const updatedAt = new Date(repair.updatedAt);
           const isOld = updatedAt < threeDaysAgo;
@@ -16480,7 +16504,7 @@ export function registerRoutes(app: Express): Server {
               id: `repair-diagnosi-${repair.id}`,
               type: 'repair',
               priority: 'alta',
-              title: `Diagnosi in attesa: ${repair.orderNumber}`,
+              title: `Diagnosi in attesa: ${getCustomerName(repair.customerId)}`,
               description: `Il dispositivo è in attesa di diagnosi da ${Math.floor((now.getTime() - updatedAt.getTime()) / (1000 * 60 * 60 * 24))} giorni`,
               actionLabel: 'Avvia diagnosi',
               actionUrl: `/repair-center/repairs/${repair.id}`,
@@ -16494,7 +16518,7 @@ export function registerRoutes(app: Express): Server {
               id: `repair-preventivo-${repair.id}`,
               type: 'quote',
               priority: isOld ? 'alta' : 'media',
-              title: `Preventivo da emettere: ${repair.orderNumber}`,
+              title: `Preventivo da emettere: ${getCustomerName(repair.customerId)}`,
               description: `Diagnosi completata, emettere preventivo`,
               actionLabel: 'Crea preventivo',
               actionUrl: `/repair-center/repairs/${repair.id}`,
@@ -16508,7 +16532,7 @@ export function registerRoutes(app: Express): Server {
               id: `repair-ritiro-${repair.id}`,
               type: 'repair',
               priority: isOld ? 'media' : 'bassa',
-              title: `Pronto per ritiro: ${repair.orderNumber}`,
+              title: `Pronto per ritiro: ${getCustomerName(repair.customerId)}`,
               description: `Contattare cliente per ritiro`,
               actionLabel: 'Gestisci',
               actionUrl: `/repair-center/repairs/${repair.id}`,
@@ -16522,7 +16546,7 @@ export function registerRoutes(app: Express): Server {
               id: `repair-ricambi-${repair.id}`,
               type: 'repair',
               priority: 'media',
-              title: `Attesa ricambi: ${repair.orderNumber}`,
+              title: `Attesa ricambi: ${getCustomerName(repair.customerId)}`,
               description: `Verificare stato ordine ricambi`,
               actionLabel: 'Verifica',
               actionUrl: `/repair-center/repairs/${repair.id}`,
