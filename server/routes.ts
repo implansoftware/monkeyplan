@@ -16141,7 +16141,6 @@ export function registerRoutes(app: Express): Server {
         }
         
       } else if (req.user.role === 'reseller') {
-      } else if (req.user.role === 'reseller') {
         // Reseller sees comprehensive dashboard stats
         const context = getEffectiveContext(req);
         const resellerId = context.resellerId;
