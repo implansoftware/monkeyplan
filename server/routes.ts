@@ -6589,6 +6589,69 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Reseller Repair Centers - get detailed info with stats and recent repairs
+  app.get("/api/reseller/repair-centers/:id/detail", requireRole("reseller", "reseller_staff"), requireModulePermission("repair_centers", "read"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Non autorizzato");
+      
+      const centerId = req.params.id;
+      const effectiveResellerId = req.user.role === "reseller_staff" ? req.user.parentResellerId : req.user.id;
+      
+      if (!effectiveResellerId) {
+        return res.status(403).send("Non autorizzato");
+      }
+
+      const detail = await storage.getResellerRepairCenterDetail(effectiveResellerId, centerId);
+      if (!detail) {
+        return res.status(404).send("Centro di riparazione non trovato o non autorizzato");
+      }
+
+      res.json(detail);
+    } catch (error: any) {
+      console.error("Error getting repair center detail:", error);
+      res.status(500).send(error.message);
+    }
+  });
+
+  // Reseller Repair Centers - get repairs list with pagination
+  app.get("/api/reseller/repair-centers/:id/repairs", requireRole("reseller", "reseller_staff"), requireModulePermission("repair_centers", "read"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Non autorizzato");
+      
+      const centerId = req.params.id;
+      const effectiveResellerId = req.user.role === "reseller_staff" ? req.user.parentResellerId : req.user.id;
+      
+      if (!effectiveResellerId) {
+        return res.status(403).send("Non autorizzato");
+      }
+
+      // Verify ownership
+      const center = await storage.getRepairCenter(centerId);
+      if (!center) {
+        return res.status(404).send("Centro di riparazione non trovato");
+      }
+      
+      // Get sub-resellers to check ownership
+      const subResellers = await storage.getSubResellersForReseller(effectiveResellerId);
+      const subResellerIds = subResellers.map(sr => sr.id);
+      const allowedResellerIds = [effectiveResellerId, ...subResellerIds];
+      
+      if (!center.resellerId || !allowedResellerIds.includes(center.resellerId)) {
+        return res.status(403).send("Non autorizzato ad accedere a questo centro");
+      }
+
+      const limit = parseInt(req.query.limit as string) || 20;
+      const offset = parseInt(req.query.offset as string) || 0;
+      const status = req.query.status as string | undefined;
+
+      const result = await storage.getRepairCenterRepairs(centerId, { limit, offset, status });
+      res.json(result);
+    } catch (error: any) {
+      console.error("Error getting repair center repairs:", error);
+      res.status(500).send(error.message);
+    }
+  });
+
   // Reseller Suppliers - view global suppliers (admin) + own suppliers
   app.get("/api/reseller/suppliers", requireRole("reseller", "reseller_staff"), requireModulePermission("suppliers", "read"), async (req, res) => {
     try {

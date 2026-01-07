@@ -1327,7 +1327,7 @@ export class DatabaseStorage implements IStorage {
     const subResellerIds = resellerSubResellers.map(sr => sr.id);
     const allowedResellerIds = [resellerId, ...subResellerIds];
     
-    if (!allowedResellerIds.includes(center.resellerId)) {
+    if (!center.resellerId || !allowedResellerIds.includes(center.resellerId)) {
       return null;
     }
 
@@ -1335,25 +1335,26 @@ export class DatabaseStorage implements IStorage {
     const allRepairs = await db.select({
       id: repairOrders.id,
       status: repairOrders.status,
-      totalCents: repairOrders.totalCents,
+      finalCost: repairOrders.finalCost,
     }).from(repairOrders).where(eq(repairOrders.repairCenterId, centerId));
 
     const totalRepairs = allRepairs.length;
-    const pendingRepairs = allRepairs.filter(r => r.status === "pending" || r.status === "waiting_parts" || r.status === "waiting_approval").length;
-    const completedRepairs = allRepairs.filter(r => r.status === "completed" || r.status === "delivered").length;
-    const inProgressRepairs = allRepairs.filter(r => r.status === "in_progress" || r.status === "diagnosed").length;
-    const totalRevenue = allRepairs.reduce((sum, r) => sum + (r.totalCents || 0), 0);
+    const pendingRepairs = allRepairs.filter(r => r.status === "pending" || r.status === "attesa_ricambi" || r.status === "preventivo_emesso").length;
+    const completedRepairs = allRepairs.filter(r => r.status === "consegnato" || r.status === "pronto_ritiro").length;
+    const inProgressRepairs = allRepairs.filter(r => r.status === "in_riparazione" || r.status === "in_diagnosi" || r.status === "in_test").length;
+    const totalRevenue = allRepairs.reduce((sum, r) => sum + (r.finalCost || 0), 0);
 
     // Get recent repairs with customer info
     const recentRepairsData = await db.select({
       id: repairOrders.id,
-      ticketNumber: repairOrders.ticketNumber,
+      orderNumber: repairOrders.orderNumber,
       status: repairOrders.status,
       deviceType: repairOrders.deviceType,
       brand: repairOrders.brand,
-      model: repairOrders.model,
-      problemDescription: repairOrders.problemDescription,
-      totalCents: repairOrders.totalCents,
+      deviceModel: repairOrders.deviceModel,
+      issueDescription: repairOrders.issueDescription,
+      finalCost: repairOrders.finalCost,
+      estimatedCost: repairOrders.estimatedCost,
       createdAt: repairOrders.createdAt,
       customerName: users.fullName,
       customerEmail: users.email,
@@ -1402,13 +1403,14 @@ export class DatabaseStorage implements IStorage {
 
     const repairsData = await db.select({
       id: repairOrders.id,
-      ticketNumber: repairOrders.ticketNumber,
+      orderNumber: repairOrders.orderNumber,
       status: repairOrders.status,
       deviceType: repairOrders.deviceType,
       brand: repairOrders.brand,
-      model: repairOrders.model,
-      problemDescription: repairOrders.problemDescription,
-      totalCents: repairOrders.totalCents,
+      deviceModel: repairOrders.deviceModel,
+      issueDescription: repairOrders.issueDescription,
+      finalCost: repairOrders.finalCost,
+      estimatedCost: repairOrders.estimatedCost,
       createdAt: repairOrders.createdAt,
       updatedAt: repairOrders.updatedAt,
       customerName: users.fullName,
