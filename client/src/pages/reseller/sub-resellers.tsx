@@ -356,90 +356,114 @@ export default function SubResellers() {
 
   return (
     <div className="space-y-6 p-6">
-      <div className="flex items-center justify-between flex-wrap gap-4">
-        <div>
-          <h1 className="text-2xl font-bold flex items-center gap-2" data-testid="text-page-title">
-            <Network className="h-6 w-6" />
-            Sub-Reseller
-          </h1>
-          <p className="text-muted-foreground">
-            Gestisci i tuoi rivenditori affiliati
-          </p>
-        </div>
-        <Button onClick={handleOpenCreate} data-testid="button-add-subreseller">
-          <Plus className="h-4 w-4 mr-2" />
-          Nuovo Sub-Reseller
-        </Button>
-      </div>
+      <Card className="bg-gradient-to-r from-primary/10 via-primary/5 to-transparent border-none shadow-sm">
+        <CardContent className="py-6">
+          <div className="flex items-center justify-between flex-wrap gap-4">
+            <div className="flex items-center gap-4">
+              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-primary/80 text-primary-foreground shadow-lg">
+                <Network className="h-7 w-7" />
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold tracking-tight" data-testid="text-page-title">
+                  Sub-Reseller
+                </h1>
+                <p className="text-muted-foreground">
+                  Gestisci i tuoi rivenditori affiliati
+                </p>
+              </div>
+            </div>
+            <Button onClick={handleOpenCreate} className="shadow-sm" data-testid="button-add-subreseller">
+              <Plus className="h-4 w-4 mr-2" />
+              Nuovo Sub-Reseller
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
 
       <div className="grid gap-4 md:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 gap-2">
-            <CardTitle className="text-sm font-medium">Totale Sub-Reseller</CardTitle>
-            <Store className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold" data-testid="text-total-subresellers">
-              {isLoading ? <Skeleton className="h-8 w-16" /> : subResellers.length}
+        <Card className="overflow-hidden">
+          <CardContent className="p-5">
+            <div className="flex items-center gap-4">
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-500/10">
+                <Store className="h-6 w-6 text-blue-600" />
+              </div>
+              <div className="flex-1">
+                <p className="text-sm font-medium text-muted-foreground">Totale Sub-Reseller</p>
+                <div className="text-2xl font-bold" data-testid="text-total-subresellers">
+                  {isLoading ? <Skeleton className="h-8 w-16" /> : subResellers.length}
+                </div>
+              </div>
             </div>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-xs text-muted-foreground mt-2 pl-16">
               {activeResellers} attivi
             </p>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 gap-2">
-            <CardTitle className="text-sm font-medium">Clienti Totali</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold" data-testid="text-total-customers">
-              {isLoading ? <Skeleton className="h-8 w-16" /> : totalCustomers}
+        <Card className="overflow-hidden">
+          <CardContent className="p-5">
+            <div className="flex items-center gap-4">
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-500/10">
+                <Users className="h-6 w-6 text-emerald-600" />
+              </div>
+              <div className="flex-1">
+                <p className="text-sm font-medium text-muted-foreground">Clienti Totali</p>
+                <div className="text-2xl font-bold" data-testid="text-total-customers">
+                  {isLoading ? <Skeleton className="h-8 w-16" /> : totalCustomers}
+                </div>
+              </div>
             </div>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-xs text-muted-foreground mt-2 pl-16">
               tra tutti i sub-reseller
             </p>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 gap-2">
-            <CardTitle className="text-sm font-medium">Centri Riparazione</CardTitle>
-            <Building className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold" data-testid="text-total-centers">
-              {isLoading ? <Skeleton className="h-8 w-16" /> : totalCenters}
+        <Card className="overflow-hidden">
+          <CardContent className="p-5">
+            <div className="flex items-center gap-4">
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-amber-500/10">
+                <Building className="h-6 w-6 text-amber-600" />
+              </div>
+              <div className="flex-1">
+                <p className="text-sm font-medium text-muted-foreground">Centri Riparazione</p>
+                <div className="text-2xl font-bold" data-testid="text-total-centers">
+                  {isLoading ? <Skeleton className="h-8 w-16" /> : totalCenters}
+                </div>
+              </div>
             </div>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-xs text-muted-foreground mt-2 pl-16">
               tra tutti i sub-reseller
             </p>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 gap-2">
-            <CardTitle className="text-sm font-medium">
-              {activeTab === "ecommerce" ? "Fatturato Rete" : "Attivi"}
-            </CardTitle>
-            {activeTab === "ecommerce" ? (
-              <DollarSign className="h-4 w-4 text-muted-foreground" />
-            ) : (
-              <Network className="h-4 w-4 text-muted-foreground" />
-            )}
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold" data-testid="text-active-resellers">
-              {isLoading ? (
-                <Skeleton className="h-8 w-16" />
-              ) : activeTab === "ecommerce" ? (
-                formatPrice(totalEcommerceRevenue)
-              ) : (
-                `${activeResellers}/${subResellers.length}`
-              )}
+        <Card className="overflow-hidden">
+          <CardContent className="p-5">
+            <div className="flex items-center gap-4">
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-violet-500/10">
+                {activeTab === "ecommerce" ? (
+                  <DollarSign className="h-6 w-6 text-violet-600" />
+                ) : (
+                  <Network className="h-6 w-6 text-violet-600" />
+                )}
+              </div>
+              <div className="flex-1">
+                <p className="text-sm font-medium text-muted-foreground">
+                  {activeTab === "ecommerce" ? "Fatturato Rete" : "Attivi"}
+                </p>
+                <div className="text-2xl font-bold" data-testid="text-active-resellers">
+                  {isLoading ? (
+                    <Skeleton className="h-8 w-16" />
+                  ) : activeTab === "ecommerce" ? (
+                    formatPrice(totalEcommerceRevenue)
+                  ) : (
+                    `${activeResellers}/${subResellers.length}`
+                  )}
+                </div>
+              </div>
             </div>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-xs text-muted-foreground mt-2 pl-16">
               {activeTab === "ecommerce" 
                 ? `${totalEcommerceOrders} ordini totali`
                 : "sub-reseller attivi"}
@@ -449,72 +473,82 @@ export default function SubResellers() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList>
-          <TabsTrigger value="anagrafica">
+        <TabsList className="bg-muted/50 p-1">
+          <TabsTrigger value="anagrafica" className="data-[state=active]:bg-background data-[state=active]:shadow-sm">
             <Users className="h-4 w-4 mr-2" />
             Anagrafica
           </TabsTrigger>
-          <TabsTrigger value="ecommerce">
+          <TabsTrigger value="ecommerce" className="data-[state=active]:bg-background data-[state=active]:shadow-sm">
             <ShoppingCart className="h-4 w-4 mr-2" />
             E-commerce
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="anagrafica">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Store className="h-5 w-5" />
-                Elenco Sub-Reseller
-              </CardTitle>
-              <CardDescription>
-                Visualizza e gestisci i rivenditori affiliati alla tua rete
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center gap-4 mb-4">
-                <div className="relative flex-1 max-w-sm">
+        <TabsContent value="anagrafica" className="mt-4">
+          <Card className="shadow-sm">
+            <CardHeader className="pb-4">
+              <div className="flex items-center justify-between gap-4 flex-wrap">
+                <div>
+                  <CardTitle className="flex items-center gap-2 text-lg">
+                    <Store className="h-5 w-5 text-primary" />
+                    Elenco Sub-Reseller
+                  </CardTitle>
+                  <CardDescription>
+                    Visualizza e gestisci i rivenditori affiliati alla tua rete
+                  </CardDescription>
+                </div>
+                <div className="relative w-72">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
                     placeholder="Cerca per nome, email o username..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-9"
+                    className="pl-9 bg-muted/30"
                     data-testid="input-search"
                   />
                 </div>
               </div>
+            </CardHeader>
+            <CardContent className="pt-0">
 
               {isLoading ? (
                 <div className="space-y-3">
                   {Array.from({ length: 5 }).map((_, i) => (
-                    <Skeleton key={i} className="h-12 w-full" />
+                    <Skeleton key={i} className="h-14 w-full rounded-lg" />
                   ))}
                 </div>
               ) : filteredResellers.length === 0 ? (
-                <div className="text-center py-12 text-muted-foreground">
-                  <Network className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p className="text-lg font-medium">Nessun sub-reseller trovato</p>
-                  <p className="text-sm">
+                <div className="text-center py-16">
+                  <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-muted/50 mx-auto mb-4">
+                    <Network className="h-8 w-8 text-muted-foreground" />
+                  </div>
+                  <p className="text-lg font-semibold">Nessun sub-reseller trovato</p>
+                  <p className="text-sm text-muted-foreground mt-1">
                     {searchQuery
                       ? "Prova a modificare i criteri di ricerca"
                       : "Non hai ancora rivenditori affiliati"}
                   </p>
+                  {!searchQuery && (
+                    <Button onClick={handleOpenCreate} className="mt-4" variant="outline">
+                      <Plus className="h-4 w-4 mr-2" />
+                      Aggiungi il primo
+                    </Button>
+                  )}
                 </div>
               ) : (
-                <div className="rounded-md border">
+                <div className="rounded-lg border overflow-hidden">
                   <Table>
                     <TableHeader>
-                      <TableRow>
-                        <TableHead>Nome</TableHead>
-                        <TableHead>Email</TableHead>
-                        <TableHead>Telefono</TableHead>
-                        <TableHead>Categoria</TableHead>
-                        <TableHead className="text-center">Clienti</TableHead>
-                        <TableHead className="text-center">Centri</TableHead>
-                        <TableHead>Stato</TableHead>
-                        <TableHead>Data Creazione</TableHead>
-                        <TableHead className="text-right">Azioni</TableHead>
+                      <TableRow className="bg-muted/30 hover:bg-muted/30">
+                        <TableHead className="font-semibold">Nome</TableHead>
+                        <TableHead className="font-semibold">Email</TableHead>
+                        <TableHead className="font-semibold">Telefono</TableHead>
+                        <TableHead className="font-semibold">Categoria</TableHead>
+                        <TableHead className="text-center font-semibold">Clienti</TableHead>
+                        <TableHead className="text-center font-semibold">Centri</TableHead>
+                        <TableHead className="font-semibold">Stato</TableHead>
+                        <TableHead className="font-semibold">Data Creazione</TableHead>
+                        <TableHead className="text-right font-semibold">Azioni</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -562,6 +596,7 @@ export default function SubResellers() {
                               <Button
                                 size="icon"
                                 variant="ghost"
+                                className="h-8 w-8 rounded-lg hover:bg-blue-500/10 hover:text-blue-600"
                                 onClick={() => {
                                   setViewingReseller(reseller);
                                   setDetailDialogOpen(true);
@@ -573,6 +608,7 @@ export default function SubResellers() {
                               <Button
                                 size="icon"
                                 variant="ghost"
+                                className="h-8 w-8 rounded-lg hover:bg-amber-500/10 hover:text-amber-600"
                                 onClick={() => handleOpenEdit(reseller)}
                                 data-testid={`button-edit-${reseller.id}`}
                               >
@@ -581,6 +617,7 @@ export default function SubResellers() {
                               <Button
                                 size="icon"
                                 variant="ghost"
+                                className="h-8 w-8 rounded-lg hover:bg-destructive/10"
                                 onClick={() => handleOpenDelete(reseller)}
                                 data-testid={`button-delete-${reseller.id}`}
                               >
@@ -598,45 +635,47 @@ export default function SubResellers() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="ecommerce">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <TrendingUp className="h-5 w-5" />
+        <TabsContent value="ecommerce" className="mt-4">
+          <Card className="shadow-sm">
+            <CardHeader className="pb-4">
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <TrendingUp className="h-5 w-5 text-primary" />
                 Performance E-commerce Sub-Reseller
               </CardTitle>
               <CardDescription>
                 Monitora le vendite e il catalogo dei tuoi sub-reseller
               </CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="pt-0">
               {isLoadingEcommerce ? (
                 <div className="space-y-3">
                   {Array.from({ length: 5 }).map((_, i) => (
-                    <Skeleton key={i} className="h-12 w-full" />
+                    <Skeleton key={i} className="h-14 w-full rounded-lg" />
                   ))}
                 </div>
               ) : ecommerceData.length === 0 ? (
-                <div className="text-center py-12 text-muted-foreground">
-                  <ShoppingCart className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p className="text-lg font-medium">Nessun dato e-commerce</p>
-                  <p className="text-sm">
+                <div className="text-center py-16">
+                  <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-muted/50 mx-auto mb-4">
+                    <ShoppingCart className="h-8 w-8 text-muted-foreground" />
+                  </div>
+                  <p className="text-lg font-semibold">Nessun dato e-commerce</p>
+                  <p className="text-sm text-muted-foreground mt-1">
                     I tuoi sub-reseller non hanno ancora attività e-commerce
                   </p>
                 </div>
               ) : (
-                <div className="rounded-md border">
+                <div className="rounded-lg border overflow-hidden">
                   <Table>
                     <TableHeader>
-                      <TableRow>
-                        <TableHead>Sub-Reseller</TableHead>
-                        <TableHead className="text-center">Prodotti Assegnati</TableHead>
-                        <TableHead className="text-center">Prodotti Pubblicati</TableHead>
-                        <TableHead className="text-center">Ordini Totali</TableHead>
-                        <TableHead className="text-center">Ordini Pendenti</TableHead>
-                        <TableHead className="text-right">Fatturato</TableHead>
-                        <TableHead>Ultimo Ordine</TableHead>
-                        <TableHead className="text-right">Azioni</TableHead>
+                      <TableRow className="bg-muted/30 hover:bg-muted/30">
+                        <TableHead className="font-semibold">Sub-Reseller</TableHead>
+                        <TableHead className="text-center font-semibold">Prodotti Assegnati</TableHead>
+                        <TableHead className="text-center font-semibold">Prodotti Pubblicati</TableHead>
+                        <TableHead className="text-center font-semibold">Ordini Totali</TableHead>
+                        <TableHead className="text-center font-semibold">Ordini Pendenti</TableHead>
+                        <TableHead className="text-right font-semibold">Fatturato</TableHead>
+                        <TableHead className="font-semibold">Ultimo Ordine</TableHead>
+                        <TableHead className="text-right font-semibold">Azioni</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -707,12 +746,20 @@ export default function SubResellers() {
         }
       }}>
         <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto" data-testid="dialog-subreseller-form">
-          <DialogHeader>
-            <DialogTitle>{editingReseller ? "Modifica Sub-Reseller" : "Nuovo Sub-Reseller"}</DialogTitle>
+          <DialogHeader className="pb-2">
+            <DialogTitle className="flex items-center gap-2 text-xl">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-primary/80 text-primary-foreground">
+                {editingReseller ? <Pencil className="h-5 w-5" /> : <Plus className="h-5 w-5" />}
+              </div>
+              {editingReseller ? "Modifica Sub-Reseller" : "Nuovo Sub-Reseller"}
+            </DialogTitle>
+            <DialogDescription>
+              {editingReseller ? "Aggiorna le informazioni del sub-reseller" : "Compila i dati per creare un nuovo sub-reseller"}
+            </DialogDescription>
           </DialogHeader>
           
           <div className="space-y-4">
-            <div className="flex items-center justify-between gap-2 mb-2">
+            <div className="flex items-center justify-between gap-3 mb-2 px-2">
               {currentSteps.map((step, idx) => {
                 const StepIcon = step.icon;
                 const isActive = step.id === wizardStep;
@@ -720,22 +767,22 @@ export default function SubResellers() {
                 return (
                   <div key={step.id} className="flex flex-col items-center flex-1">
                     <div 
-                      className={`w-10 h-10 rounded-full flex items-center justify-center border-2 transition-colors ${
-                        isActive ? 'bg-primary border-primary text-primary-foreground' : 
-                        isPast ? 'bg-primary/20 border-primary text-primary' : 
-                        'bg-muted border-muted-foreground/30 text-muted-foreground'
+                      className={`w-11 h-11 rounded-xl flex items-center justify-center border-2 transition-all duration-200 shadow-sm ${
+                        isActive ? 'bg-primary border-primary text-primary-foreground scale-105' : 
+                        isPast ? 'bg-emerald-500/20 border-emerald-500 text-emerald-600' : 
+                        'bg-muted/50 border-muted-foreground/20 text-muted-foreground'
                       }`}
                     >
                       {isPast ? <Check className="h-5 w-5" /> : <StepIcon className="h-5 w-5" />}
                     </div>
-                    <span className={`text-xs mt-1 text-center ${isActive ? 'text-foreground font-medium' : 'text-muted-foreground'}`}>
+                    <span className={`text-xs mt-1.5 text-center font-medium ${isActive ? 'text-primary' : isPast ? 'text-emerald-600' : 'text-muted-foreground'}`}>
                       {step.title}
                     </span>
                   </div>
                 );
               })}
             </div>
-            <Progress value={progressPercent} className="h-1" />
+            <Progress value={progressPercent} className="h-1.5 rounded-full" />
 
             <div className="min-h-[300px]">
               {wizardStep === 1 && !editingReseller && (
@@ -1034,9 +1081,11 @@ const SubResellerDetailDialog = ({ open, onOpenChange, reseller }: SubResellerDe
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto" data-testid="dialog-subreseller-detail">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Eye className="h-5 w-5" />
+        <DialogHeader className="pb-2">
+          <DialogTitle className="flex items-center gap-2 text-xl">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 text-white">
+              <Eye className="h-5 w-5" />
+            </div>
             Dettagli Sub-Reseller
           </DialogTitle>
           <DialogDescription>
@@ -1046,23 +1095,29 @@ const SubResellerDetailDialog = ({ open, onOpenChange, reseller }: SubResellerDe
         
         {isLoading ? (
           <div className="space-y-4">
-            <Skeleton className="h-8 w-48" />
-            <Skeleton className="h-24 w-full" />
-            <Skeleton className="h-24 w-full" />
+            <Skeleton className="h-16 w-full rounded-lg" />
+            <Skeleton className="h-32 w-full rounded-lg" />
+            <Skeleton className="h-32 w-full rounded-lg" />
           </div>
         ) : data ? (
-          <div className="space-y-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-lg font-semibold">{data.fullName}</h3>
-                <p className="text-sm text-muted-foreground">{data.email}</p>
+          <div className="space-y-5">
+            <div className="flex items-center justify-between p-4 rounded-xl bg-gradient-to-r from-primary/10 via-primary/5 to-transparent">
+              <div className="flex items-center gap-3">
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/20 text-primary font-bold text-lg">
+                  {data.fullName.charAt(0).toUpperCase()}
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold">{data.fullName}</h3>
+                  <p className="text-sm text-muted-foreground">{data.email}</p>
+                </div>
               </div>
-              <Badge variant={data.isActive ? "default" : "secondary"}>
+              <Badge 
+                variant={data.isActive ? "default" : "secondary"}
+                className={data.isActive ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20" : ""}
+              >
                 {data.isActive ? "Attivo" : "Inattivo"}
               </Badge>
             </div>
-
-            <Separator />
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1">
@@ -1087,11 +1142,11 @@ const SubResellerDetailDialog = ({ open, onOpenChange, reseller }: SubResellerDe
               </div>
             </div>
 
-            <Separator />
-
-            <div>
-              <h4 className="font-medium mb-3 flex items-center gap-2">
-                <FileText className="h-4 w-4" />
+            <div className="rounded-lg border p-4">
+              <h4 className="font-semibold mb-3 flex items-center gap-2 text-sm">
+                <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-violet-500/10">
+                  <FileText className="h-4 w-4 text-violet-600" />
+                </div>
                 Dati Fiscali
               </h4>
               <div className="grid grid-cols-2 gap-4">
@@ -1118,11 +1173,11 @@ const SubResellerDetailDialog = ({ open, onOpenChange, reseller }: SubResellerDe
               </div>
             </div>
 
-            <Separator />
-
-            <div>
-              <h4 className="font-medium mb-3 flex items-center gap-2">
-                <Building className="h-4 w-4" />
+            <div className="rounded-lg border p-4">
+              <h4 className="font-semibold mb-3 flex items-center gap-2 text-sm">
+                <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-amber-500/10">
+                  <Building className="h-4 w-4 text-amber-600" />
+                </div>
                 Indirizzo
               </h4>
               <div className="grid grid-cols-2 gap-4">
@@ -1145,36 +1200,32 @@ const SubResellerDetailDialog = ({ open, onOpenChange, reseller }: SubResellerDe
               </div>
             </div>
 
-            <Separator />
-
-            <div>
-              <h4 className="font-medium mb-3 flex items-center gap-2">
-                <TrendingUp className="h-4 w-4" />
+            <div className="rounded-lg border p-4">
+              <h4 className="font-semibold mb-3 flex items-center gap-2 text-sm">
+                <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-500/10">
+                  <TrendingUp className="h-4 w-4 text-emerald-600" />
+                </div>
                 Statistiche
               </h4>
               <div className="grid grid-cols-2 gap-4">
-                <Card>
-                  <CardContent className="p-4 flex items-center gap-3">
-                    <div className="p-2 rounded-md bg-primary/10">
-                      <Users className="h-5 w-5 text-primary" />
-                    </div>
-                    <div>
-                      <p className="text-2xl font-bold">{data.customersCount || 0}</p>
-                      <p className="text-xs text-muted-foreground">Clienti</p>
-                    </div>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardContent className="p-4 flex items-center gap-3">
-                    <div className="p-2 rounded-md bg-primary/10">
-                      <Store className="h-5 w-5 text-primary" />
-                    </div>
-                    <div>
-                      <p className="text-2xl font-bold">{data.repairCentersCount || 0}</p>
-                      <p className="text-xs text-muted-foreground">Centri Riparazione</p>
-                    </div>
-                  </CardContent>
-                </Card>
+                <div className="p-4 rounded-lg bg-blue-500/5 border border-blue-500/10 flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-500/10">
+                    <Users className="h-5 w-5 text-blue-600" />
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold">{data.customersCount || 0}</p>
+                    <p className="text-xs text-muted-foreground">Clienti</p>
+                  </div>
+                </div>
+                <div className="p-4 rounded-lg bg-amber-500/5 border border-amber-500/10 flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500/10">
+                    <Store className="h-5 w-5 text-amber-600" />
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold">{data.repairCentersCount || 0}</p>
+                    <p className="text-xs text-muted-foreground">Centri Riparazione</p>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
