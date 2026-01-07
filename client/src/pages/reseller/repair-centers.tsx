@@ -1331,18 +1331,46 @@ export default function ResellerRepairCenters() {
 
               {/* Tab Riparazioni */}
               <TabsContent value="riparazioni" className="mt-4 space-y-4">
-                {/* Recenti / Lista */}
-                <div>
-                  <h4 className="text-sm font-semibold mb-3 flex items-center gap-2">
-                    <Calendar className="h-4 w-4" />
-                    Ultime Riparazioni
+                {/* Filtri */}
+                <div className="flex items-center justify-between gap-4 flex-wrap">
+                  <h4 className="text-sm font-semibold flex items-center gap-2">
+                    <Wrench className="h-4 w-4" />
+                    Riparazioni ({repairsData?.total || 0})
                   </h4>
-                  {centerDetail.recentRepairs.length === 0 ? (
-                    <div className="text-center py-8 text-muted-foreground">
-                      <Wrench className="h-10 w-10 mx-auto mb-2 opacity-20" />
-                      <p>Nessuna riparazione trovata</p>
-                    </div>
-                  ) : (
+                  <div className="flex items-center gap-2">
+                    <Select value={repairsStatusFilter} onValueChange={(v) => { setRepairsStatusFilter(v); setRepairsPage(0); }}>
+                      <SelectTrigger className="w-48" data-testid="select-repair-status-filter">
+                        <SelectValue placeholder="Filtra per stato" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Tutti gli stati</SelectItem>
+                        <SelectItem value="pending">In Attesa</SelectItem>
+                        <SelectItem value="ingressato">Ingressato</SelectItem>
+                        <SelectItem value="in_diagnosi">In Diagnosi</SelectItem>
+                        <SelectItem value="preventivo_emesso">Preventivo Emesso</SelectItem>
+                        <SelectItem value="preventivo_accettato">Preventivo Accettato</SelectItem>
+                        <SelectItem value="attesa_ricambi">Attesa Ricambi</SelectItem>
+                        <SelectItem value="in_riparazione">In Riparazione</SelectItem>
+                        <SelectItem value="in_test">In Test</SelectItem>
+                        <SelectItem value="pronto_ritiro">Pronto Ritiro</SelectItem>
+                        <SelectItem value="consegnato">Consegnato</SelectItem>
+                        <SelectItem value="cancelled">Annullato</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                {isLoadingRepairs ? (
+                  <div className="flex items-center justify-center py-8">
+                    <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                  </div>
+                ) : !repairsData || repairsData.repairs.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <Wrench className="h-10 w-10 mx-auto mb-2 opacity-20" />
+                    <p>Nessuna riparazione trovata</p>
+                  </div>
+                ) : (
+                  <>
                     <Table>
                       <TableHeader>
                         <TableRow>
@@ -1355,7 +1383,7 @@ export default function ResellerRepairCenters() {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {centerDetail.recentRepairs.map((repair) => (
+                        {repairsData.repairs.map((repair) => (
                           <TableRow key={repair.id} data-testid={`row-repair-${repair.id}`}>
                             <TableCell className="font-mono text-sm">{repair.orderNumber}</TableCell>
                             <TableCell>
@@ -1382,8 +1410,39 @@ export default function ResellerRepairCenters() {
                         ))}
                       </TableBody>
                     </Table>
-                  )}
-                </div>
+
+                    {/* Paginazione */}
+                    {repairsData.total > 20 && (
+                      <div className="flex items-center justify-between pt-4 border-t">
+                        <p className="text-sm text-muted-foreground">
+                          Pagina {repairsPage + 1} di {Math.ceil(repairsData.total / 20)}
+                        </p>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setRepairsPage(p => Math.max(0, p - 1))}
+                            disabled={repairsPage === 0}
+                            data-testid="button-prev-repairs-page"
+                          >
+                            <ChevronLeft className="h-4 w-4 mr-1" />
+                            Precedente
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setRepairsPage(p => p + 1)}
+                            disabled={(repairsPage + 1) * 20 >= repairsData.total}
+                            data-testid="button-next-repairs-page"
+                          >
+                            Successiva
+                            <ChevronRight className="h-4 w-4 ml-1" />
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+                  </>
+                )}
               </TabsContent>
             </Tabs>
           ) : (
