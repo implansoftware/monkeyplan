@@ -6632,7 +6632,7 @@ export function registerRoutes(app: Express): Server {
       }
       
       // Get sub-resellers to check ownership
-      const subResellers = await storage.getSubResellersForReseller(effectiveResellerId);
+      const subResellers = await storage.getChildResellers(effectiveResellerId);
       const subResellerIds = subResellers.map(sr => sr.id);
       const allowedResellerIds = [effectiveResellerId, ...subResellerIds];
       
