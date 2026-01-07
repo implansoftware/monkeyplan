@@ -389,11 +389,21 @@ export default function ResellerServiceCatalog() {
 
   if (isLoading) {
     return (
-      <div className="p-6 space-y-6">
-        <Skeleton className="h-8 w-64" />
+      <div className="space-y-6">
+        <div className="relative overflow-hidden rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 p-6 text-white shadow-lg">
+          <div className="flex items-center gap-4">
+            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm">
+              <Wrench className="h-7 w-7" />
+            </div>
+            <div>
+              <Skeleton className="h-8 w-48 bg-white/30" />
+              <Skeleton className="h-4 w-64 mt-2 bg-white/20" />
+            </div>
+          </div>
+        </div>
         <div className="grid gap-4">
           {[1, 2, 3].map(i => (
-            <Skeleton key={i} className="h-24 w-full" />
+            <Skeleton key={i} className="h-24 w-full rounded-xl" />
           ))}
         </div>
       </div>
@@ -401,16 +411,23 @@ export default function ResellerServiceCatalog() {
   }
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold flex items-center gap-2" data-testid="text-page-title">
-            <Wrench className="h-6 w-6" />
-            Listino Prezzi
-          </h1>
-          <p className="text-muted-foreground">
-            Gestisci i prezzi e crea le tue voci di listino personalizzate
-          </p>
+    <div className="space-y-6">
+      <div className="relative overflow-hidden rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 p-6 text-white shadow-lg">
+        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxwYXRoIGQ9Ik0zNiAxOGMtOS45NDEgMC0xOCA4LjA1OS0xOCAxOHM4LjA1OSAxOCAxOCAxOCAxOC04LjA1OSAxOC0xOC04LjA1OS0xOC0xOC0xOHptMCAzMmMtNy43MzIgMC0xNC02LjI2OC0xNC0xNHM2LjI2OC0xNCAxNC0xNCAxNCA2LjI2OCAxNCAxNC02LjI2OCAxNC0xNCAxNHoiIGZpbGwtb3BhY2l0eT0iLjA1IiBmaWxsPSIjZmZmIi8+PC9nPjwvc3ZnPg==')] opacity-30"></div>
+        <div className="relative flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-4">
+            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm">
+              <Wrench className="h-7 w-7" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold" data-testid="text-page-title">
+                Listino Prezzi
+              </h1>
+              <p className="text-white/80">
+                Gestisci i prezzi e crea le tue voci di listino personalizzate
+              </p>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -425,7 +442,7 @@ export default function ResellerServiceCatalog() {
         </TabsList>
 
         <TabsContent value="catalog" className="mt-4">
-          <Card>
+          <Card className="rounded-xl shadow-sm border-0 bg-card">
             <CardHeader className="pb-4">
               <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
@@ -486,11 +503,14 @@ export default function ResellerServiceCatalog() {
             <CardContent>
               {filteredItems.length === 0 ? (
                 <div className="text-center py-12 text-muted-foreground">
-                  <Wrench className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p>Nessun intervento trovato</p>
+                  <div className="flex h-16 w-16 items-center justify-center rounded-full bg-amber-100 dark:bg-amber-900/30 mx-auto mb-4">
+                    <Wrench className="h-8 w-8 text-amber-600 dark:text-amber-400" />
+                  </div>
+                  <p className="font-medium">Nessun intervento trovato</p>
+                  <p className="text-sm mt-1">Prova a modificare i filtri di ricerca</p>
                 </div>
               ) : (
-                <div className="rounded-md border overflow-hidden">
+                <div className="rounded-lg border overflow-hidden">
                   <Table>
                     <TableHeader>
                       <TableRow>
@@ -591,12 +611,17 @@ export default function ResellerServiceCatalog() {
         </TabsContent>
 
         <TabsContent value="my-items" className="mt-4">
-          <Card>
+          <Card className="rounded-xl shadow-sm border-0 bg-card">
             <CardHeader className="pb-4">
               <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                  <CardTitle>Le Mie Voci di Listino</CardTitle>
-                  <CardDescription>
+                  <CardTitle className="flex items-center gap-2">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-amber-100 dark:bg-amber-900/30">
+                      <Tag className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                    </div>
+                    Le Mie Voci di Listino
+                  </CardTitle>
+                  <CardDescription className="ml-10">
                     Voci di listino personalizzate create da te
                   </CardDescription>
                 </div>
@@ -635,20 +660,23 @@ export default function ResellerServiceCatalog() {
               {isLoadingMyItems ? (
                 <div className="space-y-4">
                   {[1, 2, 3].map(i => (
-                    <Skeleton key={i} className="h-16 w-full" />
+                    <Skeleton key={i} className="h-16 w-full rounded-lg" />
                   ))}
                 </div>
               ) : filteredMyItems.length === 0 ? (
                 <div className="text-center py-12 text-muted-foreground">
-                  <Wrench className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p className="mb-4">Non hai ancora creato voci di listino personalizzate</p>
+                  <div className="flex h-16 w-16 items-center justify-center rounded-full bg-amber-100 dark:bg-amber-900/30 mx-auto mb-4">
+                    <Tag className="h-8 w-8 text-amber-600 dark:text-amber-400" />
+                  </div>
+                  <p className="font-medium">Non hai ancora creato voci di listino personalizzate</p>
+                  <p className="text-sm mt-1 mb-4">Crea la tua prima voce per iniziare</p>
                   <Button onClick={() => openItemDialog()} data-testid="button-create-first-item">
                     <Plus className="h-4 w-4 mr-2" />
                     Crea la Prima Voce
                   </Button>
                 </div>
               ) : (
-                <div className="rounded-md border overflow-hidden">
+                <div className="rounded-lg border overflow-hidden">
                   <Table>
                     <TableHeader>
                       <TableRow>
