@@ -301,7 +301,11 @@ export default function AdminRepairCenters() {
                 {orphansData.orphanCount} centri senza account
               </Button>
             )}
-        <Dialog open={dialogOpen} onOpenChange={(open) => {
+          </div>
+        </div>
+      </div>
+
+      <Dialog open={dialogOpen} onOpenChange={(open) => {
           setDialogOpen(open);
           if (!open) {
             setEditingCenter(null);
@@ -640,8 +644,6 @@ export default function AdminRepairCenters() {
             </div>
           </DialogContent>
         </Dialog>
-        </div>
-      </div>
 
       {/* Dialog per backfill account mancanti */}
       <AlertDialog open={backfillDialogOpen} onOpenChange={setBackfillDialogOpen}>

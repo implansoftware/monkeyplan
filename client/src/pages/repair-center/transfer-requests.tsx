@@ -558,6 +558,7 @@ export default function RepairCenterTransferRequestsPage() {
           </DialogContent>
         </Dialog>
       </div>
+    </div>
 
       <div className="flex items-center gap-4 flex-wrap">
         <div className="relative flex-1 min-w-[200px]">

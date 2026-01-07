@@ -275,6 +275,7 @@ export default function RepairCenterTickets() {
             </div>
           </DialogContent>
         </Dialog>
+        </div>
       </div>
 
       <Card>
