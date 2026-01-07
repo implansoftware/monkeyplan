@@ -9,7 +9,10 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Plus, Search, MapPin, Phone, Mail, Pencil, Trash2, Building, Clock, ChevronLeft, ChevronRight, Check, FileText, Settings, Network, Users, Eye, UserCheck, KeyRound } from "lucide-react";
+import { Plus, Search, MapPin, Phone, Mail, Pencil, Trash2, Building, Clock, ChevronLeft, ChevronRight, Check, FileText, Settings, Network, Users, Eye, UserCheck, KeyRound, Wrench, Euro, TrendingUp, Loader2, BarChart3, Calendar, User2, AlertCircle } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { format } from "date-fns";
+import { it } from "date-fns/locale";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { User } from "@shared/schema";
@@ -49,6 +52,53 @@ type SubResellerWithCenters = {
   repairCenters: SubResellerCenter[];
 };
 
+type RepairCenterDetailData = {
+  center: RepairCenter;
+  stats: {
+    totalRepairs: number;
+    pendingRepairs: number;
+    completedRepairs: number;
+    inProgressRepairs: number;
+    totalRevenue: number;
+    staffCount: number;
+    customerCount: number;
+  };
+  recentRepairs: {
+    id: string;
+    orderNumber: string;
+    status: string;
+    deviceType: string;
+    brand: string | null;
+    deviceModel: string;
+    issueDescription: string;
+    finalCost: number | null;
+    estimatedCost: number | null;
+    createdAt: string;
+    customerName: string | null;
+    customerEmail: string | null;
+  }[];
+};
+
+type RepairCenterRepairsData = {
+  repairs: {
+    id: string;
+    orderNumber: string;
+    status: string;
+    deviceType: string;
+    brand: string | null;
+    deviceModel: string;
+    issueDescription: string;
+    finalCost: number | null;
+    estimatedCost: number | null;
+    createdAt: string;
+    updatedAt: string;
+    customerName: string | null;
+    customerEmail: string | null;
+    customerPhone: string | null;
+  }[];
+  total: number;
+};
+
 export default function ResellerRepairCenters() {
   const [searchQuery, setSearchQuery] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -62,6 +112,10 @@ export default function ResellerRepairCenters() {
   const [resetPasswordDialogOpen, setResetPasswordDialogOpen] = useState(false);
   const [centerToResetPassword, setCenterToResetPassword] = useState<RepairCenter | null>(null);
   const [newPassword, setNewPassword] = useState("");
+  const [detailDialogOpen, setDetailDialogOpen] = useState(false);
+  const [selectedCenterId, setSelectedCenterId] = useState<string | null>(null);
+  const [repairsPage, setRepairsPage] = useState(0);
+  const [repairsStatusFilter, setRepairsStatusFilter] = useState<string>("all");
   const [formData, setFormData] = useState({
     name: "",
     phone: "",
@@ -87,6 +141,18 @@ export default function ResellerRepairCenters() {
 
   const { data: subResellers = [] } = useQuery<User[]>({
     queryKey: ["/api/reseller/sub-resellers"],
+  });
+
+  // Query per il dettaglio centro selezionato
+  const { data: centerDetail, isLoading: isLoadingDetail } = useQuery<RepairCenterDetailData>({
+    queryKey: [`/api/reseller/repair-centers/${selectedCenterId}/detail`],
+    enabled: !!selectedCenterId && detailDialogOpen,
+  });
+
+  // Query per le riparazioni paginate del centro
+  const { data: repairsData, isLoading: isLoadingRepairs } = useQuery<RepairCenterRepairsData>({
+    queryKey: [`/api/reseller/repair-centers/${selectedCenterId}/repairs?limit=20&offset=${repairsPage * 20}${repairsStatusFilter !== "all" ? `&status=${repairsStatusFilter}` : ""}`],
+    enabled: !!selectedCenterId && detailDialogOpen,
   });
 
   const totalNetworkCenters = subResellersCenters.reduce((acc, sr) => acc + sr.repairCenters.length, 0);
@@ -163,6 +229,31 @@ export default function ResellerRepairCenters() {
     if (centerToResetPassword && newPassword.length >= 6) {
       resetPasswordMutation.mutate({ id: centerToResetPassword.id, newPassword });
     }
+  };
+
+  const handleViewDetail = (centerId: string) => {
+    setSelectedCenterId(centerId);
+    setRepairsPage(0);
+    setRepairsStatusFilter("all");
+    setDetailDialogOpen(true);
+  };
+
+  const getStatusBadge = (status: string) => {
+    const statusConfig: Record<string, { label: string; variant: "default" | "secondary" | "outline" | "destructive" }> = {
+      pending: { label: "In Attesa", variant: "secondary" },
+      ingressato: { label: "Ingressato", variant: "outline" },
+      in_diagnosi: { label: "In Diagnosi", variant: "outline" },
+      preventivo_emesso: { label: "Preventivo Emesso", variant: "outline" },
+      preventivo_accettato: { label: "Preventivo Accettato", variant: "default" },
+      attesa_ricambi: { label: "Attesa Ricambi", variant: "secondary" },
+      in_riparazione: { label: "In Riparazione", variant: "default" },
+      in_test: { label: "In Test", variant: "default" },
+      pronto_ritiro: { label: "Pronto Ritiro", variant: "default" },
+      consegnato: { label: "Consegnato", variant: "default" },
+      cancelled: { label: "Annullato", variant: "destructive" },
+    };
+    const config = statusConfig[status] || { label: status, variant: "secondary" as const };
+    return <Badge variant={config.variant}>{config.label}</Badge>;
   };
 
   const resetWizard = () => {
@@ -798,6 +889,15 @@ export default function ResellerRepairCenters() {
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleViewDetail(center.id)}
+                          title="Visualizza Dettagli"
+                          data-testid={`button-view-detail-${center.id}`}
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
                         <Button 
                           variant="ghost" 
                           size="icon" 
@@ -993,6 +1093,307 @@ export default function ResellerRepairCenters() {
           </CardContent>
         </Card>
       )}
+
+      {/* Dialog Dettaglio Centro */}
+      <Dialog open={detailDialogOpen} onOpenChange={(open) => {
+        setDetailDialogOpen(open);
+        if (!open) setSelectedCenterId(null);
+      }}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto" data-testid="dialog-center-detail">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-xl bg-primary text-primary-foreground flex items-center justify-center">
+                <Building className="h-5 w-5" />
+              </div>
+              <div>
+                <span className="text-xl">{centerDetail?.center.name || "Caricamento..."}</span>
+                {centerDetail?.center.isActive !== undefined && (
+                  <Badge variant={centerDetail.center.isActive ? "default" : "secondary"} className="ml-3">
+                    {centerDetail.center.isActive ? "Attivo" : "Inattivo"}
+                  </Badge>
+                )}
+              </div>
+            </DialogTitle>
+          </DialogHeader>
+
+          {isLoadingDetail ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            </div>
+          ) : centerDetail ? (
+            <Tabs defaultValue="anagrafica" className="w-full">
+              <TabsList className="grid w-full grid-cols-3">
+                <TabsTrigger value="anagrafica" className="flex items-center gap-2" data-testid="tab-anagrafica">
+                  <FileText className="h-4 w-4" />
+                  Anagrafica
+                </TabsTrigger>
+                <TabsTrigger value="statistiche" className="flex items-center gap-2" data-testid="tab-statistiche">
+                  <BarChart3 className="h-4 w-4" />
+                  Statistiche
+                </TabsTrigger>
+                <TabsTrigger value="riparazioni" className="flex items-center gap-2" data-testid="tab-riparazioni">
+                  <Wrench className="h-4 w-4" />
+                  Riparazioni
+                </TabsTrigger>
+              </TabsList>
+
+              {/* Tab Anagrafica */}
+              <TabsContent value="anagrafica" className="mt-4 space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Contatti */}
+                  <Card>
+                    <CardHeader className="pb-3">
+                      <div className="flex items-center gap-2">
+                        <div className="h-8 w-8 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+                          <Phone className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                        </div>
+                        <span className="font-semibold">Contatti</span>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="space-y-3 text-sm">
+                      <div className="flex items-center gap-2">
+                        <Mail className="h-4 w-4 text-muted-foreground" />
+                        <span>{centerDetail.center.email}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Phone className="h-4 w-4 text-muted-foreground" />
+                        <span>{centerDetail.center.phone}</span>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* Indirizzo */}
+                  <Card>
+                    <CardHeader className="pb-3">
+                      <div className="flex items-center gap-2">
+                        <div className="h-8 w-8 rounded-lg bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center">
+                          <MapPin className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                        </div>
+                        <span className="font-semibold">Indirizzo</span>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="text-sm">
+                      <p>{centerDetail.center.address}</p>
+                      <p>{centerDetail.center.cap} {centerDetail.center.city} ({centerDetail.center.provincia})</p>
+                    </CardContent>
+                  </Card>
+
+                  {/* Dati Fiscali */}
+                  <Card className="md:col-span-2">
+                    <CardHeader className="pb-3">
+                      <div className="flex items-center gap-2">
+                        <div className="h-8 w-8 rounded-lg bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
+                          <FileText className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                        </div>
+                        <span className="font-semibold">Dati Fiscali</span>
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
+                        <div>
+                          <p className="text-muted-foreground text-xs uppercase">Ragione Sociale</p>
+                          <p className="font-medium">{centerDetail.center.ragioneSociale || "-"}</p>
+                        </div>
+                        <div>
+                          <p className="text-muted-foreground text-xs uppercase">Partita IVA</p>
+                          <p className="font-medium">{centerDetail.center.partitaIva || "-"}</p>
+                        </div>
+                        <div>
+                          <p className="text-muted-foreground text-xs uppercase">Codice Fiscale</p>
+                          <p className="font-medium">{centerDetail.center.codiceFiscale || "-"}</p>
+                        </div>
+                        <div>
+                          <p className="text-muted-foreground text-xs uppercase">Codice SDI</p>
+                          <p className="font-medium">{centerDetail.center.codiceUnivoco || "-"}</p>
+                        </div>
+                        <div>
+                          <p className="text-muted-foreground text-xs uppercase">PEC</p>
+                          <p className="font-medium">{centerDetail.center.pec || "-"}</p>
+                        </div>
+                        <div>
+                          <p className="text-muted-foreground text-xs uppercase">IBAN</p>
+                          <p className="font-medium">{centerDetail.center.iban || "-"}</p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              </TabsContent>
+
+              {/* Tab Statistiche */}
+              <TabsContent value="statistiche" className="mt-4 space-y-4">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <Card className="relative overflow-hidden">
+                    <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-transparent" />
+                    <CardContent className="relative pt-4 pb-3">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-xs text-muted-foreground uppercase">Totale Riparazioni</p>
+                          <p className="text-2xl font-bold">{centerDetail.stats.totalRepairs}</p>
+                        </div>
+                        <div className="h-10 w-10 rounded-lg bg-blue-500 text-white flex items-center justify-center">
+                          <Wrench className="h-5 w-5" />
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card className="relative overflow-hidden">
+                    <div className="absolute inset-0 bg-gradient-to-br from-amber-500/5 to-transparent" />
+                    <CardContent className="relative pt-4 pb-3">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-xs text-muted-foreground uppercase">In Attesa</p>
+                          <p className="text-2xl font-bold text-amber-600">{centerDetail.stats.pendingRepairs}</p>
+                        </div>
+                        <div className="h-10 w-10 rounded-lg bg-amber-500 text-white flex items-center justify-center">
+                          <AlertCircle className="h-5 w-5" />
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card className="relative overflow-hidden">
+                    <div className="absolute inset-0 bg-gradient-to-br from-violet-500/5 to-transparent" />
+                    <CardContent className="relative pt-4 pb-3">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-xs text-muted-foreground uppercase">In Corso</p>
+                          <p className="text-2xl font-bold text-violet-600">{centerDetail.stats.inProgressRepairs}</p>
+                        </div>
+                        <div className="h-10 w-10 rounded-lg bg-violet-500 text-white flex items-center justify-center">
+                          <TrendingUp className="h-5 w-5" />
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card className="relative overflow-hidden">
+                    <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-transparent" />
+                    <CardContent className="relative pt-4 pb-3">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-xs text-muted-foreground uppercase">Completate</p>
+                          <p className="text-2xl font-bold text-emerald-600">{centerDetail.stats.completedRepairs}</p>
+                        </div>
+                        <div className="h-10 w-10 rounded-lg bg-emerald-500 text-white flex items-center justify-center">
+                          <Check className="h-5 w-5" />
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <Card>
+                    <CardContent className="pt-4 pb-3">
+                      <div className="flex items-center gap-3">
+                        <div className="h-10 w-10 rounded-lg bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
+                          <Euro className="h-5 w-5 text-green-600 dark:text-green-400" />
+                        </div>
+                        <div>
+                          <p className="text-xs text-muted-foreground uppercase">Fatturato Totale</p>
+                          <p className="text-xl font-bold">€{(centerDetail.stats.totalRevenue / 100).toFixed(2)}</p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardContent className="pt-4 pb-3">
+                      <div className="flex items-center gap-3">
+                        <div className="h-10 w-10 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+                          <Users className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                        </div>
+                        <div>
+                          <p className="text-xs text-muted-foreground uppercase">Staff Assegnato</p>
+                          <p className="text-xl font-bold">{centerDetail.stats.staffCount}</p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardContent className="pt-4 pb-3">
+                      <div className="flex items-center gap-3">
+                        <div className="h-10 w-10 rounded-lg bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center">
+                          <User2 className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+                        </div>
+                        <div>
+                          <p className="text-xs text-muted-foreground uppercase">Clienti Serviti</p>
+                          <p className="text-xl font-bold">{centerDetail.stats.customerCount}</p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              </TabsContent>
+
+              {/* Tab Riparazioni */}
+              <TabsContent value="riparazioni" className="mt-4 space-y-4">
+                {/* Recenti / Lista */}
+                <div>
+                  <h4 className="text-sm font-semibold mb-3 flex items-center gap-2">
+                    <Calendar className="h-4 w-4" />
+                    Ultime Riparazioni
+                  </h4>
+                  {centerDetail.recentRepairs.length === 0 ? (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <Wrench className="h-10 w-10 mx-auto mb-2 opacity-20" />
+                      <p>Nessuna riparazione trovata</p>
+                    </div>
+                  ) : (
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Ordine</TableHead>
+                          <TableHead>Dispositivo</TableHead>
+                          <TableHead>Cliente</TableHead>
+                          <TableHead>Stato</TableHead>
+                          <TableHead>Data</TableHead>
+                          <TableHead className="text-right">Importo</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {centerDetail.recentRepairs.map((repair) => (
+                          <TableRow key={repair.id} data-testid={`row-repair-${repair.id}`}>
+                            <TableCell className="font-mono text-sm">{repair.orderNumber}</TableCell>
+                            <TableCell>
+                              <div>
+                                <div className="font-medium">{repair.brand} {repair.deviceModel}</div>
+                                <div className="text-xs text-muted-foreground">{repair.deviceType}</div>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <div className="text-sm">
+                                <div>{repair.customerName || "-"}</div>
+                                <div className="text-xs text-muted-foreground">{repair.customerEmail}</div>
+                              </div>
+                            </TableCell>
+                            <TableCell>{getStatusBadge(repair.status)}</TableCell>
+                            <TableCell className="text-sm text-muted-foreground">
+                              {format(new Date(repair.createdAt), "dd/MM/yyyy", { locale: it })}
+                            </TableCell>
+                            <TableCell className="text-right font-medium">
+                              {repair.finalCost ? `€${(repair.finalCost / 100).toFixed(2)}` : 
+                               repair.estimatedCost ? `~€${(repair.estimatedCost / 100).toFixed(2)}` : "-"}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  )}
+                </div>
+              </TabsContent>
+            </Tabs>
+          ) : (
+            <div className="text-center py-8 text-muted-foreground">
+              <AlertCircle className="h-10 w-10 mx-auto mb-2 opacity-20" />
+              <p>Impossibile caricare i dati del centro</p>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* Dialog per reset password */}
       <AlertDialog open={resetPasswordDialogOpen} onOpenChange={setResetPasswordDialogOpen}>
