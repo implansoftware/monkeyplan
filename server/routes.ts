@@ -4004,9 +4004,6 @@ export function registerRoutes(app: Express): Server {
   });
 
   // Create sub-reseller (for franchising/GDO parent resellers)
-
-
-  // Create sub-reseller (for franchising/GDO parent resellers)
   app.post("/api/reseller/sub-resellers", requireRole("reseller"), async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
