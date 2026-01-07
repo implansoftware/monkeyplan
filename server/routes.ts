@@ -3968,6 +3968,44 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Get single sub-reseller detail (for franchising/GDO parent resellers)
+  app.get("/api/reseller/sub-resellers/:id", requireRole("reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      // Only franchising/gdo resellers can view sub-reseller details
+      if (req.user.resellerCategory !== 'franchising' && req.user.resellerCategory !== 'gdo') {
+        return res.status(403).send("Solo i rivenditori franchising/GDO possono visualizzare sub-rivenditori");
+      }
+      
+      const { id } = req.params;
+      
+      // Verify sub-reseller belongs to this parent
+      const subReseller = await storage.getSubResellerDetail(req.user.id, id);
+      if (!subReseller) {
+        return res.status(404).send("Sub-rivenditore non trovato");
+      }
+      
+      // Get enriched data
+      const customers = await storage.listCustomers({ resellerId: subReseller.id });
+      const repairCenters = await storage.getRepairCentersForReseller(subReseller.id);
+      
+      // Return full details without password
+      const { password: _, ...safeUser } = subReseller;
+      
+      res.json({
+        ...safeUser,
+        customersCount: customers.length,
+        repairCentersCount: repairCenters.length,
+      });
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // Create sub-reseller (for franchising/GDO parent resellers)
+
+
   // Create sub-reseller (for franchising/GDO parent resellers)
   app.post("/api/reseller/sub-resellers", requireRole("reseller"), async (req, res) => {
     try {

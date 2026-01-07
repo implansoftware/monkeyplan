@@ -129,6 +129,7 @@ export interface IStorage {
   
   // Context Switching (for parent resellers managing sub-resellers/repair centers)
   getChildResellers(parentResellerId: string): Promise<User[]>;
+  getSubResellerDetail(parentResellerId: string, subResellerId: string): Promise<User | null>;
   getRepairCentersForReseller(resellerId: string): Promise<RepairCenter[]>;
   
   // Customer-RepairCenter Many-to-Many
@@ -1104,6 +1105,20 @@ export class DatabaseStorage implements IStorage {
         )
       )
       .orderBy(users.fullName);
+  }
+
+  async getSubResellerDetail(parentResellerId: string, subResellerId: string): Promise<User | null> {
+    const [subReseller] = await db
+      .select()
+      .from(users)
+      .where(
+        and(
+          eq(users.id, subResellerId),
+          eq(users.role, 'reseller'),
+          eq(users.parentResellerId, parentResellerId)
+        )
+      );
+    return subReseller || null;
   }
 
   async getRepairCentersForReseller(resellerId: string): Promise<RepairCenter[]> {

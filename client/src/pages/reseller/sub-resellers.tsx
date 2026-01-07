@@ -118,6 +118,8 @@ export default function SubResellers() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [editingReseller, setEditingReseller] = useState<SubReseller | null>(null);
   const [deletingReseller, setDeletingReseller] = useState<SubReseller | null>(null);
+  const [detailDialogOpen, setDetailDialogOpen] = useState(false);
+  const [viewingReseller, setViewingReseller] = useState<SubReseller | null>(null);
   const [formData, setFormData] = useState<SubResellerFormData>(initialFormData);
   const [useParentData, setUseParentData] = useState(false);
   const [wizardStep, setWizardStep] = useState(1);
@@ -560,6 +562,17 @@ export default function SubResellers() {
                               <Button
                                 size="icon"
                                 variant="ghost"
+                                onClick={() => {
+                                  setViewingReseller(reseller);
+                                  setDetailDialogOpen(true);
+                                }}
+                                data-testid={`button-view-${reseller.id}`}
+                              >
+                                <Eye className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                size="icon"
+                                variant="ghost"
                                 onClick={() => handleOpenEdit(reseller)}
                                 data-testid={`button-edit-${reseller.id}`}
                               >
@@ -986,6 +999,197 @@ export default function SubResellers() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <SubResellerDetailDialog
+        open={detailDialogOpen}
+        onOpenChange={setDetailDialogOpen}
+        reseller={viewingReseller}
+      />
     </div>
   );
 }
+
+interface SubResellerDetailDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  reseller: SubReseller | null;
+}
+
+const SubResellerDetailDialog = ({ open, onOpenChange, reseller }: SubResellerDetailDialogProps) => {
+  const { data: details, isLoading } = useQuery<SubReseller>({
+    queryKey: ['/api/reseller/sub-resellers', reseller?.id],
+    queryFn: async () => {
+      if (!reseller?.id) return null;
+      const res = await fetch(`/api/reseller/sub-resellers/${reseller.id}`, { credentials: 'include' });
+      if (!res.ok) throw new Error('Failed to fetch sub-reseller details');
+      return res.json();
+    },
+    enabled: open && !!reseller?.id,
+  });
+
+  if (!open) return null;
+
+  const data = details || reseller;
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto" data-testid="dialog-subreseller-detail">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Eye className="h-5 w-5" />
+            Dettagli Sub-Reseller
+          </DialogTitle>
+          <DialogDescription>
+            Informazioni complete del sub-reseller
+          </DialogDescription>
+        </DialogHeader>
+        
+        {isLoading ? (
+          <div className="space-y-4">
+            <Skeleton className="h-8 w-48" />
+            <Skeleton className="h-24 w-full" />
+            <Skeleton className="h-24 w-full" />
+          </div>
+        ) : data ? (
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-lg font-semibold">{data.fullName}</h3>
+                <p className="text-sm text-muted-foreground">{data.email}</p>
+              </div>
+              <Badge variant={data.isActive ? "default" : "secondary"}>
+                {data.isActive ? "Attivo" : "Inattivo"}
+              </Badge>
+            </div>
+
+            <Separator />
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <Label className="text-xs text-muted-foreground">Username</Label>
+                <p className="text-sm font-medium">{data.username}</p>
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs text-muted-foreground">Telefono</Label>
+                <p className="text-sm font-medium">{data.phone || "-"}</p>
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs text-muted-foreground">Categoria</Label>
+                <Badge variant="outline">
+                  {categoryLabels[data.resellerCategory || "standard"] || data.resellerCategory}
+                </Badge>
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs text-muted-foreground">Data Creazione</Label>
+                <p className="text-sm font-medium">
+                  {format(new Date(data.createdAt), "dd MMMM yyyy", { locale: it })}
+                </p>
+              </div>
+            </div>
+
+            <Separator />
+
+            <div>
+              <h4 className="font-medium mb-3 flex items-center gap-2">
+                <FileText className="h-4 w-4" />
+                Dati Fiscali
+              </h4>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <Label className="text-xs text-muted-foreground">Ragione Sociale</Label>
+                  <p className="text-sm font-medium">{data.ragioneSociale || "-"}</p>
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs text-muted-foreground">Partita IVA</Label>
+                  <p className="text-sm font-medium">{data.partitaIva || "-"}</p>
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs text-muted-foreground">Codice Fiscale</Label>
+                  <p className="text-sm font-medium">{data.codiceFiscale || "-"}</p>
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs text-muted-foreground">Codice Univoco (SDI)</Label>
+                  <p className="text-sm font-medium">{data.codiceUnivoco || "-"}</p>
+                </div>
+                <div className="col-span-2 space-y-1">
+                  <Label className="text-xs text-muted-foreground">PEC</Label>
+                  <p className="text-sm font-medium">{data.pec || "-"}</p>
+                </div>
+              </div>
+            </div>
+
+            <Separator />
+
+            <div>
+              <h4 className="font-medium mb-3 flex items-center gap-2">
+                <Building className="h-4 w-4" />
+                Indirizzo
+              </h4>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="col-span-2 space-y-1">
+                  <Label className="text-xs text-muted-foreground">Via/Indirizzo</Label>
+                  <p className="text-sm font-medium">{data.indirizzo || "-"}</p>
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs text-muted-foreground">Città</Label>
+                  <p className="text-sm font-medium">{data.citta || "-"}</p>
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs text-muted-foreground">CAP</Label>
+                  <p className="text-sm font-medium">{data.cap || "-"}</p>
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs text-muted-foreground">Provincia</Label>
+                  <p className="text-sm font-medium">{data.provincia || "-"}</p>
+                </div>
+              </div>
+            </div>
+
+            <Separator />
+
+            <div>
+              <h4 className="font-medium mb-3 flex items-center gap-2">
+                <TrendingUp className="h-4 w-4" />
+                Statistiche
+              </h4>
+              <div className="grid grid-cols-2 gap-4">
+                <Card>
+                  <CardContent className="p-4 flex items-center gap-3">
+                    <div className="p-2 rounded-md bg-primary/10">
+                      <Users className="h-5 w-5 text-primary" />
+                    </div>
+                    <div>
+                      <p className="text-2xl font-bold">{data.customersCount || 0}</p>
+                      <p className="text-xs text-muted-foreground">Clienti</p>
+                    </div>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardContent className="p-4 flex items-center gap-3">
+                    <div className="p-2 rounded-md bg-primary/10">
+                      <Store className="h-5 w-5 text-primary" />
+                    </div>
+                    <div>
+                      <p className="text-2xl font-bold">{data.repairCentersCount || 0}</p>
+                      <p className="text-xs text-muted-foreground">Centri Riparazione</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="text-center py-8 text-muted-foreground">
+            Nessun dato disponibile
+          </div>
+        )}
+
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)} data-testid="button-close-detail">
+            Chiudi
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+};
