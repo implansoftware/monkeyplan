@@ -27956,8 +27956,12 @@ export function registerRoutes(app: Express): Server {
       const resellerId = req.user.role === 'reseller' ? req.user.id : req.user.resellerId;
       if (!resellerId) return res.status(400).json({ error: "Reseller ID non trovato" });
       const { startDate, endDate, userId } = req.query;
+      
+      // Get all accessible reseller IDs (self + sub-resellers + repair centers)
+      const accessibleResellerIds = await storage.getAccessibleResellerIds(resellerId);
+      
       const events = await storage.listHrClockEvents({
-        resellerId,
+        resellerIds: accessibleResellerIds,
         userId: userId as string | undefined,
         startDate: startDate ? new Date(startDate as string) : undefined,
         endDate: endDate ? new Date(endDate as string) : undefined

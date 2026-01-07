@@ -8422,6 +8422,31 @@ export class DatabaseStorage implements IStorage {
       .orderBy(hrClockingPolicies.locationName);
   }
 
+  // Get all accessible reseller IDs for a parent reseller (includes sub-resellers and repair centers)
+  async getAccessibleResellerIds(resellerId: string): Promise<string[]> {
+    const ids = [resellerId];
+    
+    // Get sub-resellers (users with parentResellerId = resellerId)
+    const subResellers = await db.select({ id: users.id })
+      .from(users)
+      .where(eq(users.parentResellerId, resellerId));
+    ids.push(...subResellers.map(r => r.id));
+    
+    // Get repair centers owned by this reseller
+    const centers = await db.select({ id: repairCenters.id })
+      .from(repairCenters)
+      .where(eq(repairCenters.resellerId, resellerId));
+    ids.push(...centers.map(c => c.id));
+    
+    // Get staff members of this reseller
+    const staff = await db.select({ id: users.id })
+      .from(users)
+      .where(eq(users.resellerId, resellerId));
+    ids.push(...staff.map(s => s.id));
+    
+    return [...new Set(ids)]; // Remove duplicates
+  }
+
   async getHrClockingPolicy(id: string): Promise<HrClockingPolicy | undefined> {
     const [policy] = await db.select().from(hrClockingPolicies).where(eq(hrClockingPolicies.id, id));
     return policy || undefined;
@@ -8450,10 +8475,12 @@ export class DatabaseStorage implements IStorage {
     return event;
   }
 
-  async listHrClockEvents(filters: { userId?: string; resellerId?: string; startDate?: Date; endDate?: Date }): Promise<HrClockEvent[]> {
+  async listHrClockEvents(filters: { userId?: string; resellerIds?: string[]; startDate?: Date; endDate?: Date }): Promise<any[]> {
     const conditions = [];
     if (filters.userId) conditions.push(eq(hrClockEvents.userId, filters.userId));
-    if (filters.resellerId) conditions.push(eq(hrClockEvents.resellerId, filters.resellerId));
+    if (filters.resellerIds && filters.resellerIds.length > 0) {
+      conditions.push(inArray(hrClockEvents.resellerId, filters.resellerIds));
+    }
     if (filters.startDate) conditions.push(gte(hrClockEvents.eventTime, filters.startDate));
     if (filters.endDate) conditions.push(lte(hrClockEvents.eventTime, filters.endDate));
     
@@ -8476,7 +8503,7 @@ export class DatabaseStorage implements IStorage {
     return results.map(r => ({
       ...r,
       user: r.userFullName ? { fullName: r.userFullName } : undefined
-    })) as any;
+    }));
   }
   async getTodayClockEvents(userId: string): Promise<HrClockEvent[]> {
     const today = new Date();
