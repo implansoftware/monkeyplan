@@ -13,7 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import { Package, Search, ShoppingCart, Plus, Minus, Trash2, CreditCard, Send, Box } from "lucide-react";
+import { Package, Search, ShoppingCart, Plus, Minus, Trash2, CreditCard, Send, Box, Building2 } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 
@@ -141,41 +141,46 @@ export default function ResellerB2BCatalog() {
 
   return (
     <div className="p-6 space-y-6">
-      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold flex items-center gap-2">
-            <Box className="h-6 w-6" />
-            Catalogo B2B
-          </h1>
-          <p className="text-muted-foreground">Acquista prodotti dal magazzino centrale</p>
-        </div>
-        
-        <div className="flex items-center gap-4">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Cerca prodotti..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9 w-64"
-              data-testid="input-search"
-            />
+      <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-primary/5 via-primary/10 to-slate-100 dark:from-primary/10 dark:via-primary/5 dark:to-slate-900 p-6 border">
+        <div className="absolute inset-0 opacity-[0.03]" style={{
+          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23000' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+        }} />
+        <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <div className="h-10 w-10 rounded-xl bg-primary text-primary-foreground flex items-center justify-center shadow-lg shadow-primary/25">
+              <Building2 className="h-5 w-5" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold">Catalogo B2B</h1>
+              <p className="text-muted-foreground text-sm">Prodotti per ordini B2B</p>
+            </div>
           </div>
-          
-          <Button 
-            variant="default" 
-            className="relative"
-            onClick={handleCheckout}
-            data-testid="button-cart"
-          >
-            <ShoppingCart className="h-4 w-4 mr-2" />
-            Carrello
-            {cart.length > 0 && (
-              <Badge variant="secondary" className="absolute -top-2 -right-2 h-5 w-5 p-0 flex items-center justify-center">
-                {cartItemCount}
-              </Badge>
-            )}
-          </Button>
+          <div className="flex items-center gap-4">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Cerca prodotti..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9 w-64"
+                data-testid="input-search"
+              />
+            </div>
+            <Button 
+              variant="default" 
+              className="relative"
+              onClick={handleCheckout}
+              data-testid="button-cart"
+            >
+              <ShoppingCart className="h-4 w-4 mr-2" />
+              Carrello
+              {cart.length > 0 && (
+                <Badge variant="secondary" className="absolute -top-2 -right-2 h-5 w-5 p-0 flex items-center justify-center">
+                  {cartItemCount}
+                </Badge>
+              )}
+            </Button>
+          </div>
         </div>
       </div>
 
