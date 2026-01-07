@@ -8457,11 +8457,27 @@ export class DatabaseStorage implements IStorage {
     if (filters.startDate) conditions.push(gte(hrClockEvents.eventTime, filters.startDate));
     if (filters.endDate) conditions.push(lte(hrClockEvents.eventTime, filters.endDate));
     
-    return db.select().from(hrClockEvents)
+    const results = await db.select({
+      id: hrClockEvents.id,
+      userId: hrClockEvents.userId,
+      resellerId: hrClockEvents.resellerId,
+      eventType: hrClockEvents.eventType,
+      eventTime: hrClockEvents.eventTime,
+      latitude: hrClockEvents.latitude,
+      longitude: hrClockEvents.longitude,
+      notes: hrClockEvents.notes,
+      createdAt: hrClockEvents.createdAt,
+      userFullName: users.fullName,
+    }).from(hrClockEvents)
+      .leftJoin(users, eq(hrClockEvents.userId, users.id))
       .where(conditions.length > 0 ? and(...conditions) : undefined)
       .orderBy(desc(hrClockEvents.eventTime));
+    
+    return results.map(r => ({
+      ...r,
+      user: r.userFullName ? { fullName: r.userFullName } : undefined
+    })) as any;
   }
-
   async getTodayClockEvents(userId: string): Promise<HrClockEvent[]> {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
