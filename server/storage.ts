@@ -8424,25 +8424,31 @@ export class DatabaseStorage implements IStorage {
 
   // Get all accessible reseller IDs for a parent reseller (includes sub-resellers and repair centers)
   async getAccessibleResellerIds(resellerId: string): Promise<string[]> {
-    const ids = [resellerId];
+    const ids: string[] = [resellerId];
     
     // Get sub-resellers (users with parentResellerId = resellerId)
     const subResellers = await db.select({ id: users.id })
       .from(users)
       .where(eq(users.parentResellerId, resellerId));
-    ids.push(...subResellers.map(r => r.id));
+    for (const r of subResellers) {
+      if (r.id) ids.push(r.id);
+    }
     
     // Get repair centers owned by this reseller
     const centers = await db.select({ id: repairCenters.id })
       .from(repairCenters)
       .where(eq(repairCenters.resellerId, resellerId));
-    ids.push(...centers.map(c => c.id));
+    for (const c of centers) {
+      if (c.id) ids.push(c.id);
+    }
     
     // Get staff members of this reseller
     const staff = await db.select({ id: users.id })
       .from(users)
       .where(eq(users.resellerId, resellerId));
-    ids.push(...staff.map(s => s.id));
+    for (const s of staff) {
+      if (s.id) ids.push(s.id);
+    }
     
     return [...new Set(ids)]; // Remove duplicates
   }
@@ -8492,7 +8498,8 @@ export class DatabaseStorage implements IStorage {
       eventTime: hrClockEvents.eventTime,
       latitude: hrClockEvents.latitude,
       longitude: hrClockEvents.longitude,
-      notes: hrClockEvents.notes,
+      status: hrClockEvents.status,
+      validationNote: hrClockEvents.validationNote,
       createdAt: hrClockEvents.createdAt,
       userFullName: users.fullName,
     }).from(hrClockEvents)
