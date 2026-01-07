@@ -753,9 +753,9 @@ export default function ResellerProducts() {
     return (
       <div className="space-y-6">
         <div>
-          <h1 className="text-2xl font-semibold mb-2">Catalogo Prodotti</h1>
+          <h1 className="text-2xl font-semibold mb-2">Catalogo Ricambi</h1>
           <p className="text-muted-foreground">
-            Visualizza il catalogo prodotti disponibili
+            Visualizza il catalogo ricambi disponibili
           </p>
         </div>
         <div className="space-y-4">
@@ -771,14 +771,14 @@ export default function ResellerProducts() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold mb-2">Catalogo Prodotti</h1>
+          <h1 className="text-2xl font-semibold mb-2">Catalogo Ricambi</h1>
           <p className="text-muted-foreground">
-            Visualizza i prodotti del catalogo e gestisci i tuoi prodotti personalizzati
+            Visualizza i ricambi del catalogo e gestisci i tuoi ricambi personalizzati
           </p>
         </div>
         <Button onClick={() => setDialogOpen(true)} data-testid="button-new-product">
           <Plus className="h-4 w-4 mr-2" />
-          Nuovo Prodotto
+          Nuovo Ricambio
         </Button>
       </div>
 
