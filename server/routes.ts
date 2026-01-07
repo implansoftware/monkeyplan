@@ -27869,5 +27869,607 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  
+}
+
+  // ============================================================================
+  // HR MODULE API - Gestione Risorse Umane
+  // ============================================================================
+
+  // HR Work Profiles
+  app.get("/api/reseller/hr/work-profiles", requireRole("reseller", "reseller_staff"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      const resellerId = req.user.role === 'reseller' ? req.user.id : req.user.resellerId;
+      if (!resellerId) return res.status(400).json({ error: "Reseller ID non trovato" });
+      const profiles = await storage.listHrWorkProfiles(resellerId);
+      res.json(profiles);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post("/api/reseller/hr/work-profiles", requireRole("reseller", "reseller_staff"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      const resellerId = req.user.role === 'reseller' ? req.user.id : req.user.resellerId;
+      if (!resellerId) return res.status(400).json({ error: "Reseller ID non trovato" });
+      const profile = await storage.createHrWorkProfile({ ...req.body, resellerId });
+      await storage.createHrAuditLog({
+        resellerId,
+        userId: req.user.id,
+        action: 'create',
+        entityType: 'work_profile',
+        entityId: profile.id,
+        newValues: req.body
+      });
+      res.json(profile);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.patch("/api/reseller/hr/work-profiles/:id", requireRole("reseller", "reseller_staff"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      const oldProfile = await storage.getHrWorkProfile(req.params.id);
+      const profile = await storage.updateHrWorkProfile(req.params.id, req.body);
+      const resellerId = req.user.role === 'reseller' ? req.user.id : req.user.resellerId;
+      if (resellerId) {
+        await storage.createHrAuditLog({
+          resellerId,
+          userId: req.user.id,
+          action: 'update',
+          entityType: 'work_profile',
+          entityId: profile.id,
+          oldValues: oldProfile,
+          newValues: req.body
+        });
+      }
+      res.json(profile);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.delete("/api/reseller/hr/work-profiles/:id", requireRole("reseller", "reseller_staff"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      const resellerId = req.user.role === 'reseller' ? req.user.id : req.user.resellerId;
+      await storage.deleteHrWorkProfile(req.params.id);
+      if (resellerId) {
+        await storage.createHrAuditLog({
+          resellerId,
+          userId: req.user.id,
+          action: 'delete',
+          entityType: 'work_profile',
+          entityId: req.params.id
+        });
+      }
+      res.json({ success: true });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // HR Clock Events (Timbrature)
+  app.get("/api/reseller/hr/clock-events", requireRole("reseller", "reseller_staff"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      const resellerId = req.user.role === 'reseller' ? req.user.id : req.user.resellerId;
+      if (!resellerId) return res.status(400).json({ error: "Reseller ID non trovato" });
+      const { startDate, endDate, userId } = req.query;
+      const events = await storage.listHrClockEvents({
+        resellerId,
+        userId: userId as string | undefined,
+        startDate: startDate ? new Date(startDate as string) : undefined,
+        endDate: endDate ? new Date(endDate as string) : undefined
+      });
+      res.json(events);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post("/api/reseller/hr/clock-events", requireRole("reseller", "reseller_staff"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      const resellerId = req.user.role === 'reseller' ? req.user.id : req.user.resellerId;
+      if (!resellerId) return res.status(400).json({ error: "Reseller ID non trovato" });
+      
+      const { eventType, latitude, longitude, notes } = req.body;
+      const userId = req.body.userId || req.user.id;
+      
+      // Validate GPS if policy requires it
+      const policy = await storage.getHrClockingPolicy(resellerId);
+      if (policy?.requireGps && (!latitude || !longitude)) {
+        return res.status(400).json({ error: "Posizione GPS richiesta per la timbratura" });
+      }
+      
+      const event = await storage.createHrClockEvent({
+        resellerId,
+        userId,
+        eventType,
+        latitude: latitude ? parseFloat(latitude) : undefined,
+        longitude: longitude ? parseFloat(longitude) : undefined,
+        notes
+      });
+      
+      res.json(event);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // HR Leave Requests (Ferie/Permessi)
+  app.get("/api/reseller/hr/leave-requests", requireRole("reseller", "reseller_staff"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      const resellerId = req.user.role === 'reseller' ? req.user.id : req.user.resellerId;
+      if (!resellerId) return res.status(400).json({ error: "Reseller ID non trovato" });
+      const { status, userId } = req.query;
+      const requests = await storage.listHrLeaveRequests({
+        resellerId,
+        status: status as string | undefined,
+        userId: userId as string | undefined
+      });
+      res.json(requests);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post("/api/reseller/hr/leave-requests", requireRole("reseller", "reseller_staff"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      const resellerId = req.user.role === 'reseller' ? req.user.id : req.user.resellerId;
+      if (!resellerId) return res.status(400).json({ error: "Reseller ID non trovato" });
+      
+      const request = await storage.createHrLeaveRequest({
+        ...req.body,
+        resellerId,
+        userId: req.body.userId || req.user.id
+      });
+      
+      await storage.createHrAuditLog({
+        resellerId,
+        userId: req.user.id,
+        action: 'create',
+        entityType: 'leave_request',
+        entityId: request.id,
+        newValues: req.body
+      });
+      
+      res.json(request);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.patch("/api/reseller/hr/leave-requests/:id", requireRole("reseller", "reseller_staff"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      const resellerId = req.user.role === 'reseller' ? req.user.id : req.user.resellerId;
+      
+      const oldRequest = await storage.getHrLeaveRequest(req.params.id);
+      const request = await storage.updateHrLeaveRequest(req.params.id, {
+        ...req.body,
+        reviewedBy: req.body.status ? req.user.id : undefined,
+        reviewedAt: req.body.status ? new Date() : undefined
+      });
+      
+      if (resellerId) {
+        await storage.createHrAuditLog({
+          resellerId,
+          userId: req.user.id,
+          action: 'update',
+          entityType: 'leave_request',
+          entityId: request.id,
+          oldValues: oldRequest,
+          newValues: req.body
+        });
+      }
+      
+      res.json(request);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // HR Sick Leave (Malattie)
+  app.get("/api/reseller/hr/sick-leaves", requireRole("reseller", "reseller_staff"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      const resellerId = req.user.role === 'reseller' ? req.user.id : req.user.resellerId;
+      if (!resellerId) return res.status(400).json({ error: "Reseller ID non trovato" });
+      const { userId, status } = req.query;
+      const sickLeaves = await storage.listHrSickLeaves({
+        resellerId,
+        userId: userId as string | undefined,
+        status: status as string | undefined
+      });
+      res.json(sickLeaves);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post("/api/reseller/hr/sick-leaves", requireRole("reseller", "reseller_staff"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      const resellerId = req.user.role === 'reseller' ? req.user.id : req.user.resellerId;
+      if (!resellerId) return res.status(400).json({ error: "Reseller ID non trovato" });
+      
+      const sickLeave = await storage.createHrSickLeave({
+        ...req.body,
+        resellerId,
+        userId: req.body.userId || req.user.id
+      });
+      
+      res.json(sickLeave);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.patch("/api/reseller/hr/sick-leaves/:id", requireRole("reseller", "reseller_staff"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      const sickLeave = await storage.updateHrSickLeave(req.params.id, req.body);
+      res.json(sickLeave);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // HR Expense Reports (Rimborsi Spese)
+  app.get("/api/reseller/hr/expense-reports", requireRole("reseller", "reseller_staff"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      const resellerId = req.user.role === 'reseller' ? req.user.id : req.user.resellerId;
+      if (!resellerId) return res.status(400).json({ error: "Reseller ID non trovato" });
+      const { userId, status } = req.query;
+      const reports = await storage.listHrExpenseReports({
+        resellerId,
+        userId: userId as string | undefined,
+        status: status as string | undefined
+      });
+      res.json(reports);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post("/api/reseller/hr/expense-reports", requireRole("reseller", "reseller_staff"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      const resellerId = req.user.role === 'reseller' ? req.user.id : req.user.resellerId;
+      if (!resellerId) return res.status(400).json({ error: "Reseller ID non trovato" });
+      
+      const report = await storage.createHrExpenseReport({
+        ...req.body,
+        resellerId,
+        userId: req.body.userId || req.user.id
+      });
+      
+      res.json(report);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.patch("/api/reseller/hr/expense-reports/:id", requireRole("reseller", "reseller_staff"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      const resellerId = req.user.role === 'reseller' ? req.user.id : req.user.resellerId;
+      
+      const report = await storage.updateHrExpenseReport(req.params.id, {
+        ...req.body,
+        reviewedBy: req.body.status ? req.user.id : undefined,
+        reviewedAt: req.body.status ? new Date() : undefined
+      });
+      
+      if (resellerId) {
+        await storage.createHrAuditLog({
+          resellerId,
+          userId: req.user.id,
+          action: 'update',
+          entityType: 'expense_report',
+          entityId: report.id,
+          newValues: req.body
+        });
+      }
+      
+      res.json(report);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // HR Expense Items
+  app.get("/api/reseller/hr/expense-reports/:reportId/items", requireRole("reseller", "reseller_staff"), async (req, res) => {
+    try {
+      const items = await storage.listHrExpenseItems(req.params.reportId);
+      res.json(items);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post("/api/reseller/hr/expense-reports/:reportId/items", requireRole("reseller", "reseller_staff"), async (req, res) => {
+    try {
+      const item = await storage.createHrExpenseItem({
+        ...req.body,
+        expenseReportId: req.params.reportId
+      });
+      res.json(item);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.delete("/api/reseller/hr/expense-items/:id", requireRole("reseller", "reseller_staff"), async (req, res) => {
+    try {
+      await storage.deleteHrExpenseItem(req.params.id);
+      res.json({ success: true });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // HR Absences (Assenze)
+  app.get("/api/reseller/hr/absences", requireRole("reseller", "reseller_staff"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      const resellerId = req.user.role === 'reseller' ? req.user.id : req.user.resellerId;
+      if (!resellerId) return res.status(400).json({ error: "Reseller ID non trovato" });
+      const { userId, status } = req.query;
+      const absences = await storage.listHrAbsences({
+        resellerId,
+        userId: userId as string | undefined,
+        status: status as string | undefined
+      });
+      res.json(absences);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post("/api/reseller/hr/absences", requireRole("reseller", "reseller_staff"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      const resellerId = req.user.role === 'reseller' ? req.user.id : req.user.resellerId;
+      if (!resellerId) return res.status(400).json({ error: "Reseller ID non trovato" });
+      
+      const absence = await storage.createHrAbsence({
+        ...req.body,
+        resellerId,
+        userId: req.body.userId || req.user.id
+      });
+      
+      res.json(absence);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // HR Justifications (Giustificativi)
+  app.post("/api/reseller/hr/justifications", requireRole("reseller", "reseller_staff"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      const resellerId = req.user.role === 'reseller' ? req.user.id : req.user.resellerId;
+      if (!resellerId) return res.status(400).json({ error: "Reseller ID non trovato" });
+      
+      const justification = await storage.createHrJustification({
+        ...req.body,
+        resellerId,
+        submittedBy: req.user.id
+      });
+      
+      res.json(justification);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.patch("/api/reseller/hr/justifications/:id", requireRole("reseller", "reseller_staff"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      
+      const justification = await storage.updateHrJustification(req.params.id, {
+        ...req.body,
+        reviewedBy: req.body.status ? req.user.id : undefined,
+        reviewedAt: req.body.status ? new Date() : undefined
+      });
+      
+      res.json(justification);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // HR Calendar Data
+  app.get("/api/reseller/hr/calendar", requireRole("reseller", "reseller_staff"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      const resellerId = req.user.role === 'reseller' ? req.user.id : req.user.resellerId;
+      if (!resellerId) return res.status(400).json({ error: "Reseller ID non trovato" });
+      
+      const { startDate, endDate } = req.query;
+      if (!startDate || !endDate) {
+        return res.status(400).json({ error: "Parametri startDate e endDate richiesti" });
+      }
+      
+      const calendarData = await storage.getHrCalendarData(
+        resellerId,
+        new Date(startDate as string),
+        new Date(endDate as string)
+      );
+      
+      res.json(calendarData);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // HR Notifications
+  app.get("/api/reseller/hr/notifications", requireRole("reseller", "reseller_staff"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      const resellerId = req.user.role === 'reseller' ? req.user.id : req.user.resellerId;
+      if (!resellerId) return res.status(400).json({ error: "Reseller ID non trovato" });
+      
+      const { unreadOnly } = req.query;
+      const notifications = await storage.listHrNotifications({
+        resellerId,
+        recipientId: req.user.id,
+        unreadOnly: unreadOnly === 'true'
+      });
+      
+      res.json(notifications);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post("/api/reseller/hr/notifications", requireRole("reseller", "reseller_staff"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      const resellerId = req.user.role === 'reseller' ? req.user.id : req.user.resellerId;
+      if (!resellerId) return res.status(400).json({ error: "Reseller ID non trovato" });
+      
+      const notification = await storage.createHrNotification({
+        ...req.body,
+        resellerId
+      });
+      
+      res.json(notification);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.patch("/api/reseller/hr/notifications/:id/read", requireRole("reseller", "reseller_staff"), async (req, res) => {
+    try {
+      const notification = await storage.markHrNotificationRead(req.params.id);
+      res.json(notification);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // HR Audit Logs
+  app.get("/api/reseller/hr/audit-logs", requireRole("reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      const resellerId = req.user.id;
+      const { userId, entityType, limit } = req.query;
+      
+      const logs = await storage.listHrAuditLogs({
+        resellerId,
+        userId: userId as string | undefined,
+        entityType: entityType as string | undefined,
+        limit: limit ? parseInt(limit as string) : undefined
+      });
+      
+      res.json(logs);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // HR Dashboard Stats
+  app.get("/api/reseller/hr/dashboard", requireRole("reseller", "reseller_staff"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      const resellerId = req.user.role === 'reseller' ? req.user.id : req.user.resellerId;
+      if (!resellerId) return res.status(400).json({ error: "Reseller ID non trovato" });
+      
+      const today = new Date();
+      const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+      const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+      
+      const [
+        pendingLeaveRequests,
+        pendingExpenses,
+        todayClockEvents,
+        absencesThisMonth
+      ] = await Promise.all([
+        storage.listHrLeaveRequests({ resellerId, status: 'pending' }),
+        storage.listHrExpenseReports({ resellerId, status: 'pending' }),
+        storage.listHrClockEvents({ resellerId, startDate: today, endDate: today }),
+        storage.listHrAbsences({ resellerId, status: 'pending' })
+      ]);
+      
+      res.json({
+        pendingLeaveRequests: pendingLeaveRequests.length,
+        pendingExpenses: pendingExpenses.length,
+        todayClockEvents: todayClockEvents.length,
+        pendingAbsences: absencesThisMonth.length
+      });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // HR Leave Balances
+  app.get("/api/reseller/hr/leave-balances/:userId", requireRole("reseller", "reseller_staff"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      const resellerId = req.user.role === 'reseller' ? req.user.id : req.user.resellerId;
+      if (!resellerId) return res.status(400).json({ error: "Reseller ID non trovato" });
+      
+      const balance = await storage.getHrLeaveBalance(req.params.userId, new Date().getFullYear());
+      res.json(balance || { vacationDays: 0, sickDays: 0, personalDays: 0, usedVacation: 0, usedSick: 0, usedPersonal: 0 });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post("/api/reseller/hr/leave-balances", requireRole("reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      const resellerId = req.user.id;
+      
+      const balance = await storage.upsertHrLeaveBalance({
+        ...req.body,
+        resellerId
+      });
+      
+      res.json(balance);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // HR Clocking Policy
+  app.get("/api/reseller/hr/clocking-policy", requireRole("reseller", "reseller_staff"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      const resellerId = req.user.role === 'reseller' ? req.user.id : req.user.resellerId;
+      if (!resellerId) return res.status(400).json({ error: "Reseller ID non trovato" });
+      
+      const policy = await storage.getHrClockingPolicy(resellerId);
+      res.json(policy || { requireGps: false, allowedLocations: [], toleranceMinutes: 15 });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post("/api/reseller/hr/clocking-policy", requireRole("reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      const resellerId = req.user.id;
+      
+      const policy = await storage.upsertHrClockingPolicy({
+        ...req.body,
+        resellerId
+      });
+      
+      res.json(policy);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
   return httpServer;
 }
