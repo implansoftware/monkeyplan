@@ -147,6 +147,20 @@ export interface IStorage {
   // Repair Centers
   listRepairCenters(): Promise<RepairCenter[]>;
   getRepairCenter(id: string): Promise<RepairCenter | undefined>;
+  getResellerRepairCenterDetail(resellerId: string, centerId: string): Promise<{
+    center: RepairCenter;
+    stats: {
+      totalRepairs: number;
+      pendingRepairs: number;
+      completedRepairs: number;
+      inProgressRepairs: number;
+      totalRevenue: number;
+    };
+    recentRepairs: any[];
+    staffCount: number;
+    customersCount: number;
+  } | null>;
+  getRepairCenterRepairs(centerId: string, options?: { limit?: number; offset?: number; status?: string }): Promise<{ repairs: any[]; total: number }>;
   createRepairCenter(center: InsertRepairCenter): Promise<RepairCenter>;
   updateRepairCenter(id: string, updates: Partial<Pick<RepairCenter, 'name' | 'address' | 'city' | 'phone' | 'email' | 'resellerId' | 'isActive' | 'hourlyRateCents' | 'cap' | 'provincia' | 'ragioneSociale' | 'partitaIva' | 'codiceFiscale' | 'iban' | 'codiceUnivoco' | 'pec'>>): Promise<RepairCenter>;
   deleteRepairCenter(id: string): Promise<void>;
@@ -1285,6 +1299,135 @@ export class DatabaseStorage implements IStorage {
   async getRepairCenter(id: string): Promise<RepairCenter | undefined> {
     const [center] = await db.select().from(repairCenters).where(eq(repairCenters.id, id));
     return center || undefined;
+  }
+
+  async getResellerRepairCenterDetail(resellerId: string, centerId: string): Promise<{
+    center: RepairCenter;
+    stats: {
+      totalRepairs: number;
+      pendingRepairs: number;
+      completedRepairs: number;
+      inProgressRepairs: number;
+      totalRevenue: number;
+    };
+    recentRepairs: any[];
+    staffCount: number;
+    customersCount: number;
+  } | null> {
+    const center = await this.getRepairCenter(centerId);
+    if (!center) return null;
+    
+    // Verify ownership - center must belong to this reseller or one of their sub-resellers
+    const resellerSubResellers = await db.select({ id: users.id })
+      .from(users)
+      .where(and(
+        eq(users.parentResellerId, resellerId),
+        eq(users.role, "reseller")
+      ));
+    const subResellerIds = resellerSubResellers.map(sr => sr.id);
+    const allowedResellerIds = [resellerId, ...subResellerIds];
+    
+    if (!allowedResellerIds.includes(center.resellerId)) {
+      return null;
+    }
+
+    // Get repair statistics
+    const allRepairs = await db.select({
+      id: repairOrders.id,
+      status: repairOrders.status,
+      totalCents: repairOrders.totalCents,
+    }).from(repairOrders).where(eq(repairOrders.repairCenterId, centerId));
+
+    const totalRepairs = allRepairs.length;
+    const pendingRepairs = allRepairs.filter(r => r.status === "pending" || r.status === "waiting_parts" || r.status === "waiting_approval").length;
+    const completedRepairs = allRepairs.filter(r => r.status === "completed" || r.status === "delivered").length;
+    const inProgressRepairs = allRepairs.filter(r => r.status === "in_progress" || r.status === "diagnosed").length;
+    const totalRevenue = allRepairs.reduce((sum, r) => sum + (r.totalCents || 0), 0);
+
+    // Get recent repairs with customer info
+    const recentRepairsData = await db.select({
+      id: repairOrders.id,
+      ticketNumber: repairOrders.ticketNumber,
+      status: repairOrders.status,
+      deviceType: repairOrders.deviceType,
+      brand: repairOrders.brand,
+      model: repairOrders.model,
+      problemDescription: repairOrders.problemDescription,
+      totalCents: repairOrders.totalCents,
+      createdAt: repairOrders.createdAt,
+      customerName: users.fullName,
+      customerEmail: users.email,
+    })
+    .from(repairOrders)
+    .leftJoin(users, eq(repairOrders.customerId, users.id))
+    .where(eq(repairOrders.repairCenterId, centerId))
+    .orderBy(desc(repairOrders.createdAt))
+    .limit(10);
+
+    // Get staff count (users assigned to this center)
+    const staffResult = await db.select({ count: sql<number>`count(*)` })
+      .from(staffRepairCenters)
+      .where(eq(staffRepairCenters.repairCenterId, centerId));
+    const staffCount = Number(staffResult[0]?.count || 0);
+
+    // Get customers count
+    const customersResult = await db.select({ count: sql<number>`count(*)` })
+      .from(customerRepairCenters)
+      .where(eq(customerRepairCenters.repairCenterId, centerId));
+    const customersCount = Number(customersResult[0]?.count || 0);
+
+    return {
+      center,
+      stats: {
+        totalRepairs,
+        pendingRepairs,
+        completedRepairs,
+        inProgressRepairs,
+        totalRevenue,
+      },
+      recentRepairs: recentRepairsData,
+      staffCount,
+      customersCount,
+    };
+  }
+
+  async getRepairCenterRepairs(centerId: string, options?: { limit?: number; offset?: number; status?: string }): Promise<{ repairs: any[]; total: number }> {
+    const limit = options?.limit || 20;
+    const offset = options?.offset || 0;
+    
+    let conditions = [eq(repairOrders.repairCenterId, centerId)];
+    if (options?.status && options.status !== "all") {
+      conditions.push(eq(repairOrders.status, options.status as any));
+    }
+
+    const repairsData = await db.select({
+      id: repairOrders.id,
+      ticketNumber: repairOrders.ticketNumber,
+      status: repairOrders.status,
+      deviceType: repairOrders.deviceType,
+      brand: repairOrders.brand,
+      model: repairOrders.model,
+      problemDescription: repairOrders.problemDescription,
+      totalCents: repairOrders.totalCents,
+      createdAt: repairOrders.createdAt,
+      updatedAt: repairOrders.updatedAt,
+      customerName: users.fullName,
+      customerEmail: users.email,
+      customerPhone: users.phone,
+    })
+    .from(repairOrders)
+    .leftJoin(users, eq(repairOrders.customerId, users.id))
+    .where(and(...conditions))
+    .orderBy(desc(repairOrders.createdAt))
+    .limit(limit)
+    .offset(offset);
+
+    const totalResult = await db.select({ count: sql<number>`count(*)` })
+      .from(repairOrders)
+      .where(and(...conditions));
+    const total = Number(totalResult[0]?.count || 0);
+
+    return { repairs: repairsData, total };
   }
 
   async createRepairCenter(insertCenter: InsertRepairCenter): Promise<RepairCenter> {
