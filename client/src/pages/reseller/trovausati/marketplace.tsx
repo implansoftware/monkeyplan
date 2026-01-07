@@ -85,6 +85,11 @@ export default function TrovausatiMarketplacePage() {
 
   const { data: products = [], isLoading: loadingProducts, refetch: refetchProducts } = useQuery<MarketplaceProduct[]>({
     queryKey: ["/api/trovausati/marketplace/products", page],
+    queryFn: async () => {
+      const res = await fetch(`/api/trovausati/marketplace/products?page=${page}&limit=25`);
+      if (!res.ok) throw new Error("Errore nel caricamento prodotti");
+      return res.json();
+    },
     enabled: !!credential?.isActive && !!credential?.marketplaceId,
   });
 
