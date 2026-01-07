@@ -34,7 +34,7 @@ interface ClockEvent {
   id: string;
   userId: string;
   eventType: 'entrata' | 'uscita' | 'pausa_inizio' | 'pausa_fine';
-  timestamp: string;
+  eventTime: string;
   latitude?: number;
   longitude?: number;
   notes?: string;
@@ -66,8 +66,10 @@ export default function HrAttendance() {
   const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate());
   const endOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59);
 
+  const clockEventsUrl = `/api/reseller/hr/clock-events?startDate=${encodeURIComponent(startOfDay.toISOString())}&endDate=${encodeURIComponent(endOfDay.toISOString())}`;
+  
   const { data: clockEvents = [], isLoading } = useQuery<ClockEvent[]>({
-    queryKey: ["/api/reseller/hr/clock-events", { startDate: startOfDay.toISOString(), endDate: endOfDay.toISOString() }],
+    queryKey: [clockEventsUrl],
   });
 
   const { data: staffMembers = [] } = useQuery<StaffMember[]>({
@@ -79,7 +81,7 @@ export default function HrAttendance() {
       return apiRequest("POST", "/api/reseller/hr/clock-events", data);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/reseller/hr/clock-events"] });
+      queryClient.invalidateQueries({ queryKey: [clockEventsUrl] });
       setDialogOpen(false);
       setNewEvent({ eventType: "entrata", userId: "", notes: "" });
       toast({ title: "Timbratura registrata", description: "La timbratura è stata salvata con successo." });
@@ -266,7 +268,7 @@ export default function HrAttendance() {
                   return (
                     <TableRow key={event.id} data-testid={`row-clock-event-${event.id}`}>
                       <TableCell className="font-medium">
-                        {format(new Date(event.timestamp), "HH:mm:ss")}
+                        {format(new Date(event.eventTime), "HH:mm:ss")}
                       </TableCell>
                       <TableCell>
                         <Badge variant="secondary" className="gap-1">
