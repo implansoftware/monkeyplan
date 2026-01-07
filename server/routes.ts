@@ -1285,6 +1285,7 @@ export function registerRoutes(app: Express): Server {
           customerCount: customers.filter(c => c.resellerId === reseller.id).length,
           staffCount: staff.filter(s => s.resellerId === reseller.id).length,
           repairCenterCount: repairCenters.filter(rc => rc.resellerId === reseller.id).length,
+          subResellerCount: resellers.filter(r => r.parentResellerId === reseller.id).length,
         };
       });
       

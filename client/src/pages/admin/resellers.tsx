@@ -30,6 +30,8 @@ const WIZARD_STEPS = [
   { id: 5, title: "Centri Rip.", icon: Wrench },
 ];
 
+type ResellerWithCount = Omit<User, 'password'> & { customerCount: number; staffCount: number; repairCenterCount: number; subResellerCount: number };
+
 export default function AdminResellers() {
   const [searchQuery, setSearchQuery] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -42,6 +44,8 @@ export default function AdminResellers() {
   const [resetPasswordDialogOpen, setResetPasswordDialogOpen] = useState(false);
   const [resellerToResetPassword, setResellerToResetPassword] = useState<Omit<User, 'password'> | null>(null);
   const [newPassword, setNewPassword] = useState("");
+  const [subResellersDialogOpen, setSubResellersDialogOpen] = useState(false);
+  const [selectedResellerForSubResellers, setSelectedResellerForSubResellers] = useState<ResellerWithCount | null>(null);
   const [wizardStep, setWizardStep] = useState(1);
   const [logoUploading, setLogoUploading] = useState(false);
   const [logoDeleting, setLogoDeleting] = useState(false);
@@ -61,8 +65,6 @@ export default function AdminResellers() {
   });
   const [selectedRepairCenterIds, setSelectedRepairCenterIds] = useState<string[]>([]);
   const { toast } = useToast();
-
-  type ResellerWithCount = Omit<User, 'password'> & { customerCount: number; staffCount: number; repairCenterCount: number };
   
   const { data: resellers = [], isLoading } = useQuery<ResellerWithCount[]>({
     queryKey: ["/api/admin/resellers"],
@@ -905,6 +907,7 @@ export default function AdminResellers() {
                   <TableHead>Rivenditore Padre</TableHead>
                   <TableHead>Clienti</TableHead>
                   <TableHead>Centri Rip.</TableHead>
+                  <TableHead>Sub-Reseller</TableHead>
                   <TableHead>Stato</TableHead>
                   <TableHead className="text-right">Azioni</TableHead>
                 </TableRow>
@@ -951,6 +954,27 @@ export default function AdminResellers() {
                         <Building2 className="h-3 w-3 mr-1" />
                         {reseller.repairCenterCount}
                       </Badge>
+                    </TableCell>
+                    <TableCell data-testid={`text-sub-resellers-${reseller.id}`}>
+                      {reseller.subResellerCount > 0 ? (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-auto py-1 px-2"
+                          onClick={() => {
+                            setSelectedResellerForSubResellers(reseller);
+                            setSubResellersDialogOpen(true);
+                          }}
+                          data-testid={`button-view-sub-resellers-${reseller.id}`}
+                        >
+                          <Badge variant="secondary" className="cursor-pointer">
+                            <UsersRound className="h-3 w-3 mr-1" />
+                            {reseller.subResellerCount}
+                          </Badge>
+                        </Button>
+                      ) : (
+                        <Badge variant="outline" className="text-muted-foreground">0</Badge>
+                      )}
                     </TableCell>
                     <TableCell data-testid={`badge-status-${reseller.id}`}>
                       <div className="flex items-center gap-2">
@@ -1122,6 +1146,104 @@ export default function AdminResellers() {
           </div>
         </DialogContent>
       </Dialog>
+
+      <SubResellersDialog
+        open={subResellersDialogOpen}
+        onOpenChange={setSubResellersDialogOpen}
+        reseller={selectedResellerForSubResellers}
+      />
     </div>
   );
 }
+
+interface SubResellersDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  reseller: ResellerWithCount | null;
+}
+
+const SubResellersDialog = ({ open, onOpenChange, reseller }: SubResellersDialogProps) => {
+  const { data: subResellers = [], isLoading } = useQuery<Omit<User, 'password'>[]>({
+    queryKey: ['/api/admin/resellers', reseller?.id, 'sub-resellers'],
+    queryFn: async () => {
+      if (!reseller?.id) return [];
+      const res = await fetch(`/api/admin/resellers/${reseller.id}/sub-resellers`, { credentials: 'include' });
+      if (!res.ok) throw new Error('Failed to fetch sub-resellers');
+      return res.json();
+    },
+    enabled: open && !!reseller?.id,
+  });
+
+  if (!open) return null;
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-2xl" data-testid="dialog-sub-resellers">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <UsersRound className="h-5 w-5" />
+            Sub-Reseller di {reseller?.fullName}
+          </DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4">
+          {isLoading ? (
+            <div className="space-y-2">
+              <Skeleton className="h-12 w-full" />
+              <Skeleton className="h-12 w-full" />
+              <Skeleton className="h-12 w-full" />
+            </div>
+          ) : subResellers.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              <UsersRound className="h-12 w-12 mx-auto mb-4 opacity-50" />
+              <p>Nessun sub-reseller trovato</p>
+            </div>
+          ) : (
+            <ScrollArea className="max-h-[400px]">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Nome</TableHead>
+                    <TableHead>Email</TableHead>
+                    <TableHead>Telefono</TableHead>
+                    <TableHead>Stato</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {subResellers.map((sub) => (
+                    <TableRow key={sub.id} data-testid={`row-sub-reseller-${sub.id}`}>
+                      <TableCell className="font-medium">
+                        <div className="flex items-center gap-2">
+                          <Avatar className="h-7 w-7">
+                            {sub.logoUrl ? (
+                              <AvatarImage src={sub.logoUrl} alt={sub.fullName} className="object-contain" />
+                            ) : null}
+                            <AvatarFallback className="text-xs">
+                              {sub.fullName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
+                            </AvatarFallback>
+                          </Avatar>
+                          <span>{sub.fullName}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell>{sub.email}</TableCell>
+                      <TableCell>{sub.phone || '-'}</TableCell>
+                      <TableCell>
+                        <Badge variant={sub.isActive ? "default" : "secondary"}>
+                          {sub.isActive ? "Attivo" : "Inattivo"}
+                        </Badge>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </ScrollArea>
+          )}
+          <div className="flex justify-end">
+            <Button variant="outline" onClick={() => onOpenChange(false)} data-testid="button-close-sub-resellers">
+              Chiudi
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+};
