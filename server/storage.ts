@@ -104,7 +104,22 @@ import {
   transferRequests, TransferRequest, InsertTransferRequest,
   transferRequestItems, TransferRequestItem, InsertTransferRequestItem,
   remoteRepairRequests, RemoteRepairRequest, InsertRemoteRepairRequest, UpdateRemoteRepairRequest,
-  serviceOrders, ServiceOrder, InsertServiceOrder
+  serviceOrders, ServiceOrder, InsertServiceOrder,
+  hrWorkProfiles, HrWorkProfile, InsertHrWorkProfile,
+  hrWorkProfileVersions, HrWorkProfileVersion, InsertHrWorkProfileVersion,
+  hrWorkProfileAssignments, HrWorkProfileAssignment, InsertHrWorkProfileAssignment,
+  hrClockingPolicies, HrClockingPolicy, InsertHrClockingPolicy,
+  hrClockEvents, HrClockEvent, InsertHrClockEvent,
+  hrLeaveBalances, HrLeaveBalance, InsertHrLeaveBalance,
+  hrLeaveRequests, HrLeaveRequest, InsertHrLeaveRequest,
+  hrSickLeaves, HrSickLeave, InsertHrSickLeave,
+  hrCertificates, HrCertificate, InsertHrCertificate,
+  hrAbsences, HrAbsence, InsertHrAbsence,
+  hrJustifications, HrJustification, InsertHrJustification,
+  hrExpenseReports, HrExpenseReport, InsertHrExpenseReport,
+  hrExpenseItems, HrExpenseItem, InsertHrExpenseItem,
+  hrNotifications, HrNotification, InsertHrNotification,
+  hrAuditLogs, HrAuditLog, InsertHrAuditLog
 } from "@shared/schema";
 import { db, pool } from "./db";
 import { eq, and, or, desc, lt, gt, gte, lte, sql, not, inArray, isNull, ilike } from "drizzle-orm";
@@ -8345,6 +8360,517 @@ export class DatabaseStorage implements IStorage {
       .where(ilike(serviceOrders.orderNumber, `${prefix}%`));
     const nextNumber = existingOrders.length + 1;
     return `${prefix}-${String(nextNumber).padStart(5, '0')}`;
+  }
+
+  // ============================================================================
+  // HR MODULE - Gestione Risorse Umane
+  // ============================================================================
+
+  // Work Profiles
+  async listHrWorkProfiles(resellerId: string): Promise<HrWorkProfile[]> {
+    return db.select().from(hrWorkProfiles)
+      .where(eq(hrWorkProfiles.resellerId, resellerId))
+      .orderBy(hrWorkProfiles.name);
+  }
+
+  async getHrWorkProfile(id: string): Promise<HrWorkProfile | undefined> {
+    const [profile] = await db.select().from(hrWorkProfiles).where(eq(hrWorkProfiles.id, id));
+    return profile || undefined;
+  }
+
+  async createHrWorkProfile(data: InsertHrWorkProfile): Promise<HrWorkProfile> {
+    const [profile] = await db.insert(hrWorkProfiles).values(data).returning();
+    return profile;
+  }
+
+  async updateHrWorkProfile(id: string, updates: Partial<HrWorkProfile>): Promise<HrWorkProfile> {
+    const [profile] = await db.update(hrWorkProfiles)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(hrWorkProfiles.id, id))
+      .returning();
+    return profile;
+  }
+
+  async deleteHrWorkProfile(id: string): Promise<void> {
+    await db.delete(hrWorkProfiles).where(eq(hrWorkProfiles.id, id));
+  }
+
+  // Work Profile Assignments
+  async assignWorkProfile(data: InsertHrWorkProfileAssignment): Promise<HrWorkProfileAssignment> {
+    const [assignment] = await db.insert(hrWorkProfileAssignments).values(data).returning();
+    return assignment;
+  }
+
+  async getUserWorkProfile(userId: string): Promise<HrWorkProfile | undefined> {
+    const [assignment] = await db.select()
+      .from(hrWorkProfileAssignments)
+      .where(and(
+        eq(hrWorkProfileAssignments.userId, userId),
+        or(isNull(hrWorkProfileAssignments.validTo), gte(hrWorkProfileAssignments.validTo, new Date()))
+      ))
+      .orderBy(desc(hrWorkProfileAssignments.validFrom))
+      .limit(1);
+    
+    if (!assignment) return undefined;
+    return this.getHrWorkProfile(assignment.workProfileId);
+  }
+
+  // Clocking Policies
+  async listHrClockingPolicies(resellerId: string): Promise<HrClockingPolicy[]> {
+    return db.select().from(hrClockingPolicies)
+      .where(eq(hrClockingPolicies.resellerId, resellerId))
+      .orderBy(hrClockingPolicies.locationName);
+  }
+
+  async getHrClockingPolicy(id: string): Promise<HrClockingPolicy | undefined> {
+    const [policy] = await db.select().from(hrClockingPolicies).where(eq(hrClockingPolicies.id, id));
+    return policy || undefined;
+  }
+
+  async createHrClockingPolicy(data: InsertHrClockingPolicy): Promise<HrClockingPolicy> {
+    const [policy] = await db.insert(hrClockingPolicies).values(data).returning();
+    return policy;
+  }
+
+  async updateHrClockingPolicy(id: string, updates: Partial<HrClockingPolicy>): Promise<HrClockingPolicy> {
+    const [policy] = await db.update(hrClockingPolicies)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(hrClockingPolicies.id, id))
+      .returning();
+    return policy;
+  }
+
+  async deleteHrClockingPolicy(id: string): Promise<void> {
+    await db.delete(hrClockingPolicies).where(eq(hrClockingPolicies.id, id));
+  }
+
+  // Clock Events (Timbrature)
+  async createHrClockEvent(data: InsertHrClockEvent): Promise<HrClockEvent> {
+    const [event] = await db.insert(hrClockEvents).values(data).returning();
+    return event;
+  }
+
+  async listHrClockEvents(filters: { userId?: string; resellerId?: string; startDate?: Date; endDate?: Date }): Promise<HrClockEvent[]> {
+    const conditions = [];
+    if (filters.userId) conditions.push(eq(hrClockEvents.userId, filters.userId));
+    if (filters.resellerId) conditions.push(eq(hrClockEvents.resellerId, filters.resellerId));
+    if (filters.startDate) conditions.push(gte(hrClockEvents.eventTime, filters.startDate));
+    if (filters.endDate) conditions.push(lte(hrClockEvents.eventTime, filters.endDate));
+    
+    return db.select().from(hrClockEvents)
+      .where(conditions.length > 0 ? and(...conditions) : undefined)
+      .orderBy(desc(hrClockEvents.eventTime));
+  }
+
+  async getTodayClockEvents(userId: string): Promise<HrClockEvent[]> {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    
+    return db.select().from(hrClockEvents)
+      .where(and(
+        eq(hrClockEvents.userId, userId),
+        gte(hrClockEvents.eventTime, today),
+        lt(hrClockEvents.eventTime, tomorrow)
+      ))
+      .orderBy(hrClockEvents.eventTime);
+  }
+
+  async validateHrClockEvent(id: string, validatedBy: string, note?: string): Promise<HrClockEvent> {
+    const [event] = await db.update(hrClockEvents)
+      .set({
+        status: 'validated',
+        validatedBy,
+        validatedAt: new Date(),
+        validationNote: note,
+      })
+      .where(eq(hrClockEvents.id, id))
+      .returning();
+    return event;
+  }
+
+  // Leave Balances
+  async getHrLeaveBalance(userId: string, leaveType: string, year: number): Promise<HrLeaveBalance | undefined> {
+    const [balance] = await db.select().from(hrLeaveBalances)
+      .where(and(
+        eq(hrLeaveBalances.userId, userId),
+        eq(hrLeaveBalances.leaveType, leaveType as any),
+        eq(hrLeaveBalances.year, year)
+      ));
+    return balance || undefined;
+  }
+
+  async listHrLeaveBalances(userId: string, year?: number): Promise<HrLeaveBalance[]> {
+    const conditions = [eq(hrLeaveBalances.userId, userId)];
+    if (year) conditions.push(eq(hrLeaveBalances.year, year));
+    
+    return db.select().from(hrLeaveBalances)
+      .where(and(...conditions));
+  }
+
+  async upsertHrLeaveBalance(data: InsertHrLeaveBalance): Promise<HrLeaveBalance> {
+    const existing = await this.getHrLeaveBalance(data.userId, data.leaveType, data.year);
+    if (existing) {
+      const [updated] = await db.update(hrLeaveBalances)
+        .set({ ...data, updatedAt: new Date() })
+        .where(eq(hrLeaveBalances.id, existing.id))
+        .returning();
+      return updated;
+    }
+    const [created] = await db.insert(hrLeaveBalances).values(data).returning();
+    return created;
+  }
+
+  // Leave Requests
+  async createHrLeaveRequest(data: InsertHrLeaveRequest): Promise<HrLeaveRequest> {
+    const [request] = await db.insert(hrLeaveRequests).values(data).returning();
+    return request;
+  }
+
+  async getHrLeaveRequest(id: string): Promise<HrLeaveRequest | undefined> {
+    const [request] = await db.select().from(hrLeaveRequests).where(eq(hrLeaveRequests.id, id));
+    return request || undefined;
+  }
+
+  async listHrLeaveRequests(filters: { userId?: string; resellerId?: string; status?: string }): Promise<HrLeaveRequest[]> {
+    const conditions = [];
+    if (filters.userId) conditions.push(eq(hrLeaveRequests.userId, filters.userId));
+    if (filters.resellerId) conditions.push(eq(hrLeaveRequests.resellerId, filters.resellerId));
+    if (filters.status) conditions.push(eq(hrLeaveRequests.status, filters.status as any));
+    
+    return db.select().from(hrLeaveRequests)
+      .where(conditions.length > 0 ? and(...conditions) : undefined)
+      .orderBy(desc(hrLeaveRequests.createdAt));
+  }
+
+  async updateHrLeaveRequest(id: string, updates: Partial<HrLeaveRequest>): Promise<HrLeaveRequest> {
+    const [request] = await db.update(hrLeaveRequests)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(hrLeaveRequests.id, id))
+      .returning();
+    return request;
+  }
+
+  async approveHrLeaveRequest(id: string, approvedBy: string): Promise<HrLeaveRequest> {
+    const [request] = await db.update(hrLeaveRequests)
+      .set({
+        status: 'approved',
+        approvedBy,
+        approvedAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .where(eq(hrLeaveRequests.id, id))
+      .returning();
+    return request;
+  }
+
+  async rejectHrLeaveRequest(id: string, approvedBy: string, reason: string): Promise<HrLeaveRequest> {
+    const [request] = await db.update(hrLeaveRequests)
+      .set({
+        status: 'rejected',
+        approvedBy,
+        approvedAt: new Date(),
+        rejectionReason: reason,
+        updatedAt: new Date(),
+      })
+      .where(eq(hrLeaveRequests.id, id))
+      .returning();
+    return request;
+  }
+
+  // Sick Leaves
+  async createHrSickLeave(data: InsertHrSickLeave): Promise<HrSickLeave> {
+    const [leave] = await db.insert(hrSickLeaves).values(data).returning();
+    return leave;
+  }
+
+  async getHrSickLeave(id: string): Promise<HrSickLeave | undefined> {
+    const [leave] = await db.select().from(hrSickLeaves).where(eq(hrSickLeaves.id, id));
+    return leave || undefined;
+  }
+
+  async listHrSickLeaves(filters: { userId?: string; resellerId?: string }): Promise<HrSickLeave[]> {
+    const conditions = [];
+    if (filters.userId) conditions.push(eq(hrSickLeaves.userId, filters.userId));
+    if (filters.resellerId) conditions.push(eq(hrSickLeaves.resellerId, filters.resellerId));
+    
+    return db.select().from(hrSickLeaves)
+      .where(conditions.length > 0 ? and(...conditions) : undefined)
+      .orderBy(desc(hrSickLeaves.startDate));
+  }
+
+  async updateHrSickLeave(id: string, updates: Partial<HrSickLeave>): Promise<HrSickLeave> {
+    const [leave] = await db.update(hrSickLeaves)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(hrSickLeaves.id, id))
+      .returning();
+    return leave;
+  }
+
+  // Certificates
+  async createHrCertificate(data: InsertHrCertificate): Promise<HrCertificate> {
+    const [cert] = await db.insert(hrCertificates).values(data).returning();
+    return cert;
+  }
+
+  async listHrCertificates(filters: { userId?: string; resellerId?: string; sickLeaveId?: string }): Promise<HrCertificate[]> {
+    const conditions = [];
+    if (filters.userId) conditions.push(eq(hrCertificates.userId, filters.userId));
+    if (filters.resellerId) conditions.push(eq(hrCertificates.resellerId, filters.resellerId));
+    if (filters.sickLeaveId) conditions.push(eq(hrCertificates.relatedSickLeaveId, filters.sickLeaveId));
+    
+    return db.select().from(hrCertificates)
+      .where(conditions.length > 0 ? and(...conditions) : undefined)
+      .orderBy(desc(hrCertificates.createdAt));
+  }
+
+  // Absences
+  async createHrAbsence(data: InsertHrAbsence): Promise<HrAbsence> {
+    const [absence] = await db.insert(hrAbsences).values(data).returning();
+    return absence;
+  }
+
+  async listHrAbsences(filters: { userId?: string; resellerId?: string; isJustified?: boolean }): Promise<HrAbsence[]> {
+    const conditions = [];
+    if (filters.userId) conditions.push(eq(hrAbsences.userId, filters.userId));
+    if (filters.resellerId) conditions.push(eq(hrAbsences.resellerId, filters.resellerId));
+    if (filters.isJustified !== undefined) conditions.push(eq(hrAbsences.isJustified, filters.isJustified));
+    
+    return db.select().from(hrAbsences)
+      .where(conditions.length > 0 ? and(...conditions) : undefined)
+      .orderBy(desc(hrAbsences.absenceDate));
+  }
+
+  async updateHrAbsence(id: string, updates: Partial<HrAbsence>): Promise<HrAbsence> {
+    const [absence] = await db.update(hrAbsences)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(hrAbsences.id, id))
+      .returning();
+    return absence;
+  }
+
+  // Justifications
+  async createHrJustification(data: InsertHrJustification): Promise<HrJustification> {
+    const [just] = await db.insert(hrJustifications).values(data).returning();
+    return just;
+  }
+
+  async listHrJustifications(absenceId: string): Promise<HrJustification[]> {
+    return db.select().from(hrJustifications)
+      .where(eq(hrJustifications.absenceId, absenceId))
+      .orderBy(desc(hrJustifications.createdAt));
+  }
+
+  async updateHrJustification(id: string, updates: Partial<HrJustification>): Promise<HrJustification> {
+    const [just] = await db.update(hrJustifications)
+      .set(updates)
+      .where(eq(hrJustifications.id, id))
+      .returning();
+    return just;
+  }
+
+  // Expense Reports
+  async createHrExpenseReport(data: InsertHrExpenseReport): Promise<HrExpenseReport> {
+    const [report] = await db.insert(hrExpenseReports).values(data).returning();
+    return report;
+  }
+
+  async getHrExpenseReport(id: string): Promise<HrExpenseReport | undefined> {
+    const [report] = await db.select().from(hrExpenseReports).where(eq(hrExpenseReports.id, id));
+    return report || undefined;
+  }
+
+  async listHrExpenseReports(filters: { userId?: string; resellerId?: string; status?: string }): Promise<HrExpenseReport[]> {
+    const conditions = [];
+    if (filters.userId) conditions.push(eq(hrExpenseReports.userId, filters.userId));
+    if (filters.resellerId) conditions.push(eq(hrExpenseReports.resellerId, filters.resellerId));
+    if (filters.status) conditions.push(eq(hrExpenseReports.status, filters.status as any));
+    
+    return db.select().from(hrExpenseReports)
+      .where(conditions.length > 0 ? and(...conditions) : undefined)
+      .orderBy(desc(hrExpenseReports.createdAt));
+  }
+
+  async updateHrExpenseReport(id: string, updates: Partial<HrExpenseReport>): Promise<HrExpenseReport> {
+    const [report] = await db.update(hrExpenseReports)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(hrExpenseReports.id, id))
+      .returning();
+    return report;
+  }
+
+  // Expense Items
+  async createHrExpenseItem(data: InsertHrExpenseItem): Promise<HrExpenseItem> {
+    const [item] = await db.insert(hrExpenseItems).values(data).returning();
+    // Update total amount
+    await this.recalculateExpenseTotal(data.expenseReportId);
+    return item;
+  }
+
+  async listHrExpenseItems(expenseReportId: string): Promise<HrExpenseItem[]> {
+    return db.select().from(hrExpenseItems)
+      .where(eq(hrExpenseItems.expenseReportId, expenseReportId))
+      .orderBy(hrExpenseItems.expenseDate);
+  }
+
+  async deleteHrExpenseItem(id: string): Promise<void> {
+    const [item] = await db.select().from(hrExpenseItems).where(eq(hrExpenseItems.id, id));
+    if (item) {
+      await db.delete(hrExpenseItems).where(eq(hrExpenseItems.id, id));
+      await this.recalculateExpenseTotal(item.expenseReportId);
+    }
+  }
+
+  private async recalculateExpenseTotal(reportId: string): Promise<void> {
+    const items = await this.listHrExpenseItems(reportId);
+    const total = items.reduce((sum, item) => sum + item.amount, 0);
+    await db.update(hrExpenseReports)
+      .set({ totalAmount: total, updatedAt: new Date() })
+      .where(eq(hrExpenseReports.id, reportId));
+  }
+
+  // HR Notifications
+  async createHrNotification(data: InsertHrNotification): Promise<HrNotification> {
+    const [notif] = await db.insert(hrNotifications).values(data).returning();
+    return notif;
+  }
+
+  async listHrNotifications(filters: { recipientId?: string; resellerId?: string; unreadOnly?: boolean }): Promise<HrNotification[]> {
+    const conditions = [];
+    if (filters.recipientId) conditions.push(eq(hrNotifications.recipientId, filters.recipientId));
+    if (filters.resellerId) conditions.push(eq(hrNotifications.resellerId, filters.resellerId));
+    if (filters.unreadOnly) conditions.push(isNull(hrNotifications.readAt));
+    
+    return db.select().from(hrNotifications)
+      .where(conditions.length > 0 ? and(...conditions) : undefined)
+      .orderBy(desc(hrNotifications.createdAt));
+  }
+
+  async markHrNotificationRead(id: string): Promise<HrNotification> {
+    const [notif] = await db.update(hrNotifications)
+      .set({ readAt: new Date() })
+      .where(eq(hrNotifications.id, id))
+      .returning();
+    return notif;
+  }
+
+  // HR Audit Logs
+  async createHrAuditLog(data: InsertHrAuditLog): Promise<HrAuditLog> {
+    const [log] = await db.insert(hrAuditLogs).values(data).returning();
+    return log;
+  }
+
+  async listHrAuditLogs(filters: { resellerId?: string; userId?: string; entityType?: string; limit?: number }): Promise<HrAuditLog[]> {
+    const conditions = [];
+    if (filters.resellerId) conditions.push(eq(hrAuditLogs.resellerId, filters.resellerId));
+    if (filters.userId) conditions.push(eq(hrAuditLogs.userId, filters.userId));
+    if (filters.entityType) conditions.push(eq(hrAuditLogs.entityType, filters.entityType));
+    
+    let query = db.select().from(hrAuditLogs)
+      .where(conditions.length > 0 ? and(...conditions) : undefined)
+      .orderBy(desc(hrAuditLogs.createdAt));
+    
+    if (filters.limit) {
+      query = query.limit(filters.limit) as any;
+    }
+    
+    return query;
+  }
+
+  // HR Dashboard Stats
+  async getHrDashboardStats(resellerId: string): Promise<{
+    totalStaff: number;
+    presentToday: number;
+    onLeave: number;
+    pendingRequests: number;
+    pendingExpenses: number;
+  }> {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    // Get staff count
+    const staff = await db.select().from(users)
+      .where(and(
+        eq(users.resellerId, resellerId),
+        eq(users.role, 'reseller_staff'),
+        eq(users.isActive, true)
+      ));
+
+    // Get today's clock-ins
+    const clockIns = await db.select().from(hrClockEvents)
+      .where(and(
+        eq(hrClockEvents.resellerId, resellerId),
+        eq(hrClockEvents.eventType, 'entrata'),
+        gte(hrClockEvents.eventTime, today),
+        lt(hrClockEvents.eventTime, tomorrow)
+      ));
+
+    // Get approved leaves for today
+    const onLeave = await db.select().from(hrLeaveRequests)
+      .where(and(
+        eq(hrLeaveRequests.resellerId, resellerId),
+        eq(hrLeaveRequests.status, 'approved'),
+        lte(hrLeaveRequests.startDate, today),
+        gte(hrLeaveRequests.endDate, today)
+      ));
+
+    // Get pending leave requests
+    const pendingLeave = await db.select().from(hrLeaveRequests)
+      .where(and(
+        eq(hrLeaveRequests.resellerId, resellerId),
+        eq(hrLeaveRequests.status, 'pending')
+      ));
+
+    // Get pending expense reports
+    const pendingExp = await db.select().from(hrExpenseReports)
+      .where(and(
+        eq(hrExpenseReports.resellerId, resellerId),
+        eq(hrExpenseReports.status, 'pending')
+      ));
+
+    return {
+      totalStaff: staff.length,
+      presentToday: clockIns.length,
+      onLeave: onLeave.length,
+      pendingRequests: pendingLeave.length,
+      pendingExpenses: pendingExp.length,
+    };
+  }
+
+  // Shared Calendar - Get approved absences visible to colleagues
+  async getSharedCalendarEvents(resellerId: string, startDate: Date, endDate: Date): Promise<{
+    userId: string;
+    userName: string;
+    type: string;
+    startDate: Date;
+    endDate: Date;
+  }[]> {
+    const leaves = await db.select({
+      userId: hrLeaveRequests.userId,
+      userName: users.fullName,
+      type: hrLeaveRequests.leaveType,
+      startDate: hrLeaveRequests.startDate,
+      endDate: hrLeaveRequests.endDate,
+    })
+    .from(hrLeaveRequests)
+    .innerJoin(users, eq(hrLeaveRequests.userId, users.id))
+    .where(and(
+      eq(hrLeaveRequests.resellerId, resellerId),
+      eq(hrLeaveRequests.status, 'approved'),
+      lte(hrLeaveRequests.startDate, endDate),
+      gte(hrLeaveRequests.endDate, startDate)
+    ));
+
+    return leaves.map(l => ({
+      userId: l.userId,
+      userName: l.userName || 'Unknown',
+      type: l.type,
+      startDate: l.startDate,
+      endDate: l.endDate,
+    }));
   }
 }
 

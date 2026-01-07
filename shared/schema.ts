@@ -5480,7 +5480,7 @@ export type MobilesentrixOrder = typeof mobilesentrixOrders.$inferSelect;
 export type InsertMobilesentrixOrder = z.infer<typeof insertMobilesentrixOrderSchema>;
 
 // Utility Module Types
-export type UtilityCategory = "fisso" | "mobile" | "centralino" | "luce" | "gas" | "altro";
+export type UtilityCategoryType = "fisso" | "mobile" | "centralino" | "luce" | "gas" | "altro";
 export type UtilityPracticeStatus = "bozza" | "inviata" | "in_lavorazione" | "attesa_documenti" | "completata" | "rifiutata" | "annullata";
 export type UtilityCommissionStatus = "pending" | "accrued" | "invoiced" | "paid" | "cancelled";
 
@@ -5644,3 +5644,461 @@ export interface OperationalTask {
   relatedId?: string;
   createdAt: string;
 }
+
+// ============================================================================
+// HR MODULE - Gestione Risorse Umane
+// ============================================================================
+
+// HR Enums
+export const hrLeaveTypeEnum = pgEnum("hr_leave_type", [
+  "ferie",           // Ferie annuali
+  "permesso_rol",    // Permesso ROL (Riduzione Orario Lavoro)
+  "permesso_studio", // Permesso studio
+  "permesso_medico", // Permesso per visita medica
+  "permesso_lutto",  // Permesso per lutto
+  "permesso_matrimonio", // Permesso matrimoniale
+  "congedo_parentale", // Congedo parentale
+  "altro",           // Altro tipo di permesso
+]);
+
+export const hrLeaveRequestStatusEnum = pgEnum("hr_leave_request_status", [
+  "pending",         // In attesa di approvazione
+  "approved",        // Approvata
+  "rejected",        // Rifiutata
+  "cancelled",       // Annullata dal richiedente
+]);
+
+export const hrAbsenceTypeEnum = pgEnum("hr_absence_type", [
+  "ritardo",         // Ritardo entrata
+  "uscita_anticipata", // Uscita anticipata
+  "assenza_ingiustificata", // Assenza non coperta
+  "assenza_giustificata", // Assenza con giustificazione
+]);
+
+export const hrJustificationStatusEnum = pgEnum("hr_justification_status", [
+  "pending",         // In attesa di approvazione
+  "approved",        // Approvata
+  "rejected",        // Rifiutata
+]);
+
+export const hrExpenseStatusEnum = pgEnum("hr_expense_status", [
+  "draft",           // Bozza
+  "pending",         // In attesa di approvazione
+  "approved",        // Approvata
+  "rejected",        // Rifiutata
+  "paid",            // Rimborsata
+]);
+
+export const hrClockEventTypeEnum = pgEnum("hr_clock_event_type", [
+  "entrata",         // Timbratura entrata
+  "uscita",          // Timbratura uscita
+  "pausa_inizio",    // Inizio pausa
+  "pausa_fine",      // Fine pausa
+]);
+
+export const hrClockEventStatusEnum = pgEnum("hr_clock_event_status", [
+  "valid",           // Timbratura valida
+  "pending_validation", // In attesa di validazione (fuori raggio, problemi tecnici)
+  "validated",       // Validata manualmente
+  "rejected",        // Rifiutata
+]);
+
+export const hrCertificateTypeEnum = pgEnum("hr_certificate_type", [
+  "malattia",        // Certificato malattia
+  "infortunio",      // Certificato infortunio
+  "maternita",       // Certificato maternità
+  "altro",           // Altro tipo
+]);
+
+export const hrNotificationChannelEnum = pgEnum("hr_notification_channel", [
+  "in_app",          // Notifica in-app
+  "email",           // Email
+  "sms",             // SMS
+]);
+
+export const hrAuditActionEnum = pgEnum("hr_audit_action", [
+  "create",          // Creazione
+  "update",          // Modifica
+  "delete",          // Eliminazione
+  "approve",         // Approvazione
+  "reject",          // Rifiuto
+  "clock_in",        // Timbratura entrata
+  "clock_out",       // Timbratura uscita
+  "validate",        // Validazione
+]);
+
+// ============================================================================
+// HR Tables
+// ============================================================================
+
+// Profili Orario - Definizione template orari di lavoro
+export const hrWorkProfiles = pgTable("hr_work_profiles", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  resellerId: varchar("reseller_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  name: varchar("name", { length: 100 }).notNull(), // es. "Full-time 40h", "Part-time 20h"
+  description: text("description"),
+  weeklyHours: real("weekly_hours").notNull(), // Ore settimanali totali
+  dailyHours: real("daily_hours").notNull(), // Ore giornaliere standard
+  workDays: jsonb("work_days").notNull().$type<number[]>(), // [1,2,3,4,5] = Lun-Ven
+  breakMinutes: integer("break_minutes").default(60), // Minuti pausa giornaliera
+  toleranceMinutes: integer("tolerance_minutes").default(15), // Tolleranza ritardo in minuti
+  isDefault: boolean("is_default").default(false),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export const insertHrWorkProfileSchema = createInsertSchema(hrWorkProfiles).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export type InsertHrWorkProfile = z.infer<typeof insertHrWorkProfileSchema>;
+export type HrWorkProfile = typeof hrWorkProfiles.$inferSelect;
+
+// Versioni Profili Orario - Storico modifiche
+export const hrWorkProfileVersions = pgTable("hr_work_profile_versions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  workProfileId: varchar("work_profile_id").notNull().references(() => hrWorkProfiles.id, { onDelete: "cascade" }),
+  versionNumber: integer("version_number").notNull(),
+  weeklyHours: real("weekly_hours").notNull(),
+  dailyHours: real("daily_hours").notNull(),
+  workDays: jsonb("work_days").notNull().$type<number[]>(),
+  breakMinutes: integer("break_minutes"),
+  toleranceMinutes: integer("tolerance_minutes"),
+  validFrom: timestamp("valid_from").notNull(),
+  validTo: timestamp("valid_to"),
+  changedBy: varchar("changed_by").references(() => users.id),
+  changeReason: text("change_reason"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const insertHrWorkProfileVersionSchema = createInsertSchema(hrWorkProfileVersions).omit({
+  id: true,
+  createdAt: true,
+});
+export type InsertHrWorkProfileVersion = z.infer<typeof insertHrWorkProfileVersionSchema>;
+export type HrWorkProfileVersion = typeof hrWorkProfileVersions.$inferSelect;
+
+// Assegnazione Profili Orario ai Collaboratori
+export const hrWorkProfileAssignments = pgTable("hr_work_profile_assignments", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  workProfileId: varchar("work_profile_id").notNull().references(() => hrWorkProfiles.id, { onDelete: "cascade" }),
+  validFrom: timestamp("valid_from").notNull().defaultNow(),
+  validTo: timestamp("valid_to"),
+  assignedBy: varchar("assigned_by").references(() => users.id),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const insertHrWorkProfileAssignmentSchema = createInsertSchema(hrWorkProfileAssignments).omit({
+  id: true,
+  createdAt: true,
+});
+export type InsertHrWorkProfileAssignment = z.infer<typeof insertHrWorkProfileAssignmentSchema>;
+export type HrWorkProfileAssignment = typeof hrWorkProfileAssignments.$inferSelect;
+
+// Politiche Timbratura - Configurazione geolocalizzazione
+export const hrClockingPolicies = pgTable("hr_clocking_policies", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  resellerId: varchar("reseller_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  locationName: varchar("location_name", { length: 200 }).notNull(), // Nome sede
+  latitude: real("latitude").notNull(),
+  longitude: real("longitude").notNull(),
+  radiusMeters: integer("radius_meters").notNull().default(100), // Raggio validità GPS
+  requiresGeolocation: boolean("requires_geolocation").default(true),
+  allowManualEntry: boolean("allow_manual_entry").default(false), // Permetti timbratura manuale
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export const insertHrClockingPolicySchema = createInsertSchema(hrClockingPolicies).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export type InsertHrClockingPolicy = z.infer<typeof insertHrClockingPolicySchema>;
+export type HrClockingPolicy = typeof hrClockingPolicies.$inferSelect;
+
+// Timbrature - Registrazione entrate/uscite
+export const hrClockEvents = pgTable("hr_clock_events", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  resellerId: varchar("reseller_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  eventType: hrClockEventTypeEnum("event_type").notNull(),
+  eventTime: timestamp("event_time").notNull(),
+  latitude: real("latitude"),
+  longitude: real("longitude"),
+  accuracy: real("accuracy"), // Precisione GPS in metri
+  deviceInfo: text("device_info"), // Info dispositivo (user agent, etc.)
+  policyId: varchar("policy_id").references(() => hrClockingPolicies.id),
+  distanceFromLocation: real("distance_from_location"), // Distanza dalla sede in metri
+  status: hrClockEventStatusEnum("status").notNull().default("valid"),
+  validatedBy: varchar("validated_by").references(() => users.id),
+  validatedAt: timestamp("validated_at"),
+  validationNote: text("validation_note"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const insertHrClockEventSchema = createInsertSchema(hrClockEvents).omit({
+  id: true,
+  createdAt: true,
+});
+export type InsertHrClockEvent = z.infer<typeof insertHrClockEventSchema>;
+export type HrClockEvent = typeof hrClockEvents.$inferSelect;
+
+// Saldi Ferie/Permessi
+export const hrLeaveBalances = pgTable("hr_leave_balances", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  resellerId: varchar("reseller_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  leaveType: hrLeaveTypeEnum("leave_type").notNull(),
+  year: integer("year").notNull(),
+  accrued: real("accrued").notNull().default(0), // Maturate
+  used: real("used").notNull().default(0), // Utilizzate
+  pending: real("pending").notNull().default(0), // In attesa approvazione
+  carriedOver: real("carried_over").notNull().default(0), // Riportate da anno precedente
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export const insertHrLeaveBalanceSchema = createInsertSchema(hrLeaveBalances).omit({
+  id: true,
+  updatedAt: true,
+});
+export type InsertHrLeaveBalance = z.infer<typeof insertHrLeaveBalanceSchema>;
+export type HrLeaveBalance = typeof hrLeaveBalances.$inferSelect;
+
+// Richieste Ferie/Permessi
+export const hrLeaveRequests = pgTable("hr_leave_requests", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  resellerId: varchar("reseller_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  leaveType: hrLeaveTypeEnum("leave_type").notNull(),
+  startDate: timestamp("start_date").notNull(),
+  endDate: timestamp("end_date").notNull(),
+  startTime: varchar("start_time", { length: 5 }), // "09:00" per permessi orari
+  endTime: varchar("end_time", { length: 5 }), // "12:00" per permessi orari
+  isFullDay: boolean("is_full_day").notNull().default(true),
+  totalHours: real("total_hours").notNull(), // Ore totali richieste
+  totalDays: real("total_days").notNull(), // Giorni totali richiesti
+  reason: text("reason"),
+  status: hrLeaveRequestStatusEnum("status").notNull().default("pending"),
+  approvedBy: varchar("approved_by").references(() => users.id),
+  approvedAt: timestamp("approved_at"),
+  rejectionReason: text("rejection_reason"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export const insertHrLeaveRequestSchema = createInsertSchema(hrLeaveRequests).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export type InsertHrLeaveRequest = z.infer<typeof insertHrLeaveRequestSchema>;
+export type HrLeaveRequest = typeof hrLeaveRequests.$inferSelect;
+
+// Malattie
+export const hrSickLeaves = pgTable("hr_sick_leaves", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  resellerId: varchar("reseller_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  startDate: timestamp("start_date").notNull(),
+  endDate: timestamp("end_date"),
+  protocolNumber: varchar("protocol_number", { length: 50 }), // Numero protocollo INPS
+  certificateRequired: boolean("certificate_required").default(true),
+  certificateUploaded: boolean("certificate_uploaded").default(false),
+  certificateDeadline: timestamp("certificate_deadline"), // Scadenza per upload certificato
+  validatedBy: varchar("validated_by").references(() => users.id),
+  validatedAt: timestamp("validated_at"),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export const insertHrSickLeaveSchema = createInsertSchema(hrSickLeaves).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export type InsertHrSickLeave = z.infer<typeof insertHrSickLeaveSchema>;
+export type HrSickLeave = typeof hrSickLeaves.$inferSelect;
+
+// Certificati
+export const hrCertificates = pgTable("hr_certificates", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  resellerId: varchar("reseller_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  certificateType: hrCertificateTypeEnum("certificate_type").notNull(),
+  relatedSickLeaveId: varchar("related_sick_leave_id").references(() => hrSickLeaves.id),
+  fileName: varchar("file_name", { length: 255 }).notNull(),
+  fileUrl: text("file_url").notNull(),
+  fileSize: integer("file_size"),
+  mimeType: varchar("mime_type", { length: 100 }),
+  validFrom: timestamp("valid_from").notNull(),
+  validTo: timestamp("valid_to"),
+  uploadedBy: varchar("uploaded_by").references(() => users.id),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const insertHrCertificateSchema = createInsertSchema(hrCertificates).omit({
+  id: true,
+  createdAt: true,
+});
+export type InsertHrCertificate = z.infer<typeof insertHrCertificateSchema>;
+export type HrCertificate = typeof hrCertificates.$inferSelect;
+
+// Assenze e Ritardi
+export const hrAbsences = pgTable("hr_absences", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  resellerId: varchar("reseller_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  absenceType: hrAbsenceTypeEnum("absence_type").notNull(),
+  absenceDate: timestamp("absence_date").notNull(),
+  expectedTime: varchar("expected_time", { length: 5 }), // Orario previsto
+  actualTime: varchar("actual_time", { length: 5 }), // Orario effettivo
+  minutesLost: integer("minutes_lost"), // Minuti persi/anticipo
+  isJustified: boolean("is_justified").default(false),
+  autoDetected: boolean("auto_detected").default(true), // Rilevato automaticamente
+  relatedClockEventId: varchar("related_clock_event_id").references(() => hrClockEvents.id),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export const insertHrAbsenceSchema = createInsertSchema(hrAbsences).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export type InsertHrAbsence = z.infer<typeof insertHrAbsenceSchema>;
+export type HrAbsence = typeof hrAbsences.$inferSelect;
+
+// Giustificazioni
+export const hrJustifications = pgTable("hr_justifications", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  absenceId: varchar("absence_id").notNull().references(() => hrAbsences.id, { onDelete: "cascade" }),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  justificationText: text("justification_text").notNull(),
+  status: hrJustificationStatusEnum("status").notNull().default("pending"),
+  reviewedBy: varchar("reviewed_by").references(() => users.id),
+  reviewedAt: timestamp("reviewed_at"),
+  reviewNote: text("review_note"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const insertHrJustificationSchema = createInsertSchema(hrJustifications).omit({
+  id: true,
+  createdAt: true,
+});
+export type InsertHrJustification = z.infer<typeof insertHrJustificationSchema>;
+export type HrJustification = typeof hrJustifications.$inferSelect;
+
+// Rimborsi Spese
+export const hrExpenseReports = pgTable("hr_expense_reports", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  resellerId: varchar("reseller_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  reportNumber: varchar("report_number", { length: 50 }),
+  title: varchar("title", { length: 200 }).notNull(),
+  description: text("description"),
+  totalAmount: real("total_amount").notNull().default(0),
+  status: hrExpenseStatusEnum("status").notNull().default("draft"),
+  submittedAt: timestamp("submitted_at"),
+  approvedBy: varchar("approved_by").references(() => users.id),
+  approvedAt: timestamp("approved_at"),
+  rejectionReason: text("rejection_reason"),
+  paidAt: timestamp("paid_at"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export const insertHrExpenseReportSchema = createInsertSchema(hrExpenseReports).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export type InsertHrExpenseReport = z.infer<typeof insertHrExpenseReportSchema>;
+export type HrExpenseReport = typeof hrExpenseReports.$inferSelect;
+
+// Voci Spesa
+export const hrExpenseItems = pgTable("hr_expense_items", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  expenseReportId: varchar("expense_report_id").notNull().references(() => hrExpenseReports.id, { onDelete: "cascade" }),
+  expenseDate: timestamp("expense_date").notNull(),
+  category: varchar("category", { length: 100 }).notNull(), // Viaggio, Vitto, Alloggio, etc.
+  description: text("description").notNull(),
+  amount: real("amount").notNull(),
+  receiptUrl: text("receipt_url"), // URL giustificativo
+  receiptFileName: varchar("receipt_file_name", { length: 255 }),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const insertHrExpenseItemSchema = createInsertSchema(hrExpenseItems).omit({
+  id: true,
+  createdAt: true,
+});
+export type InsertHrExpenseItem = z.infer<typeof insertHrExpenseItemSchema>;
+export type HrExpenseItem = typeof hrExpenseItems.$inferSelect;
+
+// Notifiche HR
+export const hrNotifications = pgTable("hr_notifications", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  resellerId: varchar("reseller_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  recipientId: varchar("recipient_id").references(() => users.id, { onDelete: "cascade" }),
+  channel: hrNotificationChannelEnum("channel").notNull(),
+  subject: varchar("subject", { length: 255 }).notNull(),
+  message: text("message").notNull(),
+  isBroadcast: boolean("is_broadcast").default(false), // Comunicazione massiva
+  targetFilters: jsonb("target_filters").$type<{
+    locations?: string[];
+    departments?: string[];
+    roles?: string[];
+  }>(), // Filtri per broadcast
+  sentAt: timestamp("sent_at"),
+  readAt: timestamp("read_at"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const insertHrNotificationSchema = createInsertSchema(hrNotifications).omit({
+  id: true,
+  createdAt: true,
+});
+export type InsertHrNotification = z.infer<typeof insertHrNotificationSchema>;
+export type HrNotification = typeof hrNotifications.$inferSelect;
+
+// Audit Trail HR
+export const hrAuditLogs = pgTable("hr_audit_logs", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  resellerId: varchar("reseller_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  userId: varchar("user_id").references(() => users.id), // Utente che ha eseguito l'azione
+  targetUserId: varchar("target_user_id").references(() => users.id), // Utente target dell'azione
+  action: hrAuditActionEnum("action").notNull(),
+  entityType: varchar("entity_type", { length: 50 }).notNull(), // clock_event, leave_request, etc.
+  entityId: varchar("entity_id").notNull(),
+  previousData: jsonb("previous_data"), // Stato precedente
+  newData: jsonb("new_data"), // Nuovo stato
+  ipAddress: varchar("ip_address", { length: 45 }),
+  userAgent: text("user_agent"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const insertHrAuditLogSchema = createInsertSchema(hrAuditLogs).omit({
+  id: true,
+  createdAt: true,
+});
+export type InsertHrAuditLog = z.infer<typeof insertHrAuditLogSchema>;
+export type HrAuditLog = typeof hrAuditLogs.$inferSelect;
+
+// HR Types Export
+export type HrLeaveType = "ferie" | "permesso_rol" | "permesso_studio" | "permesso_medico" | "permesso_lutto" | "permesso_matrimonio" | "congedo_parentale" | "altro";
+export type HrLeaveRequestStatus = "pending" | "approved" | "rejected" | "cancelled";
+export type HrAbsenceType = "ritardo" | "uscita_anticipata" | "assenza_ingiustificata" | "assenza_giustificata";
+export type HrJustificationStatus = "pending" | "approved" | "rejected";
+export type HrExpenseStatus = "draft" | "pending" | "approved" | "rejected" | "paid";
+export type HrClockEventType = "entrata" | "uscita" | "pausa_inizio" | "pausa_fine";
+export type HrClockEventStatus = "valid" | "pending_validation" | "validated" | "rejected";
+export type HrCertificateType = "malattia" | "infortunio" | "maternita" | "altro";
+export type HrNotificationChannel = "in_app" | "email" | "sms";
+export type HrAuditAction = "create" | "update" | "delete" | "approve" | "reject" | "clock_in" | "clock_out" | "validate";
