@@ -27987,6 +27987,7 @@ export function registerRoutes(app: Express): Server {
         resellerId,
         userId,
         eventType,
+        eventTime: new Date(),
         latitude: latitude ? parseFloat(latitude) : undefined,
         longitude: longitude ? parseFloat(longitude) : undefined,
         notes
