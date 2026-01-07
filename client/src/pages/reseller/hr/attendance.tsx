@@ -33,7 +33,7 @@ import { useToast } from "@/hooks/use-toast";
 interface ClockEvent {
   id: string;
   userId: string;
-  eventType: 'clock_in' | 'clock_out' | 'break_start' | 'break_end';
+  eventType: 'entrata' | 'uscita' | 'pausa_inizio' | 'pausa_fine';
   timestamp: string;
   latitude?: number;
   longitude?: number;
@@ -49,17 +49,17 @@ interface StaffMember {
 }
 
 const eventTypeLabels: Record<string, { label: string; icon: any; color: string }> = {
-  clock_in: { label: "Entrata", icon: LogIn, color: "bg-emerald-500" },
-  clock_out: { label: "Uscita", icon: LogOut, color: "bg-red-500" },
-  break_start: { label: "Inizio Pausa", icon: Coffee, color: "bg-amber-500" },
-  break_end: { label: "Fine Pausa", icon: Utensils, color: "bg-blue-500" },
+  entrata: { label: "Entrata", icon: LogIn, color: "bg-emerald-500" },
+  uscita: { label: "Uscita", icon: LogOut, color: "bg-red-500" },
+  pausa_inizio: { label: "Inizio Pausa", icon: Coffee, color: "bg-amber-500" },
+  pausa_fine: { label: "Fine Pausa", icon: Utensils, color: "bg-blue-500" },
 };
 
 export default function HrAttendance() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedUser, setSelectedUser] = useState<string>("all");
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [newEvent, setNewEvent] = useState({ eventType: "clock_in", userId: "", notes: "" });
+  const [newEvent, setNewEvent] = useState({ eventType: "entrata", userId: "", notes: "" });
   const { toast } = useToast();
 
   const today = new Date();
@@ -81,7 +81,7 @@ export default function HrAttendance() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/reseller/hr/clock-events"] });
       setDialogOpen(false);
-      setNewEvent({ eventType: "clock_in", userId: "", notes: "" });
+      setNewEvent({ eventType: "entrata", userId: "", notes: "" });
       toast({ title: "Timbratura registrata", description: "La timbratura è stata salvata con successo." });
     },
     onError: (error: any) => {
@@ -145,7 +145,7 @@ export default function HrAttendance() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <Card 
           className="cursor-pointer hover-elevate transition-all"
-          onClick={() => handleClockNow('clock_in')}
+          onClick={() => handleClockNow('entrata')}
           data-testid="card-clock-in"
         >
           <CardContent className="p-4 flex items-center gap-3">
@@ -161,7 +161,7 @@ export default function HrAttendance() {
 
         <Card 
           className="cursor-pointer hover-elevate transition-all"
-          onClick={() => handleClockNow('clock_out')}
+          onClick={() => handleClockNow('uscita')}
           data-testid="card-clock-out"
         >
           <CardContent className="p-4 flex items-center gap-3">
@@ -177,7 +177,7 @@ export default function HrAttendance() {
 
         <Card 
           className="cursor-pointer hover-elevate transition-all"
-          onClick={() => handleClockNow('break_start')}
+          onClick={() => handleClockNow('pausa_inizio')}
           data-testid="card-break-start"
         >
           <CardContent className="p-4 flex items-center gap-3">
@@ -193,7 +193,7 @@ export default function HrAttendance() {
 
         <Card 
           className="cursor-pointer hover-elevate transition-all"
-          onClick={() => handleClockNow('break_end')}
+          onClick={() => handleClockNow('pausa_fine')}
           data-testid="card-break-end"
         >
           <CardContent className="p-4 flex items-center gap-3">
@@ -309,10 +309,10 @@ export default function HrAttendance() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="clock_in">Entrata</SelectItem>
-                  <SelectItem value="clock_out">Uscita</SelectItem>
-                  <SelectItem value="break_start">Inizio Pausa</SelectItem>
-                  <SelectItem value="break_end">Fine Pausa</SelectItem>
+                  <SelectItem value="entrata">Entrata</SelectItem>
+                  <SelectItem value="uscita">Uscita</SelectItem>
+                  <SelectItem value="pausa_inizio">Inizio Pausa</SelectItem>
+                  <SelectItem value="pausa_fine">Fine Pausa</SelectItem>
                 </SelectContent>
               </Select>
             </div>
