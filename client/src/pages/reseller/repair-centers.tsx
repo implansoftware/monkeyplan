@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
+import { useLocation } from "wouter";
 import { RepairCenter, InsertRepairCenter } from "@shared/schema";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -100,6 +101,7 @@ type RepairCenterRepairsData = {
 };
 
 export default function ResellerRepairCenters() {
+  const [, setLocation] = useLocation();
   const [searchQuery, setSearchQuery] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingCenter, setEditingCenter] = useState<RepairCenter | null>(null);
@@ -1380,6 +1382,7 @@ export default function ResellerRepairCenters() {
                           <TableHead>Stato</TableHead>
                           <TableHead>Data</TableHead>
                           <TableHead className="text-right">Importo</TableHead>
+                          <TableHead className="text-right">Azioni</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -1405,6 +1408,19 @@ export default function ResellerRepairCenters() {
                             <TableCell className="text-right font-medium">
                               {repair.finalCost ? `€${(repair.finalCost / 100).toFixed(2)}` : 
                                repair.estimatedCost ? `~€${(repair.estimatedCost / 100).toFixed(2)}` : "-"}
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => {
+                                  setDetailDialogOpen(false);
+                                  setLocation(`/reseller/repairs/${repair.id}`);
+                                }}
+                                data-testid={`button-view-repair-${repair.id}`}
+                              >
+                                <Eye className="h-4 w-4" />
+                              </Button>
                             </TableCell>
                           </TableRow>
                         ))}
