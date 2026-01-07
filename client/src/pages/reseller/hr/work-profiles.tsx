@@ -1,0 +1,400 @@
+import { useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Link } from "wouter";
+import {
+  Briefcase,
+  Plus,
+  Edit,
+  Trash2,
+  ArrowLeft,
+  Clock,
+  Calendar,
+  Users
+} from "lucide-react";
+import { queryClient, apiRequest } from "@/lib/queryClient";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useToast } from "@/hooks/use-toast";
+
+interface WorkProfile {
+  id: string;
+  name: string;
+  weeklyHours: number;
+  dailyHours: number;
+  workDays: number[];
+  startTime?: string;
+  endTime?: string;
+  breakMinutes: number;
+  isDefault: boolean;
+}
+
+const dayLabels = ["Dom", "Lun", "Mar", "Mer", "Gio", "Ven", "Sab"];
+
+export default function HrWorkProfiles() {
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [selectedProfile, setSelectedProfile] = useState<WorkProfile | null>(null);
+  const [formData, setFormData] = useState({
+    name: "",
+    weeklyHours: 40,
+    dailyHours: 8,
+    workDays: [1, 2, 3, 4, 5],
+    startTime: "09:00",
+    endTime: "18:00",
+    breakMinutes: 60,
+    isDefault: false
+  });
+  const { toast } = useToast();
+
+  const { data: profiles = [], isLoading } = useQuery<WorkProfile[]>({
+    queryKey: ["/api/reseller/hr/work-profiles"],
+  });
+
+  const createMutation = useMutation({
+    mutationFn: async (data: any) => {
+      return apiRequest("POST", "/api/reseller/hr/work-profiles", data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/reseller/hr/work-profiles"] });
+      setDialogOpen(false);
+      resetForm();
+      toast({ title: "Profilo creato", description: "Il profilo orario è stato creato con successo." });
+    },
+    onError: (error: any) => {
+      toast({ title: "Errore", description: error.message, variant: "destructive" });
+    }
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: any }) => {
+      return apiRequest("PATCH", `/api/reseller/hr/work-profiles/${id}`, data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/reseller/hr/work-profiles"] });
+      setDialogOpen(false);
+      resetForm();
+      toast({ title: "Profilo aggiornato", description: "Il profilo orario è stato aggiornato." });
+    },
+    onError: (error: any) => {
+      toast({ title: "Errore", description: error.message, variant: "destructive" });
+    }
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      return apiRequest("DELETE", `/api/reseller/hr/work-profiles/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/reseller/hr/work-profiles"] });
+      setDeleteDialogOpen(false);
+      setSelectedProfile(null);
+      toast({ title: "Profilo eliminato", description: "Il profilo orario è stato eliminato." });
+    },
+    onError: (error: any) => {
+      toast({ title: "Errore", description: error.message, variant: "destructive" });
+    }
+  });
+
+  const resetForm = () => {
+    setFormData({
+      name: "",
+      weeklyHours: 40,
+      dailyHours: 8,
+      workDays: [1, 2, 3, 4, 5],
+      startTime: "09:00",
+      endTime: "18:00",
+      breakMinutes: 60,
+      isDefault: false
+    });
+    setSelectedProfile(null);
+  };
+
+  const openEditDialog = (profile: WorkProfile) => {
+    setSelectedProfile(profile);
+    setFormData({
+      name: profile.name,
+      weeklyHours: profile.weeklyHours,
+      dailyHours: profile.dailyHours,
+      workDays: profile.workDays,
+      startTime: profile.startTime || "09:00",
+      endTime: profile.endTime || "18:00",
+      breakMinutes: profile.breakMinutes,
+      isDefault: profile.isDefault
+    });
+    setDialogOpen(true);
+  };
+
+  const toggleWorkDay = (day: number) => {
+    setFormData(prev => ({
+      ...prev,
+      workDays: prev.workDays.includes(day)
+        ? prev.workDays.filter(d => d !== day)
+        : [...prev.workDays, day].sort()
+    }));
+  };
+
+  const handleSubmit = () => {
+    if (selectedProfile) {
+      updateMutation.mutate({ id: selectedProfile.id, data: formData });
+    } else {
+      createMutation.mutate(formData);
+    }
+  };
+
+  return (
+    <div className="space-y-6" data-testid="page-hr-work-profiles">
+      <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-purple-500/5 via-purple-500/10 to-slate-100 dark:from-purple-500/10 dark:via-purple-500/5 dark:to-slate-900 p-6 border">
+        <div className="absolute inset-0 opacity-[0.03]" style={{
+          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23000' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+        }} />
+        <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-3 mb-2">
+              <div className="h-12 w-12 rounded-lg bg-purple-500/10 flex items-center justify-center">
+                <Briefcase className="h-6 w-6 text-purple-600 dark:text-purple-400" />
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold" data-testid="text-profiles-title">Profili Orario</h1>
+                <p className="text-muted-foreground">Configurazione orari di lavoro del personale</p>
+              </div>
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <Link href="/reseller/hr">
+              <Button variant="outline" data-testid="button-back-to-hr">
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Torna a HR
+              </Button>
+            </Link>
+            <Button onClick={() => { resetForm(); setDialogOpen(true); }} data-testid="button-new-profile">
+              <Plus className="h-4 w-4 mr-2" />
+              Nuovo Profilo
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      <Card data-testid="card-work-profiles-list">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Clock className="h-5 w-5 text-muted-foreground" />
+            Profili Configurati
+          </CardTitle>
+          <CardDescription>Gestisci i profili orario per i dipendenti</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {isLoading ? (
+            <div className="space-y-2">
+              {[1, 2, 3].map((i) => <Skeleton key={i} className="h-12 w-full" />)}
+            </div>
+          ) : profiles.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              <Briefcase className="h-12 w-12 mx-auto mb-3 opacity-50" />
+              <p>Nessun profilo orario configurato</p>
+              <p className="text-sm">Crea il primo profilo per iniziare</p>
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Nome Profilo</TableHead>
+                  <TableHead>Ore Settimanali</TableHead>
+                  <TableHead>Ore Giornaliere</TableHead>
+                  <TableHead>Giorni Lavorativi</TableHead>
+                  <TableHead>Orario</TableHead>
+                  <TableHead>Pausa</TableHead>
+                  <TableHead>Azioni</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {profiles.map((profile) => (
+                  <TableRow key={profile.id} data-testid={`row-profile-${profile.id}`}>
+                    <TableCell className="font-medium">
+                      <div className="flex items-center gap-2">
+                        {profile.name}
+                        {profile.isDefault && (
+                          <Badge variant="secondary" className="text-xs">Default</Badge>
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell>{profile.weeklyHours}h</TableCell>
+                    <TableCell>{profile.dailyHours}h</TableCell>
+                    <TableCell>
+                      <div className="flex gap-1">
+                        {profile.workDays.map(day => (
+                          <Badge key={day} variant="outline" className="text-xs">
+                            {dayLabels[day]}
+                          </Badge>
+                        ))}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      {profile.startTime || '-'} - {profile.endTime || '-'}
+                    </TableCell>
+                    <TableCell>{profile.breakMinutes} min</TableCell>
+                    <TableCell>
+                      <div className="flex gap-1">
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-8 w-8 p-0"
+                          onClick={() => openEditDialog(profile)}
+                          data-testid={`button-edit-${profile.id}`}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
+                          onClick={() => { setSelectedProfile(profile); setDeleteDialogOpen(true); }}
+                          data-testid={`button-delete-${profile.id}`}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
+
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>{selectedProfile ? "Modifica Profilo" : "Nuovo Profilo Orario"}</DialogTitle>
+            <DialogDescription>Configura le impostazioni del profilo orario</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Nome Profilo</Label>
+              <Input
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                placeholder="es. Full-time Standard"
+                data-testid="input-profile-name"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Ore Settimanali</Label>
+                <Input
+                  type="number"
+                  value={formData.weeklyHours}
+                  onChange={(e) => setFormData({ ...formData, weeklyHours: parseInt(e.target.value) || 0 })}
+                  data-testid="input-weekly-hours"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Ore Giornaliere</Label>
+                <Input
+                  type="number"
+                  value={formData.dailyHours}
+                  onChange={(e) => setFormData({ ...formData, dailyHours: parseInt(e.target.value) || 0 })}
+                  data-testid="input-daily-hours"
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Giorni Lavorativi</Label>
+              <div className="flex gap-2 flex-wrap">
+                {dayLabels.map((label, index) => (
+                  <Button
+                    key={index}
+                    type="button"
+                    size="sm"
+                    variant={formData.workDays.includes(index) ? "default" : "outline"}
+                    onClick={() => toggleWorkDay(index)}
+                    data-testid={`button-day-${index}`}
+                  >
+                    {label}
+                  </Button>
+                ))}
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Orario Inizio</Label>
+                <Input
+                  type="time"
+                  value={formData.startTime}
+                  onChange={(e) => setFormData({ ...formData, startTime: e.target.value })}
+                  data-testid="input-start-time"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Orario Fine</Label>
+                <Input
+                  type="time"
+                  value={formData.endTime}
+                  onChange={(e) => setFormData({ ...formData, endTime: e.target.value })}
+                  data-testid="input-end-time"
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Pausa (minuti)</Label>
+              <Input
+                type="number"
+                value={formData.breakMinutes}
+                onChange={(e) => setFormData({ ...formData, breakMinutes: parseInt(e.target.value) || 0 })}
+                data-testid="input-break-minutes"
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <Checkbox
+                id="isDefault"
+                checked={formData.isDefault}
+                onCheckedChange={(checked) => setFormData({ ...formData, isDefault: !!checked })}
+                data-testid="checkbox-is-default"
+              />
+              <Label htmlFor="isDefault" className="text-sm">Imposta come profilo predefinito</Label>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDialogOpen(false)}>Annulla</Button>
+            <Button 
+              onClick={handleSubmit}
+              disabled={!formData.name || createMutation.isPending || updateMutation.isPending}
+              data-testid="button-save-profile"
+            >
+              {createMutation.isPending || updateMutation.isPending ? "Salvataggio..." : "Salva"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Conferma Eliminazione</DialogTitle>
+            <DialogDescription>
+              Sei sicuro di voler eliminare il profilo "{selectedProfile?.name}"? Questa azione non può essere annullata.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>Annulla</Button>
+            <Button 
+              variant="destructive"
+              onClick={() => selectedProfile && deleteMutation.mutate(selectedProfile.id)}
+              disabled={deleteMutation.isPending}
+              data-testid="button-confirm-delete"
+            >
+              {deleteMutation.isPending ? "Eliminazione..." : "Elimina"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}

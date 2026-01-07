@@ -9,7 +9,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
-import { Users, Plus, Search, Edit, Trash2, Shield, UserCog, Eye, FilePlus, Pencil, Key, TrendingUp, UserCheck, ChevronRight, Check } from "lucide-react";
+import { Link } from "wouter";
+import { Users, Plus, Search, Edit, Trash2, Shield, UserCog, Eye, FilePlus, Pencil, Key, TrendingUp, UserCheck, ChevronRight, Check, Briefcase } from "lucide-react";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
@@ -385,10 +386,18 @@ export default function ResellerTeam() {
               </div>
             </div>
           </div>
-          <Button onClick={openCreateDialog} className="shadow-lg shadow-primary/25" data-testid="button-new-staff">
-            <Plus className="h-4 w-4 mr-2" />
-            Nuovo Collaboratore
-          </Button>
+          <div className="flex gap-2">
+            <Link href="/reseller/hr">
+              <Button variant="outline" data-testid="button-hr-module">
+                <Briefcase className="h-4 w-4 mr-2" />
+                Gestione HR
+              </Button>
+            </Link>
+            <Button onClick={openCreateDialog} className="shadow-lg shadow-primary/25" data-testid="button-new-staff">
+              <Plus className="h-4 w-4 mr-2" />
+              Nuovo Collaboratore
+            </Button>
+          </div>
         </div>
       </div>
 
