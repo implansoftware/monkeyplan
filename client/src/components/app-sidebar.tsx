@@ -498,17 +498,17 @@ export function AppSidebar() {
 
   return (
     <Sidebar>
-      <SidebarHeader className="p-4 border-b border-sidebar-border">
+      <SidebarHeader className="px-4 py-3 border-b border-sidebar-border/50">
         {parentReseller?.logoUrl ? (
-          <div className="flex flex-col items-center gap-2">
-            <Avatar className="h-16 w-16 rounded-lg">
+          <div className="flex items-center gap-3">
+            <Avatar className="h-10 w-10 rounded-xl shadow-sm">
               <AvatarImage src={parentReseller.logoUrl} alt={parentReseller.ragioneSociale || parentReseller.fullName} className="object-contain" />
-              <AvatarFallback className="rounded-lg bg-primary text-primary-foreground text-sm">
+              <AvatarFallback className="rounded-xl bg-gradient-to-br from-primary to-primary/80 text-primary-foreground text-sm font-semibold">
                 {getInitials(parentReseller.ragioneSociale || parentReseller.fullName)}
               </AvatarFallback>
             </Avatar>
-            <div className="text-center">
-              <span className="font-semibold text-sm block">
+            <div className="min-w-0 flex-1">
+              <span className="font-semibold text-sm block truncate">
                 {parentReseller.ragioneSociale || parentReseller.fullName}
               </span>
               <p className="text-xs text-muted-foreground capitalize">
@@ -518,13 +518,13 @@ export function AppSidebar() {
           </div>
         ) : (
           <div className="flex items-center gap-3">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-              <Wrench className="h-4 w-4" />
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-primary/80 text-primary-foreground shadow-sm">
+              <Wrench className="h-5 w-5" />
             </div>
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2">
-                <span className="font-semibold text-sm">MonkeyPlan</span>
-                <span className="text-[10px] text-primary font-medium px-1.5 py-0.5 rounded bg-primary/10">Beta v.23</span>
+                <span className="font-bold text-sm tracking-tight">MonkeyPlan</span>
+                <span className="text-[10px] text-primary-foreground font-semibold px-1.5 py-0.5 rounded-md bg-primary shadow-sm">Beta v.23</span>
               </div>
               <p className="text-xs text-muted-foreground capitalize">
                 {user.role.replace("_", " ")}
@@ -535,7 +535,7 @@ export function AppSidebar() {
       </SidebarHeader>
 
       {isReseller && (
-        <div className="py-2 border-b border-sidebar-border">
+        <div className="px-3 py-2 border-b border-sidebar-border/50">
           <ContextSwitcher />
         </div>
       )}
@@ -549,20 +549,24 @@ export function AppSidebar() {
           // Dashboard group: render items directly without collapsible
           if (group === "Dashboard" || group === "Principale") {
             return (
-              <SidebarGroup key={group} className="py-1">
+              <SidebarGroup key={group} className="px-3 py-2">
                 <SidebarMenu>
                   {groupItems.map((item) => {
                     const isActive = location === item.url || location.startsWith(item.url + "/");
                     return (
                       <SidebarMenuItem key={item.title}>
-                        <SidebarMenuButton asChild isActive={isActive} className="px-4 py-2.5">
+                        <SidebarMenuButton 
+                          asChild 
+                          isActive={isActive} 
+                          className={`px-3 py-2.5 rounded-lg transition-all duration-200 ${isActive ? "bg-primary text-primary-foreground shadow-sm" : "hover:bg-sidebar-accent"}`}
+                        >
                           <Link 
                             href={item.url} 
                             onClick={handleLinkClick}
                             data-testid={`link-${item.title.toLowerCase().replace(/\s+/g, "-")}`}
                           >
                             <item.icon className="h-4 w-4" />
-                            <span className="font-medium">{item.title}</span>
+                            <span className="font-semibold">{item.title}</span>
                           </Link>
                         </SidebarMenuButton>
                       </SidebarMenuItem>
@@ -574,15 +578,15 @@ export function AppSidebar() {
           }
           
           return (
-            <SidebarGroup key={group} className="py-0">
+            <SidebarGroup key={group} className="px-3 py-0.5">
               <Collapsible open={isOpen} onOpenChange={(open) => setGroupOpen(group, open)}>
                 <CollapsibleTrigger asChild>
                   <SidebarMenuButton 
-                    className="w-full px-4 py-2.5 hover-elevate"
+                    className={`w-full px-3 py-2.5 rounded-lg transition-all duration-200 ${hasActiveItem && !isOpen ? "bg-sidebar-accent/50" : "hover:bg-sidebar-accent/50"}`}
                     data-testid={`button-group-${group.toLowerCase().replace(/\s+/g, "-")}`}
                   >
-                    <GroupIcon className="h-4 w-4" />
-                    <span className={`flex-1 text-left font-medium ${hasActiveItem ? "text-sidebar-primary" : ""}`}>
+                    <GroupIcon className={`h-4 w-4 ${hasActiveItem ? "text-primary" : "text-muted-foreground"}`} />
+                    <span className={`flex-1 text-left font-medium ${hasActiveItem ? "text-foreground" : "text-muted-foreground"}`}>
                       {group}
                     </span>
                     {group === "Interscambio" && pendingTransferRequestsCount > 0 && !isOpen && (
@@ -617,12 +621,12 @@ export function AppSidebar() {
                         {pendingServiceOrdersCount}
                       </span>
                     )}
-                    <ChevronRight className={`h-4 w-4 transition-transform duration-200 ${isOpen ? "rotate-90" : ""}`} />
+                    <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform duration-200 ${isOpen ? "" : "-rotate-90"}`} />
                   </SidebarMenuButton>
                 </CollapsibleTrigger>
                 <CollapsibleContent>
                   <SidebarGroupContent>
-                    <SidebarMenu className="ml-4 border-l border-sidebar-border">
+                    <SidebarMenu className="ml-6 mt-1 border-l-2 border-sidebar-border/30">
                       {groupItems.map((item) => {
                         const isActive = location === item.url || location.startsWith(item.url + "/");
                         const showTransferBadge = item.url === "/reseller/transfer-requests" && pendingTransferRequestsCount > 0;
@@ -632,13 +636,17 @@ export function AppSidebar() {
                         const showTicketsBadge = item.url === "/reseller/tickets" && pendingTicketsCount > 0;
                         return (
                           <SidebarMenuItem key={item.title}>
-                            <SidebarMenuButton asChild isActive={isActive} className="pl-4">
+                            <SidebarMenuButton 
+                              asChild 
+                              isActive={isActive} 
+                              className={`pl-4 py-2 rounded-md transition-all duration-150 ${isActive ? "bg-primary/10 text-primary font-medium" : "text-muted-foreground hover:text-foreground hover:bg-sidebar-accent/50"}`}
+                            >
                               <Link 
                                 href={item.url} 
                                 onClick={handleLinkClick}
                                 data-testid={`link-${item.title.toLowerCase().replace(/\s+/g, "-")}`}
                               >
-                                <item.icon className="h-4 w-4" />
+                                <item.icon className={`h-4 w-4 ${isActive ? "text-primary" : ""}`} />
                                 <span className="flex-1">{item.title}</span>
                                 {showTransferBadge && (
                                   <span 
@@ -744,26 +752,26 @@ export function AppSidebar() {
         })}
       </SidebarContent>
 
-      <SidebarFooter className="p-3 border-t border-sidebar-border">
-        <div className="flex items-center gap-2">
-          <Avatar className="h-7 w-7">
-            <AvatarFallback className="text-[10px] bg-muted">
+      <SidebarFooter className="px-3 py-3 border-t border-sidebar-border/50">
+        <div className="flex items-center gap-3 p-2 rounded-lg bg-sidebar-accent/30 hover:bg-sidebar-accent/50 transition-colors duration-200">
+          <Avatar className="h-9 w-9 shadow-sm">
+            <AvatarFallback className="text-xs font-semibold bg-gradient-to-br from-primary/20 to-primary/10 text-primary">
               {getInitials(user.fullName)}
             </AvatarFallback>
           </Avatar>
           <div className="flex-1 min-w-0">
-            <p className="text-xs font-medium truncate">{user.fullName}</p>
-            <p className="text-[10px] text-muted-foreground truncate">{user.email}</p>
+            <p className="text-sm font-medium truncate">{user.fullName}</p>
+            <p className="text-xs text-muted-foreground truncate">{user.email}</p>
           </div>
           <Button
             variant="ghost"
             size="icon"
-            className="h-7 w-7 flex-shrink-0"
+            className="h-8 w-8 flex-shrink-0 rounded-lg hover:bg-destructive/10 hover:text-destructive"
             onClick={() => logoutMutation.mutate()}
             disabled={logoutMutation.isPending}
             data-testid="button-logout"
           >
-            <LogOut className="h-3.5 w-3.5" />
+            <LogOut className="h-4 w-4" />
           </Button>
         </div>
       </SidebarFooter>
