@@ -41,6 +41,11 @@ import {
   ArrowRightLeft,
   UserCircle,
   Tag,
+  Briefcase,
+  Clock,
+  Calendar,
+  Stethoscope,
+  ReceiptText,
 } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useState, Fragment, useMemo } from "react";
@@ -152,9 +157,16 @@ const menuItems = {
   ],
   reseller: [
     { title: "Dashboard", url: "/reseller", icon: LayoutDashboard, group: "Dashboard" },
-    { title: "Clienti", url: "/reseller/customers", icon: Users, group: "Clienti & Team" },
-    { title: "Team", url: "/reseller/team", icon: UsersRound, group: "Clienti & Team" },
-    { title: "Appuntamenti", url: "/reseller/appointments", icon: CalendarCheck, group: "Clienti & Team" },
+    { title: "Clienti", url: "/reseller/customers", icon: Users, group: "Clienti" },
+    { title: "Appuntamenti", url: "/reseller/appointments", icon: CalendarCheck, group: "Clienti" },
+    { title: "Dashboard HR", url: "/reseller/hr", icon: Briefcase, group: "Gestione HR" },
+    { title: "Team", url: "/reseller/team", icon: UsersRound, group: "Gestione HR" },
+    { title: "Presenze", url: "/reseller/hr/attendance", icon: Clock, group: "Gestione HR" },
+    { title: "Ferie e Permessi", url: "/reseller/hr/leave-requests", icon: Calendar, group: "Gestione HR" },
+    { title: "Profili Orario", url: "/reseller/hr/work-profiles", icon: Settings, group: "Gestione HR" },
+    { title: "Rimborsi Spese", url: "/reseller/hr/expenses", icon: ReceiptText, group: "Gestione HR" },
+    { title: "Malattie", url: "/reseller/hr/sick-leave", icon: Stethoscope, group: "Gestione HR" },
+    { title: "Calendario Team", url: "/reseller/hr/calendar", icon: CalendarCheck, group: "Gestione HR" },
     { title: "Centri Riparazione", url: "/reseller/repair-centers", icon: Building, group: "Centri & Riparazioni" },
     { title: "Lavorazioni", url: "/reseller/repairs", icon: Wrench, group: "Centri & Riparazioni" },
     { title: "Listino Prezzi", url: "/reseller/service-catalog", icon: Receipt, group: "Centri & Riparazioni" },
