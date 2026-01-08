@@ -8730,14 +8730,24 @@ export class DatabaseStorage implements IStorage {
     return leave || undefined;
   }
 
-  async listHrSickLeaves(filters: { userId?: string; resellerId?: string }): Promise<HrSickLeave[]> {
+  async listHrSickLeaves(filters: { userId?: string; resellerId?: string }): Promise<(HrSickLeave & { user: { fullName: string } | null })[]> {
     const conditions = [];
     if (filters.userId) conditions.push(eq(hrSickLeaves.userId, filters.userId));
     if (filters.resellerId) conditions.push(eq(hrSickLeaves.resellerId, filters.resellerId));
     
-    return db.select().from(hrSickLeaves)
+    const results = await db.select({
+      sickLeave: hrSickLeaves,
+      userFullName: users.fullName,
+    })
+      .from(hrSickLeaves)
+      .leftJoin(users, eq(hrSickLeaves.userId, users.id))
       .where(conditions.length > 0 ? and(...conditions) : undefined)
       .orderBy(desc(hrSickLeaves.startDate));
+    
+    return results.map(r => ({
+      ...r.sickLeave,
+      user: r.userFullName ? { fullName: r.userFullName } : null,
+    }));
   }
 
   async updateHrSickLeave(id: string, updates: Partial<HrSickLeave>): Promise<HrSickLeave> {
