@@ -15251,15 +15251,14 @@ export function registerRoutes(app: Express): Server {
       res.status(500).send(error.message);
     }
   });
-
-  // GET /api/my-parent-reseller - Get parent reseller info for sub-resellers and reseller_staff
+  // GET /api/my-parent-reseller - Get parent reseller info for sub-resellers, reseller_staff, and repair_center
   app.get("/api/my-parent-reseller", requireAuth, async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
-      // For reseller_staff, use resellerId; for sub-resellers, use parentResellerId
+      // For reseller_staff and repair_center, use resellerId; for sub-resellers, use parentResellerId
       let targetResellerId = null;
-      if (req.user.role === 'reseller_staff' && req.user.resellerId) {
+      if ((req.user.role === 'reseller_staff' || req.user.role === 'repair_center') && req.user.resellerId) {
         targetResellerId = req.user.resellerId;
       } else if ((req.user as any).parentResellerId) {
         targetResellerId = (req.user as any).parentResellerId;
@@ -15284,7 +15283,6 @@ export function registerRoutes(app: Express): Server {
       res.status(500).send(error.message);
     }
   });
-
   // GET /api/resellers - List all resellers (users with role 'reseller')
   app.get("/api/resellers", requireAuth, requireRole("admin"), async (req, res) => {
     try {

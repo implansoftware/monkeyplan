@@ -328,13 +328,16 @@ export function AppSidebar() {
 
   const isReseller = user?.role === "reseller";
   const isResellerStaff = user?.role === "reseller_staff";
+  const isRepairCenter = user?.role === "repair_center";
   const isFranchisingOrGdo = user?.resellerCategory === "franchising" || user?.resellerCategory === "gdo";
   const hasParentReseller = !!(user as any)?.parentResellerId;
+  // Repair centers and reseller staff should also see their reseller's logo
+  const shouldShowResellerLogo = hasParentReseller || isResellerStaff || isRepairCenter;
 
-  // Query parent reseller info for sub-resellers (to show their logo)
+  // Query parent reseller info for sub-resellers, staff, and repair centers (to show their logo)
   const { data: parentReseller } = useQuery<{ id: string; fullName: string; logoUrl: string | null; ragioneSociale: string | null }>({
     queryKey: ["/api/my-parent-reseller"],
-    enabled: hasParentReseller,
+    enabled: shouldShowResellerLogo,
   });
 
   // Query sub-resellers for franchising/gdo resellers
