@@ -27956,7 +27956,8 @@ export function registerRoutes(app: Express): Server {
       if (!req.user) return res.status(401).json({ error: "Non autenticato" });
       const resellerId = req.user.role === 'reseller' ? req.user.id : req.user.resellerId;
       if (!resellerId) return res.status(400).json({ error: "Reseller ID non trovato" });
-      const profiles = await storage.listHrWorkProfiles(resellerId);
+      // Use hierarchical query to include sub-resellers and repair centers
+      const profiles = await storage.listHrWorkProfilesHierarchical(resellerId);
       res.json(profiles);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
