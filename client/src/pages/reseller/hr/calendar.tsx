@@ -40,7 +40,14 @@ export default function HrCalendar() {
   const monthEnd = endOfMonth(currentDate);
 
   const { data: calendarData = [], isLoading } = useQuery<CalendarEvent[]>({
-    queryKey: ["/api/reseller/hr/calendar", { startDate: monthStart.toISOString(), endDate: monthEnd.toISOString() }],
+    queryKey: ["/api/reseller/hr/calendar", monthStart.toISOString(), monthEnd.toISOString()],
+    queryFn: async () => {
+      const res = await fetch(`/api/reseller/hr/calendar?startDate=${encodeURIComponent(monthStart.toISOString())}&endDate=${encodeURIComponent(monthEnd.toISOString())}`, {
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("Errore nel caricamento del calendario");
+      return res.json();
+    },
   });
 
   const daysInMonth = eachDayOfInterval({ start: monthStart, end: monthEnd });

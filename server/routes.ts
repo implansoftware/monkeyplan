@@ -28713,7 +28713,6 @@ export function registerRoutes(app: Express): Server {
       res.status(500).json({ error: error.message });
     }
   });
-
   // HR Calendar Data
   app.get("/api/reseller/hr/calendar", requireRole("reseller", "reseller_staff"), async (req, res) => {
     try {
@@ -28726,8 +28725,11 @@ export function registerRoutes(app: Express): Server {
         return res.status(400).json({ error: "Parametri startDate e endDate richiesti" });
       }
       
+      // Get all accessible reseller IDs for hierarchical visibility
+      const accessibleResellerIds = await storage.getAccessibleResellerIds(resellerId);
+      
       const calendarData = await storage.getHrCalendarData(
-        resellerId,
+        accessibleResellerIds,
         new Date(startDate as string),
         new Date(endDate as string)
       );
