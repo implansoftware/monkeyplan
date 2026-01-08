@@ -92,6 +92,8 @@ export function CustomerWizardDialog({ open, onOpenChange, onSuccess }: Customer
     resolver: zodResolver(customerWizardSchema),
     defaultValues: {
       customerType: "private",
+      username: "",
+      password: "",
       fullName: "",
       email: "",
       phone: "",
@@ -329,6 +331,41 @@ export function CustomerWizardDialog({ open, onOpenChange, onSuccess }: Customer
               )}
             />
           )}
+
+          <Separator />
+
+          {/* Campi credenziali */}
+          <div className="grid grid-cols-2 gap-4">
+            <FormField
+              control={form.control as any}
+              name="username"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Username *</FormLabel>
+                  <FormControl>
+                    <Input {...field} data-testid="input-username" />
+                  </FormControl>
+                  <FormDescription>Username per l'accesso al portale</FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control as any}
+              name="password"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Password *</FormLabel>
+                  <FormControl>
+                    <Input type="password" {...field} data-testid="input-password" />
+                  </FormControl>
+                  <FormDescription>Minimo 6 caratteri</FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
 
           <Separator />
 

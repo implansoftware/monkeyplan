@@ -5041,6 +5041,8 @@ export const createTicketMessageSchema = z.object({
 
 // Customer Registration Wizard Schemas
 const baseCustomerSchema = z.object({
+  username: z.string().min(3, "Username deve avere almeno 3 caratteri").trim(),
+  password: z.string().min(6, "Password deve avere almeno 6 caratteri"),
   email: z.string().email(),
   phone: z.string().min(1).trim(),
   address: z.string().optional(),
