@@ -69,10 +69,11 @@ export function CustomerWizardDialog({ open, onOpenChange, onSuccess }: Customer
   
   // Carica i centri di riparazione per reseller/repair_center
   const isReseller = user?.role === "reseller";
+  const isResellerStaff = user?.role === "reseller_staff";
   const isRepairCenter = user?.role === "repair_center";
   const { data: repairCenters = [] } = useQuery<RepairCenter[]>({
     queryKey: ["/api/reseller/repair-centers"],
-    enabled: isReseller || isRepairCenter,
+    enabled: isReseller || isResellerStaff || isRepairCenter,
   });
   
   // Carica i sub-reseller per il reseller
@@ -118,13 +119,15 @@ export function CustomerWizardDialog({ open, onOpenChange, onSuccess }: Customer
           payload.subResellerId = selectedSubResellerId;
         }
       }
-      if (isReseller && selectedSubResellerId) {
+      if ((isReseller || isResellerStaff) && selectedSubResellerId) {
         payload.subResellerId = selectedSubResellerId;
       }
       if (selectedRepairCenterIds.length > 0) {
         payload.repairCenterIds = selectedRepairCenterIds;
       }
-      const response = await apiRequest("POST", "/api/customers", payload);
+      // Use appropriate endpoint based on user role
+      const endpoint = (isReseller || isResellerStaff) ? "/api/reseller/customers" : "/api/customers";
+      const response = await apiRequest("POST", endpoint, payload);
       const result = await response.json() as {
         customer: {
           id: string;
