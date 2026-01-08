@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
+import { useAuth } from "@/hooks/use-auth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -30,18 +31,23 @@ export function CustomerBranchManager({ customerId, customerName, readOnly = fal
   const [selectedProvince, setSelectedProvince] = useState("");
   const [selectedPostalCode, setSelectedPostalCode] = useState("");
   const { toast } = useToast();
+  const { user } = useAuth();
+  
+  // Use unified customer branches endpoint for all roles
+  const branchesQueryKey = ['/api/customers', customerId, 'branches'];
+  const branchesCreateEndpoint = `/api/customers/${customerId}/branches`;
 
   const { data: branches = [], isLoading } = useQuery<CustomerBranch[]>({
-    queryKey: ['/api/customers', customerId, 'branches'],
+    queryKey: branchesQueryKey,
   });
 
   const createBranchMutation = useMutation({
     mutationFn: async (data: Partial<CustomerBranch>) => {
-      const res = await apiRequest("POST", `/api/customers/${customerId}/branches`, data);
+      const res = await apiRequest("POST", branchesCreateEndpoint, data);
       return await res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/customers', customerId, 'branches'] });
+      queryClient.invalidateQueries({ queryKey: branchesQueryKey });
       setDialogOpen(false);
       toast({ title: "Filiale creata con successo" });
     },
@@ -56,7 +62,7 @@ export function CustomerBranchManager({ customerId, customerName, readOnly = fal
       return await res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/customers', customerId, 'branches'] });
+      queryClient.invalidateQueries({ queryKey: branchesQueryKey });
       setEditBranch(null);
       toast({ title: "Filiale aggiornata con successo" });
     },
@@ -70,7 +76,7 @@ export function CustomerBranchManager({ customerId, customerName, readOnly = fal
       await apiRequest("DELETE", `/api/branches/${branchId}`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/customers', customerId, 'branches'] });
+      queryClient.invalidateQueries({ queryKey: branchesQueryKey });
       toast({ title: "Filiale eliminata" });
     },
     onError: (error: Error) => {

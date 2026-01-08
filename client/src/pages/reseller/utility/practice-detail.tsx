@@ -158,9 +158,9 @@ export default function ResellerUtilityPracticeDetail() {
   const practiceProducts = practiceData?.practiceProducts || [];
 
   const { data: customer } = useQuery<User>({
-    queryKey: ["/api/customers", practice?.customerId],
+    queryKey: ["/api/reseller/customers", practice?.customerId],
     queryFn: async () => {
-      const res = await fetch(`/api/customers`);
+      const res = await fetch(`/api/reseller/customers`);
       const users = await res.json();
       return users.find((u: User) => u.id === practice?.customerId);
     },

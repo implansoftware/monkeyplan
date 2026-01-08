@@ -180,7 +180,7 @@ export function RepairIntakeWizard({
   }, [currentStep]);
 
   // Queries
-  const customerEndpoint = user?.role === "reseller" ? "/api/reseller/customers" : "/api/customers";
+  const customerEndpoint = (user?.role === "reseller" || user?.role === "reseller_staff") ? "/api/reseller/customers" : "/api/customers";
 
   // Mutation per creare nuovo cliente rapido
   const createCustomerMutation = useMutation({

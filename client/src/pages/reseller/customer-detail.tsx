@@ -55,7 +55,7 @@ export default function ResellerCustomerDetail() {
   const { toast } = useToast();
 
   const { data, isLoading, error } = useQuery<CustomerDetailResponse>({
-    queryKey: ["/api/customers", customerId],
+    queryKey: ["/api/reseller/customers", customerId],
     enabled: !!customerId,
   });
 
@@ -69,7 +69,7 @@ export default function ResellerCustomerDetail() {
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/customers", customerId] });
+      queryClient.invalidateQueries({ queryKey: ["/api/reseller/customers", customerId] });
       queryClient.invalidateQueries({ queryKey: ["/api/reseller/customers"] });
       setEditDialogOpen(false);
       toast({

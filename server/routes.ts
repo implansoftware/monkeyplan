@@ -15639,8 +15639,8 @@ export function registerRoutes(app: Express): Server {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
-      // Only admin and reseller can quick-create customers
-      if (!['admin', 'reseller'].includes(req.user.role)) {
+      // Only admin, reseller, reseller_staff and repair_center can quick-create customers
+      if (!['admin', 'reseller', 'reseller_staff', 'repair_center'].includes(req.user.role)) {
         return res.status(403).send("Forbidden");
       }
       
@@ -15709,6 +15709,10 @@ export function registerRoutes(app: Express): Server {
           }
           assignedSubResellerId = validatedData.subResellerId;
         }
+      } else if (req.user.role === 'reseller_staff') {
+        // reseller_staff uses parent reseller's ID via getEffectiveContext
+        const context = getEffectiveContext(req);
+        assignedResellerId = context.resellerId;
       } else if (req.user.role === 'admin') {
         assignedResellerId = (req.body.resellerId as string) || null;
         // For admin, sub-reseller requires a valid resellerId
@@ -15722,6 +15726,9 @@ export function registerRoutes(app: Express): Server {
           }
           assignedSubResellerId = validatedData.subResellerId;
         }
+      } else if (req.user.role === 'repair_center') {
+        // repair_center uses its parent reseller and itself as repair center
+        assignedResellerId = req.user.resellerId;
       }
       
       // Create customer
@@ -15737,10 +15744,14 @@ export function registerRoutes(app: Express): Server {
         subResellerId: assignedSubResellerId,
       });
       
-      // If acting as a repair center context, assign customer to that center
-      const context = getEffectiveContext(req);
-      if (context.repairCenterId) {
-        await storage.setCustomerRepairCenters(customer.id, [context.repairCenterId]);
+      // If acting as a repair center context or user is a repair center, assign customer to that center
+      if (req.user.role === 'repair_center') {
+        await storage.setCustomerRepairCenters(customer.id, [req.user.id]);
+      } else {
+        const context = getEffectiveContext(req);
+        if (context.repairCenterId) {
+          await storage.setCustomerRepairCenters(customer.id, [context.repairCenterId]);
+        }
       }
       
       // Remove password from response
@@ -15808,6 +15819,10 @@ export function registerRoutes(app: Express): Server {
         if (subResellerIdFromBody) {
           return res.status(400).send("I centri di riparazione non possono assegnare sub-reseller ai clienti");
         }
+      } else if (req.user.role === 'reseller_staff') {
+        // reseller_staff uses parent reseller's ID via getEffectiveContext
+        const context = getEffectiveContext(req);
+        assignedResellerId = context.resellerId;
       } else if (req.user.role === 'admin') {
         // Admin can optionally specify resellerId from body
         assignedResellerId = (req.body.resellerId as string) || null;
@@ -16082,7 +16097,7 @@ export function registerRoutes(app: Express): Server {
       if (!req.user) return res.status(401).send("Unauthorized");
       
       // Only admin, reseller (for their customers) can delete branches
-      if (!['admin', 'reseller'].includes(req.user.role)) {
+      if (!['admin', 'reseller', 'reseller_staff', 'repair_center'].includes(req.user.role)) {
         return res.status(403).send("Forbidden");
       }
       
@@ -19195,6 +19210,10 @@ export function registerRoutes(app: Express): Server {
         }
         ownerType = 'reseller';
         ownerId = req.user.resellerId;
+      } else if (req.user.role === 'reseller_staff') {
+        // reseller_staff uses parent reseller's ID via getEffectiveContext
+        const context = getEffectiveContext(req);
+        assignedResellerId = context.resellerId;
       } else if (req.user.role === 'admin') {
         // Admin can specify any owner type, or default to admin
         if (!ownerType || !ownerId) {

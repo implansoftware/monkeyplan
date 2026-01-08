@@ -326,7 +326,7 @@ export default function ResellerUtilityPractices() {
   });
 
   const { data: customers = [] } = useQuery<User[]>({
-    queryKey: ["/api/customers"],
+    queryKey: ["/api/reseller/customers"],
   });
 
   const { data: products = [] } = useQuery<Product[]>({
@@ -371,7 +371,7 @@ export default function ResellerUtilityPractices() {
       return await res.json();
     },
     onSuccess: (newCustomer: User) => {
-      queryClient.invalidateQueries({ queryKey: ["/api/customers"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/reseller/customers"] });
       setSelectedCustomerId(newCustomer.id);
       setNewCustomerDialogOpen(false);
       setNewCustomerName("");

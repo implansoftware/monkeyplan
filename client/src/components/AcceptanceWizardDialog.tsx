@@ -227,7 +227,7 @@ export function AcceptanceWizardDialog({
     fullName: string;
     email: string;
   }>>({
-    queryKey: user?.role === "reseller" ? ["/api/reseller/customers"] : ["/api/customers"],
+    queryKey: (user?.role === "reseller" || user?.role === "reseller_staff") ? ["/api/reseller/customers"] : ["/api/customers"],
     select: (data: any[]) => {
       if (!data) return [];
       return data.map((u: any) => ({
@@ -236,7 +236,7 @@ export function AcceptanceWizardDialog({
         email: u.email || '',
       }));
     },
-    enabled: user?.role === "admin" || user?.role === "repair_center" || user?.role === "reseller",
+    enabled: user?.role === "admin" || user?.role === "repair_center" || user?.role === "reseller" || user?.role === "reseller_staff",
   });
 
   const { data: resellerRepairCenters = [] } = useQuery<Array<{
@@ -440,7 +440,7 @@ export function AcceptanceWizardDialog({
     isActive: boolean;
   }>>({
     queryKey: ["/api/customers", selectedCustomerId, "branches"],
-    enabled: !!selectedCustomerId && (user?.role === "admin" || user?.role === "repair_center" || user?.role === "reseller"),
+    enabled: !!selectedCustomerId && (user?.role === "admin" || user?.role === "repair_center" || user?.role === "reseller" || user?.role === "reseller_staff"),
   });
 
   const activeBranches = customerBranches.filter(b => b.isActive);
@@ -552,7 +552,7 @@ export function AcceptanceWizardDialog({
           role: "customer", 
           isActive: true 
         };
-      } else if (user?.role === "reseller") {
+      } else if (user?.role === "reseller" || user?.role === "reseller_staff") {
         endpoint = "/api/reseller/customers";
         payload = { 
           ...basePayload, 
@@ -562,8 +562,14 @@ export function AcceptanceWizardDialog({
           repairCenterId: data.repairCenterId || undefined,
         };
       } else {
+        // repair_center uses the unified customers endpoint
         endpoint = "/api/customers";
-        payload = basePayload;
+        payload = { 
+          ...basePayload, 
+          username: data.username,
+          password: data.password,
+          isActive: true 
+        };
       }
       
       const response = await apiRequest("POST", endpoint, payload);

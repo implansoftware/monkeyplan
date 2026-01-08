@@ -163,8 +163,13 @@ export function UtilityPracticeWizard({ open, onOpenChange, onSuccess }: Utility
     enabled: open,
   });
 
+  // Select endpoint based on user role
+  const customerEndpoint = (user?.role === "reseller" || user?.role === "reseller_staff") 
+    ? "/api/reseller/customers" 
+    : (user?.role === "repair_center" ? "/api/repair-center/customers" : "/api/customers");
+  
   const { data: customerUsers = [] } = useQuery<UserType[]>({
-    queryKey: ["/api/customers"],
+    queryKey: [customerEndpoint],
     enabled: open,
   });
 
