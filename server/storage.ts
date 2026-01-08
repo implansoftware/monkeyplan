@@ -8545,6 +8545,80 @@ export class DatabaseStorage implements IStorage {
     return [...new Set(ids)]; // Remove duplicates
   }
 
+  // Get accessible entities with names for calendar filter dropdown
+  async getAccessibleEntitiesForCalendar(resellerId: string): Promise<Array<{
+    type: "reseller" | "repair_center";
+    id: string;
+    name: string;
+    parentId: string | null;
+  }>> {
+    const entities: Array<{
+      type: "reseller" | "repair_center";
+      id: string;
+      name: string;
+      parentId: string | null;
+    }> = [];
+    
+    // Get all sub-resellers recursively
+    const resellerIds: string[] = [];
+    const collectSubResellers = async (parentIds: string[]) => {
+      if (parentIds.length === 0) return;
+      const children = await db.select({
+        id: users.id,
+        fullName: users.fullName,
+        companyName: users.companyName,
+        parentResellerId: users.parentResellerId
+      })
+        .from(users)
+        .where(and(
+          inArray(users.parentResellerId, parentIds),
+          eq(users.role, 'reseller')
+        ));
+      const newIds: string[] = [];
+      for (const child of children) {
+        if (child.id && !resellerIds.includes(child.id)) {
+          resellerIds.push(child.id);
+          newIds.push(child.id);
+          entities.push({
+            type: 'reseller',
+            id: child.id,
+            name: child.companyName || child.fullName || 'Sub-Reseller',
+            parentId: child.parentResellerId || null
+          });
+        }
+      }
+      if (newIds.length > 0) {
+        await collectSubResellers(newIds);
+      }
+    };
+    await collectSubResellers([resellerId]);
+    
+    // Get repair centers owned by all resellers in hierarchy (including root)
+    const allResellerIds = [resellerId, ...resellerIds];
+    const centers = await db.select({
+      id: repairCenters.id,
+      name: repairCenters.name,
+      resellerId: repairCenters.resellerId,
+      subResellerId: repairCenters.subResellerId
+    })
+      .from(repairCenters)
+      .where(or(
+        inArray(repairCenters.resellerId, allResellerIds),
+        inArray(repairCenters.subResellerId, allResellerIds)
+      ));
+    
+    for (const center of centers) {
+      entities.push({
+        type: 'repair_center',
+        id: center.id,
+        name: center.name || 'Centro Riparazioni',
+        parentId: center.subResellerId || center.resellerId || null
+      });
+    }
+    
+    return entities;
+  }
+
   async getHrClockingPolicy(id: string): Promise<HrClockingPolicy | undefined> {
     const [policy] = await db.select().from(hrClockingPolicies).where(eq(hrClockingPolicies.id, id));
     return policy || undefined;

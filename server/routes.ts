@@ -8544,6 +8544,7 @@ export function registerRoutes(app: Express): Server {
         updateData = {
           ...updateData,
           shippingAddress,
+
           shippingCity,
           shippingCap,
           shippingProvince,
@@ -28713,6 +28714,21 @@ export function registerRoutes(app: Express): Server {
       res.status(500).json({ error: error.message });
     }
   });
+
+  // HR Calendar Entities - list accessible entities for filter dropdown
+  app.get("/api/reseller/hr/calendar/entities", requireRole("reseller", "reseller_staff"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      const resellerId = req.user.role === 'reseller' ? req.user.id : req.user.resellerId;
+      if (!resellerId) return res.status(400).json({ error: "Reseller ID non trovato" });
+      
+      const entities = await storage.getAccessibleEntitiesForCalendar(resellerId);
+      res.json(entities);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   // HR Calendar Data
   app.get("/api/reseller/hr/calendar", requireRole("reseller", "reseller_staff"), async (req, res) => {
     try {
@@ -28720,7 +28736,7 @@ export function registerRoutes(app: Express): Server {
       const resellerId = req.user.role === 'reseller' ? req.user.id : req.user.resellerId;
       if (!resellerId) return res.status(400).json({ error: "Reseller ID non trovato" });
       
-      const { startDate, endDate } = req.query;
+      const { startDate, endDate, entityType, entityId } = req.query;
       if (!startDate || !endDate) {
         return res.status(400).json({ error: "Parametri startDate e endDate richiesti" });
       }
@@ -28728,8 +28744,29 @@ export function registerRoutes(app: Express): Server {
       // Get all accessible reseller IDs for hierarchical visibility
       const accessibleResellerIds = await storage.getAccessibleResellerIds(resellerId);
       
+      // Filter by entity if specified
+      let filteredResellerIds = accessibleResellerIds;
+      if (entityType && entityId) {
+        const eType = entityType as string;
+        const eId = entityId as string;
+        
+        // Verify the entity is accessible
+        if (!accessibleResellerIds.includes(eId)) {
+          return res.status(403).json({ error: "Entità non accessibile" });
+        }
+        
+        if (eType === 'reseller') {
+          // Filter to this specific reseller and its subordinates
+          const subIds = await storage.getAccessibleResellerIds(eId);
+          filteredResellerIds = subIds.filter(id => accessibleResellerIds.includes(id));
+        } else if (eType === 'repair_center') {
+          // Filter to just this repair center
+          filteredResellerIds = [eId];
+        }
+      }
+      
       const calendarData = await storage.getHrCalendarData(
-        accessibleResellerIds,
+        filteredResellerIds,
         new Date(startDate as string),
         new Date(endDate as string)
       );
