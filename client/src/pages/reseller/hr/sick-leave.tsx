@@ -36,6 +36,11 @@ interface SickLeave {
   user?: { fullName: string };
 }
 
+interface TeamMember {
+  id: string;
+  fullName: string;
+}
+
 const statusLabels: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
   pending: { label: "In Corso", variant: "secondary" },
   confirmed: { label: "Confermata", variant: "default" },
@@ -46,6 +51,7 @@ export default function HrSickLeave() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [newSickLeave, setNewSickLeave] = useState({
+    userId: "",
     startDate: "",
     endDate: "",
     certificateNumber: "",
@@ -58,6 +64,10 @@ export default function HrSickLeave() {
     queryKey: ["/api/reseller/hr/sick-leaves"],
   });
 
+  const { data: teamMembers = [] } = useQuery<TeamMember[]>({
+    queryKey: ["/api/reseller/team"],
+  });
+
   const createMutation = useMutation({
     mutationFn: async (data: any) => {
       return apiRequest("POST", "/api/reseller/hr/sick-leaves", {
@@ -68,7 +78,7 @@ export default function HrSickLeave() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/reseller/hr/sick-leaves"] });
       setDialogOpen(false);
-      setNewSickLeave({ startDate: "", endDate: "", certificateNumber: "", inpsProtocol: "", notes: "" });
+      setNewSickLeave({ userId: "", startDate: "", endDate: "", certificateNumber: "", inpsProtocol: "", notes: "" });
       toast({ title: "Malattia registrata", description: "La comunicazione di malattia è stata registrata." });
     },
     onError: (error: any) => {
@@ -210,6 +220,24 @@ export default function HrSickLeave() {
             <DialogDescription>Inserisci i dati della comunicazione di malattia</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Dipendente</Label>
+              <Select
+                value={newSickLeave.userId}
+                onValueChange={(value) => setNewSickLeave({ ...newSickLeave, userId: value })}
+              >
+                <SelectTrigger data-testid="select-employee">
+                  <SelectValue placeholder="Seleziona dipendente" />
+                </SelectTrigger>
+                <SelectContent>
+                  {teamMembers.map((member) => (
+                    <SelectItem key={member.id} value={member.id}>
+                      {member.fullName}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Data Inizio</Label>
@@ -262,7 +290,7 @@ export default function HrSickLeave() {
             <Button variant="outline" onClick={() => setDialogOpen(false)}>Annulla</Button>
             <Button 
               onClick={() => createMutation.mutate(newSickLeave)}
-              disabled={!newSickLeave.startDate || createMutation.isPending}
+              disabled={!newSickLeave.userId || !newSickLeave.startDate || createMutation.isPending}
               data-testid="button-submit-sick-leave"
             >
               {createMutation.isPending ? "Registrazione..." : "Registra"}
