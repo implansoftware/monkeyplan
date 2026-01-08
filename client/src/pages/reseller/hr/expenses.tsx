@@ -19,7 +19,8 @@ import {
   Clock,
   Filter,
   Euro,
-  FileText
+  FileText,
+  User
 } from "lucide-react";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -39,6 +40,12 @@ interface ExpenseReport {
   user?: { fullName: string };
 }
 
+interface TeamMember {
+  id: string;
+  fullName: string;
+  role: string;
+}
+
 const statusLabels: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
   draft: { label: "Bozza", variant: "outline" },
   pending: { label: "In Attesa", variant: "secondary" },
@@ -52,12 +59,17 @@ export default function HrExpenses() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [newReport, setNewReport] = useState({
     title: "",
-    description: ""
+    description: "",
+    userId: ""
   });
   const { toast } = useToast();
 
   const { data: reports = [], isLoading } = useQuery<ExpenseReport[]>({
     queryKey: ["/api/reseller/hr/expense-reports"],
+  });
+
+  const { data: employees = [] } = useQuery<TeamMember[]>({
+    queryKey: ["/api/reseller/team"],
   });
 
   const createMutation = useMutation({
@@ -71,7 +83,7 @@ export default function HrExpenses() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/reseller/hr/expense-reports"] });
       setDialogOpen(false);
-      setNewReport({ title: "", description: "" });
+      setNewReport({ title: "", description: "", userId: "" });
       toast({ title: "Nota spese creata", description: "La nota spese è stata creata con successo." });
     },
     onError: (error: any) => {
@@ -263,7 +275,26 @@ export default function HrExpenses() {
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label>Titolo</Label>
+              <Label>Dipendente Richiedente *</Label>
+              <Select 
+                value={newReport.userId} 
+                onValueChange={(v) => setNewReport({ ...newReport, userId: v })}
+              >
+                <SelectTrigger data-testid="select-employee">
+                  <User className="h-4 w-4 mr-2 text-muted-foreground" />
+                  <SelectValue placeholder="Seleziona dipendente" />
+                </SelectTrigger>
+                <SelectContent>
+                  {employees.map((emp) => (
+                    <SelectItem key={emp.id} value={emp.id} data-testid={`option-employee-${emp.id}`}>
+                      {emp.fullName}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Titolo *</Label>
               <Input
                 value={newReport.title}
                 onChange={(e) => setNewReport({ ...newReport, title: e.target.value })}
@@ -285,7 +316,7 @@ export default function HrExpenses() {
             <Button variant="outline" onClick={() => setDialogOpen(false)}>Annulla</Button>
             <Button 
               onClick={() => createMutation.mutate(newReport)}
-              disabled={!newReport.title || createMutation.isPending}
+              disabled={!newReport.title || !newReport.userId || createMutation.isPending}
               data-testid="button-create-expense"
             >
               {createMutation.isPending ? "Creazione..." : "Crea"}
