@@ -8821,15 +8821,29 @@ export class DatabaseStorage implements IStorage {
     return report || undefined;
   }
 
-  async listHrExpenseReports(filters: { userId?: string; resellerId?: string; status?: string }): Promise<HrExpenseReport[]> {
+  async listHrExpenseReports(filters: { userId?: string; resellerId?: string; status?: string }): Promise<(HrExpenseReport & { user?: { fullName: string } })[]> {
     const conditions = [];
     if (filters.userId) conditions.push(eq(hrExpenseReports.userId, filters.userId));
     if (filters.resellerId) conditions.push(eq(hrExpenseReports.resellerId, filters.resellerId));
     if (filters.status) conditions.push(eq(hrExpenseReports.status, filters.status as any));
     
-    return db.select().from(hrExpenseReports)
+    const results = await db.select({
+      report: hrExpenseReports,
+      userName: users.fullName
+    })
+      .from(hrExpenseReports)
+      .leftJoin(users, eq(hrExpenseReports.userId, users.id))
       .where(conditions.length > 0 ? and(...conditions) : undefined)
       .orderBy(desc(hrExpenseReports.createdAt));
+    
+    return results.map(r => ({
+      ...r.report,
+      user: r.userName ? { fullName: r.userName } : undefined
+    }));
+  }
+
+  async deleteHrExpenseReport(id: string): Promise<void> {
+    await db.delete(hrExpenseReports).where(eq(hrExpenseReports.id, id));
   }
 
   async updateHrExpenseReport(id: string, updates: Partial<HrExpenseReport>): Promise<HrExpenseReport> {

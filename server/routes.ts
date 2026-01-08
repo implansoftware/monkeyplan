@@ -28474,6 +28474,30 @@ export function registerRoutes(app: Express): Server {
       res.status(500).json({ error: error.message });
     }
   });
+  app.delete("/api/reseller/hr/expense-reports/:id", requireRole("reseller", "reseller_staff"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      const resellerId = req.user.role === 'reseller' ? req.user.id : req.user.resellerId;
+      
+      await storage.deleteHrExpenseReport(req.params.id);
+      
+      if (resellerId) {
+        await storage.createHrAuditLog({
+          resellerId,
+          userId: req.user.id,
+          action: 'delete',
+          entityType: 'expense_report',
+          entityId: req.params.id,
+          newValues: {}
+        });
+      }
+      
+      res.json({ success: true });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
 
   // HR Expense Items
   app.get("/api/reseller/hr/expense-reports/:reportId/items", requireRole("reseller", "reseller_staff"), async (req, res) => {

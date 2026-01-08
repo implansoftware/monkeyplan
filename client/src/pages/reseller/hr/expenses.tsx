@@ -20,7 +20,9 @@ import {
   Filter,
   Euro,
   FileText,
-  User
+  User,
+  Send,
+  Trash2
 } from "lucide-react";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -102,6 +104,19 @@ export default function HrExpenses() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/reseller/hr/expense-reports"] });
       toast({ title: "Stato aggiornato", description: "Lo stato della nota spese è stato aggiornato." });
+    },
+    onError: (error: any) => {
+      toast({ title: "Errore", description: error.message, variant: "destructive" });
+    }
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      return apiRequest("DELETE", `/api/reseller/hr/expense-reports/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/reseller/hr/expense-reports"] });
+      toast({ title: "Nota eliminata", description: "La nota spese è stata eliminata." });
     },
     onError: (error: any) => {
       toast({ title: "Errore", description: error.message, variant: "destructive" });
@@ -239,28 +254,52 @@ export default function HrExpenses() {
                         {report.submittedAt ? format(new Date(report.submittedAt), "dd/MM/yyyy") : '-'}
                       </TableCell>
                       <TableCell>
-                        {report.status === 'pending' && (
-                          <div className="flex gap-1">
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              className="h-8 w-8 p-0 text-emerald-600"
-                              onClick={() => updateMutation.mutate({ id: report.id, status: 'approved' })}
-                              data-testid={`button-approve-${report.id}`}
-                            >
-                              <Check className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              className="h-8 w-8 p-0 text-red-600"
-                              onClick={() => updateMutation.mutate({ id: report.id, status: 'rejected' })}
-                              data-testid={`button-reject-${report.id}`}
-                            >
-                              <X className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        )}
+                        <div className="flex gap-1">
+                          {report.status === 'draft' && (
+                            <>
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                onClick={() => updateMutation.mutate({ id: report.id, status: 'pending' })}
+                                title="Invia per approvazione"
+                                data-testid={`button-submit-${report.id}`}
+                              >
+                                <Send className="h-4 w-4 text-blue-600" />
+                              </Button>
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                onClick={() => deleteMutation.mutate(report.id)}
+                                title="Elimina"
+                                data-testid={`button-delete-${report.id}`}
+                              >
+                                <Trash2 className="h-4 w-4 text-red-600" />
+                              </Button>
+                            </>
+                          )}
+                          {report.status === 'pending' && (
+                            <>
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                onClick={() => updateMutation.mutate({ id: report.id, status: 'approved' })}
+                                title="Approva"
+                                data-testid={`button-approve-${report.id}`}
+                              >
+                                <Check className="h-4 w-4 text-emerald-600" />
+                              </Button>
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                onClick={() => updateMutation.mutate({ id: report.id, status: 'rejected' })}
+                                title="Rifiuta"
+                                data-testid={`button-reject-${report.id}`}
+                              >
+                                <X className="h-4 w-4 text-red-600" />
+                              </Button>
+                            </>
+                          )}
+                        </div>
                       </TableCell>
                     </TableRow>
                   );
