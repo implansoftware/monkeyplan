@@ -88,9 +88,12 @@ export default function HrLeaveRequests() {
       const startDate = new Date(data.startDate);
       const endDate = new Date(data.endDate);
       const totalDays = differenceInDays(endDate, startDate) + 1;
+      const totalHours = totalDays * 8;
       return apiRequest("POST", "/api/reseller/hr/leave-requests", {
         ...data,
         totalDays,
+        totalHours,
+        isFullDay: true,
         status: 'pending'
       });
     },

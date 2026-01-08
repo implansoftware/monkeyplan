@@ -28027,10 +28027,15 @@ export function registerRoutes(app: Express): Server {
       const resellerId = req.user.role === 'reseller' ? req.user.id : req.user.resellerId;
       if (!resellerId) return res.status(400).json({ error: "Reseller ID non trovato" });
       
+      const totalDays = req.body.totalDays || 1;
       const request = await storage.createHrLeaveRequest({
         ...req.body,
         resellerId,
-        userId: req.body.userId || req.user.id
+        userId: req.body.userId || req.user.id,
+        startDate: new Date(req.body.startDate),
+        endDate: new Date(req.body.endDate),
+        totalHours: req.body.totalHours || (totalDays * 8),
+        isFullDay: req.body.isFullDay ?? true
       });
       
       await storage.createHrAuditLog({
