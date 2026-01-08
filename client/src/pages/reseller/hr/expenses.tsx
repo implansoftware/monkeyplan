@@ -60,7 +60,8 @@ export default function HrExpenses() {
   const [newReport, setNewReport] = useState({
     title: "",
     description: "",
-    userId: ""
+    userId: "",
+    amountEuro: ""
   });
   const { toast } = useToast();
 
@@ -74,16 +75,19 @@ export default function HrExpenses() {
 
   const createMutation = useMutation({
     mutationFn: async (data: any) => {
+      const amountCents = Math.round(parseFloat(data.amountEuro || "0") * 100);
       return apiRequest("POST", "/api/reseller/hr/expense-reports", {
-        ...data,
+        title: data.title,
+        description: data.description,
+        userId: data.userId,
         status: 'draft',
-        totalAmount: 0
+        totalAmount: amountCents
       });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/reseller/hr/expense-reports"] });
       setDialogOpen(false);
-      setNewReport({ title: "", description: "", userId: "" });
+      setNewReport({ title: "", description: "", userId: "", amountEuro: "" });
       toast({ title: "Nota spese creata", description: "La nota spese è stata creata con successo." });
     },
     onError: (error: any) => {
@@ -303,6 +307,22 @@ export default function HrExpenses() {
               />
             </div>
             <div className="space-y-2">
+              <Label>Importo Totale (EUR) *</Label>
+              <div className="relative">
+                <Euro className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={newReport.amountEuro}
+                  onChange={(e) => setNewReport({ ...newReport, amountEuro: e.target.value })}
+                  placeholder="0.00"
+                  className="pl-9"
+                  data-testid="input-amount"
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
               <Label>Descrizione (opzionale)</Label>
               <Textarea
                 value={newReport.description}
@@ -316,7 +336,7 @@ export default function HrExpenses() {
             <Button variant="outline" onClick={() => setDialogOpen(false)}>Annulla</Button>
             <Button 
               onClick={() => createMutation.mutate(newReport)}
-              disabled={!newReport.title || !newReport.userId || createMutation.isPending}
+              disabled={!newReport.title || !newReport.userId || !newReport.amountEuro || parseFloat(newReport.amountEuro) <= 0 || createMutation.isPending}
               data-testid="button-create-expense"
             >
               {createMutation.isPending ? "Creazione..." : "Crea"}
