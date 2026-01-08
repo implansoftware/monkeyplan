@@ -1,0 +1,56 @@
+🎨 TEMA E UI/UX
+Nuovo Design "Cinematic Dark"
+Introdotto tema scuro cinematografico con accenti neon
+Effetti glow multicolore (gradiente giallo-arancione-rosa-viola-blu) sulle card
+Sfondo animato sottile ottimizzato per GPU
+Migliorata leggibilità in dark mode su tutta la piattaforma
+Animazioni e Login
+Animazioni spettacolari sulla pagina di login
+Animazione di benvenuto dopo login riuscito
+Toggle tema chiaro/scuro nell'header
+Fix layout mobile per pulsanti azioni post
+Correzioni Dark Mode
+Fix gradiente header in dark mode
+Migliorata visibilità messaggi chat in dark mode
+Fix notifiche in dark mode
+Correzioni card impostazioni e tab
+🏪 PAGINE BUSINESS
+Upload immagine profilo per pagine business
+Traduzione categorie business in italiano
+Categorie predefinite per dettagli business
+Fix duplicazione città nella località
+Bordi multicolor alle sezioni business
+👤 GESTIONE UTENTI ADMIN
+Nuova pagina per modificare dettagli utenti
+Gestione ordini business per admin
+Fix funzionalità editing utenti
+📦 GESTIONE ORDINI E RESI
+Gestione ordini per pagine business
+Modifica dettagli ordini per admin
+Modifica completa dettagli resi per admin
+Rigenerazione e download etichette spedizione
+Download etichette con autenticazione corretta
+Tracking URL per spedizioni premi
+🏆 SISTEMA CONTEST
+Fix gestione contest per amministratori
+Modifica contest esistenti
+Upload immagine copertina contest
+Gestione premi con immagini
+Sistema dichiarazione vincitori
+Gestione spedizioni premi
+Pagina classifica contest
+Fix selezione categorie vuote
+💰 PANORAMICA MERCHANT (Oggi)
+Nuova pagina admin panoramica merchant (/admin/merchants/:id/overview)
+KPI: vendite totali, commissioni, pagamenti, stato merchant
+Tab Ordini recenti con link ai dettagli
+Tab Commissioni recenti con link agli ordini
+Tab Pagamenti recenti
+Tab Prodotti Top per vendite
+Informazioni merchant complete (IBAN, email, business page)
+🐛 BUG FIX E PERFORMANCE
+Fix crash app su pagina login
+Ottimizzazione reazioni con aggiornamenti ottimistici
+Miglioramento performance feed rimuovendo virtualizzazione pesante
+Conversione query Drizzle ORM in SQL raw per stabilità
+Fix colonna title vs name nella tabella products
