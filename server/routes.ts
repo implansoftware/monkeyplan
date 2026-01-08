@@ -3947,16 +3947,19 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  // Helper to get effective reseller/repair center ID based on context switching
   function getEffectiveContext(req: Request): { resellerId: string; repairCenterId?: string; isActingAs: boolean } {
     const actingAs = (req.session as any).actingAs;
+    const baseResellerId = req.user!.role === 'reseller_staff' 
+      ? req.user!.resellerId! 
+      : req.user!.id;
+    
     if (actingAs && actingAs.type === 'reseller') {
       return { resellerId: actingAs.id, isActingAs: true };
     }
     if (actingAs && actingAs.type === 'repair_center') {
-      return { resellerId: req.user!.id, repairCenterId: actingAs.id, isActingAs: true };
+      return { resellerId: baseResellerId, repairCenterId: actingAs.id, isActingAs: true };
     }
-    return { resellerId: req.user!.id, isActingAs: false };
+    return { resellerId: baseResellerId, isActingAs: false };
   }
 
   // Context Switching for Parent Resellers (Franchising/GDO)
