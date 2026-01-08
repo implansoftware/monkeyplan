@@ -72,11 +72,14 @@ export default function ResellerDashboard() {
   const [customerDialogOpen, setCustomerDialogOpen] = useState(false);
   const [acceptanceDialogOpen, setAcceptanceDialogOpen] = useState(false);
   const { user } = useAuth();
+  const isResellerStaff = user?.role === 'reseller_staff';
   const hasParentReseller = !!(user as any)?.parentResellerId;
+  // Staff should see their reseller, sub-resellers should see parent reseller
+  const shouldShowResellerBanner = isResellerStaff || hasParentReseller;
 
   const { data: parentReseller } = useQuery<{ id: string; fullName: string; logoUrl: string | null; ragioneSociale: string | null }>({
     queryKey: ["/api/my-parent-reseller"],
-    enabled: hasParentReseller,
+    enabled: shouldShowResellerBanner,
   });
 
   const { data: stats, isLoading } = useQuery<ResellerStats>({

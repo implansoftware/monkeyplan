@@ -15252,17 +15252,24 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  // GET /api/my-parent-reseller - Get parent reseller info for sub-resellers
+  // GET /api/my-parent-reseller - Get parent reseller info for sub-resellers and reseller_staff
   app.get("/api/my-parent-reseller", requireAuth, async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
-      const parentResellerId = (req.user as any).parentResellerId;
-      if (!parentResellerId) {
+      // For reseller_staff, use resellerId; for sub-resellers, use parentResellerId
+      let targetResellerId = null;
+      if (req.user.role === 'reseller_staff' && req.user.resellerId) {
+        targetResellerId = req.user.resellerId;
+      } else if ((req.user as any).parentResellerId) {
+        targetResellerId = (req.user as any).parentResellerId;
+      }
+      
+      if (!targetResellerId) {
         return res.status(404).json({ error: "No parent reseller" });
       }
       
-      const parentReseller = await storage.getUser(parentResellerId);
+      const parentReseller = await storage.getUser(targetResellerId);
       if (!parentReseller || parentReseller.role !== 'reseller') {
         return res.status(404).json({ error: "Parent reseller not found" });
       }
