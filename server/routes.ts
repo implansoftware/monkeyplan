@@ -164,7 +164,9 @@ function requireModulePermission(module: string, action: 'read' | 'create' | 'up
     
     // For reseller_staff, check module permissions
     if (req.user.role === 'reseller_staff') {
+      console.log(`[Permission Check] User: ${req.user.id}, Module: ${module}, Action: ${action}`);
       const hasPermission = await storage.checkStaffPermission(req.user.id, module, action);
+      console.log(`[Permission Check] Result: ${hasPermission}`);
       if (!hasPermission) {
         return res.status(403).send("Non hai i permessi per questa operazione");
       }
