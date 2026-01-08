@@ -158,6 +158,7 @@ const menuItems = {
   reseller: [
     { title: "Dashboard", url: "/reseller", icon: LayoutDashboard, group: "Dashboard" },
     { title: "Dashboard HR", url: "/reseller/hr", icon: Briefcase, group: "Gestione HR" },
+    { title: "Team", url: "/reseller/team", icon: UsersRound, group: "Gestione HR" },
     { title: "Presenze", url: "/reseller/hr/attendance", icon: Clock, group: "Gestione HR" },
     { title: "Ferie e Permessi", url: "/reseller/hr/leave-requests", icon: Calendar, group: "Gestione HR" },
     { title: "Profili Orario", url: "/reseller/hr/work-profiles", icon: Settings, group: "Gestione HR" },
