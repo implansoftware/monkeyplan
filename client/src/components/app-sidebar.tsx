@@ -157,7 +157,6 @@ const menuItems = {
   ],
   reseller: [
     { title: "Dashboard", url: "/reseller", icon: LayoutDashboard, group: "Dashboard" },
-    { title: "Appuntamenti", url: "/reseller/appointments", icon: CalendarCheck, group: "Dashboard" },
     { title: "Dashboard HR", url: "/reseller/hr", icon: Briefcase, group: "Gestione HR" },
     { title: "Presenze", url: "/reseller/hr/attendance", icon: Clock, group: "Gestione HR" },
     { title: "Ferie e Permessi", url: "/reseller/hr/leave-requests", icon: Calendar, group: "Gestione HR" },
@@ -166,6 +165,7 @@ const menuItems = {
     { title: "Malattie", url: "/reseller/hr/sick-leave", icon: Stethoscope, group: "Gestione HR" },
     { title: "Calendario Team", url: "/reseller/hr/calendar", icon: CalendarCheck, group: "Gestione HR" },
     { title: "Centri Riparazione", url: "/reseller/repair-centers", icon: Building, group: "Centri & Riparazioni" },
+    { title: "Appuntamenti", url: "/reseller/appointments", icon: CalendarCheck, group: "Centri & Riparazioni" },
     { title: "Lavorazioni", url: "/reseller/repairs", icon: Wrench, group: "Centri & Riparazioni" },
     { title: "Listino Prezzi", url: "/reseller/service-catalog", icon: Receipt, group: "Centri & Riparazioni" },
     { title: "Catalogo Dispositivi", url: "/reseller/device-catalog", icon: Smartphone, group: "Centri & Riparazioni" },
