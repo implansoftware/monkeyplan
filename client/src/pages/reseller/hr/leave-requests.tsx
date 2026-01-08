@@ -49,11 +49,14 @@ interface StaffMember {
 }
 
 const leaveTypeLabels: Record<string, { label: string; color: string }> = {
-  vacation: { label: "Ferie", color: "bg-emerald-500" },
-  permit: { label: "Permesso", color: "bg-blue-500" },
-  rol: { label: "ROL", color: "bg-purple-500" },
-  parental: { label: "Parentale", color: "bg-pink-500" },
-  other: { label: "Altro", color: "bg-gray-500" },
+  ferie: { label: "Ferie", color: "bg-emerald-500" },
+  permesso_rol: { label: "Permesso ROL", color: "bg-purple-500" },
+  permesso_studio: { label: "Permesso Studio", color: "bg-blue-500" },
+  permesso_medico: { label: "Permesso Medico", color: "bg-cyan-500" },
+  permesso_lutto: { label: "Permesso Lutto", color: "bg-gray-600" },
+  permesso_matrimonio: { label: "Permesso Matrimonio", color: "bg-pink-500" },
+  congedo_parentale: { label: "Congedo Parentale", color: "bg-amber-500" },
+  altro: { label: "Altro", color: "bg-gray-500" },
 };
 
 const statusLabels: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
@@ -67,7 +70,7 @@ export default function HrLeaveRequests() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [newRequest, setNewRequest] = useState({
-    leaveType: "vacation",
+    leaveType: "ferie",
     startDate: "",
     endDate: "",
     reason: "",
@@ -100,7 +103,7 @@ export default function HrLeaveRequests() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/reseller/hr/leave-requests"] });
       setDialogOpen(false);
-      setNewRequest({ leaveType: "vacation", startDate: "", endDate: "", reason: "", userId: "" });
+      setNewRequest({ leaveType: "ferie", startDate: "", endDate: "", reason: "", userId: "" });
       toast({ title: "Richiesta inviata", description: "La richiesta ferie è stata inviata con successo." });
     },
     onError: (error: any) => {
@@ -302,11 +305,14 @@ export default function HrLeaveRequests() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="vacation">Ferie</SelectItem>
-                  <SelectItem value="permit">Permesso</SelectItem>
-                  <SelectItem value="rol">ROL</SelectItem>
-                  <SelectItem value="parental">Congedo Parentale</SelectItem>
-                  <SelectItem value="other">Altro</SelectItem>
+                  <SelectItem value="ferie">Ferie</SelectItem>
+                  <SelectItem value="permesso_rol">Permesso ROL</SelectItem>
+                  <SelectItem value="permesso_studio">Permesso Studio</SelectItem>
+                  <SelectItem value="permesso_medico">Permesso Medico</SelectItem>
+                  <SelectItem value="permesso_lutto">Permesso Lutto</SelectItem>
+                  <SelectItem value="permesso_matrimonio">Permesso Matrimonio</SelectItem>
+                  <SelectItem value="congedo_parentale">Congedo Parentale</SelectItem>
+                  <SelectItem value="altro">Altro</SelectItem>
                 </SelectContent>
               </Select>
             </div>
