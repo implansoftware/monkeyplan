@@ -12,9 +12,13 @@ import {
   Users,
   CalendarDays,
   Thermometer,
-  Briefcase
+  Briefcase,
+  Building2,
+  Wrench,
+  Filter
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isToday, addMonths, subMonths } from "date-fns";
 import { it } from "date-fns/locale";
 
@@ -26,6 +30,13 @@ interface CalendarEvent {
   endDate: string;
 }
 
+interface CalendarEntity {
+  type: "reseller" | "repair_center";
+  id: string;
+  name: string;
+  parentId: string | null;
+}
+
 const eventTypeColors: Record<string, { bg: string; text: string }> = {
   vacation: { bg: "bg-emerald-100 dark:bg-emerald-900/30", text: "text-emerald-700 dark:text-emerald-300" },
   permit: { bg: "bg-blue-100 dark:bg-blue-900/30", text: "text-blue-700 dark:text-blue-300" },
@@ -35,14 +46,30 @@ const eventTypeColors: Record<string, { bg: string; text: string }> = {
 
 export default function HrCalendar() {
   const [currentDate, setCurrentDate] = useState(new Date());
+  const [selectedEntity, setSelectedEntity] = useState<string>("all");
   
   const monthStart = startOfMonth(currentDate);
   const monthEnd = endOfMonth(currentDate);
 
-  const { data: calendarData = [], isLoading } = useQuery<CalendarEvent[]>({
-    queryKey: ["/api/reseller/hr/calendar", monthStart.toISOString(), monthEnd.toISOString()],
+  const { data: entities = [] } = useQuery<CalendarEntity[]>({
+    queryKey: ["/api/reseller/hr/calendar/entities"],
     queryFn: async () => {
-      const res = await fetch(`/api/reseller/hr/calendar?startDate=${encodeURIComponent(monthStart.toISOString())}&endDate=${encodeURIComponent(monthEnd.toISOString())}`, {
+      const res = await fetch("/api/reseller/hr/calendar/entities", { credentials: "include" });
+      if (!res.ok) return [];
+      return res.json();
+    },
+  });
+
+  const getFilterParams = () => {
+    if (selectedEntity === "all") return "";
+    const [type, id] = selectedEntity.split(":");
+    return `&entityType=${encodeURIComponent(type)}&entityId=${encodeURIComponent(id)}`;
+  };
+
+  const { data: calendarData = [], isLoading } = useQuery<CalendarEvent[]>({
+    queryKey: ["/api/reseller/hr/calendar", monthStart.toISOString(), monthEnd.toISOString(), selectedEntity],
+    queryFn: async () => {
+      const res = await fetch(`/api/reseller/hr/calendar?startDate=${encodeURIComponent(monthStart.toISOString())}&endDate=${encodeURIComponent(monthEnd.toISOString())}${getFilterParams()}`, {
         credentials: "include",
       });
       if (!res.ok) throw new Error("Errore nel caricamento del calendario");
@@ -96,23 +123,70 @@ export default function HrCalendar() {
         </div>
       </div>
 
-      <div className="flex flex-wrap gap-4 items-center">
-        <Badge variant="secondary" className="gap-1">
-          <div className="w-3 h-3 rounded-full bg-emerald-500" />
-          Ferie
-        </Badge>
-        <Badge variant="secondary" className="gap-1">
-          <div className="w-3 h-3 rounded-full bg-blue-500" />
-          Permessi
-        </Badge>
-        <Badge variant="secondary" className="gap-1">
-          <div className="w-3 h-3 rounded-full bg-red-500" />
-          Malattia
-        </Badge>
-        <Badge variant="secondary" className="gap-1">
-          <div className="w-3 h-3 rounded-full bg-purple-500" />
-          ROL
-        </Badge>
+      <div className="flex flex-wrap gap-4 items-center justify-between">
+        <div className="flex flex-wrap gap-4 items-center">
+          <Badge variant="secondary" className="gap-1">
+            <div className="w-3 h-3 rounded-full bg-emerald-500" />
+            Ferie
+          </Badge>
+          <Badge variant="secondary" className="gap-1">
+            <div className="w-3 h-3 rounded-full bg-blue-500" />
+            Permessi
+          </Badge>
+          <Badge variant="secondary" className="gap-1">
+            <div className="w-3 h-3 rounded-full bg-red-500" />
+            Malattia
+          </Badge>
+          <Badge variant="secondary" className="gap-1">
+            <div className="w-3 h-3 rounded-full bg-purple-500" />
+            ROL
+          </Badge>
+        </div>
+
+        {entities.length > 0 && (
+          <div className="flex items-center gap-2">
+            <Filter className="h-4 w-4 text-muted-foreground" />
+            <Select value={selectedEntity} onValueChange={setSelectedEntity} data-testid="select-entity-filter">
+              <SelectTrigger className="w-[250px]" data-testid="trigger-entity-filter">
+                <SelectValue placeholder="Filtra per entità" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all" data-testid="option-all">
+                  <div className="flex items-center gap-2">
+                    <Users className="h-4 w-4" />
+                    Tutti (gerarchia completa)
+                  </div>
+                </SelectItem>
+                {entities.filter(e => e.type === "reseller").length > 0 && (
+                  <>
+                    <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">Sub-Reseller</div>
+                    {entities.filter(e => e.type === "reseller").map(entity => (
+                      <SelectItem key={entity.id} value={`reseller:${entity.id}`} data-testid={`option-reseller-${entity.id}`}>
+                        <div className="flex items-center gap-2">
+                          <Building2 className="h-4 w-4 text-blue-500" />
+                          {entity.name}
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </>
+                )}
+                {entities.filter(e => e.type === "repair_center").length > 0 && (
+                  <>
+                    <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">Centri Riparazione</div>
+                    {entities.filter(e => e.type === "repair_center").map(entity => (
+                      <SelectItem key={entity.id} value={`repair_center:${entity.id}`} data-testid={`option-repair-center-${entity.id}`}>
+                        <div className="flex items-center gap-2">
+                          <Wrench className="h-4 w-4 text-orange-500" />
+                          {entity.name}
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </>
+                )}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
       </div>
 
       <Card data-testid="card-calendar">
