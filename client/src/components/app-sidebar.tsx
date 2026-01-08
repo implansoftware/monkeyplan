@@ -166,6 +166,7 @@ const menuItems = {
     { title: "Malattie", url: "/reseller/hr/sick-leave", icon: Stethoscope, group: "Gestione HR" },
     { title: "Calendario Team", url: "/reseller/hr/calendar", icon: CalendarCheck, group: "Gestione HR" },
     { title: "Centri Riparazione", url: "/reseller/repair-centers", icon: Building, group: "Centri & Riparazioni" },
+    { title: "Clienti", url: "/reseller/customers", icon: Users, group: "Centri & Riparazioni" },
     { title: "Appuntamenti", url: "/reseller/appointments", icon: CalendarCheck, group: "Centri & Riparazioni" },
     { title: "Lavorazioni", url: "/reseller/repairs", icon: Wrench, group: "Centri & Riparazioni" },
     { title: "Listino Prezzi", url: "/reseller/service-catalog", icon: Receipt, group: "Centri & Riparazioni" },
