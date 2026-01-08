@@ -8583,15 +8583,27 @@ export class DatabaseStorage implements IStorage {
     return request || undefined;
   }
 
-  async listHrLeaveRequests(filters: { userId?: string; resellerId?: string; status?: string }): Promise<HrLeaveRequest[]> {
+  async listHrLeaveRequests(filters: { userId?: string; resellerId?: string; status?: string }): Promise<(HrLeaveRequest & { user?: { fullName: string } })[]> {
     const conditions = [];
     if (filters.userId) conditions.push(eq(hrLeaveRequests.userId, filters.userId));
     if (filters.resellerId) conditions.push(eq(hrLeaveRequests.resellerId, filters.resellerId));
     if (filters.status) conditions.push(eq(hrLeaveRequests.status, filters.status as any));
     
-    return db.select().from(hrLeaveRequests)
+    const results = await db.select({
+      request: hrLeaveRequests,
+      user: {
+        fullName: users.fullName
+      }
+    })
+      .from(hrLeaveRequests)
+      .leftJoin(users, eq(hrLeaveRequests.userId, users.id))
       .where(conditions.length > 0 ? and(...conditions) : undefined)
       .orderBy(desc(hrLeaveRequests.createdAt));
+    
+    return results.map(r => ({
+      ...r.request,
+      user: r.user ? { fullName: r.user.fullName } : undefined
+    }));
   }
 
   async updateHrLeaveRequest(id: string, updates: Partial<HrLeaveRequest>): Promise<HrLeaveRequest> {
