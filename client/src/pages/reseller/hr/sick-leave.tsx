@@ -94,10 +94,11 @@ export default function HrSickLeave() {
 
   const createMutation = useMutation({
     mutationFn: async (data: any) => {
-      return apiRequest("POST", "/api/reseller/hr/sick-leaves", {
+      const response = await apiRequest("POST", "/api/reseller/hr/sick-leaves", {
         ...data,
         status: 'pending'
       });
+      return response.json();
     },
     onSuccess: async (result: any) => {
       if (certificateFile && result.id) {
