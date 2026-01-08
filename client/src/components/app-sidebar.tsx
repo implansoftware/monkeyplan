@@ -157,10 +157,8 @@ const menuItems = {
   ],
   reseller: [
     { title: "Dashboard", url: "/reseller", icon: LayoutDashboard, group: "Dashboard" },
-    { title: "Clienti", url: "/reseller/customers", icon: Users, group: "Clienti" },
-    { title: "Appuntamenti", url: "/reseller/appointments", icon: CalendarCheck, group: "Clienti" },
+    { title: "Appuntamenti", url: "/reseller/appointments", icon: CalendarCheck, group: "Dashboard" },
     { title: "Dashboard HR", url: "/reseller/hr", icon: Briefcase, group: "Gestione HR" },
-    { title: "Team", url: "/reseller/team", icon: UsersRound, group: "Gestione HR" },
     { title: "Presenze", url: "/reseller/hr/attendance", icon: Clock, group: "Gestione HR" },
     { title: "Ferie e Permessi", url: "/reseller/hr/leave-requests", icon: Calendar, group: "Gestione HR" },
     { title: "Profili Orario", url: "/reseller/hr/work-profiles", icon: Settings, group: "Gestione HR" },
@@ -432,19 +430,19 @@ export function AppSidebar() {
     }
     
     if (isReseller && hasSubResellers) {
-      // Add Sub-Reseller item after Team in "Clienti & Team" group
-      const teamIndex = baseItems.findIndex(item => item.title === "Team");
-      if (teamIndex !== -1) {
+      // Add Sub-Reseller item after Dashboard in "Dashboard" group
+      const dashboardIndex = baseItems.findIndex(item => item.url === "/reseller");
+      if (dashboardIndex !== -1) {
         const subResellerItem = { 
           title: "Sub-Reseller", 
           url: "/reseller/sub-resellers", 
           icon: Network, 
-          group: "Clienti & Team" 
+          group: "Dashboard" 
         };
         return [
-          ...baseItems.slice(0, teamIndex + 1),
+          ...baseItems.slice(0, dashboardIndex + 1),
           subResellerItem,
-          ...baseItems.slice(teamIndex + 1),
+          ...baseItems.slice(dashboardIndex + 1),
         ];
       }
     }
