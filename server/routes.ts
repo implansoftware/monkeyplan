@@ -28506,7 +28506,9 @@ export function registerRoutes(app: Express): Server {
       }
 
       const objectPath = certificate.fileUrl.replace(/^\/objects\//, '');
-      const signedUrl = await getSignedDownloadUrl(objectPath);
+      const privateObjectDir = objectStorage.getPrivateObjectDir();
+      const fullPath = `${privateObjectDir}/${objectPath}`;
+      const signedUrl = await getSignedDownloadUrl(fullPath);
       
       res.json({
         fileName: certificate.fileName,
