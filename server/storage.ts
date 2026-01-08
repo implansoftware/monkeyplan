@@ -8373,6 +8373,58 @@ export class DatabaseStorage implements IStorage {
       .orderBy(hrWorkProfiles.name);
   }
 
+  // Work Profiles with hierarchical visibility (includes sub-resellers and repair centers)
+  async listHrWorkProfilesHierarchical(resellerId: string): Promise<(HrWorkProfile & { 
+    originType: 'own' | 'sub_reseller' | 'repair_center';
+    originEntityName: string;
+  })[]> {
+    // 1. Get sub-resellers (users with parentResellerId = resellerId)
+    const subResellers = await db.select({ id: users.id, fullName: users.fullName })
+      .from(users)
+      .where(eq(users.parentResellerId, resellerId));
+    const subResellerIds = subResellers.map(r => r.id);
+    const subResellerNames = new Map(subResellers.map(r => [r.id, r.fullName]));
+
+    // 2. Get repair centers (direct + via sub-resellers)
+    const directCenters = await db.select({ id: repairCenters.id, name: repairCenters.name })
+      .from(repairCenters)
+      .where(eq(repairCenters.resellerId, resellerId));
+    
+    const subResellerCenters = subResellerIds.length > 0 
+      ? await db.select({ id: repairCenters.id, name: repairCenters.name })
+          .from(repairCenters)
+          .where(inArray(repairCenters.subResellerId, subResellerIds))
+      : [];
+    
+    const allCenters = [...directCenters, ...subResellerCenters];
+    const centerNames = new Map(allCenters.map(c => [c.id, c.name]));
+    const centerIds = allCenters.map(c => c.id);
+
+    // 3. Collect all reseller IDs to query
+    const allResellerIds = [resellerId, ...subResellerIds];
+
+    // 4. Query all work profiles
+    const profiles = await db.select().from(hrWorkProfiles)
+      .where(inArray(hrWorkProfiles.resellerId, allResellerIds))
+      .orderBy(hrWorkProfiles.name);
+
+    // 5. Enrich with origin info
+    return profiles.map(profile => {
+      let originType: 'own' | 'sub_reseller' | 'repair_center' = 'own';
+      let originEntityName = 'Proprio';
+
+      if (profile.sourceType === 'repair_center' && profile.sourceEntityId) {
+        originType = 'repair_center';
+        originEntityName = centerNames.get(profile.sourceEntityId) || 'Centro Riparazione';
+      } else if (profile.resellerId !== resellerId) {
+        originType = 'sub_reseller';
+        originEntityName = subResellerNames.get(profile.resellerId) || 'Sub-Reseller';
+      }
+
+      return { ...profile, originType, originEntityName };
+    });
+  }
+
   async getHrWorkProfile(id: string): Promise<HrWorkProfile | undefined> {
     const [profile] = await db.select().from(hrWorkProfiles).where(eq(hrWorkProfiles.id, id));
     return profile || undefined;
