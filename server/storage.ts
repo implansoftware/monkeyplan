@@ -1316,6 +1316,22 @@ export class DatabaseStorage implements IStorage {
     return center || undefined;
   }
 
+  // Get sub-resellers by parent IDs (for hierarchical queries)
+  async getUsersByParentResellerIds(parentIds: string[]): Promise<User[]> {
+    if (parentIds.length === 0) return [];
+    return db.select().from(users).where(inArray(users.parentResellerId, parentIds));
+  }
+
+  // Get repair centers by multiple reseller IDs (for hierarchical queries)
+  async getRepairCentersByResellerIds(resellerIds: string[]): Promise<RepairCenter[]> {
+    if (resellerIds.length === 0) return [];
+    return db.select().from(repairCenters)
+      .where(or(
+        inArray(repairCenters.resellerId, resellerIds),
+        inArray(repairCenters.subResellerId, resellerIds)
+      ));
+  }
+
   async getResellerRepairCenterDetail(resellerId: string, centerId: string): Promise<{
     center: RepairCenter;
     stats: {

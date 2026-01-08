@@ -103,6 +103,22 @@ export default function HrWorkProfiles() {
     }
   });
 
+  const syncAllMutation = useMutation({
+    mutationFn: async () => {
+      return apiRequest("POST", "/api/reseller/hr/work-profiles/sync-all", {});
+    },
+    onSuccess: (data: any) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/reseller/hr/work-profiles"] });
+      toast({ 
+        title: "Sincronizzazione completata", 
+        description: `Sincronizzati ${data.synced} profili su ${data.total} centri. ${data.skipped} saltati.` 
+      });
+    },
+    onError: (error: any) => {
+      toast({ title: "Errore sincronizzazione", description: error.message, variant: "destructive" });
+    }
+  });
+
   const createMutation = useMutation({
     mutationFn: async (data: any) => {
       return apiRequest("POST", "/api/reseller/hr/work-profiles", data);
@@ -240,6 +256,15 @@ export default function HrWorkProfiles() {
             <Button variant="outline" onClick={() => setSyncDialogOpen(true)} data-testid="button-sync-from-center">
               <Building2 className="h-4 w-4 mr-2" />
               Sincronizza Centro
+            </Button>
+            <Button 
+              variant="outline" 
+              onClick={() => syncAllMutation.mutate()} 
+              disabled={syncAllMutation.isPending}
+              data-testid="button-sync-all"
+            >
+              <RefreshCw className={`h-4 w-4 mr-2 ${syncAllMutation.isPending ? 'animate-spin' : ''}`} />
+              {syncAllMutation.isPending ? 'Sincronizzazione...' : 'Sincronizza Tutti'}
             </Button>
             <Button onClick={() => { resetForm(); setDialogOpen(true); }} data-testid="button-new-profile">
               <Plus className="h-4 w-4 mr-2" />

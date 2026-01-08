@@ -28136,6 +28136,100 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+
+  // HR Work Profiles - Sync all repair centers in hierarchy
+  app.post("/api/reseller/hr/work-profiles/sync-all", requireRole("reseller", "reseller_staff"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      const resellerId = req.user.role === 'reseller' ? req.user.id : req.user.resellerId;
+      if (!resellerId) return res.status(400).json({ error: "Reseller ID non trovato" });
+      
+      // Get all repair centers in hierarchy (recursive sub-resellers)
+      const allSubResellerIds: string[] = [];
+      const collectSubResellers = async (parentIds: string[]) => {
+        if (parentIds.length === 0) return;
+        const children = await storage.getUsersByParentResellerIds(parentIds);
+        const newIds: string[] = [];
+        for (const child of children) {
+          if (!allSubResellerIds.includes(child.id)) {
+            allSubResellerIds.push(child.id);
+            newIds.push(child.id);
+          }
+        }
+        if (newIds.length > 0) await collectSubResellers(newIds);
+      };
+      await collectSubResellers([resellerId]);
+      
+      const allResellerIds = [resellerId, ...allSubResellerIds];
+      const repairCenters = await storage.getRepairCentersByResellerIds(allResellerIds);
+      
+      let synced = 0;
+      let skipped = 0;
+      
+      for (const center of repairCenters) {
+        if (!center.openingHours) { skipped++; continue; }
+        
+        const openingHours = center.openingHours as Record<string, { isOpen: boolean; start?: string; end?: string; breakStart?: string | null; breakEnd?: string | null }>;
+        const dayMapping: Record<string, number> = { 'sunday': 0, 'monday': 1, 'tuesday': 2, 'wednesday': 3, 'thursday': 4, 'friday': 5, 'saturday': 6 };
+        
+        const workDays: number[] = [];
+        let totalMinutes = 0, startTime = '', endTime = '', breakMinutes = 0;
+        
+        for (const [day, hours] of Object.entries(openingHours)) {
+          if (hours.isOpen && dayMapping[day] !== undefined) {
+            workDays.push(dayMapping[day]);
+            if (hours.start && hours.end) {
+              startTime = startTime || hours.start;
+              endTime = endTime || hours.end;
+              const [sh, sm] = hours.start.split(':').map(Number);
+              const [eh, em] = hours.end.split(':').map(Number);
+              const dayMinutes = (eh * 60 + em) - (sh * 60 + sm);
+              if (hours.breakStart && hours.breakEnd) {
+                const [bsh, bsm] = hours.breakStart.split(':').map(Number);
+                const [beh, bem] = hours.breakEnd.split(':').map(Number);
+                breakMinutes = Math.max(breakMinutes, (beh * 60 + bem) - (bsh * 60 + bsm));
+              }
+              totalMinutes += dayMinutes;
+            }
+          }
+        }
+        
+        if (workDays.length === 0) { skipped++; continue; }
+        workDays.sort((a, b) => a - b);
+        const weeklyHours = Math.round((totalMinutes - (breakMinutes * workDays.length)) / 60);
+        const dailyHours = Math.round(weeklyHours / workDays.length);
+        
+        const profileResellerId = center.subResellerId || center.resellerId || resellerId;
+        const profileData = {
+          resellerId: profileResellerId,
+          name: `Orario ${center.name}`,
+          weeklyHours, dailyHours, workDays, startTime, endTime, breakMinutes,
+          sourceType: 'repair_center' as const,
+          sourceEntityId: center.id,
+          isSynced: true,
+          lastSyncedAt: new Date(),
+          isActive: true
+        };
+        
+        const existingProfiles = await storage.listHrWorkProfiles(profileResellerId);
+        const existingProfile = existingProfiles.find(p => p.sourceType === 'repair_center' && p.sourceEntityId === center.id);
+        
+        if (existingProfile && !existingProfile.autoSyncDisabled) {
+          await storage.updateHrWorkProfile(existingProfile.id, profileData);
+          synced++;
+        } else if (!existingProfile) {
+          await storage.createHrWorkProfile(profileData);
+          synced++;
+        } else {
+          skipped++;
+        }
+      }
+      
+      res.json({ synced, skipped, total: repairCenters.length });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
   // HR Clock Events (Timbrature)
   // HR Clock Events (Timbrature)
   app.get("/api/reseller/hr/clock-events", requireRole("reseller", "reseller_staff"), async (req, res) => {
