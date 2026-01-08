@@ -8373,42 +8373,52 @@ export class DatabaseStorage implements IStorage {
       .orderBy(hrWorkProfiles.name);
   }
 
-  // Work Profiles with hierarchical visibility (includes sub-resellers and repair centers)
+  // Work Profiles with hierarchical visibility (includes sub-resellers and repair centers recursively)
   async listHrWorkProfilesHierarchical(resellerId: string): Promise<(HrWorkProfile & { 
     originType: 'own' | 'sub_reseller' | 'repair_center';
     originEntityName: string;
   })[]> {
-    // 1. Get sub-resellers (users with parentResellerId = resellerId)
-    const subResellers = await db.select({ id: users.id, fullName: users.fullName })
-      .from(users)
-      .where(eq(users.parentResellerId, resellerId));
-    const subResellerIds = subResellers.map(r => r.id);
-    const subResellerNames = new Map(subResellers.map(r => [r.id, r.fullName]));
+    // 1. Recursively get ALL sub-resellers at any depth
+    const subResellerNames = new Map<string, string>();
+    const allSubResellerIds: string[] = [];
+    
+    const collectSubResellers = async (parentIds: string[]) => {
+      if (parentIds.length === 0) return;
+      const children = await db.select({ id: users.id, fullName: users.fullName })
+        .from(users)
+        .where(inArray(users.parentResellerId, parentIds));
+      const newIds: string[] = [];
+      for (const child of children) {
+        if (!allSubResellerIds.includes(child.id)) {
+          allSubResellerIds.push(child.id);
+          subResellerNames.set(child.id, child.fullName);
+          newIds.push(child.id);
+        }
+      }
+      if (newIds.length > 0) {
+        await collectSubResellers(newIds);
+      }
+    };
+    await collectSubResellers([resellerId]);
 
-    // 2. Get repair centers (direct + via sub-resellers)
-    const directCenters = await db.select({ id: repairCenters.id, name: repairCenters.name })
+    // 2. Get ALL repair centers (direct + via any level of sub-resellers)
+    const allResellerIds = [resellerId, ...allSubResellerIds];
+    
+    const allCenters = await db.select({ id: repairCenters.id, name: repairCenters.name })
       .from(repairCenters)
-      .where(eq(repairCenters.resellerId, resellerId));
+      .where(or(
+        inArray(repairCenters.resellerId, allResellerIds),
+        inArray(repairCenters.subResellerId, allResellerIds)
+      ));
     
-    const subResellerCenters = subResellerIds.length > 0 
-      ? await db.select({ id: repairCenters.id, name: repairCenters.name })
-          .from(repairCenters)
-          .where(inArray(repairCenters.subResellerId, subResellerIds))
-      : [];
-    
-    const allCenters = [...directCenters, ...subResellerCenters];
     const centerNames = new Map(allCenters.map(c => [c.id, c.name]));
-    const centerIds = allCenters.map(c => c.id);
 
-    // 3. Collect all reseller IDs to query
-    const allResellerIds = [resellerId, ...subResellerIds];
-
-    // 4. Query all work profiles
+    // 3. Query all work profiles for all reseller IDs in the hierarchy
     const profiles = await db.select().from(hrWorkProfiles)
       .where(inArray(hrWorkProfiles.resellerId, allResellerIds))
       .orderBy(hrWorkProfiles.name);
 
-    // 5. Enrich with origin info
+    // 4. Enrich with origin info
     return profiles.map(profile => {
       let originType: 'own' | 'sub_reseller' | 'repair_center' = 'own';
       let originEntityName = 'Proprio';

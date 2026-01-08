@@ -43,6 +43,8 @@ interface WorkProfile {
   isSynced?: boolean;
   autoSyncDisabled?: boolean;
   lastSyncedAt?: string;
+  originType?: 'own' | 'sub_reseller' | 'repair_center';
+  originEntityName?: string;
 }
 
 interface RepairCenter {
@@ -59,6 +61,7 @@ export default function HrWorkProfiles() {
   const [syncDialogOpen, setSyncDialogOpen] = useState(false);
   const [selectedProfile, setSelectedProfile] = useState<WorkProfile | null>(null);
   const [selectedRepairCenterId, setSelectedRepairCenterId] = useState<string>("");
+  const [originFilter, setOriginFilter] = useState<'all' | 'own' | 'sub_reseller' | 'repair_center'>('all');
   const [formData, setFormData] = useState({
     name: "",
     weeklyHours: 40,
@@ -77,6 +80,12 @@ export default function HrWorkProfiles() {
 
   const { data: repairCenters = [] } = useQuery<RepairCenter[]>({
     queryKey: ["/api/reseller/repair-centers"],
+  });
+
+  // Filter profiles by origin type
+  const filteredProfiles = profiles.filter(profile => {
+    if (originFilter === 'all') return true;
+    return profile.originType === originFilter;
   });
 
   const syncMutation = useMutation({
@@ -242,18 +251,33 @@ export default function HrWorkProfiles() {
 
       <Card data-testid="card-work-profiles-list">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Clock className="h-5 w-5 text-muted-foreground" />
-            Profili Configurati
-          </CardTitle>
-          <CardDescription>Gestisci i profili orario per i dipendenti</CardDescription>
+          <div className="flex items-center justify-between gap-4 flex-wrap">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <Clock className="h-5 w-5 text-muted-foreground" />
+                Profili Configurati
+              </CardTitle>
+              <CardDescription>Gestisci i profili orario per i dipendenti</CardDescription>
+            </div>
+            <Select value={originFilter} onValueChange={(v) => setOriginFilter(v as typeof originFilter)}>
+              <SelectTrigger className="w-48" data-testid="select-origin-filter">
+                <SelectValue placeholder="Filtra per origine" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tutti i Profili</SelectItem>
+                <SelectItem value="own">Solo Propri</SelectItem>
+                <SelectItem value="sub_reseller">Da Sub-Reseller</SelectItem>
+                <SelectItem value="repair_center">Da Centri Riparazione</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </CardHeader>
         <CardContent>
           {isLoading ? (
             <div className="space-y-2">
               {[1, 2, 3].map((i) => <Skeleton key={i} className="h-12 w-full" />)}
             </div>
-          ) : profiles.length === 0 ? (
+          ) : filteredProfiles.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
               <Briefcase className="h-12 w-12 mx-auto mb-3 opacity-50" />
               <p>Nessun profilo orario configurato</p>
@@ -264,6 +288,7 @@ export default function HrWorkProfiles() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Nome Profilo</TableHead>
+                  <TableHead>Origine</TableHead>
                   <TableHead>Ore Settimanali</TableHead>
                   <TableHead>Ore Giornaliere</TableHead>
                   <TableHead>Giorni Lavorativi</TableHead>
@@ -273,7 +298,7 @@ export default function HrWorkProfiles() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {profiles.map((profile) => (
+                {filteredProfiles.map((profile) => (
                   <TableRow key={profile.id} data-testid={`row-profile-${profile.id}`}>
                     <TableCell className="font-medium">
                       <div className="flex items-center gap-2 flex-wrap">
@@ -291,6 +316,15 @@ export default function HrWorkProfiles() {
                           </Badge>
                         )}
                       </div>
+                    </TableCell>
+                    <TableCell>
+                      <Badge 
+                        variant={profile.originType === 'own' ? 'default' : profile.originType === 'sub_reseller' ? 'secondary' : 'outline'}
+                        className="text-xs"
+                      >
+                        {profile.originType === 'repair_center' && <Building2 className="h-3 w-3 mr-1" />}
+                        {profile.originEntityName || 'Proprio'}
+                      </Badge>
                     </TableCell>
                     <TableCell>{profile.weeklyHours}h</TableCell>
                     <TableCell>{profile.dailyHours}h</TableCell>
