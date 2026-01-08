@@ -1881,7 +1881,8 @@ export function registerRoutes(app: Express): Server {
       }
       
       setActivityEntity(res, { type: 'users', id: user.id });
-      res.status(201).json(user);
+      const { password: _, ...safeUser } = user;
+      res.status(201).json({ customer: safeUser, tempPassword: password });
     } catch (error: any) {
       res.status(400).send(error.message);
     }
@@ -4918,7 +4919,8 @@ export function registerRoutes(app: Express): Server {
       }
       
       setActivityEntity(res, { type: 'users', id: user.id });
-      res.status(201).json(user);
+      const { password: _, ...safeUser } = user;
+      res.status(201).json({ customer: safeUser, tempPassword: password });
     } catch (error: any) {
       res.status(400).send(error.message);
     }
