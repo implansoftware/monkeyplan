@@ -20,7 +20,9 @@ import {
   Calendar,
   Users,
   RefreshCw,
-  Building2
+  Building2,
+  Link2,
+  Unlink2
 } from "lucide-react";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -116,6 +118,24 @@ export default function HrWorkProfiles() {
       setDialogOpen(false);
       resetForm();
       toast({ title: "Profilo aggiornato", description: "Il profilo orario è stato aggiornato." });
+    },
+    onError: (error: any) => {
+      toast({ title: "Errore", description: error.message, variant: "destructive" });
+    }
+  });
+
+  const toggleAutoSyncMutation = useMutation({
+    mutationFn: async ({ id, disabled }: { id: string; disabled: boolean }) => {
+      return apiRequest("PATCH", `/api/reseller/hr/work-profiles/${id}`, { autoSyncDisabled: disabled });
+    },
+    onSuccess: (_, { disabled }) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/reseller/hr/work-profiles"] });
+      toast({ 
+        title: disabled ? "Auto-sync disattivato" : "Auto-sync attivato", 
+        description: disabled 
+          ? "Il profilo non sarà più aggiornato automaticamente." 
+          : "Il profilo verrà sincronizzato con gli orari del centro." 
+      });
     },
     onError: (error: any) => {
       toast({ title: "Errore", description: error.message, variant: "destructive" });
@@ -289,6 +309,22 @@ export default function HrWorkProfiles() {
                     <TableCell>{profile.breakMinutes} min</TableCell>
                     <TableCell>
                       <div className="flex gap-1">
+                        {profile.sourceType === 'repair_center' && (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className={`h-8 w-8 p-0 ${profile.autoSyncDisabled ? 'text-yellow-600' : 'text-green-600'}`}
+                            onClick={() => toggleAutoSyncMutation.mutate({ 
+                              id: profile.id, 
+                              disabled: !profile.autoSyncDisabled 
+                            })}
+                            disabled={toggleAutoSyncMutation.isPending}
+                            title={profile.autoSyncDisabled ? "Riattiva sincronizzazione automatica" : "Disattiva sincronizzazione automatica"}
+                            data-testid={`button-toggle-sync-${profile.id}`}
+                          >
+                            {profile.autoSyncDisabled ? <Unlink2 className="h-4 w-4" /> : <Link2 className="h-4 w-4" />}
+                          </Button>
+                        )}
                         <Button
                           size="sm"
                           variant="ghost"
