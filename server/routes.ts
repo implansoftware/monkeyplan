@@ -27949,6 +27949,116 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Sync work profile from repair center opening hours
+  app.post("/api/reseller/hr/work-profiles/sync-from-entity", requireRole("reseller", "reseller_staff"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      const resellerId = req.user.role === 'reseller' ? req.user.id : req.user.resellerId;
+      if (!resellerId) return res.status(400).json({ error: "Reseller ID non trovato" });
+      
+      const { entityType, entityId, profileName } = req.body;
+      if (!entityType || !entityId) {
+        return res.status(400).json({ error: "entityType e entityId sono richiesti" });
+      }
+      
+      if (entityType !== 'repair_center') {
+        return res.status(400).json({ error: "Solo 'repair_center' è supportato come entityType" });
+      }
+      
+      // Get repair center with opening hours
+      const repairCenter = await storage.getRepairCenter(entityId);
+      if (!repairCenter) {
+        return res.status(404).json({ error: "Centro riparazione non trovato" });
+      }
+      
+      if (!repairCenter.openingHours) {
+        return res.status(400).json({ error: "Il centro riparazione non ha orari configurati" });
+      }
+      
+      // Convert opening hours to work profile format
+      const openingHours = repairCenter.openingHours as Record<string, { isOpen: boolean; start?: string; end?: string; breakStart?: string | null; breakEnd?: string | null }>;
+      const dayMapping: Record<string, number> = {
+        'sunday': 0, 'monday': 1, 'tuesday': 2, 'wednesday': 3,
+        'thursday': 4, 'friday': 5, 'saturday': 6
+      };
+      
+      const workDays: number[] = [];
+      let startTime = "09:00";
+      let endTime = "18:00";
+      let breakMinutes = 60;
+      
+      Object.entries(openingHours).forEach(([day, config]) => {
+        if (config.isOpen) {
+          workDays.push(dayMapping[day.toLowerCase()]);
+          if (config.start) startTime = config.start;
+          if (config.end) endTime = config.end;
+          // Calculate break from breakStart/breakEnd if available
+          if (config.breakStart && config.breakEnd) {
+            const [bsH, bsM] = config.breakStart.split(':').map(Number);
+            const [beH, beM] = config.breakEnd.split(':').map(Number);
+            breakMinutes = (beH * 60 + beM) - (bsH * 60 + bsM);
+          }
+        }
+      });
+      
+      // Sort workDays
+      workDays.sort((a, b) => a - b);
+      
+      // Calculate daily and weekly hours
+      const [startH, startM] = startTime.split(':').map(Number);
+      const [endH, endM] = endTime.split(':').map(Number);
+      const totalMinutes = (endH * 60 + endM) - (startH * 60 + startM) - breakMinutes;
+      const dailyHours = Math.round(totalMinutes / 60 * 10) / 10;
+      const weeklyHours = dailyHours * workDays.length;
+      
+      // Create or update work profile
+      const profileData = {
+        resellerId,
+        name: profileName || `Orario ${repairCenter.name}`,
+        description: `Profilo sincronizzato da ${repairCenter.name}`,
+        weeklyHours,
+        dailyHours,
+        workDays,
+        startTime,
+        endTime,
+        breakMinutes,
+        sourceType: 'repair_center',
+        sourceEntityId: entityId,
+        isSynced: true,
+        lastSyncedAt: new Date(),
+        isActive: true
+      };
+      
+      // Check if profile already exists for this entity
+      const existingProfiles = await storage.listHrWorkProfiles(resellerId);
+      const existingProfile = existingProfiles.find(p => 
+        p.sourceType === 'repair_center' && p.sourceEntityId === entityId
+      );
+      
+      let profile;
+      if (existingProfile) {
+        profile = await storage.updateHrWorkProfile(existingProfile.id, profileData);
+      } else {
+        profile = await storage.createHrWorkProfile(profileData);
+      }
+      
+      // Audit log
+      await storage.createHrAuditLog({
+        resellerId,
+        userId: req.user.id,
+        action: existingProfile ? 'update' : 'create',
+        entityType: 'work_profile',
+        entityId: profile.id,
+        newValues: { synced_from: entityId, entity_type: entityType }
+      });
+      
+      res.json(profile);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // HR Clock Events (Timbrature)
   // HR Clock Events (Timbrature)
   app.get("/api/reseller/hr/clock-events", requireRole("reseller", "reseller_staff"), async (req, res) => {
     try {
