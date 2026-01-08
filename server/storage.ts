@@ -8500,32 +8500,46 @@ export class DatabaseStorage implements IStorage {
       .orderBy(hrClockingPolicies.locationName);
   }
 
-  // Get all accessible reseller IDs for a parent reseller (includes sub-resellers and repair centers)
+  // Get all accessible reseller IDs for a parent reseller (includes sub-resellers at any depth and repair centers)
   async getAccessibleResellerIds(resellerId: string): Promise<string[]> {
     const ids: string[] = [resellerId];
     
-    // Get sub-resellers (users with parentResellerId = resellerId)
-    const subResellers = await db.select({ id: users.id })
-      .from(users)
-      .where(eq(users.parentResellerId, resellerId));
-    for (const r of subResellers) {
-      if (r.id) ids.push(r.id);
-    }
+    // Recursively collect ALL sub-resellers at any depth
+    const collectSubResellers = async (parentIds: string[]) => {
+      if (parentIds.length === 0) return;
+      const children = await db.select({ id: users.id })
+        .from(users)
+        .where(inArray(users.parentResellerId, parentIds));
+      const newIds: string[] = [];
+      for (const child of children) {
+        if (child.id && !ids.includes(child.id)) {
+          ids.push(child.id);
+          newIds.push(child.id);
+        }
+      }
+      if (newIds.length > 0) {
+        await collectSubResellers(newIds);
+      }
+    };
+    await collectSubResellers([resellerId]);
     
-    // Get repair centers owned by this reseller
+    // Get repair centers owned by all resellers in hierarchy
     const centers = await db.select({ id: repairCenters.id })
       .from(repairCenters)
-      .where(eq(repairCenters.resellerId, resellerId));
+      .where(or(
+        inArray(repairCenters.resellerId, ids),
+        inArray(repairCenters.subResellerId, ids)
+      ));
     for (const c of centers) {
-      if (c.id) ids.push(c.id);
+      if (c.id && !ids.includes(c.id)) ids.push(c.id);
     }
     
-    // Get staff members of this reseller
+    // Get staff members of all resellers in hierarchy
     const staff = await db.select({ id: users.id })
       .from(users)
-      .where(eq(users.resellerId, resellerId));
+      .where(inArray(users.resellerId, ids));
     for (const s of staff) {
-      if (s.id) ids.push(s.id);
+      if (s.id && !ids.includes(s.id)) ids.push(s.id);
     }
     
     return [...new Set(ids)]; // Remove duplicates

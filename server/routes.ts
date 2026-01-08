@@ -28495,7 +28495,8 @@ export function registerRoutes(app: Express): Server {
         return res.status(404).json({ error: "Malattia non trovata" });
       }
 
-      if (sickLeave.resellerId !== resellerId) {
+      const accessibleResellerIds = await storage.getAccessibleResellerIds(resellerId);
+      if (!accessibleResellerIds.includes(sickLeave.resellerId)) {
         return res.status(403).json({ error: "Non autorizzato" });
       }
 
@@ -28516,7 +28517,6 @@ export function registerRoutes(app: Express): Server {
       res.status(500).json({ error: error.message });
     }
   });
-
   // HR Expense Reports (Rimborsi Spese)
   app.get("/api/reseller/hr/expense-reports", requireRole("reseller", "reseller_staff"), async (req, res) => {
     try {
