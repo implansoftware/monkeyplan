@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
@@ -17,7 +17,12 @@ import {
   FileText,
   Filter,
   Upload,
-  Calendar
+  Calendar,
+  Check,
+  X,
+  Paperclip,
+  Download,
+  Loader2
 } from "lucide-react";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -33,6 +38,7 @@ interface SickLeave {
   inpsProtocol?: string;
   notes?: string;
   status: 'pending' | 'confirmed' | 'closed';
+  certificateUploaded?: boolean;
   user?: { fullName: string };
 }
 
@@ -50,6 +56,9 @@ const statusLabels: Record<string, { label: string; variant: "default" | "second
 export default function HrSickLeave() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [certificateFile, setCertificateFile] = useState<File | null>(null);
+  const [uploadingCertificate, setUploadingCertificate] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [newSickLeave, setNewSickLeave] = useState({
     userId: "",
     startDate: "",
@@ -68,6 +77,21 @@ export default function HrSickLeave() {
     queryKey: ["/api/reseller/team"],
   });
 
+  const uploadCertificate = async (sickLeaveId: string, file: File) => {
+    const formData = new FormData();
+    formData.append("certificate", file);
+    const response = await fetch(`/api/reseller/hr/sick-leaves/${sickLeaveId}/certificate`, {
+      method: "POST",
+      body: formData,
+      credentials: "include"
+    });
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || "Errore durante l'upload del certificato");
+    }
+    return response.json();
+  };
+
   const createMutation = useMutation({
     mutationFn: async (data: any) => {
       return apiRequest("POST", "/api/reseller/hr/sick-leaves", {
@@ -75,11 +99,24 @@ export default function HrSickLeave() {
         status: 'pending'
       });
     },
-    onSuccess: () => {
+    onSuccess: async (result: any) => {
+      if (certificateFile && result.id) {
+        setUploadingCertificate(true);
+        try {
+          await uploadCertificate(result.id, certificateFile);
+          toast({ title: "Malattia e certificato registrati", description: "La comunicazione di malattia e il certificato sono stati registrati." });
+        } catch (error: any) {
+          toast({ title: "Malattia registrata", description: "La malattia è stata registrata, ma c'è stato un errore nel caricamento del certificato.", variant: "destructive" });
+        } finally {
+          setUploadingCertificate(false);
+        }
+      } else {
+        toast({ title: "Malattia registrata", description: "La comunicazione di malattia è stata registrata." });
+      }
       queryClient.invalidateQueries({ queryKey: ["/api/reseller/hr/sick-leaves"] });
       setDialogOpen(false);
+      setCertificateFile(null);
       setNewSickLeave({ userId: "", startDate: "", endDate: "", certificateNumber: "", inpsProtocol: "", notes: "" });
-      toast({ title: "Malattia registrata", description: "La comunicazione di malattia è stata registrata." });
     },
     onError: (error: any) => {
       toast({ title: "Errore", description: error.message, variant: "destructive" });
@@ -184,6 +221,7 @@ export default function HrSickLeave() {
                   <TableHead>Giorni</TableHead>
                   <TableHead>N. Certificato</TableHead>
                   <TableHead>Protocollo INPS</TableHead>
+                  <TableHead>Certificato</TableHead>
                   <TableHead>Stato</TableHead>
                 </TableRow>
               </TableHeader>
@@ -201,6 +239,19 @@ export default function HrSickLeave() {
                       <TableCell>{days}</TableCell>
                       <TableCell>{sl.certificateNumber || '-'}</TableCell>
                       <TableCell>{sl.inpsProtocol || '-'}</TableCell>
+                      <TableCell>
+                        {sl.certificateUploaded ? (
+                          <Badge variant="default" className="bg-green-600">
+                            <Check className="h-3 w-3 mr-1" />
+                            Caricato
+                          </Badge>
+                        ) : (
+                          <Badge variant="outline" className="text-muted-foreground">
+                            <X className="h-3 w-3 mr-1" />
+                            Mancante
+                          </Badge>
+                        )}
+                      </TableCell>
                       <TableCell>
                         <Badge variant={statusInfo.variant}>{statusInfo.label}</Badge>
                       </TableCell>
@@ -285,15 +336,65 @@ export default function HrSickLeave() {
                 data-testid="input-notes"
               />
             </div>
+            <div className="space-y-2">
+              <Label>Certificato Medico (opzionale)</Label>
+              <div className="flex items-center gap-2">
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={(e) => setCertificateFile(e.target.files?.[0] || null)}
+                  accept=".pdf,.jpg,.jpeg,.png,.webp"
+                  className="hidden"
+                  data-testid="input-certificate-file"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="flex-1"
+                  data-testid="button-select-file"
+                >
+                  <Upload className="h-4 w-4 mr-2" />
+                  {certificateFile ? certificateFile.name : "Seleziona file"}
+                </Button>
+                {certificateFile && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => {
+                      setCertificateFile(null);
+                      if (fileInputRef.current) fileInputRef.current.value = "";
+                    }}
+                    data-testid="button-remove-file"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                )}
+              </div>
+              <p className="text-xs text-muted-foreground">Formati supportati: PDF, JPEG, PNG, WebP (max 10MB)</p>
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)}>Annulla</Button>
             <Button 
               onClick={() => createMutation.mutate(newSickLeave)}
-              disabled={!newSickLeave.userId || !newSickLeave.startDate || createMutation.isPending}
+              disabled={!newSickLeave.userId || !newSickLeave.startDate || createMutation.isPending || uploadingCertificate}
               data-testid="button-submit-sick-leave"
             >
-              {createMutation.isPending ? "Registrazione..." : "Registra"}
+              {uploadingCertificate ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Caricamento certificato...
+                </>
+              ) : createMutation.isPending ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Registrazione...
+                </>
+              ) : (
+                "Registra"
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>

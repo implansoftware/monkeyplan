@@ -28426,6 +28426,11 @@ export function registerRoutes(app: Express): Server {
         return res.status(404).json({ error: "Malattia non trovata" });
       }
 
+      // Verifica autorizzazione
+      if (sickLeave.resellerId !== resellerId) {
+        return res.status(403).json({ error: "Non autorizzato a modificare questa malattia" });
+      }
+
       if (!req.file) {
         return res.status(400).json({ error: "Nessun file caricato" });
       }
