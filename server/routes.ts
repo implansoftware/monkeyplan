@@ -28452,11 +28452,51 @@ export function registerRoutes(app: Express): Server {
       if (!req.user) return res.status(401).json({ error: "Non autenticato" });
       const resellerId = req.user.role === 'reseller' ? req.user.id : req.user.resellerId;
       
-      const report = await storage.updateHrExpenseReport(req.params.id, {
-        ...req.body,
-        reviewedBy: req.body.status ? req.user.id : undefined,
-        reviewedAt: req.body.status ? new Date() : undefined
-      });
+      const updateData: any = { ...req.body };
+      if (req.body.status === "pending") {
+        updateData.submittedAt = new Date();
+      }
+      if (req.body.status === "approved" || req.body.status === "rejected") {
+        updateData.reviewedBy = req.user.id;
+        updateData.reviewedAt = new Date();
+      }
+      const report = await storage.updateHrExpenseReport(req.params.id, updateData);
+      const updateData: any = { ...req.body };
+      if (req.body.status === "pending") {
+        updateData.submittedAt = new Date();
+      }
+      if (req.body.status === "approved" || req.body.status === "rejected") {
+        updateData.reviewedBy = req.user.id;
+        updateData.reviewedAt = new Date();
+      }
+      const report = await storage.updateHrExpenseReport(req.params.id, updateData);
+      const updateData: any = { ...req.body };
+      if (req.body.status === "pending") {
+        updateData.submittedAt = new Date();
+      }
+      if (req.body.status === "approved" || req.body.status === "rejected") {
+        updateData.reviewedBy = req.user.id;
+        updateData.reviewedAt = new Date();
+      }
+      const report = await storage.updateHrExpenseReport(req.params.id, updateData);
+      const updateData: any = { ...req.body };
+      if (req.body.status === "pending") {
+        updateData.submittedAt = new Date();
+      }
+      if (req.body.status === "approved" || req.body.status === "rejected") {
+        updateData.reviewedBy = req.user.id;
+        updateData.reviewedAt = new Date();
+      }
+      const report = await storage.updateHrExpenseReport(req.params.id, updateData);
+      const updateData: any = { ...req.body };
+      if (req.body.status === "pending") {
+        updateData.submittedAt = new Date();
+      }
+      if (req.body.status === "approved" || req.body.status === "rejected") {
+        updateData.reviewedBy = req.user.id;
+        updateData.reviewedAt = new Date();
+      }
+      const report = await storage.updateHrExpenseReport(req.params.id, updateData);
       
       if (resellerId) {
         await storage.createHrAuditLog({

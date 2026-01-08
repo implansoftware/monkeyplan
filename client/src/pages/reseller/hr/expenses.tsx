@@ -36,6 +36,7 @@ interface ExpenseReport {
   description?: string;
   totalAmount: number;
   status: 'draft' | 'pending' | 'approved' | 'rejected' | 'paid';
+  createdAt?: string;
   submittedAt?: string;
   reviewedBy?: string;
   reviewedAt?: string;
@@ -251,7 +252,10 @@ export default function HrExpenses() {
                         <Badge variant={statusInfo.variant}>{statusInfo.label}</Badge>
                       </TableCell>
                       <TableCell>
-                        {report.submittedAt ? format(new Date(report.submittedAt), "dd/MM/yyyy") : '-'}
+                        {report.status === 'draft' 
+                          ? (report.createdAt ? format(new Date(report.createdAt), "dd/MM/yyyy") : '-')
+                          : (report.submittedAt ? format(new Date(report.submittedAt), "dd/MM/yyyy") : (report.createdAt ? format(new Date(report.createdAt), "dd/MM/yyyy") : '-'))
+                        }
                       </TableCell>
                       <TableCell>
                         <div className="flex gap-1">
