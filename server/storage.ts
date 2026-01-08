@@ -8775,6 +8775,14 @@ export class DatabaseStorage implements IStorage {
       .orderBy(desc(hrCertificates.createdAt));
   }
 
+  async getHrCertificateBySickLeaveId(sickLeaveId: string): Promise<HrCertificate | undefined> {
+    const [cert] = await db.select().from(hrCertificates)
+      .where(eq(hrCertificates.relatedSickLeaveId, sickLeaveId))
+      .orderBy(desc(hrCertificates.createdAt))
+      .limit(1);
+    return cert || undefined;
+  }
+
   // Absences
   async createHrAbsence(data: InsertHrAbsence): Promise<HrAbsence> {
     const [absence] = await db.insert(hrAbsences).values(data).returning();

@@ -28487,8 +28487,31 @@ export function registerRoutes(app: Express): Server {
   app.get("/api/reseller/hr/sick-leaves/:id/certificate", requireRole("reseller", "reseller_staff"), async (req, res) => {
     try {
       if (!req.user) return res.status(401).json({ error: "Non autenticato" });
-      const certificates = await storage.listHrCertificates({ sickLeaveId: req.params.id });
-      res.json(certificates);
+      const resellerId = req.user.role === 'reseller' ? req.user.id : req.user.resellerId;
+      if (!resellerId) return res.status(400).json({ error: "Reseller ID non trovato" });
+
+      const sickLeave = await storage.getHrSickLeave(req.params.id);
+      if (!sickLeave) {
+        return res.status(404).json({ error: "Malattia non trovata" });
+      }
+
+      if (sickLeave.resellerId !== resellerId) {
+        return res.status(403).json({ error: "Non autorizzato" });
+      }
+
+      const certificate = await storage.getHrCertificateBySickLeaveId(req.params.id);
+      if (!certificate) {
+        return res.status(404).json({ error: "Certificato non trovato" });
+      }
+
+      const objectPath = certificate.fileUrl.replace(/^\/objects\//, '');
+      const signedUrl = await getSignedDownloadUrl(objectPath);
+      
+      res.json({
+        fileName: certificate.fileName,
+        mimeType: certificate.mimeType,
+        downloadUrl: signedUrl
+      });
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }

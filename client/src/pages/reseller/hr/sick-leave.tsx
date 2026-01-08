@@ -242,10 +242,34 @@ export default function HrSickLeave() {
                       <TableCell>{sl.inpsProtocol || '-'}</TableCell>
                       <TableCell>
                         {sl.certificateUploaded ? (
-                          <Badge variant="default" className="bg-green-600">
-                            <Check className="h-3 w-3 mr-1" />
-                            Caricato
-                          </Badge>
+                          <div className="flex items-center gap-2">
+                            <Badge variant="default" className="bg-green-600">
+                              <Check className="h-3 w-3 mr-1" />
+                              Caricato
+                            </Badge>
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              onClick={async () => {
+                                try {
+                                  const response = await fetch(`/api/reseller/hr/sick-leaves/${sl.id}/certificate`, {
+                                    credentials: "include"
+                                  });
+                                  if (!response.ok) {
+                                    const error = await response.json();
+                                    throw new Error(error.error || "Errore nel download");
+                                  }
+                                  const data = await response.json();
+                                  window.open(data.downloadUrl, '_blank');
+                                } catch (error: any) {
+                                  toast({ title: "Errore", description: error.message, variant: "destructive" });
+                                }
+                              }}
+                              data-testid={`button-download-certificate-${sl.id}`}
+                            >
+                              <Download className="h-4 w-4" />
+                            </Button>
+                          </div>
                         ) : (
                           <Badge variant="outline" className="text-muted-foreground">
                             <X className="h-3 w-3 mr-1" />
