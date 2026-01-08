@@ -15256,9 +15256,23 @@ export function registerRoutes(app: Express): Server {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
-      // For reseller_staff and repair_center, use resellerId; for sub-resellers, use parentResellerId
+      // For reseller_staff, use resellerId; for sub-resellers, use parentResellerId
+      // For repair_center, look up from repair_centers table
       let targetResellerId = null;
-      if ((req.user.role === 'reseller_staff' || req.user.role === 'repair_center') && req.user.resellerId) {
+      
+      if (req.user.role === 'repair_center') {
+        // Repair center user: find the repair center and get its resellerId
+        if (req.user.repairCenterId) {
+          const repairCenter = await storage.getRepairCenter(req.user.repairCenterId);
+          if (repairCenter) {
+            targetResellerId = repairCenter.resellerId;
+          }
+        }
+        // Fallback to user's resellerId if available
+        if (!targetResellerId && req.user.resellerId) {
+          targetResellerId = req.user.resellerId;
+        }
+      } else if (req.user.role === 'reseller_staff' && req.user.resellerId) {
         targetResellerId = req.user.resellerId;
       } else if ((req.user as any).parentResellerId) {
         targetResellerId = (req.user as any).parentResellerId;
