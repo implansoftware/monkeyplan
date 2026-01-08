@@ -28413,6 +28413,82 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Upload certificato malattia
+  app.post("/api/reseller/hr/sick-leaves/:id/certificate", requireRole("reseller", "reseller_staff"), upload.single("certificate"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      const resellerId = req.user.role === 'reseller' ? req.user.id : req.user.resellerId;
+      if (!resellerId) return res.status(400).json({ error: "Reseller ID non trovato" });
+
+      const sickLeaveId = req.params.id;
+      const sickLeave = await storage.getHrSickLeave(sickLeaveId);
+      if (!sickLeave) {
+        return res.status(404).json({ error: "Malattia non trovata" });
+      }
+
+      if (!req.file) {
+        return res.status(400).json({ error: "Nessun file caricato" });
+      }
+
+      const allowedMimeTypes = ["image/jpeg", "image/png", "image/webp", "application/pdf"];
+      if (!allowedMimeTypes.includes(req.file.mimetype)) {
+        return res.status(400).json({ error: "Formato file non supportato. Usa JPEG, PNG, WebP o PDF." });
+      }
+
+      const maxSize = 10 * 1024 * 1024;
+      if (req.file.size > maxSize) {
+        return res.status(400).json({ error: "File troppo grande. Massimo 10MB." });
+      }
+
+      const ext = req.file.originalname.split(".").pop() || "pdf";
+      const objectPath = `hr-certificates/${sickLeaveId}/${Date.now()}.${ext}`;
+
+      const privateObjectDir = objectStorage.getPrivateObjectDir();
+      const fullPath = `${privateObjectDir}/${objectPath}`;
+      const { bucketName, objectName } = parseObjectPath(fullPath);
+      const bucket = objectStorageClient.bucket(bucketName);
+      const file = bucket.file(objectName);
+
+      await file.save(req.file.buffer, {
+        metadata: { contentType: req.file.mimetype }
+      });
+
+      const fileUrl = `/objects/${objectPath}`;
+
+      const certificate = await storage.createHrCertificate({
+        userId: sickLeave.userId,
+        resellerId,
+        certificateType: 'sick_leave',
+        relatedSickLeaveId: sickLeaveId,
+        fileName: req.file.originalname,
+        fileUrl,
+        fileSize: req.file.size,
+        mimeType: req.file.mimetype,
+        validFrom: sickLeave.startDate,
+        validTo: sickLeave.endDate || undefined,
+        uploadedBy: req.user.id,
+      });
+
+      await storage.updateHrSickLeave(sickLeaveId, { certificateUploaded: true });
+
+      res.json(certificate);
+    } catch (error: any) {
+      console.error("Error uploading sick leave certificate:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Ottieni certificato malattia
+  app.get("/api/reseller/hr/sick-leaves/:id/certificate", requireRole("reseller", "reseller_staff"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      const certificates = await storage.listHrCertificates({ sickLeaveId: req.params.id });
+      res.json(certificates);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   // HR Expense Reports (Rimborsi Spese)
   app.get("/api/reseller/hr/expense-reports", requireRole("reseller", "reseller_staff"), async (req, res) => {
     try {
