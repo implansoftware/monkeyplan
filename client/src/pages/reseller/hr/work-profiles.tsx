@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Link } from "wouter";
 import {
   Briefcase,
@@ -17,7 +18,9 @@ import {
   ArrowLeft,
   Clock,
   Calendar,
-  Users
+  Users,
+  RefreshCw,
+  Building2
 } from "lucide-react";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -33,6 +36,16 @@ interface WorkProfile {
   endTime?: string;
   breakMinutes: number;
   isDefault: boolean;
+  sourceType?: string;
+  sourceEntityId?: string;
+  isSynced?: boolean;
+  lastSyncedAt?: string;
+}
+
+interface RepairCenter {
+  id: string;
+  name: string;
+  openingHours?: Record<string, { isOpen: boolean; start?: string; end?: string }>;
 }
 
 const dayLabels = ["Dom", "Lun", "Mar", "Mer", "Gio", "Ven", "Sab"];
@@ -40,7 +53,9 @@ const dayLabels = ["Dom", "Lun", "Mar", "Mer", "Gio", "Ven", "Sab"];
 export default function HrWorkProfiles() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [syncDialogOpen, setSyncDialogOpen] = useState(false);
   const [selectedProfile, setSelectedProfile] = useState<WorkProfile | null>(null);
+  const [selectedRepairCenterId, setSelectedRepairCenterId] = useState<string>("");
   const [formData, setFormData] = useState({
     name: "",
     weeklyHours: 40,
@@ -55,6 +70,25 @@ export default function HrWorkProfiles() {
 
   const { data: profiles = [], isLoading } = useQuery<WorkProfile[]>({
     queryKey: ["/api/reseller/hr/work-profiles"],
+  });
+
+  const { data: repairCenters = [] } = useQuery<RepairCenter[]>({
+    queryKey: ["/api/reseller/repair-centers"],
+  });
+
+  const syncMutation = useMutation({
+    mutationFn: async (data: { entityType: string; entityId: string }) => {
+      return apiRequest("POST", "/api/reseller/hr/work-profiles/sync-from-entity", data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/reseller/hr/work-profiles"] });
+      setSyncDialogOpen(false);
+      setSelectedRepairCenterId("");
+      toast({ title: "Sincronizzazione completata", description: "Il profilo orario è stato creato dagli orari del centro riparazione." });
+    },
+    onError: (error: any) => {
+      toast({ title: "Errore sincronizzazione", description: error.message, variant: "destructive" });
+    }
   });
 
   const createMutation = useMutation({
@@ -166,13 +200,17 @@ export default function HrWorkProfiles() {
               </div>
             </div>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
             <Link href="/reseller/hr">
               <Button variant="outline" data-testid="button-back-to-hr">
                 <ArrowLeft className="h-4 w-4 mr-2" />
                 Torna a HR
               </Button>
             </Link>
+            <Button variant="outline" onClick={() => setSyncDialogOpen(true)} data-testid="button-sync-from-center">
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Importa da Centro
+            </Button>
             <Button onClick={() => { resetForm(); setDialogOpen(true); }} data-testid="button-new-profile">
               <Plus className="h-4 w-4 mr-2" />
               Nuovo Profilo
@@ -217,10 +255,16 @@ export default function HrWorkProfiles() {
                 {profiles.map((profile) => (
                   <TableRow key={profile.id} data-testid={`row-profile-${profile.id}`}>
                     <TableCell className="font-medium">
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 flex-wrap">
                         {profile.name}
                         {profile.isDefault && (
                           <Badge variant="secondary" className="text-xs">Default</Badge>
+                        )}
+                        {profile.sourceType === 'repair_center' && (
+                          <Badge variant="outline" className="text-xs">
+                            <RefreshCw className="h-3 w-3 mr-1" />
+                            Sincronizzato
+                          </Badge>
                         )}
                       </div>
                     </TableCell>
@@ -391,6 +435,64 @@ export default function HrWorkProfiles() {
               data-testid="button-confirm-delete"
             >
               {deleteMutation.isPending ? "Eliminazione..." : "Elimina"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={syncDialogOpen} onOpenChange={setSyncDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Building2 className="h-5 w-5" />
+              Importa Orari da Centro Riparazione
+            </DialogTitle>
+            <DialogDescription>
+              Seleziona un centro riparazione per importare automaticamente gli orari di apertura come profilo orario del personale.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>Centro Riparazione</Label>
+              <Select value={selectedRepairCenterId} onValueChange={setSelectedRepairCenterId}>
+                <SelectTrigger data-testid="select-repair-center">
+                  <SelectValue placeholder="Seleziona centro riparazione..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {repairCenters.filter(rc => rc.openingHours).map((center) => (
+                    <SelectItem key={center.id} value={center.id}>
+                      {center.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {repairCenters.filter(rc => rc.openingHours).length === 0 && (
+                <p className="text-sm text-muted-foreground">
+                  Nessun centro riparazione ha orari configurati. Configura prima gli orari nelle impostazioni del centro.
+                </p>
+              )}
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setSyncDialogOpen(false); setSelectedRepairCenterId(""); }}>
+              Annulla
+            </Button>
+            <Button 
+              onClick={() => syncMutation.mutate({ entityType: 'repair_center', entityId: selectedRepairCenterId })}
+              disabled={!selectedRepairCenterId || syncMutation.isPending}
+              data-testid="button-confirm-sync"
+            >
+              {syncMutation.isPending ? (
+                <>
+                  <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                  Sincronizzazione...
+                </>
+              ) : (
+                <>
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                  Importa Orari
+                </>
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>
