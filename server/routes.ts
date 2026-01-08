@@ -28463,7 +28463,7 @@ export function registerRoutes(app: Express): Server {
       const certificate = await storage.createHrCertificate({
         userId: sickLeave.userId,
         resellerId,
-        certificateType: 'sick_leave',
+        certificateType: 'malattia',
         relatedSickLeaveId: sickLeaveId,
         fileName: req.file.originalname,
         fileUrl,
