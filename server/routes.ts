@@ -1857,7 +1857,7 @@ export function registerRoutes(app: Express): Server {
       }
       
       // Hash password before storing
-      const hashedPassword = await hashPassword(validatedData.password);
+      const hashedPassword = await hashPassword(password);
       
       // Only set resellerCategory for reseller role
       const resellerCategory = validatedData.role === 'reseller' 
@@ -4113,7 +4113,7 @@ export function registerRoutes(app: Express): Server {
       }
       
       // Hash password before storing
-      const hashedPassword = await hashPassword(validatedData.password);
+      const hashedPassword = await hashPassword(password);
       
       // Force role to reseller and set parent
       const user = await storage.createUser({
@@ -4859,8 +4859,32 @@ export function registerRoutes(app: Express): Server {
       }).extend({
         repairCenterId: z.string().optional(),
         repairCenterIds: z.array(z.string()).optional(),
+        username: z.string().optional(),
+        password: z.string().optional(),
       });
       const validatedData = baseSchema.parse(req.body);
+      
+      // Auto-generate username if not provided
+      let username = validatedData.username;
+      if (!username && validatedData.fullName) {
+        let baseUsername = validatedData.fullName
+          .toLowerCase()
+          .replace(/[^a-z0-9]/g, '')
+          .substring(0, 20);
+        if (baseUsername.length < 3) baseUsername = 'cliente';
+        username = baseUsername;
+        let counter = 1;
+        while (await storage.getUserByUsername(username)) {
+          username = `${baseUsername}${counter}`;
+          counter++;
+        }
+      }
+      
+      // Auto-generate password if not provided
+      let password = validatedData.password;
+      if (!password) {
+        password = randomBytes(8).toString('hex');
+      }
 
       // Validate repair centers belong to this reseller
       const repairCenterIds = validatedData.repairCenterIds || (validatedData.repairCenterId ? [validatedData.repairCenterId] : []);
@@ -4874,10 +4898,10 @@ export function registerRoutes(app: Express): Server {
       }
 
       // Hash password before storing
-      const hashedPassword = await hashPassword(validatedData.password);
+      const hashedPassword = await hashPassword(password);
 
       const user = await storage.createUser({
-        username: validatedData.username,
+        username: username,
         password: hashedPassword,
         email: validatedData.email,
         fullName: validatedData.fullName,
