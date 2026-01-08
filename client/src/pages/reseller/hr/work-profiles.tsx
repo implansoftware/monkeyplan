@@ -39,6 +39,7 @@ interface WorkProfile {
   sourceType?: string;
   sourceEntityId?: string;
   isSynced?: boolean;
+  autoSyncDisabled?: boolean;
   lastSyncedAt?: string;
 }
 
@@ -208,8 +209,8 @@ export default function HrWorkProfiles() {
               </Button>
             </Link>
             <Button variant="outline" onClick={() => setSyncDialogOpen(true)} data-testid="button-sync-from-center">
-              <RefreshCw className="h-4 w-4 mr-2" />
-              Importa da Centro
+              <Building2 className="h-4 w-4 mr-2" />
+              Sincronizza Centro
             </Button>
             <Button onClick={() => { resetForm(); setDialogOpen(true); }} data-testid="button-new-profile">
               <Plus className="h-4 w-4 mr-2" />
@@ -261,9 +262,12 @@ export default function HrWorkProfiles() {
                           <Badge variant="secondary" className="text-xs">Default</Badge>
                         )}
                         {profile.sourceType === 'repair_center' && (
-                          <Badge variant="outline" className="text-xs">
-                            <RefreshCw className="h-3 w-3 mr-1" />
-                            Sincronizzato
+                          <Badge 
+                            variant="outline" 
+                            className={`text-xs ${profile.autoSyncDisabled ? 'border-yellow-500 text-yellow-600' : 'border-green-500 text-green-600'}`}
+                          >
+                            <RefreshCw className={`h-3 w-3 mr-1 ${!profile.autoSyncDisabled ? 'animate-pulse' : ''}`} />
+                            {profile.autoSyncDisabled ? 'Sync Disattivato' : 'Auto-Sync'}
                           </Badge>
                         )}
                       </div>
@@ -445,13 +449,22 @@ export default function HrWorkProfiles() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Building2 className="h-5 w-5" />
-              Importa Orari da Centro Riparazione
+              Sincronizzazione Orari Centro
             </DialogTitle>
             <DialogDescription>
-              Seleziona un centro riparazione per importare automaticamente gli orari di apertura come profilo orario del personale.
+              Crea un profilo orario basato sugli orari di apertura di un centro riparazione. Il profilo verrà aggiornato automaticamente quando il centro modifica i propri orari.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
+            <div className="p-3 bg-muted/50 rounded-lg text-sm">
+              <div className="flex items-center gap-2 text-muted-foreground mb-1">
+                <RefreshCw className="h-4 w-4" />
+                <span className="font-medium">Sincronizzazione Automatica</span>
+              </div>
+              <p className="text-muted-foreground">
+                I profili sincronizzati vengono aggiornati automaticamente quando il centro riparazione modifica i propri orari di apertura.
+              </p>
+            </div>
             <div className="space-y-2">
               <Label>Centro Riparazione</Label>
               <Select value={selectedRepairCenterId} onValueChange={setSelectedRepairCenterId}>
@@ -485,12 +498,12 @@ export default function HrWorkProfiles() {
               {syncMutation.isPending ? (
                 <>
                   <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                  Sincronizzazione...
+                  Creazione...
                 </>
               ) : (
                 <>
                   <RefreshCw className="h-4 w-4 mr-2" />
-                  Importa Orari
+                  Crea Profilo Sincronizzato
                 </>
               )}
             </Button>

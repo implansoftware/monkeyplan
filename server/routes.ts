@@ -373,6 +373,78 @@ function autoLogMiddleware(req: Request, res: Response, next: Function) {
   next();
 }
 
+
+// Helper function to auto-sync work profile from repair center opening hours
+async function autoSyncWorkProfileFromRepairCenter(repairCenterId: string, openingHours: any, resellerId: string | null): Promise<void> {
+  if (!openingHours || !resellerId) return;
+  
+  try {
+    const dayMapping: Record<string, number> = {
+      'sunday': 0, 'monday': 1, 'tuesday': 2, 'wednesday': 3,
+      'thursday': 4, 'friday': 5, 'saturday': 6
+    };
+    
+    const workDays: number[] = [];
+    let startTime = "09:00";
+    let endTime = "18:00";
+    let breakMinutes = 60;
+    
+    Object.entries(openingHours as Record<string, { isOpen: boolean; start?: string; end?: string; breakStart?: string | null; breakEnd?: string | null }>).forEach(([day, config]) => {
+      if (config.isOpen) {
+        workDays.push(dayMapping[day.toLowerCase()]);
+        if (config.start) startTime = config.start;
+        if (config.end) endTime = config.end;
+        if (config.breakStart && config.breakEnd) {
+          const [bsH, bsM] = config.breakStart.split(':').map(Number);
+          const [beH, beM] = config.breakEnd.split(':').map(Number);
+          breakMinutes = (beH * 60 + beM) - (bsH * 60 + bsM);
+        }
+      }
+    });
+    
+    workDays.sort((a, b) => a - b);
+    
+    const [startH, startM] = startTime.split(':').map(Number);
+    const [endH, endM] = endTime.split(':').map(Number);
+    const totalMinutes = (endH * 60 + endM) - (startH * 60 + startM) - breakMinutes;
+    const dailyHours = Math.round(totalMinutes / 60 * 10) / 10;
+    const weeklyHours = dailyHours * workDays.length;
+    
+    const repairCenter = await storage.getRepairCenter(repairCenterId);
+    if (!repairCenter) return;
+    
+    const existingProfiles = await storage.listHrWorkProfiles(resellerId);
+    const existingProfile = existingProfiles.find(p => 
+      p.sourceType === 'repair_center' && p.sourceEntityId === repairCenterId && !p.autoSyncDisabled
+    );
+    
+    const profileData = {
+      resellerId,
+      name: `Orario ${repairCenter.name}`,
+      description: `Profilo sincronizzato automaticamente da ${repairCenter.name}`,
+      weeklyHours,
+      dailyHours,
+      workDays,
+      startTime,
+      endTime,
+      breakMinutes,
+      sourceType: 'repair_center',
+      sourceEntityId: repairCenterId,
+      isSynced: true,
+      lastSyncedAt: new Date(),
+      isActive: true
+    };
+    
+    if (existingProfile) {
+      await storage.updateHrWorkProfile(existingProfile.id, profileData);
+    } else {
+      await storage.createHrWorkProfile(profileData);
+    }
+  } catch (error) {
+    console.error('Auto-sync work profile failed:', error);
+  }
+}
+
 export function registerRoutes(app: Express): Server {
   // Setup authentication routes
   setupAuth(app);
@@ -7229,6 +7301,11 @@ export function registerRoutes(app: Express): Server {
       
       // Update repair center with validated data
       const updated = await storage.updateRepairCenter(repairCenterId, validatedData);
+      
+      // Auto-sync work profile if openingHours changed
+      if (validatedData.openingHours) {
+        await autoSyncWorkProfileFromRepairCenter(repairCenterId, validatedData.openingHours, repairCenter.resellerId);
+      }
       
       setActivityEntity(res, { type: 'repair_centers', id: repairCenterId });
       

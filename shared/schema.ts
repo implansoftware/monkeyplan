@@ -5749,6 +5749,7 @@ export const hrWorkProfiles = pgTable("hr_work_profiles", {
   sourceType: varchar("source_type", { length: 20 }), // 'repair_center' | 'reseller' | 'manual'
   sourceEntityId: varchar("source_entity_id"), // ID del centro/reseller di origine
   isSynced: boolean("is_synced").default(false), // Auto-sync attivo con entità sorgente
+  autoSyncDisabled: boolean("auto_sync_disabled").default(false), // Disabilita auto-sync (utente ha modificato manualmente)
   lastSyncedAt: timestamp("last_synced_at"), // Ultima sincronizzazione
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
