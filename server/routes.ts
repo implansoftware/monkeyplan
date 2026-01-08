@@ -28391,6 +28391,8 @@ export function registerRoutes(app: Express): Server {
       
       const sickLeave = await storage.createHrSickLeave({
         ...req.body,
+        startDate: req.body.startDate ? new Date(req.body.startDate) : undefined,
+        endDate: req.body.endDate ? new Date(req.body.endDate) : undefined,
         resellerId,
         userId: req.body.userId || req.user.id
       });
