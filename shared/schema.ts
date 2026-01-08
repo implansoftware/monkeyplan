@@ -5740,10 +5740,16 @@ export const hrWorkProfiles = pgTable("hr_work_profiles", {
   weeklyHours: real("weekly_hours").notNull(), // Ore settimanali totali
   dailyHours: real("daily_hours").notNull(), // Ore giornaliere standard
   workDays: jsonb("work_days").notNull().$type<number[]>(), // [1,2,3,4,5] = Lun-Ven
+  startTime: varchar("start_time", { length: 5 }), // Orario inizio es. "09:00"
+  endTime: varchar("end_time", { length: 5 }), // Orario fine es. "18:00"
   breakMinutes: integer("break_minutes").default(60), // Minuti pausa giornaliera
   toleranceMinutes: integer("tolerance_minutes").default(15), // Tolleranza ritardo in minuti
   isDefault: boolean("is_default").default(false),
   isActive: boolean("is_active").default(true),
+  sourceType: varchar("source_type", { length: 20 }), // 'repair_center' | 'reseller' | 'manual'
+  sourceEntityId: varchar("source_entity_id"), // ID del centro/reseller di origine
+  isSynced: boolean("is_synced").default(false), // Auto-sync attivo con entità sorgente
+  lastSyncedAt: timestamp("last_synced_at"), // Ultima sincronizzazione
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
