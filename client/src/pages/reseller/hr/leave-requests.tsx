@@ -70,7 +70,8 @@ export default function HrLeaveRequests() {
     leaveType: "vacation",
     startDate: "",
     endDate: "",
-    reason: ""
+    reason: "",
+    userId: ""
   });
   const { toast } = useToast();
 
@@ -96,7 +97,7 @@ export default function HrLeaveRequests() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/reseller/hr/leave-requests"] });
       setDialogOpen(false);
-      setNewRequest({ leaveType: "vacation", startDate: "", endDate: "", reason: "" });
+      setNewRequest({ leaveType: "vacation", startDate: "", endDate: "", reason: "", userId: "" });
       toast({ title: "Richiesta inviata", description: "La richiesta ferie è stata inviata con successo." });
     },
     onError: (error: any) => {
@@ -277,6 +278,21 @@ export default function HrLeaveRequests() {
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
+              <Label>Dipendente</Label>
+              <Select value={newRequest.userId} onValueChange={(v) => setNewRequest({ ...newRequest, userId: v })}>
+                <SelectTrigger data-testid="select-employee">
+                  <SelectValue placeholder="Seleziona dipendente..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {staffMembers.map((member) => (
+                    <SelectItem key={member.id} value={member.id}>
+                      {member.fullName}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
               <Label>Tipo</Label>
               <Select value={newRequest.leaveType} onValueChange={(v) => setNewRequest({ ...newRequest, leaveType: v })}>
                 <SelectTrigger data-testid="select-leave-type">
@@ -325,7 +341,7 @@ export default function HrLeaveRequests() {
             <Button variant="outline" onClick={() => setDialogOpen(false)}>Annulla</Button>
             <Button 
               onClick={() => createMutation.mutate(newRequest)}
-              disabled={!newRequest.startDate || !newRequest.endDate || createMutation.isPending}
+              disabled={!newRequest.userId || !newRequest.startDate || !newRequest.endDate || createMutation.isPending}
               data-testid="button-submit-request"
             >
               {createMutation.isPending ? "Invio..." : "Invia Richiesta"}
