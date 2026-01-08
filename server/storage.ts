@@ -8773,13 +8773,18 @@ export class DatabaseStorage implements IStorage {
   }
 
   // HR Calendar Data - aggregates leaves, sick leaves for calendar view
-  async getHrCalendarData(resellerId: string, startDate: Date, endDate: Date): Promise<Array<{
+  // Accepts array of resellerIds for hierarchical visibility
+  async getHrCalendarData(resellerIds: string[], startDate: Date, endDate: Date): Promise<Array<{
     userId: string;
     userName: string;
     type: string;
     startDate: string;
     endDate: string;
   }>> {
+    if (resellerIds.length === 0) {
+      return [];
+    }
+
     const events: Array<{
       userId: string;
       userName: string;
@@ -8799,7 +8804,7 @@ export class DatabaseStorage implements IStorage {
       .from(hrLeaveRequests)
       .leftJoin(users, eq(hrLeaveRequests.userId, users.id))
       .where(and(
-        eq(hrLeaveRequests.resellerId, resellerId),
+        inArray(hrLeaveRequests.resellerId, resellerIds),
         eq(hrLeaveRequests.status, 'approved'),
         or(
           and(gte(hrLeaveRequests.startDate, startDate), lte(hrLeaveRequests.startDate, endDate)),
@@ -8834,7 +8839,7 @@ export class DatabaseStorage implements IStorage {
       .from(hrSickLeaves)
       .leftJoin(users, eq(hrSickLeaves.userId, users.id))
       .where(and(
-        eq(hrSickLeaves.resellerId, resellerId),
+        inArray(hrSickLeaves.resellerId, resellerIds),
         or(
           and(gte(hrSickLeaves.startDate, startDate), lte(hrSickLeaves.startDate, endDate)),
           and(
@@ -8845,12 +8850,14 @@ export class DatabaseStorage implements IStorage {
       ));
 
     for (const sl of sickLeaves) {
+      // For open-ended sick leaves (no endDate), clamp to the requested range endDate
+      const effectiveEndDate = sl.endDate ? sl.endDate : endDate;
       events.push({
         userId: sl.userId,
         userName: sl.userName || 'Sconosciuto',
         type: 'sick',
         startDate: sl.startDate.toISOString(),
-        endDate: sl.endDate ? sl.endDate.toISOString() : new Date().toISOString(),
+        endDate: effectiveEndDate.toISOString(),
       });
     }
 
