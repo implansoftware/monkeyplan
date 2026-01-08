@@ -8772,6 +8772,91 @@ export class DatabaseStorage implements IStorage {
     return leave;
   }
 
+  // HR Calendar Data - aggregates leaves, sick leaves for calendar view
+  async getHrCalendarData(resellerId: string, startDate: Date, endDate: Date): Promise<Array<{
+    userId: string;
+    userName: string;
+    type: string;
+    startDate: string;
+    endDate: string;
+  }>> {
+    const events: Array<{
+      userId: string;
+      userName: string;
+      type: string;
+      startDate: string;
+      endDate: string;
+    }> = [];
+
+    // Get approved leave requests (ferie, permessi, rol)
+    const leaveRequests = await db.select({
+      userId: hrLeaveRequests.userId,
+      userName: users.fullName,
+      leaveType: hrLeaveRequests.leaveType,
+      startDate: hrLeaveRequests.startDate,
+      endDate: hrLeaveRequests.endDate,
+    })
+      .from(hrLeaveRequests)
+      .leftJoin(users, eq(hrLeaveRequests.userId, users.id))
+      .where(and(
+        eq(hrLeaveRequests.resellerId, resellerId),
+        eq(hrLeaveRequests.status, 'approved'),
+        or(
+          and(gte(hrLeaveRequests.startDate, startDate), lte(hrLeaveRequests.startDate, endDate)),
+          and(gte(hrLeaveRequests.endDate, startDate), lte(hrLeaveRequests.endDate, endDate)),
+          and(lte(hrLeaveRequests.startDate, startDate), gte(hrLeaveRequests.endDate, endDate))
+        )
+      ));
+
+    for (const lr of leaveRequests) {
+      let eventType = 'vacation';
+      if (lr.leaveType === 'permesso_studio' || lr.leaveType === 'permesso_medico' || lr.leaveType === 'permesso_lutto' || lr.leaveType === 'permesso_matrimonio') {
+        eventType = 'permit';
+      } else if (lr.leaveType === 'permesso_rol') {
+        eventType = 'rol';
+      }
+      events.push({
+        userId: lr.userId,
+        userName: lr.userName || 'Sconosciuto',
+        type: eventType,
+        startDate: lr.startDate.toISOString(),
+        endDate: lr.endDate.toISOString(),
+      });
+    }
+
+    // Get sick leaves
+    const sickLeaves = await db.select({
+      userId: hrSickLeaves.userId,
+      userName: users.fullName,
+      startDate: hrSickLeaves.startDate,
+      endDate: hrSickLeaves.endDate,
+    })
+      .from(hrSickLeaves)
+      .leftJoin(users, eq(hrSickLeaves.userId, users.id))
+      .where(and(
+        eq(hrSickLeaves.resellerId, resellerId),
+        or(
+          and(gte(hrSickLeaves.startDate, startDate), lte(hrSickLeaves.startDate, endDate)),
+          and(
+            or(isNull(hrSickLeaves.endDate), gte(hrSickLeaves.endDate, startDate)),
+            lte(hrSickLeaves.startDate, endDate)
+          )
+        )
+      ));
+
+    for (const sl of sickLeaves) {
+      events.push({
+        userId: sl.userId,
+        userName: sl.userName || 'Sconosciuto',
+        type: 'sick',
+        startDate: sl.startDate.toISOString(),
+        endDate: sl.endDate ? sl.endDate.toISOString() : new Date().toISOString(),
+      });
+    }
+
+    return events;
+  }
+
   // Certificates
   async createHrCertificate(data: InsertHrCertificate): Promise<HrCertificate> {
     const [cert] = await db.insert(hrCertificates).values(data).returning();
