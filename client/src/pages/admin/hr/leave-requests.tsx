@@ -20,15 +20,18 @@ import {
 interface LeaveRequest {
   id: string;
   userId: string;
-  type: string;
+  leaveType: string;
   startDate: string;
   endDate: string;
   status: string;
-  notes?: string;
+  reason?: string;
+  totalDays: number;
+  totalHours: number;
+  isFullDay: boolean;
   createdAt: string;
   user?: {
     fullName: string;
-    email: string;
+    email?: string;
   };
 }
 
@@ -139,7 +142,7 @@ export default function AdminLeaveRequestsPage() {
                     </TableCell>
                     <TableCell>
                       <Badge variant="outline">
-                        {leaveTypeLabels[req.type] || req.type}
+                        {leaveTypeLabels[req.leaveType] || req.leaveType}
                       </Badge>
                     </TableCell>
                     <TableCell>
@@ -157,7 +160,7 @@ export default function AdminLeaveRequestsPage() {
                     </TableCell>
                     <TableCell>
                       <span className="text-sm text-muted-foreground truncate max-w-[200px] block">
-                        {req.notes || "-"}
+                        {req.reason || "-"}
                       </span>
                     </TableCell>
                   </TableRow>
