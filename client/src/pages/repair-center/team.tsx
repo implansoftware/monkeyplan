@@ -69,10 +69,7 @@ export default function RepairCenterTeam() {
 
   const createMutation = useMutation({
     mutationFn: async (data: StaffFormValues) => {
-      return await apiRequest("/api/repair-center/team", {
-        method: "POST",
-        body: JSON.stringify(data),
-      });
+      return await apiRequest("POST", "/api/repair-center/team", data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/repair-center/team"] });
@@ -87,10 +84,7 @@ export default function RepairCenterTeam() {
 
   const updateMutation = useMutation({
     mutationFn: async ({ id, data }: { id: string; data: Partial<StaffFormValues> }) => {
-      return await apiRequest(`/api/repair-center/team/${id}`, {
-        method: "PUT",
-        body: JSON.stringify(data),
-      });
+      return await apiRequest("PUT", `/api/repair-center/team/${id}`, data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/repair-center/team"] });
@@ -107,7 +101,7 @@ export default function RepairCenterTeam() {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      return await apiRequest(`/api/repair-center/team/${id}`, { method: "DELETE" });
+      return await apiRequest("DELETE", `/api/repair-center/team/${id}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/repair-center/team"] });
@@ -122,10 +116,7 @@ export default function RepairCenterTeam() {
 
   const resetPasswordMutation = useMutation({
     mutationFn: async ({ id, newPassword }: { id: string; newPassword: string }) => {
-      return await apiRequest(`/api/repair-center/team/${id}/reset-password`, {
-        method: "POST",
-        body: JSON.stringify({ newPassword }),
-      });
+      return await apiRequest("POST", `/api/repair-center/team/${id}/reset-password`, { newPassword });
     },
     onSuccess: () => {
       toast({ title: "Password reimpostata", description: "La nuova password è stata impostata" });
@@ -140,10 +131,7 @@ export default function RepairCenterTeam() {
 
   const toggleActiveMutation = useMutation({
     mutationFn: async ({ id, isActive }: { id: string; isActive: boolean }) => {
-      return await apiRequest(`/api/repair-center/team/${id}`, {
-        method: "PUT",
-        body: JSON.stringify({ isActive }),
-      });
+      return await apiRequest("PUT", `/api/repair-center/team/${id}`, { isActive });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/repair-center/team"] });

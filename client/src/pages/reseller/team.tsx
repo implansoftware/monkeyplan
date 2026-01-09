@@ -673,7 +673,8 @@ export default function ResellerTeam() {
                         </div>
                       </TableCell>
                     </TableRow>
-                  );})}
+                  );
+                  })}
                 </TableBody>
               </Table>
             </div>
