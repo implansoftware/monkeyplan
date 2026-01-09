@@ -216,6 +216,11 @@ import AdminB2BOrders from "@/pages/admin/b2b-orders";
 import AdminRCB2BOrders from "@/pages/admin/rc-b2b-orders";
 import AdminB2BReturns from "@/pages/admin/b2b-returns";
 import AdminRemoteRequests from "@/pages/admin/remote-requests";
+import AdminHRLeaveRequests from "@/pages/admin/hr/leave-requests";
+import AdminHRSickLeave from "@/pages/admin/hr/sick-leave";
+import AdminHRExpenses from "@/pages/admin/hr/expenses";
+import AdminHRAttendance from "@/pages/admin/hr/attendance";
+import AdminHRCalendar from "@/pages/admin/hr/calendar";
 
 // Reseller Marketplace (peer-to-peer)
 import ResellerMarketplace from "@/pages/reseller/marketplace";
@@ -291,6 +296,11 @@ function Router() {
       <ProtectedRoute path="/admin/rc-b2b-orders" component={AdminRCB2BOrders} />
       <ProtectedRoute path="/admin/b2b-returns" component={AdminB2BReturns} />
       <ProtectedRoute path="/admin/remote-requests" component={AdminRemoteRequests} />
+      <ProtectedRoute path="/admin/hr/leave-requests" component={AdminHRLeaveRequests} />
+      <ProtectedRoute path="/admin/hr/sick-leave" component={AdminHRSickLeave} />
+      <ProtectedRoute path="/admin/hr/expenses" component={AdminHRExpenses} />
+      <ProtectedRoute path="/admin/hr/attendance" component={AdminHRAttendance} />
+      <ProtectedRoute path="/admin/hr/calendar" component={AdminHRCalendar} />
       
       {/* Reseller routes - accessible by reseller and reseller_staff */}
       <ProtectedRoute path="/reseller" component={ResellerDashboard} allowedRoles={["reseller", "reseller_staff"]} />

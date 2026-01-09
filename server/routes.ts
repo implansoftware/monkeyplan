@@ -169,7 +169,7 @@ async function resolveResellerEntityScope(opts: {
   // Default: no entity filter, return all accessible reseller IDs
   if (!entityType || !entityId) {
     const resellerIds = await st.getAccessibleResellerIds(requesterResellerId);
-    return { resellerIds, entityType: 'reseller', isExternalEntity: false };
+    return { resellerIds, entityType: entityType as 'reseller' | 'repair-center' | 'all', isExternalEntity: false };
   }
   
   const accessibleIds = await st.getAccessibleResellerIds(requesterResellerId);
@@ -186,7 +186,7 @@ async function resolveResellerEntityScope(opts: {
     return { 
       resellerIds: [entityId], 
       userIds, 
-      entityType: 'reseller', 
+      entityType: entityType as 'reseller' | 'repair-center' | 'all', 
       isExternalEntity: true 
     };
   }
@@ -203,7 +203,7 @@ async function resolveResellerEntityScope(opts: {
     const rcStaff = await st.listRepairCenterStaff(entityId);
     const userIds = rcStaff.map(u => u.id);
     return { 
-      resellerIds: [rc.resellerId], 
+      resellerIds: [rc.subResellerId || rc.resellerId], 
       userIds, 
       entityType: 'repair-center', 
       isExternalEntity: true 
@@ -212,6 +212,105 @@ async function resolveResellerEntityScope(opts: {
   
   throw new Error('INVALID_ENTITY_TYPE');
 }
+
+// Admin-specific scope resolution - Admin can see ALL entities in the system
+interface AdminEntityScopeResult {
+  resellerIds: string[];
+  userIds?: string[];
+  entityType: 'reseller' | 'repair-center' | 'all';
+  isGlobalAdminScope: boolean;
+  isExternalEntity: boolean;
+}
+
+async function resolveAdminEntityScope(opts: {
+  storage: typeof storage;
+  entityType?: string;
+  entityId?: string;
+}): Promise<AdminEntityScopeResult> {
+  const { storage: st, entityType, entityId } = opts;
+  
+  // Default: no entity filter, return ALL entities in the system
+  if (!entityType || !entityId || entityType === 'all') {
+    // Get all resellers (both top-level and sub-resellers)
+    const allResellers = await st.getAllResellers();
+    const resellerIds = allResellers.map(r => r.id);
+    
+    // Get all repair center staff
+    const allRepairCenters = await st.getAllRepairCenters();
+    const userIds: string[] = [...resellerIds]; // Include resellers as users
+    
+    // Add all reseller staff
+    for (const resellerId of resellerIds) {
+      const staff = await st.listResellerStaff(resellerId);
+      userIds.push(...staff.map(s => s.id));
+    }
+    
+    // Add all repair center staff
+    for (const rc of allRepairCenters) {
+      const rcStaff = await st.listRepairCenterStaff(rc.id);
+      userIds.push(...rcStaff.map(s => s.id));
+    }
+    
+    return { 
+      resellerIds, 
+      userIds: [...new Set(userIds)], // Deduplicate
+      entityType: 'all', 
+      isGlobalAdminScope: true,
+      isExternalEntity: false 
+    };
+  }
+  
+  if (entityType === 'reseller' || entityType === 'sub-reseller') {
+    // Admin viewing specific reseller - include complete subordinate hierarchy
+    const reseller = await st.getUser(entityId);
+    if (!reseller || reseller.role !== 'reseller') {
+      throw new Error('NOT_FOUND');
+    }
+    // Get all accessible reseller IDs in hierarchy (includes entityId + all sub-resellers)
+    const accessibleResellerIds = await st.getAccessibleResellerIds(entityId);
+    const allResellerIds = [...new Set([entityId, ...accessibleResellerIds])];
+    
+    // Collect all staff userIds from resellers and their repair centers
+    const userIds: string[] = [...allResellerIds]; // Include resellers as users
+    for (const rid of allResellerIds) {
+      const staff = await st.listResellerStaff(rid);
+      userIds.push(...staff.map(s => s.id));
+    }
+    // Get repair centers for these resellers
+    const repairCenters = await st.getRepairCentersByResellerIds(allResellerIds);
+    for (const rc of repairCenters) {
+      const rcStaff = await st.listRepairCenterStaff(rc.id);
+      userIds.push(...rcStaff.map(s => s.id));
+    }
+    
+    return { 
+      resellerIds: allResellerIds, 
+      userIds: [...new Set(userIds)], 
+      entityType: entityType as 'reseller' | 'repair-center' | 'all', 
+      isGlobalAdminScope: false,
+      isExternalEntity: true 
+    };
+  }
+
+  if (entityType === 'repair-center') {
+    const rc = await st.getRepairCenter(entityId);
+    if (!rc) {
+      throw new Error('NOT_FOUND');
+    }
+    const rcStaff = await st.listRepairCenterStaff(entityId);
+    const userIds = rcStaff.map(u => u.id);
+    return { 
+      resellerIds: [rc.subResellerId || rc.resellerId], 
+      userIds, 
+      entityType: 'repair-center', 
+      isGlobalAdminScope: false,
+      isExternalEntity: true 
+    };
+  }
+  
+  throw new Error('INVALID_ENTITY_TYPE');
+}
+
 // For reseller/admin/repair_center users, always allows access (full permissions)
 // For reseller_staff users, checks granular permissions in the database
 function requireModulePermission(module: string, action: 'read' | 'create' | 'update' | 'delete') {
@@ -29082,6 +29181,216 @@ export function registerRoutes(app: Express): Server {
         : calendarData;
       
       res.json(filteredData);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+
+  // ============================================
+  // ADMIN HR ENDPOINTS - Global visibility for all entities
+  // ============================================
+
+  // Get all entities for admin HR filtering
+  app.get("/api/admin/hr/entities", requireRole("admin", "admin_staff"), async (req, res) => {
+    try {
+      const entities: Array<{ type: string; id: string; name: string; parentId: string | null; parentName?: string }> = [];
+      
+      // Get all resellers
+      const allResellers = await storage.getAllResellers();
+      const resellerMap = new Map<string, typeof allResellers[0]>();
+      
+      for (const r of allResellers) {
+        resellerMap.set(r.id, r);
+        entities.push({
+          type: r.parentResellerId ? 'sub-reseller' : 'reseller',
+          id: r.id,
+          name: r.ragioneSociale || r.fullName || 'Reseller',
+          parentId: r.parentResellerId || null,
+          parentName: r.parentResellerId ? (resellerMap.get(r.parentResellerId)?.ragioneSociale || resellerMap.get(r.parentResellerId)?.fullName) : undefined
+        });
+      }
+      
+      // Get all repair centers
+      const allRepairCenters = await storage.getAllRepairCenters();
+      for (const rc of allRepairCenters) {
+        const parentReseller = resellerMap.get(rc.subResellerId || rc.resellerId);
+        entities.push({
+          type: 'repair-center',
+          id: rc.id,
+          name: rc.name,
+          parentId: rc.subResellerId || rc.resellerId,
+          parentName: parentReseller?.ragioneSociale || parentReseller?.fullName
+        });
+      }
+      
+      res.json(entities);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Admin HR - Leave Requests (global visibility)
+  app.get("/api/admin/hr/leave-requests", requireRole("admin", "admin_staff"), async (req, res) => {
+    try {
+      const { entityType, entityId, status } = req.query;
+      
+      let scope: AdminEntityScopeResult;
+      try {
+        scope = await resolveAdminEntityScope({
+          storage,
+          entityType: entityType as string | undefined,
+          entityId: entityId as string | undefined
+        });
+      } catch (e: any) {
+        if (e.message === 'NOT_FOUND') return res.status(404).json({ error: "Entità non trovata" });
+        throw e;
+      }
+      
+      const requests = await storage.listHrLeaveRequests({
+        resellerIds: scope.isGlobalAdminScope ? undefined : scope.resellerIds,
+        status: status as string | undefined
+      });
+      res.json(requests);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Admin HR - Sick Leaves (global visibility)
+  app.get("/api/admin/hr/sick-leaves", requireRole("admin", "admin_staff"), async (req, res) => {
+    try {
+      const { entityType, entityId, status } = req.query;
+      
+      let scope: AdminEntityScopeResult;
+      try {
+        scope = await resolveAdminEntityScope({
+          storage,
+          entityType: entityType as string | undefined,
+          entityId: entityId as string | undefined
+        });
+      } catch (e: any) {
+        if (e.message === 'NOT_FOUND') return res.status(404).json({ error: "Entità non trovata" });
+        throw e;
+      }
+      
+      const sickLeaves = await storage.listHrSickLeaves({
+        resellerIds: scope.isGlobalAdminScope ? undefined : scope.resellerIds,
+        status: status as string | undefined
+      });
+      res.json(sickLeaves);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Admin HR - Expense Reports (global visibility)
+  app.get("/api/admin/hr/expense-reports", requireRole("admin", "admin_staff"), async (req, res) => {
+    try {
+      const { entityType, entityId, status } = req.query;
+      
+      let scope: AdminEntityScopeResult;
+      try {
+        scope = await resolveAdminEntityScope({
+          storage,
+          entityType: entityType as string | undefined,
+          entityId: entityId as string | undefined
+        });
+      } catch (e: any) {
+        if (e.message === 'NOT_FOUND') return res.status(404).json({ error: "Entità non trovata" });
+        throw e;
+      }
+      
+      const reports = await storage.listHrExpenseReports({
+        resellerIds: scope.isGlobalAdminScope ? undefined : scope.resellerIds,
+        status: status as string | undefined
+      });
+      res.json(reports);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Admin HR - Clock Events (global visibility)
+  app.get("/api/admin/hr/clock-events", requireRole("admin", "admin_staff"), async (req, res) => {
+    try {
+      const { entityType, entityId, startDate, endDate } = req.query;
+      
+      let scope: AdminEntityScopeResult;
+      try {
+        scope = await resolveAdminEntityScope({
+          storage,
+          entityType: entityType as string | undefined,
+          entityId: entityId as string | undefined
+        });
+      } catch (e: any) {
+        if (e.message === 'NOT_FOUND') return res.status(404).json({ error: "Entità non trovata" });
+        throw e;
+      }
+      
+      const events = await storage.listHrClockEvents({
+        resellerIds: scope.isGlobalAdminScope ? undefined : scope.resellerIds,
+        startDate: startDate ? new Date(startDate as string) : undefined,
+        endDate: endDate ? new Date(endDate as string) : undefined
+      });
+      res.json(events);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Admin HR - Calendar Events (global visibility)
+  app.get("/api/admin/hr/calendar", requireRole("admin", "admin_staff"), async (req, res) => {
+    try {
+      const { entityType, entityId, startDate, endDate } = req.query;
+      
+      let scope: AdminEntityScopeResult;
+      try {
+        scope = await resolveAdminEntityScope({
+          storage,
+          entityType: entityType as string | undefined,
+          entityId: entityId as string | undefined
+        });
+      } catch (e: any) {
+        if (e.message === 'NOT_FOUND') return res.status(404).json({ error: "Entità non trovata" });
+        throw e;
+      }
+      
+      const events = await storage.listHrCalendarEvents({
+        resellerIds: scope.isGlobalAdminScope ? undefined : scope.resellerIds,
+        startDate: startDate ? new Date(startDate as string) : undefined,
+        endDate: endDate ? new Date(endDate as string) : undefined
+      });
+      res.json(events);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Admin HR - Work Profiles (global visibility)
+  app.get("/api/admin/hr/work-profiles", requireRole("admin", "admin_staff"), async (req, res) => {
+    try {
+      const { entityType, entityId } = req.query;
+      
+      let scope: AdminEntityScopeResult;
+      try {
+        scope = await resolveAdminEntityScope({
+          storage,
+          entityType: entityType as string | undefined,
+          entityId: entityId as string | undefined
+        });
+      } catch (e: any) {
+        if (e.message === 'NOT_FOUND') return res.status(404).json({ error: "Entità non trovata" });
+        throw e;
+      }
+      
+      // Get profiles for all resellers in scope
+      const profiles: any[] = [];
+      for (const resellerId of scope.resellerIds) {
+        const resellerProfiles = await storage.listHrWorkProfiles(resellerId);
+        profiles.push(...resellerProfiles);
+      }
+      res.json(profiles);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }

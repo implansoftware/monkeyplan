@@ -106,6 +106,11 @@ const menuItems = {
     // E-commerce - Operazioni
     { title: "Spedizioni", url: "/admin/shipments", icon: Truck, group: "E-commerce" },
     { title: "Pagamenti", url: "/admin/payments", icon: CreditCard, group: "E-commerce" },
+    { title: "Ferie/Permessi", url: "/admin/hr/leave-requests", icon: Calendar, group: "Risorse Umane" },
+    { title: "Malattie", url: "/admin/hr/sick-leave", icon: Stethoscope, group: "Risorse Umane" },
+    { title: "Note Spese", url: "/admin/hr/expenses", icon: Receipt, group: "Risorse Umane" },
+    { title: "Presenze", url: "/admin/hr/attendance", icon: Clock, group: "Risorse Umane" },
+    { title: "Calendario HR", url: "/admin/hr/calendar", icon: Calendar, group: "Risorse Umane" },
     { title: "Catalogo Dispositivi", url: "/admin/device-catalog", icon: Package, group: "Sistema" },
     { title: "Listino Prezzi", url: "/admin/service-catalog", icon: Receipt, group: "Sistema" },
     { title: "Categorie Utility", url: "/admin/utility-categories", icon: FolderOpen, group: "Sistema" },

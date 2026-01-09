@@ -1335,6 +1335,16 @@ export class DatabaseStorage implements IStorage {
     return center || undefined;
   }
 
+  // Get all resellers in the system (for admin visibility)
+  async getAllResellers(): Promise<User[]> {
+    return await db.select().from(users).where(eq(users.role, 'reseller')).orderBy(desc(users.createdAt));
+  }
+
+  // Alias for listRepairCenters (for admin visibility)
+  async getAllRepairCenters(): Promise<RepairCenter[]> {
+    return this.listRepairCenters();
+  }
+
   // Get sub-resellers by parent IDs (for hierarchical queries)
   async getUsersByParentResellerIds(parentIds: string[]): Promise<User[]> {
     if (parentIds.length === 0) return [];
