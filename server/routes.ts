@@ -29356,11 +29356,17 @@ export function registerRoutes(app: Express): Server {
         throw e;
       }
       
-      const events = await storage.listHrCalendarEvents({
-        resellerIds: scope.isGlobalAdminScope ? undefined : scope.resellerIds,
-        startDate: startDate ? new Date(startDate as string) : undefined,
-        endDate: endDate ? new Date(endDate as string) : undefined
-      });
+      // For admin global scope, get all reseller IDs first
+      let resellerIds = scope.resellerIds || [];
+      if (scope.isGlobalAdminScope) {
+        const allResellers = await storage.getAllResellers();
+        resellerIds = allResellers.map(r => r.id);
+      }
+      
+      const start = startDate ? new Date(startDate as string) : new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+      const end = endDate ? new Date(endDate as string) : new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0);
+      
+      const events = await storage.getHrCalendarData(resellerIds, start, end);
       res.json(events);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
