@@ -5322,6 +5322,21 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Get repair center staff for hierarchical visibility
+  app.get("/api/reseller/repair-center-staff", requireRole("reseller", "reseller_staff"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      const resellerId = req.user.role === 'reseller' ? req.user.id : req.user.resellerId;
+      if (!resellerId) return res.status(400).json({ error: "Reseller ID non trovato" });
+      
+      const staff = await storage.listRepairCenterStaffHierarchical(resellerId);
+      res.json(staff);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+
   // ============================================================================
   // End of Reseller Staff Team Management
   // ============================================================================
@@ -29021,7 +29036,7 @@ export function registerRoutes(app: Express): Server {
       if (!req.user) return res.status(401).json({ error: "Non autenticato" });
       const repairCenterId = req.user.id;
       const staff = await storage.listRepairCenterStaff(repairCenterId);
-      res.json(staff.map(s => ({ ...s, password: undefined })));
+      res.json(staff.map((s: any) => ({ ...s, password: undefined })));
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }

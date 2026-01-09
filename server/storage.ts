@@ -717,6 +717,18 @@ export interface IStorage {
   
   // Repair Center Staff Team Management
   listRepairCenterStaff(repairCenterId: string): Promise<User[]>;
+  listRepairCenterStaffHierarchical(resellerId: string): Promise<Array<{
+    id: string;
+    username: string;
+    email: string;
+    fullName: string;
+    phone: string | null;
+    role: string;
+    isActive: boolean;
+    repairCenterId: string | null;
+    createdAt: Date | null;
+    repairCenterName: string;
+  }>>;
   createRepairCenterStaff(data: { repairCenterId: string; username: string; password: string; email: string; fullName: string; phone?: string }): Promise<User>;
   updateRepairCenterStaff(userId: string, repairCenterId: string, updates: Partial<{ username: string; email: string; fullName: string; phone: string; isActive: boolean }>): Promise<User>;
   deleteRepairCenterStaff(userId: string, repairCenterId: string): Promise<void>;
@@ -6230,6 +6242,76 @@ export class DatabaseStorage implements IStorage {
         eq(users.repairCenterId, repairCenterId),
         eq(users.role, 'repair_center_staff')
       ));
+  }
+
+  async listRepairCenterStaffHierarchical(resellerId: string): Promise<Array<{
+    id: string;
+    username: string;
+    email: string;
+    fullName: string;
+    phone: string | null;
+    role: string;
+    isActive: boolean;
+    repairCenterId: string | null;
+    createdAt: Date | null;
+    repairCenterName: string;
+  }>> {
+    const accessibleIds = await this.getAccessibleResellerIds(resellerId);
+    
+    if (accessibleIds.length === 0) {
+      return [];
+    }
+    
+    const repairCenters = await db.select({
+      id: users.id,
+      name: users.fullName,
+      ragioneSociale: users.ragioneSociale
+    })
+      .from(users)
+      .where(and(
+        inArray(users.id, accessibleIds),
+        eq(users.role, 'repair_center')
+      ));
+    
+    const repairCenterIds = repairCenters.map(rc => rc.id);
+    
+    if (repairCenterIds.length === 0) {
+      return [];
+    }
+    
+    const repairCenterMap = new Map(
+      repairCenters.map(rc => [rc.id, rc.name || rc.ragioneSociale || 'N/A'])
+    );
+    
+    const staffMembers = await db.select({
+      id: users.id,
+      username: users.username,
+      email: users.email,
+      fullName: users.fullName,
+      phone: users.phone,
+      role: users.role,
+      isActive: users.isActive,
+      repairCenterId: users.repairCenterId,
+      createdAt: users.createdAt
+    })
+      .from(users)
+      .where(and(
+        inArray(users.repairCenterId, repairCenterIds),
+        eq(users.role, 'repair_center_staff')
+      ));
+    
+    return staffMembers.map(staff => ({
+      id: staff.id,
+      username: staff.username,
+      email: staff.email,
+      fullName: staff.fullName,
+      phone: staff.phone,
+      role: staff.role,
+      isActive: staff.isActive,
+      repairCenterId: staff.repairCenterId,
+      createdAt: staff.createdAt,
+      repairCenterName: repairCenterMap.get(staff.repairCenterId!) || 'N/A'
+    }));
   }
 
   async createRepairCenterStaff(data: { repairCenterId: string; username: string; password: string; email: string; fullName: string; phone?: string }): Promise<User> {
