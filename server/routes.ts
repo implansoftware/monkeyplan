@@ -149,6 +149,69 @@ function requireRole(...roles: string[]) {
 }
 
 // Middleware to check module-level permissions for reseller_staff users
+
+// Helper function for resolving entity scope for HR endpoints with security validation
+interface EntityScopeResult {
+  resellerIds: string[];
+  userIds?: string[];
+  entityType: 'reseller' | 'repair-center';
+  isExternalEntity: boolean;
+}
+
+async function resolveResellerEntityScope(opts: {
+  storage: typeof storage;
+  requesterResellerId: string;
+  entityType?: string;
+  entityId?: string;
+}): Promise<EntityScopeResult> {
+  const { storage: st, requesterResellerId, entityType, entityId } = opts;
+  
+  // Default: no entity filter, return all accessible reseller IDs
+  if (!entityType || !entityId) {
+    const resellerIds = await st.getAccessibleResellerIds(requesterResellerId);
+    return { resellerIds, entityType: 'reseller', isExternalEntity: false };
+  }
+  
+  const accessibleIds = await st.getAccessibleResellerIds(requesterResellerId);
+  
+  if (entityType === 'sub-reseller') {
+    // Validate sub-reseller is in accessible hierarchy and is not the requester
+    if (!accessibleIds.includes(entityId) || entityId === requesterResellerId) {
+      throw new Error('FORBIDDEN');
+    }
+    // Get staff of the sub-reseller + the sub-reseller itself
+    const subResellerStaff = await st.listResellerStaff(entityId);
+    const userIds = subResellerStaff.map(u => u.id);
+    userIds.push(entityId); // Include the sub-reseller owner
+    return { 
+      resellerIds: [entityId], 
+      userIds, 
+      entityType: 'reseller', 
+      isExternalEntity: true 
+    };
+  }
+  
+  if (entityType === 'repair-center') {
+    const rc = await st.getRepairCenter(entityId);
+    if (!rc) {
+      throw new Error('NOT_FOUND');
+    }
+    // Validate repair center belongs to an accessible reseller
+    if (!accessibleIds.includes(rc.resellerId)) {
+      throw new Error('FORBIDDEN');
+    }
+    const rcStaff = await st.listRepairCenterStaff(entityId);
+    const userIds = rcStaff.map(u => u.id);
+    return { 
+      resellerIds: [rc.resellerId], 
+      userIds, 
+      entityType: 'repair-center', 
+      isExternalEntity: true 
+    };
+  }
+  
+  throw new Error('INVALID_ENTITY_TYPE');
+}
 // For reseller/admin/repair_center users, always allows access (full permissions)
 // For reseller_staff users, checks granular permissions in the database
 function requireModulePermission(module: string, action: 'read' | 'create' | 'update' | 'delete') {
@@ -28394,41 +28457,36 @@ export function registerRoutes(app: Express): Server {
       if (!resellerId) return res.status(400).json({ error: "Reseller ID non trovato" });
       const { startDate, endDate, userId, entityType, entityId } = req.query;
       
-      let targetResellerIds: string[];
-      if (entityType === 'sub-reseller' && entityId) {
-        const subReseller = await storage.getUser(entityId as string);
-        if (!subReseller || subReseller.parentResellerId !== resellerId) {
-          return res.status(403).json({ error: "Non autorizzato" });
-        }
-        targetResellerIds = [entityId as string];
-      } else if (entityType === 'repair-center' && entityId) {
-        const rc = await storage.getRepairCenter(entityId as string);
-        if (!rc) return res.status(404).json({ error: "Centro non trovato" });
-        const accessibleIds = await storage.getAccessibleResellerIds(resellerId);
-        if (!accessibleIds.includes(rc.resellerId)) {
-          return res.status(403).json({ error: "Non autorizzato" });
-        }
-        const rcUsers = await storage.listRepairCenterStaff(entityId as string);
-        const rcUserIds = rcUsers.map(u => u.id);
-        const events = await storage.listHrClockEvents({
-          resellerIds: accessibleIds,
-          userId: userId as string | undefined,
-          startDate: startDate ? new Date(startDate as string) : undefined,
-          endDate: endDate ? new Date(endDate as string) : undefined
+      let scope: EntityScopeResult;
+      try {
+        scope = await resolveResellerEntityScope({
+          storage,
+          requesterResellerId: resellerId,
+          entityType: entityType as string | undefined,
+          entityId: entityId as string | undefined
         });
-        const filtered = events.filter(e => rcUserIds.includes(e.userId));
-        return res.json(filtered);
-      } else {
-        targetResellerIds = await storage.getAccessibleResellerIds(resellerId);
+      } catch (e: any) {
+        if (e.message === 'FORBIDDEN') return res.status(403).json({ error: "Non autorizzato" });
+        if (e.message === 'NOT_FOUND') return res.status(404).json({ error: "Entità non trovata" });
+        throw e;
+      }
+      
+      if (userId && scope.userIds && !scope.userIds.includes(userId as string)) {
+        return res.status(403).json({ error: "Utente non autorizzato per questa entità" });
       }
       
       const events = await storage.listHrClockEvents({
-        resellerIds: targetResellerIds,
+        resellerIds: scope.resellerIds,
         userId: userId as string | undefined,
         startDate: startDate ? new Date(startDate as string) : undefined,
         endDate: endDate ? new Date(endDate as string) : undefined
       });
-      res.json(events);
+      
+      const filteredEvents = scope.userIds 
+        ? events.filter(e => scope.userIds!.includes(e.userId))
+        : events;
+      
+      res.json(filteredEvents);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }
@@ -28473,39 +28531,35 @@ export function registerRoutes(app: Express): Server {
       if (!resellerId) return res.status(400).json({ error: "Reseller ID non trovato" });
       const { status, userId, entityType, entityId } = req.query;
       
-      let targetResellerIds: string[];
-      if (entityType === 'sub-reseller' && entityId) {
-        const subReseller = await storage.getUser(entityId as string);
-        if (!subReseller || subReseller.parentResellerId !== resellerId) {
-          return res.status(403).json({ error: "Non autorizzato" });
-        }
-        targetResellerIds = [entityId as string];
-      } else if (entityType === 'repair-center' && entityId) {
-        const rc = await storage.getRepairCenter(entityId as string);
-        if (!rc) return res.status(404).json({ error: "Centro non trovato" });
-        const accessibleIds = await storage.getAccessibleResellerIds(resellerId);
-        if (!accessibleIds.includes(rc.resellerId)) {
-          return res.status(403).json({ error: "Non autorizzato" });
-        }
-        const rcUsers = await storage.listRepairCenterStaff(entityId as string);
-        const rcUserIds = rcUsers.map(u => u.id);
-        const requests = await storage.listHrLeaveRequests({
-          resellerIds: accessibleIds,
-          status: status as string | undefined,
-          userId: userId as string | undefined
+      let scope: EntityScopeResult;
+      try {
+        scope = await resolveResellerEntityScope({
+          storage,
+          requesterResellerId: resellerId,
+          entityType: entityType as string | undefined,
+          entityId: entityId as string | undefined
         });
-        const filtered = requests.filter(r => rcUserIds.includes(r.userId));
-        return res.json(filtered);
-      } else {
-        targetResellerIds = await storage.getAccessibleResellerIds(resellerId);
+      } catch (e: any) {
+        if (e.message === 'FORBIDDEN') return res.status(403).json({ error: "Non autorizzato" });
+        if (e.message === 'NOT_FOUND') return res.status(404).json({ error: "Entità non trovata" });
+        throw e;
+      }
+      
+      if (userId && scope.userIds && !scope.userIds.includes(userId as string)) {
+        return res.status(403).json({ error: "Utente non autorizzato per questa entità" });
       }
       
       const requests = await storage.listHrLeaveRequests({
-        resellerIds: targetResellerIds,
+        resellerIds: scope.resellerIds,
         status: status as string | undefined,
         userId: userId as string | undefined
       });
-      res.json(requests);
+      
+      const filteredRequests = scope.userIds 
+        ? requests.filter(r => scope.userIds!.includes(r.userId))
+        : requests;
+      
+      res.json(filteredRequests);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }
@@ -28581,39 +28635,35 @@ export function registerRoutes(app: Express): Server {
       if (!resellerId) return res.status(400).json({ error: "Reseller ID non trovato" });
       const { userId, status, entityType, entityId } = req.query;
       
-      let targetResellerIds: string[];
-      if (entityType === 'sub-reseller' && entityId) {
-        const subReseller = await storage.getUser(entityId as string);
-        if (!subReseller || subReseller.parentResellerId !== resellerId) {
-          return res.status(403).json({ error: "Non autorizzato" });
-        }
-        targetResellerIds = [entityId as string];
-      } else if (entityType === 'repair-center' && entityId) {
-        const rc = await storage.getRepairCenter(entityId as string);
-        if (!rc) return res.status(404).json({ error: "Centro non trovato" });
-        const accessibleIds = await storage.getAccessibleResellerIds(resellerId);
-        if (!accessibleIds.includes(rc.resellerId)) {
-          return res.status(403).json({ error: "Non autorizzato" });
-        }
-        const rcUsers = await storage.listRepairCenterStaff(entityId as string);
-        const rcUserIds = rcUsers.map(u => u.id);
-        const sickLeaves = await storage.listHrSickLeaves({
-          resellerIds: accessibleIds,
-          userId: userId as string | undefined,
-          status: status as string | undefined
+      let scope: EntityScopeResult;
+      try {
+        scope = await resolveResellerEntityScope({
+          storage,
+          requesterResellerId: resellerId,
+          entityType: entityType as string | undefined,
+          entityId: entityId as string | undefined
         });
-        const filtered = sickLeaves.filter(s => rcUserIds.includes(s.userId));
-        return res.json(filtered);
-      } else {
-        targetResellerIds = await storage.getAccessibleResellerIds(resellerId);
+      } catch (e: any) {
+        if (e.message === 'FORBIDDEN') return res.status(403).json({ error: "Non autorizzato" });
+        if (e.message === 'NOT_FOUND') return res.status(404).json({ error: "Entità non trovata" });
+        throw e;
+      }
+      
+      if (userId && scope.userIds && !scope.userIds.includes(userId as string)) {
+        return res.status(403).json({ error: "Utente non autorizzato per questa entità" });
       }
       
       const sickLeaves = await storage.listHrSickLeaves({
-        resellerIds: targetResellerIds,
+        resellerIds: scope.resellerIds,
         userId: userId as string | undefined,
         status: status as string | undefined
       });
-      res.json(sickLeaves);
+      
+      const filteredSickLeaves = scope.userIds 
+        ? sickLeaves.filter(s => scope.userIds!.includes(s.userId))
+        : sickLeaves;
+      
+      res.json(filteredSickLeaves);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }
@@ -28763,39 +28813,35 @@ export function registerRoutes(app: Express): Server {
       if (!resellerId) return res.status(400).json({ error: "Reseller ID non trovato" });
       const { userId, status, entityType, entityId } = req.query;
       
-      let targetResellerIds: string[];
-      if (entityType === 'sub-reseller' && entityId) {
-        const subReseller = await storage.getUser(entityId as string);
-        if (!subReseller || subReseller.parentResellerId !== resellerId) {
-          return res.status(403).json({ error: "Non autorizzato" });
-        }
-        targetResellerIds = [entityId as string];
-      } else if (entityType === 'repair-center' && entityId) {
-        const rc = await storage.getRepairCenter(entityId as string);
-        if (!rc) return res.status(404).json({ error: "Centro non trovato" });
-        const accessibleIds = await storage.getAccessibleResellerIds(resellerId);
-        if (!accessibleIds.includes(rc.resellerId)) {
-          return res.status(403).json({ error: "Non autorizzato" });
-        }
-        const rcUsers = await storage.listRepairCenterStaff(entityId as string);
-        const rcUserIds = rcUsers.map(u => u.id);
-        const reports = await storage.listHrExpenseReports({
-          resellerIds: accessibleIds,
-          userId: userId as string | undefined,
-          status: status as string | undefined
+      let scope: EntityScopeResult;
+      try {
+        scope = await resolveResellerEntityScope({
+          storage,
+          requesterResellerId: resellerId,
+          entityType: entityType as string | undefined,
+          entityId: entityId as string | undefined
         });
-        const filtered = reports.filter(r => rcUserIds.includes(r.userId));
-        return res.json(filtered);
-      } else {
-        targetResellerIds = await storage.getAccessibleResellerIds(resellerId);
+      } catch (e: any) {
+        if (e.message === 'FORBIDDEN') return res.status(403).json({ error: "Non autorizzato" });
+        if (e.message === 'NOT_FOUND') return res.status(404).json({ error: "Entità non trovata" });
+        throw e;
+      }
+      
+      if (userId && scope.userIds && !scope.userIds.includes(userId as string)) {
+        return res.status(403).json({ error: "Utente non autorizzato per questa entità" });
       }
       
       const reports = await storage.listHrExpenseReports({
-        resellerIds: targetResellerIds,
+        resellerIds: scope.resellerIds,
         userId: userId as string | undefined,
         status: status as string | undefined
       });
-      res.json(reports);
+      
+      const filteredReports = scope.userIds 
+        ? reports.filter(r => scope.userIds!.includes(r.userId))
+        : reports;
+      
+      res.json(filteredReports);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }
