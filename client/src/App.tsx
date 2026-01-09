@@ -164,6 +164,7 @@ import RepairCenterTransferRequests from "@/pages/repair-center/transfer-request
 import RepairCenterTransferRequestsOverview from "@/pages/repair-center/transfer-requests-overview";
 import RepairCenterRemoteRequests from "@/pages/repair-center/remote-requests";
 import RepairCenterCart from "@/pages/repair-center/cart";
+import RepairCenterTeam from "@/pages/repair-center/team";
 
 // Repair Center HR pages
 import RepairCenterHrDashboard from "@/pages/repair-center/hr/index";
@@ -394,6 +395,7 @@ function Router() {
       <ProtectedRoute path="/repair-center/utility/practices" component={RepairCenterUtilityPractices} />
       <ProtectedRoute path="/repair-center/utility/commissions" component={RepairCenterUtilityCommissions} />
       <ProtectedRoute path="/repair-center/utility/reports" component={RepairCenterUtilityReports} />
+      <ProtectedRoute path="/repair-center/team" component={RepairCenterTeam} allowedRoles={["repair_center"]} />
       <ProtectedRoute path="/repair-center/hr/attendance" component={RepairCenterHrAttendance} />
       <ProtectedRoute path="/repair-center/hr/leave-requests" component={RepairCenterHrLeaveRequests} />
       <ProtectedRoute path="/repair-center/hr/work-profiles" component={RepairCenterHrWorkProfiles} />

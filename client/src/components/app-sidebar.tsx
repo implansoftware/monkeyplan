@@ -215,6 +215,7 @@ const menuItems = {
   repair_center: [
     { title: "Dashboard", url: "/repair-center", icon: LayoutDashboard, group: "Principale" },
     { title: "Dashboard HR", url: "/repair-center/hr", icon: Briefcase, group: "Gestione HR" },
+    { title: "Team", url: "/repair-center/team", icon: UsersRound, group: "Gestione HR" },
     { title: "Presenze", url: "/repair-center/hr/attendance", icon: Clock, group: "Gestione HR" },
     { title: "Ferie e Permessi", url: "/repair-center/hr/leave-requests", icon: Calendar, group: "Gestione HR" },
     { title: "Profili Orario", url: "/repair-center/hr/work-profiles", icon: Settings, group: "Gestione HR" },
