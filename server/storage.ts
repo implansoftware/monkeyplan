@@ -9028,7 +9028,7 @@ export class DatabaseStorage implements IStorage {
     return leave || undefined;
   }
 
-  async listHrSickLeaves(filters: { userId?: string; resellerId?: string; resellerIds?: string[]; status?: string }): Promise<(HrSickLeave & { user: { fullName: string } | null })[]> {
+  async listHrSickLeaves(filters: { userId?: string; resellerId?: string; resellerIds?: string[]; status?: string }): Promise<(HrSickLeave & { user: { fullName: string } | null; certificate?: { id: string; fileName: string; fileUrl: string } | null })[]> {
     const conditions = [];
     if (filters.userId) conditions.push(eq(hrSickLeaves.userId, filters.userId));
     if (filters.resellerIds && filters.resellerIds.length > 0) {
@@ -9040,15 +9040,24 @@ export class DatabaseStorage implements IStorage {
     const results = await db.select({
       sickLeave: hrSickLeaves,
       userFullName: users.fullName,
+      certificateId: hrCertificates.id,
+      certificateFileName: hrCertificates.fileName,
+      certificateFileUrl: hrCertificates.fileUrl,
     })
       .from(hrSickLeaves)
       .leftJoin(users, eq(hrSickLeaves.userId, users.id))
+      .leftJoin(hrCertificates, eq(hrCertificates.relatedSickLeaveId, hrSickLeaves.id))
       .where(conditions.length > 0 ? and(...conditions) : undefined)
       .orderBy(desc(hrSickLeaves.startDate));
     
     return results.map(r => ({
       ...r.sickLeave,
       user: r.userFullName ? { fullName: r.userFullName } : null,
+      certificate: r.certificateId ? { 
+        id: r.certificateId, 
+        fileName: r.certificateFileName!, 
+        fileUrl: r.certificateFileUrl! 
+      } : null,
     }));
   }
 

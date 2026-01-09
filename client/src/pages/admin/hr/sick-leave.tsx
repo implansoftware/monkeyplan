@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Stethoscope, Clock, User, RefreshCw } from "lucide-react";
+import { Stethoscope, Clock, User, RefreshCw, Download } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
@@ -31,6 +31,11 @@ interface SickLeave {
   createdAt: string;
   user?: {
     fullName: string;
+  } | null;
+  certificate?: {
+    id: string;
+    fileName: string;
+    fileUrl: string;
   } | null;
 }
 
@@ -161,7 +166,14 @@ export default function AdminSickLeavePage() {
                       })()}
                     </TableCell>
                     <TableCell>
-                      {sl.certificateUploaded ? (
+                      {sl.certificate ? (
+                        <Button variant="ghost" size="sm" asChild>
+                          <a href={sl.certificate.fileUrl} target="_blank" rel="noopener noreferrer">
+                            <Download className="h-4 w-4 mr-1" />
+                            Scarica
+                          </a>
+                        </Button>
+                      ) : sl.certificateUploaded ? (
                         <Badge variant="outline" className="bg-green-50 dark:bg-green-950">
                           Caricato
                         </Badge>
