@@ -715,6 +715,13 @@ export interface IStorage {
   // Reseller Staff Team Management
   listResellerStaff(resellerId: string): Promise<User[]>;
   
+  // Repair Center Staff Team Management
+  listRepairCenterStaff(repairCenterId: string): Promise<User[]>;
+  createRepairCenterStaff(data: { repairCenterId: string; username: string; password: string; email: string; fullName: string; phone?: string }): Promise<User>;
+  updateRepairCenterStaff(userId: string, repairCenterId: string, updates: Partial<{ username: string; email: string; fullName: string; phone: string; isActive: boolean }>): Promise<User>;
+  deleteRepairCenterStaff(userId: string, repairCenterId: string): Promise<void>;
+  resetRepairCenterStaffPassword(userId: string, repairCenterId: string, newPassword: string): Promise<void>;
+  
   // Reseller Staff Permissions
   getStaffPermissions(userId: string): Promise<ResellerStaffPermission[]>;
   getStaffPermissionForModule(userId: string, module: string): Promise<ResellerStaffPermission | undefined>;
@@ -6213,6 +6220,85 @@ export class DatabaseStorage implements IStorage {
         eq(users.resellerId, resellerId),
         eq(users.role, 'reseller_staff')
       ));
+  }
+
+  // Repair Center Staff Team Management
+  async listRepairCenterStaff(repairCenterId: string): Promise<User[]> {
+    return await db.select()
+      .from(users)
+      .where(and(
+        eq(users.repairCenterId, repairCenterId),
+        eq(users.role, 'repair_center_staff')
+      ));
+  }
+
+  async createRepairCenterStaff(data: { repairCenterId: string; username: string; password: string; email: string; fullName: string; phone?: string }): Promise<User> {
+    const { scryptSync, randomBytes } = await import('crypto');
+    const salt = randomBytes(16).toString('hex');
+    const hash = scryptSync(data.password, salt, 64).toString('hex');
+    const hashedPassword = `${salt}:${hash}`;
+    
+    const [user] = await db.insert(users)
+      .values({
+        id: crypto.randomUUID(),
+        username: data.username,
+        password: hashedPassword,
+        email: data.email,
+        fullName: data.fullName,
+        phone: data.phone || null,
+        role: 'repair_center_staff',
+        repairCenterId: data.repairCenterId,
+        isActive: true
+      })
+      .returning();
+    return user;
+  }
+
+  async updateRepairCenterStaff(userId: string, repairCenterId: string, updates: Partial<{ username: string; email: string; fullName: string; phone: string; isActive: boolean }>): Promise<User> {
+    const [existing] = await db.select().from(users)
+      .where(and(
+        eq(users.id, userId),
+        eq(users.repairCenterId, repairCenterId),
+        eq(users.role, 'repair_center_staff')
+      ));
+    if (!existing) throw new Error("Staff non trovato");
+    
+    const [updated] = await db.update(users)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(users.id, userId))
+      .returning();
+    return updated;
+  }
+
+  async deleteRepairCenterStaff(userId: string, repairCenterId: string): Promise<void> {
+    const [existing] = await db.select().from(users)
+      .where(and(
+        eq(users.id, userId),
+        eq(users.repairCenterId, repairCenterId),
+        eq(users.role, 'repair_center_staff')
+      ));
+    if (!existing) throw new Error("Staff non trovato");
+    
+    await db.delete(users).where(eq(users.id, userId));
+  }
+
+  async resetRepairCenterStaffPassword(userId: string, repairCenterId: string, newPassword: string): Promise<void> {
+    const [existing] = await db.select().from(users)
+      .where(and(
+        eq(users.id, userId),
+        eq(users.repairCenterId, repairCenterId),
+        eq(users.role, 'repair_center_staff')
+      ));
+    if (!existing) throw new Error("Staff non trovato");
+    
+    const { scryptSync, randomBytes } = await import('crypto');
+    const salt = randomBytes(16).toString('hex');
+    const hash = scryptSync(newPassword, salt, 64).toString('hex');
+    const hashedPassword = `${salt}:${hash}`;
+    
+    await db.update(users)
+      .set({ password: hashedPassword, updatedAt: new Date() })
+      .where(eq(users.id, userId));
   }
 
   // Reseller Staff Permissions
