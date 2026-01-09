@@ -1,9 +1,13 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { useToast } from "@/hooks/use-toast";
+import { queryClient, apiRequest } from "@/lib/queryClient";
 import { 
-  Wrench, Euro, Clock, Search, Tag, RefreshCw
+  Wrench, Euro, Clock, Search, Tag, RefreshCw, Plus, Pencil, Trash2
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
@@ -23,6 +27,24 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import type { ServiceItem } from "@shared/schema";
 
 const SERVICE_CATEGORIES = [
@@ -79,15 +101,149 @@ interface ServiceCatalogItem extends ServiceItem {
   effectivePrice: number;
   effectiveLaborMinutes: number;
   priceSource: 'base' | 'reseller' | 'center';
+  isOwned: boolean;
 }
 
 export default function RepairCenterServiceCatalog() {
+  const { toast } = useToast();
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
+  
+  const [isItemDialogOpen, setIsItemDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [editingItem, setEditingItem] = useState<ServiceCatalogItem | null>(null);
+  const [itemToDelete, setItemToDelete] = useState<ServiceCatalogItem | null>(null);
+  
+  const [itemCode, setItemCode] = useState("");
+  const [itemName, setItemName] = useState("");
+  const [itemDescription, setItemDescription] = useState("");
+  const [itemCategory, setItemCategory] = useState("");
+  const [itemPriceEuros, setItemPriceEuros] = useState("");
+  const [itemLaborMinutes, setItemLaborMinutes] = useState("60");
 
   const { data: items = [], isLoading, refetch } = useQuery<ServiceCatalogItem[]>({
     queryKey: ["/api/repair-center/service-catalog"],
   });
+
+  const createItemMutation = useMutation({
+    mutationFn: async (data: any) => {
+      const res = await apiRequest("POST", "/api/repair-center/service-items", data);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/repair-center/service-catalog"] });
+      toast({ title: "Intervento creato", description: "Nuovo intervento aggiunto al listino" });
+      closeItemDialog();
+    },
+    onError: (error: any) => {
+      toast({ 
+        title: "Errore", 
+        description: error.message || "Impossibile creare l'intervento",
+        variant: "destructive"
+      });
+    },
+  });
+
+  const updateItemMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: any }) => {
+      const res = await apiRequest("PATCH", `/api/repair-center/service-items/${id}`, data);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/repair-center/service-catalog"] });
+      toast({ title: "Intervento aggiornato" });
+      closeItemDialog();
+    },
+    onError: (error: any) => {
+      toast({ 
+        title: "Errore", 
+        description: error.message || "Impossibile aggiornare l'intervento",
+        variant: "destructive"
+      });
+    },
+  });
+
+  const deleteItemMutation = useMutation({
+    mutationFn: async (id: string) => {
+      await apiRequest("DELETE", `/api/repair-center/service-items/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/repair-center/service-catalog"] });
+      toast({ title: "Intervento eliminato" });
+      setIsDeleteDialogOpen(false);
+      setItemToDelete(null);
+    },
+    onError: (error: any) => {
+      toast({ 
+        title: "Errore", 
+        description: error.message || "Impossibile eliminare l'intervento",
+        variant: "destructive"
+      });
+    },
+  });
+
+  const openNewItemDialog = () => {
+    setEditingItem(null);
+    setItemCode("");
+    setItemName("");
+    setItemDescription("");
+    setItemCategory("");
+    setItemPriceEuros("");
+    setItemLaborMinutes("60");
+    setIsItemDialogOpen(true);
+  };
+
+  const openEditItemDialog = (item: ServiceCatalogItem) => {
+    setEditingItem(item);
+    setItemCode(item.code);
+    setItemName(item.name);
+    setItemDescription(item.description || "");
+    setItemCategory(item.category);
+    setItemPriceEuros((item.defaultPriceCents / 100).toString());
+    setItemLaborMinutes(item.defaultLaborMinutes?.toString() || "60");
+    setIsItemDialogOpen(true);
+  };
+
+  const closeItemDialog = () => {
+    setIsItemDialogOpen(false);
+    setEditingItem(null);
+  };
+
+  const handleSaveItem = () => {
+    if (!itemCode || !itemName || !itemCategory || !itemPriceEuros) {
+      toast({ 
+        title: "Errore", 
+        description: "Compila tutti i campi obbligatori",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const priceCents = Math.round(parseFloat(itemPriceEuros) * 100);
+    const laborMins = parseInt(itemLaborMinutes) || 60;
+
+    if (editingItem) {
+      updateItemMutation.mutate({
+        id: editingItem.id,
+        data: {
+          name: itemName,
+          description: itemDescription || null,
+          category: itemCategory,
+          defaultPriceCents: priceCents,
+          defaultLaborMinutes: laborMins,
+        },
+      });
+    } else {
+      createItemMutation.mutate({
+        code: itemCode,
+        name: itemName,
+        description: itemDescription || null,
+        category: itemCategory,
+        defaultPriceCents: priceCents,
+        defaultLaborMinutes: laborMins,
+      });
+    }
+  };
 
   const filteredItems = items.filter(item => {
     const matchesSearch = 
@@ -99,6 +255,8 @@ export default function RepairCenterServiceCatalog() {
     
     return matchesSearch && matchesCategory;
   });
+
+  const ownedItems = items.filter(i => i.isOwned);
 
   if (isLoading) {
     return (
@@ -121,20 +279,102 @@ export default function RepairCenterServiceCatalog() {
             Catalogo servizi con prezzi applicati al tuo centro
           </p>
         </div>
-        <Button variant="outline" size="sm" onClick={() => refetch()} data-testid="button-refresh">
-          <RefreshCw className="h-4 w-4 mr-2" />
-          Aggiorna
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={() => refetch()} data-testid="button-refresh">
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Aggiorna
+          </Button>
+          <Button size="sm" onClick={openNewItemDialog} data-testid="button-new-item">
+            <Plus className="h-4 w-4 mr-2" />
+            Nuovo Intervento
+          </Button>
+        </div>
       </div>
+
+      {ownedItems.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <Tag className="h-5 w-5" />
+              I Miei Interventi
+            </CardTitle>
+            <CardDescription>
+              {ownedItems.length} interventi creati da te
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="rounded-md border overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Codice</TableHead>
+                    <TableHead>Intervento</TableHead>
+                    <TableHead>Categoria</TableHead>
+                    <TableHead className="text-right">Prezzo</TableHead>
+                    <TableHead className="text-right">Tempo</TableHead>
+                    <TableHead className="w-[100px]">Azioni</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {ownedItems.map(item => (
+                    <TableRow key={item.id} data-testid={`row-owned-${item.id}`}>
+                      <TableCell className="font-mono text-sm">{item.code}</TableCell>
+                      <TableCell>
+                        <div className="font-medium">{item.name}</div>
+                        {item.description && (
+                          <div className="text-sm text-muted-foreground line-clamp-1">
+                            {item.description}
+                          </div>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="secondary" className={getCategoryColor(item.category)}>
+                          {getCategoryLabel(item.category)}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right font-semibold">
+                        {formatCurrency(item.effectivePrice)}
+                      </TableCell>
+                      <TableCell className="text-right text-muted-foreground">
+                        {item.effectiveLaborMinutes} min
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex gap-1">
+                          <Button 
+                            variant="ghost" 
+                            size="icon"
+                            onClick={() => openEditItemDialog(item)}
+                            data-testid={`button-edit-${item.id}`}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="icon"
+                            onClick={() => { setItemToDelete(item); setIsDeleteDialogOpen(true); }}
+                            data-testid={`button-delete-${item.id}`}
+                          >
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Tag className="h-5 w-5" />
-            Servizi Disponibili
+            Catalogo Completo
           </CardTitle>
           <CardDescription>
-            {items.length} interventi nel catalogo
+            {items.length} interventi disponibili
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -177,7 +417,7 @@ export default function RepairCenterServiceCatalog() {
                     <TableHead>Intervento</TableHead>
                     <TableHead>Categoria</TableHead>
                     <TableHead className="text-right">Prezzo</TableHead>
-                    <TableHead>Origine Prezzo</TableHead>
+                    <TableHead>Origine</TableHead>
                     <TableHead className="text-right">Tempo</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -186,16 +426,17 @@ export default function RepairCenterServiceCatalog() {
                     <TableRow key={item.id} data-testid={`row-service-${item.id}`}>
                       <TableCell className="font-mono text-sm">
                         {item.code}
+                        {item.isOwned && (
+                          <Badge variant="outline" className="ml-2 text-xs">Mio</Badge>
+                        )}
                       </TableCell>
                       <TableCell>
-                        <div>
-                          <div className="font-medium">{item.name}</div>
-                          {item.description && (
-                            <div className="text-sm text-muted-foreground line-clamp-1">
-                              {item.description}
-                            </div>
-                          )}
-                        </div>
+                        <div className="font-medium">{item.name}</div>
+                        {item.description && (
+                          <div className="text-sm text-muted-foreground line-clamp-1">
+                            {item.description}
+                          </div>
+                        )}
                       </TableCell>
                       <TableCell>
                         <Badge variant="secondary" className={getCategoryColor(item.category)}>
@@ -228,27 +469,134 @@ export default function RepairCenterServiceCatalog() {
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-sm">Legenda Origine Prezzo</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-wrap gap-4 text-sm">
-            <div className="flex items-center gap-2">
-              <Badge variant="outline" className={getPriceSourceColor('center')}>Proprio</Badge>
-              <span className="text-muted-foreground">Prezzo specifico per il tuo centro</span>
+      <Dialog open={isItemDialogOpen} onOpenChange={setIsItemDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>
+              {editingItem ? "Modifica Intervento" : "Nuovo Intervento"}
+            </DialogTitle>
+            <DialogDescription>
+              {editingItem 
+                ? "Modifica i dettagli dell'intervento"
+                : "Crea un nuovo intervento nel tuo listino"
+              }
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="code">Codice *</Label>
+              <Input
+                id="code"
+                value={itemCode}
+                onChange={(e) => setItemCode(e.target.value)}
+                placeholder="es. DISP-001"
+                disabled={!!editingItem}
+                data-testid="input-item-code"
+              />
             </div>
-            <div className="flex items-center gap-2">
-              <Badge variant="outline" className={getPriceSourceColor('reseller')}>Rivenditore</Badge>
-              <span className="text-muted-foreground">Prezzo definito dal tuo rivenditore</span>
+            <div className="space-y-2">
+              <Label htmlFor="name">Nome *</Label>
+              <Input
+                id="name"
+                value={itemName}
+                onChange={(e) => setItemName(e.target.value)}
+                placeholder="es. Sostituzione Display"
+                data-testid="input-item-name"
+              />
             </div>
-            <div className="flex items-center gap-2">
-              <Badge variant="outline" className={getPriceSourceColor('base')}>Listino Base</Badge>
-              <span className="text-muted-foreground">Prezzo standard del catalogo</span>
+            <div className="space-y-2">
+              <Label htmlFor="description">Descrizione</Label>
+              <Textarea
+                id="description"
+                value={itemDescription}
+                onChange={(e) => setItemDescription(e.target.value)}
+                placeholder="Descrizione opzionale..."
+                data-testid="input-item-description"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="category">Categoria *</Label>
+              <Select value={itemCategory} onValueChange={setItemCategory}>
+                <SelectTrigger data-testid="select-item-category">
+                  <SelectValue placeholder="Seleziona categoria" />
+                </SelectTrigger>
+                <SelectContent>
+                  {SERVICE_CATEGORIES.map(cat => (
+                    <SelectItem key={cat.value} value={cat.value}>
+                      {cat.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="price">Prezzo (EUR) *</Label>
+                <Input
+                  id="price"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={itemPriceEuros}
+                  onChange={(e) => setItemPriceEuros(e.target.value)}
+                  placeholder="0.00"
+                  data-testid="input-item-price"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="labor">Tempo (min)</Label>
+                <Input
+                  id="labor"
+                  type="number"
+                  min="0"
+                  value={itemLaborMinutes}
+                  onChange={(e) => setItemLaborMinutes(e.target.value)}
+                  placeholder="60"
+                  data-testid="input-item-labor"
+                />
+              </div>
             </div>
           </div>
-        </CardContent>
-      </Card>
+          <DialogFooter>
+            <Button variant="outline" onClick={closeItemDialog}>
+              Annulla
+            </Button>
+            <Button
+              onClick={handleSaveItem}
+              disabled={createItemMutation.isPending || updateItemMutation.isPending}
+              data-testid="button-save-item"
+            >
+              {(createItemMutation.isPending || updateItemMutation.isPending) 
+                ? "Salvataggio..." 
+                : (editingItem ? "Salva Modifiche" : "Crea Intervento")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Elimina Intervento</AlertDialogTitle>
+            <AlertDialogDescription>
+              Sei sicuro di voler eliminare l'intervento "{itemToDelete?.name}"?
+              Questa azione non può essere annullata.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel data-testid="button-cancel-delete">
+              Annulla
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => itemToDelete && deleteItemMutation.mutate(itemToDelete.id)}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              data-testid="button-confirm-delete"
+            >
+              {deleteItemMutation.isPending ? "Eliminazione..." : "Elimina"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
