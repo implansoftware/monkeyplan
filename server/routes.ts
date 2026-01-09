@@ -29012,6 +29012,96 @@ export function registerRoutes(app: Express): Server {
   });
 
   // ============================================================================
+
+  // REPAIR CENTER TEAM MANAGEMENT ENDPOINTS
+  // ============================================================================
+
+  app.get("/api/repair-center/team", requireRole("repair_center"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      const repairCenterId = req.user.id;
+      const staff = await storage.listRepairCenterStaff(repairCenterId);
+      res.json(staff.map(s => ({ ...s, password: undefined })));
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post("/api/repair-center/team", requireRole("repair_center"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      const repairCenterId = req.user.id;
+      const { username, password, email, fullName, phone } = req.body;
+      
+      if (!username || !password || !email || !fullName) {
+        return res.status(400).json({ error: "Campi obbligatori mancanti" });
+      }
+      
+      const existingUser = await storage.getUserByUsername(username);
+      if (existingUser) {
+        return res.status(400).json({ error: "Username già in uso" });
+      }
+      
+      const user = await storage.createRepairCenterStaff({
+        repairCenterId,
+        username,
+        password,
+        email,
+        fullName,
+        phone
+      });
+      
+      res.status(201).json({ ...user, password: undefined });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.put("/api/repair-center/team/:id", requireRole("repair_center"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      const repairCenterId = req.user.id;
+      const userId = req.params.id;
+      const updates = req.body;
+      
+      const user = await storage.updateRepairCenterStaff(userId, repairCenterId, updates);
+      res.json({ ...user, password: undefined });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.delete("/api/repair-center/team/:id", requireRole("repair_center"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      const repairCenterId = req.user.id;
+      const userId = req.params.id;
+      
+      await storage.deleteRepairCenterStaff(userId, repairCenterId);
+      res.json({ success: true });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post("/api/repair-center/team/:id/reset-password", requireRole("repair_center"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      const repairCenterId = req.user.id;
+      const userId = req.params.id;
+      const { newPassword } = req.body;
+      
+      if (!newPassword || newPassword.length < 6) {
+        return res.status(400).json({ error: "Password deve essere almeno 6 caratteri" });
+      }
+      
+      await storage.resetRepairCenterStaffPassword(userId, repairCenterId, newPassword);
+      res.json({ success: true });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   // REPAIR CENTER HR ENDPOINTS
   // ============================================================================
 
