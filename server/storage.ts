@@ -6224,23 +6224,39 @@ export class DatabaseStorage implements IStorage {
     };
   }
 
-  // Reseller Staff Team Management
+  // Reseller Staff Team Management - includes owner + staff
   async listResellerStaff(resellerId: string): Promise<User[]> {
     return await db.select()
       .from(users)
-      .where(and(
-        eq(users.resellerId, resellerId),
-        eq(users.role, 'reseller_staff')
+      .where(or(
+        // Staff members
+        and(
+          eq(users.resellerId, resellerId),
+          eq(users.role, 'reseller_staff')
+        ),
+        // Owner (the reseller itself)
+        and(
+          eq(users.id, resellerId),
+          eq(users.role, 'reseller')
+        )
       ));
   }
 
-  // Repair Center Staff Team Management
+  // Repair Center Staff Team Management - includes owner + staff
   async listRepairCenterStaff(repairCenterId: string): Promise<User[]> {
     return await db.select()
       .from(users)
-      .where(and(
-        eq(users.repairCenterId, repairCenterId),
-        eq(users.role, 'repair_center_staff')
+      .where(or(
+        // Staff members
+        and(
+          eq(users.repairCenterId, repairCenterId),
+          eq(users.role, 'repair_center_staff')
+        ),
+        // Owner (the repair center user)
+        and(
+          eq(users.repairCenterId, repairCenterId),
+          eq(users.role, 'repair_center')
+        )
       ));
   }
 
@@ -6283,6 +6299,7 @@ export class DatabaseStorage implements IStorage {
       repairCenters.map(rc => [rc.id, rc.name || rc.ragioneSociale || 'N/A'])
     );
     
+    // Include both owners (repair_center role) and staff (repair_center_staff role)
     const staffMembers = await db.select({
       id: users.id,
       username: users.username,
@@ -6297,7 +6314,10 @@ export class DatabaseStorage implements IStorage {
       .from(users)
       .where(and(
         inArray(users.repairCenterId, repairCenterIds),
-        eq(users.role, 'repair_center_staff')
+        or(
+          eq(users.role, 'repair_center_staff'),
+          eq(users.role, 'repair_center')
+        )
       ));
     
     return staffMembers.map(staff => ({

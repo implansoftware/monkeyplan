@@ -61,6 +61,7 @@ interface StaffMember {
   phone: string | null;
   isActive: boolean;
   createdAt: string;
+  role?: string;
   permissions: StaffPermission[];
   assignedRepairCenters?: RepairCenter[];
   assignedSubResellerIds?: string[];
@@ -550,7 +551,9 @@ export default function ResellerTeam() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredMembers.map((member, index) => (
+                  {filteredMembers.map((member, index) => {
+                    const isOwner = member.role === 'reseller';
+                    return (
                     <TableRow 
                       key={member.id} 
                       data-testid={`row-staff-${member.id}`}
@@ -559,9 +562,16 @@ export default function ResellerTeam() {
                       <TableCell className="pl-6 relative">
                         <div className={`absolute left-0 top-2 bottom-2 w-1 rounded-r-full ${member.isActive ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-600'}`} />
                         <div>
-                          <p className="font-medium" data-testid={`text-name-${member.id}`}>
-                            {member.fullName}
-                          </p>
+                          <div className="flex items-center gap-2">
+                            <p className="font-medium" data-testid={`text-name-${member.id}`}>
+                              {member.fullName}
+                            </p>
+                            {isOwner && (
+                              <Badge variant="outline" className="text-xs bg-primary/10 text-primary border-primary/30">
+                                Proprietario
+                              </Badge>
+                            )}
+                          </div>
                           <p className="text-xs text-muted-foreground font-mono">
                             @{member.username}
                           </p>
@@ -609,57 +619,61 @@ export default function ResellerTeam() {
                       </TableCell>
                       <TableCell className="pr-6 text-right">
                         <div className="flex items-center justify-end gap-1 opacity-70 group-hover:opacity-100 transition-opacity">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8"
-                            onClick={() => openPermissionsDialog(member)}
-                            title="Gestisci permessi"
-                            data-testid={`button-permissions-${member.id}`}
-                          >
-                            <Shield className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8"
-                            onClick={() => openEditDialog(member)}
-                            title="Modifica"
-                            data-testid={`button-edit-${member.id}`}
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8"
-                            onClick={() => {
-                              setSelectedMember(member);
-                              setNewPassword("");
-                              setResetPasswordDialogOpen(true);
-                            }}
-                            title="Reset password"
-                            data-testid={`button-reset-password-${member.id}`}
-                          >
-                            <Key className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                            onClick={() => {
-                              setSelectedMember(member);
-                              setDeleteDialogOpen(true);
-                            }}
-                            title="Elimina"
-                            data-testid={`button-delete-${member.id}`}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
+                          {!isOwner && (
+                            <>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8"
+                                onClick={() => openPermissionsDialog(member)}
+                                title="Gestisci permessi"
+                                data-testid={`button-permissions-${member.id}`}
+                              >
+                                <Shield className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8"
+                                onClick={() => openEditDialog(member)}
+                                title="Modifica"
+                                data-testid={`button-edit-${member.id}`}
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8"
+                                onClick={() => {
+                                  setSelectedMember(member);
+                                  setNewPassword("");
+                                  setResetPasswordDialogOpen(true);
+                                }}
+                                title="Reset password"
+                                data-testid={`button-reset-password-${member.id}`}
+                              >
+                                <Key className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                                onClick={() => {
+                                  setSelectedMember(member);
+                                  setDeleteDialogOpen(true);
+                                }}
+                                title="Elimina"
+                                data-testid={`button-delete-${member.id}`}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </>
+                          )}
                         </div>
                       </TableCell>
                     </TableRow>
-                  ))}
+                  );})}
                 </TableBody>
               </Table>
             </div>

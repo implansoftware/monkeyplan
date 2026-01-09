@@ -26,6 +26,7 @@ interface StaffMember {
   phone: string | null;
   isActive: boolean;
   createdAt: string;
+  role?: string;
 }
 
 const staffFormSchema = z.object({
@@ -297,63 +298,80 @@ export default function RepairCenterTeam() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredMembers.map((member) => (
-                  <TableRow key={member.id} data-testid={`row-member-${member.id}`}>
-                    <TableCell className="font-medium">{member.fullName}</TableCell>
-                    <TableCell>{member.username}</TableCell>
-                    <TableCell>{member.email}</TableCell>
-                    <TableCell>{member.phone || "-"}</TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <Switch
-                          checked={member.isActive}
-                          onCheckedChange={(checked) =>
-                            toggleActiveMutation.mutate({ id: member.id, isActive: checked })
-                          }
-                          data-testid={`switch-active-${member.id}`}
-                        />
-                        <Badge variant={member.isActive ? "default" : "secondary"}>
-                          {member.isActive ? "Attivo" : "Inattivo"}
-                        </Badge>
-                      </div>
-                    </TableCell>
-                    <TableCell>{format(new Date(member.createdAt), "dd/MM/yyyy")}</TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex items-center justify-end gap-1">
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          onClick={() => handleOpenEdit(member)}
-                          data-testid={`button-edit-${member.id}`}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          onClick={() => {
-                            setSelectedMember(member);
-                            setResetPasswordDialogOpen(true);
-                          }}
-                          data-testid={`button-reset-password-${member.id}`}
-                        >
-                          <Key className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          onClick={() => {
-                            setSelectedMember(member);
-                            setDeleteDialogOpen(true);
-                          }}
-                          data-testid={`button-delete-${member.id}`}
-                        >
-                          <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
+                {filteredMembers.map((member) => {
+                  const isOwner = member.role === 'repair_center';
+                  return (
+                    <TableRow key={member.id} data-testid={`row-member-${member.id}`}>
+                      <TableCell className="font-medium">
+                        <div className="flex items-center gap-2">
+                          {member.fullName}
+                          {isOwner && (
+                            <Badge variant="outline" className="text-xs bg-primary/10 text-primary border-primary/30">
+                              Proprietario
+                            </Badge>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell>{member.username}</TableCell>
+                      <TableCell>{member.email}</TableCell>
+                      <TableCell>{member.phone || "-"}</TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <Switch
+                            checked={member.isActive}
+                            onCheckedChange={(checked) =>
+                              toggleActiveMutation.mutate({ id: member.id, isActive: checked })
+                            }
+                            disabled={isOwner}
+                            data-testid={`switch-active-${member.id}`}
+                          />
+                          <Badge variant={member.isActive ? "default" : "secondary"}>
+                            {member.isActive ? "Attivo" : "Inattivo"}
+                          </Badge>
+                        </div>
+                      </TableCell>
+                      <TableCell>{format(new Date(member.createdAt), "dd/MM/yyyy")}</TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex items-center justify-end gap-1">
+                          {!isOwner && (
+                            <>
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                onClick={() => handleOpenEdit(member)}
+                                data-testid={`button-edit-${member.id}`}
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                onClick={() => {
+                                  setSelectedMember(member);
+                                  setResetPasswordDialogOpen(true);
+                                }}
+                                data-testid={`button-reset-password-${member.id}`}
+                              >
+                                <Key className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                onClick={() => {
+                                  setSelectedMember(member);
+                                  setDeleteDialogOpen(true);
+                                }}
+                                data-testid={`button-delete-${member.id}`}
+                              >
+                                <Trash2 className="h-4 w-4 text-destructive" />
+                              </Button>
+                            </>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
               </TableBody>
             </Table>
           )}
