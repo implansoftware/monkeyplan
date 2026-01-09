@@ -29005,5 +29005,415 @@ export function registerRoutes(app: Express): Server {
       res.status(500).json({ error: error.message });
     }
   });
+
+  // ============================================================================
+  // REPAIR CENTER HR ENDPOINTS
+  // ============================================================================
+
+  const getRepairCenterIdFromUser = (user: any): string | null => {
+    if (user.role === 'repair_center') return user.id;
+    if (user.role === 'repair_center_staff' && user.repairCenterId) return user.repairCenterId;
+    return null;
+  };
+
+  const getParentResellerForRepairCenter = async (repairCenterId: string): Promise<string | null> => {
+    const repairCenter = await storage.getUser(repairCenterId);
+    return repairCenter?.resellerId || null;
+  };
+
+  app.get("/api/repair-center/hr/dashboard", requireRole("repair_center", "repair_center_staff"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      const repairCenterId = getRepairCenterIdFromUser(req.user);
+      if (!repairCenterId) return res.status(400).json({ error: "Repair Center ID non trovato" });
+      
+      const parentResellerId = await getParentResellerForRepairCenter(repairCenterId);
+      if (!parentResellerId) return res.status(400).json({ error: "Reseller parent non trovato" });
+      
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const endOfDay = new Date(today);
+      endOfDay.setHours(23, 59, 59, 999);
+      
+      const [leaveRequests, expenseReports, clockEvents, sickLeaves] = await Promise.all([
+        storage.listHrLeaveRequests({ resellerId: parentResellerId, status: 'pending' }),
+        storage.listHrExpenseReports({ resellerId: parentResellerId, status: 'submitted' }),
+        storage.listHrClockEvents({ resellerIds: [parentResellerId], startDate: today, endDate: endOfDay }),
+        storage.listHrSickLeaves({ resellerId: parentResellerId })
+      ]);
+      
+      const rcStaff = await storage.listRepairCenterStaff(repairCenterId);
+      const rcStaffIds = new Set(rcStaff.map((s: any) => s.id));
+      rcStaffIds.add(repairCenterId);
+      
+      res.json({
+        pendingLeaveRequests: leaveRequests.filter((lr: any) => rcStaffIds.has(lr.userId)).length,
+        pendingExpenses: expenseReports.filter((er: any) => rcStaffIds.has(er.userId)).length,
+        todayClockEvents: clockEvents.filter((ce: any) => rcStaffIds.has(ce.userId)).length,
+        pendingSickLeaves: sickLeaves.filter((sl: any) => rcStaffIds.has(sl.userId) && (!sl.endDate || new Date(sl.endDate) >= today)).length
+      });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/repair-center/team", requireRole("repair_center", "repair_center_staff"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      const repairCenterId = getRepairCenterIdFromUser(req.user);
+      if (!repairCenterId) return res.status(400).json({ error: "Repair Center ID non trovato" });
+      
+      const staff = await storage.listRepairCenterStaff(repairCenterId);
+      const repairCenter = await storage.getUser(repairCenterId);
+      
+      const team = [
+        ...(repairCenter ? [{ id: repairCenter.id, fullName: repairCenter.fullName }] : []),
+        ...staff.map((s: any) => ({ id: s.id, fullName: s.fullName }))
+      ];
+      
+      res.json(team);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/repair-center/hr/clock-events", requireRole("repair_center", "repair_center_staff"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      const repairCenterId = getRepairCenterIdFromUser(req.user);
+      if (!repairCenterId) return res.status(400).json({ error: "Repair Center ID non trovato" });
+      
+      const parentResellerId = await getParentResellerForRepairCenter(repairCenterId);
+      if (!parentResellerId) return res.status(400).json({ error: "Reseller parent non trovato" });
+      
+      const { startDate, endDate, userId } = req.query;
+      
+      const rcStaff = await storage.listRepairCenterStaff(repairCenterId);
+      const rcStaffIds = new Set(rcStaff.map((s: any) => s.id));
+      rcStaffIds.add(repairCenterId);
+      
+      const events = await storage.listHrClockEvents({
+        resellerIds: [parentResellerId],
+        userId: userId as string | undefined,
+        startDate: startDate ? new Date(startDate as string) : undefined,
+        endDate: endDate ? new Date(endDate as string) : undefined
+      });
+      
+      res.json(events.filter((e: any) => rcStaffIds.has(e.userId)));
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post("/api/repair-center/hr/clock-events", requireRole("repair_center", "repair_center_staff"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      const repairCenterId = getRepairCenterIdFromUser(req.user);
+      if (!repairCenterId) return res.status(400).json({ error: "Repair Center ID non trovato" });
+      
+      const parentResellerId = await getParentResellerForRepairCenter(repairCenterId);
+      if (!parentResellerId) return res.status(400).json({ error: "Reseller parent non trovato" });
+      
+      const event = await storage.createHrClockEvent({
+        userId: req.body.userId || req.user.id,
+        resellerId: parentResellerId,
+        eventType: req.body.eventType,
+        eventTime: new Date(),
+        latitude: req.body.latitude,
+        longitude: req.body.longitude,
+        notes: req.body.notes
+      });
+      
+      res.json(event);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/repair-center/hr/leave-requests", requireRole("repair_center", "repair_center_staff"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      const repairCenterId = getRepairCenterIdFromUser(req.user);
+      if (!repairCenterId) return res.status(400).json({ error: "Repair Center ID non trovato" });
+      
+      const parentResellerId = await getParentResellerForRepairCenter(repairCenterId);
+      if (!parentResellerId) return res.status(400).json({ error: "Reseller parent non trovato" });
+      
+      const rcStaff = await storage.listRepairCenterStaff(repairCenterId);
+      const rcStaffIds = new Set(rcStaff.map((s: any) => s.id));
+      rcStaffIds.add(repairCenterId);
+      
+      const requests = await storage.listHrLeaveRequests({ resellerId: parentResellerId });
+      res.json(requests.filter((r: any) => rcStaffIds.has(r.userId)));
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post("/api/repair-center/hr/leave-requests", requireRole("repair_center", "repair_center_staff"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      const repairCenterId = getRepairCenterIdFromUser(req.user);
+      if (!repairCenterId) return res.status(400).json({ error: "Repair Center ID non trovato" });
+      
+      const parentResellerId = await getParentResellerForRepairCenter(repairCenterId);
+      if (!parentResellerId) return res.status(400).json({ error: "Reseller parent non trovato" });
+      
+      const request = await storage.createHrLeaveRequest({
+        userId: req.user.id,
+        resellerId: parentResellerId,
+        leaveType: req.body.leaveType,
+        startDate: new Date(req.body.startDate),
+        endDate: new Date(req.body.endDate),
+        notes: req.body.notes,
+        status: 'pending'
+      });
+      
+      res.json(request);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.patch("/api/repair-center/hr/leave-requests/:id", requireRole("repair_center"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      const existing = await storage.getHrLeaveRequest(req.params.id);
+      if (!existing) return res.status(404).json({ error: "Richiesta non trovata" });
+      
+      const updated = await storage.updateHrLeaveRequest(req.params.id, {
+        status: req.body.status,
+        approvedBy: req.body.status === 'approved' ? req.user.id : undefined
+      });
+      
+      res.json(updated);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/repair-center/hr/sick-leaves", requireRole("repair_center", "repair_center_staff"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      const repairCenterId = getRepairCenterIdFromUser(req.user);
+      if (!repairCenterId) return res.status(400).json({ error: "Repair Center ID non trovato" });
+      
+      const parentResellerId = await getParentResellerForRepairCenter(repairCenterId);
+      if (!parentResellerId) return res.status(400).json({ error: "Reseller parent non trovato" });
+      
+      const rcStaff = await storage.listRepairCenterStaff(repairCenterId);
+      const rcStaffIds = new Set(rcStaff.map((s: any) => s.id));
+      rcStaffIds.add(repairCenterId);
+      
+      const sickLeaves = await storage.listHrSickLeaves({ resellerId: parentResellerId });
+      res.json(sickLeaves.filter((sl: any) => rcStaffIds.has(sl.userId)));
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post("/api/repair-center/hr/sick-leaves", requireRole("repair_center", "repair_center_staff"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      const repairCenterId = getRepairCenterIdFromUser(req.user);
+      if (!repairCenterId) return res.status(400).json({ error: "Repair Center ID non trovato" });
+      
+      const parentResellerId = await getParentResellerForRepairCenter(repairCenterId);
+      if (!parentResellerId) return res.status(400).json({ error: "Reseller parent non trovato" });
+      
+      const sickLeave = await storage.createHrSickLeave({
+        userId: req.body.userId || req.user.id,
+        resellerId: parentResellerId,
+        startDate: new Date(req.body.startDate),
+        endDate: req.body.endDate ? new Date(req.body.endDate) : undefined,
+        certificateNumber: req.body.certificateNumber,
+        notes: req.body.notes
+      });
+      
+      res.json(sickLeave);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/repair-center/hr/expense-reports", requireRole("repair_center", "repair_center_staff"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      const repairCenterId = getRepairCenterIdFromUser(req.user);
+      if (!repairCenterId) return res.status(400).json({ error: "Repair Center ID non trovato" });
+      
+      const parentResellerId = await getParentResellerForRepairCenter(repairCenterId);
+      if (!parentResellerId) return res.status(400).json({ error: "Reseller parent non trovato" });
+      
+      const rcStaff = await storage.listRepairCenterStaff(repairCenterId);
+      const rcStaffIds = new Set(rcStaff.map((s: any) => s.id));
+      rcStaffIds.add(repairCenterId);
+      
+      const reports = await storage.listHrExpenseReports({ resellerId: parentResellerId });
+      res.json(reports.filter((r: any) => rcStaffIds.has(r.userId)));
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post("/api/repair-center/hr/expense-reports", requireRole("repair_center", "repair_center_staff"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      const repairCenterId = getRepairCenterIdFromUser(req.user);
+      if (!repairCenterId) return res.status(400).json({ error: "Repair Center ID non trovato" });
+      
+      const parentResellerId = await getParentResellerForRepairCenter(repairCenterId);
+      if (!parentResellerId) return res.status(400).json({ error: "Reseller parent non trovato" });
+      
+      const report = await storage.createHrExpenseReport({
+        userId: req.user.id,
+        resellerId: parentResellerId,
+        title: req.body.title,
+        description: req.body.description,
+        totalAmount: req.body.totalAmount,
+        status: 'draft',
+        submittedAt: new Date()
+      });
+      
+      res.json(report);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.patch("/api/repair-center/hr/expense-reports/:id", requireRole("repair_center"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      const existing = await storage.getHrExpenseReport(req.params.id);
+      if (!existing) return res.status(404).json({ error: "Nota spese non trovata" });
+      
+      const updated = await storage.updateHrExpenseReport(req.params.id, { status: req.body.status });
+      res.json(updated);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/repair-center/hr/work-profiles", requireRole("repair_center", "repair_center_staff"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      const repairCenterId = getRepairCenterIdFromUser(req.user);
+      if (!repairCenterId) return res.status(400).json({ error: "Repair Center ID non trovato" });
+      
+      const parentResellerId = await getParentResellerForRepairCenter(repairCenterId);
+      if (!parentResellerId) return res.status(400).json({ error: "Reseller parent non trovato" });
+      
+      const allProfiles = await storage.listHrWorkProfiles(parentResellerId);
+      res.json(allProfiles.filter((p: any) => p.sourceType === 'repair_center' && p.sourceEntityId === repairCenterId));
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post("/api/repair-center/hr/work-profiles", requireRole("repair_center"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      const repairCenterId = getRepairCenterIdFromUser(req.user);
+      if (!repairCenterId) return res.status(400).json({ error: "Repair Center ID non trovato" });
+      
+      const parentResellerId = await getParentResellerForRepairCenter(repairCenterId);
+      if (!parentResellerId) return res.status(400).json({ error: "Reseller parent non trovato" });
+      
+      const profile = await storage.createHrWorkProfile({
+        resellerId: parentResellerId,
+        name: req.body.name,
+        description: req.body.description,
+        weeklyHours: req.body.weeklyHours,
+        dailyHours: req.body.dailyHours,
+        workDays: req.body.workDays || [1, 2, 3, 4, 5],
+        startTime: req.body.startTime,
+        endTime: req.body.endTime,
+        breakMinutes: req.body.breakMinutes,
+        toleranceMinutes: req.body.toleranceMinutes,
+        isDefault: false,
+        sourceType: 'repair_center',
+        sourceEntityId: repairCenterId
+      });
+      
+      res.json(profile);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.patch("/api/repair-center/hr/work-profiles/:id", requireRole("repair_center"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      const repairCenterId = getRepairCenterIdFromUser(req.user);
+      if (!repairCenterId) return res.status(400).json({ error: "Repair Center ID non trovato" });
+      
+      const existing = await storage.getHrWorkProfile(req.params.id);
+      if (!existing) return res.status(404).json({ error: "Profilo non trovato" });
+      if (existing.sourceEntityId !== repairCenterId) {
+        return res.status(403).json({ error: "Non autorizzato a modificare questo profilo" });
+      }
+      
+      const updated = await storage.updateHrWorkProfile(req.params.id, {
+        name: req.body.name,
+        description: req.body.description,
+        weeklyHours: req.body.weeklyHours,
+        dailyHours: req.body.dailyHours,
+        workDays: req.body.workDays,
+        startTime: req.body.startTime,
+        endTime: req.body.endTime,
+        breakMinutes: req.body.breakMinutes,
+        toleranceMinutes: req.body.toleranceMinutes
+      });
+      
+      res.json(updated);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.delete("/api/repair-center/hr/work-profiles/:id", requireRole("repair_center"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      const repairCenterId = getRepairCenterIdFromUser(req.user);
+      if (!repairCenterId) return res.status(400).json({ error: "Repair Center ID non trovato" });
+      
+      const existing = await storage.getHrWorkProfile(req.params.id);
+      if (!existing) return res.status(404).json({ error: "Profilo non trovato" });
+      if (existing.sourceEntityId !== repairCenterId) {
+        return res.status(403).json({ error: "Non autorizzato a eliminare questo profilo" });
+      }
+      if (existing.isDefault) {
+        return res.status(400).json({ error: "Non è possibile eliminare il profilo predefinito" });
+      }
+      
+      await storage.deleteHrWorkProfile(req.params.id);
+      res.json({ success: true });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/repair-center/hr/calendar", requireRole("repair_center", "repair_center_staff"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      const repairCenterId = getRepairCenterIdFromUser(req.user);
+      if (!repairCenterId) return res.status(400).json({ error: "Repair Center ID non trovato" });
+      
+      const parentResellerId = await getParentResellerForRepairCenter(repairCenterId);
+      if (!parentResellerId) return res.status(400).json({ error: "Reseller parent non trovato" });
+      
+      const rcStaff = await storage.listRepairCenterStaff(repairCenterId);
+      const rcStaffIds = new Set(rcStaff.map((s: any) => s.id));
+      rcStaffIds.add(repairCenterId);
+      
+      const startDate = new Date(req.query.startDate as string || new Date());
+      const endDate = new Date(req.query.endDate as string || new Date());
+      
+      const calendarData = await storage.getHrCalendarData([parentResellerId], startDate, endDate);
+      res.json(calendarData.filter((event: any) => rcStaffIds.has(event.userId)));
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
   return httpServer;
 }
