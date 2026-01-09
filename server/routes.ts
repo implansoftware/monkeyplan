@@ -28392,13 +28392,38 @@ export function registerRoutes(app: Express): Server {
       if (!req.user) return res.status(401).json({ error: "Non autenticato" });
       const resellerId = req.user.role === 'reseller' ? req.user.id : req.user.resellerId;
       if (!resellerId) return res.status(400).json({ error: "Reseller ID non trovato" });
-      const { startDate, endDate, userId } = req.query;
+      const { startDate, endDate, userId, entityType, entityId } = req.query;
       
-      // Get all accessible reseller IDs (self + sub-resellers + repair centers)
-      const accessibleResellerIds = await storage.getAccessibleResellerIds(resellerId);
+      let targetResellerIds: string[];
+      if (entityType === 'sub-reseller' && entityId) {
+        const subReseller = await storage.getUser(entityId as string);
+        if (!subReseller || subReseller.parentResellerId !== resellerId) {
+          return res.status(403).json({ error: "Non autorizzato" });
+        }
+        targetResellerIds = [entityId as string];
+      } else if (entityType === 'repair-center' && entityId) {
+        const rc = await storage.getRepairCenter(entityId as string);
+        if (!rc) return res.status(404).json({ error: "Centro non trovato" });
+        const accessibleIds = await storage.getAccessibleResellerIds(resellerId);
+        if (!accessibleIds.includes(rc.resellerId)) {
+          return res.status(403).json({ error: "Non autorizzato" });
+        }
+        const rcUsers = await storage.listRepairCenterStaff(entityId as string);
+        const rcUserIds = rcUsers.map(u => u.id);
+        const events = await storage.listHrClockEvents({
+          resellerIds: accessibleIds,
+          userId: userId as string | undefined,
+          startDate: startDate ? new Date(startDate as string) : undefined,
+          endDate: endDate ? new Date(endDate as string) : undefined
+        });
+        const filtered = events.filter(e => rcUserIds.includes(e.userId));
+        return res.json(filtered);
+      } else {
+        targetResellerIds = await storage.getAccessibleResellerIds(resellerId);
+      }
       
       const events = await storage.listHrClockEvents({
-        resellerIds: accessibleResellerIds,
+        resellerIds: targetResellerIds,
         userId: userId as string | undefined,
         startDate: startDate ? new Date(startDate as string) : undefined,
         endDate: endDate ? new Date(endDate as string) : undefined
@@ -28446,10 +28471,37 @@ export function registerRoutes(app: Express): Server {
       if (!req.user) return res.status(401).json({ error: "Non autenticato" });
       const resellerId = req.user.role === 'reseller' ? req.user.id : req.user.resellerId;
       if (!resellerId) return res.status(400).json({ error: "Reseller ID non trovato" });
-      const { status, userId } = req.query;
-      const accessibleResellerIds = await storage.getAccessibleResellerIds(resellerId);
+      const { status, userId, entityType, entityId } = req.query;
+      
+      let targetResellerIds: string[];
+      if (entityType === 'sub-reseller' && entityId) {
+        const subReseller = await storage.getUser(entityId as string);
+        if (!subReseller || subReseller.parentResellerId !== resellerId) {
+          return res.status(403).json({ error: "Non autorizzato" });
+        }
+        targetResellerIds = [entityId as string];
+      } else if (entityType === 'repair-center' && entityId) {
+        const rc = await storage.getRepairCenter(entityId as string);
+        if (!rc) return res.status(404).json({ error: "Centro non trovato" });
+        const accessibleIds = await storage.getAccessibleResellerIds(resellerId);
+        if (!accessibleIds.includes(rc.resellerId)) {
+          return res.status(403).json({ error: "Non autorizzato" });
+        }
+        const rcUsers = await storage.listRepairCenterStaff(entityId as string);
+        const rcUserIds = rcUsers.map(u => u.id);
+        const requests = await storage.listHrLeaveRequests({
+          resellerIds: accessibleIds,
+          status: status as string | undefined,
+          userId: userId as string | undefined
+        });
+        const filtered = requests.filter(r => rcUserIds.includes(r.userId));
+        return res.json(filtered);
+      } else {
+        targetResellerIds = await storage.getAccessibleResellerIds(resellerId);
+      }
+      
       const requests = await storage.listHrLeaveRequests({
-        resellerIds: accessibleResellerIds,
+        resellerIds: targetResellerIds,
         status: status as string | undefined,
         userId: userId as string | undefined
       });
@@ -28527,10 +28579,37 @@ export function registerRoutes(app: Express): Server {
       if (!req.user) return res.status(401).json({ error: "Non autenticato" });
       const resellerId = req.user.role === 'reseller' ? req.user.id : req.user.resellerId;
       if (!resellerId) return res.status(400).json({ error: "Reseller ID non trovato" });
-      const { userId, status } = req.query;
-      const accessibleResellerIds = await storage.getAccessibleResellerIds(resellerId);
+      const { userId, status, entityType, entityId } = req.query;
+      
+      let targetResellerIds: string[];
+      if (entityType === 'sub-reseller' && entityId) {
+        const subReseller = await storage.getUser(entityId as string);
+        if (!subReseller || subReseller.parentResellerId !== resellerId) {
+          return res.status(403).json({ error: "Non autorizzato" });
+        }
+        targetResellerIds = [entityId as string];
+      } else if (entityType === 'repair-center' && entityId) {
+        const rc = await storage.getRepairCenter(entityId as string);
+        if (!rc) return res.status(404).json({ error: "Centro non trovato" });
+        const accessibleIds = await storage.getAccessibleResellerIds(resellerId);
+        if (!accessibleIds.includes(rc.resellerId)) {
+          return res.status(403).json({ error: "Non autorizzato" });
+        }
+        const rcUsers = await storage.listRepairCenterStaff(entityId as string);
+        const rcUserIds = rcUsers.map(u => u.id);
+        const sickLeaves = await storage.listHrSickLeaves({
+          resellerIds: accessibleIds,
+          userId: userId as string | undefined,
+          status: status as string | undefined
+        });
+        const filtered = sickLeaves.filter(s => rcUserIds.includes(s.userId));
+        return res.json(filtered);
+      } else {
+        targetResellerIds = await storage.getAccessibleResellerIds(resellerId);
+      }
+      
       const sickLeaves = await storage.listHrSickLeaves({
-        resellerIds: accessibleResellerIds,
+        resellerIds: targetResellerIds,
         userId: userId as string | undefined,
         status: status as string | undefined
       });
@@ -28682,10 +28761,37 @@ export function registerRoutes(app: Express): Server {
       if (!req.user) return res.status(401).json({ error: "Non autenticato" });
       const resellerId = req.user.role === 'reseller' ? req.user.id : req.user.resellerId;
       if (!resellerId) return res.status(400).json({ error: "Reseller ID non trovato" });
-      const { userId, status } = req.query;
-      const accessibleResellerIds = await storage.getAccessibleResellerIds(resellerId);
+      const { userId, status, entityType, entityId } = req.query;
+      
+      let targetResellerIds: string[];
+      if (entityType === 'sub-reseller' && entityId) {
+        const subReseller = await storage.getUser(entityId as string);
+        if (!subReseller || subReseller.parentResellerId !== resellerId) {
+          return res.status(403).json({ error: "Non autorizzato" });
+        }
+        targetResellerIds = [entityId as string];
+      } else if (entityType === 'repair-center' && entityId) {
+        const rc = await storage.getRepairCenter(entityId as string);
+        if (!rc) return res.status(404).json({ error: "Centro non trovato" });
+        const accessibleIds = await storage.getAccessibleResellerIds(resellerId);
+        if (!accessibleIds.includes(rc.resellerId)) {
+          return res.status(403).json({ error: "Non autorizzato" });
+        }
+        const rcUsers = await storage.listRepairCenterStaff(entityId as string);
+        const rcUserIds = rcUsers.map(u => u.id);
+        const reports = await storage.listHrExpenseReports({
+          resellerIds: accessibleIds,
+          userId: userId as string | undefined,
+          status: status as string | undefined
+        });
+        const filtered = reports.filter(r => rcUserIds.includes(r.userId));
+        return res.json(filtered);
+      } else {
+        targetResellerIds = await storage.getAccessibleResellerIds(resellerId);
+      }
+      
       const reports = await storage.listHrExpenseReports({
-        resellerIds: accessibleResellerIds,
+        resellerIds: targetResellerIds,
         userId: userId as string | undefined,
         status: status as string | undefined
       });
