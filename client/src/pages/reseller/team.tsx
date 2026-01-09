@@ -10,7 +10,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogD
 import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
 import { Link } from "wouter";
-import { Users, Plus, Search, Edit, Trash2, Shield, UserCog, Eye, FilePlus, Pencil, Key, TrendingUp, UserCheck, ChevronRight, Check, Briefcase } from "lucide-react";
+import { Users, Plus, Search, Edit, Trash2, Shield, UserCog, Eye, FilePlus, Pencil, Key, TrendingUp, UserCheck, ChevronRight, Check, Briefcase, Building2, Store } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
@@ -89,10 +90,13 @@ const staffFormSchema = z.object({
 type StaffFormValues = z.infer<typeof staffFormSchema>;
 
 type FilterType = "all" | "active" | "inactive";
+type EntityType = "own" | "sub-reseller" | "repair-center";
 
 export default function ResellerTeam() {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeFilter, setActiveFilter] = useState<FilterType>("all");
+  const [entityType, setEntityType] = useState<EntityType>("own");
+  const [selectedEntityId, setSelectedEntityId] = useState<string>("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [permissionsDialogOpen, setPermissionsDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -116,8 +120,29 @@ export default function ResellerTeam() {
     },
   });
 
+  // Build dynamic query key based on entity selection
+  const getTeamQueryKey = () => {
+    if (entityType === "own") return ["/api/reseller/team"];
+    if (entityType === "sub-reseller" && selectedEntityId) return ["/api/reseller/sub-resellers", selectedEntityId, "team"];
+    if (entityType === "repair-center" && selectedEntityId) return ["/api/reseller/repair-centers", selectedEntityId, "team"];
+    return ["/api/reseller/team"];
+  };
+
+  const getTeamQueryUrl = () => {
+    if (entityType === "own") return "/api/reseller/team";
+    if (entityType === "sub-reseller" && selectedEntityId) return `/api/reseller/sub-resellers/${selectedEntityId}/team`;
+    if (entityType === "repair-center" && selectedEntityId) return `/api/reseller/repair-centers/${selectedEntityId}/team`;
+    return "/api/reseller/team";
+  };
+
   const { data: staffMembers = [], isLoading } = useQuery<StaffMember[]>({
-    queryKey: ["/api/reseller/team"],
+    queryKey: getTeamQueryKey(),
+    queryFn: async () => {
+      const res = await fetch(getTeamQueryUrl(), { credentials: "include" });
+      if (!res.ok) throw new Error("Errore nel caricamento del team");
+      return res.json();
+    },
+    enabled: entityType === "own" || !!selectedEntityId,
   });
 
   const { data: repairCenters = [] } = useQuery<RepairCenter[]>({
@@ -127,6 +152,29 @@ export default function ResellerTeam() {
   const { data: subResellers = [] } = useQuery<SubReseller[]>({
     queryKey: ["/api/reseller/sub-resellers"],
   });
+
+  // Reset entity ID when type changes
+  const handleEntityTypeChange = (value: EntityType) => {
+    setEntityType(value);
+    setSelectedEntityId("");
+  };
+
+  // Get selected entity name for display
+  const getSelectedEntityName = () => {
+    if (entityType === "own") return "Il mio team";
+    if (entityType === "sub-reseller") {
+      const sub = subResellers.find(s => s.id === selectedEntityId);
+      return sub ? (sub.ragioneSociale || sub.fullName) : "Seleziona sub-reseller";
+    }
+    if (entityType === "repair-center") {
+      const rc = repairCenters.find(r => r.id === selectedEntityId);
+      return rc ? rc.name : "Seleziona centro";
+    }
+    return "";
+  };
+
+  // Check if viewing own team (for actions)
+  const isOwnTeam = entityType === "own";
 
   const createMutation = useMutation({
     mutationFn: async (data: { user: StaffFormValues; permissions: any[]; repairCenterIds?: string[]; subResellerIds?: string[] }) => {
@@ -394,10 +442,12 @@ export default function ResellerTeam() {
                 Gestione HR
               </Button>
             </Link>
-            <Button onClick={openCreateDialog} className="shadow-lg shadow-primary/25" data-testid="button-new-staff">
-              <Plus className="h-4 w-4 mr-2" />
-              Nuovo Collaboratore
-            </Button>
+            {isOwnTeam && (
+              <Button onClick={openCreateDialog} className="shadow-lg shadow-primary/25" data-testid="button-new-staff">
+                <Plus className="h-4 w-4 mr-2" />
+                Nuovo Collaboratore
+              </Button>
+            )}
           </div>
         </div>
       </div>
@@ -460,12 +510,92 @@ export default function ResellerTeam() {
         </Card>
       </div>
 
+      {/* Entity Selector */}
+      <Card className="overflow-hidden">
+        <CardContent className="py-4">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+            <div className="flex items-center gap-2">
+              <Label className="text-sm font-medium whitespace-nowrap">Visualizza team di:</Label>
+            </div>
+            <div className="flex flex-wrap items-center gap-3">
+              <Select value={entityType} onValueChange={(v) => handleEntityTypeChange(v as EntityType)}>
+                <SelectTrigger className="w-48" data-testid="select-entity-type">
+                  <SelectValue placeholder="Seleziona tipo" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="own">
+                    <div className="flex items-center gap-2">
+                      <Users className="h-4 w-4" />
+                      <span>Il mio team</span>
+                    </div>
+                  </SelectItem>
+                  {subResellers.length > 0 && (
+                    <SelectItem value="sub-reseller">
+                      <div className="flex items-center gap-2">
+                        <Store className="h-4 w-4" />
+                        <span>Sub-Reseller</span>
+                      </div>
+                    </SelectItem>
+                  )}
+                  {repairCenters.length > 0 && (
+                    <SelectItem value="repair-center">
+                      <div className="flex items-center gap-2">
+                        <Building2 className="h-4 w-4" />
+                        <span>Centro Riparazione</span>
+                      </div>
+                    </SelectItem>
+                  )}
+                </SelectContent>
+              </Select>
+
+              {entityType === "sub-reseller" && (
+                <Select value={selectedEntityId} onValueChange={setSelectedEntityId}>
+                  <SelectTrigger className="w-64" data-testid="select-sub-reseller">
+                    <SelectValue placeholder="Seleziona sub-reseller" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {subResellers.map((sub) => (
+                      <SelectItem key={sub.id} value={sub.id}>
+                        {sub.ragioneSociale || sub.fullName}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+
+              {entityType === "repair-center" && (
+                <Select value={selectedEntityId} onValueChange={setSelectedEntityId}>
+                  <SelectTrigger className="w-64" data-testid="select-repair-center">
+                    <SelectValue placeholder="Seleziona centro" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {repairCenters.map((rc) => (
+                      <SelectItem key={rc.id} value={rc.id}>
+                        {rc.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            </div>
+            
+            {(entityType !== "own" && selectedEntityId) && (
+              <Badge variant="outline" className="ml-auto">
+                Team di: {getSelectedEntityName()}
+              </Badge>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Main Table Card */}
       <Card className="overflow-hidden">
         <CardHeader className="pb-4 border-b bg-muted/30">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div className="flex items-center gap-3">
-              <CardTitle className="text-base font-semibold">Membri del Team</CardTitle>
+              <CardTitle className="text-base font-semibold">
+                {entityType === "own" ? "Membri del Team" : `Team: ${getSelectedEntityName()}`}
+              </CardTitle>
               <Badge variant="secondary" className="font-normal">
                 {filteredMembers.length} risultati
               </Badge>
@@ -528,9 +658,9 @@ export default function ResellerTeam() {
               </div>
               <h3 className="font-medium mb-1">Nessun collaboratore trovato</h3>
               <p className="text-sm text-muted-foreground max-w-sm mx-auto">
-                {searchQuery ? "Prova a modificare i criteri di ricerca" : "Inizia aggiungendo il tuo primo collaboratore"}
+                {searchQuery ? "Prova a modificare i criteri di ricerca" : (isOwnTeam ? "Inizia aggiungendo il tuo primo collaboratore" : "Nessun membro nel team")}
               </p>
-              {!searchQuery && (
+              {!searchQuery && isOwnTeam && (
                 <Button className="mt-4" onClick={openCreateDialog}>
                   <Plus className="h-4 w-4 mr-2" />
                   Aggiungi Collaboratore
@@ -619,7 +749,7 @@ export default function ResellerTeam() {
                       </TableCell>
                       <TableCell className="pr-6 text-right">
                         <div className="flex items-center justify-end gap-1 opacity-70 group-hover:opacity-100 transition-opacity">
-                          {!isOwner && (
+                          {isOwnTeam && !isOwner && (
                             <>
                               <Button
                                 variant="ghost"
