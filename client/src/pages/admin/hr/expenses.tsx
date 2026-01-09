@@ -19,41 +19,33 @@ import {
 interface ExpenseReport {
   id: string;
   userId: string;
-  category: string;
-  amount: number;
-  currency: string;
-  description: string;
+  reportNumber?: string | null;
+  title: string;
+  description?: string | null;
+  totalAmount: number;
   status: string;
-  expenseDate: string;
-  receiptUrl?: string;
+  submittedAt?: string | null;
+  approvedAt?: string | null;
   createdAt: string;
   user?: {
     fullName: string;
-    email: string;
   };
 }
 
-const categoryLabels: Record<string, string> = {
-  travel: "Viaggio",
-  meals: "Pasti",
-  accommodation: "Alloggio",
-  transport: "Trasporti",
-  supplies: "Materiali",
-  other: "Altro",
-};
-
 const statusColors: Record<string, string> = {
-  pending: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200",
+  draft: "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200",
+  submitted: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200",
   approved: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200",
   rejected: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200",
-  reimbursed: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200",
+  paid: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200",
 };
 
 const statusLabels: Record<string, string> = {
-  pending: "In Attesa",
+  draft: "Bozza",
+  submitted: "Inviata",
   approved: "Approvata",
   rejected: "Rifiutata",
-  reimbursed: "Rimborsata",
+  paid: "Pagata",
 };
 
 export default function AdminExpensesPage() {
@@ -79,7 +71,7 @@ export default function AdminExpensesPage() {
     },
   });
 
-  const totalAmount = reports.reduce((sum, r) => sum + Number(r.amount), 0);
+  const totalAmount = reports.reduce((sum, r) => sum + Number(r.totalAmount), 0);
 
   return (
     <div className="p-6 space-y-6">
@@ -132,9 +124,9 @@ export default function AdminExpensesPage() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Dipendente</TableHead>
-                  <TableHead>Categoria</TableHead>
+                  <TableHead>Titolo</TableHead>
                   <TableHead>Importo</TableHead>
-                  <TableHead>Data</TableHead>
+                  <TableHead>Data Creazione</TableHead>
                   <TableHead>Stato</TableHead>
                   <TableHead>Descrizione</TableHead>
                 </TableRow>
@@ -145,27 +137,25 @@ export default function AdminExpensesPage() {
                     <TableCell>
                       <div className="flex items-center gap-2">
                         <User className="h-4 w-4 text-muted-foreground" />
-                        <div>
-                          <p className="font-medium">{rep.user?.fullName || "N/A"}</p>
-                          <p className="text-xs text-muted-foreground">{rep.user?.email}</p>
-                        </div>
+                        <p className="font-medium">{rep.user?.fullName || "N/A"}</p>
                       </div>
                     </TableCell>
                     <TableCell>
-                      <Badge variant="outline">
-                        {categoryLabels[rep.category] || rep.category}
-                      </Badge>
+                      <span className="font-medium">{rep.title}</span>
+                      {rep.reportNumber && (
+                        <p className="text-xs text-muted-foreground">#{rep.reportNumber}</p>
+                      )}
                     </TableCell>
                     <TableCell>
                       <span className="font-medium flex items-center gap-1">
                         <Euro className="h-3 w-3" />
-                        {Number(rep.amount).toFixed(2)}
+                        {Number(rep.totalAmount).toFixed(2)}
                       </span>
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-1 text-sm">
                         <Clock className="h-3 w-3" />
-                        {format(new Date(rep.expenseDate), "dd/MM/yyyy", { locale: it })}
+                        {format(new Date(rep.createdAt), "dd/MM/yyyy", { locale: it })}
                       </div>
                     </TableCell>
                     <TableCell>
