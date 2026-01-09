@@ -29051,37 +29051,37 @@ export function registerRoutes(app: Express): Server {
         return res.status(400).json({ error: "Parametri startDate e endDate richiesti" });
       }
       
-      // Get all accessible reseller IDs for hierarchical visibility
-      const accessibleResellerIds = await storage.getAccessibleResellerIds(resellerId);
+      // Normalize entityType from frontend (repair_center -> repair-center, reseller -> sub-reseller)
+      const normalizedEntityType = entityType === 'repair_center' ? 'repair-center' : 
+                                   entityType === 'reseller' ? 'sub-reseller' : 
+                                   entityType as string | undefined;
       
-      // Filter by entity if specified
-      let filteredResellerIds = accessibleResellerIds;
-      if (entityType && entityId) {
-        const eType = entityType as string;
-        const eId = entityId as string;
-        
-        // Verify the entity is accessible
-        if (!accessibleResellerIds.includes(eId)) {
-          return res.status(403).json({ error: "Entità non accessibile" });
-        }
-        
-        if (eType === 'reseller') {
-          // Filter to this specific reseller and its subordinates
-          const subIds = await storage.getAccessibleResellerIds(eId);
-          filteredResellerIds = subIds.filter(id => accessibleResellerIds.includes(id));
-        } else if (eType === 'repair_center') {
-          // Filter to just this repair center
-          filteredResellerIds = [eId];
-        }
+      let scope: EntityScopeResult;
+      try {
+        scope = await resolveResellerEntityScope({
+          storage,
+          requesterResellerId: resellerId,
+          entityType: normalizedEntityType,
+          entityId: entityId as string | undefined
+        });
+      } catch (e: any) {
+        if (e.message === 'FORBIDDEN') return res.status(403).json({ error: "Non autorizzato" });
+        if (e.message === 'NOT_FOUND') return res.status(404).json({ error: "Entità non trovata" });
+        throw e;
       }
       
       const calendarData = await storage.getHrCalendarData(
-        filteredResellerIds,
+        scope.resellerIds,
         new Date(startDate as string),
         new Date(endDate as string)
       );
       
-      res.json(calendarData);
+      // Filter by userIds if entity filter is active (for repair-center filtering)
+      const filteredData = scope.userIds 
+        ? calendarData.filter(e => scope.userIds!.includes(e.userId))
+        : calendarData;
+      
+      res.json(filteredData);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }
