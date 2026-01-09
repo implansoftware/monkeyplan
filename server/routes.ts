@@ -4312,7 +4312,7 @@ export function registerRoutes(app: Express): Server {
       const { id } = req.params;
       
       // Get the repair center to verify ownership
-      const repairCenter = await storage.getRepairCenterById(id);
+      const repairCenter = await storage.getRepairCenter(id);
       if (!repairCenter) {
         return res.status(404).send("Centro di riparazione non trovato");
       }
