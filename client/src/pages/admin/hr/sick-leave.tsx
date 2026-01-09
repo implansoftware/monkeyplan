@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Stethoscope, Clock, User, FileText, RefreshCw, Download } from "lucide-react";
+import { Stethoscope, Clock, User, RefreshCw } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
@@ -20,28 +20,37 @@ interface SickLeave {
   id: string;
   userId: string;
   startDate: string;
-  endDate: string;
-  status: string;
-  certificateUrl?: string;
-  protocolNumber?: string;
-  notes?: string;
+  endDate: string | null;
+  protocolNumber?: string | null;
+  certificateRequired: boolean;
+  certificateUploaded: boolean;
+  certificateDeadline?: string | null;
+  validatedBy?: string | null;
+  validatedAt?: string | null;
+  notes?: string | null;
   createdAt: string;
   user?: {
     fullName: string;
-    email: string;
-  };
+  } | null;
+}
+
+// Derive status from certificateUploaded and validatedAt
+function getStatus(sl: SickLeave): "pending" | "uploaded" | "validated" {
+  if (sl.validatedAt) return "validated";
+  if (sl.certificateUploaded) return "uploaded";
+  return "pending";
 }
 
 const statusColors: Record<string, string> = {
   pending: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200",
-  approved: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200",
-  rejected: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200",
+  uploaded: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200",
+  validated: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200",
 };
 
 const statusLabels: Record<string, string> = {
-  pending: "In Attesa",
-  approved: "Verificata",
-  rejected: "Non Valida",
+  pending: "In Attesa Certificato",
+  uploaded: "Certificato Caricato",
+  validated: "Verificata",
 };
 
 export default function AdminSickLeavePage() {
@@ -121,18 +130,19 @@ export default function AdminSickLeavePage() {
                     <TableCell>
                       <div className="flex items-center gap-2">
                         <User className="h-4 w-4 text-muted-foreground" />
-                        <div>
-                          <p className="font-medium">{sl.user?.fullName || "N/A"}</p>
-                          <p className="text-xs text-muted-foreground">{sl.user?.email}</p>
-                        </div>
+                        <p className="font-medium">{sl.user?.fullName || "N/A"}</p>
                       </div>
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-1 text-sm">
                         <Clock className="h-3 w-3" />
                         {format(new Date(sl.startDate), "dd/MM/yyyy", { locale: it })}
-                        {" - "}
-                        {format(new Date(sl.endDate), "dd/MM/yyyy", { locale: it })}
+                        {sl.endDate && (
+                          <>
+                            {" - "}
+                            {format(new Date(sl.endDate), "dd/MM/yyyy", { locale: it })}
+                          </>
+                        )}
                       </div>
                     </TableCell>
                     <TableCell>
@@ -141,20 +151,22 @@ export default function AdminSickLeavePage() {
                       </span>
                     </TableCell>
                     <TableCell>
-                      <Badge className={statusColors[sl.status]}>
-                        {statusLabels[sl.status] || sl.status}
-                      </Badge>
+                      {(() => {
+                        const status = getStatus(sl);
+                        return (
+                          <Badge className={statusColors[status]}>
+                            {statusLabels[status]}
+                          </Badge>
+                        );
+                      })()}
                     </TableCell>
                     <TableCell>
-                      {sl.certificateUrl ? (
-                        <Button variant="ghost" size="sm" asChild>
-                          <a href={sl.certificateUrl} target="_blank" rel="noopener noreferrer">
-                            <Download className="h-4 w-4 mr-1" />
-                            Scarica
-                          </a>
-                        </Button>
+                      {sl.certificateUploaded ? (
+                        <Badge variant="outline" className="bg-green-50 dark:bg-green-950">
+                          Caricato
+                        </Badge>
                       ) : (
-                        <span className="text-muted-foreground text-sm">-</span>
+                        <span className="text-muted-foreground text-sm">Non caricato</span>
                       )}
                     </TableCell>
                   </TableRow>
