@@ -4267,6 +4267,76 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+
+  // Get sub-reseller team (for parent resellers to view sub-reseller staff)
+  app.get("/api/reseller/sub-resellers/:id/team", requireRole("reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Non autorizzato");
+      
+      // Only franchising/gdo resellers can view sub-reseller teams
+      if (req.user.resellerCategory !== 'franchising' && req.user.resellerCategory !== 'gdo') {
+        return res.status(403).send("Solo i rivenditori franchising/GDO possono visualizzare i team dei sub-rivenditori");
+      }
+      
+      const { id } = req.params;
+      
+      // Verify sub-reseller exists and belongs to this parent
+      const subReseller = await storage.getUser(id);
+      if (!subReseller || subReseller.role !== 'reseller' || subReseller.parentResellerId !== req.user.id) {
+        return res.status(404).send("Sub-rivenditore non trovato o non autorizzato");
+      }
+      
+      // Get the sub-reseller's team (staff + owner)
+      const staff = await storage.listResellerStaff(id);
+      
+      // Return without password
+      const safeStaff = staff.map((s: any) => {
+        const { password: _, ...safe } = s;
+        return safe;
+      });
+      
+      res.json(safeStaff);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // Get repair center team (for resellers to view repair center staff)
+  app.get("/api/reseller/repair-centers/:id/team", requireRole("reseller", "reseller_staff"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Non autorizzato");
+      
+      const resellerId = req.user.role === 'reseller' ? req.user.id : req.user.resellerId;
+      if (!resellerId) return res.status(400).send("Reseller ID non trovato");
+      
+      const { id } = req.params;
+      
+      // Get the repair center to verify ownership
+      const repairCenter = await storage.getRepairCenterById(id);
+      if (!repairCenter) {
+        return res.status(404).send("Centro di riparazione non trovato");
+      }
+      
+      // Check if this reseller can access this repair center
+      const accessibleIds = await storage.getAccessibleResellerIds(resellerId);
+      if (!accessibleIds.includes(repairCenter.resellerId)) {
+        return res.status(403).send("Non autorizzato a visualizzare questo centro");
+      }
+      
+      // Get the repair center's team (staff + owner)
+      const staff = await storage.listRepairCenterStaff(id);
+      
+      // Return without password
+      const safeStaff = staff.map((s: any) => {
+        const { password: _, ...safe } = s;
+        return safe;
+      });
+      
+      res.json(safeStaff);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
   // Get sub-resellers e-commerce data (for franchising/GDO resellers)
   app.get("/api/reseller/sub-resellers/ecommerce", requireRole("reseller"), async (req, res) => {
     try {
