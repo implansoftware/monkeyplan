@@ -22,7 +22,16 @@ export async function hashPassword(password: string) {
 }
 
 async function comparePasswords(supplied: string, stored: string) {
+  if (!stored || !stored.includes(".")) {
+    // Password is not in the expected format (hash.salt)
+    console.log('[AUTH] Invalid password format - missing salt');
+    return false;
+  }
   const [hashed, salt] = stored.split(".");
+  if (!hashed || !salt) {
+    console.log('[AUTH] Invalid password format - empty hash or salt');
+    return false;
+  }
   const hashedBuf = Buffer.from(hashed, "hex");
   const suppliedBuf = (await scryptAsync(supplied, salt, 64)) as Buffer;
   return timingSafeEqual(hashedBuf, suppliedBuf);
