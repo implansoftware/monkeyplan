@@ -7596,6 +7596,68 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+
+  // GET /api/repair-center/service-catalog - View service catalog with prices
+  app.get("/api/repair-center/service-catalog", requireRole("repair_center"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const repairCenterId = req.user.repairCenterId;
+      if (!repairCenterId) {
+        return res.status(400).send("Repair center not found");
+      }
+      
+      // Get repair center to find parent reseller
+      const repairCenter = await storage.getRepairCenter(repairCenterId);
+      if (!repairCenter) {
+        return res.status(404).send("Repair center not found");
+      }
+      
+      // Get all active service items
+      const items = await storage.listServiceItems();
+      const activeItems = items.filter(item => item.isActive);
+      
+      // Get custom prices for this repair center
+      const centerPrices = await storage.listServiceItemPricesByRepairCenter(repairCenterId);
+      
+      // Get reseller prices as fallback
+      const resellerPrices = repairCenter.resellerId 
+        ? await storage.listServiceItemPricesByReseller(repairCenter.resellerId)
+        : [];
+      
+      // Build response with effective prices
+      const itemsWithPrices = activeItems.map(item => {
+        const centerPrice = centerPrices.find(p => p.serviceItemId === item.id);
+        const resellerPrice = resellerPrices.find(p => p.serviceItemId === item.id);
+        
+        // Priority: center price > reseller price > base price
+        let effectivePrice = item.basePriceCents;
+        let effectiveLaborMinutes = item.laborMinutes;
+        let priceSource: 'base' | 'reseller' | 'center' = 'base';
+        
+        if (centerPrice) {
+          effectivePrice = centerPrice.priceCents;
+          effectiveLaborMinutes = centerPrice.laborMinutes ?? item.laborMinutes;
+          priceSource = 'center';
+        } else if (resellerPrice) {
+          effectivePrice = resellerPrice.priceCents;
+          effectiveLaborMinutes = resellerPrice.laborMinutes ?? item.laborMinutes;
+          priceSource = 'reseller';
+        }
+        
+        return {
+          ...item,
+          effectivePrice,
+          effectiveLaborMinutes,
+          priceSource,
+        };
+      });
+      
+      res.json(itemsWithPrices);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
   app.get("/api/repair-center/stats", requireRole("repair_center"), async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
