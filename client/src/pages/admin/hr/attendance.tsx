@@ -19,35 +19,35 @@ import {
 interface ClockEvent {
   id: string;
   userId: string;
-  type: string;
-  timestamp: string;
-  latitude?: number;
-  longitude?: number;
-  notes?: string;
+  eventType: string;
+  eventTime: string;
+  latitude?: number | null;
+  longitude?: number | null;
+  accuracy?: number | null;
+  status: string;
   createdAt: string;
   user?: {
     fullName: string;
-    email: string;
-  };
+  } | null;
 }
 
 const typeColors: Record<string, string> = {
-  clock_in: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200",
-  clock_out: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200",
+  entry: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200",
+  exit: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200",
   break_start: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200",
   break_end: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200",
 };
 
-const statusLabels: Record<string, string> = {
-  clock_in: "Entrata",
-  clock_out: "Uscita",
+const typeLabels: Record<string, string> = {
+  entry: "Entrata",
+  exit: "Uscita",
   break_start: "Inizio Pausa",
   break_end: "Fine Pausa",
 };
 
 const typeIcons: Record<string, JSX.Element> = {
-  clock_in: <ArrowRight className="h-3 w-3" />,
-  clock_out: <ArrowLeft className="h-3 w-3" />,
+  entry: <ArrowRight className="h-3 w-3" />,
+  exit: <ArrowLeft className="h-3 w-3" />,
   break_start: <Clock className="h-3 w-3" />,
   break_end: <Clock className="h-3 w-3" />,
 };
@@ -120,7 +120,7 @@ export default function AdminAttendancePage() {
                   <TableHead>Tipo</TableHead>
                   <TableHead>Data/Ora</TableHead>
                   <TableHead>Posizione</TableHead>
-                  <TableHead>Note</TableHead>
+                  <TableHead>Stato</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -129,27 +129,24 @@ export default function AdminAttendancePage() {
                     <TableCell>
                       <div className="flex items-center gap-2">
                         <User className="h-4 w-4 text-muted-foreground" />
-                        <div>
-                          <p className="font-medium">{evt.user?.fullName || "N/A"}</p>
-                          <p className="text-xs text-muted-foreground">{evt.user?.email}</p>
-                        </div>
+                        <p className="font-medium">{evt.user?.fullName || "N/A"}</p>
                       </div>
                     </TableCell>
                     <TableCell>
-                      <Badge className={typeColors[evt.type]}>
+                      <Badge className={typeColors[evt.eventType] || "bg-gray-100 text-gray-800"}>
                         <span className="flex items-center gap-1">
-                          {typeIcons[evt.type]}
-                          {statusLabels[evt.type] || evt.type}
+                          {typeIcons[evt.eventType]}
+                          {typeLabels[evt.eventType] || evt.eventType}
                         </span>
                       </Badge>
                     </TableCell>
                     <TableCell>
                       <div className="text-sm">
                         <p className="font-medium">
-                          {format(new Date(evt.timestamp), "dd/MM/yyyy", { locale: it })}
+                          {format(new Date(evt.eventTime), "dd/MM/yyyy", { locale: it })}
                         </p>
                         <p className="text-muted-foreground">
-                          {format(new Date(evt.timestamp), "HH:mm:ss", { locale: it })}
+                          {format(new Date(evt.eventTime), "HH:mm:ss", { locale: it })}
                         </p>
                       </div>
                     </TableCell>
@@ -174,9 +171,9 @@ export default function AdminAttendancePage() {
                       )}
                     </TableCell>
                     <TableCell>
-                      <span className="text-sm text-muted-foreground truncate max-w-[200px] block">
-                        {evt.notes || "-"}
-                      </span>
+                      <Badge variant="outline">
+                        {evt.status}
+                      </Badge>
                     </TableCell>
                   </TableRow>
                 ))}
