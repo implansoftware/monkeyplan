@@ -8749,10 +8749,14 @@ export class DatabaseStorage implements IStorage {
     return request || undefined;
   }
 
-  async listHrLeaveRequests(filters: { userId?: string; resellerId?: string; status?: string }): Promise<(HrLeaveRequest & { user?: { fullName: string } })[]> {
+  async listHrLeaveRequests(filters: { userId?: string; resellerId?: string; resellerIds?: string[]; status?: string }): Promise<(HrLeaveRequest & { user?: { fullName: string } })[]> {
     const conditions = [];
     if (filters.userId) conditions.push(eq(hrLeaveRequests.userId, filters.userId));
-    if (filters.resellerId) conditions.push(eq(hrLeaveRequests.resellerId, filters.resellerId));
+    if (filters.resellerIds && filters.resellerIds.length > 0) {
+      conditions.push(inArray(hrLeaveRequests.resellerId, filters.resellerIds));
+    } else if (filters.resellerId) {
+      conditions.push(eq(hrLeaveRequests.resellerId, filters.resellerId));
+    }
     if (filters.status) conditions.push(eq(hrLeaveRequests.status, filters.status as any));
     
     const results = await db.select({
@@ -8818,10 +8822,14 @@ export class DatabaseStorage implements IStorage {
     return leave || undefined;
   }
 
-  async listHrSickLeaves(filters: { userId?: string; resellerId?: string }): Promise<(HrSickLeave & { user: { fullName: string } | null })[]> {
+  async listHrSickLeaves(filters: { userId?: string; resellerId?: string; resellerIds?: string[]; status?: string }): Promise<(HrSickLeave & { user: { fullName: string } | null })[]> {
     const conditions = [];
     if (filters.userId) conditions.push(eq(hrSickLeaves.userId, filters.userId));
-    if (filters.resellerId) conditions.push(eq(hrSickLeaves.resellerId, filters.resellerId));
+    if (filters.resellerIds && filters.resellerIds.length > 0) {
+      conditions.push(inArray(hrSickLeaves.resellerId, filters.resellerIds));
+    } else if (filters.resellerId) {
+      conditions.push(eq(hrSickLeaves.resellerId, filters.resellerId));
+    }
     
     const results = await db.select({
       sickLeave: hrSickLeaves,
@@ -8969,10 +8977,14 @@ export class DatabaseStorage implements IStorage {
     return absence;
   }
 
-  async listHrAbsences(filters: { userId?: string; resellerId?: string; isJustified?: boolean }): Promise<HrAbsence[]> {
+  async listHrAbsences(filters: { userId?: string; resellerId?: string; resellerIds?: string[]; isJustified?: boolean; status?: string }): Promise<HrAbsence[]> {
     const conditions = [];
     if (filters.userId) conditions.push(eq(hrAbsences.userId, filters.userId));
-    if (filters.resellerId) conditions.push(eq(hrAbsences.resellerId, filters.resellerId));
+    if (filters.resellerIds && filters.resellerIds.length > 0) {
+      conditions.push(inArray(hrAbsences.resellerId, filters.resellerIds));
+    } else if (filters.resellerId) {
+      conditions.push(eq(hrAbsences.resellerId, filters.resellerId));
+    }
     if (filters.isJustified !== undefined) conditions.push(eq(hrAbsences.isJustified, filters.isJustified));
     
     return db.select().from(hrAbsences)
@@ -9019,10 +9031,14 @@ export class DatabaseStorage implements IStorage {
     return report || undefined;
   }
 
-  async listHrExpenseReports(filters: { userId?: string; resellerId?: string; status?: string }): Promise<(HrExpenseReport & { user?: { fullName: string } })[]> {
+  async listHrExpenseReports(filters: { userId?: string; resellerId?: string; resellerIds?: string[]; status?: string }): Promise<(HrExpenseReport & { user?: { fullName: string } })[]> {
     const conditions = [];
     if (filters.userId) conditions.push(eq(hrExpenseReports.userId, filters.userId));
-    if (filters.resellerId) conditions.push(eq(hrExpenseReports.resellerId, filters.resellerId));
+    if (filters.resellerIds && filters.resellerIds.length > 0) {
+      conditions.push(inArray(hrExpenseReports.resellerId, filters.resellerIds));
+    } else if (filters.resellerId) {
+      conditions.push(eq(hrExpenseReports.resellerId, filters.resellerId));
+    }
     if (filters.status) conditions.push(eq(hrExpenseReports.status, filters.status as any));
     
     const results = await db.select({

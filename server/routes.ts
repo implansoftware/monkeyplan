@@ -28362,8 +28362,9 @@ export function registerRoutes(app: Express): Server {
       const resellerId = req.user.role === 'reseller' ? req.user.id : req.user.resellerId;
       if (!resellerId) return res.status(400).json({ error: "Reseller ID non trovato" });
       const { status, userId } = req.query;
+      const accessibleResellerIds = await storage.getAccessibleResellerIds(resellerId);
       const requests = await storage.listHrLeaveRequests({
-        resellerId,
+        resellerIds: accessibleResellerIds,
         status: status as string | undefined,
         userId: userId as string | undefined
       });
@@ -28442,8 +28443,9 @@ export function registerRoutes(app: Express): Server {
       const resellerId = req.user.role === 'reseller' ? req.user.id : req.user.resellerId;
       if (!resellerId) return res.status(400).json({ error: "Reseller ID non trovato" });
       const { userId, status } = req.query;
+      const accessibleResellerIds = await storage.getAccessibleResellerIds(resellerId);
       const sickLeaves = await storage.listHrSickLeaves({
-        resellerId,
+        resellerIds: accessibleResellerIds,
         userId: userId as string | undefined,
         status: status as string | undefined
       });
@@ -28596,8 +28598,9 @@ export function registerRoutes(app: Express): Server {
       const resellerId = req.user.role === 'reseller' ? req.user.id : req.user.resellerId;
       if (!resellerId) return res.status(400).json({ error: "Reseller ID non trovato" });
       const { userId, status } = req.query;
+      const accessibleResellerIds = await storage.getAccessibleResellerIds(resellerId);
       const reports = await storage.listHrExpenseReports({
-        resellerId,
+        resellerIds: accessibleResellerIds,
         userId: userId as string | undefined,
         status: status as string | undefined
       });
@@ -28720,8 +28723,9 @@ export function registerRoutes(app: Express): Server {
       const resellerId = req.user.role === 'reseller' ? req.user.id : req.user.resellerId;
       if (!resellerId) return res.status(400).json({ error: "Reseller ID non trovato" });
       const { userId, status } = req.query;
+      const accessibleResellerIds = await storage.getAccessibleResellerIds(resellerId);
       const absences = await storage.listHrAbsences({
-        resellerId,
+        resellerIds: accessibleResellerIds,
         userId: userId as string | undefined,
         status: status as string | undefined
       });
@@ -28919,6 +28923,7 @@ export function registerRoutes(app: Express): Server {
       const resellerId = req.user.role === 'reseller' ? req.user.id : req.user.resellerId;
       if (!resellerId) return res.status(400).json({ error: "Reseller ID non trovato" });
       
+      const accessibleResellerIds = await storage.getAccessibleResellerIds(resellerId);
       const today = new Date();
       const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
       const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
@@ -28929,10 +28934,10 @@ export function registerRoutes(app: Express): Server {
         todayClockEvents,
         absencesThisMonth
       ] = await Promise.all([
-        storage.listHrLeaveRequests({ resellerId, status: 'pending' }),
-        storage.listHrExpenseReports({ resellerId, status: 'pending' }),
-        storage.listHrClockEvents({ resellerId, startDate: today, endDate: today }),
-        storage.listHrAbsences({ resellerId, status: 'pending' })
+        storage.listHrLeaveRequests({ resellerIds: accessibleResellerIds, status: 'pending' }),
+        storage.listHrExpenseReports({ resellerIds: accessibleResellerIds, status: 'pending' }),
+        storage.listHrClockEvents({ resellerIds: accessibleResellerIds, startDate: today, endDate: today }),
+        storage.listHrAbsences({ resellerIds: accessibleResellerIds, status: 'pending' })
       ]);
       
       res.json({
