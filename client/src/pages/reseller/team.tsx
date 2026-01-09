@@ -405,12 +405,14 @@ export default function ResellerTeam() {
 
   function getPermissionCount(member: StaffMember) {
     let count = 0;
-    member.permissions.forEach((p) => {
-      if (p.canRead) count++;
-      if (p.canCreate) count++;
-      if (p.canUpdate) count++;
-      if (p.canDelete) count++;
-    });
+    if (member.permissions) {
+      member.permissions.forEach((p) => {
+        if (p.canRead) count++;
+        if (p.canCreate) count++;
+        if (p.canUpdate) count++;
+        if (p.canDelete) count++;
+      });
+    }
     return count;
   }
 
