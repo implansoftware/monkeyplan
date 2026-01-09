@@ -9,36 +9,26 @@ import { useState } from "react";
 import { AdminEntityFilterSelector, AdminEntityType } from "@/components/hr/admin-entity-filter-selector";
 
 interface CalendarEvent {
-  id: string;
   userId: string;
-  title: string;
+  userName: string;
   type: string;
   startDate: string;
-  endDate?: string;
-  allDay: boolean;
-  color?: string;
-  notes?: string;
-  user?: {
-    fullName: string;
-    email: string;
-  };
+  endDate: string;
 }
 
 const eventTypeColors: Record<string, string> = {
-  meeting: "bg-blue-500",
-  deadline: "bg-red-500",
-  reminder: "bg-yellow-500",
-  holiday: "bg-green-500",
-  training: "bg-purple-500",
+  vacation: "bg-blue-500",
+  permit: "bg-purple-500",
+  rol: "bg-indigo-500",
+  sick: "bg-red-500",
   other: "bg-gray-500",
 };
 
 const eventTypeLabels: Record<string, string> = {
-  meeting: "Riunione",
-  deadline: "Scadenza",
-  reminder: "Promemoria",
-  holiday: "Festività",
-  training: "Formazione",
+  vacation: "Ferie",
+  permit: "Permesso",
+  rol: "ROL",
+  sick: "Malattia",
   other: "Altro",
 };
 
@@ -156,13 +146,13 @@ export default function AdminCalendarPage() {
                       {day.getDate()}
                     </div>
                     <div className="space-y-1">
-                      {dayEvents.slice(0, 3).map(evt => (
+                      {dayEvents.slice(0, 3).map((evt, idx) => (
                         <div
-                          key={evt.id}
+                          key={`${evt.userId}-${evt.type}-${evt.startDate}-${idx}`}
                           className={`text-xs p-1 rounded truncate text-white ${eventTypeColors[evt.type] || eventTypeColors.other}`}
-                          title={`${evt.title} - ${evt.user?.fullName || "N/A"}`}
+                          title={`${eventTypeLabels[evt.type] || evt.type} - ${evt.userName}`}
                         >
-                          {evt.title}
+                          {evt.userName}
                         </div>
                       ))}
                       {dayEvents.length > 3 && (
