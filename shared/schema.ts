@@ -749,6 +749,9 @@ export const products = pgTable("products", {
   // Creatore (null = admin/globale, altrimenti = rivenditore specifico)
   createdBy: varchar("created_by").references(() => users.id, { onDelete: "cascade" }),
   
+  // Centro di riparazione creatore (null = globale/reseller, altrimenti = centro specifico)
+  repairCenterId: varchar("repair_center_id").references(() => repairCenters.id, { onDelete: "cascade" }),
+  
   // Immagine prodotto
   imageUrl: text("image_url"),
   
@@ -3067,6 +3070,9 @@ export const serviceItems = pgTable("service_items", {
   
   // Creatore (null = admin/globale, altrimenti = rivenditore specifico)
   createdBy: varchar("created_by").references(() => users.id, { onDelete: "cascade" }),
+  
+  // Centro di riparazione creatore (null = globale/reseller, altrimenti = centro specifico)
+  repairCenterId: varchar("repair_center_id").references(() => repairCenters.id, { onDelete: "cascade" }),
   
   // Stato
   isActive: boolean("is_active").notNull().default(true),
