@@ -165,6 +165,15 @@ import RepairCenterTransferRequestsOverview from "@/pages/repair-center/transfer
 import RepairCenterRemoteRequests from "@/pages/repair-center/remote-requests";
 import RepairCenterCart from "@/pages/repair-center/cart";
 
+// Repair Center HR pages
+import RepairCenterHrDashboard from "@/pages/repair-center/hr/index";
+import RepairCenterHrAttendance from "@/pages/repair-center/hr/attendance";
+import RepairCenterHrLeaveRequests from "@/pages/repair-center/hr/leave-requests";
+import RepairCenterHrWorkProfiles from "@/pages/repair-center/hr/work-profiles";
+import RepairCenterHrExpenses from "@/pages/repair-center/hr/expenses";
+import RepairCenterHrSickLeave from "@/pages/repair-center/hr/sick-leave";
+import RepairCenterHrCalendar from "@/pages/repair-center/hr/calendar";
+
 // Customer pages
 import CustomerDashboard from "@/pages/customer/dashboard";
 import CustomerRepairs from "@/pages/customer/repairs";
@@ -385,6 +394,13 @@ function Router() {
       <ProtectedRoute path="/repair-center/utility/practices" component={RepairCenterUtilityPractices} />
       <ProtectedRoute path="/repair-center/utility/commissions" component={RepairCenterUtilityCommissions} />
       <ProtectedRoute path="/repair-center/utility/reports" component={RepairCenterUtilityReports} />
+      <ProtectedRoute path="/repair-center/hr/attendance" component={RepairCenterHrAttendance} />
+      <ProtectedRoute path="/repair-center/hr/leave-requests" component={RepairCenterHrLeaveRequests} />
+      <ProtectedRoute path="/repair-center/hr/work-profiles" component={RepairCenterHrWorkProfiles} />
+      <ProtectedRoute path="/repair-center/hr/expenses" component={RepairCenterHrExpenses} />
+      <ProtectedRoute path="/repair-center/hr/sick-leave" component={RepairCenterHrSickLeave} />
+      <ProtectedRoute path="/repair-center/hr/calendar" component={RepairCenterHrCalendar} />
+      <ProtectedRoute path="/repair-center/hr" component={RepairCenterHrDashboard} />
       <ProtectedRoute path="/repair-center/transfer-requests/overview" component={RepairCenterTransferRequestsOverview} />
       <ProtectedRoute path="/repair-center/transfer-requests" component={RepairCenterTransferRequests} />
       <ProtectedRoute path="/repair-center/remote-requests" component={RepairCenterRemoteRequests} />
