@@ -6252,9 +6252,9 @@ export class DatabaseStorage implements IStorage {
           eq(users.repairCenterId, repairCenterId),
           eq(users.role, 'repair_center_staff')
         ),
-        // Owner (the repair center user)
+        // Owner (the repair center user itself - their id equals repairCenterId)
         and(
-          eq(users.repairCenterId, repairCenterId),
+          eq(users.id, repairCenterId),
           eq(users.role, 'repair_center')
         )
       ));
