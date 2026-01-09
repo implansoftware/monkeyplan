@@ -8754,7 +8754,7 @@ export class DatabaseStorage implements IStorage {
       const children = await db.select({
         id: users.id,
         fullName: users.fullName,
-        companyName: users.companyName,
+        ragioneSociale: users.ragioneSociale,
         parentResellerId: users.parentResellerId
       })
         .from(users)
@@ -8770,7 +8770,7 @@ export class DatabaseStorage implements IStorage {
           entities.push({
             type: 'reseller',
             id: child.id,
-            name: child.companyName || child.fullName || 'Sub-Reseller',
+            name: child.ragioneSociale || child.fullName || 'Sub-Reseller',
             parentId: child.parentResellerId || null
           });
         }
@@ -8783,6 +8783,17 @@ export class DatabaseStorage implements IStorage {
     
     // Get repair centers owned by all resellers in hierarchy (including root)
     const allResellerIds = [resellerId, ...resellerIds];
+    // Build conditions array for repair centers - handle nullable subResellerId safely
+    const rcConditions = [inArray(repairCenters.resellerId, allResellerIds)];
+    // Only add subResellerId condition if we have IDs to check (avoid null comparison issues)
+    if (allResellerIds.length > 0) {
+      rcConditions.push(
+        and(
+          not(isNull(repairCenters.subResellerId)),
+          inArray(repairCenters.subResellerId, allResellerIds)
+        )!
+      );
+    }
     const centers = await db.select({
       id: repairCenters.id,
       name: repairCenters.name,
@@ -8790,10 +8801,7 @@ export class DatabaseStorage implements IStorage {
       subResellerId: repairCenters.subResellerId
     })
       .from(repairCenters)
-      .where(or(
-        inArray(repairCenters.resellerId, allResellerIds),
-        inArray(repairCenters.subResellerId, allResellerIds)
-      ));
+      .where(or(...rcConditions));
     
     for (const center of centers) {
       entities.push({
