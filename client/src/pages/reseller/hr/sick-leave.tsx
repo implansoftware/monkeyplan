@@ -22,12 +22,14 @@ import {
   X,
   Paperclip,
   Download,
-  Loader2
+  Loader2,
+  Eye
 } from "lucide-react";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format, differenceInDays } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
+import { EntityFilterSelector, EntityType, useEntityFilter } from "@/components/hr/entity-filter-selector";
 
 interface SickLeave {
   id: string;
@@ -56,6 +58,9 @@ const statusLabels: Record<string, { label: string; variant: "default" | "second
 export default function HrSickLeave() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [entityType, setEntityType] = useState<EntityType>("own");
+  const [selectedEntityId, setSelectedEntityId] = useState<string>("");
+  const { buildQueryParams, isReadOnly } = useEntityFilter();
   const [certificateFile, setCertificateFile] = useState<File | null>(null);
   const [uploadingCertificate, setUploadingCertificate] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -69,8 +74,16 @@ export default function HrSickLeave() {
   });
   const { toast } = useToast();
 
+  const readOnly = isReadOnly(entityType, selectedEntityId);
+  const queryParams = buildQueryParams(entityType, selectedEntityId);
+
   const { data: sickLeaves = [], isLoading } = useQuery<SickLeave[]>({
-    queryKey: ["/api/reseller/hr/sick-leaves"],
+    queryKey: ["/api/reseller/hr/sick-leaves", entityType, selectedEntityId],
+    queryFn: async () => {
+      const res = await fetch(`/api/reseller/hr/sick-leaves${queryParams}`);
+      if (!res.ok) throw new Error("Errore nel caricamento");
+      return res.json();
+    },
   });
 
   const { data: teamMembers = [] } = useQuery<TeamMember[]>({
@@ -156,12 +169,28 @@ export default function HrSickLeave() {
                 Torna a HR
               </Button>
             </Link>
-            <Button onClick={() => setDialogOpen(true)} data-testid="button-new-sick-leave">
-              <Plus className="h-4 w-4 mr-2" />
-              Registra Malattia
-            </Button>
+            {!readOnly && (
+              <Button onClick={() => setDialogOpen(true)} data-testid="button-new-sick-leave">
+                <Plus className="h-4 w-4 mr-2" />
+                Registra Malattia
+              </Button>
+            )}
           </div>
         </div>
+        <div className="mt-4">
+          <EntityFilterSelector
+            entityType={entityType}
+            setEntityType={setEntityType}
+            selectedEntityId={selectedEntityId}
+            setSelectedEntityId={setSelectedEntityId}
+          />
+        </div>
+        {readOnly && (
+          <div className="mt-3 flex items-center gap-2 text-sm text-amber-600 dark:text-amber-400">
+            <Eye className="h-4 w-4" />
+            <span>Modalità sola lettura - Visualizzazione dati esterni</span>
+          </div>
+        )}
       </div>
 
       {activeSickLeaves > 0 && (

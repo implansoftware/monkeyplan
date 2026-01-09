@@ -22,12 +22,14 @@ import {
   FileText,
   User,
   Send,
-  Trash2
+  Trash2,
+  Eye
 } from "lucide-react";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
+import { EntityFilterSelector, EntityType, useEntityFilter } from "@/components/hr/entity-filter-selector";
 
 interface ExpenseReport {
   id: string;
@@ -60,6 +62,9 @@ const statusLabels: Record<string, { label: string; variant: "default" | "second
 export default function HrExpenses() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [entityType, setEntityType] = useState<EntityType>("own");
+  const [selectedEntityId, setSelectedEntityId] = useState<string>("");
+  const { buildQueryParams, isReadOnly } = useEntityFilter();
   const [newReport, setNewReport] = useState({
     title: "",
     description: "",
@@ -68,8 +73,16 @@ export default function HrExpenses() {
   });
   const { toast } = useToast();
 
+  const readOnly = isReadOnly(entityType, selectedEntityId);
+  const queryParams = buildQueryParams(entityType, selectedEntityId);
+
   const { data: reports = [], isLoading } = useQuery<ExpenseReport[]>({
-    queryKey: ["/api/reseller/hr/expense-reports"],
+    queryKey: ["/api/reseller/hr/expense-reports", entityType, selectedEntityId],
+    queryFn: async () => {
+      const res = await fetch(`/api/reseller/hr/expense-reports${queryParams}`);
+      if (!res.ok) throw new Error("Errore nel caricamento");
+      return res.json();
+    },
   });
 
   const { data: employees = [] } = useQuery<TeamMember[]>({
@@ -159,12 +172,28 @@ export default function HrExpenses() {
                 Torna a HR
               </Button>
             </Link>
-            <Button onClick={() => setDialogOpen(true)} data-testid="button-new-expense">
-              <Plus className="h-4 w-4 mr-2" />
-              Nuova Nota Spese
-            </Button>
+            {!readOnly && (
+              <Button onClick={() => setDialogOpen(true)} data-testid="button-new-expense">
+                <Plus className="h-4 w-4 mr-2" />
+                Nuova Nota Spese
+              </Button>
+            )}
           </div>
         </div>
+        <div className="mt-4">
+          <EntityFilterSelector
+            entityType={entityType}
+            setEntityType={setEntityType}
+            selectedEntityId={selectedEntityId}
+            setSelectedEntityId={setSelectedEntityId}
+          />
+        </div>
+        {readOnly && (
+          <div className="mt-3 flex items-center gap-2 text-sm text-amber-600 dark:text-amber-400">
+            <Eye className="h-4 w-4" />
+            <span>Modalità sola lettura - Visualizzazione dati esterni</span>
+          </div>
+        )}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

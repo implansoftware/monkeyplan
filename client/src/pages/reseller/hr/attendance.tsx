@@ -22,13 +22,15 @@ import {
   Utensils,
   Filter,
   Calendar,
-  User
+  User,
+  Eye
 } from "lucide-react";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
 import { useToast } from "@/hooks/use-toast";
+import { EntityFilterSelector, EntityType, useEntityFilter } from "@/components/hr/entity-filter-selector";
 
 interface ClockEvent {
   id: string;
@@ -59,17 +61,29 @@ export default function HrAttendance() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedUser, setSelectedUser] = useState<string>("all");
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [entityType, setEntityType] = useState<EntityType>("own");
+  const [selectedEntityId, setSelectedEntityId] = useState<string>("");
+  const { buildQueryParams, isReadOnly } = useEntityFilter();
   const [newEvent, setNewEvent] = useState({ eventType: "entrata", userId: "", notes: "" });
   const { toast } = useToast();
+
+  const readOnly = isReadOnly(entityType, selectedEntityId);
 
   const today = new Date();
   const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate());
   const endOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59);
 
-  const clockEventsUrl = `/api/reseller/hr/clock-events?startDate=${encodeURIComponent(startOfDay.toISOString())}&endDate=${encodeURIComponent(endOfDay.toISOString())}`;
+  const baseParams = `startDate=${encodeURIComponent(startOfDay.toISOString())}&endDate=${encodeURIComponent(endOfDay.toISOString())}`;
+  const entityParams = entityType !== "own" && selectedEntityId ? `&entityType=${entityType}&entityId=${selectedEntityId}` : "";
+  const clockEventsUrl = `/api/reseller/hr/clock-events?${baseParams}${entityParams}`;
   
   const { data: clockEvents = [], isLoading } = useQuery<ClockEvent[]>({
-    queryKey: [clockEventsUrl],
+    queryKey: ["/api/reseller/hr/clock-events", entityType, selectedEntityId, today.toDateString()],
+    queryFn: async () => {
+      const res = await fetch(clockEventsUrl);
+      if (!res.ok) throw new Error("Errore nel caricamento");
+      return res.json();
+    },
   });
 
   const { data: staffMembers = [] } = useQuery<StaffMember[]>({
@@ -142,73 +156,89 @@ export default function HrAttendance() {
             </Link>
           </div>
         </div>
+        <div className="mt-4">
+          <EntityFilterSelector
+            entityType={entityType}
+            setEntityType={setEntityType}
+            selectedEntityId={selectedEntityId}
+            setSelectedEntityId={setSelectedEntityId}
+          />
+        </div>
+        {readOnly && (
+          <div className="mt-3 flex items-center gap-2 text-sm text-amber-600 dark:text-amber-400">
+            <Eye className="h-4 w-4" />
+            <span>Modalità sola lettura - Visualizzazione dati esterni</span>
+          </div>
+        )}
       </div>
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card 
-          className="cursor-pointer hover-elevate transition-all"
-          onClick={() => handleClockNow('entrata')}
-          data-testid="card-clock-in"
-        >
-          <CardContent className="p-4 flex items-center gap-3">
-            <div className="h-10 w-10 rounded-full bg-emerald-500/10 flex items-center justify-center">
-              <LogIn className="h-5 w-5 text-emerald-600" />
-            </div>
-            <div>
-              <p className="font-medium">Timbra Entrata</p>
-              <p className="text-xs text-muted-foreground">Registra ingresso</p>
-            </div>
-          </CardContent>
-        </Card>
+      {!readOnly && (
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <Card 
+            className="cursor-pointer hover-elevate transition-all"
+            onClick={() => handleClockNow('entrata')}
+            data-testid="card-clock-in"
+          >
+            <CardContent className="p-4 flex items-center gap-3">
+              <div className="h-10 w-10 rounded-full bg-emerald-500/10 flex items-center justify-center">
+                <LogIn className="h-5 w-5 text-emerald-600" />
+              </div>
+              <div>
+                <p className="font-medium">Timbra Entrata</p>
+                <p className="text-xs text-muted-foreground">Registra ingresso</p>
+              </div>
+            </CardContent>
+          </Card>
 
-        <Card 
-          className="cursor-pointer hover-elevate transition-all"
-          onClick={() => handleClockNow('uscita')}
-          data-testid="card-clock-out"
-        >
-          <CardContent className="p-4 flex items-center gap-3">
-            <div className="h-10 w-10 rounded-full bg-red-500/10 flex items-center justify-center">
-              <LogOut className="h-5 w-5 text-red-600" />
-            </div>
-            <div>
-              <p className="font-medium">Timbra Uscita</p>
-              <p className="text-xs text-muted-foreground">Registra uscita</p>
-            </div>
-          </CardContent>
-        </Card>
+          <Card 
+            className="cursor-pointer hover-elevate transition-all"
+            onClick={() => handleClockNow('uscita')}
+            data-testid="card-clock-out"
+          >
+            <CardContent className="p-4 flex items-center gap-3">
+              <div className="h-10 w-10 rounded-full bg-red-500/10 flex items-center justify-center">
+                <LogOut className="h-5 w-5 text-red-600" />
+              </div>
+              <div>
+                <p className="font-medium">Timbra Uscita</p>
+                <p className="text-xs text-muted-foreground">Registra uscita</p>
+              </div>
+            </CardContent>
+          </Card>
 
-        <Card 
-          className="cursor-pointer hover-elevate transition-all"
-          onClick={() => handleClockNow('pausa_inizio')}
-          data-testid="card-break-start"
-        >
-          <CardContent className="p-4 flex items-center gap-3">
-            <div className="h-10 w-10 rounded-full bg-amber-500/10 flex items-center justify-center">
-              <Coffee className="h-5 w-5 text-amber-600" />
-            </div>
-            <div>
-              <p className="font-medium">Inizio Pausa</p>
-              <p className="text-xs text-muted-foreground">Inizia pausa</p>
-            </div>
-          </CardContent>
-        </Card>
+          <Card 
+            className="cursor-pointer hover-elevate transition-all"
+            onClick={() => handleClockNow('pausa_inizio')}
+            data-testid="card-break-start"
+          >
+            <CardContent className="p-4 flex items-center gap-3">
+              <div className="h-10 w-10 rounded-full bg-amber-500/10 flex items-center justify-center">
+                <Coffee className="h-5 w-5 text-amber-600" />
+              </div>
+              <div>
+                <p className="font-medium">Inizio Pausa</p>
+                <p className="text-xs text-muted-foreground">Inizia pausa</p>
+              </div>
+            </CardContent>
+          </Card>
 
-        <Card 
-          className="cursor-pointer hover-elevate transition-all"
-          onClick={() => handleClockNow('pausa_fine')}
-          data-testid="card-break-end"
-        >
-          <CardContent className="p-4 flex items-center gap-3">
-            <div className="h-10 w-10 rounded-full bg-blue-500/10 flex items-center justify-center">
-              <Utensils className="h-5 w-5 text-blue-600" />
-            </div>
-            <div>
-              <p className="font-medium">Fine Pausa</p>
-              <p className="text-xs text-muted-foreground">Termina pausa</p>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+          <Card 
+            className="cursor-pointer hover-elevate transition-all"
+            onClick={() => handleClockNow('pausa_fine')}
+            data-testid="card-break-end"
+          >
+            <CardContent className="p-4 flex items-center gap-3">
+              <div className="h-10 w-10 rounded-full bg-blue-500/10 flex items-center justify-center">
+                <Utensils className="h-5 w-5 text-blue-600" />
+              </div>
+              <div>
+                <p className="font-medium">Fine Pausa</p>
+                <p className="text-xs text-muted-foreground">Termina pausa</p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       <Card data-testid="card-clock-events-list">
         <CardHeader>

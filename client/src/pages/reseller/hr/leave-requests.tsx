@@ -20,13 +20,15 @@ import {
   Clock,
   Filter,
   User,
-  Calendar
+  Calendar,
+  Eye
 } from "lucide-react";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format, differenceInDays } from "date-fns";
 import { it } from "date-fns/locale";
 import { useToast } from "@/hooks/use-toast";
+import { EntityFilterSelector, EntityType, useEntityFilter } from "@/components/hr/entity-filter-selector";
 
 interface LeaveRequest {
   id: string;
@@ -69,6 +71,9 @@ const statusLabels: Record<string, { label: string; variant: "default" | "second
 export default function HrLeaveRequests() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [entityType, setEntityType] = useState<EntityType>("own");
+  const [selectedEntityId, setSelectedEntityId] = useState<string>("");
+  const { buildQueryParams, isReadOnly } = useEntityFilter();
   const [newRequest, setNewRequest] = useState({
     leaveType: "ferie",
     startDate: "",
@@ -78,8 +83,16 @@ export default function HrLeaveRequests() {
   });
   const { toast } = useToast();
 
+  const readOnly = isReadOnly(entityType, selectedEntityId);
+  const queryParams = buildQueryParams(entityType, selectedEntityId);
+
   const { data: requests = [], isLoading } = useQuery<LeaveRequest[]>({
-    queryKey: ["/api/reseller/hr/leave-requests"],
+    queryKey: ["/api/reseller/hr/leave-requests", entityType, selectedEntityId],
+    queryFn: async () => {
+      const res = await fetch(`/api/reseller/hr/leave-requests${queryParams}`);
+      if (!res.ok) throw new Error("Errore nel caricamento");
+      return res.json();
+    },
   });
 
   const { data: staffMembers = [] } = useQuery<StaffMember[]>({
@@ -156,12 +169,28 @@ export default function HrLeaveRequests() {
                 Torna a HR
               </Button>
             </Link>
-            <Button onClick={() => setDialogOpen(true)} data-testid="button-new-request">
-              <Plus className="h-4 w-4 mr-2" />
-              Nuova Richiesta
-            </Button>
+            {!readOnly && (
+              <Button onClick={() => setDialogOpen(true)} data-testid="button-new-request">
+                <Plus className="h-4 w-4 mr-2" />
+                Nuova Richiesta
+              </Button>
+            )}
           </div>
         </div>
+        <div className="mt-4">
+          <EntityFilterSelector
+            entityType={entityType}
+            setEntityType={setEntityType}
+            selectedEntityId={selectedEntityId}
+            setSelectedEntityId={setSelectedEntityId}
+          />
+        </div>
+        {readOnly && (
+          <div className="mt-3 flex items-center gap-2 text-sm text-amber-600 dark:text-amber-400">
+            <Eye className="h-4 w-4" />
+            <span>Modalità sola lettura - Visualizzazione dati esterni</span>
+          </div>
+        )}
       </div>
 
       {pendingCount > 0 && (
@@ -244,7 +273,7 @@ export default function HrLeaveRequests() {
                         <Badge variant={statusInfo.variant}>{statusInfo.label}</Badge>
                       </TableCell>
                       <TableCell>
-                        {request.status === 'pending' && (
+                        {request.status === 'pending' && !readOnly && (
                           <div className="flex gap-1">
                             <Button
                               size="sm"
