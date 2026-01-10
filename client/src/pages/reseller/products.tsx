@@ -154,6 +154,7 @@ export default function ResellerProducts() {
   const [pendingImagePreview, setPendingImagePreview] = useState<string | null>(null);
   const [selectedSupplierId, setSelectedSupplierId] = useState<string | null>(null);
   const [editSupplierId, setEditSupplierId] = useState<string | null>(null);
+  const [originalSupplierId, setOriginalSupplierId] = useState<string | null>(null);
   const { toast } = useToast();
   
   // Manage preview URL with proper cleanup
@@ -194,6 +195,18 @@ export default function ResellerProducts() {
   const { data: suppliers = [] } = useQuery<Array<{ id: string; name: string; code: string }>>({
     queryKey: ["/api/suppliers/list"],
   });
+
+  // Populate editSupplierId when suppliers load and edit dialog is open
+  useEffect(() => {
+    if (editDialogOpen && editingProduct && suppliers.length > 0 && editSupplierId === null && originalSupplierId === null) {
+      const matchingSupplier = editingProduct.supplier 
+        ? suppliers.find(s => s.name === editingProduct.supplier) 
+        : null;
+      const suppId = matchingSupplier?.id || null;
+      setEditSupplierId(suppId);
+      setOriginalSupplierId(suppId);
+    }
+  }, [editDialogOpen, editingProduct, suppliers, editSupplierId, originalSupplierId]);
 
   const stockMap = new Map<string, { totalStock: number; stockByCenter: StockByCenter[] }>();
   productsWithStock.forEach(item => {
@@ -654,11 +667,9 @@ export default function ResellerProducts() {
     setExpandedBrands(new Set());
     setEditDeviceSearchQuery("");
     
-    // Find supplier ID by name
-    const matchingSupplier = product.supplier 
-      ? suppliers.find(s => s.name === product.supplier) 
-      : null;
-    setEditSupplierId(matchingSupplier?.id || null);
+    // Reset supplier states - will be populated by useEffect when suppliers load
+    setEditSupplierId(null);
+    setOriginalSupplierId(null);
     
     try {
       const res = await fetch(`/api/reseller/products/${product.id}/stock`, {
@@ -718,6 +729,10 @@ export default function ResellerProducts() {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
     
+    // Capture values before async operations
+    const capturedSupplierId = selectedSupplierId;
+    const capturedImageFile = pendingImageFile;
+    
     const data = {
       name: formData.get("name") as string,
       sku: formData.get("sku") as string,
@@ -737,10 +752,10 @@ export default function ResellerProducts() {
     createProductMutation.mutate(data, {
       onSuccess: async (newProduct: any) => {
         // Associate supplier if one was selected
-        if (selectedSupplierId && newProduct?.id) {
+        if (capturedSupplierId && newProduct?.id) {
           try {
             await apiRequest("POST", `/api/products/${newProduct.id}/suppliers`, {
-              supplierId: selectedSupplierId,
+              supplierId: capturedSupplierId,
               isPreferred: true
             });
             queryClient.invalidateQueries({ queryKey: ["/api/reseller/products"] });
@@ -750,9 +765,9 @@ export default function ResellerProducts() {
         }
         
         // Upload image if one was selected during creation
-        if (pendingImageFile && newProduct?.id) {
+        if (capturedImageFile && newProduct?.id) {
           uploadImageMutation.mutate(
-            { productId: newProduct.id, file: pendingImageFile },
+            { productId: newProduct.id, file: capturedImageFile },
             {
               onSettled: () => {
                 queryClient.invalidateQueries({ queryKey: ["/api/reseller/products"] });
@@ -771,9 +786,11 @@ export default function ResellerProducts() {
     e.preventDefault();
     if (!editingProduct) return;
     
-    // Capture product ID before mutations to avoid race condition with onSuccess
+    // Capture values before mutations to avoid race conditions
     const productId = editingProduct.id;
     const currentEditStock = [...editStock];
+    const capturedEditSupplierId = editSupplierId;
+    const capturedOriginalSupplierId = originalSupplierId;
     
     const formData = new FormData(e.currentTarget);
     
@@ -819,25 +836,31 @@ export default function ResellerProducts() {
         queryClient.invalidateQueries({ queryKey: ["/api/reseller/products/with-stock"] });
       }
       
-      // Update supplier association
-      // First remove existing supplier, then add new one if selected
-      try {
-        await apiRequest("DELETE", `/api/products/${productId}/suppliers`);
-        if (editSupplierId) {
-          await apiRequest("POST", `/api/products/${productId}/suppliers`, {
-            supplierId: editSupplierId,
-            isPreferred: true
-          });
+      // Update supplier association only if it changed
+      if (capturedEditSupplierId !== capturedOriginalSupplierId) {
+        try {
+          // Remove existing supplier if there was one
+          if (capturedOriginalSupplierId) {
+            await apiRequest("DELETE", `/api/products/${productId}/suppliers`);
+          }
+          // Add new supplier if selected
+          if (capturedEditSupplierId) {
+            await apiRequest("POST", `/api/products/${productId}/suppliers`, {
+              supplierId: capturedEditSupplierId,
+              isPreferred: true
+            });
+          }
+          queryClient.invalidateQueries({ queryKey: ["/api/reseller/products"] });
+        } catch (err) {
+          console.error("Failed to update supplier:", err);
         }
-        queryClient.invalidateQueries({ queryKey: ["/api/reseller/products"] });
-      } catch (err) {
-        console.error("Failed to update supplier:", err);
       }
       
       setEditDialogOpen(false);
       setEditingProduct(null);
       setEditStock([]);
       setEditSupplierId(null);
+      setOriginalSupplierId(null);
     } catch (error) {
       // Error handled by mutation
     }
@@ -1691,6 +1714,8 @@ export default function ResellerProducts() {
         if (!open) {
           setEditingProduct(null);
           setEditStock([]);
+          setEditSupplierId(null);
+          setOriginalSupplierId(null);
         }
       }}>
         <DialogContent className="max-w-2xl max-h-[90vh]">
