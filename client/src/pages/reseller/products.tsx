@@ -152,6 +152,8 @@ export default function ResellerProducts() {
   const [marketplaceMinQty, setMarketplaceMinQty] = useState("1");
   const [pendingImageFile, setPendingImageFile] = useState<File | null>(null);
   const [pendingImagePreview, setPendingImagePreview] = useState<string | null>(null);
+  const [selectedSupplierId, setSelectedSupplierId] = useState<string | null>(null);
+  const [editSupplierId, setEditSupplierId] = useState<string | null>(null);
   const { toast } = useToast();
   
   // Manage preview URL with proper cleanup
@@ -652,6 +654,12 @@ export default function ResellerProducts() {
     setExpandedBrands(new Set());
     setEditDeviceSearchQuery("");
     
+    // Find supplier ID by name
+    const matchingSupplier = product.supplier 
+      ? suppliers.find(s => s.name === product.supplier) 
+      : null;
+    setEditSupplierId(matchingSupplier?.id || null);
+    
     try {
       const res = await fetch(`/api/reseller/products/${product.id}/stock`, {
         credentials: 'include'
@@ -728,6 +736,19 @@ export default function ResellerProducts() {
     
     createProductMutation.mutate(data, {
       onSuccess: async (newProduct: any) => {
+        // Associate supplier if one was selected
+        if (selectedSupplierId && newProduct?.id) {
+          try {
+            await apiRequest("POST", `/api/products/${newProduct.id}/suppliers`, {
+              supplierId: selectedSupplierId,
+              isPreferred: true
+            });
+            queryClient.invalidateQueries({ queryKey: ["/api/reseller/products"] });
+          } catch (err) {
+            console.error("Failed to associate supplier:", err);
+          }
+        }
+        
         // Upload image if one was selected during creation
         if (pendingImageFile && newProduct?.id) {
           uploadImageMutation.mutate(
@@ -740,6 +761,7 @@ export default function ResellerProducts() {
           );
         }
         setPendingImageFile(null);
+        setSelectedSupplierId(null);
       },
     });
     setInitialStock([]);
@@ -766,7 +788,6 @@ export default function ResellerProducts() {
       unitPrice: Math.round(parseFloat(formData.get("unitPrice") as string) * 100),
       costPrice: formData.get("costPrice") ? Math.round(parseFloat(formData.get("costPrice") as string) * 100) : null,
       warrantyMonths: formData.get("warrantyMonths") ? parseInt(formData.get("warrantyMonths") as string) : null,
-      supplier: formData.get("supplier") as string || null,
       minStock: formData.get("minStock") ? parseInt(formData.get("minStock") as string) : null,
       location: formData.get("location") as string || null,
     };
@@ -798,9 +819,25 @@ export default function ResellerProducts() {
         queryClient.invalidateQueries({ queryKey: ["/api/reseller/products/with-stock"] });
       }
       
+      // Update supplier association
+      // First remove existing supplier, then add new one if selected
+      try {
+        await apiRequest("DELETE", `/api/products/${productId}/suppliers`);
+        if (editSupplierId) {
+          await apiRequest("POST", `/api/products/${productId}/suppliers`, {
+            supplierId: editSupplierId,
+            isPreferred: true
+          });
+        }
+        queryClient.invalidateQueries({ queryKey: ["/api/reseller/products"] });
+      } catch (err) {
+        console.error("Failed to update supplier:", err);
+      }
+      
       setEditDialogOpen(false);
       setEditingProduct(null);
       setEditStock([]);
+      setEditSupplierId(null);
     } catch (error) {
       // Error handled by mutation
     }
@@ -1194,6 +1231,7 @@ export default function ResellerProducts() {
           setInitialStock([]);
           setWizardStep("info");
           setPendingImageFile(null);
+          setSelectedSupplierId(null);
         }
       }}>
         <DialogContent className="max-w-2xl max-h-[90vh]">
@@ -1392,10 +1430,9 @@ export default function ResellerProducts() {
                     <div className="space-y-2">
                       <Label htmlFor="supplier">Fornitore</Label>
                       <Select 
-                        defaultValue="none"
+                        value={selectedSupplierId || "none"}
                         onValueChange={(value) => {
-                          const hiddenInput = document.getElementById('create-supplier-hidden') as HTMLInputElement;
-                          if (hiddenInput) hiddenInput.value = value === "none" ? "" : value;
+                          setSelectedSupplierId(value === "none" ? null : value);
                         }}
                       >
                         <SelectTrigger data-testid="select-create-supplier">
@@ -1404,11 +1441,10 @@ export default function ResellerProducts() {
                         <SelectContent>
                           <SelectItem value="none">Nessun fornitore</SelectItem>
                           {suppliers.map((s) => (
-                            <SelectItem key={s.id} value={s.name}>{s.name} ({s.code})</SelectItem>
+                            <SelectItem key={s.id} value={s.id}>{s.name} ({s.code})</SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
-                      <input type="hidden" id="create-supplier-hidden" name="supplier" defaultValue="" />
                     </div>
                   </div>
                 </TabsContent>
@@ -1622,7 +1658,7 @@ export default function ResellerProducts() {
                   )}
                 </div>
                 <div className="flex gap-2">
-                  <Button type="button" variant="outline" onClick={() => { setDialogOpen(false); setInitialStock([]); setDeviceCompatibilities([]); setDeviceSearchQuery(""); setWizardStep("info"); }}>
+                  <Button type="button" variant="outline" onClick={() => { setDialogOpen(false); setInitialStock([]); setDeviceCompatibilities([]); setDeviceSearchQuery(""); setWizardStep("info"); setSelectedSupplierId(null); }}>
                     Annulla
                   </Button>
                   {wizardStep !== "compatibility" ? (
@@ -1877,10 +1913,9 @@ export default function ResellerProducts() {
                       <div className="space-y-2">
                         <Label htmlFor="edit-supplier">Fornitore</Label>
                         <Select 
-                          defaultValue={editingProduct.supplier || "none"}
+                          value={editSupplierId || "none"}
                           onValueChange={(value) => {
-                            const hiddenInput = document.getElementById('edit-supplier-hidden') as HTMLInputElement;
-                            if (hiddenInput) hiddenInput.value = value === "none" ? "" : value;
+                            setEditSupplierId(value === "none" ? null : value);
                           }}
                         >
                           <SelectTrigger data-testid="select-edit-supplier">
@@ -1889,11 +1924,10 @@ export default function ResellerProducts() {
                           <SelectContent>
                             <SelectItem value="none">Nessun fornitore</SelectItem>
                             {suppliers.map((s) => (
-                              <SelectItem key={s.id} value={s.name}>{s.name} ({s.code})</SelectItem>
+                              <SelectItem key={s.id} value={s.id}>{s.name} ({s.code})</SelectItem>
                             ))}
                           </SelectContent>
                         </Select>
-                        <input type="hidden" id="edit-supplier-hidden" name="supplier" defaultValue={editingProduct.supplier || ""} />
                       </div>
                     </div>
 
