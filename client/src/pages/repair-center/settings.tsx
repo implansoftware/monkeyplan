@@ -545,58 +545,110 @@ export default function RepairCenterSettings() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  {DAYS_OF_WEEK.map((day) => (
-                    <div key={day.key} className="flex flex-wrap items-center gap-4 p-3 rounded-lg border">
-                      <div className="w-28 font-medium">{day.label}</div>
-                      <FormField
-                        control={form.control}
-                        name={`openingHours.${day.key}.isOpen`}
-                        render={({ field }) => (
-                          <FormItem className="flex items-center space-x-2 space-y-0">
-                            <FormControl>
-                              <Switch
-                                checked={field.value}
-                                onCheckedChange={field.onChange}
-                                data-testid={`switch-day-${day.key}`}
-                              />
-                            </FormControl>
-                            <Label className="text-sm text-muted-foreground">
-                              {field.value ? 'Aperto' : 'Chiuso'}
-                            </Label>
-                          </FormItem>
-                        )}
-                      />
-                      {form.watch(`openingHours.${day.key}.isOpen`) && (
-                        <>
-                          <div className="flex items-center gap-2">
-                            <FormField
-                              control={form.control}
-                              name={`openingHours.${day.key}.start`}
-                              render={({ field }) => (
-                                <FormItem>
-                                  <FormControl>
-                                    <Input {...field} type="time" className="w-28" data-testid={`input-start-${day.key}`} />
-                                  </FormControl>
-                                </FormItem>
-                              )}
-                            />
-                            <span className="text-muted-foreground">-</span>
-                            <FormField
-                              control={form.control}
-                              name={`openingHours.${day.key}.end`}
-                              render={({ field }) => (
-                                <FormItem>
-                                  <FormControl>
-                                    <Input {...field} type="time" className="w-28" data-testid={`input-end-${day.key}`} />
-                                  </FormControl>
-                                </FormItem>
-                              )}
-                            />
+                  {DAYS_OF_WEEK.map((day) => {
+                    const isOpen = form.watch(`openingHours.${day.key}.isOpen`);
+                    const hasBreak = form.watch(`openingHours.${day.key}.breakStart`) || form.watch(`openingHours.${day.key}.breakEnd`);
+                    return (
+                      <div key={day.key} className="p-4 rounded-lg border space-y-3">
+                        <div className="flex flex-wrap items-center gap-4">
+                          <div className="w-28 font-medium">{day.label}</div>
+                          <FormField
+                            control={form.control}
+                            name={`openingHours.${day.key}.isOpen`}
+                            render={({ field }) => (
+                              <FormItem className="flex items-center space-x-2 space-y-0">
+                                <FormControl>
+                                  <Switch
+                                    checked={field.value}
+                                    onCheckedChange={field.onChange}
+                                    data-testid={`switch-day-${day.key}`}
+                                  />
+                                </FormControl>
+                                <Label className="text-sm text-muted-foreground">
+                                  {field.value ? 'Aperto' : 'Chiuso'}
+                                </Label>
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+                        {isOpen && (
+                          <div className="ml-0 md:ml-32 space-y-3">
+                            <div className="flex flex-wrap items-center gap-3">
+                              <div className="flex items-center gap-2 bg-muted/50 px-3 py-2 rounded-md">
+                                <span className="text-xs text-muted-foreground font-medium w-16">Mattina</span>
+                                <FormField
+                                  control={form.control}
+                                  name={`openingHours.${day.key}.start`}
+                                  render={({ field }) => (
+                                    <FormItem>
+                                      <FormControl>
+                                        <Input {...field} type="time" className="w-28 h-8" data-testid={`input-start-${day.key}`} />
+                                      </FormControl>
+                                    </FormItem>
+                                  )}
+                                />
+                                <span className="text-muted-foreground">-</span>
+                                <FormField
+                                  control={form.control}
+                                  name={`openingHours.${day.key}.breakStart`}
+                                  render={({ field }) => (
+                                    <FormItem>
+                                      <FormControl>
+                                        <Input 
+                                          {...field} 
+                                          value={field.value || ''} 
+                                          type="time" 
+                                          className="w-28 h-8" 
+                                          placeholder="--:--"
+                                          data-testid={`input-break-start-${day.key}`} 
+                                        />
+                                      </FormControl>
+                                    </FormItem>
+                                  )}
+                                />
+                              </div>
+                              <div className="flex items-center gap-2 bg-muted/50 px-3 py-2 rounded-md">
+                                <span className="text-xs text-muted-foreground font-medium w-16">Pomeriggio</span>
+                                <FormField
+                                  control={form.control}
+                                  name={`openingHours.${day.key}.breakEnd`}
+                                  render={({ field }) => (
+                                    <FormItem>
+                                      <FormControl>
+                                        <Input 
+                                          {...field} 
+                                          value={field.value || ''} 
+                                          type="time" 
+                                          className="w-28 h-8" 
+                                          placeholder="--:--"
+                                          data-testid={`input-break-end-${day.key}`} 
+                                        />
+                                      </FormControl>
+                                    </FormItem>
+                                  )}
+                                />
+                                <span className="text-muted-foreground">-</span>
+                                <FormField
+                                  control={form.control}
+                                  name={`openingHours.${day.key}.end`}
+                                  render={({ field }) => (
+                                    <FormItem>
+                                      <FormControl>
+                                        <Input {...field} type="time" className="w-28 h-8" data-testid={`input-end-${day.key}`} />
+                                      </FormControl>
+                                    </FormItem>
+                                  )}
+                                />
+                              </div>
+                            </div>
+                            <p className="text-xs text-muted-foreground">
+                              Lascia vuoti gli orari pausa per orario continuato
+                            </p>
                           </div>
-                        </>
-                      )}
-                    </div>
-                  ))}
+                        )}
+                      </div>
+                    );
+                  })}
                 </CardContent>
               </Card>
             </TabsContent>
