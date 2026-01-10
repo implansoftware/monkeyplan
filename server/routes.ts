@@ -978,41 +978,18 @@ export function registerRoutes(app: Express): Server {
       if (!req.user) return res.status(401).send("Unauthorized");
       
       const items = await storage.listServiceItems();
-      // Include: global items (no owner) + reseller items
+      
+      // Get reseller's repair centers first (needed for filtering)
+      const repairCenters = await storage.listRepairCenters();
+      const myRepairCenters = repairCenters.filter(rc => rc.resellerId === req.user!.id);
+      
+      // Include: global items (no owner) + items owned by reseller's repair centers
       const activeItems = items.filter(item => 
-        item.isActive && !item.repairCenterId // Global or reseller items only
-      );
-      // Include: global items (no owner) + reseller items
-      const activeItems = items.filter(item => 
-        item.isActive && !item.repairCenterId // Global or reseller items only
-      );
-      // Include: global items (no owner) + reseller items
-      const activeItems = items.filter(item => 
-        item.isActive && !item.repairCenterId // Global or reseller items only
-      );
-      // Include: global items (no owner) + reseller items
-      const activeItems = items.filter(item => 
-        item.isActive && !item.repairCenterId // Global or reseller items only
-      );
-      // Include: global items (no owner) + reseller items
-      const activeItems = items.filter(item => 
-        item.isActive && !item.repairCenterId // Global or reseller items only
-      );
-      // Include: global items (no owner) + reseller items
-      const activeItems = items.filter(item => 
-        item.isActive && !item.repairCenterId // Global or reseller items only
-      );
-      // Include: global items (no owner) + reseller items
-      const activeItems = items.filter(item => 
-        item.isActive && !item.repairCenterId // Global or reseller items only
+        item.isActive && (!item.repairCenterId || myRepairCenters.some(rc => rc.id === item.repairCenterId))
       );
       
       // Get all custom prices for this reseller
       const resellerPrices = await storage.listServiceItemPricesByReseller(req.user.id);
-      
-      // Get reseller's repair centers
-      const repairCenters = await storage.listRepairCenters();
-      const myRepairCenters = repairCenters.filter(rc => rc.resellerId === req.user!.id);
       
       // Get custom prices for each repair center
       const centerPricesMap: { [centerId: string]: any[] } = {};
@@ -1032,7 +1009,7 @@ export function registerRoutes(app: Express): Server {
         }
         
         return {
-          isOwned: item.repairCenterId === repairCenterId,
+          isOwned: !!item.repairCenterId && myRepairCenters.some(rc => rc.id === item.repairCenterId),
           ...item,
           resellerPrice: resellerPrice || null,
           centerPrices,
@@ -1047,7 +1024,6 @@ export function registerRoutes(app: Express): Server {
       res.status(500).send(error.message);
     }
   });
-
   // Create/Update reseller custom price
   app.post("/api/reseller/service-item-prices", requireRole("reseller", "reseller_staff"), requireModulePermission("services", "create"), async (req, res) => {
     try {
