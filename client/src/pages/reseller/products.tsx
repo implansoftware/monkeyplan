@@ -790,7 +790,6 @@ export default function ResellerProducts() {
     const productId = editingProduct.id;
     const currentEditStock = [...editStock];
     const capturedEditSupplierId = editSupplierId;
-    const capturedOriginalSupplierId = originalSupplierId;
     
     const formData = new FormData(e.currentTarget);
     
@@ -836,24 +835,21 @@ export default function ResellerProducts() {
         queryClient.invalidateQueries({ queryKey: ["/api/reseller/products/with-stock"] });
       }
       
-      // Update supplier association only if it changed
-      if (capturedEditSupplierId !== capturedOriginalSupplierId) {
-        try {
-          // Remove existing supplier if there was one
-          if (capturedOriginalSupplierId) {
-            await apiRequest("DELETE", `/api/products/${productId}/suppliers`);
-          }
-          // Add new supplier if selected
-          if (capturedEditSupplierId) {
-            await apiRequest("POST", `/api/products/${productId}/suppliers`, {
-              supplierId: capturedEditSupplierId,
-              isPreferred: true
-            });
-          }
-          queryClient.invalidateQueries({ queryKey: ["/api/reseller/products"] });
-        } catch (err) {
-          console.error("Failed to update supplier:", err);
+      // Always update supplier association - DELETE any existing, then POST new one if selected
+      try {
+        // Remove any existing supplier association first
+        await apiRequest("DELETE", `/api/products/${productId}/suppliers`);
+        
+        // Add new supplier if selected
+        if (capturedEditSupplierId) {
+          await apiRequest("POST", `/api/products/${productId}/suppliers`, {
+            supplierId: capturedEditSupplierId,
+            isPreferred: true
+          });
         }
+        queryClient.invalidateQueries({ queryKey: ["/api/reseller/products"] });
+      } catch (err) {
+        console.error("Failed to update supplier:", err);
       }
       
       setEditDialogOpen(false);
