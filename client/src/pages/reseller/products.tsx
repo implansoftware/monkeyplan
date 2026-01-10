@@ -134,7 +134,20 @@ export default function ResellerProducts() {
   const [marketplaceEnabled, setMarketplaceEnabled] = useState(false);
   const [marketplacePrice, setMarketplacePrice] = useState("");
   const [marketplaceMinQty, setMarketplaceMinQty] = useState("1");
+  const [pendingImageFile, setPendingImageFile] = useState<File | null>(null);
+  const [pendingImagePreview, setPendingImagePreview] = useState<string | null>(null);
   const { toast } = useToast();
+  
+  // Manage preview URL with proper cleanup
+  useEffect(() => {
+    if (pendingImageFile) {
+      const url = URL.createObjectURL(pendingImageFile);
+      setPendingImagePreview(url);
+      return () => URL.revokeObjectURL(url);
+    } else {
+      setPendingImagePreview(null);
+    }
+  }, [pendingImageFile]);
 
   const { data: products = [], isLoading } = useQuery<EnrichedProduct[]>({
     queryKey: ["/api/reseller/products"],
@@ -681,7 +694,22 @@ export default function ResellerProducts() {
       deviceCompatibilities: deviceCompatibilities.length > 0 ? deviceCompatibilities : undefined,
     };
     
-    createProductMutation.mutate(data);
+    createProductMutation.mutate(data, {
+      onSuccess: async (newProduct: any) => {
+        // Upload image if one was selected during creation
+        if (pendingImageFile && newProduct?.id) {
+          uploadImageMutation.mutate(
+            { productId: newProduct.id, file: pendingImageFile },
+            {
+              onSettled: () => {
+                queryClient.invalidateQueries({ queryKey: ["/api/reseller/products"] });
+              }
+            }
+          );
+        }
+        setPendingImageFile(null);
+      },
+    });
     setInitialStock([]);
   };
 
@@ -1135,6 +1163,7 @@ export default function ResellerProducts() {
         if (!open) {
           setInitialStock([]);
           setWizardStep("info");
+          setPendingImageFile(null);
         }
       }}>
         <DialogContent className="max-w-2xl max-h-[90vh]">
@@ -1230,6 +1259,59 @@ export default function ResellerProducts() {
                   <div className="space-y-2">
                     <Label htmlFor="description">Descrizione</Label>
                     <Textarea id="description" name="description" rows={3} data-testid="textarea-create-description" />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Immagine Prodotto</Label>
+                    <div className="flex items-center gap-4">
+                      <div className="w-16 h-16 rounded-lg border flex items-center justify-center bg-muted">
+                        {pendingImagePreview ? (
+                          <img 
+                            src={pendingImagePreview} 
+                            alt="Preview" 
+                            className="w-full h-full object-cover rounded-lg"
+                          />
+                        ) : (
+                          <ImageIcon className="h-8 w-8 text-muted-foreground" />
+                        )}
+                      </div>
+                      <div className="flex flex-col gap-2">
+                        <input 
+                          type="file" 
+                          accept="image/*"
+                          id="create-image-upload"
+                          className="hidden"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) setPendingImageFile(file);
+                          }}
+                          data-testid="input-create-upload-image"
+                        />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => document.getElementById('create-image-upload')?.click()}
+                          data-testid="button-create-upload-image"
+                        >
+                          <Upload className="h-4 w-4 mr-2" />
+                          {pendingImageFile ? "Cambia Immagine" : "Carica Immagine"}
+                        </Button>
+                        {pendingImageFile && (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setPendingImageFile(null)}
+                            className="text-destructive"
+                            data-testid="button-create-remove-image"
+                          >
+                            <X className="h-4 w-4 mr-2" />
+                            Rimuovi
+                          </Button>
+                        )}
+                      </div>
+                    </div>
                   </div>
                 </TabsContent>
 
