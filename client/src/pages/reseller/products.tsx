@@ -219,9 +219,9 @@ export default function ResellerProducts() {
       results.forEach(({ id, compatibilities }) => {
         newMap.set(id, compatibilities.map((c: any) => ({
           brandId: c.deviceBrandId || c.brandId,
-          brandName: c.brandName,
+          brandName: c.deviceBrandName || c.brandName,
           modelId: c.deviceModelId || c.modelId,
-          modelName: c.modelName
+          modelName: c.deviceModelName || c.modelName
         })));
       });
       
@@ -930,7 +930,6 @@ export default function ResellerProducts() {
                   <TableHead className="w-12"></TableHead>
                   <TableHead>Tipo</TableHead>
                   <TableHead>Prodotto</TableHead>
-                  <TableHead>SKU</TableHead>
                   <TableHead>Marca</TableHead>
                   <TableHead>Categoria</TableHead>
                   <TableHead>Condizione</TableHead>
@@ -994,7 +993,6 @@ export default function ResellerProducts() {
                         )}
                       </div>
                     </TableCell>
-                    <TableCell className="font-mono text-sm">{product.sku}</TableCell>
                     <TableCell>{product.brand || "-"}</TableCell>
                     <TableCell>
                       <Badge variant="outline">{product.category}</Badge>
