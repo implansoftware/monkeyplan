@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Package, Search, Plus, Pencil, Trash2, Loader2, Headphones, Cable, Battery, Shield, ImagePlus, X, Image, ChevronDown, Store, Save } from "lucide-react";
+import { Package, Search, Plus, Pencil, Trash2, Loader2, Headphones, Cable, Battery, Shield, ImagePlus, X, Image, ChevronDown, Store, Save, User, Minus, Wrench as WrenchIcon } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -27,6 +27,21 @@ type DeviceCompatibilityEntry = {
   deviceModelId: string | null;
   brandName?: string;
   modelName?: string | null;
+};
+
+type WarehouseStock = {
+  warehouseId: string;
+  warehouseName: string;
+  ownerType: 'reseller' | 'sub_reseller' | 'repair_center';
+  ownerName: string;
+  quantity: number;
+};
+
+type AccessibleWarehouse = {
+  id: string;
+  name: string;
+  ownerType: 'reseller' | 'sub_reseller' | 'repair_center';
+  owner?: { fullName?: string; username?: string };
 };
 
 type AccessoryWithSpecs = Product & {
@@ -93,6 +108,17 @@ export default function AccessoryCatalog() {
   const [marketplacePrice, setMarketplacePrice] = useState("");
   const [marketplaceMinQty, setMarketplaceMinQty] = useState("1");
 
+  // Stock management state
+  const [editStock, setEditStock] = useState<Array<{ 
+    warehouseId: string; 
+    warehouseName: string;
+    ownerType: 'reseller' | 'sub_reseller' | 'repair_center';
+    ownerName: string;
+    quantity: number; 
+    originalQuantity: number 
+  }>>([]);
+  const [loadingEditStock, setLoadingEditStock] = useState(false);
+
   // Device compatibility state (like spare parts)
   const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set());
   const [deviceCompatibilities, setDeviceCompatibilities] = useState<DeviceCompatibilityEntry[]>([]);
@@ -131,6 +157,11 @@ export default function AccessoryCatalog() {
 
   const { data: deviceModels = [] } = useQuery<DeviceModel[]>({
     queryKey: ["/api/device-models"],
+  });
+
+  // Query per magazzini accessibili
+  const { data: accessibleWarehouses = [] } = useQuery<AccessibleWarehouse[]>({
+    queryKey: ["/api/warehouses/accessible"],
   });
 
   const createBrandMutation = useMutation({
@@ -287,11 +318,19 @@ export default function AccessoryCatalog() {
       queryClient.invalidateQueries({ queryKey: ["/api/accessories"] });
       setDialogOpen(false);
       setEditingAccessory(null);
+      setEditStock([]);
       resetForm();
       toast({ title: "Accessorio aggiornato", description: "Le modifiche sono state salvate." });
     },
     onError: (error: any) => {
       toast({ title: "Errore", description: error.message, variant: "destructive" });
+    },
+  });
+
+  // Mutation per aggiornare stock
+  const updateStockMutation = useMutation({
+    mutationFn: async ({ productId, warehouseId, quantity }: { productId: string; warehouseId: string; quantity: number }) => {
+      return apiRequest("POST", `/api/reseller/products/${productId}/stock`, { warehouseId, quantity });
     },
   });
 
@@ -421,11 +460,13 @@ export default function AccessoryCatalog() {
     });
   };
 
-  const openEditDialog = (accessory: AccessoryWithSpecs) => {
+  const openEditDialog = async (accessory: AccessoryWithSpecs) => {
     setEditingAccessory(accessory);
     setImageFile(null);
     setImagePreview(accessory.imageUrl || null);
     setExpandedBrands(new Set());
+    setLoadingEditStock(true);
+    setEditStock([]);
     // Extract device compatibilities from existing data
     const existingCompatibilities: DeviceCompatibilityEntry[] = (accessory.deviceCompatibilities || []).map(dc => ({
       deviceBrandId: dc.deviceBrandId,
@@ -452,9 +493,63 @@ export default function AccessoryCatalog() {
       notes: accessory.specs?.notes || "",
     });
     setDialogOpen(true);
+    
+    // Load stock for this product
+    try {
+      const res = await fetch(`/api/reseller/products/${accessory.id}/stock`, {
+        credentials: 'include'
+      });
+      if (res.ok) {
+        const data: WarehouseStock[] = await res.json();
+        setEditStock(data.map(s => ({
+          warehouseId: s.warehouseId,
+          warehouseName: s.warehouseName,
+          ownerType: s.ownerType,
+          ownerName: s.ownerName,
+          quantity: s.quantity,
+          originalQuantity: s.quantity
+        })));
+      } else {
+        setEditStock([]);
+      }
+    } catch (error) {
+      setEditStock([]);
+    } finally {
+      setLoadingEditStock(false);
+    }
+  };
+  
+  // Stock helper functions
+  const addEditStock = (warehouseId: string) => {
+    const warehouse = accessibleWarehouses.find(w => w.id === warehouseId);
+    if (!warehouse) {
+      toast({ title: "Errore", description: "Magazzino non trovato", variant: "destructive" });
+      return;
+    }
+    setEditStock(prev => {
+      if (prev.find(s => s.warehouseId === warehouseId)) return prev;
+      return [...prev, { 
+        warehouseId, 
+        warehouseName: warehouse.name,
+        ownerType: warehouse.ownerType,
+        ownerName: warehouse.owner?.fullName || warehouse.owner?.username || '',
+        quantity: 0, 
+        originalQuantity: 0 
+      }];
+    });
   };
 
-  const handleSubmit = () => {
+  const updateEditStock = (warehouseId: string, quantity: number) => {
+    setEditStock(prev => prev.map(s => 
+      s.warehouseId === warehouseId ? { ...s, quantity } : s
+    ));
+  };
+
+  const removeEditStock = (warehouseId: string) => {
+    setEditStock(prev => prev.filter(s => s.warehouseId !== warehouseId));
+  };
+
+  const handleSubmit = async () => {
     const product = {
       name: formData.name,
       sku: formData.sku,
@@ -499,7 +594,34 @@ export default function AccessoryCatalog() {
     }
 
     if (editingAccessory) {
-      updateMutation.mutate({ productId: editingAccessory.id, data: { product, specs, compatibleDeviceModelIds } });
+      const productId = editingAccessory.id;
+      const currentEditStock = [...editStock];
+      
+      try {
+        await updateMutation.mutateAsync({ productId, data: { product, specs, compatibleDeviceModelIds } });
+        
+        // Update stock for each warehouse that changed
+        const stockToUpdate = currentEditStock.filter(s => s.quantity !== s.originalQuantity);
+        if (stockToUpdate.length > 0) {
+          try {
+            await Promise.all(stockToUpdate.map(s => 
+              updateStockMutation.mutateAsync({
+                productId: productId,
+                warehouseId: s.warehouseId,
+                quantity: s.quantity,
+              })
+            ));
+          } catch (stockError: any) {
+            toast({ 
+              title: "Attenzione", 
+              description: "Accessorio salvato ma alcune giacenze non sono state aggiornate", 
+              variant: "destructive" 
+            });
+          }
+        }
+      } catch (error) {
+        // Error handled by mutation
+      }
     } else {
       createMutation.mutate({ product, specs, imageFile, compatibleDeviceModelIds });
     }
@@ -1093,6 +1215,116 @@ export default function AccessoryCatalog() {
                   </div>
                 </div>
               </div>
+
+            {/* Sezione Magazzino - solo in modifica */}
+            {editingAccessory && (
+              <div className="space-y-4 border-t pt-4">
+                <div className="flex items-center justify-between">
+                  <Label className="text-base font-medium flex items-center gap-2">
+                    <Package className="h-4 w-4" />
+                    Giacenza Magazzini
+                  </Label>
+                  <Select
+                    value=""
+                    onValueChange={(val) => addEditStock(val)}
+                  >
+                    <SelectTrigger className="w-[200px]" data-testid="select-add-warehouse">
+                      <SelectValue placeholder="Aggiungi magazzino..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {accessibleWarehouses
+                        .filter(w => !editStock.find(s => s.warehouseId === w.id))
+                        .map(w => (
+                          <SelectItem key={w.id} value={w.id} data-testid={`option-warehouse-${w.id}`}>
+                            <div className="flex items-center gap-2">
+                              {w.ownerType === 'reseller' && <User className="h-3 w-3 text-blue-500" />}
+                              {w.ownerType === 'sub_reseller' && <Store className="h-3 w-3 text-green-500" />}
+                              {w.ownerType === 'repair_center' && <WrenchIcon className="h-3 w-3 text-orange-500" />}
+                              {w.name}
+                            </div>
+                          </SelectItem>
+                        ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {loadingEditStock ? (
+                  <div className="flex items-center justify-center py-4">
+                    <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                    <span className="ml-2 text-sm text-muted-foreground">Caricamento giacenze...</span>
+                  </div>
+                ) : editStock.length === 0 ? (
+                  <p className="text-sm text-muted-foreground italic py-2">
+                    Nessuna giacenza configurata. Seleziona un magazzino per aggiungere stock.
+                  </p>
+                ) : (
+                  <div className="space-y-2">
+                    {editStock.map((stock) => (
+                      <div 
+                        key={stock.warehouseId} 
+                        className="flex items-center gap-3 p-2 rounded-md border bg-muted/30"
+                        data-testid={`stock-row-${stock.warehouseId}`}
+                      >
+                        <div className="flex items-center gap-2 flex-1 min-w-0">
+                          {stock.ownerType === 'reseller' && <User className="h-4 w-4 text-blue-500 shrink-0" />}
+                          {stock.ownerType === 'sub_reseller' && <Store className="h-4 w-4 text-green-500 shrink-0" />}
+                          {stock.ownerType === 'repair_center' && <WrenchIcon className="h-4 w-4 text-orange-500 shrink-0" />}
+                          <div className="min-w-0">
+                            <p className="text-sm font-medium truncate">{stock.warehouseName}</p>
+                            <p className="text-xs text-muted-foreground truncate">{stock.ownerName}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={() => updateEditStock(stock.warehouseId, Math.max(0, stock.quantity - 1))}
+                            data-testid={`button-decrease-${stock.warehouseId}`}
+                          >
+                            <Minus className="h-3 w-3" />
+                          </Button>
+                          <Input
+                            type="number"
+                            min="0"
+                            value={stock.quantity}
+                            onChange={(e) => updateEditStock(stock.warehouseId, Math.max(0, parseInt(e.target.value) || 0))}
+                            className="w-16 text-center"
+                            data-testid={`input-quantity-${stock.warehouseId}`}
+                          />
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={() => updateEditStock(stock.warehouseId, stock.quantity + 1)}
+                            data-testid={`button-increase-${stock.warehouseId}`}
+                          >
+                            <Plus className="h-3 w-3" />
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-destructive hover:text-destructive"
+                            onClick={() => removeEditStock(stock.warehouseId)}
+                            data-testid={`button-remove-${stock.warehouseId}`}
+                          >
+                            <X className="h-3 w-3" />
+                          </Button>
+                        </div>
+                        {stock.quantity !== stock.originalQuantity && (
+                          <span className="text-xs text-muted-foreground">
+                            (era: {stock.originalQuantity})
+                          </span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           <DialogFooter>

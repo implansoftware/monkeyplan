@@ -509,27 +509,32 @@ export default function SmartphoneCatalog() {
   
   // Stock helper functions
   const addEditStock = (warehouseId: string) => {
-    if (warehouseId && !editStock.find(s => s.warehouseId === warehouseId)) {
-      const warehouse = accessibleWarehouses.find(w => w.id === warehouseId);
-      setEditStock([...editStock, { 
+    const warehouse = accessibleWarehouses.find(w => w.id === warehouseId);
+    if (!warehouse) {
+      toast({ title: "Errore", description: "Magazzino non trovato", variant: "destructive" });
+      return;
+    }
+    setEditStock(prev => {
+      if (prev.find(s => s.warehouseId === warehouseId)) return prev;
+      return [...prev, { 
         warehouseId, 
-        warehouseName: warehouse?.name || 'Magazzino',
-        ownerType: (warehouse?.ownerType || 'repair_center') as 'reseller' | 'sub_reseller' | 'repair_center',
-        ownerName: warehouse?.owner?.fullName || warehouse?.owner?.username || '',
+        warehouseName: warehouse.name,
+        ownerType: warehouse.ownerType as 'reseller' | 'sub_reseller' | 'repair_center',
+        ownerName: warehouse.owner?.fullName || warehouse.owner?.username || '',
         quantity: 0, 
         originalQuantity: 0 
-      }]);
-    }
+      }];
+    });
   };
 
   const updateEditStock = (warehouseId: string, quantity: number) => {
-    setEditStock(editStock.map(s => 
+    setEditStock(prev => prev.map(s => 
       s.warehouseId === warehouseId ? { ...s, quantity } : s
     ));
   };
 
   const removeEditStock = (warehouseId: string) => {
-    setEditStock(editStock.filter(s => s.warehouseId !== warehouseId));
+    setEditStock(prev => prev.filter(s => s.warehouseId !== warehouseId));
   };
 
   const handleSubmit = async () => {
@@ -567,16 +572,23 @@ export default function SmartphoneCatalog() {
         await updateMutation.mutateAsync({ productId, data: { product, specs } });
         
         // Update stock for each warehouse that changed
-        const stockPromises = currentEditStock
-          .filter(s => s.quantity !== s.originalQuantity)
-          .map(s => updateStockMutation.mutateAsync({
-            productId: productId,
-            warehouseId: s.warehouseId,
-            quantity: s.quantity,
-          }));
-        
-        if (stockPromises.length > 0) {
-          await Promise.all(stockPromises);
+        const stockToUpdate = currentEditStock.filter(s => s.quantity !== s.originalQuantity);
+        if (stockToUpdate.length > 0) {
+          try {
+            await Promise.all(stockToUpdate.map(s => 
+              updateStockMutation.mutateAsync({
+                productId: productId,
+                warehouseId: s.warehouseId,
+                quantity: s.quantity,
+              })
+            ));
+          } catch (stockError: any) {
+            toast({ 
+              title: "Attenzione", 
+              description: "Smartphone salvato ma alcune giacenze non sono state aggiornate", 
+              variant: "destructive" 
+            });
+          }
         }
       } catch (error) {
         // Error handled by mutation
