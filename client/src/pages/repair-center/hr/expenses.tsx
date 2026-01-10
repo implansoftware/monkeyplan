@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogD
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Link } from "wouter";
-import { Receipt, Plus, ArrowLeft, Check, X, Eye } from "lucide-react";
+import { Receipt, Plus, ArrowLeft, Check, X, Eye, Pencil } from "lucide-react";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
@@ -43,7 +43,10 @@ const statusLabels: Record<string, { label: string; variant: "default" | "second
 
 export default function RepairCenterHrExpenses() {
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editingReport, setEditingReport] = useState<ExpenseReport | null>(null);
   const [newReport, setNewReport] = useState({ title: "", description: "", totalAmount: "", userId: "" });
+  const [editForm, setEditForm] = useState({ title: "", description: "", totalAmount: "" });
   const { toast } = useToast();
 
   const { data: teamMembers = [] } = useQuery<TeamMember[]>({
@@ -69,7 +72,7 @@ export default function RepairCenterHrExpenses() {
     }
   });
 
-  const updateMutation = useMutation({
+  const updateStatusMutation = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: string }) => {
       return apiRequest("PATCH", `/api/repair-center/hr/expense-reports/${id}`, { status });
     },
@@ -81,6 +84,31 @@ export default function RepairCenterHrExpenses() {
       toast({ title: "Errore", description: error.message, variant: "destructive" });
     }
   });
+
+  const editMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: any }) => {
+      return apiRequest("PATCH", `/api/repair-center/hr/expense-reports/${id}`, data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/repair-center/hr/expense-reports"] });
+      setEditDialogOpen(false);
+      setEditingReport(null);
+      toast({ title: "Nota spese modificata", description: "Le modifiche sono state salvate." });
+    },
+    onError: (error: any) => {
+      toast({ title: "Errore", description: error.message, variant: "destructive" });
+    }
+  });
+
+  const openEditDialog = (report: ExpenseReport) => {
+    setEditingReport(report);
+    setEditForm({
+      title: report.title,
+      description: report.description || "",
+      totalAmount: report.totalAmount.toString()
+    });
+    setEditDialogOpen(true);
+  };
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR" }).format(amount);
@@ -155,23 +183,28 @@ export default function RepairCenterHrExpenses() {
                     </TableCell>
                     <TableCell>
                       <div className="flex gap-1">
+                        {(report.status === "draft" || report.status === "pending") && (
+                          <Button size="sm" variant="ghost" onClick={() => openEditDialog(report)} title="Modifica" data-testid={`button-edit-${report.id}`}>
+                            <Pencil className="h-4 w-4 text-blue-600" />
+                          </Button>
+                        )}
                         {report.status === "draft" && (
-                          <Button size="sm" variant="outline" onClick={() => updateMutation.mutate({ id: report.id, status: "pending" })}>
+                          <Button size="sm" variant="outline" onClick={() => updateStatusMutation.mutate({ id: report.id, status: "pending" })}>
                             Invia
                           </Button>
                         )}
                         {report.status === "pending" && (
                           <>
-                            <Button size="sm" variant="ghost" onClick={() => updateMutation.mutate({ id: report.id, status: "approved" })} title="Approva">
+                            <Button size="sm" variant="ghost" onClick={() => updateStatusMutation.mutate({ id: report.id, status: "approved" })} title="Approva">
                               <Check className="h-4 w-4 text-emerald-600" />
                             </Button>
-                            <Button size="sm" variant="ghost" onClick={() => updateMutation.mutate({ id: report.id, status: "rejected" })} title="Rifiuta">
+                            <Button size="sm" variant="ghost" onClick={() => updateStatusMutation.mutate({ id: report.id, status: "rejected" })} title="Rifiuta">
                               <X className="h-4 w-4 text-red-600" />
                             </Button>
                           </>
                         )}
                         {report.status === "approved" && (
-                          <Button size="sm" variant="outline" onClick={() => updateMutation.mutate({ id: report.id, status: "paid" })}>
+                          <Button size="sm" variant="outline" onClick={() => updateStatusMutation.mutate({ id: report.id, status: "paid" })}>
                             Segna Pagata
                           </Button>
                         )}
@@ -222,6 +255,60 @@ export default function RepairCenterHrExpenses() {
             <Button variant="outline" onClick={() => setDialogOpen(false)}>Annulla</Button>
             <Button onClick={() => createMutation.mutate({ ...newReport, totalAmount: parseFloat(newReport.totalAmount) || 0 })} disabled={createMutation.isPending || !newReport.title || !newReport.userId}>
               Crea Nota Spese
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Modifica Nota Spese</DialogTitle>
+            <DialogDescription>Modifica i dati della nota spese di {editingReport?.user?.fullName}</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <label className="text-sm font-medium">Titolo</label>
+              <Input 
+                value={editForm.title} 
+                onChange={(e) => setEditForm({ ...editForm, title: e.target.value })} 
+                placeholder="Es. Trasferta Milano" 
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium">Importo Totale (EUR)</label>
+              <Input 
+                type="number" 
+                step="0.01" 
+                value={editForm.totalAmount} 
+                onChange={(e) => setEditForm({ ...editForm, totalAmount: e.target.value })} 
+                placeholder="0.00" 
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium">Descrizione (opzionale)</label>
+              <Textarea 
+                value={editForm.description} 
+                onChange={(e) => setEditForm({ ...editForm, description: e.target.value })} 
+                placeholder="Dettagli della spesa..." 
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditDialogOpen(false)}>Annulla</Button>
+            <Button 
+              onClick={() => editingReport && editMutation.mutate({ 
+                id: editingReport.id, 
+                data: { 
+                  title: editForm.title, 
+                  description: editForm.description, 
+                  totalAmount: parseFloat(editForm.totalAmount) || 0 
+                } 
+              })} 
+              disabled={editMutation.isPending || !editForm.title}
+              data-testid="button-save-expense-edit"
+            >
+              {editMutation.isPending ? "Salvataggio..." : "Salva Modifiche"}
             </Button>
           </DialogFooter>
         </DialogContent>

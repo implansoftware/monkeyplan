@@ -30376,14 +30376,33 @@ export function registerRoutes(app: Express): Server {
       res.status(500).json({ error: error.message });
     }
   });
-
-  app.patch("/api/repair-center/hr/expense-reports/:id", requireRole("repair_center"), async (req, res) => {
+  app.patch("/api/repair-center/hr/expense-reports/:id", requireRole("repair_center", "repair_center_staff"), async (req, res) => {
     try {
       if (!req.user) return res.status(401).json({ error: "Non autenticato" });
       const existing = await storage.getHrExpenseReport(req.params.id);
       if (!existing) return res.status(404).json({ error: "Nota spese non trovata" });
       
-      const updated = await storage.updateHrExpenseReport(req.params.id, { status: req.body.status });
+      // Solo note in stato draft o pending possono essere modificate nei campi
+      const editableStatuses = ['draft', 'pending'];
+      const { status, title, description, totalAmount } = req.body;
+      
+      // Se ci sono campi diversi da status, verifica che sia modificabile
+      if ((title !== undefined || description !== undefined || totalAmount !== undefined) && !editableStatuses.includes(existing.status)) {
+        return res.status(400).json({ error: "Solo le note spese in bozza o in attesa possono essere modificate" });
+      }
+      
+      const updateData: any = {};
+      if (status !== undefined) updateData.status = status;
+      if (title !== undefined) updateData.title = title;
+      if (description !== undefined) updateData.description = description;
+      if (totalAmount !== undefined) updateData.totalAmount = typeof totalAmount === 'string' ? parseFloat(totalAmount) : totalAmount;
+      
+      // Se si sta inviando (draft -> pending)
+      if (status === 'pending' && existing.status === 'draft') {
+        updateData.submittedAt = new Date();
+      }
+      
+      const updated = await storage.updateHrExpenseReport(req.params.id, updateData);
       res.json(updated);
     } catch (error: any) {
       res.status(500).json({ error: error.message });

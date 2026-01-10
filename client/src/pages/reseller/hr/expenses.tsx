@@ -23,7 +23,8 @@ import {
   User,
   Send,
   Trash2,
-  Eye
+  Eye,
+  Pencil
 } from "lucide-react";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -62,6 +63,8 @@ const statusLabels: Record<string, { label: string; variant: "default" | "second
 export default function HrExpenses() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editingReport, setEditingReport] = useState<ExpenseReport | null>(null);
   const [entityType, setEntityType] = useState<EntityType>("own");
   const [selectedEntityId, setSelectedEntityId] = useState<string>("");
   const { buildQueryParams, isReadOnly } = useEntityFilter();
@@ -69,6 +72,11 @@ export default function HrExpenses() {
     title: "",
     description: "",
     userId: "",
+    amountEuro: ""
+  });
+  const [editForm, setEditForm] = useState({
+    title: "",
+    description: "",
     amountEuro: ""
   });
   const { toast } = useToast();
@@ -111,7 +119,7 @@ export default function HrExpenses() {
     }
   });
 
-  const updateMutation = useMutation({
+  const updateStatusMutation = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: string }) => {
       return apiRequest("PATCH", `/api/reseller/hr/expense-reports/${id}`, { status });
     },
@@ -123,6 +131,31 @@ export default function HrExpenses() {
       toast({ title: "Errore", description: error.message, variant: "destructive" });
     }
   });
+
+  const editMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: any }) => {
+      return apiRequest("PATCH", `/api/reseller/hr/expense-reports/${id}`, data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/reseller/hr/expense-reports"] });
+      setEditDialogOpen(false);
+      setEditingReport(null);
+      toast({ title: "Nota spese modificata", description: "Le modifiche sono state salvate." });
+    },
+    onError: (error: any) => {
+      toast({ title: "Errore", description: error.message, variant: "destructive" });
+    }
+  });
+
+  const openEditDialog = (report: ExpenseReport) => {
+    setEditingReport(report);
+    setEditForm({
+      title: report.title,
+      description: report.description || "",
+      amountEuro: ((report.totalAmount || 0) / 100).toFixed(2)
+    });
+    setEditDialogOpen(true);
+  };
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
@@ -288,12 +321,23 @@ export default function HrExpenses() {
                       </TableCell>
                       <TableCell>
                         <div className="flex gap-1">
-                          {report.status === 'draft' && (
+                          {(report.status === 'draft' || report.status === 'pending') && !readOnly && (
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              onClick={() => openEditDialog(report)}
+                              title="Modifica"
+                              data-testid={`button-edit-${report.id}`}
+                            >
+                              <Pencil className="h-4 w-4 text-blue-600" />
+                            </Button>
+                          )}
+                          {report.status === 'draft' && !readOnly && (
                             <>
                               <Button
                                 size="icon"
                                 variant="ghost"
-                                onClick={() => updateMutation.mutate({ id: report.id, status: 'pending' })}
+                                onClick={() => updateStatusMutation.mutate({ id: report.id, status: 'pending' })}
                                 title="Invia per approvazione"
                                 data-testid={`button-submit-${report.id}`}
                               >
@@ -310,12 +354,12 @@ export default function HrExpenses() {
                               </Button>
                             </>
                           )}
-                          {report.status === 'pending' && (
+                          {report.status === 'pending' && !readOnly && (
                             <>
                               <Button
                                 size="icon"
                                 variant="ghost"
-                                onClick={() => updateMutation.mutate({ id: report.id, status: 'approved' })}
+                                onClick={() => updateStatusMutation.mutate({ id: report.id, status: 'approved' })}
                                 title="Approva"
                                 data-testid={`button-approve-${report.id}`}
                               >
@@ -324,7 +368,7 @@ export default function HrExpenses() {
                               <Button
                                 size="icon"
                                 variant="ghost"
-                                onClick={() => updateMutation.mutate({ id: report.id, status: 'rejected' })}
+                                onClick={() => updateStatusMutation.mutate({ id: report.id, status: 'rejected' })}
                                 title="Rifiuta"
                                 data-testid={`button-reject-${report.id}`}
                               >
@@ -412,6 +456,68 @@ export default function HrExpenses() {
               data-testid="button-create-expense"
             >
               {createMutation.isPending ? "Creazione..." : "Crea"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Modifica Nota Spese</DialogTitle>
+            <DialogDescription>Modifica i dati della nota spese di {editingReport?.user?.fullName}</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Titolo *</Label>
+              <Input
+                value={editForm.title}
+                onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
+                placeholder="es. Trasferta Milano"
+                data-testid="input-edit-title"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Importo Totale (EUR) *</Label>
+              <div className="relative">
+                <Euro className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={editForm.amountEuro}
+                  onChange={(e) => setEditForm({ ...editForm, amountEuro: e.target.value })}
+                  placeholder="0.00"
+                  className="pl-9"
+                  data-testid="input-edit-amount"
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Descrizione (opzionale)</Label>
+              <Textarea
+                value={editForm.description}
+                onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
+                placeholder="Descrizione della nota spese..."
+                data-testid="input-edit-description"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditDialogOpen(false)}>Annulla</Button>
+            <Button 
+              onClick={() => editingReport && editMutation.mutate({ 
+                id: editingReport.id, 
+                data: { 
+                  title: editForm.title, 
+                  description: editForm.description, 
+                  totalAmount: Math.round(parseFloat(editForm.amountEuro || "0") * 100)
+                } 
+              })}
+              disabled={!editForm.title || !editForm.amountEuro || parseFloat(editForm.amountEuro) <= 0 || editMutation.isPending}
+              data-testid="button-save-expense-edit"
+            >
+              {editMutation.isPending ? "Salvataggio..." : "Salva Modifiche"}
             </Button>
           </DialogFooter>
         </DialogContent>
