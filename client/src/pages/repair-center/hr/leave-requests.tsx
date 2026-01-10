@@ -44,13 +44,22 @@ const statusLabels: Record<string, { label: string; variant: "default" | "second
   rejected: { label: "Rifiutata", variant: "destructive" }
 };
 
+interface StaffMember {
+  id: string;
+  fullName: string;
+}
+
 export default function RepairCenterHrLeaveRequests() {
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [newRequest, setNewRequest] = useState({ leaveType: "ferie", startDate: "", endDate: "", notes: "" });
+  const [newRequest, setNewRequest] = useState({ leaveType: "ferie", startDate: "", endDate: "", notes: "", userId: "" });
   const { toast } = useToast();
 
   const { data: leaveRequests = [], isLoading } = useQuery<LeaveRequest[]>({
     queryKey: ["/api/repair-center/hr/leave-requests"],
+  });
+
+  const { data: staffMembers = [] } = useQuery<StaffMember[]>({
+    queryKey: ["/api/repair-center/team"],
   });
 
   const createMutation = useMutation({
@@ -60,7 +69,7 @@ export default function RepairCenterHrLeaveRequests() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/repair-center/hr/leave-requests"] });
       setDialogOpen(false);
-      setNewRequest({ leaveType: "ferie", startDate: "", endDate: "", notes: "" });
+      setNewRequest({ leaveType: "ferie", startDate: "", endDate: "", notes: "", userId: "" });
       toast({ title: "Richiesta inviata", description: "La richiesta è stata inviata con successo." });
     },
     onError: (error: any) => {
@@ -176,9 +185,22 @@ export default function RepairCenterHrLeaveRequests() {
           </DialogHeader>
           <div className="space-y-4">
             <div>
+              <label className="text-sm font-medium">Dipendente</label>
+              <Select value={newRequest.userId} onValueChange={(v) => setNewRequest({ ...newRequest, userId: v })}>
+                <SelectTrigger data-testid="select-employee">
+                  <SelectValue placeholder="Seleziona dipendente" />
+                </SelectTrigger>
+                <SelectContent>
+                  {staffMembers.map((member) => (
+                    <SelectItem key={member.id} value={member.id}>{member.fullName}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
               <label className="text-sm font-medium">Tipo</label>
               <Select value={newRequest.leaveType} onValueChange={(v) => setNewRequest({ ...newRequest, leaveType: v })}>
-                <SelectTrigger>
+                <SelectTrigger data-testid="select-leave-type">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -205,7 +227,7 @@ export default function RepairCenterHrLeaveRequests() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)}>Annulla</Button>
-            <Button onClick={() => createMutation.mutate(newRequest)} disabled={createMutation.isPending || !newRequest.startDate || !newRequest.endDate}>
+            <Button onClick={() => createMutation.mutate(newRequest)} disabled={createMutation.isPending || !newRequest.userId || !newRequest.startDate || !newRequest.endDate} data-testid="button-submit-leave">
               Invia Richiesta
             </Button>
           </DialogFooter>

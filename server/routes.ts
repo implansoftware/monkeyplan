@@ -3644,7 +3644,7 @@ export function registerRoutes(app: Express): Server {
 
       const message = await storage.createTicketMessage({
         ticketId: req.params.id,
-        userId: req.user.id,
+        userId: req.body.userId || req.user.id,
         message: validatedData.message,
         isInternal: validatedData.isInternal,
       });
@@ -9546,7 +9546,7 @@ export function registerRoutes(app: Express): Server {
       
       if (!preferences) {
         preferences = await storage.createNotificationPreferences({
-          userId: req.user.id,
+          userId: req.body.userId || req.user.id,
           emailEnabled: true,
           pushEnabled: true,
           types: ['repair_update', 'sla_warning', 'review_request', 'message', 'system']
@@ -10162,7 +10162,7 @@ export function registerRoutes(app: Express): Server {
       }
       
       const filters: { userId: string; userRole: string; targetType?: string; ticketType?: string } = {
-        userId: req.user.id,
+        userId: req.body.userId || req.user.id,
         userRole: req.user.role,
       };
       
@@ -10593,7 +10593,7 @@ export function registerRoutes(app: Express): Server {
       
       const ticketMessage = await storage.createTicketMessage({
         ticketId: req.params.id,
-        userId: req.user.id,
+        userId: req.body.userId || req.user.id,
         message: message.trim(),
         isInternal: messageIsInternal,
         attachments: validAttachments,
@@ -12074,7 +12074,7 @@ export function registerRoutes(app: Express): Server {
       
       // Log activity
       await storage.createActivityLog({
-        userId: req.user.id,
+        userId: req.body.userId || req.user.id,
         action: resellerId ? 'accessory_assigned' : 'accessory_unassigned',
         entityType: 'product',
         entityId: req.params.productId,
@@ -28513,7 +28513,7 @@ export function registerRoutes(app: Express): Server {
       const profile = await storage.createHrWorkProfile({ ...req.body, resellerId });
       await storage.createHrAuditLog({
         resellerId,
-        userId: req.user.id,
+        userId: req.body.userId || req.user.id,
         action: 'create',
         entityType: 'work_profile',
         entityId: profile.id,
@@ -28534,7 +28534,7 @@ export function registerRoutes(app: Express): Server {
       if (resellerId) {
         await storage.createHrAuditLog({
           resellerId,
-          userId: req.user.id,
+          userId: req.body.userId || req.user.id,
           action: 'update',
           entityType: 'work_profile',
           entityId: profile.id,
@@ -28556,7 +28556,7 @@ export function registerRoutes(app: Express): Server {
       if (resellerId) {
         await storage.createHrAuditLog({
           resellerId,
-          userId: req.user.id,
+          userId: req.body.userId || req.user.id,
           action: 'delete',
           entityType: 'work_profile',
           entityId: req.params.id
@@ -28664,7 +28664,7 @@ export function registerRoutes(app: Express): Server {
       // Audit log
       await storage.createHrAuditLog({
         resellerId,
-        userId: req.user.id,
+        userId: req.body.userId || req.user.id,
         action: existingProfile ? 'update' : 'create',
         entityType: 'work_profile',
         entityId: profile.id,
@@ -28907,7 +28907,7 @@ export function registerRoutes(app: Express): Server {
       
       await storage.createHrAuditLog({
         resellerId,
-        userId: req.user.id,
+        userId: req.body.userId || req.user.id,
         action: 'create',
         entityType: 'leave_request',
         entityId: request.id,
@@ -28935,7 +28935,7 @@ export function registerRoutes(app: Express): Server {
       if (resellerId) {
         await storage.createHrAuditLog({
           resellerId,
-          userId: req.user.id,
+          userId: req.body.userId || req.user.id,
           action: 'update',
           entityType: 'leave_request',
           entityId: request.id,
@@ -29207,7 +29207,7 @@ export function registerRoutes(app: Express): Server {
       if (resellerId) {
         await storage.createHrAuditLog({
           resellerId,
-          userId: req.user.id,
+          userId: req.body.userId || req.user.id,
           action: 'update',
           entityType: 'expense_report',
           entityId: report.id,
@@ -29230,7 +29230,7 @@ export function registerRoutes(app: Express): Server {
       if (resellerId) {
         await storage.createHrAuditLog({
           resellerId,
-          userId: req.user.id,
+          userId: req.body.userId || req.user.id,
           action: 'delete',
           entityType: 'expense_report',
           entityId: req.params.id,
@@ -30045,7 +30045,7 @@ export function registerRoutes(app: Express): Server {
       if (!parentResellerId) return res.status(400).json({ error: "Reseller parent non trovato" });
       
       const request = await storage.createHrLeaveRequest({
-        userId: req.user.id,
+        userId: req.body.userId || req.user.id,
         resellerId: parentResellerId,
         leaveType: req.body.leaveType,
         startDate: new Date(req.body.startDate),
@@ -30151,7 +30151,7 @@ export function registerRoutes(app: Express): Server {
       if (!parentResellerId) return res.status(400).json({ error: "Reseller parent non trovato" });
       
       const report = await storage.createHrExpenseReport({
-        userId: req.user.id,
+        userId: req.body.userId || req.user.id,
         resellerId: parentResellerId,
         title: req.body.title,
         description: req.body.description,
