@@ -23670,7 +23670,6 @@ export function registerRoutes(app: Express): Server {
         }
         
         return {
-          isOwned: item.repairCenterId === repairCenterId,
           mapboxId: suggestion.mapbox_id,
           fullAddress: suggestion.full_address || suggestion.place_formatted || suggestion.name || "",
           address,
