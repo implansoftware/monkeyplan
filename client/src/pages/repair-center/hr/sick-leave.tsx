@@ -51,12 +51,30 @@ export default function RepairCenterHrSickLeave() {
 
   const createMutation = useMutation({
     mutationFn: async (data: any) => {
-      return apiRequest("POST", "/api/repair-center/hr/sick-leaves", data);
+      const response = await apiRequest("POST", "/api/repair-center/hr/sick-leaves", data);
+      const sickLeave = await response.json();
+      
+      // If there's a certificate file, upload it
+      if (certificateFile && sickLeave.id) {
+        const formData = new FormData();
+        formData.append("certificate", certificateFile);
+        const uploadResponse = await fetch(`/api/repair-center/hr/sick-leaves/${sickLeave.id}/certificate`, {
+          method: "POST",
+          body: formData,
+          credentials: "include"
+        });
+        if (!uploadResponse.ok) {
+          console.error("Failed to upload certificate");
+        }
+      }
+      
+      return sickLeave;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/repair-center/hr/sick-leaves"] });
       setDialogOpen(false);
       setNewSickLeave({ userId: "", startDate: "", endDate: "", protocolNumber: "", notes: "" });
+      setCertificateFile(null);
       toast({ title: "Malattia registrata", description: "La registrazione è stata completata con successo." });
     },
     onError: (error: any) => {
@@ -209,6 +227,15 @@ export default function RepairCenterHrSickLeave() {
             <div>
               <label className="text-sm font-medium">Numero Certificato</label>
               <Input value={newSickLeave.protocolNumber} onChange={(e) => setNewSickLeave({ ...newSickLeave, protocolNumber: e.target.value })} placeholder="Es. ABC123456" />
+            </div>
+            <div>
+              <label className="text-sm font-medium">Certificato Medico</label>
+              <Input 
+                type="file" 
+                accept=".pdf,.jpg,.jpeg,.png" 
+                onChange={(e) => setCertificateFile(e.target.files?.[0] || null)} 
+              />
+              <p className="text-xs text-muted-foreground mt-1">Formati accettati: PDF, JPG, PNG</p>
             </div>
             <div>
               <label className="text-sm font-medium">Note (opzionale)</label>
