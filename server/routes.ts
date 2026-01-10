@@ -19097,7 +19097,7 @@ export function registerRoutes(app: Express): Server {
   });
 
   // GET /api/trovausati/models - Get available device models for valuation
-  app.get("/api/trovausati/models", requireAuth, requireRole("admin", "reseller", "reseller_staff"), async (req, res) => {
+  app.get("/api/trovausati/models", requireAuth, requireRole("admin", "reseller", "reseller_staff", "repair_center"), async (req, res) => {
     try {
       const resellerId = req.user!.role === 'admin' ? req.query.resellerId as string : 
         (req.user!.role === 'reseller' ? req.user!.id : req.user!.resellerId);
@@ -19125,7 +19125,7 @@ export function registerRoutes(app: Express): Server {
   });
 
   // GET /api/trovausati/models/:id - Get model valuation details
-  app.get("/api/trovausati/models/:id", requireAuth, requireRole("admin", "reseller", "reseller_staff"), async (req, res) => {
+  app.get("/api/trovausati/models/:id", requireAuth, requireRole("admin", "reseller", "reseller_staff", "repair_center"), async (req, res) => {
     try {
       const resellerId = req.user!.role === 'admin' ? req.query.resellerId as string : 
         (req.user!.role === 'reseller' ? req.user!.id : req.user!.resellerId);
@@ -19214,7 +19214,7 @@ export function registerRoutes(app: Express): Server {
   });
 
   // GET /api/trovausati/marketplace/orders - List marketplace orders
-  app.get("/api/trovausati/marketplace/orders", requireAuth, requireRole("admin", "reseller", "reseller_staff"), async (req, res) => {
+  app.get("/api/trovausati/marketplace/orders", requireAuth, requireRole("admin", "reseller", "reseller_staff", "repair_center"), async (req, res) => {
     try {
       const resellerId = req.user!.role === 'admin' ? req.query.resellerId as string : 
         (req.user!.role === 'reseller' ? req.user!.id : req.user!.resellerId);
@@ -19238,7 +19238,7 @@ export function registerRoutes(app: Express): Server {
   });
 
   // POST /api/trovausati/marketplace/orders - Create marketplace order (alias)
-  app.post("/api/trovausati/marketplace/orders", requireAuth, requireRole("admin", "reseller", "reseller_staff"), async (req, res) => {
+  app.post("/api/trovausati/marketplace/orders", requireAuth, requireRole("admin", "reseller", "reseller_staff", "repair_center"), async (req, res) => {
     try {
       const resellerId = req.user!.role === 'admin' ? req.body.resellerId : 
         (req.user!.role === 'reseller' ? req.user!.id : req.user!.resellerId);
@@ -19273,7 +19273,7 @@ export function registerRoutes(app: Express): Server {
   });
 
   // GET /api/trovausati/models/:id/valuation - Get model valuation prices
-  app.get("/api/trovausati/models/:id/valuation", requireAuth, requireRole("admin", "reseller", "reseller_staff"), async (req, res) => {
+  app.get("/api/trovausati/models/:id/valuation", requireAuth, requireRole("admin", "reseller", "reseller_staff", "repair_center"), async (req, res) => {
     try {
       const resellerId = req.user!.role === 'admin' ? req.query.resellerId as string : 
         (req.user!.role === 'reseller' ? req.user!.id : req.user!.resellerId);
@@ -19300,7 +19300,7 @@ export function registerRoutes(app: Express): Server {
   });
 
   // POST /api/trovausati/coupons - Issue a new coupon (GDS)
-  app.post("/api/trovausati/coupons", requireAuth, requireRole("admin", "reseller", "reseller_staff"), async (req, res) => {
+  app.post("/api/trovausati/coupons", requireAuth, requireRole("admin", "reseller", "reseller_staff", "repair_center"), async (req, res) => {
     try {
       const resellerId = req.user!.role === 'admin' ? req.body.resellerId : 
         (req.user!.role === 'reseller' ? req.user!.id : req.user!.resellerId);
@@ -19451,7 +19451,7 @@ export function registerRoutes(app: Express): Server {
   });
 
   // GET /api/trovausati/coupons - List coupons (GDS)
-  app.get("/api/trovausati/coupons", requireAuth, requireRole("admin", "reseller", "reseller_staff"), async (req, res) => {
+  app.get("/api/trovausati/coupons", requireAuth, requireRole("admin", "reseller", "reseller_staff", "repair_center"), async (req, res) => {
     try {
       const resellerId = req.user!.role === 'admin' ? req.query.resellerId as string : 
         (req.user!.role === 'reseller' ? req.user!.id : req.user!.resellerId);
@@ -19483,7 +19483,7 @@ export function registerRoutes(app: Express): Server {
   });
 
   // GET /api/trovausati/coupons/:code - Get coupon details
-  app.get("/api/trovausati/coupons/:code", requireAuth, requireRole("admin", "reseller", "reseller_staff"), async (req, res) => {
+  app.get("/api/trovausati/coupons/:code", requireAuth, requireRole("admin", "reseller", "reseller_staff", "repair_center"), async (req, res) => {
     try {
       const resellerId = req.user!.role === 'admin' ? req.query.resellerId as string : 
         (req.user!.role === 'reseller' ? req.user!.id : req.user!.resellerId);
@@ -19507,7 +19507,7 @@ export function registerRoutes(app: Express): Server {
   });
 
   // PATCH /api/trovausati/coupons/:code/consume - Consume coupon
-  app.patch("/api/trovausati/coupons/:code/consume", requireAuth, requireRole("admin", "reseller", "reseller_staff"), async (req, res) => {
+  app.patch("/api/trovausati/coupons/:code/consume", requireAuth, requireRole("admin", "reseller", "reseller_staff", "repair_center"), async (req, res) => {
     try {
       const resellerId = req.user!.role === 'admin' ? req.body.resellerId : 
         (req.user!.role === 'reseller' ? req.user!.id : req.user!.resellerId);
@@ -19535,7 +19535,7 @@ export function registerRoutes(app: Express): Server {
   });
 
   // GET /api/trovausati/access-token - Get iframe access token
-  app.get("/api/trovausati/access-token", requireAuth, requireRole("admin", "reseller", "reseller_staff"), async (req, res) => {
+  app.get("/api/trovausati/access-token", requireAuth, requireRole("admin", "reseller", "reseller_staff", "repair_center"), async (req, res) => {
     try {
       const resellerId = req.user!.role === 'admin' ? req.query.resellerId as string : 
         (req.user!.role === 'reseller' ? req.user!.id : req.user!.resellerId);
@@ -20498,7 +20498,7 @@ export function registerRoutes(app: Express): Server {
   });
 
   // GET /api/external-integrations - List all integrations (admins get all, resellers get active only)
-  app.get("/api/external-integrations", requireAuth, requireRole("admin", "reseller", "reseller_staff"), async (req, res) => {
+  app.get("/api/external-integrations", requireAuth, requireRole("admin", "reseller", "reseller_staff", "repair_center"), async (req, res) => {
     try {
       // Admin sees all, others see only active
       if (req.user?.role === 'admin') {
@@ -20514,7 +20514,7 @@ export function registerRoutes(app: Express): Server {
   });
 
   // GET /api/external-integrations/:id - Get single integration
-  app.get("/api/external-integrations/:id", requireAuth, requireRole("admin", "reseller", "reseller_staff"), async (req, res) => {
+  app.get("/api/external-integrations/:id", requireAuth, requireRole("admin", "reseller", "reseller_staff", "repair_center"), async (req, res) => {
     try {
       const integration = await storage.getExternalIntegration(req.params.id);
       if (!integration) {
@@ -28657,6 +28657,226 @@ export function registerRoutes(app: Express): Server {
       res.json(catalog);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
+    }
+  });
+
+  // ============================================================================
+  // REPAIR CENTER SUPPLIERS API
+  // ============================================================================
+
+  // GET /api/repair-center/configured-integrations - Get integrations configured by parent reseller
+  app.get("/api/repair-center/configured-integrations", requireAuth, requireRole("repair_center"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const repairCenter = await storage.getRepairCenter(req.user.repairCenterId!);
+      if (!repairCenter || !repairCenter.resellerId) {
+        return res.json([]);
+      }
+      
+      // Use parent reseller's configured integrations
+      const resellerId = repairCenter.resellerId;
+      const configuredCodes: string[] = [];
+      
+      const sifarCred = await storage.getSifarCredentialByReseller(resellerId);
+      if (sifarCred) configuredCodes.push("sifar");
+      
+      const fonedayCred = await storage.getFonedayCredentialByReseller(resellerId);
+      if (fonedayCred) configuredCodes.push("foneday");
+      
+      const trovausatiCred = await storage.getTrovausatiCredentialByReseller(resellerId);
+      if (trovausatiCred) configuredCodes.push("trovausati");
+      
+      const mobilesentrixCred = await storage.getMobilesentrixCredentialByReseller(resellerId);
+      if (mobilesentrixCred) configuredCodes.push("mobilesentrix");
+      
+      res.json(configuredCodes);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // GET /api/repair-center/suppliers - View global suppliers + reseller's suppliers
+  app.get("/api/repair-center/suppliers", requireRole("repair_center"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const repairCenter = await storage.getRepairCenter(req.user.repairCenterId!);
+      if (!repairCenter) {
+        return res.status(404).send("Centro riparazione non trovato");
+      }
+      
+      // Get all suppliers
+      const allSuppliers = await storage.listSuppliers();
+      
+      // Filter: global (createdBy=null) + reseller's own (createdBy=resellerId)
+      const visibleSuppliers = allSuppliers.filter(s => {
+        const isGlobal = !s.createdBy;
+        const isResellerOwned = s.createdBy === repairCenter.resellerId;
+        return isGlobal || isResellerOwned;
+      });
+      
+      // Enrich with ownership info
+      const enriched = visibleSuppliers.map(s => ({
+        ...s,
+        isGlobal: !s.createdBy,
+        isOwn: false, // Repair center can only view, not manage reseller's suppliers
+      }));
+      
+      res.json(enriched);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // GET /api/repair-center/supplier-orders - View own supplier orders
+  app.get("/api/repair-center/supplier-orders", requireRole("repair_center"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const orders = await storage.listSupplierOrdersByRepairCenters([req.user.repairCenterId!]);
+      
+      // Enrich with supplier info
+      const enriched = await Promise.all(orders.map(async (order) => {
+        const supplier = order.supplierId ? await storage.getSupplier(order.supplierId) : null;
+        return {
+          ...order,
+          supplier: supplier ? { id: supplier.id, name: supplier.name, code: supplier.code } : null,
+        };
+      }));
+      
+      res.json(enriched);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // GET /api/repair-center/sifar/credentials - Get parent reseller's SIFAR credentials
+  app.get("/api/repair-center/sifar/credentials", requireRole("repair_center"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const repairCenter = await storage.getRepairCenter(req.user.repairCenterId!);
+      if (!repairCenter || !repairCenter.resellerId) {
+        return res.json(null);
+      }
+      
+      const cred = await storage.getSifarCredentialByReseller(repairCenter.resellerId);
+      if (!cred) return res.json(null);
+      
+      res.json({
+        id: cred.id,
+        environment: cred.environment,
+        isActive: cred.isActive,
+        lastSyncAt: cred.lastSyncAt,
+        createdAt: cred.createdAt,
+        hasClientKey: !!cred.clientKey,
+      });
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // GET /api/repair-center/sifar/stores - Get parent reseller's SIFAR stores
+  app.get("/api/repair-center/sifar/stores", requireRole("repair_center"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const repairCenter = await storage.getRepairCenter(req.user.repairCenterId!);
+      if (!repairCenter || !repairCenter.resellerId) {
+        return res.json([]);
+      }
+      
+      const cred = await storage.getSifarCredentialByReseller(repairCenter.resellerId);
+      if (!cred) return res.json([]);
+      
+      const stores = await storage.listSifarStores(cred.id);
+      res.json(stores);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // GET /api/repair-center/foneday/credentials - Get parent reseller's Foneday credentials
+  app.get("/api/repair-center/foneday/credentials", requireRole("repair_center"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const repairCenter = await storage.getRepairCenter(req.user.repairCenterId!);
+      if (!repairCenter || !repairCenter.resellerId) {
+        return res.json(null);
+      }
+      
+      const cred = await storage.getFonedayCredentialByReseller(repairCenter.resellerId);
+      if (!cred) return res.json(null);
+      
+      res.json({ id: cred.id, isActive: cred.isActive });
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // GET /api/repair-center/trovausati/credentials - Get parent reseller's TrovaUsati credentials
+  app.get("/api/repair-center/trovausati/credentials", requireRole("repair_center"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const repairCenter = await storage.getRepairCenter(req.user.repairCenterId!);
+      if (!repairCenter || !repairCenter.resellerId) {
+        return res.json(null);
+      }
+      
+      const cred = await storage.getTrovausatiCredentialByReseller(repairCenter.resellerId);
+      if (!cred) return res.json(null);
+      
+      res.json({
+        id: cred.id,
+        apiType: cred.apiType,
+        isActive: cred.isActive,
+        lastTestResult: cred.lastTestResult,
+        createdAt: cred.createdAt,
+      });
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // GET /api/repair-center/trovausati/shops - Get parent reseller's TrovaUsati shops
+  app.get("/api/repair-center/trovausati/shops", requireRole("repair_center"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const repairCenter = await storage.getRepairCenter(req.user.repairCenterId!);
+      if (!repairCenter || !repairCenter.resellerId) {
+        return res.json([]);
+      }
+      
+      const cred = await storage.getTrovausatiCredentialByReseller(repairCenter.resellerId);
+      if (!cred) return res.json([]);
+      
+      const shops = await storage.listTrovausatiShops(cred.id);
+      res.json(shops);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // GET /api/repair-center/mobilesentrix/credentials - Get parent reseller's MobileSentrix credentials
+  app.get("/api/repair-center/mobilesentrix/credentials", requireRole("repair_center"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const repairCenter = await storage.getRepairCenter(req.user.repairCenterId!);
+      if (!repairCenter || !repairCenter.resellerId) {
+        return res.json(null);
+      }
+      
+      const cred = await storage.getMobilesentrixCredentialByReseller(repairCenter.resellerId);
+      if (!cred) return res.json(null);
+      
+      res.json({ id: cred.id, isActive: cred.isActive });
+    } catch (error: any) {
+      res.status(500).send(error.message);
     }
   });
 

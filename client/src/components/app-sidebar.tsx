@@ -246,6 +246,8 @@ const menuItems = {
     { title: "Panoramica", url: "/repair-center/transfer-requests/overview", icon: ArrowRightLeft, group: "Interscambio" },
     { title: "Nuova Richiesta", url: "/repair-center/transfer-requests", icon: Send, group: "Interscambio" },
     { title: "Marketplace Rivenditori", url: "/repair-center/marketplace", icon: Store, group: "Marketplace" },
+    { title: "Anagrafica Fornitori", url: "/repair-center/suppliers", icon: Truck, group: "Fornitori" },
+    { title: "Ordini a Fornitori", url: "/repair-center/supplier-orders", icon: ShoppingCart, group: "Fornitori" },
     { title: "Utility", url: "/repair-center/utility", icon: Zap, group: "Utility" },
     { title: "Fornitori Utility", url: "/repair-center/utility/suppliers", icon: Phone, group: "Utility" },
     { title: "Listino Servizi", url: "/repair-center/utility/services", icon: Package, group: "Utility" },
@@ -265,11 +267,10 @@ const menuItems = {
   ],
 };
 
-const integratedSuppliers = [
+const integratedSuppliersConfig = [
   {
     key: "sifar",
     label: "SIFAR",
-    basePath: "/reseller/sifar",
     routes: [
       { title: "Catalogo", path: "/catalog", icon: Package },
       { title: "Carrello", path: "/cart", icon: ShoppingCart },
@@ -279,7 +280,6 @@ const integratedSuppliers = [
   {
     key: "foneday",
     label: "Foneday EU",
-    basePath: "/reseller/foneday",
     routes: [
       { title: "Catalogo", path: "/catalog", icon: Package },
       { title: "Carrello", path: "/cart", icon: ShoppingCart },
@@ -289,7 +289,6 @@ const integratedSuppliers = [
   {
     key: "mobilesentrix",
     label: "MobileSentrix",
-    basePath: "/reseller/mobilesentrix",
     routes: [
       { title: "Catalogo", path: "/catalog", icon: Package },
       { title: "Configurazione", path: "/settings", icon: Settings },
@@ -298,7 +297,6 @@ const integratedSuppliers = [
   {
     key: "trovausati",
     label: "TrovaUsati",
-    basePath: "/reseller/trovausati",
     routes: [
       { title: "Marketplace B2B", path: "/marketplace", icon: ShoppingCart },
       { title: "Valutatore", path: "/valutatore", icon: Tag },
@@ -306,6 +304,9 @@ const integratedSuppliers = [
     ],
   },
 ];
+
+const getIntegratedSuppliers = (rolePrefix: string) => 
+  integratedSuppliersConfig.map(s => ({ ...s, basePath: `/${rolePrefix}/${s.key}` }));
 
 const groupIcons: Record<string, typeof LayoutDashboard> = {
   "Dashboard": LayoutDashboard,
@@ -409,9 +410,20 @@ export function AppSidebar() {
     enabled: isReseller || isResellerStaff,
   });
   
+  // Query configured integrations for repair center (uses parent reseller's credentials)
+  const { data: rcConfiguredIntegrationCodes = [] } = useQuery<string[]>({
+    queryKey: ["/api/repair-center/configured-integrations"],
+    enabled: isRepairCenter,
+  });
+  
+  // Get integrated suppliers with correct base path based on role
+  const rolePrefix = isRepairCenter ? "repair-center" : "reseller";
+  const activeIntegrationCodes = isRepairCenter ? rcConfiguredIntegrationCodes : configuredIntegrationCodes;
+  const integratedSuppliers = getIntegratedSuppliers(rolePrefix);
+  
   // Filter integrated suppliers based on configured integrations
   const filteredIntegratedSuppliers = integratedSuppliers.filter(
-    supplier => configuredIntegrationCodes.includes(supplier.key)
+    supplier => activeIntegrationCodes.includes(supplier.key)
   );
 
   // Build menu items dynamically based on sub-resellers and permissions
@@ -484,7 +496,7 @@ export function AppSidebar() {
         return group;
       }
     }
-    if (isReseller || isResellerStaff) {
+    if (isReseller || isResellerStaff || isRepairCenter) {
       for (const supplier of filteredIntegratedSuppliers) {
         if (location.startsWith(supplier.basePath)) {
           return "Fornitori";
@@ -716,7 +728,7 @@ export function AppSidebar() {
                         );
                       })}
                       
-                      {group === "Fornitori" && (isReseller || isResellerStaff) && canAccessModule("suppliers") && filteredIntegratedSuppliers.length > 0 && (
+                      {group === "Fornitori" && ((isReseller || isResellerStaff) && canAccessModule("suppliers") || isRepairCenter) && filteredIntegratedSuppliers.length > 0 && (
                         <>
                           <div className="my-2 mx-2 border-t border-sidebar-border" />
                           <div className="px-4 py-1 text-xs font-medium text-muted-foreground flex items-center gap-1">
