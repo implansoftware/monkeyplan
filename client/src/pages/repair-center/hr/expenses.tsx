@@ -155,15 +155,25 @@ export default function RepairCenterHrExpenses() {
                     </TableCell>
                     <TableCell>
                       <div className="flex gap-1">
+                        {report.status === "draft" && (
+                          <Button size="sm" variant="outline" onClick={() => updateMutation.mutate({ id: report.id, status: "submitted" })}>
+                            Invia
+                          </Button>
+                        )}
                         {report.status === "submitted" && (
                           <>
-                            <Button size="sm" variant="ghost" onClick={() => updateMutation.mutate({ id: report.id, status: "approved" })}>
+                            <Button size="sm" variant="ghost" onClick={() => updateMutation.mutate({ id: report.id, status: "approved" })} title="Approva">
                               <Check className="h-4 w-4 text-emerald-600" />
                             </Button>
-                            <Button size="sm" variant="ghost" onClick={() => updateMutation.mutate({ id: report.id, status: "rejected" })}>
+                            <Button size="sm" variant="ghost" onClick={() => updateMutation.mutate({ id: report.id, status: "rejected" })} title="Rifiuta">
                               <X className="h-4 w-4 text-red-600" />
                             </Button>
                           </>
+                        )}
+                        {report.status === "approved" && (
+                          <Button size="sm" variant="outline" onClick={() => updateMutation.mutate({ id: report.id, status: "paid" })}>
+                            Segna Pagata
+                          </Button>
                         )}
                       </div>
                     </TableCell>
