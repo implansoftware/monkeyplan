@@ -1525,7 +1525,6 @@ export function registerRoutes(app: Express): Server {
       const resellersWithCounts = resellers.map(reseller => {
         const { password, ...safeReseller } = reseller;
         return {
-          isOwned: item.repairCenterId === repairCenterId,
           ...safeReseller,
           customerCount: customers.filter(c => c.resellerId === reseller.id).length,
           staffCount: staff.filter(s => s.resellerId === reseller.id).length,
@@ -1744,7 +1743,6 @@ export function registerRoutes(app: Express): Server {
           const permissions = await storage.getStaffPermissions(member.id);
           const assignedRepairCenters = await storage.listRepairCentersForStaff(member.id);
           return {
-          isOwned: item.repairCenterId === repairCenterId,
             ...member,
             password: undefined,
             permissions,
@@ -2181,7 +2179,6 @@ export function registerRoutes(app: Express): Server {
         staff.map(async (member) => {
           const permissions = await storage.getAdminStaffPermissions(member.id);
           return {
-          isOwned: item.repairCenterId === repairCenterId,
             ...member,
             password: undefined,
             permissions
@@ -2482,7 +2479,6 @@ export function registerRoutes(app: Express): Server {
         const isSubResellerCenter = subResellerIds.includes(c.resellerId || '');
         
         return {
-          isOwned: item.repairCenterId === repairCenterId,
           id: c.id,
           name: c.name,
           address: c.address,
@@ -3031,7 +3027,6 @@ export function registerRoutes(app: Express): Server {
         prices.map(async (price) => {
           const reseller = await storage.getUser(price.resellerId);
           return {
-          isOwned: item.repairCenterId === repairCenterId,
             ...price,
             reseller: reseller ? {
               id: reseller.id,
@@ -3048,7 +3043,6 @@ export function registerRoutes(app: Express): Server {
         assignments.map(async (a) => {
           const reseller = await storage.getUser(a.resellerId);
           return {
-          isOwned: item.repairCenterId === repairCenterId,
             ...a,
             reseller: reseller ? {
               id: reseller.id,
@@ -3065,7 +3059,6 @@ export function registerRoutes(app: Express): Server {
         warehouses.map(async (wh) => {
           const stockItem = await storage.getWarehouseStockItem(wh.id, product.id);
           return {
-          isOwned: item.repairCenterId === repairCenterId,
             warehouseId: wh.id,
             warehouseName: wh.name,
             ownerType: wh.ownerType,
@@ -3083,7 +3076,6 @@ export function registerRoutes(app: Express): Server {
           const brand = await storage.getDeviceBrand(c.deviceBrandId);
           const model = c.deviceModelId ? await storage.getDeviceModel(c.deviceModelId) : null;
           return {
-          isOwned: item.repairCenterId === repairCenterId,
             id: c.id,
             deviceBrandId: c.deviceBrandId,
             deviceBrandName: brand?.name || null,
@@ -3121,7 +3113,6 @@ export function registerRoutes(app: Express): Server {
           const brand = await storage.getDeviceBrand(c.deviceBrandId);
           const model = c.deviceModelId ? await storage.getDeviceModel(c.deviceModelId) : null;
           return {
-          isOwned: item.repairCenterId === repairCenterId,
             id: c.id,
             deviceBrandId: c.deviceBrandId,
             deviceBrandName: brand?.name || null,
@@ -3181,7 +3172,6 @@ export function registerRoutes(app: Express): Server {
           const brand = await storage.getDeviceBrand(c.deviceBrandId);
           const model = c.deviceModelId ? await storage.getDeviceModel(c.deviceModelId) : null;
           return {
-          isOwned: item.repairCenterId === repairCenterId,
             id: c.id,
             deviceBrandId: c.deviceBrandId,
             deviceBrandName: brand?.name || null,
@@ -3212,7 +3202,6 @@ export function registerRoutes(app: Express): Server {
         prices.map(async (price) => {
           const reseller = await storage.getUser(price.resellerId);
           return {
-          isOwned: item.repairCenterId === repairCenterId,
             ...price,
             reseller: reseller ? {
               id: reseller.id,
@@ -3435,7 +3424,6 @@ export function registerRoutes(app: Express): Server {
       const result = await Promise.all(globalProducts.map(async (product) => {
         const assignments = await storage.listResellerProducts({ productId: product.id });
         return {
-          isOwned: item.repairCenterId === repairCenterId,
           ...product,
           assignedCount: assignments.length,
           publishedCount: assignments.filter(a => a.isPublished).length,
@@ -3521,7 +3509,6 @@ export function registerRoutes(app: Express): Server {
         const customerName = customer?.ragioneSociale || customer?.fullName || null;
         
         return {
-          isOwned: item.repairCenterId === repairCenterId,
           ...repair,
           customerName,
           repairCenterName: repair.repairCenterId ? repairCentersMap.get(repair.repairCenterId) || null : null,
@@ -4200,7 +4187,6 @@ export function registerRoutes(app: Express): Server {
           const repairCenters = await storage.getRepairCentersForReseller(reseller.id);
           
           return {
-          isOwned: item.repairCenterId === repairCenterId,
             id: reseller.id,
             fullName: reseller.fullName,
             email: reseller.email,
@@ -4549,7 +4535,6 @@ export function registerRoutes(app: Express): Server {
           )[0];
           
           return {
-          isOwned: item.repairCenterId === repairCenterId,
             resellerId: reseller.id,
             resellerName: reseller.fullName,
             totalOrders: orders.length,
@@ -4823,7 +4808,6 @@ export function registerRoutes(app: Express): Server {
         const customerName = customer?.ragioneSociale || customer?.fullName || null;
         
         return {
-          isOwned: item.repairCenterId === repairCenterId,
           ...repair,
           customerName,
           repairCenterName: repair.repairCenterId ? repairCentersMap.get(repair.repairCenterId) || null : null,
@@ -5087,7 +5071,6 @@ export function registerRoutes(app: Express): Server {
         customers.map(async (customer) => {
           const repairCenters = await storage.listRepairCentersForCustomer(customer.id);
           return {
-          isOwned: item.repairCenterId === repairCenterId,
             ...customer,
             assignedRepairCenters: repairCenters,
           };
@@ -5970,7 +5953,6 @@ export function registerRoutes(app: Express): Server {
         const deviceTypeName = product.deviceTypeId ? deviceTypeMap.get(product.deviceTypeId) : null;
         
         return {
-          isOwned: item.repairCenterId === repairCenterId,
           ...product,
           isOwn, // true = prodotto creato dal reseller
           deviceType: deviceTypeName || (product.productType === 'dispositivo' ? 'Smartphone' : null), // Fallback per dispositivi senza tipo
@@ -6116,7 +6098,6 @@ export function registerRoutes(app: Express): Server {
       const result = await Promise.all(assignments.map(async (assignment) => {
         const product = await storage.getProduct(assignment.productId);
         return {
-          isOwned: item.repairCenterId === repairCenterId,
           ...assignment,
           product,
         };
@@ -6243,7 +6224,6 @@ export function registerRoutes(app: Express): Server {
           const product = productsMap.get(assignment.productId);
           if (!product) return null;
           return {
-          isOwned: item.repairCenterId === repairCenterId,
             product,
             assignment: {
               id: assignment.id,
@@ -7681,7 +7661,6 @@ export function registerRoutes(app: Express): Server {
         }
         
         return {
-          isOwned: item.repairCenterId === repairCenterId,
           ...item,
           effectivePrice,
           effectiveLaborMinutes,
@@ -7876,7 +7855,6 @@ export function registerRoutes(app: Express): Server {
         const customerName = customer?.ragioneSociale || customer?.fullName || null;
         
         return {
-          isOwned: item.repairCenterId === repairCenterId,
           ...repair,
           customerName,
           slaSeverity: severity,
@@ -8220,7 +8198,6 @@ export function registerRoutes(app: Express): Server {
         }
         
         return {
-          isOwned: item.repairCenterId === repairCenterId,
           ...r,
           photos: photoUrls,
           centerName,
@@ -8477,7 +8454,6 @@ export function registerRoutes(app: Express): Server {
         }
         
         return {
-          isOwned: item.repairCenterId === repairCenterId,
           ...r,
           customerName: customer?.username || customer?.email || null,
           customerEmail: customer?.email || null,
@@ -9159,7 +9135,6 @@ export function registerRoutes(app: Express): Server {
         const customer = await storage.getUser(order.customerId);
         const serviceItem = await storage.getServiceItem(order.serviceItemId);
         return {
-          isOwned: item.repairCenterId === repairCenterId,
           ...order,
           customerName: customer?.fullName || customer?.username || 'N/A',
           serviceName: serviceItem?.name || 'N/A',
@@ -10735,7 +10710,6 @@ export function registerRoutes(app: Express): Server {
         const quoteTotalAmount = quotesMap.get(order.id) || null;
         
         return {
-          isOwned: item.repairCenterId === repairCenterId,
           ...order,
           customerName,
           repairCenterName,
@@ -14178,7 +14152,6 @@ export function registerRoutes(app: Express): Server {
         }
         
         return {
-          isOwned: item.repairCenterId === repairCenterId,
           ...appointment,
           repairOrder: repairOrder ? {
             id: repairOrder.id,
@@ -15842,7 +15815,6 @@ export function registerRoutes(app: Express): Server {
           rc => rc.resellerId === subReseller.id || rc.subResellerId === subReseller.id
         );
         return {
-          isOwned: item.repairCenterId === repairCenterId,
           subReseller: {
             id: subReseller.id,
             name: subReseller.fullName || subReseller.username,
@@ -24694,7 +24666,6 @@ export function registerRoutes(app: Express): Server {
         const totalQuantity = stock.reduce((sum, s) => sum + s.quantity, 0);
         
         return {
-          isOwned: item.repairCenterId === repairCenterId,
           ...wh,
           owner,
           stockCount,
@@ -25105,7 +25076,6 @@ export function registerRoutes(app: Express): Server {
         }
         
         return {
-          isOwned: item.repairCenterId === repairCenterId,
           ...mov,
           product: product ? { id: product.id, name: product.name, sku: product.sku } : null,
           createdByUser: user ? { id: user.id, fullName: user.fullName, username: user.username } : null,
@@ -25168,7 +25138,6 @@ export function registerRoutes(app: Express): Server {
         const requestedBy = await storage.getUser(t.requestedBy);
         const items = await storage.listWarehouseTransferItems(t.id);
         return {
-          isOwned: item.repairCenterId === repairCenterId,
           ...t,
           sourceWarehouse: source ? { id: source.id, name: source.name } : null,
           destinationWarehouse: dest ? { id: dest.id, name: dest.name } : null,
@@ -25953,7 +25922,6 @@ export function registerRoutes(app: Express): Server {
       const enrichedItems = await Promise.all(items.map(async (item) => {
         const product = await storage.getProduct(item.productId);
         return {
-          isOwned: item.repairCenterId === repairCenterId,
           productName: product?.name || "Prodotto sconosciuto",
           productSku: product?.sku || undefined,
           quantity: item.shippedQuantity || item.approvedQuantity || 0,
@@ -27720,7 +27688,6 @@ export function registerRoutes(app: Express): Server {
         const b2bPrice = product.costPrice || Math.round((product.unitPrice || 0) * 0.8);
         
         return {
-          isOwned: item.repairCenterId === repairCenterId,
           product,
           resellerStock: s.quantity,
           b2bPrice,
@@ -28359,7 +28326,6 @@ export function registerRoutes(app: Express): Server {
           const pendingRepairs = repairs.filter(r => !['delivered', 'cancelled'].includes(r.status || ''));
           
           return {
-          isOwned: item.repairCenterId === repairCenterId,
             ...customer,
             totalRepairs: repairs.length,
             completedRepairs: completedRepairs.length,
@@ -28429,7 +28395,6 @@ export function registerRoutes(app: Express): Server {
         const resellerStock = stockMap.get(phone.id) || 0;
         const b2bPrice = phone.costPrice || Math.round((phone.unitPrice || 0) * 0.8);
         return {
-          isOwned: item.repairCenterId === repairCenterId,
           ...phone,
           resellerStock,
           b2bPrice,
@@ -28466,7 +28431,6 @@ export function registerRoutes(app: Express): Server {
         const resellerStock = stockMap.get(accessory.id) || 0;
         const b2bPrice = accessory.costPrice || Math.round((accessory.unitPrice || 0) * 0.8);
         return {
-          isOwned: item.repairCenterId === repairCenterId,
           ...accessory,
           resellerStock,
           b2bPrice,
@@ -28507,7 +28471,6 @@ export function registerRoutes(app: Express): Server {
         const resellerStock = stockMap.get(part.id) || 0;
         const b2bPrice = part.costPrice || Math.round((part.unitPrice || 0) * 0.8);
         return {
-          isOwned: item.repairCenterId === repairCenterId,
           ...part,
           resellerStock,
           b2bPrice,
