@@ -14,6 +14,13 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
 import { useToast } from "@/hooks/use-toast";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+
+interface TeamMember {
+  id: string;
+  fullName: string;
+  role: string;
+}
 
 interface ExpenseReport {
   id: string;
@@ -36,8 +43,12 @@ const statusLabels: Record<string, { label: string; variant: "default" | "second
 
 export default function RepairCenterHrExpenses() {
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [newReport, setNewReport] = useState({ title: "", description: "", totalAmount: "" });
+  const [newReport, setNewReport] = useState({ title: "", description: "", totalAmount: "", userId: "" });
   const { toast } = useToast();
+
+  const { data: teamMembers = [] } = useQuery<TeamMember[]>({
+    queryKey: ["/api/repair-center/team"],
+  });
 
   const { data: expenseReports = [], isLoading } = useQuery<ExpenseReport[]>({
     queryKey: ["/api/repair-center/hr/expense-reports"],
@@ -50,7 +61,7 @@ export default function RepairCenterHrExpenses() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/repair-center/hr/expense-reports"] });
       setDialogOpen(false);
-      setNewReport({ title: "", description: "", totalAmount: "" });
+      setNewReport({ title: "", description: "", totalAmount: "", userId: "" });
       toast({ title: "Nota spese creata", description: "La nota spese è stata creata con successo." });
     },
     onError: (error: any) => {
@@ -172,6 +183,19 @@ export default function RepairCenterHrExpenses() {
           </DialogHeader>
           <div className="space-y-4">
             <div>
+              <label className="text-sm font-medium">Dipendente</label>
+              <Select value={newReport.userId} onValueChange={(value) => setNewReport({ ...newReport, userId: value })}>
+                <SelectTrigger data-testid="select-expense-employee">
+                  <SelectValue placeholder="Seleziona dipendente" />
+                </SelectTrigger>
+                <SelectContent>
+                  {teamMembers.map((member) => (
+                    <SelectItem key={member.id} value={member.id}>{member.fullName}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
               <label className="text-sm font-medium">Titolo</label>
               <Input value={newReport.title} onChange={(e) => setNewReport({ ...newReport, title: e.target.value })} placeholder="Es. Trasferta Milano" />
             </div>
@@ -186,7 +210,7 @@ export default function RepairCenterHrExpenses() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)}>Annulla</Button>
-            <Button onClick={() => createMutation.mutate({ ...newReport, totalAmount: parseFloat(newReport.totalAmount) || 0 })} disabled={createMutation.isPending || !newReport.title}>
+            <Button onClick={() => createMutation.mutate({ ...newReport, totalAmount: parseFloat(newReport.totalAmount) || 0 })} disabled={createMutation.isPending || !newReport.title || !newReport.userId}>
               Crea Nota Spese
             </Button>
           </DialogFooter>
