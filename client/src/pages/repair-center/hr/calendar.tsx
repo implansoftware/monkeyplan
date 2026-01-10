@@ -10,21 +10,19 @@ import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSam
 import { it } from "date-fns/locale";
 
 interface CalendarEvent {
-  id: string;
   userId: string;
-  eventType: 'leave' | 'sick' | 'expense' | 'clock';
-  title: string;
+  userName: string;
+  type: string;
   startDate: string;
-  endDate?: string;
-  status: string;
-  user?: { fullName: string };
+  endDate: string;
 }
 
 const eventTypeConfig: Record<string, { label: string; icon: any; color: string; bgColor: string }> = {
-  leave: { label: "Ferie", icon: CalendarDays, color: "text-emerald-600", bgColor: "bg-emerald-100 dark:bg-emerald-900/30" },
+  vacation: { label: "Ferie", icon: CalendarDays, color: "text-emerald-600", bgColor: "bg-emerald-100 dark:bg-emerald-900/30" },
+  permit: { label: "Permesso", icon: CalendarDays, color: "text-blue-600", bgColor: "bg-blue-100 dark:bg-blue-900/30" },
+  rol: { label: "ROL", icon: CalendarDays, color: "text-cyan-600", bgColor: "bg-cyan-100 dark:bg-cyan-900/30" },
   sick: { label: "Malattia", icon: Thermometer, color: "text-red-600", bgColor: "bg-red-100 dark:bg-red-900/30" },
   expense: { label: "Trasferta", icon: Receipt, color: "text-amber-600", bgColor: "bg-amber-100 dark:bg-amber-900/30" },
-  clock: { label: "Presenza", icon: Calendar, color: "text-blue-600", bgColor: "bg-blue-100 dark:bg-blue-900/30" }
 };
 
 export default function RepairCenterHrCalendar() {
@@ -35,6 +33,13 @@ export default function RepairCenterHrCalendar() {
 
   const { data: events = [], isLoading } = useQuery<CalendarEvent[]>({
     queryKey: ["/api/repair-center/hr/calendar", format(startDate, "yyyy-MM-dd"), format(endDate, "yyyy-MM-dd")],
+    queryFn: async () => {
+      const response = await fetch(`/api/repair-center/hr/calendar?startDate=${format(startDate, "yyyy-MM-dd")}&endDate=${format(endDate, "yyyy-MM-dd")}`, {
+        credentials: "include"
+      });
+      if (!response.ok) throw new Error("Failed to fetch calendar data");
+      return response.json();
+    }
   });
 
   const days = eachDayOfInterval({ start: startDate, end: endDate });
@@ -131,15 +136,15 @@ export default function RepairCenterHrCalendar() {
                         {format(day, "d")}
                       </div>
                       <div className="space-y-0.5">
-                        {dayEvents.slice(0, 3).map((event) => {
-                          const config = eventTypeConfig[event.eventType] || eventTypeConfig.clock;
+                        {dayEvents.slice(0, 3).map((event, idx) => {
+                          const config = eventTypeConfig[event.type] || eventTypeConfig.vacation;
                           return (
                             <div
-                              key={event.id}
+                              key={`${event.userId}-${event.type}-${idx}`}
                               className={`text-xs px-1 py-0.5 rounded truncate ${config.bgColor} ${config.color}`}
-                              title={`${event.user?.fullName}: ${event.title}`}
+                              title={`${event.userName}: ${config.label}`}
                             >
-                              {event.user?.fullName?.split(" ")[0] || ""}
+                              {event.userName?.split(" ")[0] || ""}
                             </div>
                           );
                         })}
