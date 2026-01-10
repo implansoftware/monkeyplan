@@ -189,6 +189,10 @@ export default function ResellerProducts() {
     queryKey: ["/api/warehouses/accessible"],
   });
 
+  const { data: suppliers = [] } = useQuery<Array<{ id: string; name: string; code: string }>>({
+    queryKey: ["/api/suppliers/list"],
+  });
+
   const stockMap = new Map<string, { totalStock: number; stockByCenter: StockByCenter[] }>();
   productsWithStock.forEach(item => {
     stockMap.set(item.product.id, { totalStock: item.totalStock, stockByCenter: item.stockByCenter });
@@ -1372,17 +1376,40 @@ export default function ResellerProducts() {
                     </div>
                   </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="warrantyMonths">Garanzia (mesi)</Label>
-                    <Input 
-                      id="warrantyMonths" 
-                      name="warrantyMonths" 
-                      type="number" 
-                      min="0" 
-                      defaultValue="3"
-                      placeholder="3"
-                      data-testid="input-create-warranty" 
-                    />
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="warrantyMonths">Garanzia (mesi)</Label>
+                      <Input 
+                        id="warrantyMonths" 
+                        name="warrantyMonths" 
+                        type="number" 
+                        min="0" 
+                        defaultValue="3"
+                        placeholder="3"
+                        data-testid="input-create-warranty" 
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="supplier">Fornitore</Label>
+                      <Select 
+                        defaultValue="none"
+                        onValueChange={(value) => {
+                          const hiddenInput = document.getElementById('create-supplier-hidden') as HTMLInputElement;
+                          if (hiddenInput) hiddenInput.value = value === "none" ? "" : value;
+                        }}
+                      >
+                        <SelectTrigger data-testid="select-create-supplier">
+                          <SelectValue placeholder="Seleziona fornitore..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">Nessun fornitore</SelectItem>
+                          {suppliers.map((s) => (
+                            <SelectItem key={s.id} value={s.name}>{s.name} ({s.code})</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <input type="hidden" id="create-supplier-hidden" name="supplier" defaultValue="" />
+                    </div>
                   </div>
                 </TabsContent>
 
@@ -1849,13 +1876,24 @@ export default function ResellerProducts() {
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="edit-supplier">Fornitore</Label>
-                        <Input 
-                          id="edit-supplier" 
-                          name="supplier" 
-                          placeholder="Nome fornitore" 
-                          defaultValue={editingProduct.supplier || ""} 
-                          data-testid="input-edit-supplier" 
-                        />
+                        <Select 
+                          defaultValue={editingProduct.supplier || "none"}
+                          onValueChange={(value) => {
+                            const hiddenInput = document.getElementById('edit-supplier-hidden') as HTMLInputElement;
+                            if (hiddenInput) hiddenInput.value = value === "none" ? "" : value;
+                          }}
+                        >
+                          <SelectTrigger data-testid="select-edit-supplier">
+                            <SelectValue placeholder="Seleziona fornitore..." />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="none">Nessun fornitore</SelectItem>
+                            {suppliers.map((s) => (
+                              <SelectItem key={s.id} value={s.name}>{s.name} ({s.code})</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <input type="hidden" id="edit-supplier-hidden" name="supplier" defaultValue={editingProduct.supplier || ""} />
                       </div>
                     </div>
 
