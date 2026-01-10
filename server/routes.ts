@@ -2557,13 +2557,27 @@ export function registerRoutes(app: Express): Server {
         postalCode: validatedData.cap || null,
       });
       
-      // Create automatic warehouse for the repair center
-      await storage.createWarehouse({
-        name: `Magazzino ${validatedData.name}`,
-        ownerId: center.id,
-        ownerType: 'repair_center',
-        isActive: true,
-      });
+      // Create automatic warehouse for the repair center (with compensating cleanup)
+      const existingWarehouse = await storage.getWarehouseByOwner('repair_center', center.id);
+      if (!existingWarehouse) {
+        try {
+          await storage.createWarehouse({
+            name: `Magazzino ${validatedData.name}`,
+            ownerId: center.id,
+            ownerType: 'repair_center',
+            isActive: true,
+          });
+        } catch (warehouseError: any) {
+          // Compensating cleanup: delete the center if warehouse creation fails
+          console.error('Failed to create warehouse, rolling back center creation:', warehouseError);
+          try {
+            await storage.deleteRepairCenter(center.id);
+          } catch (cleanupError) {
+            console.error('Failed to cleanup repair center:', cleanupError);
+          }
+          throw new Error('Impossibile creare il magazzino per il centro di riparazione');
+        }
+      }
       
       setActivityEntity(res, { type: 'repair-centers', id: center.id });
       res.status(201).json(center);
@@ -6819,13 +6833,27 @@ export function registerRoutes(app: Express): Server {
         postalCode: validated.cap || null,
       });
       
-      // Create automatic warehouse for the repair center
-      await storage.createWarehouse({
-        name: `Magazzino ${validated.name}`,
-        ownerId: center.id,
-        ownerType: 'repair_center',
-        isActive: true,
-      });
+      // Create automatic warehouse for the repair center (with compensating cleanup)
+      const existingWarehouse = await storage.getWarehouseByOwner('repair_center', center.id);
+      if (!existingWarehouse) {
+        try {
+          await storage.createWarehouse({
+            name: `Magazzino ${validated.name}`,
+            ownerId: center.id,
+            ownerType: 'repair_center',
+            isActive: true,
+          });
+        } catch (warehouseError: any) {
+          // Compensating cleanup: delete the center if warehouse creation fails
+          console.error('Failed to create warehouse, rolling back center creation:', warehouseError);
+          try {
+            await storage.deleteRepairCenter(center.id);
+          } catch (cleanupError) {
+            console.error('Failed to cleanup repair center:', cleanupError);
+          }
+          throw new Error('Impossibile creare il magazzino per il centro di riparazione');
+        }
+      }
       
       setActivityEntity(res, { type: 'repair-centers', id: center.id });
       res.status(201).json(center);
