@@ -11927,6 +11927,10 @@ export function registerRoutes(app: Express): Server {
       
       // Set product type to 'accessorio'
       product.productType = 'accessorio';
+      // Set category from accessoryType if not provided
+      if (!product.category) {
+        product.category = specs.accessoryType || 'accessorio';
+      }
       product.createdBy = req.user.role === 'reseller_collaborator' ? req.user.resellerId : req.user.id;
       
       
