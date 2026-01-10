@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
@@ -12,16 +12,35 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
-import { Smartphone, Search, Plus, Pencil, Trash2, Battery, HardDrive, Wifi, Loader2, ImagePlus, X, Image, ShoppingCart, Settings, Eye, Store, Save } from "lucide-react";
+import { Smartphone, Search, Plus, Pencil, Trash2, Battery, HardDrive, Wifi, Loader2, ImagePlus, X, Image, ShoppingCart, Settings, Eye, Store, Save, Warehouse, User, Package, Minus, Wrench as WrenchIcon } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useRef } from "react";
 import type { SmartphoneSpecs, Product, ResellerProduct } from "@shared/schema";
 import { SmartphoneWizard } from "@/components/SmartphoneWizard";
 import { getSpecsConfig } from "@/lib/device-category-config";
+
+type WarehouseStock = {
+  warehouseId: string;
+  warehouseName: string;
+  ownerType: 'reseller' | 'sub_reseller' | 'repair_center';
+  ownerId: string;
+  ownerName: string;
+  quantity: number;
+};
+
+type AccessibleWarehouse = {
+  id: string;
+  name: string;
+  ownerType: string;
+  ownerId: string;
+  isActive: boolean;
+  owner?: { id: string; username: string; fullName: string | null } | null;
+};
 
 type SmartphoneWithSpecs = Product & {
   specs: SmartphoneSpecs | null;
@@ -139,6 +158,17 @@ export default function SmartphoneCatalog() {
   const [marketplacePrice, setMarketplacePrice] = useState("");
   const [marketplaceMinQty, setMarketplaceMinQty] = useState("1");
 
+  // Stock management state
+  const [editStock, setEditStock] = useState<Array<{ 
+    warehouseId: string; 
+    warehouseName: string;
+    ownerType: 'reseller' | 'sub_reseller' | 'repair_center';
+    ownerName: string;
+    quantity: number; 
+    originalQuantity: number 
+  }>>([]);
+  const [loadingEditStock, setLoadingEditStock] = useState(false);
+
   const [formData, setFormData] = useState({
     name: "",
     sku: "",
@@ -178,6 +208,10 @@ export default function SmartphoneCatalog() {
   // Mappa per accesso rapido alle assegnazioni
   const assignmentMap = new Map(assignments.map(a => [a.productId, a]));
 
+  // Query per magazzini accessibili
+  const { data: accessibleWarehouses = [] } = useQuery<AccessibleWarehouse[]>({
+    queryKey: ["/api/warehouses/accessible"],
+  });
   
   // Mutation per aggiornare impostazioni venditore
   const updateSettingsMutation = useMutation({
@@ -274,11 +308,19 @@ export default function SmartphoneCatalog() {
       queryClient.invalidateQueries({ queryKey: ["/api/smartphones"] });
       setDialogOpen(false);
       setEditingSmartphone(null);
+      setEditStock([]);
       resetForm();
       toast({ title: "Smartphone aggiornato", description: "Le modifiche sono state salvate." });
     },
     onError: (error: any) => {
       toast({ title: "Errore", description: error.message, variant: "destructive" });
+    },
+  });
+
+  // Mutation per aggiornare stock
+  const updateStockMutation = useMutation({
+    mutationFn: async ({ productId, warehouseId, quantity }: { productId: string; warehouseId: string; quantity: number }) => {
+      return apiRequest("POST", `/api/reseller/products/${productId}/stock`, { warehouseId, quantity });
     },
   });
 
@@ -410,10 +452,12 @@ export default function SmartphoneCatalog() {
     });
   };
 
-  const openEditDialog = (smartphone: SmartphoneWithSpecs) => {
+  const openEditDialog = async (smartphone: SmartphoneWithSpecs) => {
     setEditingSmartphone(smartphone);
     setImageFile(null);
     setImagePreview(smartphone.imageUrl || null);
+    setLoadingEditStock(true);
+    setEditStock([]);
     setFormData({
       name: smartphone.name,
       sku: smartphone.sku,
@@ -437,9 +481,58 @@ export default function SmartphoneCatalog() {
       notes: smartphone.specs?.notes || "",
     });
     setDialogOpen(true);
+    
+    // Load stock for this product
+    try {
+      const res = await fetch(`/api/reseller/products/${smartphone.id}/stock`, {
+        credentials: 'include'
+      });
+      if (res.ok) {
+        const data: WarehouseStock[] = await res.json();
+        setEditStock(data.map(s => ({
+          warehouseId: s.warehouseId,
+          warehouseName: s.warehouseName,
+          ownerType: s.ownerType,
+          ownerName: s.ownerName,
+          quantity: s.quantity,
+          originalQuantity: s.quantity
+        })));
+      } else {
+        setEditStock([]);
+      }
+    } catch (error) {
+      setEditStock([]);
+    } finally {
+      setLoadingEditStock(false);
+    }
+  };
+  
+  // Stock helper functions
+  const addEditStock = (warehouseId: string) => {
+    if (warehouseId && !editStock.find(s => s.warehouseId === warehouseId)) {
+      const warehouse = accessibleWarehouses.find(w => w.id === warehouseId);
+      setEditStock([...editStock, { 
+        warehouseId, 
+        warehouseName: warehouse?.name || 'Magazzino',
+        ownerType: (warehouse?.ownerType || 'repair_center') as 'reseller' | 'sub_reseller' | 'repair_center',
+        ownerName: warehouse?.owner?.fullName || warehouse?.owner?.username || '',
+        quantity: 0, 
+        originalQuantity: 0 
+      }]);
+    }
   };
 
-  const handleSubmit = () => {
+  const updateEditStock = (warehouseId: string, quantity: number) => {
+    setEditStock(editStock.map(s => 
+      s.warehouseId === warehouseId ? { ...s, quantity } : s
+    ));
+  };
+
+  const removeEditStock = (warehouseId: string) => {
+    setEditStock(editStock.filter(s => s.warehouseId !== warehouseId));
+  };
+
+  const handleSubmit = async () => {
     const product = {
       name: formData.name,
       sku: formData.sku,
@@ -467,7 +560,27 @@ export default function SmartphoneCatalog() {
     };
 
     if (editingSmartphone) {
-      updateMutation.mutate({ productId: editingSmartphone.id, data: { product, specs } });
+      const productId = editingSmartphone.id;
+      const currentEditStock = [...editStock];
+      
+      try {
+        await updateMutation.mutateAsync({ productId, data: { product, specs } });
+        
+        // Update stock for each warehouse that changed
+        const stockPromises = currentEditStock
+          .filter(s => s.quantity !== s.originalQuantity)
+          .map(s => updateStockMutation.mutateAsync({
+            productId: productId,
+            warehouseId: s.warehouseId,
+            quantity: s.quantity,
+          }));
+        
+        if (stockPromises.length > 0) {
+          await Promise.all(stockPromises);
+        }
+      } catch (error) {
+        // Error handled by mutation
+      }
     } else {
       createMutation.mutate({ product, specs, imageFile });
     }
@@ -1160,6 +1273,116 @@ export default function SmartphoneCatalog() {
                   </div>
                 </div>
               </div>
+
+            {/* Sezione Magazzino - solo in modifica */}
+            {editingSmartphone && (
+              <div className="space-y-4 border-t pt-4">
+                <div className="flex items-center justify-between">
+                  <Label className="text-base font-medium flex items-center gap-2">
+                    <Package className="h-4 w-4" />
+                    Giacenza Magazzini
+                  </Label>
+                  <Select
+                    value=""
+                    onValueChange={(val) => addEditStock(val)}
+                  >
+                    <SelectTrigger className="w-[200px]" data-testid="select-add-warehouse">
+                      <SelectValue placeholder="Aggiungi magazzino..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {accessibleWarehouses
+                        .filter(w => !editStock.find(s => s.warehouseId === w.id))
+                        .map(w => (
+                          <SelectItem key={w.id} value={w.id} data-testid={`option-warehouse-${w.id}`}>
+                            <div className="flex items-center gap-2">
+                              {w.ownerType === 'reseller' && <User className="h-3 w-3 text-blue-500" />}
+                              {w.ownerType === 'sub_reseller' && <Store className="h-3 w-3 text-green-500" />}
+                              {w.ownerType === 'repair_center' && <WrenchIcon className="h-3 w-3 text-orange-500" />}
+                              {w.name}
+                            </div>
+                          </SelectItem>
+                        ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {loadingEditStock ? (
+                  <div className="flex items-center justify-center py-4">
+                    <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                    <span className="ml-2 text-sm text-muted-foreground">Caricamento giacenze...</span>
+                  </div>
+                ) : editStock.length === 0 ? (
+                  <p className="text-sm text-muted-foreground italic py-2">
+                    Nessuna giacenza configurata. Seleziona un magazzino per aggiungere stock.
+                  </p>
+                ) : (
+                  <div className="space-y-2">
+                    {editStock.map((stock) => (
+                      <div 
+                        key={stock.warehouseId} 
+                        className="flex items-center gap-3 p-2 rounded-md border bg-muted/30"
+                        data-testid={`stock-row-${stock.warehouseId}`}
+                      >
+                        <div className="flex items-center gap-2 flex-1 min-w-0">
+                          {stock.ownerType === 'reseller' && <User className="h-4 w-4 text-blue-500 shrink-0" />}
+                          {stock.ownerType === 'sub_reseller' && <Store className="h-4 w-4 text-green-500 shrink-0" />}
+                          {stock.ownerType === 'repair_center' && <WrenchIcon className="h-4 w-4 text-orange-500 shrink-0" />}
+                          <div className="min-w-0">
+                            <p className="text-sm font-medium truncate">{stock.warehouseName}</p>
+                            <p className="text-xs text-muted-foreground truncate">{stock.ownerName}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={() => updateEditStock(stock.warehouseId, Math.max(0, stock.quantity - 1))}
+                            data-testid={`button-decrease-${stock.warehouseId}`}
+                          >
+                            <Minus className="h-3 w-3" />
+                          </Button>
+                          <Input
+                            type="number"
+                            min="0"
+                            value={stock.quantity}
+                            onChange={(e) => updateEditStock(stock.warehouseId, Math.max(0, parseInt(e.target.value) || 0))}
+                            className="w-16 text-center"
+                            data-testid={`input-quantity-${stock.warehouseId}`}
+                          />
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={() => updateEditStock(stock.warehouseId, stock.quantity + 1)}
+                            data-testid={`button-increase-${stock.warehouseId}`}
+                          >
+                            <Plus className="h-3 w-3" />
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-destructive hover:text-destructive"
+                            onClick={() => removeEditStock(stock.warehouseId)}
+                            data-testid={`button-remove-${stock.warehouseId}`}
+                          >
+                            <X className="h-3 w-3" />
+                          </Button>
+                        </div>
+                        {stock.quantity !== stock.originalQuantity && (
+                          <span className="text-xs text-muted-foreground">
+                            (era: {stock.originalQuantity})
+                          </span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           <DialogFooter>
