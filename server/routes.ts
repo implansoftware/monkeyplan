@@ -5313,7 +5313,6 @@ export function registerRoutes(app: Express): Server {
           const assignedRepairCenters = await storage.listRepairCentersForStaff(member.id);
           const assignedSubResellerIds = await storage.listSubResellerIdsForStaff(member.id);
           return {
-          isOwned: item.repairCenterId === repairCenterId,
             ...member,
             password: undefined, // Never send password
             permissions,
