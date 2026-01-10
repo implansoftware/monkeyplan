@@ -7666,17 +7666,17 @@ export function registerRoutes(app: Express): Server {
         const resellerPrice = resellerPrices.find(p => p.serviceItemId === item.id);
         
         // Priority: center price > reseller price > base price
-        let effectivePrice = item.basePriceCents;
-        let effectiveLaborMinutes = item.laborMinutes;
+        let effectivePrice = item.defaultPriceCents;
+        let effectiveLaborMinutes = item.defaultLaborMinutes;
         let priceSource: 'base' | 'reseller' | 'center' = 'base';
         
         if (centerPrice) {
           effectivePrice = centerPrice.priceCents;
-          effectiveLaborMinutes = centerPrice.laborMinutes ?? item.laborMinutes;
+          effectiveLaborMinutes = centerPrice.laborMinutes ?? item.defaultLaborMinutes;
           priceSource = 'center';
         } else if (resellerPrice) {
           effectivePrice = resellerPrice.priceCents;
-          effectiveLaborMinutes = resellerPrice.laborMinutes ?? item.laborMinutes;
+          effectiveLaborMinutes = resellerPrice.laborMinutes ?? item.defaultLaborMinutes;
           priceSource = 'reseller';
         }
         
