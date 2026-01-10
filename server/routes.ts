@@ -983,11 +983,15 @@ export function registerRoutes(app: Express): Server {
       const repairCenters = await storage.listRepairCenters();
       const myRepairCenters = repairCenters.filter(rc => rc.resellerId === req.user!.id);
       
-      // Include: global items (no owner) + items owned by reseller's repair centers
+      // Include: global items (no owner) + reseller items + items owned by reseller's repair centers
       const activeItems = items.filter(item => 
-        item.isActive && (!item.repairCenterId || myRepairCenters.some(rc => rc.id === item.repairCenterId))
+        item.isActive && (
+          (!item.resellerId && !item.repairCenterId) || // Global items
+          item.resellerId === req.user!.id || // Reseller own items
+          myRepairCenters.some(rc => rc.id === item.repairCenterId) // Repair center items
+        )
       );
-      
+
       // Get all custom prices for this reseller
       const resellerPrices = await storage.listServiceItemPricesByReseller(req.user.id);
       
