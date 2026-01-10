@@ -29917,8 +29917,12 @@ export function registerRoutes(app: Express): Server {
   };
 
   const getParentResellerForRepairCenter = async (repairCenterId: string): Promise<string | null> => {
-    const repairCenter = await storage.getUser(repairCenterId);
-    return repairCenter?.resellerId || null;
+    // Look up in repair_centers table first, fallback to users table
+    const repairCenter = await storage.getRepairCenter(repairCenterId);
+    if (repairCenter?.resellerId) return repairCenter.resellerId;
+    // Fallback to user.resellerId for repair center staff users
+    const user = await storage.getUser(repairCenterId);
+    return user?.resellerId || null;
   };
 
   app.get("/api/repair-center/hr/dashboard", requireRole("repair_center", "repair_center_staff"), async (req, res) => {
