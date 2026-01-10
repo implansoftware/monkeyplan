@@ -2986,6 +2986,7 @@ export function registerRoutes(app: Express): Server {
       
       res.sendStatus(204);
     } catch (error: any) {
+      console.error('[ERROR] GET /api/products:', error);
       res.status(500).send(error.message);
     }
   });
@@ -24995,6 +24996,7 @@ export function registerRoutes(app: Express): Server {
   });
 
   app.get("/api/warehouses/:warehouseId/stock", requireAuth, async (req, res) => {
+    console.log('[DEBUG] GET /api/warehouses/:warehouseId/stock called for:', req.params.warehouseId);
     try {
       const stock = await storage.listWarehouseStock(req.params.warehouseId);
       const enrichedStock = await Promise.all(stock.map(async (item) => {
@@ -25003,6 +25005,7 @@ export function registerRoutes(app: Express): Server {
       }));
       res.json(enrichedStock);
     } catch (error: any) {
+      console.error('[ERROR] GET /api/warehouses/:warehouseId/stock:', error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -25059,6 +25062,7 @@ export function registerRoutes(app: Express): Server {
   });
 
   app.get("/api/warehouses/:warehouseId/movements", requireAuth, async (req, res) => {
+    console.log('[DEBUG] GET /api/warehouses/:warehouseId/movements called for:', req.params.warehouseId);
     try {
       const movements = await storage.listWarehouseMovements({ warehouseId: req.params.warehouseId });
       const enrichedMovements = await Promise.all(movements.map(async (mov) => {
