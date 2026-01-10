@@ -38,6 +38,15 @@ type StockByCenter = {
   quantity: number;
 };
 
+type WarehouseStock = {
+  warehouseId: string;
+  warehouseName: string;
+  ownerType: 'reseller' | 'sub_reseller' | 'repair_center';
+  ownerId: string;
+  ownerName: string;
+  quantity: number;
+};
+
 type AccessibleWarehouse = {
   id: string;
   name: string;
@@ -118,7 +127,7 @@ export default function ResellerProducts() {
   const [stockDialogOpen, setStockDialogOpen] = useState(false);
   const [stockProduct, setStockProduct] = useState<EnrichedProduct | null>(null);
   const [stockValues, setStockValues] = useState<Record<string, number>>({});
-  const [stockByCenters, setStockByCenters] = useState<StockByCenter[]>([]);
+  const [warehouseStocks, setWarehouseStocks] = useState<WarehouseStock[]>([]);
   const [loadingStock, setLoadingStock] = useState(false);
   const [initialStock, setInitialStock] = useState<Array<{ warehouseId: string; quantity: number }>>([]);
   const [wizardStep, setWizardStep] = useState<"info" | "pricing" | "inventory" | "compatibility">("info");
@@ -279,8 +288,8 @@ export default function ResellerProducts() {
   });
 
   const updateStockMutation = useMutation({
-    mutationFn: async ({ productId, repairCenterId, quantity, notes }: { productId: string; repairCenterId: string; quantity: number; notes?: string }) => {
-      const res = await apiRequest("POST", `/api/reseller/products/${productId}/stock`, { repairCenterId, quantity, notes });
+    mutationFn: async ({ productId, warehouseId, repairCenterId, quantity, notes }: { productId: string; warehouseId?: string; repairCenterId?: string; quantity: number; notes?: string }) => {
+      const res = await apiRequest("POST", `/api/reseller/products/${productId}/stock`, { warehouseId, repairCenterId, quantity, notes });
       return await res.json();
     },
     onSuccess: () => {
@@ -522,20 +531,20 @@ export default function ResellerProducts() {
         credentials: 'include'
       });
       if (res.ok) {
-        const data: StockByCenter[] = await res.json();
-        setStockByCenters(data);
+        const data: WarehouseStock[] = await res.json();
+        setWarehouseStocks(data);
         const initialValues: Record<string, number> = {};
         data.forEach(s => {
-          initialValues[s.repairCenterId] = s.quantity;
+          initialValues[s.warehouseId] = s.quantity;
         });
         setStockValues(initialValues);
       } else {
         toast({ title: "Errore", description: "Impossibile caricare i dati stock", variant: "destructive" });
-        setStockByCenters([]);
+        setWarehouseStocks([]);
       }
     } catch (error) {
       toast({ title: "Errore", description: "Errore di rete", variant: "destructive" });
-      setStockByCenters([]);
+      setWarehouseStocks([]);
     } finally {
       setLoadingStock(false);
     }
@@ -543,14 +552,14 @@ export default function ResellerProducts() {
 
   const saveAllStockChanges = async () => {
     if (!stockProduct) return;
-    if (stockByCenters.length === 0) return;
+    if (warehouseStocks.length === 0) return;
 
-    const promises = stockByCenters.map(s => {
-      const newQuantity = stockValues[s.repairCenterId] ?? s.quantity;
+    const promises = warehouseStocks.map(s => {
+      const newQuantity = stockValues[s.warehouseId] ?? s.quantity;
       if (newQuantity !== s.quantity) {
         return updateStockMutation.mutateAsync({
           productId: stockProduct.id,
-          repairCenterId: s.repairCenterId,
+          warehouseId: s.warehouseId,
           quantity: newQuantity,
         });
       }
@@ -562,7 +571,7 @@ export default function ResellerProducts() {
     setStockDialogOpen(false);
     setStockProduct(null);
     setStockValues({});
-    setStockByCenters([]);
+    setWarehouseStocks([]);
   };
 
   const categories = Array.from(new Set(products.map((p) => p.category))).filter(Boolean);
@@ -2088,7 +2097,7 @@ export default function ResellerProducts() {
           setStockDialogOpen(false);
           setStockProduct(null);
           setStockValues({});
-          setStockByCenters([]);
+          setWarehouseStocks([]);
         }
       }}>
         <DialogContent className="max-w-md">
@@ -2099,7 +2108,7 @@ export default function ResellerProducts() {
             </DialogTitle>
             <DialogDescription>
               {stockProduct && (
-                <>Modifica le quantità di <strong>{stockProduct.name}</strong> nei tuoi centri di riparazione</>
+                <>Modifica le quantità di <strong>{stockProduct.name}</strong> nei tuoi magazzini</>
               )}
             </DialogDescription>
           </DialogHeader>
@@ -2110,33 +2119,53 @@ export default function ResellerProducts() {
                   <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
                   <span className="ml-2 text-muted-foreground">Caricamento...</span>
                 </div>
-              ) : stockByCenters.length === 0 ? (
+              ) : warehouseStocks.length === 0 ? (
                 <div className="text-center py-4 text-muted-foreground">
                   <Warehouse className="h-10 w-10 mx-auto mb-2 opacity-50" />
-                  <p>Nessun centro di riparazione configurato.</p>
-                  <p className="text-sm">Crea prima un centro di riparazione dalla sezione dedicata.</p>
+                  <p>Nessun magazzino configurato.</p>
+                  <p className="text-sm">Crea prima un magazzino dalla sezione dedicata.</p>
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {stockByCenters.map(center => (
-                    <div key={center.repairCenterId} className="flex items-center justify-between gap-4 p-3 rounded-lg border">
-                      <div className="flex-1">
-                        <div className="font-medium">{center.repairCenterName}</div>
-                        <div className="text-xs text-muted-foreground">
-                          Attuale: {center.quantity} unità
+                  {warehouseStocks.map(warehouse => (
+                    <div key={warehouse.warehouseId} className="flex items-center justify-between gap-4 p-3 rounded-lg border">
+                      <div className="flex items-center gap-3 flex-1">
+                        <div className={`p-2 rounded-lg ${
+                          warehouse.ownerType === 'reseller' ? 'bg-blue-100 dark:bg-blue-900' :
+                          warehouse.ownerType === 'sub_reseller' ? 'bg-purple-100 dark:bg-purple-900' :
+                          'bg-green-100 dark:bg-green-900'
+                        }`}>
+                          {warehouse.ownerType === 'reseller' ? (
+                            <Store className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                          ) : warehouse.ownerType === 'sub_reseller' ? (
+                            <User className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+                          ) : (
+                            <Warehouse className="h-4 w-4 text-green-600 dark:text-green-400" />
+                          )}
+                        </div>
+                        <div className="flex-1">
+                          <div className="font-medium">{warehouse.warehouseName}</div>
+                          <div className="text-xs text-muted-foreground">
+                            {warehouse.ownerType === 'reseller' ? 'Rivenditore' :
+                             warehouse.ownerType === 'sub_reseller' ? 'Sotto-Rivenditore' :
+                             'Centro Riparazione'} • {warehouse.ownerName}
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            Attuale: {warehouse.quantity} unità
+                          </div>
                         </div>
                       </div>
                       <div className="w-24">
                         <Input
                           type="number"
                           min="0"
-                          value={stockValues[center.repairCenterId] ?? center.quantity}
+                          value={stockValues[warehouse.warehouseId] ?? warehouse.quantity}
                           onChange={(e) => setStockValues({
                             ...stockValues,
-                            [center.repairCenterId]: parseInt(e.target.value) || 0
+                            [warehouse.warehouseId]: parseInt(e.target.value) || 0
                           })}
                           className="text-center"
-                          data-testid={`input-stock-${center.repairCenterId}`}
+                          data-testid={`input-stock-${warehouse.warehouseId}`}
                         />
                       </div>
                     </div>
@@ -2150,14 +2179,14 @@ export default function ResellerProducts() {
                     setStockDialogOpen(false);
                     setStockProduct(null);
                     setStockValues({});
-                    setStockByCenters([]);
+                    setWarehouseStocks([]);
                   }}
                 >
                   Annulla
                 </Button>
                 <Button 
                   onClick={saveAllStockChanges}
-                  disabled={updateStockMutation.isPending || loadingStock || stockByCenters.length === 0}
+                  disabled={updateStockMutation.isPending || loadingStock || warehouseStocks.length === 0}
                   data-testid="button-save-stock"
                 >
                   {updateStockMutation.isPending ? (

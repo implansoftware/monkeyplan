@@ -6543,14 +6543,19 @@ export function registerRoutes(app: Express): Server {
         return res.status(403).send("Non puoi visualizzare lo stock di prodotti che non hai creato");
       }
       
-      const stockByCenter = await storage.getResellerProductStockByCenter(req.params.id, req.user.id);
-      res.json(stockByCenter);
+      // Use full warehouse stock (includes reseller, sub-resellers, and repair centers)
+      // Get the effective reseller ID (for staff users, use their parent reseller)
+      const effectiveResellerId = req.user.role === 'reseller_staff' && req.user.resellerId 
+        ? req.user.resellerId 
+        : req.user.id;
+      const stockByWarehouse = await storage.getResellerFullWarehouseStock(req.params.id, effectiveResellerId);
+      res.json(stockByWarehouse);
     } catch (error: any) {
       res.status(500).send(error.message);
     }
   });
 
-  // Reseller Products - Update stock for a product in a specific repair center
+  // Reseller Products - Update stock for a product in a specific warehouse (repair center, reseller, or sub-reseller)
   app.post("/api/reseller/products/:id/stock", requireRole("reseller", "reseller_staff"), requireModulePermission("products", "update"), async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
@@ -6564,17 +6569,70 @@ export function registerRoutes(app: Express): Server {
         return res.status(403).send("Non puoi modificare lo stock di prodotti che non hai creato");
       }
       
-      const { repairCenterId, quantity, notes } = req.body;
+      const { warehouseId, repairCenterId, quantity, notes } = req.body;
+      const targetWarehouseId = warehouseId || repairCenterId;
       
-      if (!repairCenterId) {
-        return res.status(400).send("repairCenterId è richiesto");
+      if (!targetWarehouseId) {
+        return res.status(400).send("warehouseId o repairCenterId è richiesto");
       }
       
       if (typeof quantity !== 'number') {
         return res.status(400).send("quantity deve essere un numero");
       }
       
-      // Verify repair center belongs to reseller
+      // If warehouseId is provided, verify it belongs to reseller's hierarchy
+      if (warehouseId) {
+        const warehouse = await storage.getWarehouse(warehouseId);
+        if (!warehouse) {
+          return res.status(404).send("Magazzino non trovato");
+        }
+        
+        // Get the effective reseller ID (for staff users, use their parent reseller)
+        const effectiveResellerId = req.user.role === 'reseller_staff' && req.user.resellerId 
+          ? req.user.resellerId 
+          : req.user.id;
+        
+        let isAuthorized = false;
+        
+        if (warehouse.ownerType === 'reseller' && warehouse.ownerId === effectiveResellerId) {
+          isAuthorized = true;
+        } else if (warehouse.ownerType === 'sub_reseller') {
+          // Check if sub-reseller belongs to this reseller
+          const subReseller = await storage.getUser(warehouse.ownerId);
+          if (subReseller && subReseller.parentResellerId === effectiveResellerId) {
+            isAuthorized = true;
+          }
+        } else if (warehouse.ownerType === 'repair_center') {
+          // Check if repair center belongs to this reseller
+          const center = await storage.getRepairCenter(warehouse.ownerId);
+          if (center && center.resellerId === effectiveResellerId) {
+            isAuthorized = true;
+          }
+        }
+        
+        if (!isAuthorized) {
+          return res.status(403).send("Non puoi modificare lo stock in magazzini che non ti appartengono");
+        }
+        
+        // Update warehouse stock directly
+        const stockItem = await storage.getWarehouseStockItem(warehouseId, req.params.id);
+        const currentQuantity = stockItem?.quantity || 0;
+        const movement = {
+          warehouseId,
+          productId: req.params.id,
+          movementType: quantity > currentQuantity ? 'in' : 'out',
+          quantity: Math.abs(quantity - currentQuantity),
+          notes: notes || 'Modifica manuale stock',
+          createdBy: req.user.id,
+        };
+        
+        await storage.createWarehouseMovement(movement as any);
+        await storage.upsertWarehouseStock({ warehouseId, productId: req.params.id, quantity });
+        
+        return res.json({ success: true, warehouseId, quantity });
+      }
+      
+      // Legacy: repairCenterId only - verify repair center belongs to reseller
       const repairCenter = await storage.getRepairCenter(repairCenterId);
       if (!repairCenter) {
         return res.status(404).send("Centro di riparazione non trovato");

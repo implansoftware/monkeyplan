@@ -279,6 +279,7 @@ export interface IStorage {
   // Reseller Inventory (for own products in own centers)
   getResellerProductsWithStock(resellerId: string): Promise<Array<{ product: Product; stockByCenter: Array<{ repairCenterId: string; repairCenterName: string; quantity: number }>; totalStock: number }>>;
   getResellerProductStockByCenter(productId: string, resellerId: string): Promise<Array<{ repairCenterId: string; repairCenterName: string; quantity: number }>>;
+  getResellerFullWarehouseStock(productId: string, resellerId: string): Promise<Array<{ warehouseId: string; warehouseName: string; ownerType: 'reseller' | 'sub_reseller' | 'repair_center'; ownerId: string; ownerName: string; quantity: number }>>;
   
   // Activity Logs
   createActivityLog(log: InsertActivityLog): Promise<ActivityLog>;
@@ -2913,6 +2914,126 @@ export class DatabaseStorage implements IStorage {
       repairCenterName: center.name,
       quantity: stockMap.get(center.id)?.quantity || 0,
     }));
+  }
+
+  // Get full warehouse stock for a reseller product (includes reseller, sub-resellers, and repair centers)
+  async getResellerFullWarehouseStock(productId: string, resellerId: string): Promise<Array<{ warehouseId: string; warehouseName: string; ownerType: 'reseller' | 'sub_reseller' | 'repair_center'; ownerId: string; ownerName: string; quantity: number }>> {
+    // Verify product belongs to reseller
+    const [product] = await db.select()
+      .from(products)
+      .where(and(
+        eq(products.id, productId),
+        eq(products.createdBy, resellerId)
+      ));
+    
+    if (!product) {
+      return [];
+    }
+    
+    const result: Array<{ warehouseId: string; warehouseName: string; ownerType: 'reseller' | 'sub_reseller' | 'repair_center'; ownerId: string; ownerName: string; quantity: number }> = [];
+    
+    // 1. Get reseller's own warehouse
+    const resellerWarehouses = await db.select()
+      .from(warehouses)
+      .where(and(
+        eq(warehouses.ownerType, 'reseller'),
+        eq(warehouses.ownerId, resellerId),
+        eq(warehouses.isActive, true)
+      ));
+    
+    // Get reseller name
+    const [resellerUser] = await db.select().from(users).where(eq(users.id, resellerId));
+    const resellerName = resellerUser?.username || 'Rivenditore';
+    
+    for (const wh of resellerWarehouses) {
+      const [stock] = await db.select()
+        .from(warehouseStock)
+        .where(and(
+          eq(warehouseStock.warehouseId, wh.id),
+          eq(warehouseStock.productId, productId)
+        ));
+      
+      result.push({
+        warehouseId: wh.id,
+        warehouseName: wh.name,
+        ownerType: 'reseller',
+        ownerId: resellerId,
+        ownerName: resellerName,
+        quantity: stock?.quantity || 0,
+      });
+    }
+    
+    // 2. Get sub-resellers' warehouses (users with parentResellerId = resellerId)
+    const subResellers = await db.select()
+      .from(users)
+      .where(and(
+        eq(users.parentResellerId, resellerId),
+        eq(users.role, 'reseller'),
+        eq(users.isActive, true)
+      ));
+    
+    for (const subReseller of subResellers) {
+      const subWarehouses = await db.select()
+        .from(warehouses)
+        .where(and(
+          eq(warehouses.ownerType, 'sub_reseller'),
+          eq(warehouses.ownerId, subReseller.id),
+          eq(warehouses.isActive, true)
+        ));
+      
+      for (const wh of subWarehouses) {
+        const [stock] = await db.select()
+          .from(warehouseStock)
+          .where(and(
+            eq(warehouseStock.warehouseId, wh.id),
+            eq(warehouseStock.productId, productId)
+          ));
+        
+        result.push({
+          warehouseId: wh.id,
+          warehouseName: wh.name,
+          ownerType: 'sub_reseller',
+          ownerId: subReseller.id,
+          ownerName: subReseller.username,
+          quantity: stock?.quantity || 0,
+        });
+      }
+    }
+    
+    // 3. Get repair centers' warehouses
+    const resellerCenters = await db.select()
+      .from(repairCenters)
+      .where(eq(repairCenters.resellerId, resellerId));
+    
+    for (const center of resellerCenters) {
+      const centerWarehouses = await db.select()
+        .from(warehouses)
+        .where(and(
+          eq(warehouses.ownerType, 'repair_center'),
+          eq(warehouses.ownerId, center.id),
+          eq(warehouses.isActive, true)
+        ));
+      
+      for (const wh of centerWarehouses) {
+        const [stock] = await db.select()
+          .from(warehouseStock)
+          .where(and(
+            eq(warehouseStock.warehouseId, wh.id),
+            eq(warehouseStock.productId, productId)
+          ));
+        
+        result.push({
+          warehouseId: wh.id,
+          warehouseName: wh.name,
+          ownerType: 'repair_center',
+          ownerId: center.id,
+          ownerName: center.name,
+          quantity: stock?.quantity || 0,
+        });
+      }
+    }
+    
+    return result;
   }
 
   // Activity Logs
