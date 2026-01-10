@@ -28882,6 +28882,33 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  app.patch("/api/reseller/hr/clock-events/:id", requireRole("reseller", "reseller_staff"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      const resellerId = req.user.role === "reseller" ? req.user.id : req.user.resellerId;
+      if (!resellerId) return res.status(400).json({ error: "Reseller ID non trovato" });
+      
+      const existing = await storage.getHrClockEvent(req.params.id);
+      if (!existing) return res.status(404).json({ error: "Timbratura non trovata" });
+      
+      // Verifica che la timbratura appartenga al reseller
+      if (existing.resellerId !== resellerId) {
+        return res.status(403).json({ error: "Non autorizzato a modificare questa timbratura" });
+      }
+      
+      const { eventType, eventTime, notes } = req.body;
+      const updateData: any = {};
+      if (eventType !== undefined) updateData.eventType = eventType;
+      if (eventTime !== undefined) updateData.eventTime = new Date(eventTime);
+      if (notes !== undefined) updateData.notes = notes;
+      
+      const updated = await storage.updateHrClockEvent(req.params.id, updateData);
+      res.json(updated);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   // HR Leave Requests (Ferie/Permessi)
   app.get("/api/reseller/hr/leave-requests", requireRole("reseller", "reseller_staff"), async (req, res) => {
     try {
@@ -30065,6 +30092,36 @@ export function registerRoutes(app: Express): Server {
       });
       
       res.json(event);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.patch("/api/repair-center/hr/clock-events/:id", requireRole("repair_center", "repair_center_staff"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      const repairCenterId = getRepairCenterIdFromUser(req.user);
+      if (!repairCenterId) return res.status(400).json({ error: "Repair Center ID non trovato" });
+      
+      const parentResellerId = await getParentResellerForRepairCenter(repairCenterId);
+      if (!parentResellerId) return res.status(400).json({ error: "Reseller parent non trovato" });
+      
+      const existing = await storage.getHrClockEvent(req.params.id);
+      if (!existing) return res.status(404).json({ error: "Timbratura non trovata" });
+      
+      // Verifica che la timbratura appartenga al reseller parent
+      if (existing.resellerId !== parentResellerId) {
+        return res.status(403).json({ error: "Non autorizzato a modificare questa timbratura" });
+      }
+      
+      const { eventType, eventTime, notes } = req.body;
+      const updateData: any = {};
+      if (eventType !== undefined) updateData.eventType = eventType;
+      if (eventTime !== undefined) updateData.eventTime = new Date(eventTime);
+      if (notes !== undefined) updateData.notes = notes;
+      
+      const updated = await storage.updateHrClockEvent(req.params.id, updateData);
+      res.json(updated);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }

@@ -8853,6 +8853,16 @@ export class DatabaseStorage implements IStorage {
     return event;
   }
 
+  async getHrClockEvent(id: string): Promise<HrClockEvent | undefined> {
+    const [event] = await db.select().from(hrClockEvents).where(eq(hrClockEvents.id, id));
+    return event;
+  }
+
+  async updateHrClockEvent(id: string, data: Partial<InsertHrClockEvent>): Promise<HrClockEvent> {
+    const [event] = await db.update(hrClockEvents).set(data).where(eq(hrClockEvents.id, id)).returning();
+    return event;
+  }
+
   async listHrClockEvents(filters: { userId?: string; resellerIds?: string[]; startDate?: Date; endDate?: Date }): Promise<any[]> {
     const conditions = [];
     if (filters.userId) conditions.push(eq(hrClockEvents.userId, filters.userId));

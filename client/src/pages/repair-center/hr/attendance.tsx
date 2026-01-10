@@ -16,7 +16,8 @@ import {
   LogIn,
   LogOut,
   Coffee,
-  Utensils
+  Utensils,
+  Pencil
 } from "lucide-react";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -53,6 +54,9 @@ export default function RepairCenterHrAttendance() {
   const [selectedUser, setSelectedUser] = useState<string>("all");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [newEvent, setNewEvent] = useState({ eventType: "entrata", userId: "", notes: "" });
+  const [editingEvent, setEditingEvent] = useState<ClockEvent | null>(null);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editForm, setEditForm] = useState({ eventType: "", eventTime: "", notes: "" });
   const { toast } = useToast();
 
   const today = new Date();
@@ -83,6 +87,47 @@ export default function RepairCenterHrAttendance() {
       toast({ title: "Errore", description: error.message, variant: "destructive" });
     }
   });
+
+  const editMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: { eventType?: string; eventTime?: string; notes?: string } }) => {
+      return apiRequest("PATCH", `/api/repair-center/hr/clock-events/${id}`, data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [clockEventsUrl] });
+      setEditDialogOpen(false);
+      setEditingEvent(null);
+      toast({ title: "Timbratura aggiornata", description: "La modifica è stata salvata." });
+    },
+    onError: (error: any) => {
+      toast({ title: "Errore", description: error.message, variant: "destructive" });
+    }
+  });
+
+  const openEditDialog = (event: ClockEvent) => {
+    setEditingEvent(event);
+    setEditForm({
+      eventType: event.eventType,
+      eventTime: format(new Date(event.eventTime), "HH:mm"),
+      notes: event.notes || ""
+    });
+    setEditDialogOpen(true);
+  };
+
+  const handleEdit = () => {
+    if (!editingEvent) return;
+    const eventDate = new Date(editingEvent.eventTime);
+    const [hours, minutes] = editForm.eventTime.split(':').map(Number);
+    eventDate.setHours(hours, minutes, 0, 0);
+    
+    editMutation.mutate({
+      id: editingEvent.id,
+      data: {
+        eventType: editForm.eventType,
+        eventTime: eventDate.toISOString(),
+        notes: editForm.notes || undefined
+      }
+    });
+  };
 
   const filteredEvents = clockEvents.filter(event => {
     if (selectedUser !== "all" && event.userId !== selectedUser) return false;
@@ -201,6 +246,7 @@ export default function RepairCenterHrAttendance() {
                   <TableHead>Orario</TableHead>
                   <TableHead>Posizione</TableHead>
                   <TableHead>Note</TableHead>
+                  <TableHead className="w-[80px]">Azioni</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -228,6 +274,11 @@ export default function RepairCenterHrAttendance() {
                         )}
                       </TableCell>
                       <TableCell className="text-muted-foreground">{event.notes || "-"}</TableCell>
+                      <TableCell>
+                        <Button size="icon" variant="ghost" onClick={() => openEditDialog(event)} data-testid={`button-edit-clock-${event.id}`}>
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                      </TableCell>
                     </TableRow>
                   );
                 })}
@@ -286,6 +337,53 @@ export default function RepairCenterHrAttendance() {
               disabled={createMutation.isPending}
             >
               Registra
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Modifica Timbratura</DialogTitle>
+            <DialogDescription>Modifica i dettagli della timbratura</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <label className="text-sm font-medium">Tipo Evento</label>
+              <Select value={editForm.eventType} onValueChange={(v) => setEditForm({ ...editForm, eventType: v })}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {Object.entries(eventTypeLabels).map(([key, { label }]) => (
+                    <SelectItem key={key} value={key}>{label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <label className="text-sm font-medium">Orario</label>
+              <input
+                type="time"
+                value={editForm.eventTime}
+                onChange={(e) => setEditForm({ ...editForm, eventTime: e.target.value })}
+                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium">Note (opzionale)</label>
+              <Textarea
+                value={editForm.notes}
+                onChange={(e) => setEditForm({ ...editForm, notes: e.target.value })}
+                placeholder="Note aggiuntive..."
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditDialogOpen(false)}>Annulla</Button>
+            <Button onClick={handleEdit} disabled={editMutation.isPending}>
+              Salva Modifiche
             </Button>
           </DialogFooter>
         </DialogContent>
