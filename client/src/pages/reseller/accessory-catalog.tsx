@@ -531,7 +531,7 @@ export default function AccessoryCatalog() {
       return [...prev, { 
         warehouseId, 
         warehouseName: warehouse.name,
-        ownerType: warehouse.ownerType,
+        ownerType: warehouse.ownerType as 'reseller' | 'sub_reseller' | 'repair_center',
         ownerName: warehouse.owner?.fullName || warehouse.owner?.username || '',
         quantity: 0, 
         originalQuantity: 0 
