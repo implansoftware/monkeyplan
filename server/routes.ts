@@ -11929,6 +11929,14 @@ export function registerRoutes(app: Express): Server {
       product.productType = 'accessorio';
       product.createdBy = req.user.role === 'reseller_collaborator' ? req.user.resellerId : req.user.id;
       
+      
+      // Generate SKU if not provided or empty
+      if (!product.sku || product.sku.trim() === '') {
+        const typeCode = (specs.accessoryType || 'ACC').toUpperCase().replace(/[^A-Z0-9]/g, '').substring(0, 4);
+        const brandCode = (specs.brand || 'GEN').toUpperCase().replace(/[^A-Z0-9]/g, '').substring(0, 3);
+        const timestamp = Date.now().toString(36).toUpperCase();
+        product.sku = `ACC-${typeCode}-${brandCode}-${timestamp}`;
+      }
       // Create product first
       const createdProduct = await storage.createProduct(product);
       
