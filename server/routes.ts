@@ -3153,7 +3153,7 @@ export function registerRoutes(app: Express): Server {
   });
 
   // PUT /api/products/:id/compatibilities - Set device compatibilities for a product (replace all)
-  app.put("/api/products/:id/compatibilities", requireAuth, requireRole("admin", "reseller", "reseller_collaborator", "sub_reseller", "repair_center"), async (req, res) => {
+  app.put("/api/products/:id/compatibilities", requireAuth, requireRole("admin", "reseller", "reseller_collaborator", "reseller_staff", "sub_reseller", "repair_center"), async (req, res) => {
     try {
       const product = await storage.getProduct(req.params.id);
       if (!product) {
@@ -11548,13 +11548,26 @@ export function registerRoutes(app: Express): Server {
       
       const smartphones = await storage.listSmartphones(filters);
       
-      // Add isOwn flag to each smartphone
-      const smartphonesWithOwnership = smartphones.map(smartphone => ({
-        ...smartphone,
-        isOwn: effectiveResellerId ? smartphone.createdBy === effectiveResellerId : false,
+      // Add isOwn flag and preferred supplier to each smartphone
+      const smartphonesWithExtras = await Promise.all(smartphones.map(async (smartphone) => {
+        // Get preferred supplier for this product
+        const productSuppliers = await storage.listProductSuppliers(smartphone.id);
+        const preferredSupplier = productSuppliers.find(ps => ps.isPreferred);
+        let supplierInfo = null;
+        if (preferredSupplier) {
+          const supplier = await storage.getSupplier(preferredSupplier.supplierId);
+          if (supplier) {
+            supplierInfo = { id: supplier.id, name: supplier.name, code: supplier.code };
+          }
+        }
+        return {
+          ...smartphone,
+          isOwn: effectiveResellerId ? smartphone.createdBy === effectiveResellerId : false,
+          supplier: supplierInfo,
+        };
       }));
       
-      res.json(smartphonesWithOwnership);
+      res.json(smartphonesWithExtras);
     } catch (error: any) {
       res.status(500).send(error.message);
     }
@@ -11876,10 +11889,21 @@ export function registerRoutes(app: Express): Server {
             };
           })
         );
+        // Get preferred supplier
+        const productSuppliers = await storage.listProductSuppliers(accessory.id);
+        const preferredSupplier = productSuppliers.find(ps => ps.isPreferred);
+        let supplierInfo = null;
+        if (preferredSupplier) {
+          const supplier = await storage.getSupplier(preferredSupplier.supplierId);
+          if (supplier) {
+            supplierInfo = { id: supplier.id, name: supplier.name, code: supplier.code };
+          }
+        }
         return { 
           ...accessory, 
           isOwn: effectiveResellerId ? accessory.createdBy === effectiveResellerId : false,
           deviceCompatibilities,
+          supplier: supplierInfo,
         };
       }));
       
@@ -19542,7 +19566,7 @@ export function registerRoutes(app: Express): Server {
   // ============ PRODUCT SUPPLIERS (Relazione Prodotti-Fornitori) ============
 
   // GET /api/products/:id/suppliers - List suppliers for a product
-  app.get("/api/products/:id/suppliers", requireAuth, requireRole("admin", "repair_center"), async (req, res) => {
+  app.get("/api/products/:id/suppliers", requireAuth, requireRole("admin", "reseller", "reseller_collaborator", "reseller_staff", "sub_reseller", "repair_center"), async (req, res) => {
     try {
       const productSuppliers = await storage.listProductSuppliers(req.params.id);
       
@@ -19576,7 +19600,7 @@ export function registerRoutes(app: Express): Server {
   });
 
   // POST /api/products/:id/suppliers - Add supplier to product (admin only)
-  app.post("/api/products/:id/suppliers", requireAuth, requireRole("admin"), async (req, res) => {
+  app.post("/api/products/:id/suppliers", requireAuth, requireRole("admin", "reseller", "reseller_collaborator", "reseller_staff", "sub_reseller", "repair_center"), async (req, res) => {
     try {
       const validated = insertProductSupplierSchema.parse({
         ...req.body,
@@ -19591,7 +19615,7 @@ export function registerRoutes(app: Express): Server {
   });
 
   // PATCH /api/product-suppliers/:id - Update product supplier relationship (admin only)
-  app.patch("/api/product-suppliers/:id", requireAuth, requireRole("admin"), async (req, res) => {
+  app.patch("/api/product-suppliers/:id", requireAuth, requireRole("admin", "reseller", "reseller_collaborator", "reseller_staff", "sub_reseller", "repair_center"), async (req, res) => {
     try {
       const updated = await storage.updateProductSupplier(req.params.id, req.body);
       res.json(updated);
@@ -19601,7 +19625,7 @@ export function registerRoutes(app: Express): Server {
   });
 
   // DELETE /api/product-suppliers/:id - Remove supplier from product (admin only)
-  app.delete("/api/product-suppliers/:id", requireAuth, requireRole("admin"), async (req, res) => {
+  app.delete("/api/product-suppliers/:id", requireAuth, requireRole("admin", "reseller", "reseller_collaborator", "reseller_staff", "sub_reseller", "repair_center"), async (req, res) => {
     try {
       await storage.deleteProductSupplier(req.params.id);
       res.status(204).send();
@@ -19611,7 +19635,7 @@ export function registerRoutes(app: Express): Server {
   });
 
   // POST /api/products/:productId/suppliers/:supplierId/set-preferred - Set preferred supplier
-  app.post("/api/products/:productId/suppliers/:supplierId/set-preferred", requireAuth, requireRole("admin"), async (req, res) => {
+  app.post("/api/products/:productId/suppliers/:supplierId/set-preferred", requireAuth, requireRole("admin", "reseller", "reseller_collaborator", "reseller_staff", "sub_reseller", "repair_center"), async (req, res) => {
     try {
       await storage.setPreferredSupplier(req.params.productId, req.params.supplierId);
       res.json({ success: true });

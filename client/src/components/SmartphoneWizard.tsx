@@ -70,6 +70,7 @@ const wizardSchema = z.object({
   warrantyMonths: z.string().default("12"),
   unitPrice: z.string().min(1, "Prezzo vendita obbligatorio"),
   costPrice: z.string().optional(),
+  supplierId: z.string().optional(),
   initialStock: z.array(z.object({
     warehouseId: z.string(),
     quantity: z.number(),
@@ -90,6 +91,12 @@ const STEPS = [
 interface CompatibilityEntry {
   deviceBrandId: string;
   deviceModelId: string | null;
+}
+
+interface Supplier {
+  id: string;
+  name: string;
+  code: string;
 }
 
 const STORAGE_OPTIONS = ["16GB", "32GB", "64GB", "128GB", "256GB", "512GB", "1TB", "2TB"];
@@ -213,6 +220,7 @@ export function SmartphoneWizard({
       warrantyMonths: "12",
       unitPrice: "",
       costPrice: "",
+      supplierId: "",
       initialStock: [],
     },
   });
@@ -252,6 +260,10 @@ export function SmartphoneWizard({
       if (!res.ok) throw new Error("Failed to fetch warehouses");
       return res.json();
     },
+  });
+
+  const { data: suppliers = [] } = useQuery<Supplier[]>({
+    queryKey: ["/api/suppliers/list"],
   });
 
   // Device compatibility state and queries
@@ -397,6 +409,18 @@ export function SmartphoneWizard({
           });
         } catch (err) {
           console.error("Failed to save compatibilities:", err);
+        }
+      }
+      // Save supplier link if selected
+      const supplierId = form.getValues("supplierId");
+      if (supplierId && newProduct?.id) {
+        try {
+          await apiRequest("POST", `/api/products/${newProduct.id}/suppliers`, {
+            supplierId: supplierId,
+            isPreferred: true,
+          });
+        } catch (err) {
+          console.error("Failed to save supplier link:", err);
         }
       }
       queryClient.invalidateQueries({ queryKey: ["/api/smartphones"] });
@@ -968,6 +992,24 @@ export function SmartphoneWizard({
                   />
                 </div>
 
+                <div className="space-y-2">
+                  <Label>Fornitore (opzionale)</Label>
+                  <Select
+                    value={form.watch("supplierId") || ""}
+                    onValueChange={(value) => form.setValue("supplierId", value)}
+                  >
+                    <SelectTrigger data-testid="select-supplier">
+                      <SelectValue placeholder="Seleziona fornitore..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">Nessun fornitore</SelectItem>
+                      {suppliers.map((s) => (
+                        <SelectItem key={s.id} value={s.id}>{s.name} ({s.code})</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
                 <FormField
                   control={form.control}
                   name="warrantyMonths"
@@ -1251,6 +1293,12 @@ export function SmartphoneWizard({
                         <Label className="text-xs text-muted-foreground">Costo Acquisto</Label>
                         <p className="font-medium">€{values.costPrice || "-"}</p>
                       </div>
+                      {form.watch("supplierId") && (
+                        <div>
+                          <Label className="text-xs text-muted-foreground">Fornitore</Label>
+                          <p className="font-medium">{suppliers.find(s => s.id === form.watch("supplierId"))?.name || "-"}</p>
+                        </div>
+                      )}
                     </div>
 
                     {values.initialStock.length > 0 && (

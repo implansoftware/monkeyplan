@@ -61,6 +61,7 @@ const wizardSchema = z.object({
   warrantyMonths: z.string().default("12"),
   unitPrice: z.string().min(1, "Prezzo vendita obbligatorio"),
   costPrice: z.string().optional(),
+  supplierId: z.string().optional(),
   initialStock: z.array(z.object({
     warehouseId: z.string(),
     quantity: z.number(),
@@ -86,6 +87,12 @@ interface DeviceModel {
   id: string;
   modelName: string;
   deviceBrandId: string;
+}
+
+interface Supplier {
+  id: string;
+  name: string;
+  code: string;
 }
 
 const STEPS = [
@@ -168,6 +175,7 @@ export function AccessoryWizard({
       warrantyMonths: "12",
       unitPrice: "",
       costPrice: "",
+      supplierId: "",
       initialStock: [],
     },
   });
@@ -189,6 +197,10 @@ export function AccessoryWizard({
 
   const { data: deviceBrands = [] } = useQuery<DeviceBrand[]>({
     queryKey: ["/api/device-brands"],
+  });
+
+  const { data: suppliers = [] } = useQuery<Supplier[]>({
+    queryKey: ["/api/suppliers/list"],
   });
 
   const { data: deviceModels = [] } = useQuery<DeviceModel[]>({
@@ -300,6 +312,17 @@ export function AccessoryWizard({
           });
         } catch (err) {
           console.error("Failed to save compatibilities:", err);
+        }
+      }
+      const supplierId = form.getValues("supplierId");
+      if (supplierId && newProduct?.id) {
+        try {
+          await apiRequest("POST", `/api/products/${newProduct.id}/suppliers`, {
+            supplierId: supplierId,
+            isPreferred: true,
+          });
+        } catch (err) {
+          console.error("Failed to save supplier link:", err);
         }
       }
       queryClient.invalidateQueries({ queryKey: ["/api/accessories"] });
@@ -664,6 +687,24 @@ export function AccessoryWizard({
                   />
                 </div>
 
+                <div className="space-y-2">
+                  <Label>Fornitore (opzionale)</Label>
+                  <Select
+                    value={form.watch("supplierId") || ""}
+                    onValueChange={(value) => form.setValue("supplierId", value)}
+                  >
+                    <SelectTrigger data-testid="select-supplier">
+                      <SelectValue placeholder="Seleziona fornitore..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">Nessun fornitore</SelectItem>
+                      {suppliers.map((s) => (
+                        <SelectItem key={s.id} value={s.id}>{s.name} ({s.code})</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
                 <FormField
                   control={form.control}
                   name="warrantyMonths"
@@ -884,6 +925,13 @@ export function AccessoryWizard({
                         <p className="font-medium">€{values.costPrice || "-"}</p>
                       </div>
                     </div>
+
+                    {form.watch("supplierId") && (
+                      <div className="pt-4 border-t">
+                        <Label className="text-xs text-muted-foreground">Fornitore</Label>
+                        <p className="font-medium">{suppliers.find(s => s.id === form.watch("supplierId"))?.name || "-"}</p>
+                      </div>
+                    )}
 
                     {values.initialStock.length > 0 && (
                       <div className="pt-4 border-t">

@@ -44,6 +44,7 @@ type AccessibleWarehouse = {
 
 type SmartphoneWithSpecs = Product & {
   specs: SmartphoneSpecs | null;
+  supplier?: { id: string; name: string; code: string } | null;
 };
 
 const STORAGE_OPTIONS = ["16GB", "32GB", "64GB", "128GB", "256GB", "512GB", "1TB", "2TB"];
@@ -724,6 +725,7 @@ export default function SmartphoneCatalog() {
                     <TableHead>Dispositivo</TableHead>
                     <TableHead>Categoria</TableHead>
                     <TableHead>Tipo</TableHead>
+                    <TableHead>Fornitore</TableHead>
                     <TableHead className="text-right">Prezzo</TableHead>
                     <TableHead className="text-center">Marketplace</TableHead>
                     <TableHead className="w-32">Azioni</TableHead>
@@ -776,6 +778,13 @@ export default function SmartphoneCatalog() {
                           <Badge variant="outline" className="text-muted-foreground">
                             Admin
                           </Badge>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {smartphone.supplier ? (
+                          <Badge variant="outline" className="text-xs">{smartphone.supplier.name}</Badge>
+                        ) : (
+                          <span className="text-muted-foreground text-sm">-</span>
                         )}
                       </TableCell>
                       <TableCell className="text-right font-medium">

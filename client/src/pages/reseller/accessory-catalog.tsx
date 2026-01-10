@@ -52,6 +52,7 @@ type AccessoryWithSpecs = Product & {
     deviceModelId: string | null;
     deviceModelName: string | null;
   }>;
+  supplier?: { id: string; name: string; code: string } | null;
 };
 
 const COLOR_OPTIONS = [
@@ -721,6 +722,7 @@ export default function AccessoryCatalog() {
                     <TableHead>Tipo</TableHead>
                     <TableHead>Compatibilità</TableHead>
                     <TableHead>Materiale</TableHead>
+                    <TableHead>Fornitore</TableHead>
                     <TableHead className="text-right">Prezzo</TableHead>
                     <TableHead className="text-center">Marketplace</TableHead>
                     <TableHead className="w-24">Azioni</TableHead>
@@ -790,6 +792,13 @@ export default function AccessoryCatalog() {
                         </TableCell>
                         <TableCell>
                           <span className="text-sm">{accessory.specs?.material || "-"}</span>
+                        </TableCell>
+                        <TableCell>
+                          {accessory.supplier ? (
+                            <Badge variant="outline" className="text-xs">{accessory.supplier.name}</Badge>
+                          ) : (
+                            <span className="text-muted-foreground text-sm">-</span>
+                          )}
                         </TableCell>
                         <TableCell className="text-right font-medium">
                           €{(accessory.unitPrice / 100).toFixed(2)}
