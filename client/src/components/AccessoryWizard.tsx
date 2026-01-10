@@ -690,14 +690,14 @@ export function AccessoryWizard({
                 <div className="space-y-2">
                   <Label>Fornitore (opzionale)</Label>
                   <Select
-                    value={form.watch("supplierId") || ""}
-                    onValueChange={(value) => form.setValue("supplierId", value)}
+                    value={form.watch("supplierId") || "none"}
+                    onValueChange={(value) => form.setValue("supplierId", value === "none" ? "" : value)}
                   >
                     <SelectTrigger data-testid="select-supplier">
                       <SelectValue placeholder="Seleziona fornitore..." />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Nessun fornitore</SelectItem>
+                      <SelectItem value="none">Nessun fornitore</SelectItem>
                       {suppliers.map((s) => (
                         <SelectItem key={s.id} value={s.id}>{s.name} ({s.code})</SelectItem>
                       ))}

@@ -1257,14 +1257,14 @@ export default function AdminAccessoryCatalog() {
             <div className="space-y-2">
               <Label htmlFor="supplierId">Fornitore</Label>
               <Select
-                value={formData.supplierId}
-                onValueChange={(value) => setFormData({ ...formData, supplierId: value })}
+                value={formData.supplierId || "none"}
+                onValueChange={(value) => setFormData({ ...formData, supplierId: value === "none" ? "" : value })}
               >
                 <SelectTrigger data-testid="select-accessory-supplier">
                   <SelectValue placeholder="Seleziona fornitore..." />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Nessun fornitore</SelectItem>
+                  <SelectItem value="none">Nessun fornitore</SelectItem>
                   {suppliers.map((supplier) => (
                     <SelectItem key={supplier.id} value={supplier.id}>
                       {supplier.name} ({supplier.code})

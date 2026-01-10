@@ -1191,12 +1191,12 @@ export default function SmartphoneCatalog() {
 
             <div className="space-y-2">
               <Label htmlFor="supplierId">Fornitore Preferito</Label>
-              <Select value={formData.supplierId} onValueChange={(v) => setFormData({ ...formData, supplierId: v })}>
+              <Select value={formData.supplierId || "none"} onValueChange={(v) => setFormData({ ...formData, supplierId: v === "none" ? "" : v })}>
                 <SelectTrigger data-testid="select-smartphone-supplier">
                   <SelectValue placeholder="Seleziona fornitore (opzionale)" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Nessuno</SelectItem>
+                  <SelectItem value="none">Nessuno</SelectItem>
                   {suppliers.map((s) => (
                     <SelectItem key={s.id} value={s.id}>{s.name} ({s.code})</SelectItem>
                   ))}

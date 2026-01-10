@@ -563,14 +563,14 @@ export function SparePartWizard({
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Fornitore Preferito</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value || ""}>
+                      <Select onValueChange={(value) => field.onChange(value === "none" ? "" : value)} value={field.value || "none"}>
                         <FormControl>
                           <SelectTrigger data-testid="select-part-supplier">
                             <SelectValue placeholder="Seleziona fornitore (opzionale)" />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="">Nessuno</SelectItem>
+                          <SelectItem value="none">Nessuno</SelectItem>
                           {suppliers.map((s) => (
                             <SelectItem key={s.id} value={s.id}>{s.name} ({s.code})</SelectItem>
                           ))}
