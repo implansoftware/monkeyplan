@@ -2557,6 +2557,14 @@ export function registerRoutes(app: Express): Server {
         postalCode: validatedData.cap || null,
       });
       
+      // Create automatic warehouse for the repair center
+      await storage.createWarehouse({
+        name: `Magazzino ${validatedData.name}`,
+        ownerId: center.id,
+        ownerType: 'repair_center',
+        isActive: true,
+      });
+      
       setActivityEntity(res, { type: 'repair-centers', id: center.id });
       res.status(201).json(center);
     } catch (error: any) {
@@ -6809,6 +6817,14 @@ export function registerRoutes(app: Express): Server {
         city: validated.city || null,
         province: validated.provincia || null,
         postalCode: validated.cap || null,
+      });
+      
+      // Create automatic warehouse for the repair center
+      await storage.createWarehouse({
+        name: `Magazzino ${validated.name}`,
+        ownerId: center.id,
+        ownerType: 'repair_center',
+        isActive: true,
       });
       
       setActivityEntity(res, { type: 'repair-centers', id: center.id });
