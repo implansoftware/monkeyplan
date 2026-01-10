@@ -9160,10 +9160,7 @@ export function registerRoutes(app: Express): Server {
         resellerId = (req.user as any).resellerId;
       }
       
-      const orders = await storage.listServiceOrders({ resellerId, totalHours,
-        totalDays: diffDays,
-        isFullDay: true,
-        status: 'pending' });
+      const orders = await storage.listServiceOrders({ resellerId, status: 'pending' });
       res.json({ count: orders.length });
     } catch (error: any) {
       res.status(500).send(error.message);
