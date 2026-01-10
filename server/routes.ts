@@ -30176,7 +30176,7 @@ export function registerRoutes(app: Express): Server {
         resellerId: parentResellerId,
         startDate: new Date(req.body.startDate),
         endDate: req.body.endDate ? new Date(req.body.endDate) : undefined,
-        certificateNumber: req.body.certificateNumber,
+        protocolNumber: req.body.protocolNumber,
         notes: req.body.notes
       });
       
@@ -30185,6 +30185,60 @@ export function registerRoutes(app: Express): Server {
       res.status(500).json({ error: error.message });
     }
   });
+
+  // Upload certificate for sick leave
+  app.post("/api/repair-center/hr/sick-leaves/:id/certificate", requireRole("repair_center", "repair_center_staff"), upload.single("certificate"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      if (!req.file) return res.status(400).json({ error: "Nessun file caricato" });
+      
+      const { id } = req.params;
+      const repairCenterId = getRepairCenterIdFromUser(req.user);
+      if (!repairCenterId) return res.status(400).json({ error: "Repair Center ID non trovato" });
+      
+      const parentResellerId = await getParentResellerForRepairCenter(repairCenterId);
+      if (!parentResellerId) return res.status(400).json({ error: "Reseller parent non trovato" });
+      
+      // Upload to object storage
+      const timestamp = Date.now();
+      const fileName = `hr-certificates/${parentResellerId}/${id}/${timestamp}-${req.file.originalname}`;
+      
+      const bucket = storage.getBucket();
+      if (!bucket) {
+        return res.status(500).json({ error: "Object storage non configurato" });
+      }
+      
+      const file = bucket.file(fileName);
+      await file.save(req.file.buffer, {
+        metadata: { contentType: req.file.mimetype }
+      });
+      
+      const fileUrl = `https://storage.googleapis.com/${bucket.name}/${fileName}`;
+      
+      // Create certificate record
+      await storage.createHrCertificate({
+        userId: req.user.id,
+        resellerId: parentResellerId,
+        certificateType: "medical",
+        relatedSickLeaveId: id,
+        fileName: req.file.originalname,
+        fileUrl: fileUrl,
+        fileSize: req.file.size,
+        mimeType: req.file.mimetype,
+        validFrom: new Date(),
+        uploadedBy: req.user.id
+      });
+      
+      // Update sick leave with certificateUploaded flag
+      await storage.updateHrSickLeave(id, { certificateUploaded: true });
+      
+      res.json({ success: true, fileUrl });
+    } catch (error: any) {
+      console.error("Error uploading certificate:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
 
   app.get("/api/repair-center/hr/expense-reports", requireRole("repair_center", "repair_center_staff"), async (req, res) => {
     try {

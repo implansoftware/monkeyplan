@@ -21,10 +21,11 @@ interface SickLeave {
   userId: string;
   startDate: string;
   endDate?: string;
-  certificateNumber?: string;
-  certificateUrl?: string;
+  protocolNumber?: string;
+  certificateUploaded?: boolean;
   notes?: string;
   user?: { fullName: string };
+  certificate?: { id: string; fileName: string; fileUrl: string };
 }
 
 interface StaffMember {
@@ -34,7 +35,10 @@ interface StaffMember {
 
 export default function RepairCenterHrSickLeave() {
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [newSickLeave, setNewSickLeave] = useState({ userId: "", startDate: "", endDate: "", certificateNumber: "", notes: "" });
+  const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
+  const [selectedSickLeaveId, setSelectedSickLeaveId] = useState<string | null>(null);
+  const [certificateFile, setCertificateFile] = useState<File | null>(null);
+  const [newSickLeave, setNewSickLeave] = useState({ userId: "", startDate: "", endDate: "", protocolNumber: "", notes: "" });
   const { toast } = useToast();
 
   const { data: sickLeaves = [], isLoading } = useQuery<SickLeave[]>({
@@ -52,8 +56,35 @@ export default function RepairCenterHrSickLeave() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/repair-center/hr/sick-leaves"] });
       setDialogOpen(false);
-      setNewSickLeave({ userId: "", startDate: "", endDate: "", certificateNumber: "", notes: "" });
+      setNewSickLeave({ userId: "", startDate: "", endDate: "", protocolNumber: "", notes: "" });
       toast({ title: "Malattia registrata", description: "La registrazione è stata completata con successo." });
+    },
+    onError: (error: any) => {
+      toast({ title: "Errore", description: error.message, variant: "destructive" });
+    }
+  });
+
+  const uploadMutation = useMutation({
+    mutationFn: async ({ id, file }: { id: string; file: File }) => {
+      const formData = new FormData();
+      formData.append("certificate", file);
+      const response = await fetch(`/api/repair-center/hr/sick-leaves/${id}/certificate`, {
+        method: "POST",
+        body: formData,
+        credentials: "include"
+      });
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Errore upload");
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/repair-center/hr/sick-leaves"] });
+      setUploadDialogOpen(false);
+      setCertificateFile(null);
+      setSelectedSickLeaveId(null);
+      toast({ title: "Certificato caricato", description: "Il certificato è stato caricato con successo." });
     },
     onError: (error: any) => {
       toast({ title: "Errore", description: error.message, variant: "destructive" });
@@ -121,16 +152,19 @@ export default function RepairCenterHrSickLeave() {
                     <TableCell className="font-medium">{sickLeave.user?.fullName || "N/A"}</TableCell>
                     <TableCell>{format(new Date(sickLeave.startDate), "dd/MM/yyyy", { locale: it })}</TableCell>
                     <TableCell>{sickLeave.endDate ? format(new Date(sickLeave.endDate), "dd/MM/yyyy", { locale: it }) : "-"}</TableCell>
-                    <TableCell>{sickLeave.certificateNumber || "-"}</TableCell>
+                    <TableCell>{sickLeave.protocolNumber || "-"}</TableCell>
                     <TableCell>
-                      {sickLeave.certificateUrl ? (
+                      {sickLeave.certificate ? (
                         <Button size="sm" variant="ghost" asChild>
-                          <a href={sickLeave.certificateUrl} target="_blank" rel="noopener noreferrer">
+                          <a href={sickLeave.certificate.fileUrl} target="_blank" rel="noopener noreferrer">
                             <Download className="h-4 w-4" />
                           </a>
                         </Button>
                       ) : (
-                        <Badge variant="outline">Non caricato</Badge>
+                        <Button size="sm" variant="outline" onClick={() => { setSelectedSickLeaveId(sickLeave.id); setUploadDialogOpen(true); }}>
+                          <FileUp className="h-4 w-4 mr-1" />
+                          Carica
+                        </Button>
                       )}
                     </TableCell>
                     <TableCell className="text-muted-foreground max-w-[200px] truncate">{sickLeave.notes || "-"}</TableCell>
@@ -174,7 +208,7 @@ export default function RepairCenterHrSickLeave() {
             </div>
             <div>
               <label className="text-sm font-medium">Numero Certificato</label>
-              <Input value={newSickLeave.certificateNumber} onChange={(e) => setNewSickLeave({ ...newSickLeave, certificateNumber: e.target.value })} placeholder="Es. ABC123456" />
+              <Input value={newSickLeave.protocolNumber} onChange={(e) => setNewSickLeave({ ...newSickLeave, protocolNumber: e.target.value })} placeholder="Es. ABC123456" />
             </div>
             <div>
               <label className="text-sm font-medium">Note (opzionale)</label>
@@ -185,6 +219,36 @@ export default function RepairCenterHrSickLeave() {
             <Button variant="outline" onClick={() => setDialogOpen(false)}>Annulla</Button>
             <Button onClick={() => createMutation.mutate(newSickLeave)} disabled={createMutation.isPending || !newSickLeave.userId || !newSickLeave.startDate}>
               Registra
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={uploadDialogOpen} onOpenChange={setUploadDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Carica Certificato Medico</DialogTitle>
+            <DialogDescription>Seleziona il file del certificato da caricare</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <label className="text-sm font-medium">File Certificato</label>
+              <Input 
+                type="file" 
+                accept=".pdf,.jpg,.jpeg,.png" 
+                onChange={(e) => setCertificateFile(e.target.files?.[0] || null)} 
+              />
+              <p className="text-xs text-muted-foreground mt-1">Formati accettati: PDF, JPG, PNG</p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setUploadDialogOpen(false); setCertificateFile(null); }}>Annulla</Button>
+            <Button 
+              onClick={() => selectedSickLeaveId && certificateFile && uploadMutation.mutate({ id: selectedSickLeaveId, file: certificateFile })} 
+              disabled={uploadMutation.isPending || !certificateFile}
+            >
+              <FileUp className="h-4 w-4 mr-2" />
+              Carica Certificato
             </Button>
           </DialogFooter>
         </DialogContent>
