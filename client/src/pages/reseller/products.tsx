@@ -122,7 +122,14 @@ export default function ResellerProducts() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<EnrichedProduct | null>(null);
-  const [editStock, setEditStock] = useState<Array<{ repairCenterId: string; quantity: number; originalQuantity: number }>>([]);
+  const [editStock, setEditStock] = useState<Array<{ 
+    warehouseId: string; 
+    warehouseName: string;
+    ownerType: 'reseller' | 'sub_reseller' | 'repair_center';
+    ownerName: string;
+    quantity: number; 
+    originalQuantity: number 
+  }>>([]);
   const [loadingEditStock, setLoadingEditStock] = useState(false);
   const [stockDialogOpen, setStockDialogOpen] = useState(false);
   const [stockProduct, setStockProduct] = useState<EnrichedProduct | null>(null);
@@ -646,9 +653,12 @@ export default function ResellerProducts() {
         credentials: 'include'
       });
       if (res.ok) {
-        const data: StockByCenter[] = await res.json();
+        const data: WarehouseStock[] = await res.json();
         setEditStock(data.map(s => ({
-          repairCenterId: s.repairCenterId,
+          warehouseId: s.warehouseId,
+          warehouseName: s.warehouseName,
+          ownerType: s.ownerType,
+          ownerName: s.ownerName,
           quantity: s.quantity,
           originalQuantity: s.quantity
         })));
@@ -665,21 +675,30 @@ export default function ResellerProducts() {
     loadDeviceCompatibilities(product.id);
   };
 
-  const addEditStock = (repairCenterId: string) => {
-    if (repairCenterId && !editStock.find(s => s.repairCenterId === repairCenterId)) {
-      setEditStock([...editStock, { repairCenterId, quantity: 0, originalQuantity: 0 }]);
+  const addEditStock = (warehouseId: string) => {
+    if (warehouseId && !editStock.find(s => s.warehouseId === warehouseId)) {
+      const warehouse = accessibleWarehouses.find(w => w.id === warehouseId);
+      const center = repairCenters.find(rc => rc.id === warehouseId);
+      setEditStock([...editStock, { 
+        warehouseId, 
+        warehouseName: warehouse?.name || center?.name || 'Magazzino',
+        ownerType: (warehouse?.ownerType || 'repair_center') as 'reseller' | 'sub_reseller' | 'repair_center',
+        ownerName: warehouse?.owner?.fullName || warehouse?.owner?.username || center?.name || '',
+        quantity: 0, 
+        originalQuantity: 0 
+      }]);
     }
   };
 
-  const updateEditStock = (repairCenterId: string, quantity: number) => {
+  const updateEditStock = (warehouseId: string, quantity: number) => {
     setEditStock(editStock.map(s => 
-      s.repairCenterId === repairCenterId ? { ...s, quantity } : s
+      s.warehouseId === warehouseId ? { ...s, quantity } : s
     ));
   };
 
-  const removeEditStock = (repairCenterId: string) => {
+  const removeEditStock = (warehouseId: string) => {
     setEditStock(editStock.map(s => 
-      s.repairCenterId === repairCenterId ? { ...s, quantity: 0 } : s
+      s.warehouseId === warehouseId ? { ...s, quantity: 0 } : s
     ));
   };
 
@@ -761,12 +780,12 @@ export default function ResellerProducts() {
         deviceCompatibilities: deviceCompatibilitiesForApi
       });
       
-      // Update stock for each center that changed (using captured productId)
+      // Update stock for each warehouse that changed (using captured productId)
       const stockPromises = currentEditStock
         .filter(s => s.quantity !== s.originalQuantity)
         .map(s => updateStockMutation.mutateAsync({
           productId: productId,
-          repairCenterId: s.repairCenterId,
+          warehouseId: s.warehouseId,
           quantity: s.quantity,
         }));
       
@@ -1881,13 +1900,18 @@ export default function ResellerProducts() {
                           <Label>Quantità per Magazzino</Label>
                           <Select onValueChange={addEditStock}>
                             <SelectTrigger className="w-48" data-testid="select-add-edit-stock-center">
-                              <SelectValue placeholder="Aggiungi centro..." />
+                              <SelectValue placeholder="Aggiungi magazzino..." />
                             </SelectTrigger>
                             <SelectContent>
-                              {repairCenters
-                                .filter(rc => rc.isActive && !editStock.find(s => s.repairCenterId === rc.id))
-                                .map(rc => (
-                                  <SelectItem key={rc.id} value={rc.id}>{rc.name}</SelectItem>
+                              {accessibleWarehouses
+                                .filter(w => w.isActive && !editStock.find(s => s.warehouseId === w.id))
+                                .map(w => (
+                                  <SelectItem key={w.id} value={w.id}>
+                                    {w.ownerType === 'reseller' && <User className="h-3 w-3 inline mr-1 text-blue-500" />}
+                                    {w.ownerType === 'sub_reseller' && <Store className="h-3 w-3 inline mr-1 text-purple-500" />}
+                                    {w.ownerType === 'repair_center' && <Warehouse className="h-3 w-3 inline mr-1 text-green-500" />}
+                                    {w.name}
+                                  </SelectItem>
                                 ))
                               }
                             </SelectContent>
@@ -1898,19 +1922,31 @@ export default function ResellerProducts() {
                           <div className="text-center py-6 text-muted-foreground">
                             <Warehouse className="h-10 w-10 mx-auto mb-2 opacity-50" />
                             <p className="text-sm">Nessun magazzino configurato.</p>
-                            <p className="text-xs">Seleziona un centro riparazioni per gestire le quantità.</p>
+                            <p className="text-xs">I magazzini della tua rete verranno visualizzati automaticamente.</p>
                           </div>
                         ) : (
                           <div className="space-y-2">
                             {editStock.map(stock => {
-                              const center = repairCenters.find(rc => rc.id === stock.repairCenterId);
+                              const getOwnerTypeIcon = () => {
+                                if (stock.ownerType === 'reseller') return <User className="h-4 w-4 text-blue-500" />;
+                                if (stock.ownerType === 'sub_reseller') return <Store className="h-4 w-4 text-purple-500" />;
+                                return <Warehouse className="h-4 w-4 text-green-500" />;
+                              };
+                              const getOwnerTypeLabel = () => {
+                                if (stock.ownerType === 'reseller') return 'Reseller';
+                                if (stock.ownerType === 'sub_reseller') return 'Sub-Reseller';
+                                return 'Centro';
+                              };
                               return (
-                                <div key={stock.repairCenterId} className="flex items-center gap-3 p-3 border rounded-md">
-                                  <Warehouse className="h-4 w-4 text-muted-foreground" />
+                                <div key={stock.warehouseId} className="flex items-center gap-3 p-3 border rounded-md">
+                                  {getOwnerTypeIcon()}
                                   <div className="flex-1">
-                                    <span className="font-medium">{center?.name || "Centro"}</span>
+                                    <span className="font-medium">{stock.warehouseName}</span>
+                                    <span className="text-xs text-muted-foreground ml-2">
+                                      ({getOwnerTypeLabel()}: {stock.ownerName})
+                                    </span>
                                     {stock.originalQuantity !== stock.quantity && (
-                                      <span className="text-xs text-muted-foreground ml-2">
+                                      <span className="text-xs text-amber-600 ml-2">
                                         (era: {stock.originalQuantity})
                                       </span>
                                     )}
@@ -1919,16 +1955,16 @@ export default function ResellerProducts() {
                                     type="number"
                                     min="0"
                                     value={stock.quantity}
-                                    onChange={(e) => updateEditStock(stock.repairCenterId, parseInt(e.target.value) || 0)}
+                                    onChange={(e) => updateEditStock(stock.warehouseId, parseInt(e.target.value) || 0)}
                                     className="w-24"
-                                    data-testid={`input-edit-stock-${stock.repairCenterId}`}
+                                    data-testid={`input-edit-stock-${stock.warehouseId}`}
                                   />
                                   <Button
                                     type="button"
                                     variant="ghost"
                                     size="icon"
-                                    onClick={() => removeEditStock(stock.repairCenterId)}
-                                    data-testid={`button-remove-edit-stock-${stock.repairCenterId}`}
+                                    onClick={() => removeEditStock(stock.warehouseId)}
+                                    data-testid={`button-remove-edit-stock-${stock.warehouseId}`}
                                   >
                                     <X className="h-4 w-4" />
                                   </Button>
@@ -1938,7 +1974,7 @@ export default function ResellerProducts() {
                           </div>
                         )}
                         <p className="text-xs text-muted-foreground">
-                          Modifica le quantità nei tuoi centri di riparazione
+                          Modifica le quantità nei magazzini della tua rete
                         </p>
                       </div>
                     )}
