@@ -9185,7 +9185,8 @@ export function registerRoutes(app: Express): Server {
         resellerId = (req.user as any).resellerId;
       }
       
-      const orders = await storage.listServiceOrders({ resellerId, status: 'pending' });
+      const orders = await storage.listServiceOrders({ resellerId, totalHours,
+        status: 'pending' });
       res.json({ count: orders.length });
     } catch (error: any) {
       res.status(500).send(error.message);
@@ -13095,7 +13096,8 @@ export function registerRoutes(app: Express): Server {
           const b2bOrder = await storage.createRepairCenterPurchaseOrder({
             repairCenterId: repairOrder.repairCenterId,
             resellerId: repairCenter.resellerId,
-            status: 'pending',
+            totalHours,
+        status: 'pending',
             subtotal,
             discountAmount: 0,
             shippingCost: 0,
@@ -22060,7 +22062,8 @@ export function registerRoutes(app: Express): Server {
               periodMonth: now.getMonth() + 1, // 1-12
               periodYear: now.getFullYear(),
               amountCents: commissionAmount,
-              status: 'pending',
+              totalHours,
+        status: 'pending',
               accruedAt: now,
               notes: `Commissione automatica per pratica ${practice.practiceNumber}`,
             });
@@ -24163,6 +24166,7 @@ export function registerRoutes(app: Express): Server {
         orderNumber,
         customerId: req.user.id,
         resellerId,
+        totalHours,
         status: 'pending',
         deliveryType: deliveryType as any,
         subtotal: cart.subtotal,
@@ -24208,7 +24212,8 @@ export function registerRoutes(app: Express): Server {
         await storage.createSalesOrderPayment({
           orderId: order.id,
           method: paymentMethod,
-          status: 'pending',
+          totalHours,
+        status: 'pending',
           amount: cart.total,
           currency: 'EUR'
         });
@@ -25197,6 +25202,7 @@ export function registerRoutes(app: Express): Server {
         sourceWarehouseId,
         destinationWarehouseId,
         requestedBy: req.user.id,
+        totalHours,
         status: 'pending',
         notes,
       });
@@ -25437,6 +25443,7 @@ export function registerRoutes(app: Express): Server {
         requesterWarehouseId: requesterWarehouse.id,
         sourceWarehouseId: finalSourceWarehouseId,
         targetResellerId: repairCenter.resellerId,
+        totalHours,
         status: 'pending',
         notes,
       });
@@ -25598,6 +25605,7 @@ export function registerRoutes(app: Express): Server {
         requesterWarehouseId: requesterWarehouse.id,
         sourceWarehouseId: finalSourceWarehouseId,
         targetResellerId: user.parentResellerId,
+        totalHours,
         status: 'pending',
         notes,
       });
@@ -26310,6 +26318,7 @@ export function registerRoutes(app: Express): Server {
       // Create order
       const order = await storage.createResellerPurchaseOrder({
         resellerId: req.user.id,
+        totalHours,
         status: 'pending',
         subtotal: totalCents,
         total: totalCents,
@@ -27282,6 +27291,7 @@ export function registerRoutes(app: Express): Server {
       const order = await storage.createMarketplaceOrder({
         buyerResellerId: req.user.id,
         sellerResellerId,
+        totalHours,
         status: 'pending',
         subtotal,
         discountAmount: 0,
@@ -27606,6 +27616,7 @@ export function registerRoutes(app: Express): Server {
       const order = await storage.createRepairCenterPurchaseOrder({
         repairCenterId: req.user.repairCenterId,
         resellerId: sellerResellerId,
+        totalHours,
         status: 'pending',
         subtotal,
         discountAmount: 0,
@@ -27807,6 +27818,7 @@ export function registerRoutes(app: Express): Server {
       const order = await storage.createRepairCenterPurchaseOrder({
         repairCenterId: req.user.repairCenterId,
         resellerId: repairCenter.resellerId,
+        totalHours,
         status: 'pending',
         subtotal: totalCents,
         total: totalCents,
@@ -28895,6 +28907,13 @@ export function registerRoutes(app: Express): Server {
       if (!resellerId) return res.status(400).json({ error: "Reseller ID non trovato" });
       
       const totalDays = req.body.totalDays || 1;
+      // Calculate total hours (8 hours per day)
+      const startDate = new Date(req.body.startDate);
+      const endDate = new Date(req.body.endDate);
+      const diffTime = Math.abs(endDate.getTime() - startDate.getTime());
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1; // Include both start and end day
+      const totalHours = diffDays * 8;
+      
       const request = await storage.createHrLeaveRequest({
         ...req.body,
         resellerId,
@@ -29710,10 +29729,13 @@ export function registerRoutes(app: Express): Server {
         todayClockEvents,
         absencesThisMonth
       ] = await Promise.all([
-        storage.listHrLeaveRequests({ resellerIds: accessibleResellerIds, status: 'pending' }),
-        storage.listHrExpenseReports({ resellerIds: accessibleResellerIds, status: 'pending' }),
+        storage.listHrLeaveRequests({ resellerIds: accessibleResellerIds, totalHours,
+        status: 'pending' }),
+        storage.listHrExpenseReports({ resellerIds: accessibleResellerIds, totalHours,
+        status: 'pending' }),
         storage.listHrClockEvents({ resellerIds: accessibleResellerIds, startDate: today, endDate: today }),
-        storage.listHrAbsences({ resellerIds: accessibleResellerIds, status: 'pending' })
+        storage.listHrAbsences({ resellerIds: accessibleResellerIds, totalHours,
+        status: 'pending' })
       ]);
       
       res.json({
@@ -29940,7 +29962,8 @@ export function registerRoutes(app: Express): Server {
       endOfDay.setHours(23, 59, 59, 999);
       
       const [leaveRequests, expenseReports, clockEvents, sickLeaves] = await Promise.all([
-        storage.listHrLeaveRequests({ resellerId: parentResellerId, status: 'pending' }),
+        storage.listHrLeaveRequests({ resellerId: parentResellerId, totalHours,
+        status: 'pending' }),
         storage.listHrExpenseReports({ resellerId: parentResellerId, status: 'submitted' }),
         storage.listHrClockEvents({ resellerIds: [parentResellerId], startDate: today, endDate: endOfDay }),
         storage.listHrSickLeaves({ resellerId: parentResellerId })
@@ -30044,6 +30067,13 @@ export function registerRoutes(app: Express): Server {
       const parentResellerId = await getParentResellerForRepairCenter(repairCenterId);
       if (!parentResellerId) return res.status(400).json({ error: "Reseller parent non trovato" });
       
+      // Calculate total hours (8 hours per day)
+      const startDate = new Date(req.body.startDate);
+      const endDate = new Date(req.body.endDate);
+      const diffTime = Math.abs(endDate.getTime() - startDate.getTime());
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1; // Include both start and end day
+      const totalHours = diffDays * 8;
+      
       const request = await storage.createHrLeaveRequest({
         userId: req.body.userId || req.user.id,
         resellerId: parentResellerId,
@@ -30051,6 +30081,7 @@ export function registerRoutes(app: Express): Server {
         startDate: new Date(req.body.startDate),
         endDate: new Date(req.body.endDate),
         notes: req.body.notes,
+        totalHours,
         status: 'pending'
       });
       
