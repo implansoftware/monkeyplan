@@ -36,7 +36,7 @@ import {
 } from "@/components/ui/select";
 import { 
   ShoppingBag, Euro, CheckCircle2, 
-  ChevronRight, ChevronLeft, Loader2, ImagePlus, X, Warehouse, ChevronDown
+  ChevronRight, ChevronLeft, Loader2, ImagePlus, X, Warehouse, ChevronDown, Link2
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -70,10 +70,29 @@ const wizardSchema = z.object({
 
 type WizardData = z.infer<typeof wizardSchema>;
 
+interface CompatibilityEntry {
+  deviceBrandId: string;
+  deviceBrandName: string;
+  deviceModelId: string | null;
+  deviceModelName: string | null;
+}
+
+interface DeviceBrand {
+  id: string;
+  name: string;
+}
+
+interface DeviceModel {
+  id: string;
+  modelName: string;
+  deviceBrandId: string;
+}
+
 const STEPS = [
   { id: 1, name: "Info Base", icon: ShoppingBag },
   { id: 2, name: "Prezzo & Stock", icon: Euro },
-  { id: 3, name: "Conferma", icon: CheckCircle2 },
+  { id: 3, name: "Compatibilità", icon: Link2 },
+  { id: 4, name: "Conferma", icon: CheckCircle2 },
 ];
 
 const ACCESSORY_TYPES = [
@@ -114,6 +133,8 @@ export function AccessoryWizard({
   editingProduct 
 }: AccessoryWizardProps) {
   const [currentStep, setCurrentStep] = useState(1);
+  const [compatibilities, setCompatibilities] = useState<CompatibilityEntry[]>([]);
+  const [selectedBrandId, setSelectedBrandId] = useState<string>("");
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -166,6 +187,63 @@ export function AccessoryWizard({
     },
   });
 
+  const { data: deviceBrands = [] } = useQuery<DeviceBrand[]>({
+    queryKey: ["/api/device-brands"],
+  });
+
+  const { data: deviceModels = [] } = useQuery<DeviceModel[]>({
+    queryKey: ["/api/device-models", selectedBrandId],
+    queryFn: async () => {
+      if (!selectedBrandId) return [];
+      const res = await fetch(`/api/device-models?brandId=${selectedBrandId}`);
+      if (!res.ok) throw new Error("Failed to fetch models");
+      return res.json();
+    },
+    enabled: !!selectedBrandId,
+  });
+
+  const addBrandCompatibility = () => {
+    if (!selectedBrandId) return;
+    const exists = compatibilities.some(c => 
+      c.deviceBrandId === selectedBrandId && c.deviceModelId === null
+    );
+    if (exists) {
+      toast({ title: "Compatibilità già aggiunta", variant: "destructive" });
+      return;
+    }
+    const brand = deviceBrands.find(b => b.id === selectedBrandId);
+    setCompatibilities([...compatibilities, { 
+      deviceBrandId: selectedBrandId, 
+      deviceBrandName: brand?.name || "?",
+      deviceModelId: null,
+      deviceModelName: null,
+    }]);
+    setSelectedBrandId("");
+  };
+
+  const addModelCompatibility = (modelId: string) => {
+    if (!selectedBrandId || !modelId) return;
+    const exists = compatibilities.some(c => 
+      c.deviceBrandId === selectedBrandId && c.deviceModelId === modelId
+    );
+    if (exists) {
+      toast({ title: "Compatibilità già aggiunta", variant: "destructive" });
+      return;
+    }
+    const brand = deviceBrands.find(b => b.id === selectedBrandId);
+    const model = deviceModels.find(m => m.id === modelId);
+    setCompatibilities([...compatibilities, { 
+      deviceBrandId: selectedBrandId, 
+      deviceBrandName: brand?.name || "?",
+      deviceModelId: modelId,
+      deviceModelName: model?.modelName || "?",
+    }]);
+  };
+
+  const removeCompatibility = (index: number) => {
+    setCompatibilities(compatibilities.filter((_, i) => i !== index));
+  };
+
   const createMutation = useMutation({
     mutationFn: async (data: WizardData) => {
       const productData = {
@@ -214,7 +292,16 @@ export function AccessoryWizard({
 
       return createdProduct;
     },
-    onSuccess: (newProduct) => {
+    onSuccess: async (newProduct) => {
+      if (compatibilities.length > 0 && newProduct?.id) {
+        try {
+          await apiRequest("PUT", `/api/products/${newProduct.id}/compatibilities`, {
+            compatibilities: compatibilities,
+          });
+        } catch (err) {
+          console.error("Failed to save compatibilities:", err);
+        }
+      }
       queryClient.invalidateQueries({ queryKey: ["/api/accessories"] });
       queryClient.invalidateQueries({ queryKey: ["/api/products"] });
       toast({ title: "Accessorio creato", description: `${form.getValues("name")} aggiunto al catalogo` });
@@ -228,6 +315,8 @@ export function AccessoryWizard({
 
   const handleClose = () => {
     setCurrentStep(1);
+    setCompatibilities([]);
+    setSelectedBrandId("");
     setImageFile(null);
     setImagePreview(null);
     form.reset();
@@ -255,7 +344,7 @@ export function AccessoryWizard({
 
     const isValid = await form.trigger(fieldsToValidate);
     if (isValid) {
-      setCurrentStep(prev => Math.min(prev + 1, 3));
+      setCurrentStep(prev => Math.min(prev + 1, 4));
     }
   };
 
@@ -264,8 +353,8 @@ export function AccessoryWizard({
   };
 
   const handleSubmit = () => {
-    // Only submit if we're on the final step (step 3)
-    if (currentStep !== 3) return;
+    // Only submit if we're on the final step (step 4)
+    if (currentStep !== 4) return;
     form.handleSubmit((data) => {
       createMutation.mutate(data);
     })();
@@ -677,6 +766,75 @@ export function AccessoryWizard({
             {currentStep === 3 && (
               <div className="space-y-6">
                 <div className="text-center mb-4">
+                  <Link2 className="h-12 w-12 mx-auto text-primary mb-2" />
+                  <h3 className="text-lg font-medium">Compatibilità Dispositivi</h3>
+                  <p className="text-sm text-muted-foreground">Seleziona i dispositivi compatibili con questo accessorio</p>
+                </div>
+
+                <div className="space-y-4">
+                  <div className="flex gap-2">
+                    <Select value={selectedBrandId} onValueChange={setSelectedBrandId}>
+                      <SelectTrigger className="flex-1" data-testid="select-device-brand">
+                        <SelectValue placeholder="Seleziona marca dispositivo" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {deviceBrands.map((brand) => (
+                          <SelectItem key={brand.id} value={brand.id}>{brand.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Button type="button" variant="outline" onClick={addBrandCompatibility} disabled={!selectedBrandId} data-testid="button-add-brand">
+                      Aggiungi Marca
+                    </Button>
+                  </div>
+
+                  {selectedBrandId && deviceModels.length > 0 && (
+                    <div className="border rounded-lg p-3 space-y-2">
+                      <Label className="text-sm font-medium">Modelli disponibili:</Label>
+                      <div className="flex flex-wrap gap-2">
+                        {deviceModels.map((model) => (
+                          <Button
+                            key={model.id}
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => addModelCompatibility(model.id)}
+                            disabled={compatibilities.some(c => c.deviceModelId === model.id)}
+                            data-testid={`button-add-model-${model.id}`}
+                          >
+                            {model.modelName}
+                          </Button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {compatibilities.length > 0 && (
+                    <div className="space-y-2">
+                      <Label className="text-sm font-medium">Compatibilità selezionate:</Label>
+                      <div className="flex flex-wrap gap-2">
+                        {compatibilities.map((compat, index) => (
+                          <Badge key={index} variant="secondary" className="flex items-center gap-1">
+                            {compat.deviceBrandName}{compat.deviceModelName ? ` - ${compat.deviceModelName}` : " (tutti i modelli)"}
+                            <X className="h-3 w-3 cursor-pointer" onClick={() => removeCompatibility(index)} />
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {compatibilities.length === 0 && (
+                    <p className="text-sm text-muted-foreground text-center py-4">
+                      Nessuna compatibilità selezionata. Puoi saltare questo step se l'accessorio è universale.
+                    </p>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {currentStep === 4 && (
+              <div className="space-y-6">
+                <div className="text-center mb-4">
                   <CheckCircle2 className="h-12 w-12 mx-auto text-green-500 mb-2" />
                   <h3 className="text-lg font-medium">Riepilogo</h3>
                   <p className="text-sm text-muted-foreground">Verifica i dati prima di salvare</p>
@@ -743,6 +901,19 @@ export function AccessoryWizard({
                         </div>
                       </div>
                     )}
+
+                    {compatibilities.length > 0 && (
+                      <div className="pt-4 border-t">
+                        <Label className="text-xs text-muted-foreground">Compatibilità</Label>
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {compatibilities.map((compat, i) => (
+                            <Badge key={i} variant="outline" className="text-xs">
+                              {compat.deviceBrandName}{compat.deviceModelName ? ` ${compat.deviceModelName}` : " (tutti)"}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               </div>
@@ -759,7 +930,7 @@ export function AccessoryWizard({
                 {currentStep === 1 ? "Annulla" : "Indietro"}
               </Button>
 
-              {currentStep < 3 ? (
+              {currentStep < 4 ? (
                 <Button type="button" onClick={handleNext} data-testid="button-wizard-next">
                   Avanti
                   <ChevronRight className="h-4 w-4 ml-1" />

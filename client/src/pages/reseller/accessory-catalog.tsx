@@ -47,11 +47,10 @@ type AccessibleWarehouse = {
 type AccessoryWithSpecs = Product & {
   specs: AccessorySpecs | null;
   deviceCompatibilities?: Array<{
-    id: string;
     deviceBrandId: string;
+    deviceBrandName: string | null;
     deviceModelId: string | null;
-    deviceModel?: { id: string; modelName: string } | null;
-    deviceBrand?: { id: string; name: string } | null;
+    deviceModelName: string | null;
   }>;
 };
 
@@ -471,8 +470,8 @@ export default function AccessoryCatalog() {
     const existingCompatibilities: DeviceCompatibilityEntry[] = (accessory.deviceCompatibilities || []).map(dc => ({
       deviceBrandId: dc.deviceBrandId,
       deviceModelId: dc.deviceModelId,
-      brandName: dc.deviceBrand?.name,
-      modelName: dc.deviceModel?.modelName
+      brandName: dc.deviceBrandName || dc.deviceBrand?.name,
+      modelName: dc.deviceModelName || dc.deviceModel?.modelName
     }));
     setDeviceCompatibilities(existingCompatibilities);
     setFormData({
@@ -765,6 +764,17 @@ export default function AccessoryCatalog() {
                         <TableCell>
                           {accessory.specs?.isUniversal ? (
                             <Badge variant="secondary">Universale</Badge>
+                          ) : accessory.deviceCompatibilities && accessory.deviceCompatibilities.length > 0 ? (
+                            <div className="flex flex-wrap gap-1">
+                              {accessory.deviceCompatibilities.slice(0, 3).map((dc, i) => (
+                                <Badge key={i} variant="outline" className="text-xs">
+                                  {dc.deviceBrandName}{dc.deviceModelName ? ` ${dc.deviceModelName}` : " (tutti)"}
+                                </Badge>
+                              ))}
+                              {accessory.deviceCompatibilities.length > 3 && (
+                                <Badge variant="outline" className="text-xs">+{accessory.deviceCompatibilities.length - 3}</Badge>
+                              )}
+                            </div>
                           ) : accessory.specs?.compatibleBrands?.length ? (
                             <div className="flex flex-wrap gap-1">
                               {accessory.specs.compatibleBrands.slice(0, 3).map(b => (
@@ -1057,15 +1067,11 @@ export default function AccessoryCatalog() {
                 </ScrollArea>
                 {deviceCompatibilities.length > 0 && (
                   <div className="flex flex-wrap gap-2 mt-2">
-                    {deviceCompatibilities.map((c, idx) => {
-                      const brand = deviceBrands.find(b => b.id === c.deviceBrandId);
-                      const model = c.deviceModelId ? deviceModels.find(m => m.id === c.deviceModelId) : null;
-                      return (
-                        <Badge key={idx} variant="secondary">
-                          {brand?.name}{model ? ` - ${model.modelName}` : ' (tutti)'}
-                        </Badge>
-                      );
-                    })}
+                    {deviceCompatibilities.map((c, idx) => (
+                      <Badge key={idx} variant="secondary">
+                        {c.brandName || "?"}{c.modelName ? ` - ${c.modelName}` : " (tutti)"}
+                      </Badge>
+                    ))}
                   </div>
                 )}
               </div>

@@ -11861,13 +11861,29 @@ export function registerRoutes(app: Express): Server {
       
       const accessories = await storage.listAccessories(filters);
       
-      // Add isOwn flag for each accessory
-      const accessoriesWithFlags = accessories.map((accessory) => ({ 
-        ...accessory, 
-        isOwn: effectiveResellerId ? accessory.createdBy === effectiveResellerId : false,
+      // Add isOwn flag and device compatibilities for each accessory
+      const accessoriesWithExtras = await Promise.all(accessories.map(async (accessory) => {
+        const rawCompatibilities = await storage.listProductCompatibilities(accessory.id);
+        const deviceCompatibilities = await Promise.all(
+          rawCompatibilities.map(async (c) => {
+            const brand = await storage.getDeviceBrand(c.deviceBrandId);
+            const model = c.deviceModelId ? await storage.getDeviceModel(c.deviceModelId) : null;
+            return {
+              deviceBrandId: c.deviceBrandId,
+              deviceBrandName: brand?.name || null,
+              deviceModelId: c.deviceModelId,
+              deviceModelName: model?.modelName || null,
+            };
+          })
+        );
+        return { 
+          ...accessory, 
+          isOwn: effectiveResellerId ? accessory.createdBy === effectiveResellerId : false,
+          deviceCompatibilities,
+        };
       }));
       
-      res.json(accessoriesWithFlags);
+      res.json(accessoriesWithExtras);
     } catch (error: any) {
       res.status(500).send(error.message);
     }
