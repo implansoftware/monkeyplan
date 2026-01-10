@@ -151,14 +151,19 @@ export function AccessoryWizard({
     },
   });
 
+  // Use /api/warehouses/accessible for all non-admin roles - it handles all roles internally
+  // and returns own + sub-reseller + repair center warehouses for resellers
   const warehouseEndpoint = isAdmin 
     ? "/api/admin/all-warehouses" 
-    : isReseller 
-      ? "/api/reseller/warehouses" 
-      : "/api/repair-center/warehouses";
+    : "/api/warehouses/accessible";
 
   const { data: warehouses = [] } = useQuery<any[]>({
     queryKey: [warehouseEndpoint],
+    queryFn: async () => {
+      const res = await fetch(warehouseEndpoint, { credentials: "include" });
+      if (!res.ok) throw new Error("Failed to fetch warehouses");
+      return res.json();
+    },
   });
 
   const createMutation = useMutation({
