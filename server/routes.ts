@@ -30199,40 +30199,53 @@ export function registerRoutes(app: Express): Server {
       const parentResellerId = await getParentResellerForRepairCenter(repairCenterId);
       if (!parentResellerId) return res.status(400).json({ error: "Reseller parent non trovato" });
       
-      // Upload to object storage
-      const timestamp = Date.now();
-      const fileName = `hr-certificates/${parentResellerId}/${id}/${timestamp}-${req.file.originalname}`;
-      
-      const bucket = storage.getBucket();
-      if (!bucket) {
-        return res.status(500).json({ error: "Object storage non configurato" });
+      const sickLeave = await storage.getHrSickLeave(id);
+      if (!sickLeave) {
+        return res.status(404).json({ error: "Malattia non trovata" });
       }
       
-      const file = bucket.file(fileName);
+      const allowedMimeTypes = ["image/jpeg", "image/png", "image/webp", "application/pdf"];
+      if (!allowedMimeTypes.includes(req.file.mimetype)) {
+        return res.status(400).json({ error: "Formato file non supportato. Usa JPEG, PNG, WebP o PDF." });
+      }
+      
+      const maxSize = 10 * 1024 * 1024;
+      if (req.file.size > maxSize) {
+        return res.status(400).json({ error: "File troppo grande. Massimo 10MB." });
+      }
+      
+      const ext = req.file.originalname.split(".").pop() || "pdf";
+      const objectPath = `hr-certificates/${id}/${Date.now()}.${ext}`;
+      
+      const privateObjectDir = objectStorage.getPrivateObjectDir();
+      const fullPath = `${privateObjectDir}/${objectPath}`;
+      const { bucketName, objectName } = parseObjectPath(fullPath);
+      const bucket = objectStorageClient.bucket(bucketName);
+      const file = bucket.file(objectName);
+      
       await file.save(req.file.buffer, {
         metadata: { contentType: req.file.mimetype }
       });
       
-      const fileUrl = `https://storage.googleapis.com/${bucket.name}/${fileName}`;
+      const fileUrl = `/objects/${objectPath}`;
       
-      // Create certificate record
-      await storage.createHrCertificate({
-        userId: req.user.id,
+      const certificate = await storage.createHrCertificate({
+        userId: sickLeave.userId,
         resellerId: parentResellerId,
-        certificateType: "medical",
+        certificateType: 'malattia',
         relatedSickLeaveId: id,
         fileName: req.file.originalname,
-        fileUrl: fileUrl,
+        fileUrl,
         fileSize: req.file.size,
         mimeType: req.file.mimetype,
-        validFrom: new Date(),
-        uploadedBy: req.user.id
+        validFrom: sickLeave.startDate,
+        validTo: sickLeave.endDate || undefined,
+        uploadedBy: req.user.id,
       });
       
-      // Update sick leave with certificateUploaded flag
       await storage.updateHrSickLeave(id, { certificateUploaded: true });
       
-      res.json({ success: true, fileUrl });
+      res.json(certificate);
     } catch (error: any) {
       console.error("Error uploading certificate:", error);
       res.status(500).json({ error: error.message });
