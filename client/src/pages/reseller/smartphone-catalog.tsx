@@ -191,6 +191,17 @@ export default function SmartphoneCatalog() {
     originalBox: false,
     accessories: [] as string[],
     notes: "",
+    supplierId: "",
+  });
+
+  // Query per fornitori
+  interface Supplier {
+    id: string;
+    name: string;
+    code: string;
+  }
+  const { data: suppliers = [] } = useQuery<Supplier[]>({
+    queryKey: ["/api/suppliers/list"],
   });
 
   // Brand dinamici basati sulla categoria selezionata
@@ -273,7 +284,8 @@ export default function SmartphoneCatalog() {
   };
 
   const createMutation = useMutation({
-    mutationFn: async (data: { product: any; specs: any; imageFile?: File | null }) => {
+    mutationFn: async (data: { product: any; specs: any; imageFile?: File | null; supplierId?: string }) => {
+      let createdProduct;
       if (data.imageFile) {
         const formDataUpload = new FormData();
         formDataUpload.append("product", JSON.stringify(data.product));
@@ -285,10 +297,26 @@ export default function SmartphoneCatalog() {
           credentials: "include",
         });
         if (!response.ok) throw new Error(await response.text());
-        return response.json();
+        createdProduct = await response.json();
       } else {
-        return apiRequest("POST", "/api/smartphones", { product: data.product, specs: data.specs });
+        const res = await apiRequest("POST", "/api/smartphones", { product: data.product, specs: data.specs });
+        createdProduct = res;
       }
+      
+      // Save supplier if provided
+      if (data.supplierId && createdProduct?.id) {
+        try {
+          await fetch(`/api/products/${createdProduct.id}/suppliers`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            credentials: "include",
+            body: JSON.stringify({ supplierId: data.supplierId, isPreferred: true }),
+          });
+        } catch (e) {
+          // Ignore supplier errors
+        }
+      }
+      return createdProduct;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/smartphones"] });
@@ -450,6 +478,7 @@ export default function SmartphoneCatalog() {
       originalBox: false,
       accessories: [],
       notes: "",
+      supplierId: "",
     });
   };
 
@@ -480,6 +509,7 @@ export default function SmartphoneCatalog() {
       originalBox: smartphone.specs?.originalBox || false,
       accessories: smartphone.specs?.accessories || [],
       notes: smartphone.specs?.notes || "",
+      supplierId: smartphone.supplier?.id || "",
     });
     setDialogOpen(true);
     
@@ -572,6 +602,20 @@ export default function SmartphoneCatalog() {
       try {
         await updateMutation.mutateAsync({ productId, data: { product, specs } });
         
+        // Update supplier if changed
+        if (formData.supplierId) {
+          try {
+            await fetch(`/api/products/${productId}/suppliers`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              credentials: "include",
+              body: JSON.stringify({ supplierId: formData.supplierId, isPreferred: true }),
+            });
+          } catch (supplierError) {
+            // Silently ignore supplier errors
+          }
+        }
+        
         // Update stock for each warehouse that changed
         const stockToUpdate = currentEditStock.filter(s => s.quantity !== s.originalQuantity);
         if (stockToUpdate.length > 0) {
@@ -595,7 +639,7 @@ export default function SmartphoneCatalog() {
         // Error handled by mutation
       }
     } else {
-      createMutation.mutate({ product, specs, imageFile });
+      createMutation.mutate({ product, specs, imageFile, supplierId: formData.supplierId || undefined });
     }
   };
 
@@ -1137,6 +1181,21 @@ export default function SmartphoneCatalog() {
                   data-testid="input-smartphone-warranty"
                 />
               </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="supplierId">Fornitore Preferito</Label>
+              <Select value={formData.supplierId} onValueChange={(v) => setFormData({ ...formData, supplierId: v })}>
+                <SelectTrigger data-testid="select-smartphone-supplier">
+                  <SelectValue placeholder="Seleziona fornitore (opzionale)" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Nessuno</SelectItem>
+                  {suppliers.map((s) => (
+                    <SelectItem key={s.id} value={s.id}>{s.name} ({s.code})</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             {/* Campi opzionali dinamici in base alla categoria */}

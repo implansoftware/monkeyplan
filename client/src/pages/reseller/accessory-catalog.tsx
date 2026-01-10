@@ -144,6 +144,17 @@ export default function AccessoryCatalog() {
     compatibleModels: "",
     material: "",
     notes: "",
+    supplierId: "",
+  });
+
+  // Query per fornitori
+  interface Supplier {
+    id: string;
+    name: string;
+    code: string;
+  }
+  const { data: suppliers = [] } = useQuery<Supplier[]>({
+    queryKey: ["/api/suppliers/list"],
   });
 
   const { data: accessories = [], isLoading } = useQuery<AccessoryWithSpecs[]>({
@@ -273,7 +284,8 @@ export default function AccessoryCatalog() {
   };
 
   const createMutation = useMutation({
-    mutationFn: async (data: { product: any; specs: any; imageFile?: File | null; compatibleDeviceModelIds?: string[] }) => {
+    mutationFn: async (data: { product: any; specs: any; imageFile?: File | null; compatibleDeviceModelIds?: string[]; supplierId?: string }) => {
+      let createdProduct;
       if (data.imageFile) {
         const formDataUpload = new FormData();
         formDataUpload.append("product", JSON.stringify(data.product));
@@ -286,14 +298,30 @@ export default function AccessoryCatalog() {
           credentials: "include",
         });
         if (!response.ok) throw new Error(await response.text());
-        return response.json();
+        createdProduct = await response.json();
       } else {
-        return apiRequest("POST", "/api/accessories", { 
+        const res = await apiRequest("POST", "/api/accessories", { 
           product: data.product, 
           specs: data.specs,
           compatibleDeviceModelIds: data.compatibleDeviceModelIds || []
         });
+        createdProduct = res;
       }
+      
+      // Save supplier if provided
+      if (data.supplierId && createdProduct?.id) {
+        try {
+          await fetch(`/api/products/${createdProduct.id}/suppliers`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            credentials: "include",
+            body: JSON.stringify({ supplierId: data.supplierId, isPreferred: true }),
+          });
+        } catch (e) {
+          // Ignore supplier errors
+        }
+      }
+      return createdProduct;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/accessories"] });
@@ -457,6 +485,7 @@ export default function AccessoryCatalog() {
       compatibleModels: "",
       material: "",
       notes: "",
+      supplierId: "",
     });
   };
 
@@ -491,6 +520,7 @@ export default function AccessoryCatalog() {
       compatibleModels: accessory.specs?.compatibleModels?.join(", ") || "",
       material: accessory.specs?.material || "",
       notes: accessory.specs?.notes || "",
+      supplierId: accessory.supplier?.id || "",
     });
     setDialogOpen(true);
     
@@ -600,6 +630,20 @@ export default function AccessoryCatalog() {
       try {
         await updateMutation.mutateAsync({ productId, data: { product, specs, compatibleDeviceModelIds } });
         
+        // Update supplier if changed
+        if (formData.supplierId) {
+          try {
+            await fetch(`/api/products/${productId}/suppliers`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              credentials: "include",
+              body: JSON.stringify({ supplierId: formData.supplierId, isPreferred: true }),
+            });
+          } catch (supplierError) {
+            // Silently ignore supplier errors
+          }
+        }
+        
         // Update stock for each warehouse that changed
         const stockToUpdate = currentEditStock.filter(s => s.quantity !== s.originalQuantity);
         if (stockToUpdate.length > 0) {
@@ -623,7 +667,7 @@ export default function AccessoryCatalog() {
         // Error handled by mutation
       }
     } else {
-      createMutation.mutate({ product, specs, imageFile, compatibleDeviceModelIds });
+      createMutation.mutate({ product, specs, imageFile, compatibleDeviceModelIds, supplierId: formData.supplierId || undefined });
     }
   };
 
@@ -1122,6 +1166,21 @@ export default function AccessoryCatalog() {
                   data-testid="input-accessory-warranty"
                 />
               </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="supplierId">Fornitore Preferito</Label>
+              <Select value={formData.supplierId} onValueChange={(v) => setFormData({ ...formData, supplierId: v })}>
+                <SelectTrigger data-testid="select-accessory-supplier">
+                  <SelectValue placeholder="Seleziona fornitore (opzionale)" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Nessuno</SelectItem>
+                  {suppliers.map((s) => (
+                    <SelectItem key={s.id} value={s.id}>{s.name} ({s.code})</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="space-y-2">

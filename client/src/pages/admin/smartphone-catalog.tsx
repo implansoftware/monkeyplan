@@ -159,6 +159,17 @@ export default function AdminSmartphoneCatalog() {
     originalBox: false,
     accessories: [] as string[],
     notes: "",
+    supplierId: "",
+  });
+
+  // Query per fornitori
+  interface Supplier {
+    id: string;
+    name: string;
+    code: string;
+  }
+  const { data: suppliers = [] } = useQuery<Supplier[]>({
+    queryKey: ["/api/suppliers/list"],
   });
 
   const { data: smartphones = [], isLoading } = useQuery<SmartphoneWithSpecs[]>({
@@ -288,7 +299,20 @@ export default function AdminSmartphoneCatalog() {
         });
       }
     },
-    onSuccess: () => {
+    onSuccess: async (createdProduct) => {
+      // Save supplier if provided
+      if (formData.supplierId && createdProduct?.id) {
+        try {
+          await fetch(`/api/products/${createdProduct.id}/suppliers`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            credentials: "include",
+            body: JSON.stringify({ supplierId: formData.supplierId, isPreferred: true }),
+          });
+        } catch (e) {
+          // Ignore supplier errors
+        }
+      }
       queryClient.invalidateQueries({ queryKey: ["/api/smartphones"] });
       queryClient.invalidateQueries({ queryKey: ["/api/warehouses"] });
       queryClient.invalidateQueries({ queryKey: ["/api/admin/all-warehouses"] });
@@ -525,6 +549,7 @@ export default function AdminSmartphoneCatalog() {
       originalBox: false,
       accessories: [],
       notes: "",
+      supplierId: "",
     });
   };
 
@@ -551,6 +576,7 @@ export default function AdminSmartphoneCatalog() {
       originalBox: smartphone.specs?.originalBox || false,
       accessories: smartphone.specs?.accessories || [],
       notes: smartphone.specs?.notes || "",
+      supplierId: (smartphone as any).supplier?.id || "",
     });
     setDialogOpen(true);
     
@@ -681,6 +707,16 @@ export default function AdminSmartphoneCatalog() {
             deviceModelId: c.deviceModelId,
           })),
         });
+        
+        // Save supplier if changed
+        if (formData.supplierId) {
+          await fetch(`/api/products/${editingSmartphone.id}/suppliers`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            credentials: "include",
+            body: JSON.stringify({ supplierId: formData.supplierId, isPreferred: true }),
+          });
+        }
         
         // Success - invalidate queries, close dialog, reset form
         queryClient.invalidateQueries({ queryKey: ["/api/smartphones"] });
@@ -1185,6 +1221,26 @@ export default function AdminSmartphoneCatalog() {
                 placeholder="12"
                 data-testid="input-smartphone-warranty"
               />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="supplierId">Fornitore</Label>
+              <Select
+                value={formData.supplierId}
+                onValueChange={(value) => setFormData({ ...formData, supplierId: value })}
+              >
+                <SelectTrigger data-testid="select-smartphone-supplier">
+                  <SelectValue placeholder="Seleziona fornitore..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Nessun fornitore</SelectItem>
+                  {suppliers.map((supplier) => (
+                    <SelectItem key={supplier.id} value={supplier.id}>
+                      {supplier.name} ({supplier.code})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="space-y-3 p-3 bg-muted/50 rounded-lg">

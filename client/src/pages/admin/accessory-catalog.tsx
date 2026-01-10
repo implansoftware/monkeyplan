@@ -142,6 +142,17 @@ export default function AdminAccessoryCatalog() {
     compatibleModels: "",
     material: "",
     notes: "",
+    supplierId: "",
+  });
+
+  // Query per fornitori
+  interface Supplier {
+    id: string;
+    name: string;
+    code: string;
+  }
+  const { data: suppliers = [] } = useQuery<Supplier[]>({
+    queryKey: ["/api/suppliers/list"],
   });
 
   const { data: accessories = [], isLoading } = useQuery<AccessoryWithSpecs[]>({
@@ -446,7 +457,20 @@ export default function AdminAccessoryCatalog() {
         });
       }
     },
-    onSuccess: () => {
+    onSuccess: async (createdProduct) => {
+      // Save supplier if provided
+      if (formData.supplierId && createdProduct?.id) {
+        try {
+          await fetch(`/api/products/${createdProduct.id}/suppliers`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            credentials: "include",
+            body: JSON.stringify({ supplierId: formData.supplierId, isPreferred: true }),
+          });
+        } catch (e) {
+          // Ignore supplier errors
+        }
+      }
       queryClient.invalidateQueries({ queryKey: ["/api/accessories"] });
       queryClient.invalidateQueries({ queryKey: ["/api/warehouses"] });
       queryClient.invalidateQueries({ queryKey: ["/api/admin/all-warehouses"] });
@@ -468,7 +492,20 @@ export default function AdminAccessoryCatalog() {
         deviceCompatibilities: data.deviceCompatibilities || []
       });
     },
-    onSuccess: () => {
+    onSuccess: async () => {
+      // Save supplier if changed
+      if (editingAccessory && formData.supplierId) {
+        try {
+          await fetch(`/api/products/${editingAccessory.id}/suppliers`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            credentials: "include",
+            body: JSON.stringify({ supplierId: formData.supplierId, isPreferred: true }),
+          });
+        } catch (e) {
+          // Ignore supplier errors
+        }
+      }
       queryClient.invalidateQueries({ queryKey: ["/api/accessories"] });
       queryClient.invalidateQueries({ queryKey: ["/api/warehouses"] });
       queryClient.invalidateQueries({ queryKey: ["/api/admin/all-warehouses"] });
@@ -619,6 +656,7 @@ export default function AdminAccessoryCatalog() {
       compatibleModels: "",
       material: "",
       notes: "",
+      supplierId: "",
     });
   };
 
@@ -649,6 +687,7 @@ export default function AdminAccessoryCatalog() {
       compatibleModels: accessory.specs?.compatibleModels?.join(", ") || "",
       material: accessory.specs?.material || "",
       notes: accessory.specs?.notes || "",
+      supplierId: (accessory as any).supplier?.id || "",
     });
     setDialogOpen(true);
     
@@ -1205,6 +1244,26 @@ export default function AdminAccessoryCatalog() {
                 placeholder="12"
                 data-testid="input-accessory-warranty"
               />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="supplierId">Fornitore</Label>
+              <Select
+                value={formData.supplierId}
+                onValueChange={(value) => setFormData({ ...formData, supplierId: value })}
+              >
+                <SelectTrigger data-testid="select-accessory-supplier">
+                  <SelectValue placeholder="Seleziona fornitore..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Nessun fornitore</SelectItem>
+                  {suppliers.map((supplier) => (
+                    <SelectItem key={supplier.id} value={supplier.id}>
+                      {supplier.name} ({supplier.code})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="space-y-3 p-3 bg-muted/50 rounded-lg">

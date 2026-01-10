@@ -59,6 +59,7 @@ const wizardSchema = z.object({
   warrantyMonths: z.string().default("3"),
   unitPrice: z.string().min(1, "Prezzo vendita obbligatorio"),
   costPrice: z.string().optional(),
+  supplierId: z.string().optional(),
   initialStock: z.array(z.object({
     warehouseId: z.string(),
     quantity: z.number(),
@@ -138,6 +139,7 @@ export function SparePartWizard({
       warrantyMonths: "3",
       unitPrice: "",
       costPrice: "",
+      supplierId: "",
       initialStock: [],
     },
   });
@@ -150,6 +152,16 @@ export function SparePartWizard({
 
   const { data: warehouses = [] } = useQuery<any[]>({
     queryKey: [warehouseEndpoint],
+  });
+
+  // Query per fornitori
+  interface Supplier {
+    id: string;
+    name: string;
+    code: string;
+  }
+  const { data: suppliers = [] } = useQuery<Supplier[]>({
+    queryKey: ["/api/suppliers/list"],
   });
 
   const createMutation = useMutation({
@@ -193,7 +205,21 @@ export function SparePartWizard({
           specs: specsData,
           initialStock: data.initialStock.length > 0 ? data.initialStock : undefined,
         });
-        createdProduct = await response.json();
+        createdProduct = response;
+      }
+
+      // Save supplier if provided
+      if (data.supplierId && createdProduct?.id) {
+        try {
+          await fetch(`/api/products/${createdProduct.id}/suppliers`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            credentials: "include",
+            body: JSON.stringify({ supplierId: data.supplierId, isPreferred: true }),
+          });
+        } catch (e) {
+          // Ignore supplier errors
+        }
       }
 
       return createdProduct;
@@ -524,6 +550,30 @@ export function SparePartWizard({
                           <SelectItem value="3">3 mesi</SelectItem>
                           <SelectItem value="6">6 mesi</SelectItem>
                           <SelectItem value="12">12 mesi</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="supplierId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Fornitore Preferito</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value || ""}>
+                        <FormControl>
+                          <SelectTrigger data-testid="select-part-supplier">
+                            <SelectValue placeholder="Seleziona fornitore (opzionale)" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="">Nessuno</SelectItem>
+                          {suppliers.map((s) => (
+                            <SelectItem key={s.id} value={s.id}>{s.name} ({s.code})</SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
                       <FormMessage />
