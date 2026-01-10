@@ -28995,11 +28995,21 @@ export function registerRoutes(app: Express): Server {
       const resellerId = req.user.role === 'reseller' ? req.user.id : req.user.resellerId;
       
       const oldRequest = await storage.getHrLeaveRequest(req.params.id);
-      const request = await storage.updateHrLeaveRequest(req.params.id, {
-        ...req.body,
-        reviewedBy: req.body.status ? req.user.id : undefined,
-        reviewedAt: req.body.status ? new Date() : undefined
-      });
+      
+      // Convert date strings to Date objects
+      const updates = { ...req.body };
+      if (updates.startDate && typeof updates.startDate === 'string') {
+        updates.startDate = new Date(updates.startDate);
+      }
+      if (updates.endDate && typeof updates.endDate === 'string') {
+        updates.endDate = new Date(updates.endDate);
+      }
+      if (req.body.status) {
+        updates.reviewedBy = req.user.id;
+        updates.reviewedAt = new Date();
+      }
+      
+      const request = await storage.updateHrLeaveRequest(req.params.id, updates);
       
       if (resellerId) {
         await storage.createHrAuditLog({
