@@ -29792,6 +29792,46 @@ export function registerRoutes(app: Express): Server {
   // REPAIR CENTER TEAM MANAGEMENT ENDPOINTS
   // ============================================================================
 
+
+  app.get("/api/repair-center/team", requireRole("repair_center", "repair_center_staff"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      const repairCenterId = getRepairCenterIdFromUser(req.user);
+      if (!repairCenterId) return res.status(400).json({ error: "Repair Center ID non trovato" });
+      
+      const staff = await storage.listRepairCenterStaff(repairCenterId);
+      const repairCenter = await storage.getUser(repairCenterId);
+      
+      const team = [
+        ...(repairCenter ? [{
+          id: repairCenter.id,
+          fullName: repairCenter.fullName,
+          username: repairCenter.username,
+          email: repairCenter.email,
+          phone: repairCenter.phone,
+          role: repairCenter.role,
+          isActive: repairCenter.isActive,
+          createdAt: repairCenter.createdAt,
+          isOwner: true
+        }] : []),
+        ...staff.map((s: any) => ({
+          id: s.id,
+          fullName: s.fullName,
+          username: s.username,
+          email: s.email,
+          phone: s.phone,
+          role: s.role,
+          isActive: s.isActive,
+          createdAt: s.createdAt,
+          isOwner: false
+        }))
+      ];
+      
+      res.json(team);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
   app.post("/api/repair-center/team", requireRole("repair_center"), async (req, res) => {
     try {
       if (!req.user) return res.status(401).json({ error: "Non autenticato" });
@@ -29917,25 +29957,6 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  app.get("/api/repair-center/team", requireRole("repair_center", "repair_center_staff"), async (req, res) => {
-    try {
-      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
-      const repairCenterId = getRepairCenterIdFromUser(req.user);
-      if (!repairCenterId) return res.status(400).json({ error: "Repair Center ID non trovato" });
-      
-      const staff = await storage.listRepairCenterStaff(repairCenterId);
-      const repairCenter = await storage.getUser(repairCenterId);
-      
-      const team = [
-        ...(repairCenter ? [{ id: repairCenter.id, fullName: repairCenter.fullName }] : []),
-        ...staff.map((s: any) => ({ id: s.id, fullName: s.fullName }))
-      ];
-      
-      res.json(team);
-    } catch (error: any) {
-      res.status(500).json({ error: error.message });
-    }
-  });
 
   app.get("/api/repair-center/hr/clock-events", requireRole("repair_center", "repair_center_staff"), async (req, res) => {
     try {
