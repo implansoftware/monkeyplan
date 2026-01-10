@@ -493,15 +493,23 @@ export default function AdminAccessoryCatalog() {
       });
     },
     onSuccess: async () => {
-      // Save supplier if changed
-      if (editingAccessory && formData.supplierId) {
+      // Save or remove supplier
+      if (editingAccessory) {
         try {
-          await fetch(`/api/products/${editingAccessory.id}/suppliers`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            credentials: "include",
-            body: JSON.stringify({ supplierId: formData.supplierId, isPreferred: true }),
-          });
+          if (formData.supplierId) {
+            await fetch(`/api/products/${editingAccessory.id}/suppliers`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              credentials: "include",
+              body: JSON.stringify({ supplierId: formData.supplierId, isPreferred: true }),
+            });
+          } else {
+            // Remove all suppliers when "Nessun fornitore" is selected
+            await fetch(`/api/products/${editingAccessory.id}/suppliers`, {
+              method: "DELETE",
+              credentials: "include",
+            });
+          }
         } catch (e) {
           // Ignore supplier errors
         }

@@ -708,13 +708,19 @@ export default function AdminSmartphoneCatalog() {
           })),
         });
         
-        // Save supplier if changed
+        // Save or remove supplier
         if (formData.supplierId) {
           await fetch(`/api/products/${editingSmartphone.id}/suppliers`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             credentials: "include",
             body: JSON.stringify({ supplierId: formData.supplierId, isPreferred: true }),
+          });
+        } else {
+          // Remove all suppliers when "Nessun fornitore" is selected
+          await fetch(`/api/products/${editingSmartphone.id}/suppliers`, {
+            method: "DELETE",
+            credentials: "include",
           });
         }
         

@@ -602,18 +602,24 @@ export default function SmartphoneCatalog() {
       try {
         await updateMutation.mutateAsync({ productId, data: { product, specs } });
         
-        // Update supplier if changed
-        if (formData.supplierId) {
-          try {
+        // Update or remove supplier
+        try {
+          if (formData.supplierId) {
             await fetch(`/api/products/${productId}/suppliers`, {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               credentials: "include",
               body: JSON.stringify({ supplierId: formData.supplierId, isPreferred: true }),
             });
-          } catch (supplierError) {
-            // Silently ignore supplier errors
+          } else {
+            // Remove all suppliers when "Nessun fornitore" is selected
+            await fetch(`/api/products/${productId}/suppliers`, {
+              method: "DELETE",
+              credentials: "include",
+            });
           }
+        } catch (supplierError) {
+          // Silently ignore supplier errors
         }
         
         // Update stock for each warehouse that changed

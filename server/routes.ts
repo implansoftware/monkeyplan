@@ -19634,6 +19634,16 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // DELETE /api/products/:id/suppliers - Remove all suppliers from product
+  app.delete("/api/products/:id/suppliers", requireAuth, requireRole("admin", "reseller", "reseller_collaborator", "reseller_staff", "sub_reseller", "repair_center"), async (req, res) => {
+    try {
+      await storage.deleteAllProductSuppliers(req.params.id);
+      res.status(204).send();
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+
   // POST /api/products/:productId/suppliers/:supplierId/set-preferred - Set preferred supplier
   app.post("/api/products/:productId/suppliers/:supplierId/set-preferred", requireAuth, requireRole("admin", "reseller", "reseller_collaborator", "reseller_staff", "sub_reseller", "repair_center"), async (req, res) => {
     try {

@@ -493,6 +493,7 @@ export interface IStorage {
   createProductSupplier(productSupplier: InsertProductSupplier): Promise<ProductSupplier>;
   updateProductSupplier(id: string, updates: Partial<InsertProductSupplier>): Promise<ProductSupplier>;
   deleteProductSupplier(id: string): Promise<void>;
+  deleteAllProductSuppliers(productId: string): Promise<void>;
   setPreferredSupplier(productId: string, supplierId: string): Promise<void>;
   
   // Supplier Orders (Ordini fornitori)
@@ -4754,6 +4755,10 @@ export class DatabaseStorage implements IStorage {
 
   async deleteProductSupplier(id: string): Promise<void> {
     await db.delete(productSuppliers).where(eq(productSuppliers.id, id));
+  }
+
+  async deleteAllProductSuppliers(productId: string): Promise<void> {
+    await db.delete(productSuppliers).where(eq(productSuppliers.productId, productId));
   }
 
   async setPreferredSupplier(productId: string, supplierId: string): Promise<void> {
