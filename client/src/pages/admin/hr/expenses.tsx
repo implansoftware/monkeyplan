@@ -1,12 +1,18 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Receipt, Clock, User, RefreshCw, Euro } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
+import { Receipt, Clock, User, RefreshCw, Euro, Pencil } from "lucide-react";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
 import { useState } from "react";
 import { AdminEntityFilterSelector, AdminEntityType } from "@/components/hr/admin-entity-filter-selector";
+import { queryClient, apiRequest } from "@/lib/queryClient";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { useToast } from "@/hooks/use-toast";
 import {
   Table,
   TableBody,
@@ -51,6 +57,14 @@ const statusLabels: Record<string, string> = {
 export default function AdminExpensesPage() {
   const [entityType, setEntityType] = useState<AdminEntityType>("all");
   const [selectedEntityId, setSelectedEntityId] = useState("");
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editingReport, setEditingReport] = useState<ExpenseReport | null>(null);
+  const [editForm, setEditForm] = useState({
+    title: "",
+    description: "",
+    totalAmount: ""
+  });
+  const { toast } = useToast();
 
   const queryParams = new URLSearchParams();
   if (entityType !== "all" && selectedEntityId) {
@@ -72,6 +86,52 @@ export default function AdminExpensesPage() {
   });
 
   const totalAmount = reports.reduce((sum, r) => sum + Number(r.totalAmount), 0);
+
+  const editMutation = useMutation({
+    mutationFn: async (data: { id: string; title: string; description: string; totalAmount: number }) => {
+      return apiRequest("PATCH", `/api/admin/hr/expense-reports/${data.id}`, {
+        title: data.title,
+        description: data.description || null,
+        totalAmount: data.totalAmount
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/hr/expense-reports", queryString] });
+      setEditDialogOpen(false);
+      setEditingReport(null);
+      toast({ title: "Nota spese aggiornata con successo" });
+    },
+    onError: () => {
+      toast({ title: "Errore durante l'aggiornamento", variant: "destructive" });
+    }
+  });
+
+  const openEditDialog = (report: ExpenseReport) => {
+    setEditingReport(report);
+    setEditForm({
+      title: report.title,
+      description: report.description || "",
+      totalAmount: String(report.totalAmount)
+    });
+    setEditDialogOpen(true);
+  };
+
+  const handleEdit = () => {
+    if (!editingReport) return;
+    const amount = parseFloat(editForm.totalAmount);
+    if (isNaN(amount) || amount < 0) {
+      toast({ title: "Importo non valido", variant: "destructive" });
+      return;
+    }
+    editMutation.mutate({
+      id: editingReport.id,
+      title: editForm.title,
+      description: editForm.description,
+      totalAmount: amount
+    });
+  };
+
+  const canEdit = (status: string) => status === "draft" || status === "submitted";
 
   return (
     <div className="p-6 space-y-6">
@@ -129,6 +189,7 @@ export default function AdminExpensesPage() {
                   <TableHead>Data Creazione</TableHead>
                   <TableHead>Stato</TableHead>
                   <TableHead>Descrizione</TableHead>
+                  <TableHead>Azioni</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -168,6 +229,18 @@ export default function AdminExpensesPage() {
                         {rep.description || "-"}
                       </span>
                     </TableCell>
+                    <TableCell>
+                      {canEdit(rep.status) && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => openEditDialog(rep)}
+                          data-testid={`button-edit-expense-${rep.id}`}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -175,6 +248,57 @@ export default function AdminExpensesPage() {
           )}
         </CardContent>
       </Card>
+
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Modifica Nota Spese</DialogTitle>
+            <DialogDescription>
+              Modifica i dettagli della nota spese
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>Titolo</Label>
+              <Input
+                value={editForm.title}
+                onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
+                placeholder="Titolo della nota spese..."
+                data-testid="input-edit-title"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Importo Totale (€)</Label>
+              <Input
+                type="number"
+                step="0.01"
+                min="0"
+                value={editForm.totalAmount}
+                onChange={(e) => setEditForm({ ...editForm, totalAmount: e.target.value })}
+                placeholder="0.00"
+                data-testid="input-edit-amount"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Descrizione</Label>
+              <Textarea
+                value={editForm.description}
+                onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
+                placeholder="Descrizione della spesa..."
+                data-testid="textarea-edit-description"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditDialogOpen(false)}>
+              Annulla
+            </Button>
+            <Button onClick={handleEdit} disabled={editMutation.isPending} data-testid="button-save-edit">
+              {editMutation.isPending ? "Salvataggio..." : "Salva"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

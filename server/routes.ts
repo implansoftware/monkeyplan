@@ -29696,6 +29696,110 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Admin HR PATCH endpoints
+  app.patch("/api/admin/hr/leave-requests/:id", requireRole("admin", "admin_staff"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      const existing = await storage.getHrLeaveRequest(req.params.id);
+      if (!existing) return res.status(404).json({ error: "Richiesta ferie non trovata" });
+      
+      const editableStatuses = ["pending", "draft"];
+      const { status, leaveType, startDate, endDate, totalHours, totalDays, isFullDay, notes } = req.body;
+      
+      if ((leaveType !== undefined || startDate !== undefined || endDate !== undefined || notes !== undefined) && !editableStatuses.includes(existing.status)) {
+        return res.status(400).json({ error: "Solo le richieste in attesa possono essere modificate" });
+      }
+      
+      const updateData: any = {};
+      if (status !== undefined) updateData.status = status;
+      if (leaveType !== undefined) updateData.leaveType = leaveType;
+      if (startDate !== undefined) updateData.startDate = new Date(startDate);
+      if (endDate !== undefined) updateData.endDate = new Date(endDate);
+      if (totalHours !== undefined) updateData.totalHours = parseFloat(totalHours);
+      if (totalDays !== undefined) updateData.totalDays = parseFloat(totalDays);
+      if (isFullDay !== undefined) updateData.isFullDay = isFullDay;
+      if (notes !== undefined) updateData.notes = notes;
+      
+      const updated = await storage.updateHrLeaveRequest(req.params.id, updateData);
+      res.json(updated);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.patch("/api/admin/hr/sick-leaves/:id", requireRole("admin", "admin_staff"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      const existing = await storage.getHrSickLeave(req.params.id);
+      if (!existing) return res.status(404).json({ error: "Malattia non trovata" });
+      
+      const editableStatuses = ["pending", "draft"];
+      const { status, startDate, endDate, protocolNumber, protocolDate, notes } = req.body;
+      
+      if ((startDate !== undefined || endDate !== undefined || protocolNumber !== undefined || notes !== undefined) && !editableStatuses.includes(existing.status)) {
+        return res.status(400).json({ error: "Solo le malattie in attesa possono essere modificate" });
+      }
+      
+      const updateData: any = {};
+      if (status !== undefined) updateData.status = status;
+      if (startDate !== undefined) updateData.startDate = new Date(startDate);
+      if (endDate !== undefined) updateData.endDate = new Date(endDate);
+      if (protocolNumber !== undefined) updateData.protocolNumber = protocolNumber;
+      if (protocolDate !== undefined) updateData.protocolDate = new Date(protocolDate);
+      if (notes !== undefined) updateData.notes = notes;
+      
+      const updated = await storage.updateHrSickLeave(req.params.id, updateData);
+      res.json(updated);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.patch("/api/admin/hr/expense-reports/:id", requireRole("admin", "admin_staff"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      const existing = await storage.getHrExpenseReport(req.params.id);
+      if (!existing) return res.status(404).json({ error: "Nota spese non trovata" });
+      
+      const editableStatuses = ["draft", "pending"];
+      const { status, title, description, totalAmount } = req.body;
+      
+      if ((title !== undefined || description !== undefined || totalAmount !== undefined) && !editableStatuses.includes(existing.status)) {
+        return res.status(400).json({ error: "Solo le note spese in bozza o attesa possono essere modificate" });
+      }
+      
+      const updateData: any = {};
+      if (status !== undefined) updateData.status = status;
+      if (title !== undefined) updateData.title = title;
+      if (description !== undefined) updateData.description = description;
+      if (totalAmount !== undefined) updateData.totalAmount = typeof totalAmount === "string" ? parseFloat(totalAmount) : totalAmount;
+      
+      const updated = await storage.updateHrExpenseReport(req.params.id, updateData);
+      res.json(updated);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.patch("/api/admin/hr/clock-events/:id", requireRole("admin", "admin_staff"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      const existing = await storage.getHrClockEvent(req.params.id);
+      if (!existing) return res.status(404).json({ error: "Timbratura non trovata" });
+      
+      const { eventType, eventTime, notes } = req.body;
+      const updateData: any = {};
+      if (eventType !== undefined) updateData.eventType = eventType;
+      if (eventTime !== undefined) updateData.eventTime = new Date(eventTime);
+      if (notes !== undefined) updateData.notes = notes;
+      
+      const updated = await storage.updateHrClockEvent(req.params.id, updateData);
+      res.json(updated);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   // HR Notifications
   app.get("/api/reseller/hr/notifications", requireRole("reseller", "reseller_staff"), async (req, res) => {
     try {

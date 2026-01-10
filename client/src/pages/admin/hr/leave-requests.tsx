@@ -1,13 +1,19 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Calendar, Clock, User, FileText, RefreshCw, Building2 } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
+import { Calendar, Clock, User, FileText, RefreshCw, Building2, Pencil } from "lucide-react";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
 import { useState } from "react";
 import { AdminEntityFilterSelector, AdminEntityType } from "@/components/hr/admin-entity-filter-selector";
-import { queryClient } from "@/lib/queryClient";
+import { queryClient, apiRequest } from "@/lib/queryClient";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { useToast } from "@/hooks/use-toast";
 import {
   Table,
   TableBody,
@@ -43,6 +49,14 @@ const leaveTypeLabels: Record<string, string> = {
   paternity: "Paternità",
   bereavement: "Lutto",
   other: "Altro",
+  ferie: "Ferie",
+  permesso_rol: "Permesso ROL",
+  permesso_studio: "Permesso Studio",
+  permesso_medico: "Permesso Medico",
+  permesso_lutto: "Permesso Lutto",
+  permesso_matrimonio: "Permesso Matrimonio",
+  congedo_parentale: "Congedo Parentale",
+  altro: "Altro",
 };
 
 const statusColors: Record<string, string> = {
@@ -60,6 +74,15 @@ const statusLabels: Record<string, string> = {
 export default function AdminLeaveRequestsPage() {
   const [entityType, setEntityType] = useState<AdminEntityType>("all");
   const [selectedEntityId, setSelectedEntityId] = useState("");
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editingRequest, setEditingRequest] = useState<LeaveRequest | null>(null);
+  const [editForm, setEditForm] = useState({
+    leaveType: "",
+    startDate: "",
+    endDate: "",
+    reason: ""
+  });
+  const { toast } = useToast();
 
   const queryParams = new URLSearchParams();
   if (entityType !== "all" && selectedEntityId) {
@@ -79,6 +102,48 @@ export default function AdminLeaveRequestsPage() {
       return res.json();
     },
   });
+
+  const editMutation = useMutation({
+    mutationFn: async (data: { id: string; leaveType: string; startDate: string; endDate: string; reason: string }) => {
+      return apiRequest("PATCH", `/api/admin/hr/leave-requests/${data.id}`, {
+        leaveType: data.leaveType,
+        startDate: data.startDate,
+        endDate: data.endDate,
+        reason: data.reason
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/hr/leave-requests", queryString] });
+      setEditDialogOpen(false);
+      setEditingRequest(null);
+      toast({ title: "Richiesta aggiornata con successo" });
+    },
+    onError: () => {
+      toast({ title: "Errore durante l'aggiornamento", variant: "destructive" });
+    }
+  });
+
+  const openEditDialog = (request: LeaveRequest) => {
+    setEditingRequest(request);
+    setEditForm({
+      leaveType: request.leaveType,
+      startDate: request.startDate.split("T")[0],
+      endDate: request.endDate.split("T")[0],
+      reason: request.reason || ""
+    });
+    setEditDialogOpen(true);
+  };
+
+  const handleEdit = () => {
+    if (!editingRequest) return;
+    editMutation.mutate({
+      id: editingRequest.id,
+      leaveType: editForm.leaveType,
+      startDate: editForm.startDate,
+      endDate: editForm.endDate,
+      reason: editForm.reason
+    });
+  };
 
   return (
     <div className="p-6 space-y-6">
@@ -126,6 +191,7 @@ export default function AdminLeaveRequestsPage() {
                   <TableHead>Date</TableHead>
                   <TableHead>Stato</TableHead>
                   <TableHead>Note</TableHead>
+                  <TableHead>Azioni</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -163,6 +229,18 @@ export default function AdminLeaveRequestsPage() {
                         {req.reason || "-"}
                       </span>
                     </TableCell>
+                    <TableCell>
+                      {req.status === "pending" && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => openEditDialog(req)}
+                          data-testid={`button-edit-leave-${req.id}`}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -170,6 +248,75 @@ export default function AdminLeaveRequestsPage() {
           )}
         </CardContent>
       </Card>
+
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Modifica Richiesta Ferie/Permesso</DialogTitle>
+            <DialogDescription>
+              Modifica i dettagli della richiesta
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>Tipo</Label>
+              <Select
+                value={editForm.leaveType}
+                onValueChange={(value) => setEditForm({ ...editForm, leaveType: value })}
+              >
+                <SelectTrigger data-testid="select-edit-leave-type">
+                  <SelectValue placeholder="Seleziona tipo" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ferie">Ferie</SelectItem>
+                  <SelectItem value="permesso_rol">Permesso ROL</SelectItem>
+                  <SelectItem value="permesso_studio">Permesso Studio</SelectItem>
+                  <SelectItem value="permesso_medico">Permesso Medico</SelectItem>
+                  <SelectItem value="permesso_lutto">Permesso Lutto</SelectItem>
+                  <SelectItem value="permesso_matrimonio">Permesso Matrimonio</SelectItem>
+                  <SelectItem value="congedo_parentale">Congedo Parentale</SelectItem>
+                  <SelectItem value="altro">Altro</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Data Inizio</Label>
+              <Input
+                type="date"
+                value={editForm.startDate}
+                onChange={(e) => setEditForm({ ...editForm, startDate: e.target.value })}
+                data-testid="input-edit-start-date"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Data Fine</Label>
+              <Input
+                type="date"
+                value={editForm.endDate}
+                onChange={(e) => setEditForm({ ...editForm, endDate: e.target.value })}
+                data-testid="input-edit-end-date"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Note</Label>
+              <Textarea
+                value={editForm.reason}
+                onChange={(e) => setEditForm({ ...editForm, reason: e.target.value })}
+                placeholder="Note aggiuntive..."
+                data-testid="textarea-edit-notes"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditDialogOpen(false)}>
+              Annulla
+            </Button>
+            <Button onClick={handleEdit} disabled={editMutation.isPending} data-testid="button-save-edit">
+              {editMutation.isPending ? "Salvataggio..." : "Salva"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

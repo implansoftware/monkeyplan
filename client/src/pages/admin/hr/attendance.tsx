@@ -1,12 +1,19 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Clock, User, RefreshCw, MapPin, ArrowRight, ArrowLeft } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
+import { Clock, User, RefreshCw, MapPin, ArrowRight, ArrowLeft, Pencil } from "lucide-react";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
 import { useState } from "react";
 import { AdminEntityFilterSelector, AdminEntityType } from "@/components/hr/admin-entity-filter-selector";
+import { queryClient, apiRequest } from "@/lib/queryClient";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { useToast } from "@/hooks/use-toast";
 import {
   Table,
   TableBody,
@@ -25,6 +32,7 @@ interface ClockEvent {
   longitude?: number | null;
   accuracy?: number | null;
   status: string;
+  notes?: string | null;
   createdAt: string;
   user?: {
     fullName: string;
@@ -55,6 +63,14 @@ const typeIcons: Record<string, JSX.Element> = {
 export default function AdminAttendancePage() {
   const [entityType, setEntityType] = useState<AdminEntityType>("all");
   const [selectedEntityId, setSelectedEntityId] = useState("");
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editingEvent, setEditingEvent] = useState<ClockEvent | null>(null);
+  const [editForm, setEditForm] = useState({
+    eventType: "",
+    eventTime: "",
+    notes: ""
+  });
+  const { toast } = useToast();
 
   const queryParams = new URLSearchParams();
   if (entityType !== "all" && selectedEntityId) {
@@ -74,6 +90,51 @@ export default function AdminAttendancePage() {
       return res.json();
     },
   });
+
+  const editMutation = useMutation({
+    mutationFn: async (data: { id: string; eventType: string; eventTime: string; notes: string }) => {
+      return apiRequest("PATCH", `/api/admin/hr/clock-events/${data.id}`, {
+        eventType: data.eventType,
+        eventTime: data.eventTime,
+        notes: data.notes || null
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/hr/clock-events", queryString] });
+      setEditDialogOpen(false);
+      setEditingEvent(null);
+      toast({ title: "Timbratura aggiornata con successo" });
+    },
+    onError: () => {
+      toast({ title: "Errore durante l'aggiornamento", variant: "destructive" });
+    }
+  });
+
+  const openEditDialog = (event: ClockEvent) => {
+    setEditingEvent(event);
+    const eventDate = new Date(event.eventTime);
+    const timeString = format(eventDate, "HH:mm");
+    setEditForm({
+      eventType: event.eventType,
+      eventTime: timeString,
+      notes: event.notes || ""
+    });
+    setEditDialogOpen(true);
+  };
+
+  const handleEdit = () => {
+    if (!editingEvent) return;
+    const originalDate = new Date(editingEvent.eventTime);
+    const [hours, minutes] = editForm.eventTime.split(":").map(Number);
+    originalDate.setHours(hours, minutes, 0, 0);
+    
+    editMutation.mutate({
+      id: editingEvent.id,
+      eventType: editForm.eventType,
+      eventTime: originalDate.toISOString(),
+      notes: editForm.notes
+    });
+  };
 
   return (
     <div className="p-6 space-y-6">
@@ -121,6 +182,7 @@ export default function AdminAttendancePage() {
                   <TableHead>Data/Ora</TableHead>
                   <TableHead>Posizione</TableHead>
                   <TableHead>Stato</TableHead>
+                  <TableHead>Azioni</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -175,6 +237,16 @@ export default function AdminAttendancePage() {
                         {evt.status}
                       </Badge>
                     </TableCell>
+                    <TableCell>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => openEditDialog(evt)}
+                        data-testid={`button-edit-clock-event-${evt.id}`}
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -182,6 +254,62 @@ export default function AdminAttendancePage() {
           )}
         </CardContent>
       </Card>
+
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Modifica Timbratura</DialogTitle>
+            <DialogDescription>
+              Modifica i dettagli della timbratura
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>Tipo Evento</Label>
+              <Select
+                value={editForm.eventType}
+                onValueChange={(value) => setEditForm({ ...editForm, eventType: value })}
+              >
+                <SelectTrigger data-testid="select-edit-event-type">
+                  <SelectValue placeholder="Seleziona tipo" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="entry">Entrata</SelectItem>
+                  <SelectItem value="exit">Uscita</SelectItem>
+                  <SelectItem value="break_start">Inizio Pausa</SelectItem>
+                  <SelectItem value="break_end">Fine Pausa</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Orario</Label>
+              <Input
+                type="time"
+                value={editForm.eventTime}
+                onChange={(e) => setEditForm({ ...editForm, eventTime: e.target.value })}
+                data-testid="input-edit-event-time"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Note</Label>
+              <Textarea
+                value={editForm.notes}
+                onChange={(e) => setEditForm({ ...editForm, notes: e.target.value })}
+                placeholder="Note aggiuntive..."
+                data-testid="textarea-edit-notes"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditDialogOpen(false)}>
+              Annulla
+            </Button>
+            <Button onClick={handleEdit} disabled={editMutation.isPending} data-testid="button-save-edit">
+              {editMutation.isPending ? "Salvataggio..." : "Salva"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
