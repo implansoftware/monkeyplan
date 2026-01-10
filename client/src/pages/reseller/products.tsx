@@ -667,9 +667,26 @@ export default function ResellerProducts() {
     setExpandedBrands(new Set());
     setEditDeviceSearchQuery("");
     
-    // Reset supplier states - will be populated by useEffect when suppliers load
+    // Reset supplier states
     setEditSupplierId(null);
     setOriginalSupplierId(null);
+    
+    // Load current supplier association
+    try {
+      const supplierRes = await fetch(`/api/products/${product.id}/suppliers`, {
+        credentials: 'include'
+      });
+      if (supplierRes.ok) {
+        const supplierData = await supplierRes.json();
+        if (supplierData && supplierData.length > 0) {
+          const preferredSupplier = supplierData.find((s: any) => s.isPreferred) || supplierData[0];
+          setEditSupplierId(preferredSupplier.supplierId);
+          setOriginalSupplierId(preferredSupplier.supplierId);
+        }
+      }
+    } catch (error) {
+      console.error("Failed to load supplier:", error);
+    }
     
     try {
       const res = await fetch(`/api/reseller/products/${product.id}/stock`, {
