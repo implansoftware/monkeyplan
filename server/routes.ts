@@ -30125,19 +30125,98 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  app.patch("/api/repair-center/hr/leave-requests/:id", requireRole("repair_center"), async (req, res) => {
+  app.patch("/api/repair-center/hr/leave-requests/:id", requireRole("repair_center", "repair_center_staff"), async (req, res) => {
     try {
       if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      const repairCenterId = getRepairCenterIdFromUser(req.user);
+      if (!repairCenterId) return res.status(400).json({ error: "Repair Center ID non trovato" });
+      
       const existing = await storage.getHrLeaveRequest(req.params.id);
       if (!existing) return res.status(404).json({ error: "Richiesta non trovata" });
       
-      const updated = await storage.updateHrLeaveRequest(req.params.id, {
-        status: req.body.status,
-        approvedBy: req.body.status === 'approved' ? req.user.id : undefined
-      });
+      const rcStaff = await storage.listRepairCenterStaff(repairCenterId);
+      const rcStaffIds = new Set(rcStaff.map((s) => s.id));
+      rcStaffIds.add(repairCenterId);
       
+      if (!rcStaffIds.has(existing.userId)) {
+        return res.status(403).json({ error: "Non autorizzato a modificare questa richiesta" });
+      }
+      
+      const isOwner = existing.userId === req.user.id;
+      const isManager = req.user.role === 'repair_center';
+      
+      if (existing.status !== 'pending' && !req.body.status) {
+        return res.status(400).json({ error: "Solo lo stato può essere modificato per richieste già approvate/rifiutate" });
+      }
+      
+      if (!isManager && !isOwner) {
+        return res.status(403).json({ error: "Non autorizzato" });
+      }
+      
+      if (!isManager && req.body.status) {
+        return res.status(403).json({ error: "Solo il manager può approvare/rifiutare le richieste" });
+      }
+      
+      const updateData = {};
+      
+      if (existing.status === 'pending') {
+        if (req.body.leaveType !== undefined) updateData.leaveType = req.body.leaveType;
+        if (req.body.startDate !== undefined) updateData.startDate = new Date(req.body.startDate);
+        if (req.body.endDate !== undefined) updateData.endDate = new Date(req.body.endDate);
+        if (req.body.totalHours !== undefined) updateData.totalHours = req.body.totalHours;
+        if (req.body.totalDays !== undefined) updateData.totalDays = req.body.totalDays;
+        if (req.body.isFullDay !== undefined) updateData.isFullDay = req.body.isFullDay;
+        if (req.body.notes !== undefined) updateData.notes = req.body.notes;
+      }
+      
+      if (req.body.status && isManager) {
+        updateData.status = req.body.status;
+        updateData.reviewedBy = req.user.id;
+        updateData.reviewedAt = new Date();
+      }
+      
+      const updated = await storage.updateHrLeaveRequest(req.params.id, updateData);
       res.json(updated);
-    } catch (error: any) {
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+  
+  app.patch("/api/repair-center/hr/sick-leaves/:id", requireRole("repair_center", "repair_center_staff"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      const repairCenterId = getRepairCenterIdFromUser(req.user);
+      if (!repairCenterId) return res.status(400).json({ error: "Repair Center ID non trovato" });
+      
+      const existing = await storage.getHrSickLeave(req.params.id);
+      if (!existing) return res.status(404).json({ error: "Malattia non trovata" });
+      
+      const rcStaff = await storage.listRepairCenterStaff(repairCenterId);
+      const rcStaffIds = new Set(rcStaff.map((s) => s.id));
+      rcStaffIds.add(repairCenterId);
+      
+      if (!rcStaffIds.has(existing.userId)) {
+        return res.status(403).json({ error: "Non autorizzato a modificare questa malattia" });
+      }
+      
+      const isOwner = existing.userId === req.user.id;
+      const isManager = req.user.role === 'repair_center';
+      
+      if (!isManager && !isOwner) {
+        return res.status(403).json({ error: "Non autorizzato" });
+      }
+      
+      const updateData = {};
+      if (req.body.startDate !== undefined) updateData.startDate = new Date(req.body.startDate);
+      if (req.body.endDate !== undefined) updateData.endDate = req.body.endDate ? new Date(req.body.endDate) : null;
+      if (req.body.protocolNumber !== undefined) updateData.protocolNumber = req.body.protocolNumber;
+      if (req.body.protocolDate !== undefined) updateData.protocolDate = req.body.protocolDate ? new Date(req.body.protocolDate) : null;
+      if (req.body.notes !== undefined) updateData.notes = req.body.notes;
+      if (req.body.status !== undefined && isManager) updateData.status = req.body.status;
+      
+      const updated = await storage.updateHrSickLeave(req.params.id, updateData);
+      res.json(updated);
+    } catch (error) {
       res.status(500).json({ error: error.message });
     }
   });

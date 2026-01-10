@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Link } from "wouter";
-import { CalendarDays, Plus, ArrowLeft, Check, X } from "lucide-react";
+import { CalendarDays, Plus, ArrowLeft, Check, X, Pencil } from "lucide-react";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
@@ -51,7 +51,10 @@ interface StaffMember {
 
 export default function RepairCenterHrLeaveRequests() {
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editingRequest, setEditingRequest] = useState<LeaveRequest | null>(null);
   const [newRequest, setNewRequest] = useState({ leaveType: "ferie", startDate: "", endDate: "", notes: "", userId: "" });
+  const [editForm, setEditForm] = useState({ leaveType: "", startDate: "", endDate: "", notes: "" });
   const { toast } = useToast();
 
   const { data: leaveRequests = [], isLoading } = useQuery<LeaveRequest[]>({
@@ -77,7 +80,7 @@ export default function RepairCenterHrLeaveRequests() {
     }
   });
 
-  const updateMutation = useMutation({
+  const updateStatusMutation = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: string }) => {
       return apiRequest("PATCH", `/api/repair-center/hr/leave-requests/${id}`, { status });
     },
@@ -89,6 +92,32 @@ export default function RepairCenterHrLeaveRequests() {
       toast({ title: "Errore", description: error.message, variant: "destructive" });
     }
   });
+
+  const editMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: any }) => {
+      return apiRequest("PATCH", `/api/repair-center/hr/leave-requests/${id}`, data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/repair-center/hr/leave-requests"] });
+      setEditDialogOpen(false);
+      setEditingRequest(null);
+      toast({ title: "Richiesta modificata", description: "Le modifiche sono state salvate." });
+    },
+    onError: (error: any) => {
+      toast({ title: "Errore", description: error.message, variant: "destructive" });
+    }
+  });
+
+  const openEditDialog = (request: LeaveRequest) => {
+    setEditingRequest(request);
+    setEditForm({
+      leaveType: request.leaveType,
+      startDate: request.startDate.split("T")[0],
+      endDate: request.endDate.split("T")[0],
+      notes: request.notes || ""
+    });
+    setEditDialogOpen(true);
+  };
 
   return (
     <div className="space-y-6" data-testid="page-rc-hr-leave-requests">
@@ -158,16 +187,21 @@ export default function RepairCenterHrLeaveRequests() {
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      {request.status === "pending" && (
-                        <div className="flex gap-1">
-                          <Button size="sm" variant="ghost" onClick={() => updateMutation.mutate({ id: request.id, status: "approved" })}>
-                            <Check className="h-4 w-4 text-emerald-600" />
-                          </Button>
-                          <Button size="sm" variant="ghost" onClick={() => updateMutation.mutate({ id: request.id, status: "rejected" })}>
-                            <X className="h-4 w-4 text-red-600" />
-                          </Button>
-                        </div>
-                      )}
+                      <div className="flex gap-1">
+                        {request.status === "pending" && (
+                          <>
+                            <Button size="sm" variant="ghost" onClick={() => openEditDialog(request)} data-testid={`button-edit-leave-${request.id}`}>
+                              <Pencil className="h-4 w-4 text-blue-600" />
+                            </Button>
+                            <Button size="sm" variant="ghost" onClick={() => updateStatusMutation.mutate({ id: request.id, status: "approved" })}>
+                              <Check className="h-4 w-4 text-emerald-600" />
+                            </Button>
+                            <Button size="sm" variant="ghost" onClick={() => updateStatusMutation.mutate({ id: request.id, status: "rejected" })}>
+                              <X className="h-4 w-4 text-red-600" />
+                            </Button>
+                          </>
+                        )}
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -229,6 +263,54 @@ export default function RepairCenterHrLeaveRequests() {
             <Button variant="outline" onClick={() => setDialogOpen(false)}>Annulla</Button>
             <Button onClick={() => createMutation.mutate(newRequest)} disabled={createMutation.isPending || !newRequest.userId || !newRequest.startDate || !newRequest.endDate} data-testid="button-submit-leave">
               Invia Richiesta
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Modifica Richiesta</DialogTitle>
+            <DialogDescription>Modifica i dati della richiesta di {editingRequest?.user?.fullName}</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <label className="text-sm font-medium">Tipo</label>
+              <Select value={editForm.leaveType} onValueChange={(v) => setEditForm({ ...editForm, leaveType: v })}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {Object.entries(leaveTypeLabels).map(([key, label]) => (
+                    <SelectItem key={key} value={key}>{label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-sm font-medium">Data Inizio</label>
+                <Input type="date" value={editForm.startDate} onChange={(e) => setEditForm({ ...editForm, startDate: e.target.value })} />
+              </div>
+              <div>
+                <label className="text-sm font-medium">Data Fine</label>
+                <Input type="date" value={editForm.endDate} onChange={(e) => setEditForm({ ...editForm, endDate: e.target.value })} />
+              </div>
+            </div>
+            <div>
+              <label className="text-sm font-medium">Note (opzionale)</label>
+              <Textarea value={editForm.notes} onChange={(e) => setEditForm({ ...editForm, notes: e.target.value })} placeholder="Motivazione..." />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditDialogOpen(false)}>Annulla</Button>
+            <Button 
+              onClick={() => editingRequest && editMutation.mutate({ id: editingRequest.id, data: editForm })} 
+              disabled={editMutation.isPending || !editForm.startDate || !editForm.endDate}
+              data-testid="button-save-leave-edit"
+            >
+              Salva Modifiche
             </Button>
           </DialogFooter>
         </DialogContent>

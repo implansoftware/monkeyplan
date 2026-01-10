@@ -21,7 +21,8 @@ import {
   Filter,
   User,
   Calendar,
-  Eye
+  Eye,
+  Pencil
 } from "lucide-react";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -71,6 +72,8 @@ const statusLabels: Record<string, { label: string; variant: "default" | "second
 export default function HrLeaveRequests() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editingRequest, setEditingRequest] = useState<LeaveRequest | null>(null);
   const [entityType, setEntityType] = useState<EntityType>("own");
   const [selectedEntityId, setSelectedEntityId] = useState<string>("");
   const { buildQueryParams, isReadOnly } = useEntityFilter();
@@ -80,6 +83,12 @@ export default function HrLeaveRequests() {
     endDate: "",
     reason: "",
     userId: ""
+  });
+  const [editForm, setEditForm] = useState({
+    leaveType: "",
+    startDate: "",
+    endDate: "",
+    reason: ""
   });
   const { toast } = useToast();
 
@@ -124,7 +133,7 @@ export default function HrLeaveRequests() {
     }
   });
 
-  const updateMutation = useMutation({
+  const updateStatusMutation = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: string }) => {
       return apiRequest("PATCH", `/api/reseller/hr/leave-requests/${id}`, { status });
     },
@@ -136,6 +145,32 @@ export default function HrLeaveRequests() {
       toast({ title: "Errore", description: error.message, variant: "destructive" });
     }
   });
+
+  const editMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: any }) => {
+      return apiRequest("PATCH", `/api/reseller/hr/leave-requests/${id}`, data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/reseller/hr/leave-requests"] });
+      setEditDialogOpen(false);
+      setEditingRequest(null);
+      toast({ title: "Richiesta modificata", description: "Le modifiche sono state salvate." });
+    },
+    onError: (error: any) => {
+      toast({ title: "Errore", description: error.message, variant: "destructive" });
+    }
+  });
+
+  const openEditDialog = (request: LeaveRequest) => {
+    setEditingRequest(request);
+    setEditForm({
+      leaveType: request.leaveType,
+      startDate: request.startDate.split("T")[0],
+      endDate: request.endDate.split("T")[0],
+      reason: request.reason || ""
+    });
+    setEditDialogOpen(true);
+  };
 
   const filteredRequests = requests.filter(req => {
     if (statusFilter !== "all" && req.status !== statusFilter) return false;
@@ -278,8 +313,17 @@ export default function HrLeaveRequests() {
                             <Button
                               size="sm"
                               variant="ghost"
+                              className="h-8 w-8 p-0 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                              onClick={() => openEditDialog(request)}
+                              data-testid={`button-edit-${request.id}`}
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
                               className="h-8 w-8 p-0 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50"
-                              onClick={() => updateMutation.mutate({ id: request.id, status: 'approved' })}
+                              onClick={() => updateStatusMutation.mutate({ id: request.id, status: 'approved' })}
                               data-testid={`button-approve-${request.id}`}
                             >
                               <Check className="h-4 w-4" />
@@ -288,7 +332,7 @@ export default function HrLeaveRequests() {
                               size="sm"
                               variant="ghost"
                               className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
-                              onClick={() => updateMutation.mutate({ id: request.id, status: 'rejected' })}
+                              onClick={() => updateStatusMutation.mutate({ id: request.id, status: 'rejected' })}
                               data-testid={`button-reject-${request.id}`}
                             >
                               <X className="h-4 w-4" />
@@ -383,6 +427,71 @@ export default function HrLeaveRequests() {
               data-testid="button-submit-request"
             >
               {createMutation.isPending ? "Invio..." : "Invia Richiesta"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Modifica Richiesta</DialogTitle>
+            <DialogDescription>Modifica i dati della richiesta di {editingRequest?.user?.fullName}</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Tipo</Label>
+              <Select value={editForm.leaveType} onValueChange={(v) => setEditForm({ ...editForm, leaveType: v })}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ferie">Ferie</SelectItem>
+                  <SelectItem value="permesso_rol">Permesso ROL</SelectItem>
+                  <SelectItem value="permesso_studio">Permesso Studio</SelectItem>
+                  <SelectItem value="permesso_medico">Permesso Medico</SelectItem>
+                  <SelectItem value="permesso_lutto">Permesso Lutto</SelectItem>
+                  <SelectItem value="permesso_matrimonio">Permesso Matrimonio</SelectItem>
+                  <SelectItem value="congedo_parentale">Congedo Parentale</SelectItem>
+                  <SelectItem value="altro">Altro</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Data Inizio</Label>
+                <Input
+                  type="date"
+                  value={editForm.startDate}
+                  onChange={(e) => setEditForm({ ...editForm, startDate: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Data Fine</Label>
+                <Input
+                  type="date"
+                  value={editForm.endDate}
+                  onChange={(e) => setEditForm({ ...editForm, endDate: e.target.value })}
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Motivazione (opzionale)</Label>
+              <Textarea
+                value={editForm.reason}
+                onChange={(e) => setEditForm({ ...editForm, reason: e.target.value })}
+                placeholder="Descrivi il motivo della richiesta..."
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditDialogOpen(false)}>Annulla</Button>
+            <Button 
+              onClick={() => editingRequest && editMutation.mutate({ id: editingRequest.id, data: editForm })}
+              disabled={!editForm.startDate || !editForm.endDate || editMutation.isPending}
+              data-testid="button-save-edit"
+            >
+              {editMutation.isPending ? "Salvataggio..." : "Salva Modifiche"}
             </Button>
           </DialogFooter>
         </DialogContent>

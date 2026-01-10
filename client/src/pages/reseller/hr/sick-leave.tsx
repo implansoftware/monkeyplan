@@ -23,7 +23,8 @@ import {
   Paperclip,
   Download,
   Loader2,
-  Eye
+  Eye,
+  Pencil
 } from "lucide-react";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -58,6 +59,8 @@ const statusLabels: Record<string, { label: string; variant: "default" | "second
 export default function HrSickLeave() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editingSickLeave, setEditingSickLeave] = useState<SickLeave | null>(null);
   const [entityType, setEntityType] = useState<EntityType>("own");
   const [selectedEntityId, setSelectedEntityId] = useState<string>("");
   const { buildQueryParams, isReadOnly } = useEntityFilter();
@@ -66,6 +69,13 @@ export default function HrSickLeave() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [newSickLeave, setNewSickLeave] = useState({
     userId: "",
+    startDate: "",
+    endDate: "",
+    certificateNumber: "",
+    inpsProtocol: "",
+    notes: ""
+  });
+  const [editForm, setEditForm] = useState({
     startDate: "",
     endDate: "",
     certificateNumber: "",
@@ -136,6 +146,33 @@ export default function HrSickLeave() {
       toast({ title: "Errore", description: error.message, variant: "destructive" });
     }
   });
+
+  const editMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: any }) => {
+      return apiRequest("PATCH", `/api/reseller/hr/sick-leaves/${id}`, data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/reseller/hr/sick-leaves"] });
+      setEditDialogOpen(false);
+      setEditingSickLeave(null);
+      toast({ title: "Malattia modificata", description: "Le modifiche sono state salvate." });
+    },
+    onError: (error: any) => {
+      toast({ title: "Errore", description: error.message, variant: "destructive" });
+    }
+  });
+
+  const openEditDialog = (sickLeave: SickLeave) => {
+    setEditingSickLeave(sickLeave);
+    setEditForm({
+      startDate: sickLeave.startDate.split("T")[0],
+      endDate: sickLeave.endDate ? sickLeave.endDate.split("T")[0] : "",
+      certificateNumber: sickLeave.certificateNumber || "",
+      inpsProtocol: sickLeave.inpsProtocol || "",
+      notes: sickLeave.notes || ""
+    });
+    setEditDialogOpen(true);
+  };
 
   const filteredSickLeaves = sickLeaves.filter(sl => {
     if (statusFilter !== "all" && sl.status !== statusFilter) return false;
@@ -253,6 +290,7 @@ export default function HrSickLeave() {
                   <TableHead>Protocollo INPS</TableHead>
                   <TableHead>Certificato</TableHead>
                   <TableHead>Stato</TableHead>
+                  <TableHead>Azioni</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -308,6 +346,19 @@ export default function HrSickLeave() {
                       </TableCell>
                       <TableCell>
                         <Badge variant={statusInfo.variant}>{statusInfo.label}</Badge>
+                      </TableCell>
+                      <TableCell>
+                        {sl.status === 'pending' && !readOnly && (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-8 w-8 p-0 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                            onClick={() => openEditDialog(sl)}
+                            data-testid={`button-edit-${sl.id}`}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                        )}
                       </TableCell>
                     </TableRow>
                   );
@@ -449,6 +500,69 @@ export default function HrSickLeave() {
               ) : (
                 "Registra"
               )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Modifica Malattia</DialogTitle>
+            <DialogDescription>Modifica i dati della malattia di {editingSickLeave?.user?.fullName}</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Data Inizio</Label>
+                <Input
+                  type="date"
+                  value={editForm.startDate}
+                  onChange={(e) => setEditForm({ ...editForm, startDate: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Data Fine (se nota)</Label>
+                <Input
+                  type="date"
+                  value={editForm.endDate}
+                  onChange={(e) => setEditForm({ ...editForm, endDate: e.target.value })}
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Numero Certificato</Label>
+              <Input
+                value={editForm.certificateNumber}
+                onChange={(e) => setEditForm({ ...editForm, certificateNumber: e.target.value })}
+                placeholder="es. ABC123456"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Protocollo INPS</Label>
+              <Input
+                value={editForm.inpsProtocol}
+                onChange={(e) => setEditForm({ ...editForm, inpsProtocol: e.target.value })}
+                placeholder="es. INPS-2024-123456"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Note (opzionale)</Label>
+              <Textarea
+                value={editForm.notes}
+                onChange={(e) => setEditForm({ ...editForm, notes: e.target.value })}
+                placeholder="Note aggiuntive..."
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditDialogOpen(false)}>Annulla</Button>
+            <Button 
+              onClick={() => editingSickLeave && editMutation.mutate({ id: editingSickLeave.id, data: editForm })}
+              disabled={!editForm.startDate || editMutation.isPending}
+              data-testid="button-save-sick-edit"
+            >
+              {editMutation.isPending ? "Salvataggio..." : "Salva Modifiche"}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Link } from "wouter";
-import { Thermometer, Plus, ArrowLeft, FileUp, Download } from "lucide-react";
+import { Thermometer, Plus, ArrowLeft, FileUp, Download, Pencil } from "lucide-react";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
@@ -35,10 +35,13 @@ interface StaffMember {
 
 export default function RepairCenterHrSickLeave() {
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editingSickLeave, setEditingSickLeave] = useState<SickLeave | null>(null);
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
   const [selectedSickLeaveId, setSelectedSickLeaveId] = useState<string | null>(null);
   const [certificateFile, setCertificateFile] = useState<File | null>(null);
   const [newSickLeave, setNewSickLeave] = useState({ userId: "", startDate: "", endDate: "", protocolNumber: "", notes: "" });
+  const [editForm, setEditForm] = useState({ startDate: "", endDate: "", protocolNumber: "", notes: "" });
   const { toast } = useToast();
 
   const { data: sickLeaves = [], isLoading } = useQuery<SickLeave[]>({
@@ -109,6 +112,32 @@ export default function RepairCenterHrSickLeave() {
     }
   });
 
+  const editMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: any }) => {
+      return apiRequest("PATCH", `/api/repair-center/hr/sick-leaves/${id}`, data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/repair-center/hr/sick-leaves"] });
+      setEditDialogOpen(false);
+      setEditingSickLeave(null);
+      toast({ title: "Malattia modificata", description: "Le modifiche sono state salvate." });
+    },
+    onError: (error: any) => {
+      toast({ title: "Errore", description: error.message, variant: "destructive" });
+    }
+  });
+
+  const openEditDialog = (sickLeave: SickLeave) => {
+    setEditingSickLeave(sickLeave);
+    setEditForm({
+      startDate: sickLeave.startDate.split("T")[0],
+      endDate: sickLeave.endDate ? sickLeave.endDate.split("T")[0] : "",
+      protocolNumber: sickLeave.protocolNumber || "",
+      notes: sickLeave.notes || ""
+    });
+    setEditDialogOpen(true);
+  };
+
   return (
     <div className="space-y-6" data-testid="page-rc-hr-sick-leave">
       <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-red-500/5 via-red-500/10 to-slate-100 dark:from-red-500/10 dark:via-red-500/5 dark:to-slate-900 p-6 border">
@@ -162,6 +191,7 @@ export default function RepairCenterHrSickLeave() {
                   <TableHead>N. Certificato</TableHead>
                   <TableHead>Certificato</TableHead>
                   <TableHead>Note</TableHead>
+                  <TableHead>Azioni</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -186,6 +216,13 @@ export default function RepairCenterHrSickLeave() {
                       )}
                     </TableCell>
                     <TableCell className="text-muted-foreground max-w-[200px] truncate">{sickLeave.notes || "-"}</TableCell>
+                    <TableCell>
+                      {sickLeave.status === 'pending' && (
+                        <Button size="sm" variant="ghost" onClick={() => openEditDialog(sickLeave)} data-testid={`button-edit-sick-${sickLeave.id}`}>
+                          <Pencil className="h-4 w-4 text-blue-600" />
+                        </Button>
+                      )}
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -276,6 +313,45 @@ export default function RepairCenterHrSickLeave() {
             >
               <FileUp className="h-4 w-4 mr-2" />
               Carica Certificato
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Modifica Malattia</DialogTitle>
+            <DialogDescription>Modifica i dati della malattia di {editingSickLeave?.user?.fullName}</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-sm font-medium">Data Inizio</label>
+                <Input type="date" value={editForm.startDate} onChange={(e) => setEditForm({ ...editForm, startDate: e.target.value })} />
+              </div>
+              <div>
+                <label className="text-sm font-medium">Data Fine (opzionale)</label>
+                <Input type="date" value={editForm.endDate} onChange={(e) => setEditForm({ ...editForm, endDate: e.target.value })} />
+              </div>
+            </div>
+            <div>
+              <label className="text-sm font-medium">Numero Certificato</label>
+              <Input value={editForm.protocolNumber} onChange={(e) => setEditForm({ ...editForm, protocolNumber: e.target.value })} placeholder="Es. ABC123456" />
+            </div>
+            <div>
+              <label className="text-sm font-medium">Note (opzionale)</label>
+              <Textarea value={editForm.notes} onChange={(e) => setEditForm({ ...editForm, notes: e.target.value })} placeholder="Note aggiuntive..." />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditDialogOpen(false)}>Annulla</Button>
+            <Button 
+              onClick={() => editingSickLeave && editMutation.mutate({ id: editingSickLeave.id, data: editForm })} 
+              disabled={editMutation.isPending || !editForm.startDate}
+              data-testid="button-save-sick-edit"
+            >
+              Salva Modifiche
             </Button>
           </DialogFooter>
         </DialogContent>
