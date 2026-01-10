@@ -11926,6 +11926,16 @@ export function registerRoutes(app: Express): Server {
       }
       
       // Set product type to 'accessorio'
+      // Map cents fields from wizard to DB fields
+      if (product.unitPriceCents !== undefined && product.unitPrice === undefined) {
+        product.unitPrice = Number(product.unitPriceCents);
+        delete product.unitPriceCents;
+      }
+      if (product.costPriceCents !== undefined && product.costPrice === undefined) {
+        product.costPrice = Number(product.costPriceCents);
+        delete product.costPriceCents;
+      }
+      
       product.productType = 'accessorio';
       // Set category from accessoryType if not provided
       if (!product.category) {
