@@ -29792,17 +29792,6 @@ export function registerRoutes(app: Express): Server {
   // REPAIR CENTER TEAM MANAGEMENT ENDPOINTS
   // ============================================================================
 
-  app.get("/api/repair-center/team", requireRole("repair_center"), async (req, res) => {
-    try {
-      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
-      const repairCenterId = req.user.id;
-      const staff = await storage.listRepairCenterStaff(repairCenterId);
-      res.json(staff.map((s: any) => ({ ...s, password: undefined })));
-    } catch (error: any) {
-      res.status(500).json({ error: error.message });
-    }
-  });
-
   app.post("/api/repair-center/team", requireRole("repair_center"), async (req, res) => {
     try {
       if (!req.user) return res.status(401).json({ error: "Non autenticato" });
