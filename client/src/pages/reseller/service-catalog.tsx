@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
 import {
   Dialog,
   DialogContent,
@@ -92,7 +92,7 @@ interface ServiceCatalogResponse {
 
 export default function ResellerServiceCatalog() {
   const { toast } = useToast();
-  const [activeTab, setActiveTab] = useState("catalog");
+  
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [selectedCenterId, setSelectedCenterId] = useState<string>("reseller");
@@ -411,40 +411,120 @@ export default function ResellerServiceCatalog() {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Hero Header */}
-      <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-primary/5 via-primary/10 to-slate-100 dark:from-primary/10 dark:via-primary/5 dark:to-slate-900 p-6 border">
-        <div className="absolute inset-0 opacity-[0.03]" style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23000' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
-        }} />
-        <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="flex items-center gap-3 mb-1">
-            <div className="h-10 w-10 rounded-xl bg-primary text-primary-foreground flex items-center justify-center shadow-lg shadow-primary/25">
-              <Euro className="h-5 w-5" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold tracking-tight" data-testid="text-page-title">
-                Listino Prezzi
-              </h1>
-              <p className="text-sm text-muted-foreground">
-                Gestisci i prezzi e crea le tue voci di listino personalizzate
-              </p>
-            </div>
-          </div>
+    <div className="p-6 space-y-6">
+      {/* Header */}
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold flex items-center gap-2" data-testid="text-page-title">
+            <Euro className="h-6 w-6" />
+            Listino Prezzi
+          </h1>
+          <p className="text-muted-foreground">
+            Gestisci i prezzi e crea le tue voci di listino personalizzate
+          </p>
         </div>
+        <Button onClick={() => openItemDialog()} data-testid="button-create-item">
+          <Plus className="h-4 w-4 mr-2" />
+          Nuova Voce
+        </Button>
       </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full max-w-md grid-cols-2">
-          <TabsTrigger value="catalog" data-testid="tab-catalog">
-            Catalogo Completo
-          </TabsTrigger>
-          <TabsTrigger value="my-items" data-testid="tab-my-items">
+      {/* Le Mie Voci Section */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <Tag className="h-5 w-5" />
             Le Mie Voci
-          </TabsTrigger>
-        </TabsList>
+          </CardTitle>
+          <CardDescription>
+            {myItems?.length || 0} voci di listino create da te
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {isLoadingMyItems ? (
+            <div className="space-y-4">
+              {[1, 2, 3].map(i => (
+                <Skeleton key={i} className="h-16 w-full" />
+              ))}
+            </div>
+          ) : filteredMyItems.length === 0 ? (
+            <div className="text-center py-12 text-muted-foreground">
+              <Wrench className="h-12 w-12 mx-auto mb-4 opacity-50" />
+              <p className="mb-4">{myItems?.length === 0 ? "Non hai ancora creato voci di listino personalizzate" : "Nessun risultato trovato"}</p>
+              {myItems?.length === 0 && (
+                <Button onClick={() => openItemDialog()} data-testid="button-create-first-item">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Crea la Prima Voce
+                </Button>
+              )}
+            </div>
+          ) : (
+            <div className="rounded-md border overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Codice</TableHead>
+                    <TableHead>Intervento</TableHead>
+                    <TableHead>Categoria</TableHead>
+                    <TableHead className="text-right">Prezzo</TableHead>
+                    <TableHead className="text-right">Tempo</TableHead>
+                    <TableHead className="w-[100px]">Azioni</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredMyItems.map(item => (
+                    <TableRow key={item.id} data-testid={`row-my-item-${item.id}`}>
+                      <TableCell className="font-mono text-sm">{item.code}</TableCell>
+                      <TableCell>
+                        <div className="font-medium">{item.name}</div>
+                        {item.description && (
+                          <div className="text-sm text-muted-foreground line-clamp-1">
+                            {item.description}
+                          </div>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="secondary" className={getCategoryColor(item.category)}>
+                          {getCategoryLabel(item.category)}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right font-semibold">
+                        {formatCurrency(item.defaultPriceCents)}
+                      </TableCell>
+                      <TableCell className="text-right text-muted-foreground">
+                        {item.defaultLaborMinutes} min
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex gap-1">
+                          <Button 
+                            variant="ghost" 
+                            size="icon"
+                            onClick={() => openItemDialog(item)}
+                            data-testid={`button-edit-item-${item.id}`}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="icon"
+                            onClick={() => { setItemToDelete(item); setIsDeleteItemDialogOpen(true); }}
+                            className="text-destructive hover:text-destructive"
+                            data-testid={`button-delete-item-${item.id}`}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
-        <TabsContent value="catalog" className="mt-4">
+      {/* Catalogo Completo Section */}
           <Card>
             <CardHeader className="pb-4">
               <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -608,151 +688,7 @@ export default function ResellerServiceCatalog() {
               )}
             </CardContent>
           </Card>
-        </TabsContent>
 
-        <TabsContent value="my-items" className="mt-4">
-          <Card>
-            <CardHeader className="pb-4">
-              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                  <CardTitle>Le Mie Voci di Listino</CardTitle>
-                  <CardDescription>
-                    Voci di listino personalizzate create da te
-                  </CardDescription>
-                </div>
-                <div className="flex gap-2">
-                  <div className="relative">
-                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      placeholder="Cerca..."
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      className="pl-8 w-full sm:w-48"
-                      data-testid="input-search-my-items"
-                    />
-                  </div>
-                  <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-                    <SelectTrigger className="w-36" data-testid="select-category-filter-my-items">
-                      <SelectValue placeholder="Categoria" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Tutte</SelectItem>
-                      {SERVICE_CATEGORIES.map(cat => (
-                        <SelectItem key={cat.value} value={cat.value}>
-                          {cat.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <Button onClick={() => openItemDialog()} data-testid="button-create-item">
-                    <Plus className="h-4 w-4 mr-2" />
-                    Nuova Voce
-                  </Button>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              {isLoadingMyItems ? (
-                <div className="space-y-4">
-                  {[1, 2, 3].map(i => (
-                    <Skeleton key={i} className="h-16 w-full" />
-                  ))}
-                </div>
-              ) : filteredMyItems.length === 0 ? (
-                <div className="text-center py-12 text-muted-foreground">
-                  <Wrench className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p className="mb-4">Non hai ancora creato voci di listino personalizzate</p>
-                  <Button onClick={() => openItemDialog()} data-testid="button-create-first-item">
-                    <Plus className="h-4 w-4 mr-2" />
-                    Crea la Prima Voce
-                  </Button>
-                </div>
-              ) : (
-                <div className="rounded-md border overflow-hidden">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Codice</TableHead>
-                        <TableHead>Intervento</TableHead>
-                        <TableHead>Categoria</TableHead>
-                        <TableHead className="text-right">Prezzo</TableHead>
-                        <TableHead className="text-right">Tempo (min)</TableHead>
-                        <TableHead className="text-center">Stato</TableHead>
-                        <TableHead className="text-right">Azioni</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {filteredMyItems.map(item => (
-                        <TableRow key={item.id} data-testid={`row-my-item-${item.id}`}>
-                          <TableCell className="font-mono text-sm">
-                            {item.code}
-                          </TableCell>
-                          <TableCell>
-                            <div>
-                              <span className="font-medium">{item.name}</span>
-                              {item.description && (
-                                <p className="text-xs text-muted-foreground line-clamp-1">
-                                  {item.description}
-                                </p>
-                              )}
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <Badge variant="secondary" className={getCategoryColor(item.category)}>
-                              {getCategoryLabel(item.category)}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="text-right font-medium">
-                            {formatCurrency(item.defaultPriceCents)}
-                          </TableCell>
-                          <TableCell className="text-right text-muted-foreground">
-                            {item.defaultLaborMinutes}
-                          </TableCell>
-                          <TableCell className="text-center">
-                            {item.isActive ? (
-                              <Badge variant="default" className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
-                                Attivo
-                              </Badge>
-                            ) : (
-                              <Badge variant="secondary">
-                                Inattivo
-                              </Badge>
-                            )}
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <div className="flex items-center justify-end gap-1">
-                              <Button
-                                size="icon"
-                                variant="ghost"
-                                onClick={() => openItemDialog(item)}
-                                data-testid={`button-edit-item-${item.id}`}
-                              >
-                                <Pencil className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                size="icon"
-                                variant="ghost"
-                                onClick={() => {
-                                  setItemToDelete(item);
-                                  setIsDeleteItemDialogOpen(true);
-                                }}
-                                className="text-destructive hover:text-destructive"
-                                data-testid={`button-delete-item-${item.id}`}
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
 
       <Dialog open={isPriceDialogOpen} onOpenChange={setIsPriceDialogOpen}>
         <DialogContent>

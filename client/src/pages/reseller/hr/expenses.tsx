@@ -109,7 +109,7 @@ export default function HrExpenses() {
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/reseller/hr/expense-reports"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/reseller/hr/expense-reports", entityType, selectedEntityId] });
       setDialogOpen(false);
       setNewReport({ title: "", description: "", userId: "", amountEuro: "" });
       toast({ title: "Nota spese creata", description: "La nota spese è stata creata con successo." });
@@ -124,7 +124,7 @@ export default function HrExpenses() {
       return apiRequest("PATCH", `/api/reseller/hr/expense-reports/${id}`, { status });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/reseller/hr/expense-reports"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/reseller/hr/expense-reports", entityType, selectedEntityId] });
       toast({ title: "Stato aggiornato", description: "Lo stato della nota spese è stato aggiornato." });
     },
     onError: (error: any) => {
@@ -137,7 +137,7 @@ export default function HrExpenses() {
       return apiRequest("PATCH", `/api/reseller/hr/expense-reports/${id}`, data);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/reseller/hr/expense-reports"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/reseller/hr/expense-reports", entityType, selectedEntityId] });
       setEditDialogOpen(false);
       setEditingReport(null);
       toast({ title: "Nota spese modificata", description: "Le modifiche sono state salvate." });
@@ -162,7 +162,7 @@ export default function HrExpenses() {
       return apiRequest("DELETE", `/api/reseller/hr/expense-reports/${id}`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/reseller/hr/expense-reports"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/reseller/hr/expense-reports", entityType, selectedEntityId] });
       toast({ title: "Nota eliminata", description: "La nota spese è stata eliminata." });
     },
     onError: (error: any) => {
