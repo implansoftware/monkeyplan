@@ -24,6 +24,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   ChevronLeft,
   ChevronRight,
@@ -42,6 +43,7 @@ import {
   AlertCircle,
   ClipboardPaste,
   X,
+  Search,
 } from "lucide-react";
 import type { UtilitySupplier, UtilityService, User as UserType, Product } from "@shared/schema";
 
@@ -95,6 +97,7 @@ export function UtilityPracticeWizard({ open, onOpenChange, onSuccess }: Utility
   const [selectedSupplierId, setSelectedSupplierId] = useState("");
   const [useTemporarySupplier, setUseTemporarySupplier] = useState(false);
   const [temporarySupplierName, setTemporarySupplierName] = useState("");
+  const [supplierSearchQuery, setSupplierSearchQuery] = useState("");
   const [selectedServiceId, setSelectedServiceId] = useState("");
   const [useCustomService, setUseCustomService] = useState(false);
   const [customServiceName, setCustomServiceName] = useState("");
@@ -946,25 +949,49 @@ export function UtilityPracticeWizard({ open, onOpenChange, onSuccess }: Utility
                     })()}
                   </div>
                 ) : (
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                    {suppliers.filter(s => s.isActive).slice(0, 9).map((supplier) => (
-                      <Card
-                        key={supplier.id}
-                        className={`cursor-pointer transition-all hover-elevate p-3 ${
-                          selectedSupplierId === supplier.id ? "ring-2 ring-primary bg-primary/5" : ""
-                        }`}
-                        onClick={() => {
-                          setSelectedSupplierId(supplier.id);
-                          setSelectedServiceId("");
-                        }}
-                        data-testid={`card-supplier-${supplier.id}`}
-                      >
-                        <div className="flex items-center gap-2">
-                          <Building2 className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-sm font-medium truncate">{supplier.name}</span>
+                  <div className="space-y-2">
+                    <div className="relative">
+                      <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        placeholder="Cerca fornitore..."
+                        value={supplierSearchQuery}
+                        onChange={(e) => setSupplierSearchQuery(e.target.value)}
+                        className="pl-8"
+                        data-testid="input-supplier-search"
+                      />
+                    </div>
+                    <ScrollArea className="h-[180px] rounded-md border p-2">
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                        {suppliers
+                          .filter(s => s.isActive && (supplierSearchQuery === "" || s.name.toLowerCase().includes(supplierSearchQuery.toLowerCase())))
+                          .map((supplier) => (
+                          <Card
+                            key={supplier.id}
+                            className={`cursor-pointer transition-all hover-elevate p-3 ${
+                              selectedSupplierId === supplier.id ? "ring-2 ring-primary bg-primary/5" : ""
+                            }`}
+                            onClick={() => {
+                              setSelectedSupplierId(supplier.id);
+                              setSelectedServiceId("");
+                            }}
+                            data-testid={`card-supplier-${supplier.id}`}
+                          >
+                            <div className="flex items-center gap-2">
+                              <Building2 className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                              <span className="text-sm font-medium truncate">{supplier.name}</span>
+                            </div>
+                          </Card>
+                        ))}
+                      </div>
+                      {suppliers.filter(s => s.isActive && (supplierSearchQuery === "" || s.name.toLowerCase().includes(supplierSearchQuery.toLowerCase()))).length === 0 && (
+                        <div className="text-center py-4 text-muted-foreground text-sm">
+                          Nessun fornitore trovato
                         </div>
-                      </Card>
-                    ))}
+                      )}
+                    </ScrollArea>
+                    <p className="text-xs text-muted-foreground">
+                      {suppliers.filter(s => s.isActive).length} fornitori disponibili
+                    </p>
                   </div>
                 )}
               </div>
