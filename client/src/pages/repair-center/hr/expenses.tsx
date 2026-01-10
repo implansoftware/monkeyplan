@@ -35,7 +35,7 @@ interface ExpenseReport {
 
 const statusLabels: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
   draft: { label: "Bozza", variant: "outline" },
-  submitted: { label: "Inviata", variant: "secondary" },
+  pending: { label: "In Attesa", variant: "secondary" },
   approved: { label: "Approvata", variant: "default" },
   rejected: { label: "Rifiutata", variant: "destructive" },
   paid: { label: "Pagata", variant: "default" }
@@ -156,11 +156,11 @@ export default function RepairCenterHrExpenses() {
                     <TableCell>
                       <div className="flex gap-1">
                         {report.status === "draft" && (
-                          <Button size="sm" variant="outline" onClick={() => updateMutation.mutate({ id: report.id, status: "submitted" })}>
+                          <Button size="sm" variant="outline" onClick={() => updateMutation.mutate({ id: report.id, status: "pending" })}>
                             Invia
                           </Button>
                         )}
-                        {report.status === "submitted" && (
+                        {report.status === "pending" && (
                           <>
                             <Button size="sm" variant="ghost" onClick={() => updateMutation.mutate({ id: report.id, status: "approved" })} title="Approva">
                               <Check className="h-4 w-4 text-emerald-600" />
