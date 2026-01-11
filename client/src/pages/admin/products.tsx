@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { BarcodeDisplay } from "@/components/barcode-display";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectGroup, SelectLabel } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
@@ -2263,6 +2264,7 @@ export default function AdminProducts() {
                 <TableRow>
                   <TableHead className="w-12"></TableHead>
                   <TableHead>Prodotto</TableHead>
+                  <TableHead>Barcode</TableHead>
                   <TableHead>Categoria</TableHead>
                   <TableHead>Condizione</TableHead>
                   <TableHead>Vendita</TableHead>
@@ -2315,6 +2317,9 @@ export default function AdminProducts() {
                       </div>
                     </TableCell>
                     <TableCell>{getCategoryLabel(product.category)}</TableCell>
+                    <TableCell>
+                      <BarcodeDisplay value={product.barcode || ""} size="sm" />
+                    </TableCell>
                     <TableCell>{getConditionBadge(product.condition)}</TableCell>
                     <TableCell className="font-semibold">{formatCurrency(product.unitPrice)}</TableCell>
                     <TableCell>
