@@ -413,6 +413,15 @@ export class MobilesentrixService {
       throw new Error(cartResult.message || "Errore nell'aggiunta prodotti al carrello MobileSentrix");
     }
 
+    // Check if any items failed to be added (e.g., out of stock)
+    if (cartResult.data?.items && Array.isArray(cartResult.data.items)) {
+      const failedItems = cartResult.data.items.filter((item: any) => item.status === 0);
+      if (failedItems.length > 0) {
+        const errorMessages = failedItems.map((item: any) => item.message || `Prodotto ${item.sku} non disponibile`);
+        throw new Error("Alcuni prodotti non sono disponibili: " + errorMessages.join("; "));
+      }
+    }
+
     // Get quote_id from cart response
     const quoteId = cartResult.data?.quote_id;
     if (!quoteId) {
