@@ -13234,10 +13234,7 @@ export function registerRoutes(app: Express): Server {
           const b2bOrder = await storage.createRepairCenterPurchaseOrder({
             repairCenterId: repairOrder.repairCenterId,
             resellerId: repairCenter.resellerId,
-            totalHours,
-        totalDays: diffDays,
-        isFullDay: true,
-        status: 'pending',
+            status: 'pending',
             subtotal,
             discountAmount: 0,
             shippingCost: 0,
@@ -22210,10 +22207,7 @@ export function registerRoutes(app: Express): Server {
               periodMonth: now.getMonth() + 1, // 1-12
               periodYear: now.getFullYear(),
               amountCents: commissionAmount,
-              totalHours,
-        totalDays: diffDays,
-        isFullDay: true,
-        status: 'pending',
+              status: 'pending',
               accruedAt: now,
               notes: `Commissione automatica per pratica ${practice.practiceNumber}`,
             });
@@ -24315,9 +24309,6 @@ export function registerRoutes(app: Express): Server {
         orderNumber,
         customerId: req.user.id,
         resellerId,
-        totalHours,
-        totalDays: diffDays,
-        isFullDay: true,
         status: 'pending',
         deliveryType: deliveryType as any,
         subtotal: cart.subtotal,
@@ -24363,10 +24354,7 @@ export function registerRoutes(app: Express): Server {
         await storage.createSalesOrderPayment({
           orderId: order.id,
           method: paymentMethod,
-          totalHours,
-        totalDays: diffDays,
-        isFullDay: true,
-        status: 'pending',
+          status: 'pending',
           amount: cart.total,
           currency: 'EUR'
         });
@@ -25355,9 +25343,6 @@ export function registerRoutes(app: Express): Server {
         sourceWarehouseId,
         destinationWarehouseId,
         requestedBy: req.user.id,
-        totalHours,
-        totalDays: diffDays,
-        isFullDay: true,
         status: 'pending',
         notes,
       });
@@ -25598,9 +25583,6 @@ export function registerRoutes(app: Express): Server {
         requesterWarehouseId: requesterWarehouse.id,
         sourceWarehouseId: finalSourceWarehouseId,
         targetResellerId: repairCenter.resellerId,
-        totalHours,
-        totalDays: diffDays,
-        isFullDay: true,
         status: 'pending',
         notes,
       });
@@ -25762,9 +25744,6 @@ export function registerRoutes(app: Express): Server {
         requesterWarehouseId: requesterWarehouse.id,
         sourceWarehouseId: finalSourceWarehouseId,
         targetResellerId: user.parentResellerId,
-        totalHours,
-        totalDays: diffDays,
-        isFullDay: true,
         status: 'pending',
         notes,
       });
@@ -26476,9 +26455,6 @@ export function registerRoutes(app: Express): Server {
       // Create order
       const order = await storage.createResellerPurchaseOrder({
         resellerId: req.user.id,
-        totalHours,
-        totalDays: diffDays,
-        isFullDay: true,
         status: 'pending',
         subtotal: totalCents,
         total: totalCents,
@@ -27451,9 +27427,6 @@ export function registerRoutes(app: Express): Server {
       const order = await storage.createMarketplaceOrder({
         buyerResellerId: req.user.id,
         sellerResellerId,
-        totalHours,
-        totalDays: diffDays,
-        isFullDay: true,
         status: 'pending',
         subtotal,
         discountAmount: 0,
@@ -27778,9 +27751,6 @@ export function registerRoutes(app: Express): Server {
       const order = await storage.createRepairCenterPurchaseOrder({
         repairCenterId: req.user.repairCenterId,
         resellerId: sellerResellerId,
-        totalHours,
-        totalDays: diffDays,
-        isFullDay: true,
         status: 'pending',
         subtotal,
         discountAmount: 0,
@@ -27981,9 +27951,6 @@ export function registerRoutes(app: Express): Server {
       const order = await storage.createRepairCenterPurchaseOrder({
         repairCenterId: req.user.repairCenterId,
         resellerId: repairCenter.resellerId,
-        totalHours,
-        totalDays: diffDays,
-        isFullDay: true,
         status: 'pending',
         subtotal: totalCents,
         total: totalCents,
@@ -30251,19 +30218,10 @@ export function registerRoutes(app: Express): Server {
         todayClockEvents,
         absencesThisMonth
       ] = await Promise.all([
-        storage.listHrLeaveRequests({ resellerIds: accessibleResellerIds, totalHours,
-        totalDays: diffDays,
-        isFullDay: true,
-        status: 'pending' }),
-        storage.listHrExpenseReports({ resellerIds: accessibleResellerIds, totalHours,
-        totalDays: diffDays,
-        isFullDay: true,
-        status: 'pending' }),
+        storage.listHrLeaveRequests({ resellerIds: accessibleResellerIds, status: 'pending' }),
+        storage.listHrExpenseReports({ resellerIds: accessibleResellerIds, status: 'pending' }),
         storage.listHrClockEvents({ resellerIds: accessibleResellerIds, startDate: today, endDate: today }),
-        storage.listHrAbsences({ resellerIds: accessibleResellerIds, totalHours,
-        totalDays: diffDays,
-        isFullDay: true,
-        status: 'pending' })
+        storage.listHrAbsences({ resellerIds: accessibleResellerIds })
       ]);
       
       res.json({
@@ -30490,10 +30448,7 @@ export function registerRoutes(app: Express): Server {
       endOfDay.setHours(23, 59, 59, 999);
       
       const [leaveRequests, expenseReports, clockEvents, sickLeaves] = await Promise.all([
-        storage.listHrLeaveRequests({ resellerId: parentResellerId, totalHours,
-        totalDays: diffDays,
-        isFullDay: true,
-        status: 'pending' }),
+        storage.listHrLeaveRequests({ resellerId: parentResellerId, status: 'pending' }),
         storage.listHrExpenseReports({ resellerId: parentResellerId, status: 'submitted' }),
         storage.listHrClockEvents({ resellerIds: [parentResellerId], startDate: today, endDate: endOfDay }),
         storage.listHrSickLeaves({ resellerId: parentResellerId })
