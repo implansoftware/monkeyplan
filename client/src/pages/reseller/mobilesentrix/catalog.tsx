@@ -273,12 +273,12 @@ export default function MobilesentrixCatalogPage() {
           
           <div className="flex flex-wrap items-center gap-4">
             <div className="flex-1 min-w-[200px]">
-              <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+              <Select value={selectedCategory || "all"} onValueChange={(val) => setSelectedCategory(val === "all" ? "" : val)}>
                 <SelectTrigger data-testid="select-category">
                   <SelectValue placeholder="Tutte le categorie" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Tutte le categorie</SelectItem>
+                  <SelectItem value="all">Tutte le categorie</SelectItem>
                   {categories?.map((cat) => (
                     <SelectItem key={cat.id} value={cat.id}>
                       {cat.name}
@@ -289,12 +289,12 @@ export default function MobilesentrixCatalogPage() {
             </div>
             
             <div className="flex-1 min-w-[200px]">
-              <Select value={selectedBrand} onValueChange={setSelectedBrand}>
+              <Select value={selectedBrand || "all"} onValueChange={(val) => setSelectedBrand(val === "all" ? "" : val)}>
                 <SelectTrigger data-testid="select-brand">
                   <SelectValue placeholder="Tutte le marche" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Tutte le marche</SelectItem>
+                  <SelectItem value="all">Tutte le marche</SelectItem>
                   {brands?.map((brand) => (
                     <SelectItem key={brand} value={brand}>
                       {brand}
