@@ -23624,6 +23624,154 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+
+  // GET /api/mobilesentrix/oauth/authorize-url - Generate OAuth authorization URL
+  app.get("/api/mobilesentrix/oauth/authorize-url", requireAuth, requireRole("reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const credential = await storage.getMobilesentrixCredentialByReseller(req.user.id);
+      if (!credential) {
+        return res.status(404).send("Credenziali MobileSentrix non configurate. Inserisci prima Consumer Key e Secret.");
+      }
+
+      const baseUrl = credential.environment === "staging" 
+        ? "https://preprod.mobilesentrix.com" 
+        : "https://www.mobilesentrix.com";
+      
+      // Get the app's base URL for callback
+      const protocol = req.headers['x-forwarded-proto'] || req.protocol || 'https';
+      const host = req.headers['x-forwarded-host'] || req.headers.host || req.get('host');
+      const callbackUrl = `${protocol}://${host}/api/mobilesentrix/oauth/callback`;
+      
+      const authorizeUrl = `${baseUrl}/oauth/authorize/identifier?consumer=${encodeURIComponent(credential.consumerName)}&authtype=1&flowentry=SignIn&consumer_key=${encodeURIComponent(credential.consumerKey)}&consumer_secret=${encodeURIComponent(credential.consumerSecret)}&callback=${encodeURIComponent(callbackUrl)}`;
+      
+      res.json({ authorizeUrl, callbackUrl });
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // GET /api/mobilesentrix/oauth/callback - OAuth callback endpoint
+  app.get("/api/mobilesentrix/oauth/callback", async (req, res) => {
+    try {
+      const { oauth_token, oauth_verifier } = req.query;
+      
+      if (!oauth_token || !oauth_verifier) {
+        return res.status(400).send(`
+          <html>
+            <head><title>Errore OAuth</title></head>
+            <body style="font-family: sans-serif; padding: 40px; text-align: center;">
+              <h1 style="color: #ef4444;">Errore Autorizzazione</h1>
+              <p>Token OAuth mancanti. Riprova il processo di autorizzazione.</p>
+              <script>setTimeout(() => window.close(), 3000);</script>
+            </body>
+          </html>
+        `);
+      }
+      
+      // Show success page with tokens for the frontend to capture
+      res.send(`
+        <html>
+          <head><title>Autorizzazione MobileSentrix</title></head>
+          <body style="font-family: sans-serif; padding: 40px; text-align: center;">
+            <h1 style="color: #22c55e;">Autorizzazione Completata!</h1>
+            <p>Chiudi questa finestra per completare la configurazione.</p>
+            <script>
+              if (window.opener) {
+                window.opener.postMessage({
+                  type: 'mobilesentrix_oauth_callback',
+                  oauth_token: '${oauth_token}',
+                  oauth_verifier: '${oauth_verifier}'
+                }, '*');
+                setTimeout(() => window.close(), 1500);
+              }
+            </script>
+          </body>
+        </html>
+      `);
+    } catch (error: any) {
+      res.status(500).send("Errore OAuth: " + error.message);
+    }
+  });
+
+  // POST /api/mobilesentrix/oauth/exchange - Exchange OAuth tokens for Access Token
+  app.post("/api/mobilesentrix/oauth/exchange", requireAuth, requireRole("reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const { oauth_token, oauth_verifier } = req.body;
+      if (!oauth_token || !oauth_verifier) {
+        return res.status(400).send("oauth_token e oauth_verifier sono obbligatori");
+      }
+      
+      const credential = await storage.getMobilesentrixCredentialByReseller(req.user.id);
+      if (!credential) {
+        return res.status(404).send("Credenziali MobileSentrix non configurate");
+      }
+
+      const baseUrl = credential.environment === "staging" 
+        ? "https://preprod.mobilesentrix.com" 
+        : "https://www.mobilesentrix.com";
+      
+      // Exchange tokens for access token
+      const exchangeResponse = await fetch(`${baseUrl}/oauth/authorize/identifiercallback`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          consumer_key: credential.consumerKey,
+          consumer_secret: credential.consumerSecret,
+          oauth_token,
+          oauth_verifier,
+        }),
+      });
+      
+      const exchangeText = await exchangeResponse.text();
+      
+      // Check if response is HTML (error)
+      if (exchangeText.trim().startsWith("<!DOCTYPE") || exchangeText.trim().startsWith("<html")) {
+        return res.status(400).json({
+          success: false,
+          message: "MobileSentrix ha restituito una pagina HTML. I token potrebbero essere scaduti. Riprova l'autorizzazione.",
+        });
+      }
+      
+      let exchangeData;
+      try {
+        exchangeData = JSON.parse(exchangeText);
+      } catch {
+        return res.status(400).json({
+          success: false,
+          message: "Risposta non valida da MobileSentrix: " + exchangeText.substring(0, 200),
+        });
+      }
+      
+      if (exchangeData.status !== 1 || !exchangeData.data?.access_token) {
+        return res.status(400).json({
+          success: false,
+          message: exchangeData.message || "Errore nello scambio dei token",
+        });
+      }
+      
+      // Save access token to credentials
+      await storage.updateMobilesentrixCredential(credential.id, {
+        accessToken: exchangeData.data.access_token,
+        accessTokenSecret: exchangeData.data.access_token_secret,
+        lastTestAt: new Date(),
+        testStatus: "success",
+        testMessage: "Access Token ottenuto con successo",
+      });
+      
+      res.json({
+        success: true,
+        message: "Access Token ottenuto e salvato con successo!",
+      });
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
   // POST /api/mobilesentrix/test-connection - Test MobileSentrix connection
   app.post("/api/mobilesentrix/test-connection", requireAuth, requireRole("reseller"), async (req, res) => {
     try {

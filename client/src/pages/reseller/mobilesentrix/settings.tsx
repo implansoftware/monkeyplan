@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,7 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
-import { Settings, Key, CheckCircle, XCircle, Loader2, TestTube, Trash2, Save, ExternalLink, Package } from "lucide-react";
+import { Settings, Key, CheckCircle, XCircle, Loader2, TestTube, Trash2, Save, ExternalLink, Package, Shield, LogIn } from "lucide-react";
 import { Link } from "wouter";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
@@ -19,6 +19,8 @@ type MobilesentrixCredential = {
   consumerName: string;
   consumerKey: string;
   consumerSecret: string;
+  accessToken: string | null;
+  accessTokenSecret: string | null;
   environment: "production" | "staging";
   isActive: boolean;
   lastSyncAt: string | null;
@@ -37,10 +39,55 @@ export default function MobilesentrixSettingsPage() {
   const [consumerSecret, setConsumerSecret] = useState("");
   const [environment, setEnvironment] = useState<"production" | "staging">("production");
   const [showSecret, setShowSecret] = useState(false);
+  const [isAuthorizing, setIsAuthorizing] = useState(false);
 
   const { data: credential, isLoading } = useQuery<MobilesentrixCredential | null>({
     queryKey: ["/api/mobilesentrix/credentials"],
   });
+
+  // Listen for OAuth callback messages from popup window
+  useEffect(() => {
+    const handleMessage = async (event: MessageEvent) => {
+      if (event.data?.type === 'mobilesentrix_oauth_callback') {
+        const { oauth_token, oauth_verifier } = event.data;
+        if (oauth_token && oauth_verifier) {
+          setIsAuthorizing(true);
+          try {
+            const res = await apiRequest("POST", "/api/mobilesentrix/oauth/exchange", {
+              oauth_token,
+              oauth_verifier,
+            });
+            const data = await res.json();
+            
+            if (data.success) {
+              toast({
+                title: "Autorizzazione completata",
+                description: "Access Token ottenuto con successo! Ora puoi testare la connessione.",
+              });
+              queryClient.invalidateQueries({ queryKey: ["/api/mobilesentrix/credentials"] });
+            } else {
+              toast({
+                title: "Errore autorizzazione",
+                description: data.message || "Errore durante lo scambio dei token",
+                variant: "destructive",
+              });
+            }
+          } catch (error: any) {
+            toast({
+              title: "Errore",
+              description: error.message || "Errore durante lo scambio dei token",
+              variant: "destructive",
+            });
+          } finally {
+            setIsAuthorizing(false);
+          }
+        }
+      }
+    };
+
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+  }, [queryClient, toast]);
 
   const saveMutation = useMutation({
     mutationFn: async () => {
@@ -48,11 +95,39 @@ export default function MobilesentrixSettingsPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/mobilesentrix/credentials"] });
-      toast({ title: "Salvato", description: "Credenziali MobileSentrix salvate con successo" });
+      toast({ title: "Salvato", description: "Credenziali MobileSentrix salvate con successo. Ora completa l'autorizzazione OAuth." });
       setConsumerName("");
       setConsumerKey("");
       setConsumerSecret("");
       setEnvironment("production");
+    },
+    onError: (error: Error) => {
+      toast({ title: "Errore", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const authorizeMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest("GET", "/api/mobilesentrix/oauth/authorize-url");
+      return res.json();
+    },
+    onSuccess: (data) => {
+      if (data.authorizeUrl) {
+        // Open popup for OAuth authorization
+        const width = 600;
+        const height = 700;
+        const left = (window.screen.width - width) / 2;
+        const top = (window.screen.height - height) / 2;
+        window.open(
+          data.authorizeUrl,
+          'mobilesentrix_oauth',
+          `width=${width},height=${height},left=${left},top=${top},scrollbars=yes`
+        );
+        toast({
+          title: "Autorizzazione avviata",
+          description: "Completa il login nella finestra popup che si è aperta.",
+        });
+      }
     },
     onError: (error: Error) => {
       toast({ title: "Errore", description: error.message, variant: "destructive" });
@@ -122,7 +197,7 @@ export default function MobilesentrixSettingsPage() {
             <p className="text-muted-foreground">Configura la connessione con il tuo account MobileSentrix</p>
           </div>
         </div>
-        {credential && (
+        {credential && credential.accessToken && (
           <Link href="/reseller/mobilesentrix/catalog">
             <Button data-testid="button-go-catalog">
               <Package className="h-4 w-4 mr-2" />
@@ -143,9 +218,21 @@ export default function MobilesentrixSettingsPage() {
                 </CardTitle>
                 <CardDescription>Le tue credenziali MobileSentrix sono salvate</CardDescription>
               </div>
-              <Badge variant={credential.isActive ? "default" : "secondary"}>
-                {credential.isActive ? "Attivo" : "Disattivato"}
-              </Badge>
+              <div className="flex items-center gap-2">
+                {credential.accessToken ? (
+                  <Badge className="bg-gradient-to-r from-blue-500 to-cyan-500 text-white">
+                    <Shield className="h-3 w-3 mr-1" />
+                    Autorizzato
+                  </Badge>
+                ) : (
+                  <Badge variant="outline" className="border-amber-500 text-amber-600">
+                    In attesa di autorizzazione
+                  </Badge>
+                )}
+                <Badge variant={credential.isActive ? "default" : "secondary"}>
+                  {credential.isActive ? "Attivo" : "Disattivato"}
+                </Badge>
+              </div>
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -196,8 +283,24 @@ export default function MobilesentrixSettingsPage() {
                     {credential.environment === "production" ? "Produzione" : "Staging"}
                   </Badge>
                   <span className="text-sm text-muted-foreground">
-                    {credential.environment === "production" ? "www.mobilesentrix.eu" : "preprod.mobilesentrix.eu"}
+                    {credential.environment === "production" ? "www.mobilesentrix.com" : "preprod.mobilesentrix.com"}
                   </span>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label>Access Token</Label>
+                <div className="flex items-center gap-2">
+                  {credential.accessToken ? (
+                    <>
+                      <CheckCircle className="h-4 w-4 text-green-500" />
+                      <span className="text-sm text-green-600 font-medium">Configurato</span>
+                    </>
+                  ) : (
+                    <>
+                      <XCircle className="h-4 w-4 text-amber-500" />
+                      <span className="text-sm text-amber-600">Non ancora ottenuto</span>
+                    </>
+                  )}
                 </div>
               </div>
               <div className="space-y-2">
@@ -218,20 +321,60 @@ export default function MobilesentrixSettingsPage() {
               </div>
             </div>
 
+            {!credential.accessToken && (
+              <Alert className="border-amber-500 bg-amber-50 dark:bg-amber-950/20">
+                <AlertDescription className="flex items-center justify-between">
+                  <span>
+                    Per completare la configurazione, devi autorizzare l'accesso al tuo account MobileSentrix.
+                  </span>
+                  <Button
+                    onClick={() => authorizeMutation.mutate()}
+                    disabled={authorizeMutation.isPending || isAuthorizing}
+                    className="bg-gradient-to-r from-blue-500 to-cyan-500 ml-4"
+                    data-testid="button-authorize-oauth"
+                  >
+                    {(authorizeMutation.isPending || isAuthorizing) ? (
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    ) : (
+                      <LogIn className="h-4 w-4 mr-2" />
+                    )}
+                    Autorizza con MobileSentrix
+                  </Button>
+                </AlertDescription>
+              </Alert>
+            )}
+
             <div className="flex items-center gap-2 pt-4 border-t">
-              <Button
-                variant="outline"
-                onClick={() => testMutation.mutate()}
-                disabled={testMutation.isPending}
-                data-testid="button-test-connection"
-              >
-                {testMutation.isPending ? (
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                ) : (
-                  <TestTube className="h-4 w-4 mr-2" />
-                )}
-                Test Connessione
-              </Button>
+              {credential.accessToken && (
+                <Button
+                  variant="outline"
+                  onClick={() => testMutation.mutate()}
+                  disabled={testMutation.isPending}
+                  data-testid="button-test-connection"
+                >
+                  {testMutation.isPending ? (
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  ) : (
+                    <TestTube className="h-4 w-4 mr-2" />
+                  )}
+                  Test Connessione
+                </Button>
+              )}
+              {!credential.accessToken && (
+                <Button
+                  variant="outline"
+                  onClick={() => authorizeMutation.mutate()}
+                  disabled={authorizeMutation.isPending || isAuthorizing}
+                  data-testid="button-authorize-oauth-secondary"
+                >
+                  {(authorizeMutation.isPending || isAuthorizing) ? (
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  ) : (
+                    <LogIn className="h-4 w-4 mr-2" />
+                  )}
+                  Autorizza OAuth
+                </Button>
+              )}
               <Button
                 variant="destructive"
                 onClick={() => deleteMutation.mutate()}
@@ -246,12 +389,6 @@ export default function MobilesentrixSettingsPage() {
                 Elimina Credenziali
               </Button>
             </div>
-
-            <Alert>
-              <AlertDescription>
-                Per aggiornare le credenziali, eliminale prima e poi inseriscine di nuove.
-              </AlertDescription>
-            </Alert>
           </CardContent>
         </Card>
       ) : (
@@ -306,14 +443,14 @@ export default function MobilesentrixSettingsPage() {
                   <SelectValue placeholder="Seleziona ambiente" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="production">Produzione (www.mobilesentrix.eu)</SelectItem>
-                  <SelectItem value="staging">Staging (preprod.mobilesentrix.eu)</SelectItem>
+                  <SelectItem value="production">Produzione (www.mobilesentrix.com)</SelectItem>
+                  <SelectItem value="staging">Staging (preprod.mobilesentrix.com)</SelectItem>
                 </SelectContent>
               </Select>
               <p className="text-sm text-muted-foreground">
                 Puoi ottenere le tue credenziali OAuth dal pannello MobileSentrix.{" "}
                 <a
-                  href="https://www.mobilesentrix.eu"
+                  href="https://www.mobilesentrix.com"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-primary hover:underline inline-flex items-center gap-1"
@@ -322,6 +459,15 @@ export default function MobilesentrixSettingsPage() {
                 </a>
               </p>
             </div>
+
+            <Alert>
+              <AlertDescription>
+                <strong>Flusso di configurazione:</strong><br />
+                1. Inserisci Consumer Name, Consumer Key e Consumer Secret<br />
+                2. Clicca "Salva Credenziali"<br />
+                3. Clicca "Autorizza con MobileSentrix" per completare l'autenticazione OAuth
+              </AlertDescription>
+            </Alert>
 
             <Button
               onClick={handleSave}
