@@ -152,7 +152,7 @@ export default function PosPage() {
 
   const openSessionMutation = useMutation({
     mutationFn: async (data: { openingCash: number; openingNotes?: string }) => {
-      return apiRequest("/api/repair-center/pos/session/open", "POST", data);
+      return apiRequest("POST", "/api/repair-center/pos/session/open", data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/repair-center/pos/session/current"] });
@@ -168,7 +168,7 @@ export default function PosPage() {
 
   const closeSessionMutation = useMutation({
     mutationFn: async (data: { closingCash: number; closingNotes?: string }) => {
-      return apiRequest(`/api/repair-center/pos/session/${currentSession?.id}/close`, "POST", data);
+      return apiRequest("POST", `/api/repair-center/pos/session/${currentSession?.id}/close`, data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/repair-center/pos/session/current"] });
@@ -185,7 +185,7 @@ export default function PosPage() {
 
   const createTransactionMutation = useMutation({
     mutationFn: async (data: any) => {
-      return apiRequest("/api/repair-center/pos/transaction", "POST", data);
+      return apiRequest("POST", "/api/repair-center/pos/transaction", data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/repair-center/pos/transactions"] });
