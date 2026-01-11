@@ -347,6 +347,11 @@ export class MobilesentrixService {
         // Skip pagination info
         if (key === 'page_info' || key === 'total_count') return;
         
+        const stock = parseInt(p.in_stock_qty) || 0;
+        
+        // Skip products with no stock (hide out-of-stock items)
+        if (stock <= 0) return;
+        
         products.push({
           id: String(p.entity_id || key),
           sku: p.sku || "",
@@ -355,13 +360,14 @@ export class MobilesentrixService {
           model: p.model_text || "",
           category: "",
           price: parseFloat(p.customer_price || p.price) || 0,
-          stock: parseInt(p.in_stock_qty) || 0,
+          stock,
           image_url: p.image_url || p.default_image || "",
           description: p.short_description || p.description || "",
         });
       });
 
-      const totalCount = result.data.total_count || products.length;
+      // Total count reflects only in-stock products
+      const totalCount = products.length;
 
       return {
         products,
