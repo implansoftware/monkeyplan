@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { BarcodeDisplay } from "@/components/barcode-display";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
@@ -1071,6 +1072,9 @@ export default function ResellerProducts() {
                       </div>
                     </TableCell>
                     <TableCell>{product.brand || "-"}</TableCell>
+                    <TableCell>
+                      <BarcodeDisplay value={product.barcode || ""} size="sm" />
+                    </TableCell>
                     <TableCell>
                       <Badge variant="outline">{product.category}</Badge>
                     </TableCell>
