@@ -6,9 +6,10 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
 import {
-  Package, Search, Loader2, Settings, AlertTriangle, Image
+  Package, Search, Loader2, Settings, AlertTriangle, Image, ShoppingCart, Plus
 } from "lucide-react";
 import { Link } from "wouter";
 
@@ -32,13 +33,45 @@ type MobilesentrixCredential = {
 
 export default function MobilesentrixCatalogPage() {
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [accumulatedProducts, setAccumulatedProducts] = useState<MobilesentrixProduct[]>([]);
   const [totalProducts, setTotalProducts] = useState(0);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [addingToCart, setAddingToCart] = useState<string | null>(null);
   const perPage = 20;
+
+  const { data: cartCount } = useQuery<{ count: number }>({
+    queryKey: ["/api/mobilesentrix/cart/count"],
+  });
+
+  const addToCartMutation = useMutation({
+    mutationFn: async (product: MobilesentrixProduct) => {
+      setAddingToCart(product.id);
+      return apiRequest("POST", "/api/mobilesentrix/cart", {
+        productId: product.id,
+        sku: product.sku,
+        name: product.name,
+        brand: product.brand,
+        model: product.model,
+        price: product.price,
+        quantity: 1,
+        imageUrl: product.image_url,
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/mobilesentrix/cart"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/mobilesentrix/cart/count"] });
+      toast({ title: "Aggiunto al carrello", description: "Prodotto aggiunto con successo" });
+      setAddingToCart(null);
+    },
+    onError: (error: Error) => {
+      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      setAddingToCart(null);
+    },
+  });
 
   const { data: credential, isLoading: loadingCredential } = useQuery<MobilesentrixCredential | null>({
     queryKey: ["/api/mobilesentrix/credentials"],
@@ -151,6 +184,17 @@ export default function MobilesentrixCatalogPage() {
           </div>
         </div>
         <div className="flex items-center gap-4">
+          <Link href="/reseller/mobilesentrix/cart">
+            <Button variant="outline" className="relative" data-testid="button-view-cart">
+              <ShoppingCart className="h-4 w-4 mr-2" />
+              Carrello
+              {cartCount && cartCount.count > 0 && (
+                <Badge className="absolute -top-2 -right-2 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs bg-gradient-to-r from-blue-500 to-cyan-500">
+                  {cartCount.count}
+                </Badge>
+              )}
+            </Button>
+          </Link>
           <Link href="/reseller/mobilesentrix/settings">
             <Button variant="ghost" size="icon">
               <Settings className="h-4 w-4" />
@@ -253,7 +297,7 @@ export default function MobilesentrixCatalogPage() {
                       </div>
                     </div>
 
-                    <div className="flex items-center justify-between mt-4 pt-4 border-t">
+                    <div className="flex items-center justify-between mt-4 pt-4 border-t gap-2">
                       <div>
                         <p className="font-bold text-lg" data-testid={`text-product-price-${product.id}`}>
                           {formatPrice(product.price)}
@@ -265,11 +309,22 @@ export default function MobilesentrixCatalogPage() {
                           {product.stock > 0 ? `Stock: ${product.stock}` : "Non disponibile"}
                         </Badge>
                       </div>
-                      {product.category && (
-                        <Badge variant="outline" className="text-xs">
-                          {product.category}
-                        </Badge>
-                      )}
+                      <Button
+                        size="sm"
+                        className="bg-gradient-to-r from-blue-500 to-cyan-500"
+                        disabled={product.stock <= 0 || addingToCart === product.id}
+                        onClick={() => addToCartMutation.mutate(product)}
+                        data-testid={`button-add-cart-${product.id}`}
+                      >
+                        {addingToCart === product.id ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <>
+                            <Plus className="h-4 w-4 mr-1" />
+                            Aggiungi
+                          </>
+                        )}
+                      </Button>
                     </div>
                   </CardContent>
                 </Card>

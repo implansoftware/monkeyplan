@@ -2580,6 +2580,44 @@ export const mobilesentrixOrders = pgTable("mobilesentrix_orders", {
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 
+// Carrello MobileSentrix (items nel carrello per reseller)
+export const mobilesentrixCartItems = pgTable("mobilesentrix_cart_items", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  credentialId: varchar("credential_id").notNull().references(() => mobilesentrixCredentials.id, { onDelete: "cascade" }),
+  
+  // Dati prodotto MobileSentrix
+  productId: text("product_id").notNull(), // entity_id da MobileSentrix
+  sku: text("sku").notNull(),
+  name: text("name").notNull(),
+  brand: text("brand"),
+  model: text("model"),
+  price: integer("price").notNull(), // In centesimi USD
+  quantity: integer("quantity").notNull().default(1),
+  imageUrl: text("image_url"),
+  
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+// Items ordine MobileSentrix (dettaglio prodotti per ogni ordine)
+export const mobilesentrixOrderItems = pgTable("mobilesentrix_order_items", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  orderId: varchar("order_id").notNull().references(() => mobilesentrixOrders.id, { onDelete: "cascade" }),
+  
+  // Dati prodotto al momento dell'ordine
+  productId: text("product_id").notNull(),
+  sku: text("sku").notNull(),
+  name: text("name").notNull(),
+  brand: text("brand"),
+  model: text("model"),
+  price: integer("price").notNull(), // In centesimi USD
+  quantity: integer("quantity").notNull(),
+  imageUrl: text("image_url"),
+  
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+
 // Supplier Orders (Ordini a Fornitori)
 export const supplierOrders = pgTable("supplier_orders", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -4859,11 +4897,21 @@ export const insertMobilesentrixCredentialSchema = createInsertSchema(mobilesent
   updatedAt: true,
 });
 
+
 export const insertMobilesentrixOrderSchema = createInsertSchema(mobilesentrixOrders).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
 });
+
+export const insertMobilesentrixCartItemSchema = createInsertSchema(mobilesentrixCartItems).omit({
+  id: true, createdAt: true, updatedAt: true,
+});
+
+export const insertMobilesentrixOrderItemSchema = createInsertSchema(mobilesentrixOrderItems).omit({
+  id: true, createdAt: true,
+});
+
 
 // Utility Module Schemas
 export const insertUtilitySupplierSchema = createInsertSchema(utilitySuppliers).omit({
@@ -5495,6 +5543,12 @@ export type InsertMobilesentrixOrder = z.infer<typeof insertMobilesentrixOrderSc
 // Utility Module Types
 export type UtilityCategoryType = "fisso" | "mobile" | "centralino" | "luce" | "gas" | "altro";
 export type UtilityPracticeStatus = "bozza" | "inviata" | "in_lavorazione" | "attesa_documenti" | "completata" | "rifiutata" | "annullata";
+
+export type MobilesentrixCartItem = typeof mobilesentrixCartItems.$inferSelect;
+export type InsertMobilesentrixCartItem = z.infer<typeof insertMobilesentrixCartItemSchema>;
+
+export type MobilesentrixOrderItem = typeof mobilesentrixOrderItems.$inferSelect;
+export type InsertMobilesentrixOrderItem = z.infer<typeof insertMobilesentrixOrderItemSchema>;
 export type UtilityCommissionStatus = "pending" | "accrued" | "invoiced" | "paid" | "cancelled";
 
 export type UtilitySupplier = typeof utilitySuppliers.$inferSelect;

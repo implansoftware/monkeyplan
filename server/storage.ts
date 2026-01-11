@@ -44,7 +44,7 @@ import {
   TrovausatiCredential, InsertTrovausatiCredential, TrovausatiShop, InsertTrovausatiShop,
   TrovausatiOrder, InsertTrovausatiOrder, trovausatiCredentials, trovausatiShops, trovausatiOrders,
   FonedayCredential, InsertFonedayCredential, FonedayOrder, InsertFonedayOrder, FonedayProductsCache, InsertFonedayProductsCache,
-  MobilesentrixCredential, InsertMobilesentrixCredential, MobilesentrixOrder, InsertMobilesentrixOrder,
+  MobilesentrixCredential, InsertMobilesentrixCredential, MobilesentrixOrder, InsertMobilesentrixOrder, MobilesentrixCartItem, InsertMobilesentrixCartItem, MobilesentrixOrderItem, InsertMobilesentrixOrderItem,
   ExternalIntegration, InsertExternalIntegration, externalIntegrations,
   ServiceItem, InsertServiceItem, ServiceItemPrice, InsertServiceItemPrice,
   ProductDeviceCompatibility, InsertProductDeviceCompatibility, productDeviceCompatibilities,
@@ -64,7 +64,7 @@ import {
   utilityPracticeTimeline, utilityPracticeStateHistory,
   sifarCredentials, sifarStores,
   fonedayCredentials, fonedayOrders, fonedayProductsCache,
-  mobilesentrixCredentials, mobilesentrixOrders,
+  mobilesentrixCredentials, mobilesentrixOrders, mobilesentrixCartItems, mobilesentrixOrderItems,
   serviceItems, serviceItemPrices, productPrices,
   resellerProducts, ResellerProduct, InsertResellerProduct,
   resellerStaffPermissions, ResellerStaffPermission, InsertResellerStaffPermission,
@@ -696,6 +696,19 @@ export interface IStorage {
   getMobilesentrixOrder(id: string): Promise<MobilesentrixOrder | undefined>;
   createMobilesentrixOrder(order: InsertMobilesentrixOrder): Promise<MobilesentrixOrder>;
   updateMobilesentrixOrder(id: string, updates: Partial<InsertMobilesentrixOrder>): Promise<MobilesentrixOrder>;
+
+  // MobileSentrix Cart
+  getMobilesentrixCartItems(credentialId: string): Promise<MobilesentrixCartItem[]>;
+  getMobilesentrixCartItem(id: string): Promise<MobilesentrixCartItem | undefined>;
+  getMobilesentrixCartItemBySku(credentialId: string, sku: string): Promise<MobilesentrixCartItem | undefined>;
+  addMobilesentrixCartItem(item: InsertMobilesentrixCartItem): Promise<MobilesentrixCartItem>;
+  updateMobilesentrixCartItem(id: string, updates: Partial<InsertMobilesentrixCartItem>): Promise<MobilesentrixCartItem>;
+  deleteMobilesentrixCartItem(id: string): Promise<void>;
+  clearMobilesentrixCart(credentialId: string): Promise<void>;
+  
+  // MobileSentrix Order Items
+  getMobilesentrixOrderItems(orderId: string): Promise<MobilesentrixOrderItem[]>;
+  createMobilesentrixOrderItem(item: InsertMobilesentrixOrderItem): Promise<MobilesentrixOrderItem>;
   
   // Service Catalog (Catalogo Interventi)
   listServiceItems(): Promise<ServiceItem[]>;
@@ -6272,6 +6285,67 @@ export class DatabaseStorage implements IStorage {
       .returning();
     return updated;
   }
+
+  // ==========================================
+  // MOBILESENTRIX CART
+  // ==========================================
+
+  async getMobilesentrixCartItems(credentialId: string): Promise<MobilesentrixCartItem[]> {
+    return await db.select()
+      .from(mobilesentrixCartItems)
+      .where(eq(mobilesentrixCartItems.credentialId, credentialId))
+      .orderBy(desc(mobilesentrixCartItems.createdAt));
+  }
+
+  async getMobilesentrixCartItem(id: string): Promise<MobilesentrixCartItem | undefined> {
+    const [item] = await db.select()
+      .from(mobilesentrixCartItems)
+      .where(eq(mobilesentrixCartItems.id, id));
+    return item;
+  }
+
+  async getMobilesentrixCartItemBySku(credentialId: string, sku: string): Promise<MobilesentrixCartItem | undefined> {
+    const [item] = await db.select()
+      .from(mobilesentrixCartItems)
+      .where(and(
+        eq(mobilesentrixCartItems.credentialId, credentialId),
+        eq(mobilesentrixCartItems.sku, sku)
+      ));
+    return item;
+  }
+
+  async addMobilesentrixCartItem(item: InsertMobilesentrixCartItem): Promise<MobilesentrixCartItem> {
+    const [created] = await db.insert(mobilesentrixCartItems).values(item).returning();
+    return created;
+  }
+
+  async updateMobilesentrixCartItem(id: string, updates: Partial<InsertMobilesentrixCartItem>): Promise<MobilesentrixCartItem> {
+    const [updated] = await db.update(mobilesentrixCartItems)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(mobilesentrixCartItems.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteMobilesentrixCartItem(id: string): Promise<void> {
+    await db.delete(mobilesentrixCartItems).where(eq(mobilesentrixCartItems.id, id));
+  }
+
+  async clearMobilesentrixCart(credentialId: string): Promise<void> {
+    await db.delete(mobilesentrixCartItems).where(eq(mobilesentrixCartItems.credentialId, credentialId));
+  }
+
+  async getMobilesentrixOrderItems(orderId: string): Promise<MobilesentrixOrderItem[]> {
+    return await db.select()
+      .from(mobilesentrixOrderItems)
+      .where(eq(mobilesentrixOrderItems.orderId, orderId));
+  }
+
+  async createMobilesentrixOrderItem(item: InsertMobilesentrixOrderItem): Promise<MobilesentrixOrderItem> {
+    const [created] = await db.insert(mobilesentrixOrderItems).values(item).returning();
+    return created;
+  }
+
 
   // ==========================================
   // SERVICE CATALOG (CATALOGO INTERVENTI)

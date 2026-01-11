@@ -15,6 +15,13 @@
       "when": 1767988824773,
       "tag": "0001_sparkling_starbolt",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1768166724609,
+      "tag": "0002_empty_robbie_robertson",
+      "breakpoints": true
     }
   ]
 }

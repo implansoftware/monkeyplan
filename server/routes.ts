@@ -23916,6 +23916,285 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // ==========================================
+  // MOBILESENTRIX CART ENDPOINTS
+  // ==========================================
+
+  // GET /api/mobilesentrix/cart - Get cart items
+  app.get("/api/mobilesentrix/cart", requireAuth, requireRole("reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const credential = await storage.getMobilesentrixCredentialByReseller(req.user.id);
+      if (!credential) {
+        return res.status(404).send("Credenziali MobileSentrix non configurate");
+      }
+      
+      const items = await storage.getMobilesentrixCartItems(credential.id);
+      const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
+      const totalAmount = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+      
+      res.json({ items, totalItems, totalAmount });
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+
+  // GET /api/mobilesentrix/cart/count - Get cart item count
+  app.get("/api/mobilesentrix/cart/count", requireAuth, requireRole("reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const credential = await storage.getMobilesentrixCredentialByReseller(req.user.id);
+      if (!credential) {
+        return res.json({ count: 0 });
+      }
+      
+      const items = await storage.getMobilesentrixCartItems(credential.id);
+      const count = items.reduce((sum, item) => sum + item.quantity, 0);
+      
+      res.json({ count });
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+
+  // POST /api/mobilesentrix/cart - Add item to cart
+  app.post("/api/mobilesentrix/cart", requireAuth, requireRole("reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const credential = await storage.getMobilesentrixCredentialByReseller(req.user.id);
+      if (!credential) {
+        return res.status(404).send("Credenziali MobileSentrix non configurate");
+      }
+      
+      const { productId, sku, name, brand, model, price, quantity = 1, imageUrl } = req.body;
+      
+      if (!productId || !sku || !name || price === undefined) {
+        return res.status(400).send("productId, sku, name e price sono obbligatori");
+      }
+      
+      // Check if item already in cart
+      const existingItem = await storage.getMobilesentrixCartItemBySku(credential.id, sku);
+      
+      if (existingItem) {
+        // Update quantity
+        const updated = await storage.updateMobilesentrixCartItem(existingItem.id, {
+          quantity: existingItem.quantity + quantity,
+        });
+        return res.json(updated);
+      }
+      
+      // Add new item
+      const priceInCents = Math.round(parseFloat(price) * 100);
+      const item = await storage.addMobilesentrixCartItem({
+        credentialId: credential.id,
+        productId: String(productId),
+        sku,
+        name,
+        brand: brand || null,
+        model: model || null,
+        price: priceInCents,
+        quantity,
+        imageUrl: imageUrl || null,
+      });
+      
+      res.json(item);
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+
+  // PUT /api/mobilesentrix/cart/:id - Update cart item quantity
+  app.put("/api/mobilesentrix/cart/:id", requireAuth, requireRole("reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const { id } = req.params;
+      const { quantity } = req.body;
+      
+      if (!quantity || quantity < 1) {
+        return res.status(400).send("Quantità non valida");
+      }
+      
+      const item = await storage.getMobilesentrixCartItem(id);
+      if (!item) {
+        return res.status(404).send("Item non trovato");
+      }
+      
+      // Verify ownership
+      const credential = await storage.getMobilesentrixCredentialByReseller(req.user.id);
+      if (!credential || item.credentialId !== credential.id) {
+        return res.status(403).send("Non autorizzato");
+      }
+      
+      const updated = await storage.updateMobilesentrixCartItem(id, { quantity });
+      res.json(updated);
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+
+  // DELETE /api/mobilesentrix/cart/:id - Remove item from cart
+  app.delete("/api/mobilesentrix/cart/:id", requireAuth, requireRole("reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const { id } = req.params;
+      
+      const item = await storage.getMobilesentrixCartItem(id);
+      if (!item) {
+        return res.status(404).send("Item non trovato");
+      }
+      
+      // Verify ownership
+      const credential = await storage.getMobilesentrixCredentialByReseller(req.user.id);
+      if (!credential || item.credentialId !== credential.id) {
+        return res.status(403).send("Non autorizzato");
+      }
+      
+      await storage.deleteMobilesentrixCartItem(id);
+      res.json({ success: true });
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+
+  // DELETE /api/mobilesentrix/cart - Clear entire cart
+  app.delete("/api/mobilesentrix/cart", requireAuth, requireRole("reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const credential = await storage.getMobilesentrixCredentialByReseller(req.user.id);
+      if (!credential) {
+        return res.status(404).send("Credenziali MobileSentrix non configurate");
+      }
+      
+      await storage.clearMobilesentrixCart(credential.id);
+      res.json({ success: true });
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+
+  // POST /api/mobilesentrix/checkout - Create order from cart
+  app.post("/api/mobilesentrix/checkout", requireAuth, requireRole("reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const credential = await storage.getMobilesentrixCredentialByReseller(req.user.id);
+      if (!credential) {
+        return res.status(404).send("Credenziali MobileSentrix non configurate");
+      }
+      
+      const cartItems = await storage.getMobilesentrixCartItems(credential.id);
+      if (cartItems.length === 0) {
+        return res.status(400).send("Carrello vuoto");
+      }
+      
+      const totalAmount = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+      
+      // Create order via MobileSentrix API
+      const { getMobilesentrixService } = await import("./mobilesentrixService");
+      const mobilesentrixService = getMobilesentrixService(credential);
+      
+      try {
+        const msOrder = await mobilesentrixService.createOrder(
+          cartItems.map(item => ({
+            sku: item.sku,
+            quantity: item.quantity,
+            price: item.price / 100, // Convert back to dollars
+          })),
+          req.body.shippingAddress || {},
+          req.body.shippingMethod
+        );
+        
+        // Save order locally
+        const order = await storage.createMobilesentrixOrder({
+          credentialId: credential.id,
+          mobilesentrixOrderId: msOrder.order_id,
+          orderNumber: msOrder.order_number,
+          status: msOrder.status || "pending",
+          totalAmount,
+          currency: "USD",
+          shippingMethod: req.body.shippingMethod || null,
+          orderData: JSON.stringify({ items: cartItems, msResponse: msOrder }),
+        });
+        
+        // Save order items
+        for (const cartItem of cartItems) {
+          await storage.createMobilesentrixOrderItem({
+            orderId: order.id,
+            productId: cartItem.productId,
+            sku: cartItem.sku,
+            name: cartItem.name,
+            brand: cartItem.brand,
+            model: cartItem.model,
+            price: cartItem.price,
+            quantity: cartItem.quantity,
+            imageUrl: cartItem.imageUrl,
+          });
+        }
+        
+        // Clear cart after successful order
+        await storage.clearMobilesentrixCart(credential.id);
+        
+        res.json({ success: true, order, mobilesentrixOrderId: msOrder.order_id });
+      } catch (msError: any) {
+        return res.status(400).json({
+          success: false,
+          message: "Errore durante la creazione dell'ordine su MobileSentrix: " + msError.message,
+        });
+      }
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+
+  // GET /api/mobilesentrix/orders - Get order history
+  app.get("/api/mobilesentrix/orders", requireAuth, requireRole("reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const credential = await storage.getMobilesentrixCredentialByReseller(req.user.id);
+      if (!credential) {
+        return res.status(404).send("Credenziali MobileSentrix non configurate");
+      }
+      
+      const orders = await storage.listMobilesentrixOrders(credential.id);
+      res.json(orders);
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+
+  // GET /api/mobilesentrix/orders/:id - Get order details
+  app.get("/api/mobilesentrix/orders/:id", requireAuth, requireRole("reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const { id } = req.params;
+      
+      const order = await storage.getMobilesentrixOrder(id);
+      if (!order) {
+        return res.status(404).send("Ordine non trovato");
+      }
+      
+      // Verify ownership
+      const credential = await storage.getMobilesentrixCredentialByReseller(req.user.id);
+      if (!credential || order.credentialId !== credential.id) {
+        return res.status(403).send("Non autorizzato");
+      }
+      
+      const items = await storage.getMobilesentrixOrderItems(id);
+      res.json({ ...order, items });
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+
+
   // GET /api/mobilesentrix/catalog/categories - Get MobileSentrix categories
   app.get("/api/mobilesentrix/catalog/categories", requireAuth, requireRole("reseller"), async (req, res) => {
     try {
