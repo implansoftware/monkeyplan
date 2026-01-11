@@ -206,7 +206,7 @@ export default function PosPage() {
   });
 
   const cartSubtotal = cart.reduce((sum, item) => sum + item.totalPrice, 0);
-  const discount = parseInt(discountAmount || "0") * 100;
+  const discount = Math.round(parseFloat(discountAmount || "0") * 100);
   const cartTotal = Math.max(0, cartSubtotal - discount);
   const changeAmount = selectedPayment === "cash" && cashReceived 
     ? (parseFloat(cashReceived) * 100) - cartTotal 
@@ -275,7 +275,7 @@ export default function PosPage() {
       })),
       paymentMethod: selectedPayment,
       discountAmount: discount,
-      cashReceived: selectedPayment === "cash" ? parseInt(cashReceived || "0") * 100 : undefined,
+      cashReceived: selectedPayment === "cash" ? Math.round(parseFloat(cashReceived || "0") * 100) : undefined,
       notes: transactionNotes || undefined,
     });
   };
@@ -757,8 +757,12 @@ export default function PosPage() {
                       variant="outline"
                       className="h-12 text-lg font-bold"
                       onClick={() => {
-                        if (key === "." && cashReceived.includes(".")) return;
-                        setCashReceived(prev => prev + key);
+                        if (key === ".") {
+                          if (cashReceived.includes(".")) return;
+                          setCashReceived(prev => prev === "" ? "0." : prev + ".");
+                        } else {
+                          setCashReceived(prev => prev + key);
+                        }
                       }}
                       data-testid={`keypad-${key}`}
                     >
