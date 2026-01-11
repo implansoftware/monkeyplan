@@ -128,19 +128,60 @@ export default function MobilesentrixSettingsPage() {
         const height = 700;
         const left = (window.screen.width - width) / 2;
         const top = (window.screen.height - height) / 2;
-        window.open(
+        const popup = window.open(
           data.authorizeUrl,
           'mobilesentrix_oauth',
           `width=${width},height=${height},left=${left},top=${top},scrollbars=yes`
         );
+        
+        setIsAuthorizing(true);
         toast({
           title: "Autorizzazione avviata",
           description: "Completa il login nella finestra popup che si è aperta.",
         });
+        
+        // Poll for access token completion every 2 seconds
+        const pollInterval = setInterval(async () => {
+          try {
+            // Check if popup was closed
+            if (popup && popup.closed) {
+              clearInterval(pollInterval);
+              // Final check for access token
+              queryClient.invalidateQueries({ queryKey: ["/api/mobilesentrix/credentials"] });
+              setIsAuthorizing(false);
+              return;
+            }
+            
+            // Check if access token was obtained
+            const res = await fetch("/api/mobilesentrix/credentials", { credentials: "include" });
+            if (res.ok) {
+              const cred = await res.json();
+              if (cred && cred.accessToken) {
+                clearInterval(pollInterval);
+                if (popup && !popup.closed) popup.close();
+                queryClient.invalidateQueries({ queryKey: ["/api/mobilesentrix/credentials"] });
+                setIsAuthorizing(false);
+                toast({
+                  title: "Autorizzazione completata",
+                  description: "Access Token ottenuto con successo! Ora puoi accedere al catalogo.",
+                });
+              }
+            }
+          } catch {
+            // Ignore polling errors
+          }
+        }, 2000);
+        
+        // Stop polling after 5 minutes max
+        setTimeout(() => {
+          clearInterval(pollInterval);
+          setIsAuthorizing(false);
+        }, 5 * 60 * 1000);
       }
     },
     onError: (error: Error) => {
       toast({ title: "Errore", description: error.message, variant: "destructive" });
+      setIsAuthorizing(false);
     },
   });
 
