@@ -79,11 +79,11 @@ export const SHIPPING_METHODS = {
     { code: "flatrate001s_flatrate001s", name: "UPS Saturday Delivery", region: "US" },
     { code: "flatrate14_flatrate14", name: "USPS First Class", region: "US" },
   ],
-  // EU methods (MobileSentrix EU - based on FedEx/DHL international)
+  // EU methods (MobileSentrix EU - format: carrier_method without duplicate suffix)
   EU: [
-    { code: "flatrate6_flatrate6", name: "FedEx Priority", region: "EU" },
-    { code: "flatrate5_flatrate5", name: "FedEx Standard", region: "EU" },
-    { code: "flatrate4_flatrate4", name: "FedEx Economy", region: "EU" },
+    { code: "flatrate6_flatrate", name: "FedEx Priority", region: "EU" },
+    { code: "flatrate5_flatrate", name: "FedEx Standard", region: "EU" },
+    { code: "flatrate4_flatrate", name: "FedEx Economy", region: "EU" },
     { code: "dhlexpress_dhlexpress", name: "DHL Express", region: "EU" },
     { code: "dhleconomy_dhleconomy", name: "DHL Economy", region: "EU" },
   ],
@@ -98,7 +98,7 @@ export const SHIPPING_METHODS = {
 export function getDefaultShippingMethod(countryId: string): string {
   const euCountries = ["IT", "DE", "FR", "ES", "NL", "BE", "AT", "PT", "GR", "PL", "CZ", "SK", "HU", "RO", "BG", "HR", "SI", "LT", "LV", "EE", "IE", "FI", "SE", "DK"];
   if (euCountries.includes(countryId)) {
-    return "flatrate6_flatrate6"; // FedEx Priority for EU
+    return "flatrate6_flatrate"; // FedEx Priority for EU (format without duplicate suffix)
   }
   if (countryId === "US") {
     return "flatrate3_flatrate3"; // FedEx Ground for US
