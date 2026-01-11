@@ -31029,6 +31029,347 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // ==========================================
+  // POS (Point of Sale) - API Cassa Digitale
+  // ==========================================
+
+  // ==== REPAIR CENTER POS API ====
+
+  // Ottieni sessione attiva POS
+  app.get("/api/repair-center/pos/session/current", requireRole("repair_center", "repair_center_staff"), async (req, res) => {
+    try {
+      const repairCenterId = req.user!.repairCenterId || req.user!.id;
+      const session = await storage.getOpenPosSession(repairCenterId);
+      res.json(session || null);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Apri nuova sessione POS
+  app.post("/api/repair-center/pos/session/open", requireRole("repair_center", "repair_center_staff"), async (req, res) => {
+    try {
+      const repairCenterId = req.user!.repairCenterId || req.user!.id;
+      const operatorId = req.user!.id;
+      
+      const existingSession = await storage.getOpenPosSession(repairCenterId);
+      if (existingSession) {
+        return res.status(400).json({ error: "Esiste già una sessione cassa aperta. Chiudila prima di aprirne una nuova." });
+      }
+
+      const { openingCash, openingNotes } = req.body;
+      
+      const session = await storage.createPosSession({
+        repairCenterId,
+        operatorId,
+        openingCash: openingCash || 0,
+        openingNotes: openingNotes || null,
+      });
+      
+      res.json(session);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Chiudi sessione POS
+  app.post("/api/repair-center/pos/session/:sessionId/close", requireRole("repair_center", "repair_center_staff"), async (req, res) => {
+    try {
+      const { sessionId } = req.params;
+      const repairCenterId = req.user!.repairCenterId || req.user!.id;
+      
+      const session = await storage.getPosSession(sessionId);
+      if (!session) return res.status(404).json({ error: "Sessione non trovata" });
+      if (session.repairCenterId !== repairCenterId) return res.status(403).json({ error: "Non autorizzato" });
+      if (session.status === "closed") return res.status(400).json({ error: "Sessione già chiusa" });
+
+      const transactions = await storage.getPosTransactionsBySession(sessionId);
+      const completed = transactions.filter(t => t.status === "completed");
+      const refunded = transactions.filter(t => t.status === "refunded" || t.status === "partial_refund");
+      
+      const totalSales = completed.reduce((sum, t) => sum + t.total, 0);
+      const totalCashSales = completed.filter(t => t.paymentMethod === "cash").reduce((sum, t) => sum + t.total, 0);
+      const totalCardSales = completed.filter(t => t.paymentMethod !== "cash").reduce((sum, t) => sum + t.total, 0);
+      const totalRefunds = refunded.reduce((sum, t) => sum + (t.refundedAmount || 0), 0);
+      
+      const { closingCash, closingNotes } = req.body;
+      const expectedCash = session.openingCash + totalCashSales - totalRefunds;
+      const cashDifference = (closingCash || 0) - expectedCash;
+
+      const closedSession = await storage.closePosSession(sessionId, {
+        closingCash: closingCash || 0,
+        expectedCash,
+        cashDifference,
+        closingNotes: closingNotes || null,
+        totalSales,
+        totalTransactions: completed.length,
+        totalCashSales,
+        totalCardSales,
+        totalRefunds,
+      });
+      
+      res.json(closedSession);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Lista sessioni POS
+  app.get("/api/repair-center/pos/sessions", requireRole("repair_center", "repair_center_staff"), async (req, res) => {
+    try {
+      const repairCenterId = req.user!.repairCenterId || req.user!.id;
+      const limit = parseInt(req.query.limit as string) || 50;
+      const sessions = await storage.getPosSessionsByRepairCenter(repairCenterId, limit);
+      res.json(sessions);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Crea transazione POS
+  app.post("/api/repair-center/pos/transaction", requireRole("repair_center", "repair_center_staff"), async (req, res) => {
+    try {
+      const repairCenterId = req.user!.repairCenterId || req.user!.id;
+      const operatorId = req.user!.id;
+      
+      const session = await storage.getOpenPosSession(repairCenterId);
+      if (!session) return res.status(400).json({ error: "Nessuna sessione cassa aperta." });
+
+      const { items, paymentMethod, customerId, discountAmount, discountPercent, cashReceived, notes, customerNotes } = req.body;
+      
+      if (!items || items.length === 0) return res.status(400).json({ error: "Nessun articolo" });
+      if (!paymentMethod) return res.status(400).json({ error: "Metodo pagamento richiesto" });
+
+      let subtotal = 0;
+      const processedItems = [];
+      
+      for (const item of items) {
+        const product = await storage.getProduct(item.productId);
+        if (!product) return res.status(400).json({ error: `Prodotto ${item.productId} non trovato` });
+        
+        const unitPrice = item.unitPrice || (product.sellingPrice || 0);
+        const itemDiscount = item.discount || 0;
+        const totalPrice = (unitPrice * item.quantity) - itemDiscount;
+        
+        processedItems.push({
+          productId: item.productId,
+          productName: product.name,
+          productSku: product.sku || null,
+          productBarcode: product.barcode || null,
+          quantity: item.quantity,
+          unitPrice,
+          discount: itemDiscount,
+          totalPrice,
+          warehouseId: item.warehouseId || null,
+        });
+        
+        subtotal += totalPrice;
+      }
+
+      const discount = discountAmount || (discountPercent ? Math.round(subtotal * discountPercent / 100) : 0);
+      const taxRate = 22;
+      const taxableAmount = subtotal - discount;
+      const taxAmount = Math.round(taxableAmount * taxRate / (100 + taxRate));
+      const total = taxableAmount;
+
+      const transactionNumber = await storage.generatePosTransactionNumber(repairCenterId);
+      let changeGiven = null;
+      if (paymentMethod === "cash" && cashReceived) changeGiven = cashReceived - total;
+
+      const transaction = await storage.createPosTransaction({
+        transactionNumber,
+        repairCenterId,
+        sessionId: session.id,
+        customerId: customerId || null,
+        operatorId,
+        subtotal,
+        discountAmount: discount,
+        discountPercent: discountPercent || null,
+        taxRate,
+        taxAmount,
+        total,
+        paymentMethod,
+        cashReceived: cashReceived || null,
+        changeGiven,
+        notes: notes || null,
+        customerNotes: customerNotes || null,
+        status: "completed",
+      });
+
+      const transactionItems = await storage.createPosTransactionItems(
+        processedItems.map(item => ({ transactionId: transaction.id, ...item, inventoryDeducted: false }))
+      );
+
+      const sessionTxs = await storage.getPosTransactionsBySession(session.id);
+      const completedTxs = sessionTxs.filter(t => t.status === "completed");
+      await storage.updatePosSessionTotals(session.id, {
+        totalSales: completedTxs.reduce((sum, t) => sum + t.total, 0),
+        totalTransactions: completedTxs.length,
+        totalCashSales: completedTxs.filter(t => t.paymentMethod === "cash").reduce((sum, t) => sum + t.total, 0),
+        totalCardSales: completedTxs.filter(t => t.paymentMethod !== "cash").reduce((sum, t) => sum + t.total, 0),
+      });
+
+      res.json({ transaction, items: transactionItems });
+    } catch (error: any) {
+      console.error("POS transaction error:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Ottieni transazione POS
+  app.get("/api/repair-center/pos/transaction/:id", requireRole("repair_center", "repair_center_staff"), async (req, res) => {
+    try {
+      const repairCenterId = req.user!.repairCenterId || req.user!.id;
+      const transaction = await storage.getPosTransaction(req.params.id);
+      if (!transaction) return res.status(404).json({ error: "Transazione non trovata" });
+      if (transaction.repairCenterId !== repairCenterId) return res.status(403).json({ error: "Non autorizzato" });
+      const items = await storage.getPosTransactionItems(transaction.id);
+      res.json({ transaction, items });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Lista transazioni sessione corrente
+  app.get("/api/repair-center/pos/transactions", requireRole("repair_center", "repair_center_staff"), async (req, res) => {
+    try {
+      const repairCenterId = req.user!.repairCenterId || req.user!.id;
+      const session = await storage.getOpenPosSession(repairCenterId);
+      if (!session) return res.json([]);
+      const transactions = await storage.getPosTransactionsBySession(session.id);
+      res.json(transactions);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Rimborso transazione POS
+  app.post("/api/repair-center/pos/transaction/:id/refund", requireRole("repair_center", "repair_center_staff"), async (req, res) => {
+    try {
+      const repairCenterId = req.user!.repairCenterId || req.user!.id;
+      const operatorId = req.user!.id;
+      const transaction = await storage.getPosTransaction(req.params.id);
+      if (!transaction) return res.status(404).json({ error: "Transazione non trovata" });
+      if (transaction.repairCenterId !== repairCenterId) return res.status(403).json({ error: "Non autorizzato" });
+      if (transaction.status === "refunded") return res.status(400).json({ error: "Transazione già rimborsata" });
+
+      const { amount, reason } = req.body;
+      const refundAmount = amount || transaction.total;
+      const isFullRefund = refundAmount >= transaction.total;
+
+      const updated = await storage.updatePosTransactionStatus(transaction.id, isFullRefund ? "refunded" : "partial_refund", {
+        refundedAmount: refundAmount,
+        refundReason: reason || "Rimborso cliente",
+        refundedBy: operatorId,
+      });
+
+      if (transaction.sessionId) {
+        const sessionTxs = await storage.getPosTransactionsBySession(transaction.sessionId);
+        const refundedTxs = sessionTxs.filter(t => t.status === "refunded" || t.status === "partial_refund");
+        await storage.updatePosSessionTotals(transaction.sessionId, { totalRefunds: refundedTxs.reduce((sum, t) => sum + (t.refundedAmount || 0), 0) });
+      }
+
+      res.json(updated);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Statistiche giornaliere POS
+  app.get("/api/repair-center/pos/stats/daily", requireRole("repair_center", "repair_center_staff"), async (req, res) => {
+    try {
+      const repairCenterId = req.user!.repairCenterId || req.user!.id;
+      const date = req.query.date ? new Date(req.query.date as string) : new Date();
+      const stats = await storage.getPosDailySummary(repairCenterId, date);
+      res.json(stats);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Cerca prodotto per barcode
+  app.get("/api/repair-center/pos/product/barcode/:barcode", requireRole("repair_center", "repair_center_staff"), async (req, res) => {
+    try {
+      const products = await storage.getProducts({ barcode: req.params.barcode });
+      if (products.length === 0) return res.status(404).json({ error: "Prodotto non trovato" });
+      res.json(products[0]);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // ==== RESELLER POS API ====
+
+  app.get("/api/reseller/pos/sessions", requireRole("reseller", "reseller_staff", "sub_reseller"), async (req, res) => {
+    try {
+      const { effectiveId } = getEffectiveContext(req);
+      const startDate = req.query.startDate ? new Date(req.query.startDate as string) : undefined;
+      const endDate = req.query.endDate ? new Date(req.query.endDate as string) : undefined;
+      const limit = parseInt(req.query.limit as string) || 100;
+      const sessions = await storage.getPosSessionsForReseller(effectiveId, { startDate, endDate, limit });
+      res.json(sessions);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/reseller/pos/stats", requireRole("reseller", "reseller_staff", "sub_reseller"), async (req, res) => {
+    try {
+      const { effectiveId } = getEffectiveContext(req);
+      const startDate = new Date(req.query.startDate as string || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000));
+      const endDate = new Date(req.query.endDate as string || new Date());
+      const centers = await storage.getRepairCentersByReseller(effectiveId);
+      const stats = await Promise.all(centers.map(async (center) => {
+        const centerStats = await storage.getPosSessionStats(center.id, startDate, endDate);
+        return { repairCenterId: center.id, repairCenterName: center.name, ...centerStats };
+      }));
+      res.json(stats);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/reseller/pos/session/:sessionId", requireRole("reseller", "reseller_staff", "sub_reseller"), async (req, res) => {
+    try {
+      const { effectiveId } = getEffectiveContext(req);
+      const session = await storage.getPosSession(req.params.sessionId);
+      if (!session) return res.status(404).json({ error: "Sessione non trovata" });
+      const center = await storage.getRepairCenter(session.repairCenterId);
+      if (!center || center.resellerId !== effectiveId) return res.status(403).json({ error: "Non autorizzato" });
+      const transactions = await storage.getPosTransactionsBySession(session.id);
+      res.json({ session, transactions });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // ==== ADMIN POS API ====
+
+  app.get("/api/admin/pos/stats", requireRole("admin", "admin_staff"), async (req, res) => {
+    try {
+      const startDate = new Date(req.query.startDate as string || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000));
+      const endDate = new Date(req.query.endDate as string || new Date());
+      const stats = await storage.getGlobalPosStats(startDate, endDate);
+      res.json(stats);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/admin/pos/transactions", requireRole("admin", "admin_staff"), async (req, res) => {
+    try {
+      const startDate = req.query.startDate ? new Date(req.query.startDate as string) : undefined;
+      const endDate = req.query.endDate ? new Date(req.query.endDate as string) : undefined;
+      const status = req.query.status as any;
+      const limit = parseInt(req.query.limit as string) || 100;
+      const offset = parseInt(req.query.offset as string) || 0;
+      const transactions = await storage.getAllPosTransactions({ startDate, endDate, status, limit, offset });
+      res.json(transactions);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   // Genera immagine barcode PNG
   app.get("/api/barcode/:code", async (req, res) => {
     try {
