@@ -24163,7 +24163,8 @@ export function registerRoutes(app: Express): Server {
       }
       
       // Get orders from MobileSentrix API
-      const service = new MobilesentrixService(credential);
+      const { getMobilesentrixService } = await import("./mobilesentrixService");
+      const service = getMobilesentrixService(credential);
       try {
         console.log("MobileSentrix - Fetching orders from API...");
         const apiOrders = await service.listOrders({ page: 1, per_page: 50 });
@@ -24237,7 +24238,8 @@ export function registerRoutes(app: Express): Server {
         return res.status(400).json({ success: false, message: "Credenziali MobileSentrix non configurate" });
       }
       
-      const service = new MobilesentrixService(credential);
+      const { getMobilesentrixService } = await import("./mobilesentrixService");
+      const service = getMobilesentrixService(credential);
       const orderDetails = await service.getOrderDetails(id);
       
       res.json({ success: true, data: orderDetails });
