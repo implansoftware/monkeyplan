@@ -518,9 +518,10 @@ export class MobilesentrixService {
     console.log("MobileSentrix - Creating order with request:", JSON.stringify(orderRequest));
     
     const orderResult = await this.request<any>("/api/rest/createorder", "POST", orderRequest);
+    console.log("MobileSentrix createorder response:", JSON.stringify(orderResult));
 
     if (!orderResult.success) {
-      throw new Error(orderResult.message || "Errore nella creazione dell'ordine");
+      throw new Error(orderResult.message || "Errore nella creazione dell'ordine: " + JSON.stringify(orderResult));
     }
 
     if (orderResult.data?.order_id || orderResult.data?.increment_id) {
