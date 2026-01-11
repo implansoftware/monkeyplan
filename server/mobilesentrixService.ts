@@ -69,7 +69,6 @@ export class MobilesentrixService {
 
   constructor(credential: MobilesentrixCredential) {
     this.credential = credential;
-    // Use environment from credential, default to production
     const environment = (credential as any).environment || "production";
     this.baseUrl = getMobilesentrixBaseUrl(environment);
   }
@@ -78,7 +77,8 @@ export class MobilesentrixService {
     method: string,
     url: string,
     params: Record<string, string>,
-    consumerSecret: string
+    consumerSecret: string,
+    tokenSecret: string = ""
   ): string {
     const sortedParams = Object.keys(params)
       .sort()
@@ -91,7 +91,8 @@ export class MobilesentrixService {
       encodeURIComponent(sortedParams)
     ].join("&");
 
-    const signingKey = `${encodeURIComponent(consumerSecret)}&`;
+    // HMAC-SHA1 with consumer secret & token secret
+    const signingKey = `${encodeURIComponent(consumerSecret)}&${encodeURIComponent(tokenSecret)}`;
 
     const hmac = crypto.createHmac("sha1", signingKey);
     hmac.update(signatureBaseString);
@@ -101,19 +102,24 @@ export class MobilesentrixService {
   private generateOAuthHeader(
     method: string, 
     baseUrl: string, 
-    queryParams?: Record<string, string>,
-    bodyParams?: Record<string, any>
+    queryParams?: Record<string, string>
   ): string {
+    const credential = this.credential as any;
     const timestamp = Math.floor(Date.now() / 1000).toString();
     const nonce = crypto.randomBytes(16).toString("hex");
 
     const oauthParams: Record<string, string> = {
-      oauth_consumer_key: this.credential.consumerKey,
+      oauth_consumer_key: credential.consumerKey,
       oauth_nonce: nonce,
       oauth_signature_method: "HMAC-SHA1",
       oauth_timestamp: timestamp,
       oauth_version: "1.0"
     };
+
+    // Add access token if available
+    if (credential.accessToken) {
+      oauthParams.oauth_token = credential.accessToken;
+    }
 
     const allParams: Record<string, string> = { ...oauthParams };
     
@@ -122,37 +128,13 @@ export class MobilesentrixService {
         allParams[key] = value;
       });
     }
-    
-    if (bodyParams && typeof bodyParams === 'object') {
-      const flattenBody = (obj: any, prefix = ''): Record<string, string> => {
-        const result: Record<string, string> = {};
-        for (const key of Object.keys(obj)) {
-          const value = obj[key];
-          const fullKey = prefix ? `${prefix}[${key}]` : key;
-          if (Array.isArray(value)) {
-            value.forEach((item, index) => {
-              if (typeof item === 'object' && item !== null) {
-                Object.assign(result, flattenBody(item, `${fullKey}[${index}]`));
-              } else {
-                result[`${fullKey}[${index}]`] = String(item);
-              }
-            });
-          } else if (typeof value === 'object' && value !== null) {
-            Object.assign(result, flattenBody(value, fullKey));
-          } else if (value !== undefined && value !== null) {
-            result[fullKey] = String(value);
-          }
-        }
-        return result;
-      };
-      Object.assign(allParams, flattenBody(bodyParams));
-    }
 
     const signature = this.generateOAuthSignature(
       method,
       baseUrl,
       allParams,
-      this.credential.consumerSecret
+      credential.consumerSecret,
+      credential.accessTokenSecret || ""
     );
 
     oauthParams["oauth_signature"] = signature;
@@ -171,6 +153,16 @@ export class MobilesentrixService {
     body?: Record<string, any>,
     queryParams?: Record<string, string>
   ): Promise<MobilesentrixApiResponse<T>> {
+    const credential = this.credential as any;
+    
+    // Check for access token
+    if (!credential.accessToken) {
+      return {
+        success: false,
+        message: "Access Token non configurato. Completa prima l'autenticazione OAuth cliccando 'Autorizza con MobileSentrix'.",
+      };
+    }
+
     const url = new URL(`${this.baseUrl}${endpoint}`);
     
     if (queryParams) {
@@ -182,8 +174,7 @@ export class MobilesentrixService {
     const authHeader = this.generateOAuthHeader(
       method, 
       url.origin + url.pathname, 
-      queryParams,
-      body
+      queryParams
     );
 
     const headers: Record<string, string> = {
@@ -213,7 +204,7 @@ export class MobilesentrixService {
         console.log(`MobileSentrix returned HTML instead of JSON. Status: ${response.status}`);
         return {
           success: false,
-          message: `L'API MobileSentrix ha restituito una pagina HTML invece di dati JSON. Questo può indicare: credenziali OAuth non valide, endpoint API non accessibile, o l'API non è disponibile per integrazioni dirette. Contatta MobileSentrix per verificare l'accesso API. (Status: ${response.status})`,
+          message: `L'API MobileSentrix ha restituito HTML invece di JSON. Verifica le credenziali OAuth o l'Access Token. (Status: ${response.status})`,
         };
       }
       
@@ -221,7 +212,11 @@ export class MobilesentrixService {
         let errorMessage = `HTTP Error ${response.status}`;
         try {
           const errorJson = JSON.parse(responseText);
-          errorMessage = errorJson.message || errorJson.error || errorMessage;
+          if (errorJson.messages?.error?.[0]?.message) {
+            errorMessage = errorJson.messages.error[0].message;
+          } else {
+            errorMessage = errorJson.message || errorJson.error || errorMessage;
+          }
         } catch {
           errorMessage = responseText.substring(0, 200) || errorMessage;
         }
@@ -253,32 +248,32 @@ export class MobilesentrixService {
   }
 
   async testConnection(): Promise<{ success: boolean; message: string }> {
+    const credential = this.credential as any;
+    
+    if (!credential.accessToken) {
+      return { 
+        success: false, 
+        message: "Access Token non configurato. Clicca 'Autorizza con MobileSentrix' per completare l'autenticazione." 
+      };
+    }
+    
     try {
-      // Test connection using OAuth 1.0a with Consumer Key/Secret
-      // Try to fetch categories or products to verify credentials
-      const result = await this.request<any>("/rest/V1/products", "GET", undefined, {
-        "searchCriteria[pageSize]": "1"
+      // Test with products endpoint (limited to 1 product)
+      const result = await this.request<any>("/api/rest/products", "GET", undefined, {
+        "limit": "1",
+        "page": "1"
       });
       
       if (result.success) {
         return { 
           success: true, 
-          message: "Connessione riuscita - API MobileSentrix attiva. Catalogo accessibile." 
-        };
-      }
-      
-      // If products endpoint fails, try categories
-      const catResult = await this.request<any>("/rest/V1/categories");
-      if (catResult.success) {
-        return { 
-          success: true, 
-          message: "Connessione riuscita - API MobileSentrix attiva." 
+          message: "Connessione riuscita - API MobileSentrix attiva e catalogo accessibile." 
         };
       }
       
       return { 
         success: false, 
-        message: result.message || "Errore di connessione all'API MobileSentrix. Verifica Consumer Key e Secret." 
+        message: result.message || "Errore di connessione all'API MobileSentrix." 
       };
     } catch (error: any) {
       return { success: false, message: error.message || "Errore di connessione" };
@@ -286,23 +281,33 @@ export class MobilesentrixService {
   }
 
   async getCategories(): Promise<MobilesentrixCategory[]> {
-    // Magento 2 REST API - categories endpoint
-    const result = await this.request<any>("/rest/V1/categories");
+    const result = await this.request<any>("/api/rest/categories");
     if (result.success && result.data) {
-      const extractCategories = (cat: any): MobilesentrixCategory[] => {
-        const cats: MobilesentrixCategory[] = [{
-          id: String(cat.id),
-          name: cat.name,
-          parent_id: cat.parent_id ? String(cat.parent_id) : null
-        }];
-        if (cat.children_data) {
-          cat.children_data.forEach((child: any) => {
-            cats.push(...extractCategories(child));
+      // MobileSentrix returns categories as an object with category IDs as keys
+      const categories: MobilesentrixCategory[] = [];
+      const extractCategories = (data: any): void => {
+        if (Array.isArray(data)) {
+          data.forEach(cat => {
+            categories.push({
+              id: String(cat.entity_id || cat.id),
+              name: cat.name,
+              parent_id: cat.parent_id ? String(cat.parent_id) : null
+            });
+          });
+        } else if (typeof data === 'object') {
+          Object.values(data).forEach((cat: any) => {
+            if (cat.entity_id || cat.id) {
+              categories.push({
+                id: String(cat.entity_id || cat.id),
+                name: cat.name,
+                parent_id: cat.parent_id ? String(cat.parent_id) : null
+              });
+            }
           });
         }
-        return cats;
       };
-      return extractCategories(result.data);
+      extractCategories(result.data);
+      return categories;
     }
     throw new Error(result.message || "Errore nel recupero categorie");
   }
@@ -314,59 +319,53 @@ export class MobilesentrixService {
     page?: number;
     per_page?: number;
   }): Promise<{ products: MobilesentrixProduct[]; total: number; page: number; per_page: number }> {
-    // Magento 2 REST API - uses searchCriteria format
     const queryParams: Record<string, string> = {};
-    let filterIndex = 0;
     
-    if (params.query) {
-      // Search by name using LIKE
-      queryParams[`searchCriteria[filterGroups][${filterIndex}][filters][0][field]`] = "name";
-      queryParams[`searchCriteria[filterGroups][${filterIndex}][filters][0][value]`] = `%${params.query}%`;
-      queryParams[`searchCriteria[filterGroups][${filterIndex}][filters][0][conditionType]`] = "like";
-      filterIndex++;
-    }
-    
-    if (params.category_id) {
-      queryParams[`searchCriteria[filterGroups][${filterIndex}][filters][0][field]`] = "category_id";
-      queryParams[`searchCriteria[filterGroups][${filterIndex}][filters][0][value]`] = params.category_id;
-      filterIndex++;
-    }
-
     const page = params.page || 1;
     const perPage = params.per_page || 20;
-    queryParams["searchCriteria[currentPage]"] = String(page);
-    queryParams["searchCriteria[pageSize]"] = String(perPage);
+    queryParams["page"] = String(page);
+    queryParams["limit"] = String(perPage);
+    queryParams["pageinfo"] = "1";
+    
+    if (params.category_id) {
+      queryParams["category_id"] = params.category_id;
+    }
+    
+    if (params.query) {
+      // Use SKU filter for search
+      queryParams["filter[1][attribute]"] = "name";
+      queryParams["filter[1][like]"] = `%${params.query}%`;
+    }
 
-    const result = await this.request<any>("/rest/V1/products", "GET", undefined, queryParams);
+    const result = await this.request<any>("/api/rest/products", "GET", undefined, queryParams);
 
     if (result.success && result.data) {
-      const items = result.data.items || [];
-      const products = items.map((p: any) => {
-        // Extract custom attributes
-        const getAttr = (code: string) => {
-          const attr = p.custom_attributes?.find((a: any) => a.attribute_code === code);
-          return attr?.value || "";
-        };
+      const products: MobilesentrixProduct[] = [];
+      
+      // MobileSentrix returns products as object with product IDs as keys
+      Object.entries(result.data).forEach(([key, p]: [string, any]) => {
+        // Skip pagination info
+        if (key === 'page_info' || key === 'total_count') return;
         
-        return {
-          id: String(p.id),
+        products.push({
+          id: String(p.entity_id || key),
           sku: p.sku || "",
           name: p.name || "",
-          brand: getAttr("manufacturer") || getAttr("brand") || "",
-          model: getAttr("model") || "",
+          brand: p.manufacturer_text || "",
+          model: p.model_text || "",
           category: "",
-          price: p.price || 0,
-          stock: p.extension_attributes?.stock_item?.qty || 0,
-          image_url: p.media_gallery_entries?.[0]?.file 
-            ? `https://www.mobilesentrix.eu/media/catalog/product${p.media_gallery_entries[0].file}` 
-            : "",
-          description: getAttr("description") || getAttr("short_description") || "",
-        };
+          price: parseFloat(p.customer_price || p.price) || 0,
+          stock: parseInt(p.in_stock_qty) || 0,
+          image_url: p.image_url || p.default_image || "",
+          description: p.short_description || p.description || "",
+        });
       });
+
+      const totalCount = result.data.total_count || products.length;
 
       return {
         products,
-        total: result.data.total_count || products.length,
+        total: totalCount,
         page,
         per_page: perPage,
       };
@@ -376,78 +375,62 @@ export class MobilesentrixService {
   }
 
   async getProduct(productId: string): Promise<MobilesentrixProduct> {
-    // Magento 2 REST API - get product by SKU
-    const result = await this.request<any>(`/rest/V1/products/${encodeURIComponent(productId)}`);
+    const result = await this.request<any>(`/api/rest/products/${encodeURIComponent(productId)}`);
     if (result.success && result.data) {
       const p = result.data;
-      const getAttr = (code: string) => {
-        const attr = p.custom_attributes?.find((a: any) => a.attribute_code === code);
-        return attr?.value || "";
-      };
       
       return {
-        id: String(p.id),
+        id: String(p.entity_id || productId),
         sku: p.sku || "",
         name: p.name || "",
-        brand: getAttr("manufacturer") || getAttr("brand") || "",
-        model: getAttr("model") || "",
+        brand: p.manufacturer_text || "",
+        model: p.model_text || "",
         category: "",
-        price: p.price || 0,
-        stock: p.extension_attributes?.stock_item?.qty || 0,
-        image_url: p.media_gallery_entries?.[0]?.file 
-          ? `https://www.mobilesentrix.eu/media/catalog/product${p.media_gallery_entries[0].file}` 
-          : "",
-        description: getAttr("description") || getAttr("short_description") || "",
+        price: parseFloat(p.customer_price || p.price) || 0,
+        stock: parseInt(p.in_stock_qty) || 0,
+        image_url: p.image_url || p.default_image || "",
+        description: p.description || p.short_description || "",
       };
     }
     throw new Error(result.message || "Prodotto non trovato");
   }
 
   async createOrder(items: MobilesentrixCartItem[], shippingAddress: MobilesentrixAddress, shippingMethod?: string): Promise<MobilesentrixOrderResponse> {
-    // First create a cart
-    const cartResult = await this.request<string>("/rest/V1/carts/mine", "POST");
-    if (!cartResult.success) {
-      throw new Error("Errore nella creazione del carrello");
-    }
-    const cartId = cartResult.data;
-
-    // Add items to cart
-    for (const item of items) {
-      await this.request<any>(`/rest/V1/carts/mine/items`, "POST", {
-        cartItem: {
-          sku: item.sku,
-          qty: item.quantity,
-          quote_id: cartId
-        }
-      });
-    }
-
-    // Set shipping address and create order
-    const orderResult = await this.request<any>("/rest/V1/carts/mine/order", "PUT", {
-      paymentMethod: { method: "checkmo" }
+    // Create cart and add items
+    const cartResult = await this.request<any>("/api/rest/cart", "POST", {
+      items: items.map(item => ({
+        sku: item.sku,
+        qty: item.quantity
+      }))
     });
+    
+    if (!cartResult.success) {
+      throw new Error(cartResult.message || "Errore nella creazione del carrello");
+    }
 
-    if (orderResult.success && orderResult.data) {
+    // The cart response should contain order info or cart ID for checkout
+    if (cartResult.data?.order_id) {
       return {
-        order_id: String(orderResult.data),
-        order_number: String(orderResult.data),
+        order_id: String(cartResult.data.order_id),
+        order_number: cartResult.data.increment_id || String(cartResult.data.order_id),
         status: "pending",
         total: items.reduce((sum, i) => sum + (i.price * i.quantity), 0),
         created_at: new Date().toISOString()
       };
     }
-    throw new Error(orderResult.message || "Errore nella creazione ordine");
+
+    throw new Error("Ordine creato ma risposta non valida");
   }
 
   async getOrder(orderId: string): Promise<MobilesentrixOrderResponse> {
-    const result = await this.request<any>(`/rest/V1/orders/${orderId}`);
+    const result = await this.request<any>(`/api/rest/orders/${orderId}`);
     if (result.success && result.data) {
       return {
-        order_id: String(result.data.entity_id),
-        order_number: result.data.increment_id,
-        status: result.data.status,
-        total: result.data.grand_total,
-        created_at: result.data.created_at
+        order_id: String(result.data.entity_id || orderId),
+        order_number: result.data.increment_id || String(orderId),
+        status: result.data.status || "unknown",
+        total: parseFloat(result.data.grand_total) || 0,
+        created_at: result.data.created_at || new Date().toISOString()
       };
     }
     throw new Error(result.message || "Ordine non trovato");
@@ -457,42 +440,59 @@ export class MobilesentrixService {
     const queryParams: Record<string, string> = {};
     const page = params?.page || 1;
     const perPage = params?.per_page || 20;
-    queryParams["searchCriteria[currentPage]"] = String(page);
-    queryParams["searchCriteria[pageSize]"] = String(perPage);
+    queryParams["page"] = String(page);
+    queryParams["limit"] = String(perPage);
 
-    const result = await this.request<any>("/rest/V1/orders", "GET", undefined, queryParams);
+    const result = await this.request<any>("/api/rest/orders", "GET", undefined, queryParams);
     if (result.success && result.data) {
-      const orders = (result.data.items || []).map((o: any) => ({
-        order_id: String(o.entity_id),
-        order_number: o.increment_id,
-        status: o.status,
-        total: o.grand_total,
-        created_at: o.created_at
-      }));
+      const orders: MobilesentrixOrderResponse[] = [];
+      
+      Object.values(result.data).forEach((o: any) => {
+        if (o.entity_id) {
+          orders.push({
+            order_id: String(o.entity_id),
+            order_number: o.increment_id || String(o.entity_id),
+            status: o.status || "unknown",
+            total: parseFloat(o.grand_total) || 0,
+            created_at: o.created_at || ""
+          });
+        }
+      });
+      
       return {
         orders,
-        total: result.data.total_count || orders.length,
+        total: orders.length,
       };
     }
     throw new Error(result.message || "Errore nel recupero ordini");
   }
 
   async getBrands(): Promise<string[]> {
-    // Magento 2 - get manufacturer attribute options
-    const result = await this.request<any>("/rest/V1/products/attributes/manufacturer");
-    if (result.success && result.data?.options) {
-      return result.data.options.filter((o: any) => o.value).map((o: any) => o.label);
+    // Get products and extract unique manufacturers
+    const result = await this.request<any>("/api/rest/products", "GET", undefined, {
+      "limit": "100",
+      "page": "1"
+    });
+    
+    if (result.success && result.data) {
+      const brands = new Set<string>();
+      Object.values(result.data).forEach((p: any) => {
+        if (p.manufacturer_text) {
+          brands.add(p.manufacturer_text);
+        }
+      });
+      return Array.from(brands).sort();
     }
     return [];
   }
 
   async getAccountInfo(): Promise<{ name: string; email: string; balance?: number }> {
-    const result = await this.request<any>("/rest/V1/customers/me");
+    const result = await this.request<any>("/api/rest/customer");
     if (result.success && result.data) {
       return {
         name: `${result.data.firstname || ""} ${result.data.lastname || ""}`.trim(),
         email: result.data.email || "",
-        balance: result.data.extension_attributes?.reward_balance || undefined
+        balance: result.data.store_credit_balance || undefined
       };
     }
     throw new Error(result.message || "Errore nel recupero informazioni account");

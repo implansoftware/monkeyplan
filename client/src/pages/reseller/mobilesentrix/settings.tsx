@@ -197,7 +197,7 @@ export default function MobilesentrixSettingsPage() {
             <p className="text-muted-foreground">Configura la connessione con il tuo account MobileSentrix</p>
           </div>
         </div>
-        {credential && (
+        {credential && credential.accessToken && (
           <Link href="/reseller/mobilesentrix/catalog">
             <Button data-testid="button-go-catalog">
               <Package className="h-4 w-4 mr-2" />
@@ -218,9 +218,21 @@ export default function MobilesentrixSettingsPage() {
                 </CardTitle>
                 <CardDescription>Le tue credenziali MobileSentrix sono salvate</CardDescription>
               </div>
-              <Badge variant={credential.isActive ? "default" : "secondary"}>
-                {credential.isActive ? "Attivo" : "Disattivato"}
-              </Badge>
+              <div className="flex items-center gap-2">
+                {credential.accessToken ? (
+                  <Badge className="bg-gradient-to-r from-blue-500 to-cyan-500 text-white">
+                    <Shield className="h-3 w-3 mr-1" />
+                    Autorizzato
+                  </Badge>
+                ) : (
+                  <Badge variant="outline" className="border-amber-500 text-amber-600">
+                    Richiede Autorizzazione
+                  </Badge>
+                )}
+                <Badge variant={credential.isActive ? "default" : "secondary"}>
+                  {credential.isActive ? "Attivo" : "Disattivato"}
+                </Badge>
+              </div>
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -291,23 +303,78 @@ export default function MobilesentrixSettingsPage() {
                   <p className="text-sm text-muted-foreground">{credential.testMessage}</p>
                 )}
               </div>
+              <div className="space-y-2">
+                <Label>Access Token</Label>
+                <div className="flex items-center gap-2">
+                  {credential.accessToken ? (
+                    <>
+                      <CheckCircle className="h-4 w-4 text-green-500" />
+                      <span className="text-sm text-green-600 font-medium">Configurato</span>
+                    </>
+                  ) : (
+                    <>
+                      <XCircle className="h-4 w-4 text-amber-500" />
+                      <span className="text-sm text-amber-600">Non ancora ottenuto</span>
+                    </>
+                  )}
+                </div>
+              </div>
             </div>
 
+            {!credential.accessToken && (
+              <Alert className="border-amber-500 bg-amber-50 dark:bg-amber-950/20">
+                <AlertDescription className="flex items-center justify-between flex-wrap gap-4">
+                  <span>
+                    Per accedere al catalogo, devi completare l'autorizzazione OAuth con MobileSentrix.
+                  </span>
+                  <Button
+                    onClick={() => authorizeMutation.mutate()}
+                    disabled={authorizeMutation.isPending || isAuthorizing}
+                    className="bg-gradient-to-r from-blue-500 to-cyan-500"
+                    data-testid="button-authorize-oauth"
+                  >
+                    {(authorizeMutation.isPending || isAuthorizing) ? (
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    ) : (
+                      <LogIn className="h-4 w-4 mr-2" />
+                    )}
+                    Autorizza con MobileSentrix
+                  </Button>
+                </AlertDescription>
+              </Alert>
+            )}
 
             <div className="flex items-center gap-2 pt-4 border-t">
-              <Button
-                variant="outline"
-                onClick={() => testMutation.mutate()}
-                disabled={testMutation.isPending}
-                data-testid="button-test-connection"
-              >
-                {testMutation.isPending ? (
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                ) : (
-                  <TestTube className="h-4 w-4 mr-2" />
-                )}
-                Test Connessione
-              </Button>
+              {!credential.accessToken && (
+                <Button
+                  variant="outline"
+                  onClick={() => authorizeMutation.mutate()}
+                  disabled={authorizeMutation.isPending || isAuthorizing}
+                  data-testid="button-authorize-oauth-secondary"
+                >
+                  {(authorizeMutation.isPending || isAuthorizing) ? (
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  ) : (
+                    <LogIn className="h-4 w-4 mr-2" />
+                  )}
+                  Autorizza OAuth
+                </Button>
+              )}
+              {credential.accessToken && (
+                <Button
+                  variant="outline"
+                  onClick={() => testMutation.mutate()}
+                  disabled={testMutation.isPending}
+                  data-testid="button-test-connection"
+                >
+                  {testMutation.isPending ? (
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  ) : (
+                    <TestTube className="h-4 w-4 mr-2" />
+                  )}
+                  Test Connessione
+                </Button>
+              )}
               <Button
                 variant="destructive"
                 onClick={() => deleteMutation.mutate()}
