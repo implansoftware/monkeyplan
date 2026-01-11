@@ -1,0 +1,173 @@
+Shipments
+Pre-requirements
+After successfully getting Access Token and Access Token Secret, Below are things that need to pass it every request in Authorization:
+
+Consumer Key
+
+Consumer Secret
+
+Access Token
+
+Access Token Secret
+
+ 
+
+REST API: Shipments
+
+URI: /shipments
+
+HTTP Method: GET /shipments
+
+REST API: Shipments get by date filter
+
+URI: /shipments?limit=num&filter[1][attribute]=order_shipped_date&filter[1][from]=YYYY-MM-DD 00:00:00&filter[1][to]=YYYY-MM-DD 23:59:59&page=num
+
+HTTP Method: GET /shipments?limit=100&filter[1][attribute]=order_shipped_date&filter[1][from]=2022-01-08 00:00:00&filter[1][to]=2022-01-08 23:59:59&page=2
+
+Shipments Parameters Details
+
+Possible HTTP Status Codes
+
+ 
+
+REST API: Shipments
+URI: /shipments 
+Allows you to retrieve information on existing orders' shipments.
+
+URL Structure: {{baseurl}}/api/rest/shipments
+
+HTTP Method: GET /shipments  
+
+Description: This allows you to retrieve the list of existing orders’ shipments.
+Authentication: Admin
+Parameters: No Parameters
+
+
+
+GET {{baseurl}}/api/rest/shipments
+Response Example: JSON
+
+[{
+  "order_id": "6424061",
+  "increment_id": "1400000134",
+  "shipping_name": "Store Manager",
+  "shipping_company_name": "test company",
+  "order_created_date": "2022-01-03 18:42:26",
+  "tracking_number": "123404786998",
+  "order_shipped_date": "2022-01-08 00:02:00",
+  "total_quantity": 13
+}, {
+  "order_id": "6435149",
+  "increment_id": "1400000281",
+  "shipping_name": "Store Manager",
+  "shipping_company_name": "test company",
+  "order_created_date": "2022-01-04 20:13:35",
+  "tracking_number": "123379715410",
+  "order_shipped_date": "2022-01-08 00:25:40",
+  "total_quantity": 1
+}, {
+  "order_id": "6435278",
+  "increment_id": "1400000290",
+  "shipping_name": "Store Manager",
+  "shipping_company_name": "test company",
+  "order_created_date": "2022-01-04 20:52:28",
+  "tracking_number": "123380526470",
+  "order_shipped_date": "2022-01-08 00:25:50",
+  "total_quantity": 4
+}]
+order_id = This is the value of the order ID which is unique and it will useful in filter to fetch specific order data for API usage
+increment_id = This is the order number that is unique
+shipping_name = This is the Shipping User First name and Last name from Shipping address
+shipping_company_name = This is the Shipping User Company name from Shipping address
+order_created_date = This is the date-time value when the order is created
+tracking_number = This is the Tracking number
+order_shipped_date = This is the date-time value when the order is shipped
+total_quantity = This is the value of shipped qty
+
+ 
+
+ 
+
+REST API: Shipments get by date filter 
+URI: /shipments?limit=num&filter[1][attribute]=order_shipped_date&filter[1][from]=YYYY-MM-DD 00:00:00&filter[1][to]=YYYY-MM-DD 23:59:59&page=num 
+Allows you to retrieve information on existing orders' shipments by date filter.
+
+URL Structure: {{baseurl}}/api/rest/shipments?limit=num&filter[1][attribute]=order_shipped_date&filter[1][from]=YYYY-MM-DD 00:00:00&filter[1][to]=YYYY-MM-DD 23:59:59&page=num
+HTTP Method: GET /shipments?limit=num&filter[1][attribute]=order_shipped_date&filter[1][from]=YYYY-MM-DD 00:00:00&filter[1][to]=YYYY-MM-DD 23:59:59&page=num  
+
+
+Description: This allows you to retrieve the list of existing orders’ shipments.
+Authentication: Admin
+Parameters: No Parameters
+
+
+
+GET {{baseurl}}/api/rest/shipments?limit=100&filter[1][attribute]=order_shipped_date&filter[1][from]=2022-01-08 00:00:00&filter[1][to]=2022-01-08 23:59:59&page=2
+Response Example: JSON
+
+[{
+  "order_id": "6424061",
+  "increment_id": "1400000134",
+  "shipping_name": "Store Manager",
+  "shipping_company_name": "test company",
+  "order_created_date": "2022-01-03 18:42:26",
+  "tracking_number": "123404786998",
+  "order_shipped_date": "2022-01-08 00:02:00",
+  "total_quantity": 13
+}, {
+  "order_id": "6435149",
+  "increment_id": "1400000281",
+  "shipping_name": "Store Manager",
+  "shipping_company_name": "test company",
+  "order_created_date": "2022-01-04 20:13:35",
+  "tracking_number": "123379715410",
+  "order_shipped_date": "2022-01-08 00:25:40",
+  "total_quantity": 1
+}, {
+  "order_id": "6435278",
+  "increment_id": "1400000290",
+  "shipping_name": "Store Manager",
+  "shipping_company_name": "test company",
+  "order_created_date": "2022-01-04 20:52:28",
+  "tracking_number": "123380526470",
+  "order_shipped_date": "2022-01-08 00:25:50",
+  "total_quantity": 4
+}]
+ 
+
+Shipments Parameters Details 
+order_id = This is the value of the order ID which is unique and it will useful in filter to fetch specific order data for API usage
+increment_id = This is the order number that is unique
+shipping_name = This is the Shipping User First name and Last name from Shipping address
+shipping_company_name = This is the Shipping User Company name from Shipping address
+order_created_date = This is the date-time value when the order is created
+tracking_number = This is the Tracking number
+order_shipped_date = This is the date-time value when the order is shipped
+total_quantity = This is the value of shipped qty
+
+ 
+
+Possible HTTP Status Codes 
+Status Code
+
+Message
+
+Description
+
+404
+
+Resource not found.
+
+The required resource is not found.
+
+405
+
+Resource method not implemented yet.
+
+The required method is not implemented yet.
+
+405
+
+Resource does not support method.
+
+The current resource does not support the specified method.

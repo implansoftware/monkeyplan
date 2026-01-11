@@ -24298,6 +24298,32 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // GET /api/mobilesentrix/shipping-methods - Get available shipping methods
+  app.get("/api/mobilesentrix/shipping-methods", requireAuth, requireRole("reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const credential = await storage.getMobilesentrixCredentialByReseller(req.user.id);
+      if (!credential) {
+        return res.status(404).send("Credenziali MobileSentrix non configurate");
+      }
+
+      const { getMobilesentrixService, getShippingMethodsForCountry, getDefaultShippingMethod } = await import("./mobilesentrixService");
+      const mobilesentrixService = getMobilesentrixService(credential);
+      
+      // Get customer addresses to determine country
+      const addresses = await mobilesentrixService.getCustomerAddresses();
+      const countryId = addresses.length > 0 ? addresses[0].country_id : "IT";
+      
+      const methods = getShippingMethodsForCountry(countryId);
+      const defaultMethod = getDefaultShippingMethod(countryId);
+      
+      res.json({ methods, defaultMethod, countryId });
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+
   // GET /api/mobilesentrix/account - Get account info
   app.get("/api/mobilesentrix/account", requireAuth, requireRole("reseller"), async (req, res) => {
     try {

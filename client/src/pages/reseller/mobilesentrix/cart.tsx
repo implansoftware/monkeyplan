@@ -1,14 +1,16 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
-import { ShoppingCart, Trash2, Plus, Minus, Package, ArrowLeft, CreditCard, Loader2 } from "lucide-react";
+import { ShoppingCart, Trash2, Plus, Minus, Package, ArrowLeft, CreditCard, Loader2, Truck } from "lucide-react";
 import { Link } from "wouter";
 
 type CartItem = {
@@ -29,14 +31,38 @@ type CartResponse = {
   totalAmount: number;
 };
 
+type ShippingMethod = {
+  code: string;
+  name: string;
+  region: string;
+};
+
+type ShippingMethodsResponse = {
+  methods: ShippingMethod[];
+  defaultMethod: string;
+  countryId: string;
+};
+
 export default function MobilesentrixCartPage() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [isCheckingOut, setIsCheckingOut] = useState(false);
+  const [selectedShippingMethod, setSelectedShippingMethod] = useState<string>("");
 
   const { data: cart, isLoading } = useQuery<CartResponse>({
     queryKey: ["/api/mobilesentrix/cart"],
   });
+
+  const { data: shippingData, isLoading: isLoadingShipping } = useQuery<ShippingMethodsResponse>({
+    queryKey: ["/api/mobilesentrix/shipping-methods"],
+  });
+
+  // Set default shipping method when data loads
+  useEffect(() => {
+    if (shippingData?.defaultMethod && !selectedShippingMethod) {
+      setSelectedShippingMethod(shippingData.defaultMethod);
+    }
+  }, [shippingData, selectedShippingMethod]);
 
   const updateQuantityMutation = useMutation({
     mutationFn: async ({ id, quantity }: { id: string; quantity: number }) => {
@@ -82,7 +108,9 @@ export default function MobilesentrixCartPage() {
   const checkoutMutation = useMutation({
     mutationFn: async () => {
       setIsCheckingOut(true);
-      const res = await apiRequest("POST", "/api/mobilesentrix/checkout", {});
+      const res = await apiRequest("POST", "/api/mobilesentrix/checkout", { 
+        shippingMethod: selectedShippingMethod 
+      });
       return res.json();
     },
     onSuccess: (data) => {
@@ -264,15 +292,47 @@ export default function MobilesentrixCartPage() {
                   <span>Prodotti ({totalItems})</span>
                   <span>{formatPrice(totalAmount)}</span>
                 </div>
-                <div className="flex justify-between text-sm text-muted-foreground">
-                  <span>Spedizione</span>
-                  <span>Calcolata al checkout</span>
+                
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-2">
+                    <Truck className="h-4 w-4" />
+                    Metodo di Spedizione
+                  </Label>
+                  {isLoadingShipping ? (
+                    <Skeleton className="h-10 w-full" />
+                  ) : (
+                    <Select
+                      value={selectedShippingMethod}
+                      onValueChange={setSelectedShippingMethod}
+                      data-testid="select-shipping-method"
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Seleziona spedizione" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {shippingData?.methods.map((method) => (
+                          <SelectItem key={method.code} value={method.code}>
+                            {method.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                  {shippingData?.countryId && (
+                    <p className="text-xs text-muted-foreground">
+                      Spedizione verso: {shippingData.countryId}
+                    </p>
+                  )}
                 </div>
+
                 <div className="border-t pt-4">
                   <div className="flex justify-between font-semibold text-lg">
                     <span>Totale</span>
                     <span>{formatPrice(totalAmount)}</span>
                   </div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    + costi spedizione MobileSentrix
+                  </p>
                 </div>
               </CardContent>
               <CardFooter>

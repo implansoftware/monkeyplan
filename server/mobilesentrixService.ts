@@ -63,6 +63,60 @@ interface MobilesentrixAddress {
   email: string;
 }
 
+// Metodi di spedizione disponibili per regione
+export const SHIPPING_METHODS = {
+  // USA methods
+  US: [
+    { code: "flatrate3_flatrate3", name: "FedEx Ground", region: "US" },
+    { code: "flatrate4_flatrate4", name: "FedEx 2Day", region: "US" },
+    { code: "flatrate5_flatrate5", name: "FedEx Standard Overnight", region: "US" },
+    { code: "flatrate6_flatrate6", name: "FedEx Priority Overnight", region: "US" },
+    { code: "flatrate8_flatrate8", name: "FedEx Saturday Delivery", region: "US" },
+    { code: "flatrate003_flatrate003", name: "UPS Ground", region: "US" },
+    { code: "flatrate001_flatrate001", name: "UPS Priority Overnight", region: "US" },
+    { code: "flatrate002_flatrate002", name: "UPS 2nd Day Air", region: "US" },
+    { code: "flatrate013_flatrate013", name: "UPS Standard Overnight", region: "US" },
+    { code: "flatrate001s_flatrate001s", name: "UPS Saturday Delivery", region: "US" },
+    { code: "flatrate14_flatrate14", name: "USPS First Class", region: "US" },
+  ],
+  // EU methods (MobileSentrix EU - based on FedEx/DHL international)
+  EU: [
+    { code: "flatrate6_flatrate6", name: "FedEx Priority", region: "EU" },
+    { code: "flatrate5_flatrate5", name: "FedEx Standard", region: "EU" },
+    { code: "flatrate4_flatrate4", name: "FedEx Economy", region: "EU" },
+    { code: "dhlexpress_dhlexpress", name: "DHL Express", region: "EU" },
+    { code: "dhleconomy_dhleconomy", name: "DHL Economy", region: "EU" },
+  ],
+  // International
+  INTL: [
+    { code: "flatrate6_flatrate6", name: "FedEx International Priority", region: "INTL" },
+    { code: "flatrate5_flatrate5", name: "FedEx International Economy", region: "INTL" },
+  ]
+};
+
+// Default shipping method based on region
+export function getDefaultShippingMethod(countryId: string): string {
+  const euCountries = ["IT", "DE", "FR", "ES", "NL", "BE", "AT", "PT", "GR", "PL", "CZ", "SK", "HU", "RO", "BG", "HR", "SI", "LT", "LV", "EE", "IE", "FI", "SE", "DK"];
+  if (euCountries.includes(countryId)) {
+    return "flatrate6_flatrate6"; // FedEx Priority for EU
+  }
+  if (countryId === "US") {
+    return "flatrate3_flatrate3"; // FedEx Ground for US
+  }
+  return "flatrate6_flatrate6"; // FedEx International Priority
+}
+
+export function getShippingMethodsForCountry(countryId: string): { code: string; name: string; region: string }[] {
+  const euCountries = ["IT", "DE", "FR", "ES", "NL", "BE", "AT", "PT", "GR", "PL", "CZ", "SK", "HU", "RO", "BG", "HR", "SI", "LT", "LV", "EE", "IE", "FI", "SE", "DK"];
+  if (euCountries.includes(countryId)) {
+    return SHIPPING_METHODS.EU;
+  }
+  if (countryId === "US") {
+    return SHIPPING_METHODS.US;
+  }
+  return SHIPPING_METHODS.INTL;
+}
+
 export class MobilesentrixService {
   private credential: MobilesentrixCredential;
   private baseUrl: string;
