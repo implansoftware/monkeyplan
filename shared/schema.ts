@@ -2526,17 +2526,21 @@ export const fonedayProductsCache = pgTable("foneday_products_cache", {
 
 // ============ MOBILESENTRIX INTEGRATION ============
 
-// Credenziali MobileSentrix per reseller (OAuth 1.0 style)
+// Credenziali MobileSentrix per reseller (OAuth 1.0a)
 export const mobilesentrixCredentials = pgTable("mobilesentrix_credentials", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   resellerId: varchar("reseller_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   
-  // Consumer credentials (OAuth 1.0)
+  // Consumer credentials (OAuth 1.0a - Step 1)
   consumerName: text("consumer_name").notNull(),
   consumerKey: text("consumer_key").notNull(),
   consumerSecret: text("consumer_secret").notNull(),
   
-  // Environment: "production" (www.mobilesentrix.eu) | "staging" (preprod.mobilesentrix.eu)
+  // Access Token credentials (OAuth 1.0a - Step 2 - after user authorization)
+  accessToken: text("access_token"),
+  accessTokenSecret: text("access_token_secret"),
+  
+  // Environment: "production" (www.mobilesentrix.com) | "staging" (preprod.mobilesentrix.com)
   environment: text("environment").notNull().default("production"),
   
   // Stato

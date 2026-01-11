@@ -1,0 +1,746 @@
+REST API - Admin User List
+Overview
+This API retrieves a list of all admin users from the system.
+Authentication via Bearer Token is required.
+The response returns essential profile details such as name, contact, city, region, and activation status.
+
+Endpoint
+URL
+{{baseurl}}/api/rest/adminuser
+HTTP Method
+GET
+Authentication
+This API requires a valid Bearer token.
+
+Header
+Authorization: Bearer <token>
+Request Parameters
+This endpoint does not require any request parameters.
+
+Success Response
+Status Code: 200 OK
+Response Format
+An array of admin user objects.
+
+Sample Response
+[
+    {
+        "user_id": 1,
+        "username": "admin",
+        "email": "admin.msentrix@example.com",
+        "firstname": "xyz",
+        "lastname": "sdf",
+        "is_active": 1,
+        "mobile": "12022972772",
+        "gender": "male",
+        "badge_code": "5267144a49a14012f3a05c086156fb81",
+        "clockin_pin": null,
+        "country": null,
+        "address_line1": null,
+        "city": "Lorton",
+        "region": "67",
+        "postcode": "22079",
+        "personal_email": null,
+        "is_new": false
+    },
+    {
+        "user_id": 4,
+        "username": "demo",
+        "email": "admin.msentrix_4@gmail.com",
+        "firstname": "demo",
+        "lastname": "test",
+        "is_active": 1,
+        "mobile": "12025381005",
+        "gender": "male",
+        "badge_code": "6dd15a2e631a1bd2d337da460754b30b",
+        "clockin_pin": null,
+        "country": null,
+        "address_line1": null,
+        "city": "Chantilly",
+        "region": "67",
+        "postcode": "20151",
+        "personal_email": null,
+        "is_new": false
+    }
+]
+Field Descriptions
+Field
+
+Description
+
+Type
+
+user_id
+
+Unique admin user ID
+
+integer
+
+username
+
+Login username
+
+string
+
+email
+
+Admin user's email
+
+string
+
+firstname
+
+First name
+
+string
+
+lastname
+
+Last name
+
+string
+
+is_active
+
+Account status (1 = active, 0 = inactive)
+
+integer
+
+mobile
+
+Mobile number
+
+string
+
+gender
+
+Gender
+
+string
+
+badge_code
+
+Unique admin badge code
+
+string
+
+clockin_pin
+
+PIN for system clock-in (null if not set)
+
+string/null
+
+country
+
+Country name (if stored)
+
+string/null
+
+address_line1
+
+Address line 1
+
+string/null
+
+city
+
+City
+
+string
+
+region
+
+Region/State ID
+
+string
+
+postcode
+
+Postal code
+
+string
+
+personal_email
+
+Personal email address
+
+string/null
+
+is_new
+
+Indicates if user is newly created
+
+boolean
+
+Error Response
+Status Code: 401 Unauthorized
+Occurs when the access token is invalid or expired.
+
+{
+    "messages": {
+        "error": [
+            {
+                "code": 401,
+                "message": "Invalid access token",
+                "trace": "#0 /var/www/html/app/code/local/Mobilesentrix/Extension/Model/Api2/Adminuser.php(436): Mage_Api2_Model_Resource->_critical('Invalid access ...', 401)\n#1 /var/www/html/app/code/local/Mobilesentrix/Extension/Model/Api2/Adminuser.php(23): Mobilesentrix_Extension_Model_Api2_Adminuser->validateAuthRequest()\n#2 /var/www/html/app/code/local/Mage/Api2/Model/Resource.php(276): Mobilesentrix_Extension_Model_Api2_Adminuser->_retrieveCollection()\n#3 /var/www/html/app/code/core/Mage/Api2/Model/Dispatcher.php(74): Mage_Api2_Model_Resource->dispatch()\n#4 /var/www/html/app/code/core/Mage/Api2/Model/Server.php(239): Mage_Api2_Model_Dispatcher->dispatch(Object(Mage_Api2_Model_Request), Object(Mage_Api2_Model_Response))\n#5 /var/www/html/app/code/core/Mage/Api2/Model/Server.php(107): Mage_Api2_Model_Server->_dispatch(Object(Mage_Api2_Model_Request), Object(Mage_Api2_Model_Response), Object(Mage_Api2_Model_Auth_User_Guest))\n#6 /var/www/html/mobilesentrix.ca/api.php(49): Mage_Api2_Model_Server->run()\n#7 {main}"
+            }
+        ]
+    }
+}
+
+REST API - Create Admin User
+Overview
+This API allows you to create a new admin user in the system.
+All request parameters are mandatory.
+A valid Bearer token is required for authorization.
+
+Endpoint
+URL
+{{baseurl}}/api/rest/adminuser
+HTTP Method
+POST
+Authentication
+This endpoint requires a valid Bearer Token.
+
+Headers
+Authorization: Bearer <token>
+Content-Type: application/json
+Request Body
+All fields listed below are required.
+
+Sample JSON Request
+{
+    "username": "testapi1",
+    "email": "test+4@gmail.com",
+    "firstname": "test3",
+    "lastname": "neww",
+    "is_active": 1,
+    "mobile": "7894561230",
+    "gender": "male",
+    "badge_code": "f5adb77bda187e1267f1753d29cee816",
+    "clockin_pin": "789456",
+    "country": "IN",
+    "address_line1": "1001, Ahmedabad India",
+    "city": "Chantilly",
+    "region": "68",
+    "postcode": "20151",
+    "personal_email": "test+3@gmail.com"
+}
+
+Request Parameter Details
+Field
+
+Description
+
+Type
+
+Example
+
+Required
+
+username
+
+Unique admin username
+
+string
+
+testapi1
+
+Yes
+
+email
+
+Admin user's primary email
+
+string
+
+test@gmail.com
+
+Yes
+
+firstname
+
+First name
+
+string
+
+demo
+
+Yes
+
+lastname
+
+Last name
+
+string
+
+test
+
+Yes
+
+is_active
+
+Status (1 = active, 0 = inactive)
+
+integer
+
+1
+
+Yes
+
+mobile
+
+Mobile number
+
+string
+
+7894561230
+
+Yes
+
+gender
+
+Gender
+
+string
+
+male
+
+Yes
+
+badge_code
+
+Unique badge identifier
+
+string
+
+f5adb77…
+
+Yes
+
+clockin_pin
+
+User’s clock-in pin
+
+string
+
+789456
+
+Yes
+
+country
+
+Country code (ISO format)
+
+string
+
+IN
+
+Yes
+
+address_line1
+
+Address line 1
+
+string
+
+1001, Ahmedabad India
+
+Yes
+
+city
+
+City name
+
+string
+
+Chantilly
+
+Yes
+
+region
+
+Region/state ID
+
+string
+
+68
+
+Yes
+
+postcode
+
+Postal code
+
+string
+
+20151
+
+Yes
+
+personal_email
+
+Secondary/personal email
+
+string
+
+test@gmail.com
+
+Yes
+
+Success Response
+Status Code: 200 OK
+{
+    "user_id": 10,
+    "username": "testapi1",
+    "email": "test@gmail.com",
+    "firstname": "test",
+    "lastname": "demo",
+    "is_active": 1,
+    "mobile": "7894561230",
+    "gender": "male",
+    "badge_code": "f5adb77bda187e1267f1753d29cee816",
+    "clockin_pin": "789456",
+    "country": "IN",
+    "address_line1": "1001, Ahmedabad India",
+    "city": "Chantilly",
+    "region": "68",
+    "postcode": "20151",
+    "personal_email": "test@gmail.com",
+    "is_new": true
+}
+
+Error Response
+Status Code: 500 Internal Server Error
+Occurs when trying to create a user with an already existing username.
+
+{
+    "messages": {
+        "error": [
+            {
+                "code": 500,
+                "message": "Username already exists",
+                "trace": "#0 /var/www/html/app/code/local/Mobilesentrix/Extension/Model/Api2/Adminuser.php(79): Mage_Api2_Model_Resource->_critical('Username alread...', 500)\n#1 /var/www/html/app/code/local/Mage/Api2/Model/Resource.php(252): Mobilesentrix_Extension_Model_Api2_Adminuser->_create(Array)\n#2 /var/www/html/app/code/core/Mage/Api2/Model/Dispatcher.php(74): Mage_Api2_Model_Resource->dispatch()\n#3 /var/www/html/app/code/core/Mage/Api2/Model/Server.php(239): Mage_Api2_Model_Dispatcher->dispatch(Object(Mage_Api2_Model_Request), Object(Mage_Api2_Model_Response))\n#4 /var/www/html/app/code/core/Mage/Api2/Model/Server.php(107): Mage_Api2_Model_Server->_dispatch(Object(Mage_Api2_Model_Request), Object(Mage_Api2_Model_Response), Object(Mage_Api2_Model_Auth_User_Guest))\n#5 /var/www/html/mobilesentrix.ca/api.php(49): Mage_Api2_Model_Server->run()\n#6 {main}"
+            }
+        ]
+    }
+}
+
+Error Conditions
+Condition
+
+Error Code
+
+Message
+
+Username already exists
+
+500
+
+Username already exists
+
+Missing required field
+
+400/500
+
+Field validation error
+
+Invalid or missing token
+
+401
+
+Invalid access token
+
+Notes
+Ensure that username, email, and badge_code are unique.
+
+All fields must be provided; the API will not create partial records.
+
+Use proper ISO codes for country.
+
+REST API - Get Admin User by ID
+Overview
+This API retrieves a single admin user based on their user ID.
+A valid Bearer Token is required for access.
+
+Endpoint
+URL
+{{baseurl}}/api/rest/adminuser/{user_id}
+Example
+{{baseurl}}/api/rest/adminuser/1386
+HTTP Method
+GET
+Authentication
+This endpoint requires a valid Bearer Token.
+
+Headers
+Authorization: Bearer <token>
+Path Parameter
+Parameter
+
+Description
+
+Type
+
+Example
+
+Required
+
+user_id
+
+The unique ID of the admin user
+
+integer
+
+1386
+
+Yes
+
+Success Response
+Status Code: 200 OK
+{
+    "user_id": 1386,
+    "username": "testapi1",
+    "email": "test@gmail.com",
+    "firstname": "demo",
+    "lastname": "test",
+    "is_active": 1,
+    "mobile": "7894561230",
+    "gender": "male",
+    "badge_code": "f5adb77bda187e1267f1753d29cee816",
+    "clockin_pin": "789456",
+    "country": null,
+    "address_line1": null,
+    "city": "Chantilly",
+    "region": "68",
+    "postcode": "20151",
+    "personal_email": null,
+    "is_new": false
+}
+
+Field Descriptions
+Field
+
+Description
+
+Type
+
+user_id
+
+Unique admin ID
+
+integer
+
+username
+
+Login username
+
+string
+
+email
+
+Primary email
+
+string
+
+firstname
+
+First name
+
+string
+
+lastname
+
+Last name
+
+string
+
+is_active
+
+Account status (1 = active)
+
+integer
+
+mobile
+
+Mobile number
+
+string
+
+gender
+
+Gender
+
+string
+
+badge_code
+
+Unique badge code
+
+string
+
+clockin_pin
+
+Clock-in PIN
+
+string/null
+
+country
+
+Country code
+
+string/null
+
+address_line1
+
+Address
+
+string/null
+
+city
+
+City
+
+string
+
+region
+
+Region/state ID
+
+string
+
+postcode
+
+Postal code
+
+string
+
+personal_email
+
+Personal email
+
+string/null
+
+is_new
+
+Indicates if newly created
+
+boolean
+
+Error Response
+Status Code: 404 Not Found
+Occurs when the requested admin user ID does not exist.
+
+{
+    "messages": {
+        "error": [
+            {
+                "code": 404,
+                "message": "Admin user not found",
+                "trace": "#0 /var/www/html/app/code/local/Mobilesentrix/Extension/Model/Api2/Adminuser.php(51): Mage_Api2_Model_Resource->_critical('Admin user not ...', 404)\n#1 /var/www/html/app/code/local/Mage/Api2/Model/Resource.php(270): Mobilesentrix_Extension_Model_Api2_Adminuser->_retrieve()\n#2 /var/www/html/app/code/core/Mage/Api2/Model/Dispatcher.php(74): Mage_Api2_Model_Resource->dispatch()\n#3 /var/www/html/app/code/core/Mage/Api2/Model/Server.php(239): Mage_Api2_Model_Dispatcher->dispatch(Object(Mage_Api2_Model_Request), Object(Mage_Api2_Model_Response))\n#4 /var/www/html/app/code/core/Mage/Api2/Model/Server.php(107): Mage_Api2_Model_Server->_dispatch(Object(Mage_Api2_Model_Request), Object(Mage_Api2_Model_Response), Object(Mage_Api2_Model_Auth_User_Guest))\n#5 /var/www/html/mobilesentrix.ca/api.php(49): Mage_Api2_Model_Server->run()\n#6 {main}"
+            }
+        ]
+    }
+}
+
+Possible Error Conditions
+Condition
+
+Error Code
+
+Message
+
+Invalid or expired token
+
+401
+
+Invalid access token
+
+Admin user not found
+
+404
+
+Admin user not found
+
+Missing user ID
+
+400
+
+Invalid request
+
+Notes
+The fields country, address_line1, and personal_email may return null if not set.
+
+You must provide a valid integer user_id in the URL.
+
+REST API - Update Admin User by ID
+Endpoint
+URL
+{{baseurl}}/api/rest/adminuser/{user_id}
+Example
+{{baseurl}}/api/rest/adminuser/1384
+HTTP Method
+PUT
+Authorization
+Bearer <token>
+Response
+{
+    "user_id": 1387,
+    "username": "testapiupdate",
+    "email": "test@gmail.com",
+    "firstname": "update test",
+    "lastname": "update demo",
+    "is_active": 1,
+    "mobile": "7894561230",
+    "gender": "female",
+    "badge_code": "f5adb77bda187e1267f1753d29cee816",
+    "clockin_pin": "789456",
+    "country": "IN",
+    "address_line1": "1001, Ahmedabad India",
+    "city": "Chantilly",
+    "region": "68",
+    "postcode": "20151",
+    "personal_email": "test@gmail.com",
+    "is_new": true
+}
+
+Error Response
+{
+    "messages": {
+        "error": [
+            {
+                "code": 404,
+                "message": "Admin user not found",
+                "trace": "#0 /var/www/html/app/code/local/Mobilesentrix/Extension/Model/Api2/Adminuser.php(51): Mage_Api2_Model_Resource->_critical('Admin user not ...', 404)\n#1 /var/www/html/app/code/local/Mage/Api2/Model/Resource.php(270): Mobilesentrix_Extension_Model_Api2_Adminuser->_retrieve()\n#2 /var/www/html/app/code/core/Mage/Api2/Model/Dispatcher.php(74): Mage_Api2_Model_Resource->dispatch()\n#3 /var/www/html/app/code/core/Mage/Api2/Model/Server.php(239): Mage_Api2_Model_Dispatcher->dispatch(Object(Mage_Api2_Model_Request), Object(Mage_Api2_Model_Response))\n#4 /var/www/html/app/code/core/Mage/Api2/Model/Server.php(107): Mage_Api2_Model_Server->_dispatch(Object(Mage_Api2_Model_Request), Object(Mage_Api2_Model_Response), Object(Mage_Api2_Model_Auth_User_Guest))\n#5 /var/www/html/mobilesentrix.ca/api.php(49): Mage_Api2_Model_Server->run()\n#6 {main}"
+            }
+        ]
+    }
+}
+
+REST API - Delete Admin User by ID
+Endpoint
+URL
+{{baseurl}}/api/rest/adminuser/{user_id}
+Example
+{{baseurl}}/api/rest/adminuser/1384
+HTTP Method
+DELETE
+Authorization
+Bearer <token>
+Response
+{
+    "success": true,
+    "message": "Admin user testapiupdate deleted successfully"
+}
+Error Response
+{
+    "messages": {
+        "error": [
+            {
+                "code": 500,
+                "message": "Admin user not found",
+                "trace": "#0 /var/www/html/app/code/local/Mobilesentrix/Extension/Model/Api2/Adminuser.php(221): Mage_Api2_Model_Resource->_critical('Admin user not ...', 500)\n#1 /var/www/html/app/code/local/Mage/Api2/Model/Resource.php(299): Mobilesentrix_Extension_Model_Api2_Adminuser->_delete()\n#2 /var/www/html/app/code/core/Mage/Api2/Model/Dispatcher.php(74): Mage_Api2_Model_Resource->dispatch()\n#3 /var/www/html/app/code/core/Mage/Api2/Model/Server.php(239): Mage_Api2_Model_Dispatcher->dispatch(Object(Mage_Api2_Model_Request), Object(Mage_Api2_Model_Response))\n#4 /var/www/html/app/code/core/Mage/Api2/Model/Server.php(107): Mage_Api2_Model_Server->_dispatch(Object(Mage_Api2_Model_Request), Object(Mage_Api2_Model_Response), Object(Mage_Api2_Model_Auth_User_Guest))\n#5 /var/www/html/mobilesentrix.ca/api.php(49): Mage_Api2_Model_Server->run()\n#6 {main}"
+            }
+        ]
+    }
+}

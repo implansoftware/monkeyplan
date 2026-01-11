@@ -1,14 +1,14 @@
 import { MobilesentrixCredential } from "@shared/schema";
 import crypto from "crypto";
 
-// MobileSentrix EU environments
-// Production: https://www.mobilesentrix.eu
-// Staging: https://preprod.mobilesentrix.eu
+// MobileSentrix environments (official documentation)
+// Production: https://www.mobilesentrix.com
+// Staging: https://preprod.mobilesentrix.com
 function getMobilesentrixBaseUrl(environment: string): string {
   if (environment === "staging") {
-    return "https://preprod.mobilesentrix.eu/rest/V1";
+    return "https://preprod.mobilesentrix.com";
   }
-  return "https://www.mobilesentrix.eu/rest/V1";
+  return "https://www.mobilesentrix.com";
 }
 
 interface MobilesentrixApiResponse<T> {
@@ -254,12 +254,50 @@ export class MobilesentrixService {
 
   async testConnection(): Promise<{ success: boolean; message: string }> {
     try {
-      // Magento 2 REST API - test with store info endpoint
-      const result = await this.request<any>("/store/storeConfigs", "GET");
-      if (result.success) {
-        return { success: true, message: "Connessione riuscita" };
+      // MobileSentrix REST API - test with admin user list endpoint
+      // Requires access_token for Bearer authentication
+      const credential = this.credential as any;
+      
+      if (!credential.accessToken) {
+        return { 
+          success: false, 
+          message: "Access Token non configurato. Completa prima l'autenticazione OAuth con MobileSentrix." 
+        };
       }
-      return { success: false, message: result.message || "Errore sconosciuto" };
+      
+      const url = `${this.baseUrl}/api/rest/adminuser`;
+      const response = await fetch(url, {
+        method: "GET",
+        headers: {
+          "Authorization": `Bearer ${credential.accessToken}`,
+          "Content-Type": "application/json",
+          "Accept": "application/json",
+        },
+      });
+      
+      const contentType = response.headers.get("content-type") || "";
+      const responseText = await response.text();
+      
+      // Check if response is HTML (indicates auth failure or invalid endpoint)
+      if (contentType.includes("text/html") || responseText.trim().startsWith("<!DOCTYPE") || responseText.trim().startsWith("<html")) {
+        return { 
+          success: false, 
+          message: `L'API MobileSentrix ha restituito HTML invece di JSON. Verifica l'Access Token. (Status: ${response.status})` 
+        };
+      }
+      
+      if (!response.ok) {
+        let errorMessage = `HTTP Error ${response.status}`;
+        try {
+          const errorJson = JSON.parse(responseText);
+          errorMessage = errorJson.messages?.error?.[0]?.message || errorJson.message || errorMessage;
+        } catch {
+          errorMessage = responseText.substring(0, 200) || errorMessage;
+        }
+        return { success: false, message: errorMessage };
+      }
+      
+      return { success: true, message: "Connessione riuscita - API MobileSentrix attiva" };
     } catch (error: any) {
       return { success: false, message: error.message || "Errore di connessione" };
     }
