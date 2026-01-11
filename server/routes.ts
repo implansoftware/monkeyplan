@@ -23652,7 +23652,7 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  // GET /api/mobilesentrix/oauth/callback - OAuth callback endpoint
+  // GET /api/mobilesentrix/oauth/callback - OAuth callback endpoint (server-side exchange)
   app.get("/api/mobilesentrix/oauth/callback", async (req, res) => {
     try {
       const { oauth_token, oauth_verifier } = req.query;
@@ -23670,26 +23670,143 @@ export function registerRoutes(app: Express): Server {
         `);
       }
       
-      // Show success page with tokens for the frontend to capture
-      res.send(`
-        <html>
-          <head><title>Autorizzazione MobileSentrix</title></head>
-          <body style="font-family: sans-serif; padding: 40px; text-align: center;">
-            <h1 style="color: #22c55e;">Autorizzazione Completata!</h1>
-            <p>Chiudi questa finestra per completare la configurazione.</p>
-            <script>
-              if (window.opener) {
-                window.opener.postMessage({
-                  type: 'mobilesentrix_oauth_callback',
-                  oauth_token: '${oauth_token}',
-                  oauth_verifier: '${oauth_verifier}'
-                }, '*');
-                setTimeout(() => window.close(), 1500);
-              }
-            </script>
-          </body>
-        </html>
-      `);
+      // Get user from session
+      if (!req.user) {
+        return res.status(401).send(`
+          <html>
+            <head><title>Errore OAuth</title></head>
+            <body style="font-family: sans-serif; padding: 40px; text-align: center;">
+              <h1 style="color: #ef4444;">Sessione Scaduta</h1>
+              <p>La tua sessione è scaduta. Effettua di nuovo il login e riprova.</p>
+              <script>setTimeout(() => window.close(), 3000);</script>
+            </body>
+          </html>
+        `);
+      }
+      
+      // Get reseller's credential
+      const credential = await storage.getMobilesentrixCredentialByReseller(req.user.id);
+      if (!credential) {
+        return res.status(404).send(`
+          <html>
+            <head><title>Errore OAuth</title></head>
+            <body style="font-family: sans-serif; padding: 40px; text-align: center;">
+              <h1 style="color: #ef4444;">Credenziali non trovate</h1>
+              <p>Configura prima le credenziali MobileSentrix e poi riprova.</p>
+              <script>setTimeout(() => window.close(), 3000);</script>
+            </body>
+          </html>
+        `);
+      }
+      
+      // Exchange tokens for access token directly on server
+      const baseUrl = credential.environment === "staging" 
+        ? "https://preprod.mobilesentrix.eu" 
+        : "https://www.mobilesentrix.eu";
+      
+      try {
+        const exchangeResponse = await fetch(`${baseUrl}/oauth/authorize/identifiercallback`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            consumer_key: credential.consumerKey,
+            consumer_secret: credential.consumerSecret,
+            oauth_token: String(oauth_token),
+            oauth_verifier: String(oauth_verifier),
+          }),
+        });
+        
+        const exchangeText = await exchangeResponse.text();
+        console.log("MobileSentrix OAuth exchange response:", exchangeText.substring(0, 500));
+        
+        // Check if response is HTML (error)
+        if (exchangeText.trim().startsWith("<!DOCTYPE") || exchangeText.trim().startsWith("<html")) {
+          return res.send(`
+            <html>
+              <head><title>Errore OAuth</title></head>
+              <body style="font-family: sans-serif; padding: 40px; text-align: center;">
+                <h1 style="color: #ef4444;">Errore Scambio Token</h1>
+                <p>MobileSentrix ha restituito una pagina HTML. I token potrebbero essere scaduti.</p>
+                <p style="color: #666; font-size: 12px;">Chiudi questa finestra e riprova l'autorizzazione.</p>
+                <script>setTimeout(() => window.close(), 4000);</script>
+              </body>
+            </html>
+          `);
+        }
+        
+        let exchangeData;
+        try {
+          exchangeData = JSON.parse(exchangeText);
+        } catch {
+          return res.send(`
+            <html>
+              <head><title>Errore OAuth</title></head>
+              <body style="font-family: sans-serif; padding: 40px; text-align: center;">
+                <h1 style="color: #ef4444;">Risposta non valida</h1>
+                <p>MobileSentrix ha restituito una risposta non valida.</p>
+                <p style="color: #666; font-size: 12px;">${exchangeText.substring(0, 100)}...</p>
+                <script>setTimeout(() => window.close(), 4000);</script>
+              </body>
+            </html>
+          `);
+        }
+        
+        if (exchangeData.status !== 1 || !exchangeData.data?.access_token) {
+          return res.send(`
+            <html>
+              <head><title>Errore OAuth</title></head>
+              <body style="font-family: sans-serif; padding: 40px; text-align: center;">
+                <h1 style="color: #ef4444;">Errore Token</h1>
+                <p>${exchangeData.message || "Errore nello scambio dei token"}</p>
+                <script>setTimeout(() => window.close(), 4000);</script>
+              </body>
+            </html>
+          `);
+        }
+        
+        // Save access token to credentials
+        await storage.updateMobilesentrixCredential(credential.id, {
+          accessToken: exchangeData.data.access_token,
+          accessTokenSecret: exchangeData.data.access_token_secret,
+          lastTestAt: new Date(),
+          testStatus: "success",
+          testMessage: "Access Token ottenuto con successo",
+        });
+        
+        // Success - notify parent window and close
+        res.send(`
+          <html>
+            <head><title>Autorizzazione MobileSentrix</title></head>
+            <body style="font-family: sans-serif; padding: 40px; text-align: center;">
+              <h1 style="color: #22c55e;">Autorizzazione Completata!</h1>
+              <p>Access Token ottenuto e salvato con successo!</p>
+              <p>Puoi chiudere questa finestra.</p>
+              <script>
+                if (window.opener) {
+                  window.opener.postMessage({ type: 'mobilesentrix_oauth_success' }, '*');
+                }
+                setTimeout(() => window.close(), 2000);
+              </script>
+            </body>
+          </html>
+        `);
+        
+      } catch (exchangeError: any) {
+        console.error("MobileSentrix OAuth exchange error:", exchangeError);
+        return res.send(`
+          <html>
+            <head><title>Errore OAuth</title></head>
+            <body style="font-family: sans-serif; padding: 40px; text-align: center;">
+              <h1 style="color: #ef4444;">Errore Connessione</h1>
+              <p>Errore durante lo scambio dei token: ${exchangeError.message}</p>
+              <script>setTimeout(() => window.close(), 4000);</script>
+            </body>
+          </html>
+        `);
+      }
+      
     } catch (error: any) {
       res.status(500).send("Errore OAuth: " + error.message);
     }

@@ -45,9 +45,19 @@ export default function MobilesentrixSettingsPage() {
     queryKey: ["/api/mobilesentrix/credentials"],
   });
 
-  // Listen for OAuth callback messages from popup window
+  // Listen for OAuth success message from popup window (server-side exchange)
   useEffect(() => {
     const handleMessage = async (event: MessageEvent) => {
+      // Server-side exchange completed successfully
+      if (event.data?.type === 'mobilesentrix_oauth_success') {
+        toast({
+          title: "Autorizzazione completata",
+          description: "Access Token ottenuto con successo! Ora puoi accedere al catalogo.",
+        });
+        queryClient.invalidateQueries({ queryKey: ["/api/mobilesentrix/credentials"] });
+        setIsAuthorizing(false);
+      }
+      // Legacy: client-side exchange (fallback)
       if (event.data?.type === 'mobilesentrix_oauth_callback') {
         const { oauth_token, oauth_verifier } = event.data;
         if (oauth_token && oauth_verifier) {
