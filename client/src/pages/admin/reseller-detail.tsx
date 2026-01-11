@@ -115,9 +115,9 @@ export default function AdminResellerDetail() {
   return (
     <div className="space-y-6" data-testid="page-reseller-detail">
       {/* Hero Header */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-violet-600 via-purple-600 to-indigo-700 p-8">
-        <div className="absolute top-0 -right-20 w-64 h-64 bg-violet-400/20 rounded-full blur-3xl" />
-        <div className="absolute -bottom-10 -left-10 w-48 h-48 bg-indigo-500/20 rounded-full blur-3xl" />
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-600 via-blue-500 to-cyan-500 p-8">
+        <div className="absolute top-0 -right-20 w-64 h-64 bg-cyan-400/20 rounded-full blur-3xl" />
+        <div className="absolute -bottom-10 -left-10 w-48 h-48 bg-blue-500/20 rounded-full blur-3xl" />
         
         <div className="absolute inset-0 opacity-10" style={{
           backgroundImage: `linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)`,
@@ -141,7 +141,7 @@ export default function AdminResellerDetail() {
                 <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight" data-testid="text-reseller-name">
                   {reseller.fullName}
                 </h1>
-                <p className="text-violet-100/80 mt-1 flex items-center gap-2">
+                <p className="text-blue-100/80 mt-1 flex items-center gap-2">
                   <Mail className="h-4 w-4" />
                   {reseller.email}
                 </p>
@@ -184,7 +184,7 @@ export default function AdminResellerDetail() {
         <Card className="border-0 shadow-lg bg-white dark:bg-slate-800/50">
           <CardHeader className="pb-4">
             <CardTitle className="flex items-center gap-3 text-slate-900 dark:text-white">
-              <div className="p-2 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600">
+              <div className="p-2 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-600">
                 <Store className="h-5 w-5 text-white" />
               </div>
               Informazioni Rivenditore
@@ -199,7 +199,7 @@ export default function AdminResellerDetail() {
               <div className="p-4 bg-slate-50 dark:bg-slate-800/30 rounded-xl">
                 <p className="text-xs text-slate-500 uppercase tracking-wide mb-1">Data Registrazione</p>
                 <p className="font-semibold text-slate-900 dark:text-white flex items-center gap-2" data-testid="text-reseller-created">
-                  <Calendar className="h-4 w-4 text-violet-500" />
+                  <Calendar className="h-4 w-4 text-blue-500" />
                   {reseller.createdAt ? format(new Date(reseller.createdAt), "dd MMM yyyy", { locale: it }) : "-"}
                 </p>
               </div>
@@ -290,7 +290,7 @@ export default function AdminResellerDetail() {
           </div>
         </div>
         
-        <div className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-violet-500 to-purple-600 p-6 text-white shadow-lg shadow-violet-500/25">
+        <div className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-500 to-cyan-600 p-6 text-white shadow-lg shadow-blue-500/25">
           <div className="absolute top-0 right-0 w-24 h-24 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2" />
           <div className="relative flex items-center gap-4">
             <div className="p-3 rounded-xl bg-white/20">
@@ -371,7 +371,7 @@ export default function AdminResellerDetail() {
                           </TableCell>
                           <TableCell className="text-right">
                             <Link href={`/admin/resellers/${sub.id}`}>
-                              <Button variant="ghost" size="icon" className="hover:bg-violet-100 hover:text-violet-600" title="Visualizza dettagli">
+                              <Button variant="ghost" size="icon" className="hover:bg-blue-100 hover:text-blue-600" title="Visualizza dettagli">
                                 <Eye className="h-4 w-4" />
                               </Button>
                             </Link>

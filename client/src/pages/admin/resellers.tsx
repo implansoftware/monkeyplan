@@ -434,9 +434,9 @@ export default function AdminResellers() {
   return (
     <div className="space-y-6" data-testid="page-admin-resellers">
       {/* Hero Header */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-violet-600 via-purple-600 to-indigo-700 p-8">
-        <div className="absolute top-0 -right-20 w-64 h-64 bg-violet-400/20 rounded-full blur-3xl" />
-        <div className="absolute -bottom-10 -left-10 w-48 h-48 bg-indigo-500/20 rounded-full blur-3xl" />
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-600 via-blue-500 to-cyan-500 p-8">
+        <div className="absolute top-0 -right-20 w-64 h-64 bg-cyan-400/20 rounded-full blur-3xl" />
+        <div className="absolute -bottom-10 -left-10 w-48 h-48 bg-blue-500/20 rounded-full blur-3xl" />
         <div className="absolute inset-0 opacity-10" style={{
           backgroundImage: `linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)`,
           backgroundSize: '40px 40px'
@@ -448,10 +448,10 @@ export default function AdminResellers() {
             </div>
             <div>
               <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight" data-testid="text-page-title">Rivenditori</h1>
-              <p className="text-violet-100/80 mt-1">Gestisci i rivenditori e visualizza i loro clienti</p>
+              <p className="text-blue-100/80 mt-1">Gestisci i rivenditori e visualizza i loro clienti</p>
             </div>
           </div>
-          <Button onClick={() => { setEditingReseller(null); resetWizard(); setDialogOpen(true); }} className="bg-white text-violet-700 hover:bg-white/90 shadow-lg" data-testid="button-add-reseller">
+          <Button onClick={() => { setEditingReseller(null); resetWizard(); setDialogOpen(true); }} className="bg-white text-blue-700 hover:bg-white/90 shadow-lg" data-testid="button-add-reseller">
             <Plus className="mr-2 h-4 w-4" />
             Nuovo Rivenditore
           </Button>
@@ -480,7 +480,7 @@ export default function AdminResellers() {
                     <div key={step.id} className="flex flex-col items-center flex-1">
                       <div 
                         className={`w-10 h-10 rounded-full flex items-center justify-center border-2 transition-colors ${
-                          isActive ? 'bg-gradient-to-br from-violet-500 to-purple-600 border-violet-500 text-white' : 
+                          isActive ? 'bg-gradient-to-br from-blue-500 to-cyan-600 border-blue-500 text-white' : 
                           isPast ? 'bg-emerald-500 border-emerald-500 text-white' : 
                           'bg-slate-100 dark:bg-slate-800 border-slate-300 dark:border-slate-600 text-slate-400'
                         }`}
@@ -871,7 +871,7 @@ export default function AdminResellers() {
                 {isLastStep() ? (
                   <Button 
                     type="button"
-                    className="rounded-xl bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700"
+                    className="rounded-xl bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-violet-700 hover:to-purple-700"
                     onClick={handleFinalSubmit}
                     disabled={createResellerMutation.isPending || updateResellerMutation.isPending}
                     data-testid="button-submit"
@@ -882,7 +882,7 @@ export default function AdminResellers() {
                 ) : (
                   <Button 
                     type="button"
-                    className="rounded-xl bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700"
+                    className="rounded-xl bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-violet-700 hover:to-purple-700"
                     onClick={nextStep}
                     disabled={!canProceedToNextStep()}
                     data-testid="button-wizard-next"
@@ -1028,7 +1028,7 @@ export default function AdminResellers() {
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="hover:bg-violet-100 hover:text-violet-600"
+                            className="hover:bg-blue-100 hover:text-blue-600"
                             title="Visualizza dettagli"
                             data-testid={`button-detail-${reseller.id}`}
                           >
@@ -1077,7 +1077,7 @@ export default function AdminResellers() {
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="hover:bg-violet-100 hover:text-violet-600"
+                          className="hover:bg-blue-100 hover:text-blue-600"
                           onClick={() => handleResetPasswordClick(reseller)}
                           title="Reset password"
                           data-testid={`button-reset-password-${reseller.id}`}
@@ -1174,7 +1174,7 @@ export default function AdminResellers() {
                 Annulla
               </Button>
               <Button
-                className="rounded-xl bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700"
+                className="rounded-xl bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-violet-700 hover:to-purple-700"
                 onClick={confirmResetPassword}
                 disabled={newPassword.length < 4 || resetPasswordMutation.isPending}
                 data-testid="button-confirm-reset-password"
