@@ -79,18 +79,18 @@ export const SHIPPING_METHODS = {
     { code: "flatrate001s_flatrate001s", name: "UPS Saturday Delivery", region: "US" },
     { code: "flatrate14_flatrate14", name: "USPS First Class", region: "US" },
   ],
-  // EU methods - from official MobileSentrix EU documentation
+  // EU methods - from official MobileSentrix EU documentation (with _flatrateX suffix)
   EU: [
-    { code: "flatrate17", name: "FedEx Priority", region: "EU" },
-    { code: "flatrate18", name: "FedEx Priority Express", region: "EU" },
-    { code: "flatrate19", name: "FedEx Regional Economy", region: "EU" },
-    { code: "flatrate11", name: "FedEx Economy", region: "EU" },
-    { code: "flatrate011", name: "UPS Standard", region: "EU" },
-    { code: "flatrate0d0", name: "DHL Domestic 12:00", region: "EU" },
-    { code: "flatrate0d1", name: "DHL Domestic", region: "EU" },
-    { code: "flatrate0d3", name: "DHL Express 12:00", region: "EU" },
-    { code: "flatrate0d4", name: "DHL Express Worldwide", region: "EU" },
-    { code: "flatrate0d5", name: "DHL Economy Select", region: "EU" },
+    { code: "flatrate17_flatrate17", name: "FedEx Priority", region: "EU" },
+    { code: "flatrate18_flatrate18", name: "FedEx Priority Express", region: "EU" },
+    { code: "flatrate19_flatrate19", name: "FedEx Regional Economy", region: "EU" },
+    { code: "flatrate11_flatrate11", name: "FedEx Economy", region: "EU" },
+    { code: "flatrate011_flatrate011", name: "UPS Standard", region: "EU" },
+    { code: "flatrate0d0_flatrate0d0", name: "DHL Domestic 12:00", region: "EU" },
+    { code: "flatrate0d1_flatrate0d1", name: "DHL Domestic", region: "EU" },
+    { code: "flatrate0d3_flatrate0d3", name: "DHL Express 12:00", region: "EU" },
+    { code: "flatrate0d4_flatrate0d4", name: "DHL Express Worldwide", region: "EU" },
+    { code: "flatrate0d5_flatrate0d5", name: "DHL Economy Select", region: "EU" },
   ],
   // International
   INTL: [
@@ -103,7 +103,7 @@ export const SHIPPING_METHODS = {
 export function getDefaultShippingMethod(countryId: string): string {
   const euCountries = ["IT", "DE", "FR", "ES", "NL", "BE", "AT", "PT", "GR", "PL", "CZ", "SK", "HU", "RO", "BG", "HR", "SI", "LT", "LV", "EE", "IE", "FI", "SE", "DK"];
   if (euCountries.includes(countryId)) {
-    return "flatrate17"; // FedEx Priority for EU
+    return "flatrate17_flatrate17"; // FedEx Priority for EU
   }
   if (countryId === "US") {
     return "flatrate3_flatrate3"; // FedEx Ground for US
