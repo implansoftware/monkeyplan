@@ -24,7 +24,11 @@ import {
   Eye,
   FileText,
   MapPin,
-  KeyRound
+  KeyRound,
+  Calendar,
+  Activity,
+  Wrench,
+  Loader2
 } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -75,9 +79,12 @@ export default function AdminResellerDetail() {
   if (isLoading) {
     return (
       <div className="space-y-6" data-testid="page-reseller-detail-loading">
-        <Skeleton className="h-8 w-64" />
-        <Skeleton className="h-48 w-full" />
-        <Skeleton className="h-96 w-full" />
+        <Skeleton className="h-40 w-full rounded-2xl" />
+        <div className="grid gap-6 md:grid-cols-2">
+          <Skeleton className="h-64 w-full rounded-2xl" />
+          <Skeleton className="h-64 w-full rounded-2xl" />
+        </div>
+        <Skeleton className="h-96 w-full rounded-2xl" />
       </div>
     );
   }
@@ -86,14 +93,15 @@ export default function AdminResellerDetail() {
     return (
       <div className="space-y-6" data-testid="page-reseller-detail-error">
         <Link href="/admin/resellers">
-          <Button variant="ghost" size="sm" data-testid="button-back-to-resellers">
-            <ArrowLeft className="h-4 w-4 mr-2" />
+          <Button variant="ghost" size="sm" className="gap-2" data-testid="button-back-to-resellers">
+            <ArrowLeft className="h-4 w-4" />
             Torna ai rivenditori
           </Button>
         </Link>
-        <Card>
-          <CardContent className="py-8 text-center text-muted-foreground">
-            Rivenditore non trovato
+        <Card className="border-0 shadow-lg">
+          <CardContent className="py-16 text-center">
+            <Store className="h-16 w-16 mx-auto mb-4 text-slate-300" />
+            <p className="text-slate-500 text-lg">Rivenditore non trovato</p>
           </CardContent>
         </Card>
       </div>
@@ -106,227 +114,264 @@ export default function AdminResellerDetail() {
 
   return (
     <div className="space-y-6" data-testid="page-reseller-detail">
-      <div className="flex items-center gap-4 flex-wrap">
-        <Link href="/admin/resellers">
-          <Button variant="ghost" size="sm" data-testid="button-back-to-resellers">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Torna ai rivenditori
-          </Button>
-        </Link>
-        <div className="flex-1">
-          <h1 className="text-2xl font-semibold" data-testid="text-reseller-name">
-            {reseller.fullName}
-          </h1>
-          <p className="text-muted-foreground">Dettagli rivenditore</p>
+      {/* Hero Header */}
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-violet-600 via-purple-600 to-indigo-700 p-8">
+        <div className="absolute top-0 -right-20 w-64 h-64 bg-violet-400/20 rounded-full blur-3xl" />
+        <div className="absolute -bottom-10 -left-10 w-48 h-48 bg-indigo-500/20 rounded-full blur-3xl" />
+        
+        <div className="absolute inset-0 opacity-10" style={{
+          backgroundImage: `linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)`,
+          backgroundSize: '40px 40px'
+        }} />
+        
+        <div className="relative z-10">
+          <Link href="/admin/resellers">
+            <Button variant="ghost" size="sm" className="text-white/80 hover:text-white hover:bg-white/10 mb-4" data-testid="button-back-to-resellers">
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Torna ai rivenditori
+            </Button>
+          </Link>
+          
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-white/20 backdrop-blur-sm border border-white/30">
+                <Store className="h-8 w-8 text-white" />
+              </div>
+              <div>
+                <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight" data-testid="text-reseller-name">
+                  {reseller.fullName}
+                </h1>
+                <p className="text-violet-100/80 mt-1 flex items-center gap-2">
+                  <Mail className="h-4 w-4" />
+                  {reseller.email}
+                </p>
+              </div>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Badge className="bg-white/20 text-white border border-white/30 px-3 py-1" data-testid="badge-reseller-category">
+                {categoryLabel}
+              </Badge>
+              <Badge 
+                className={reseller.isActive 
+                  ? "bg-emerald-400/20 text-emerald-100 border border-emerald-400/30 px-3 py-1" 
+                  : "bg-slate-400/20 text-slate-100 border border-slate-400/30 px-3 py-1"
+                } 
+                data-testid="badge-reseller-status"
+              >
+                <Activity className="h-3 w-3 mr-1" />
+                {reseller.isActive ? "Attivo" : "Inattivo"}
+              </Badge>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setNewPassword("");
+                  setResetPasswordDialogOpen(true);
+                }}
+                className="bg-white/10 border-white/30 text-white hover:bg-white/20"
+                data-testid="button-reset-password"
+              >
+                <KeyRound className="h-4 w-4 mr-2" />
+                Reset Password
+              </Button>
+            </div>
+          </div>
         </div>
-        <Badge variant="outline" data-testid="badge-reseller-category">
-          {categoryLabel}
-        </Badge>
-        <Badge variant={reseller.isActive ? "default" : "secondary"} data-testid="badge-reseller-status">
-          {reseller.isActive ? "Attivo" : "Inattivo"}
-        </Badge>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => {
-            setNewPassword("");
-            setResetPasswordDialogOpen(true);
-          }}
-          data-testid="button-reset-password"
-        >
-          <KeyRound className="h-4 w-4 mr-2" />
-          Reset Password
-        </Button>
       </div>
 
+      {/* Info Cards */}
       <div className="grid gap-6 md:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Store className="h-5 w-5" />
+        <Card className="border-0 shadow-lg bg-white dark:bg-slate-800/50">
+          <CardHeader className="pb-4">
+            <CardTitle className="flex items-center gap-3 text-slate-900 dark:text-white">
+              <div className="p-2 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600">
+                <Store className="h-5 w-5 text-white" />
+              </div>
               Informazioni Rivenditore
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
-              <div>
-                <p className="text-sm text-muted-foreground">Username</p>
-                <p className="font-medium" data-testid="text-reseller-username">{reseller.username}</p>
+              <div className="p-4 bg-slate-50 dark:bg-slate-800/30 rounded-xl">
+                <p className="text-xs text-slate-500 uppercase tracking-wide mb-1">Username</p>
+                <p className="font-semibold text-slate-900 dark:text-white font-mono" data-testid="text-reseller-username">{reseller.username}</p>
               </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Email</p>
-                <p className="font-medium flex items-center gap-2" data-testid="text-reseller-email">
-                  <Mail className="h-4 w-4 text-muted-foreground" />
-                  {reseller.email}
-                </p>
-              </div>
-              {reseller.phone && (
-                <div>
-                  <p className="text-sm text-muted-foreground">Telefono</p>
-                  <p className="font-medium flex items-center gap-2" data-testid="text-reseller-phone">
-                    <Phone className="h-4 w-4 text-muted-foreground" />
-                    {reseller.phone}
-                  </p>
-                </div>
-              )}
-              <div>
-                <p className="text-sm text-muted-foreground">Data Registrazione</p>
-                <p className="font-medium" data-testid="text-reseller-created">
+              <div className="p-4 bg-slate-50 dark:bg-slate-800/30 rounded-xl">
+                <p className="text-xs text-slate-500 uppercase tracking-wide mb-1">Data Registrazione</p>
+                <p className="font-semibold text-slate-900 dark:text-white flex items-center gap-2" data-testid="text-reseller-created">
+                  <Calendar className="h-4 w-4 text-violet-500" />
                   {reseller.createdAt ? format(new Date(reseller.createdAt), "dd MMM yyyy", { locale: it }) : "-"}
                 </p>
               </div>
             </div>
+            
+            {reseller.phone && (
+              <div className="p-4 bg-slate-50 dark:bg-slate-800/30 rounded-xl">
+                <p className="text-xs text-slate-500 uppercase tracking-wide mb-1">Telefono</p>
+                <p className="font-semibold text-slate-900 dark:text-white flex items-center gap-2" data-testid="text-reseller-phone">
+                  <Phone className="h-4 w-4 text-emerald-500" />
+                  {reseller.phone}
+                </p>
+              </div>
+            )}
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <FileText className="h-5 w-5" />
+        <Card className="border-0 shadow-lg bg-white dark:bg-slate-800/50">
+          <CardHeader className="pb-4">
+            <CardTitle className="flex items-center gap-3 text-slate-900 dark:text-white">
+              <div className="p-2 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600">
+                <FileText className="h-5 w-5 text-white" />
+              </div>
               Dati Fiscali
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="col-span-2">
-                <p className="text-sm text-muted-foreground">Ragione Sociale</p>
-                <p className="font-medium" data-testid="text-reseller-ragione-sociale">
-                  {reseller.ragioneSociale || "-"}
-                </p>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Partita IVA</p>
-                <p className="font-medium" data-testid="text-reseller-piva">
+          <CardContent className="space-y-3">
+            <div className="p-3 bg-slate-50 dark:bg-slate-800/30 rounded-xl">
+              <p className="text-xs text-slate-500 uppercase tracking-wide mb-1">Ragione Sociale</p>
+              <p className="font-semibold text-slate-900 dark:text-white" data-testid="text-reseller-ragione-sociale">
+                {reseller.ragioneSociale || "-"}
+              </p>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-3">
+              <div className="p-3 bg-slate-50 dark:bg-slate-800/30 rounded-xl">
+                <p className="text-xs text-slate-500 uppercase tracking-wide mb-1">Partita IVA</p>
+                <p className="font-mono text-sm text-slate-900 dark:text-white" data-testid="text-reseller-piva">
                   {reseller.partitaIva || "-"}
                 </p>
               </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Codice Fiscale</p>
-                <p className="font-medium" data-testid="text-reseller-cf">
+              <div className="p-3 bg-slate-50 dark:bg-slate-800/30 rounded-xl">
+                <p className="text-xs text-slate-500 uppercase tracking-wide mb-1">Codice Fiscale</p>
+                <p className="font-mono text-sm text-slate-900 dark:text-white" data-testid="text-reseller-cf">
                   {reseller.codiceFiscale || "-"}
                 </p>
               </div>
-              {reseller.indirizzo && (
-                <div className="col-span-2">
-                  <p className="text-sm text-muted-foreground">Indirizzo</p>
-                  <p className="font-medium flex items-center gap-2" data-testid="text-reseller-address">
-                    <MapPin className="h-4 w-4 text-muted-foreground" />
-                    {reseller.indirizzo}, {reseller.cap} {reseller.citta} ({reseller.provincia})
-                  </p>
-                </div>
-              )}
             </div>
+            
+            {reseller.indirizzo && (
+              <div className="p-3 bg-slate-50 dark:bg-slate-800/30 rounded-xl">
+                <p className="text-xs text-slate-500 uppercase tracking-wide mb-1">Indirizzo</p>
+                <p className="font-semibold text-slate-900 dark:text-white flex items-center gap-2" data-testid="text-reseller-address">
+                  <MapPin className="h-4 w-4 text-rose-500" />
+                  {reseller.indirizzo}, {reseller.cap} {reseller.citta} ({reseller.provincia})
+                </p>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
 
+      {/* Stats Cards */}
       <div className="grid gap-4 md:grid-cols-4">
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-4">
-              <div className="p-3 rounded-full bg-blue-100 dark:bg-blue-900">
-                <Store className="h-5 w-5 text-blue-600 dark:text-blue-300" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold" data-testid="stat-sub-resellers">{subResellers.length}</p>
-                <p className="text-sm text-muted-foreground">Sub-Rivenditori</p>
-              </div>
+        <div className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-500 to-blue-600 p-6 text-white shadow-lg shadow-blue-500/25">
+          <div className="absolute top-0 right-0 w-24 h-24 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2" />
+          <div className="relative flex items-center gap-4">
+            <div className="p-3 rounded-xl bg-white/20">
+              <Store className="h-5 w-5" />
             </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-4">
-              <div className="p-3 rounded-full bg-green-100 dark:bg-green-900">
-                <Building2 className="h-5 w-5 text-green-600 dark:text-green-300" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold" data-testid="stat-repair-centers">{repairCenters.length}</p>
-                <p className="text-sm text-muted-foreground">Centri Riparazione</p>
-              </div>
+            <div>
+              <p className="text-3xl font-bold" data-testid="stat-sub-resellers">{subResellers.length}</p>
+              <p className="text-sm text-blue-100">Sub-Rivenditori</p>
             </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-4">
-              <div className="p-3 rounded-full bg-purple-100 dark:bg-purple-900">
-                <Users className="h-5 w-5 text-purple-600 dark:text-purple-300" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold" data-testid="stat-customers">{customers.length}</p>
-                <p className="text-sm text-muted-foreground">Clienti</p>
-              </div>
+          </div>
+        </div>
+        
+        <div className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-500 to-green-600 p-6 text-white shadow-lg shadow-emerald-500/25">
+          <div className="absolute top-0 right-0 w-24 h-24 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2" />
+          <div className="relative flex items-center gap-4">
+            <div className="p-3 rounded-xl bg-white/20">
+              <Wrench className="h-5 w-5" />
             </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-4">
-              <div className="p-3 rounded-full bg-orange-100 dark:bg-orange-900">
-                <UsersRound className="h-5 w-5 text-orange-600 dark:text-orange-300" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold" data-testid="stat-staff">{staff.length}</p>
-                <p className="text-sm text-muted-foreground">Staff</p>
-              </div>
+            <div>
+              <p className="text-3xl font-bold" data-testid="stat-repair-centers">{repairCenters.length}</p>
+              <p className="text-sm text-emerald-100">Centri Riparazione</p>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
+        
+        <div className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-violet-500 to-purple-600 p-6 text-white shadow-lg shadow-violet-500/25">
+          <div className="absolute top-0 right-0 w-24 h-24 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2" />
+          <div className="relative flex items-center gap-4">
+            <div className="p-3 rounded-xl bg-white/20">
+              <Users className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="text-3xl font-bold" data-testid="stat-customers">{customers.length}</p>
+              <p className="text-sm text-violet-100">Clienti</p>
+            </div>
+          </div>
+        </div>
+        
+        <div className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-amber-500 to-orange-600 p-6 text-white shadow-lg shadow-amber-500/25">
+          <div className="absolute top-0 right-0 w-24 h-24 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2" />
+          <div className="relative flex items-center gap-4">
+            <div className="p-3 rounded-xl bg-white/20">
+              <UsersRound className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="text-3xl font-bold" data-testid="stat-staff">{staff.length}</p>
+              <p className="text-sm text-amber-100">Staff</p>
+            </div>
+          </div>
+        </div>
       </div>
 
-      <Tabs defaultValue="repair-centers" className="w-full">
-        <TabsList>
-          {(reseller.resellerCategory === 'franchising' || reseller.resellerCategory === 'gdo') && (
-            <TabsTrigger value="sub-resellers" data-testid="tab-sub-resellers">
-              Sub-Rivenditori ({subResellers.length})
-            </TabsTrigger>
-          )}
-          <TabsTrigger value="repair-centers" data-testid="tab-repair-centers">
-            Centri Riparazione ({repairCenters.length})
-          </TabsTrigger>
-          <TabsTrigger value="customers" data-testid="tab-customers">
-            Clienti ({customers.length})
-          </TabsTrigger>
-          <TabsTrigger value="staff" data-testid="tab-staff">
-            Staff ({staff.length})
-          </TabsTrigger>
-        </TabsList>
+      {/* Tabs */}
+      <Card className="border-0 shadow-lg bg-white dark:bg-slate-800/50">
+        <Tabs defaultValue="repair-centers" className="w-full">
+          <div className="px-6 pt-6">
+            <TabsList className="h-12 bg-slate-100 dark:bg-slate-800 rounded-xl p-1 w-full grid grid-cols-4">
+              {(reseller.resellerCategory === 'franchising' || reseller.resellerCategory === 'gdo') && (
+                <TabsTrigger value="sub-resellers" className="rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-slate-700" data-testid="tab-sub-resellers">
+                  Sub-Riv. ({subResellers.length})
+                </TabsTrigger>
+              )}
+              <TabsTrigger value="repair-centers" className="rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-slate-700" data-testid="tab-repair-centers">
+                Centri ({repairCenters.length})
+              </TabsTrigger>
+              <TabsTrigger value="customers" className="rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-slate-700" data-testid="tab-customers">
+                Clienti ({customers.length})
+              </TabsTrigger>
+              <TabsTrigger value="staff" className="rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-slate-700" data-testid="tab-staff">
+                Staff ({staff.length})
+              </TabsTrigger>
+            </TabsList>
+          </div>
 
-        {(reseller.resellerCategory === 'franchising' || reseller.resellerCategory === 'gdo') && (
-          <TabsContent value="sub-resellers">
-            <Card>
-              <CardHeader>
-                <CardTitle>Sub-Rivenditori</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {subResellers.length === 0 ? (
-                  <p className="text-center text-muted-foreground py-8">Nessun sub-rivenditore</p>
-                ) : (
+          {(reseller.resellerCategory === 'franchising' || reseller.resellerCategory === 'gdo') && (
+            <TabsContent value="sub-resellers" className="px-6 pb-6">
+              {subResellers.length === 0 ? (
+                <div className="py-12 text-center bg-slate-50 dark:bg-slate-800/30 rounded-xl mt-4">
+                  <Store className="h-12 w-12 mx-auto mb-4 text-slate-300" />
+                  <p className="text-slate-500">Nessun sub-rivenditore</p>
+                </div>
+              ) : (
+                <div className="rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden mt-4">
                   <Table>
                     <TableHeader>
-                      <TableRow>
-                        <TableHead>Nome</TableHead>
-                        <TableHead>Email</TableHead>
-                        <TableHead>Telefono</TableHead>
-                        <TableHead>Stato</TableHead>
-                        <TableHead className="text-right">Azioni</TableHead>
+                      <TableRow className="bg-slate-50 dark:bg-slate-800/50">
+                        <TableHead className="text-slate-600 dark:text-slate-400">Nome</TableHead>
+                        <TableHead className="text-slate-600 dark:text-slate-400">Email</TableHead>
+                        <TableHead className="text-slate-600 dark:text-slate-400">Telefono</TableHead>
+                        <TableHead className="text-slate-600 dark:text-slate-400">Stato</TableHead>
+                        <TableHead className="text-right text-slate-600 dark:text-slate-400">Azioni</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {subResellers.map((sub) => (
-                        <TableRow key={sub.id} data-testid={`row-sub-reseller-${sub.id}`}>
-                          <TableCell className="font-medium">{sub.fullName}</TableCell>
-                          <TableCell>{sub.email}</TableCell>
-                          <TableCell>{sub.phone || "-"}</TableCell>
+                        <TableRow key={sub.id} data-testid={`row-sub-reseller-${sub.id}`} className="hover:bg-slate-50 dark:hover:bg-slate-800/30">
+                          <TableCell className="font-medium text-slate-900 dark:text-white">{sub.fullName}</TableCell>
+                          <TableCell className="text-slate-500">{sub.email}</TableCell>
+                          <TableCell className="text-slate-500">{sub.phone || "-"}</TableCell>
                           <TableCell>
-                            <Badge variant={sub.isActive ? "default" : "secondary"}>
+                            <Badge className={sub.isActive ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-600"}>
                               {sub.isActive ? "Attivo" : "Inattivo"}
                             </Badge>
                           </TableCell>
                           <TableCell className="text-right">
                             <Link href={`/admin/resellers/${sub.id}`}>
-                              <Button variant="ghost" size="icon" title="Visualizza dettagli">
+                              <Button variant="ghost" size="icon" className="hover:bg-violet-100 hover:text-violet-600" title="Visualizza dettagli">
                                 <Eye className="h-4 w-4" />
                               </Button>
                             </Link>
@@ -335,40 +380,38 @@ export default function AdminResellerDetail() {
                       ))}
                     </TableBody>
                   </Table>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-        )}
+                </div>
+              )}
+            </TabsContent>
+          )}
 
-        <TabsContent value="repair-centers">
-          <Card>
-            <CardHeader>
-              <CardTitle>Centri Riparazione</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {repairCenters.length === 0 ? (
-                <p className="text-center text-muted-foreground py-8">Nessun centro riparazione</p>
-              ) : (
+          <TabsContent value="repair-centers" className="px-6 pb-6">
+            {repairCenters.length === 0 ? (
+              <div className="py-12 text-center bg-slate-50 dark:bg-slate-800/30 rounded-xl mt-4">
+                <Wrench className="h-12 w-12 mx-auto mb-4 text-slate-300" />
+                <p className="text-slate-500">Nessun centro riparazione</p>
+              </div>
+            ) : (
+              <div className="rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden mt-4">
                 <Table>
                   <TableHeader>
-                    <TableRow>
-                      <TableHead>Nome</TableHead>
-                      <TableHead>Città</TableHead>
-                      <TableHead>Telefono</TableHead>
-                      <TableHead>Email</TableHead>
-                      <TableHead>Stato</TableHead>
+                    <TableRow className="bg-slate-50 dark:bg-slate-800/50">
+                      <TableHead className="text-slate-600 dark:text-slate-400">Nome</TableHead>
+                      <TableHead className="text-slate-600 dark:text-slate-400">Citta</TableHead>
+                      <TableHead className="text-slate-600 dark:text-slate-400">Telefono</TableHead>
+                      <TableHead className="text-slate-600 dark:text-slate-400">Email</TableHead>
+                      <TableHead className="text-slate-600 dark:text-slate-400">Stato</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {repairCenters.map((rc) => (
-                      <TableRow key={rc.id} data-testid={`row-repair-center-${rc.id}`}>
-                        <TableCell className="font-medium">{rc.name}</TableCell>
-                        <TableCell>{rc.city}</TableCell>
-                        <TableCell>{rc.phone}</TableCell>
-                        <TableCell>{rc.email}</TableCell>
+                      <TableRow key={rc.id} data-testid={`row-repair-center-${rc.id}`} className="hover:bg-slate-50 dark:hover:bg-slate-800/30">
+                        <TableCell className="font-medium text-slate-900 dark:text-white">{rc.name}</TableCell>
+                        <TableCell className="text-slate-500">{rc.city}</TableCell>
+                        <TableCell className="text-slate-500">{rc.phone}</TableCell>
+                        <TableCell className="text-slate-500">{rc.email}</TableCell>
                         <TableCell>
-                          <Badge variant={rc.isActive ? "default" : "secondary"}>
+                          <Badge className={rc.isActive ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-600"}>
                             {rc.isActive ? "Attivo" : "Inattivo"}
                           </Badge>
                         </TableCell>
@@ -376,44 +419,42 @@ export default function AdminResellerDetail() {
                     ))}
                   </TableBody>
                 </Table>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
+              </div>
+            )}
+          </TabsContent>
 
-        <TabsContent value="customers">
-          <Card>
-            <CardHeader>
-              <CardTitle>Clienti</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {customers.length === 0 ? (
-                <p className="text-center text-muted-foreground py-8">Nessun cliente</p>
-              ) : (
+          <TabsContent value="customers" className="px-6 pb-6">
+            {customers.length === 0 ? (
+              <div className="py-12 text-center bg-slate-50 dark:bg-slate-800/30 rounded-xl mt-4">
+                <Users className="h-12 w-12 mx-auto mb-4 text-slate-300" />
+                <p className="text-slate-500">Nessun cliente</p>
+              </div>
+            ) : (
+              <div className="rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden mt-4">
                 <Table>
                   <TableHeader>
-                    <TableRow>
-                      <TableHead>Nome</TableHead>
-                      <TableHead>Email</TableHead>
-                      <TableHead>Telefono</TableHead>
-                      <TableHead>Stato</TableHead>
-                      <TableHead className="text-right">Azioni</TableHead>
+                    <TableRow className="bg-slate-50 dark:bg-slate-800/50">
+                      <TableHead className="text-slate-600 dark:text-slate-400">Nome</TableHead>
+                      <TableHead className="text-slate-600 dark:text-slate-400">Email</TableHead>
+                      <TableHead className="text-slate-600 dark:text-slate-400">Telefono</TableHead>
+                      <TableHead className="text-slate-600 dark:text-slate-400">Stato</TableHead>
+                      <TableHead className="text-right text-slate-600 dark:text-slate-400">Azioni</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {customers.map((customer) => (
-                      <TableRow key={customer.id} data-testid={`row-customer-${customer.id}`}>
-                        <TableCell className="font-medium">{customer.fullName}</TableCell>
-                        <TableCell>{customer.email}</TableCell>
-                        <TableCell>{customer.phone || "-"}</TableCell>
+                      <TableRow key={customer.id} data-testid={`row-customer-${customer.id}`} className="hover:bg-slate-50 dark:hover:bg-slate-800/30">
+                        <TableCell className="font-medium text-slate-900 dark:text-white">{customer.fullName}</TableCell>
+                        <TableCell className="text-slate-500">{customer.email}</TableCell>
+                        <TableCell className="text-slate-500">{customer.phone || "-"}</TableCell>
                         <TableCell>
-                          <Badge variant={customer.isActive ? "default" : "secondary"}>
+                          <Badge className={customer.isActive ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-600"}>
                             {customer.isActive ? "Attivo" : "Inattivo"}
                           </Badge>
                         </TableCell>
                         <TableCell className="text-right">
                           <Link href={`/admin/customers/${customer.id}`}>
-                            <Button variant="ghost" size="icon" title="Visualizza dettagli">
+                            <Button variant="ghost" size="icon" className="hover:bg-blue-100 hover:text-blue-600" title="Visualizza dettagli">
                               <Eye className="h-4 w-4" />
                             </Button>
                           </Link>
@@ -422,43 +463,44 @@ export default function AdminResellerDetail() {
                     ))}
                   </TableBody>
                 </Table>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
+              </div>
+            )}
+          </TabsContent>
 
-        <TabsContent value="staff">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between gap-2">
-              <CardTitle>Staff</CardTitle>
+          <TabsContent value="staff" className="px-6 pb-6">
+            <div className="flex items-center justify-between mb-4 mt-4">
+              <h3 className="font-medium text-slate-900 dark:text-white">Membri Staff</h3>
               <Link href={`/admin/resellers/${resellerId}/team`}>
-                <Button variant="outline" size="sm" data-testid="button-manage-team">
+                <Button variant="outline" size="sm" className="rounded-xl" data-testid="button-manage-team">
                   <UsersRound className="h-4 w-4 mr-2" />
                   Gestisci Team
                 </Button>
               </Link>
-            </CardHeader>
-            <CardContent>
-              {staff.length === 0 ? (
-                <p className="text-center text-muted-foreground py-8">Nessun membro dello staff</p>
-              ) : (
+            </div>
+            {staff.length === 0 ? (
+              <div className="py-12 text-center bg-slate-50 dark:bg-slate-800/30 rounded-xl">
+                <UsersRound className="h-12 w-12 mx-auto mb-4 text-slate-300" />
+                <p className="text-slate-500">Nessun membro dello staff</p>
+              </div>
+            ) : (
+              <div className="rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
                 <Table>
                   <TableHeader>
-                    <TableRow>
-                      <TableHead>Nome</TableHead>
-                      <TableHead>Email</TableHead>
-                      <TableHead>Telefono</TableHead>
-                      <TableHead>Stato</TableHead>
+                    <TableRow className="bg-slate-50 dark:bg-slate-800/50">
+                      <TableHead className="text-slate-600 dark:text-slate-400">Nome</TableHead>
+                      <TableHead className="text-slate-600 dark:text-slate-400">Email</TableHead>
+                      <TableHead className="text-slate-600 dark:text-slate-400">Telefono</TableHead>
+                      <TableHead className="text-slate-600 dark:text-slate-400">Stato</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {staff.map((member) => (
-                      <TableRow key={member.id} data-testid={`row-staff-${member.id}`}>
-                        <TableCell className="font-medium">{member.fullName}</TableCell>
-                        <TableCell>{member.email}</TableCell>
-                        <TableCell>{member.phone || "-"}</TableCell>
+                      <TableRow key={member.id} data-testid={`row-staff-${member.id}`} className="hover:bg-slate-50 dark:hover:bg-slate-800/30">
+                        <TableCell className="font-medium text-slate-900 dark:text-white">{member.fullName}</TableCell>
+                        <TableCell className="text-slate-500">{member.email}</TableCell>
+                        <TableCell className="text-slate-500">{member.phone || "-"}</TableCell>
                         <TableCell>
-                          <Badge variant={member.isActive ? "default" : "secondary"}>
+                          <Badge className={member.isActive ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-600"}>
                             {member.isActive ? "Attivo" : "Inattivo"}
                           </Badge>
                         </TableCell>
@@ -466,39 +508,44 @@ export default function AdminResellerDetail() {
                     ))}
                   </TableBody>
                 </Table>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+              </div>
+            )}
+          </TabsContent>
+        </Tabs>
+      </Card>
 
+      {/* Reset Password Dialog */}
       <Dialog open={resetPasswordDialogOpen} onOpenChange={setResetPasswordDialogOpen}>
-        <DialogContent data-testid="dialog-reset-password">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <KeyRound className="h-5 w-5" />
-              Reset Password
-            </DialogTitle>
+        <DialogContent className="max-w-md" data-testid="dialog-reset-password">
+          <DialogHeader className="pb-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600">
+                <KeyRound className="h-5 w-5 text-white" />
+              </div>
+              <DialogTitle className="text-lg">Reset Password</DialogTitle>
+            </div>
           </DialogHeader>
           <div className="space-y-4">
-            <p className="text-sm text-muted-foreground">
-              Stai per resettare la password di <strong>{reseller.fullName}</strong>.
+            <p className="text-sm text-slate-500">
+              Stai per resettare la password di <strong className="text-slate-900 dark:text-white">{reseller.fullName}</strong>.
             </p>
             <div className="space-y-2">
-              <Label htmlFor="newPassword">Nuova Password</Label>
+              <Label htmlFor="newPassword" className="text-slate-700 dark:text-slate-300">Nuova Password</Label>
               <Input
                 id="newPassword"
                 type="password"
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
                 placeholder="Inserisci nuova password (min. 4 caratteri)"
+                className="h-11 rounded-xl"
                 data-testid="input-new-password"
               />
             </div>
-            <div className="flex justify-end gap-2">
+            <div className="flex justify-end gap-3 pt-2">
               <Button
                 variant="outline"
                 onClick={() => setResetPasswordDialogOpen(false)}
+                className="rounded-xl"
                 data-testid="button-cancel-reset-password"
               >
                 Annulla
@@ -506,9 +553,17 @@ export default function AdminResellerDetail() {
               <Button
                 onClick={handleResetPassword}
                 disabled={newPassword.length < 4 || resetPasswordMutation.isPending}
+                className="rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700"
                 data-testid="button-confirm-reset-password"
               >
-                {resetPasswordMutation.isPending ? "Aggiornamento..." : "Conferma Reset"}
+                {resetPasswordMutation.isPending ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Aggiornamento...
+                  </>
+                ) : (
+                  "Conferma Reset"
+                )}
               </Button>
             </div>
           </div>

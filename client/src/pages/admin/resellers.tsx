@@ -434,36 +434,37 @@ export default function AdminResellers() {
   return (
     <div className="space-y-6" data-testid="page-admin-resellers">
       {/* Hero Header */}
-      <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-primary/5 via-primary/10 to-slate-100 dark:from-primary/10 dark:via-primary/5 dark:to-slate-900 p-6 border">
-        <div className="absolute inset-0 opacity-[0.03]" style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23000' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-violet-600 via-purple-600 to-indigo-700 p-8">
+        <div className="absolute top-0 -right-20 w-64 h-64 bg-violet-400/20 rounded-full blur-3xl" />
+        <div className="absolute -bottom-10 -left-10 w-48 h-48 bg-indigo-500/20 rounded-full blur-3xl" />
+        <div className="absolute inset-0 opacity-10" style={{
+          backgroundImage: `linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)`,
+          backgroundSize: '40px 40px'
         }} />
-        <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="flex items-center gap-3 mb-1">
-            <div className="h-10 w-10 rounded-xl bg-primary text-primary-foreground flex items-center justify-center shadow-lg shadow-primary/25">
-              <Store className="h-5 w-5" />
+        <div className="relative z-10 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/20 backdrop-blur-sm border border-white/30">
+              <Store className="h-7 w-7 text-white" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold tracking-tight" data-testid="text-page-title">Rivenditori</h1>
-              <p className="text-sm text-muted-foreground">Gestisci i rivenditori e visualizza i loro clienti</p>
+              <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight" data-testid="text-page-title">Rivenditori</h1>
+              <p className="text-violet-100/80 mt-1">Gestisci i rivenditori e visualizza i loro clienti</p>
             </div>
           </div>
+          <Button onClick={() => { setEditingReseller(null); resetWizard(); setDialogOpen(true); }} className="bg-white text-violet-700 hover:bg-white/90 shadow-lg" data-testid="button-add-reseller">
+            <Plus className="mr-2 h-4 w-4" />
+            Nuovo Rivenditore
+          </Button>
         </div>
       </div>
-      <div className="flex items-center justify-end gap-4 flex-wrap">
-        <Dialog open={dialogOpen} onOpenChange={(open) => {
-          setDialogOpen(open);
-          if (!open) {
-            setEditingReseller(null);
-            resetWizard();
-          }
-        }}>
-          <DialogTrigger asChild>
-            <Button onClick={() => { setEditingReseller(null); resetWizard(); }} data-testid="button-add-reseller">
-              <Plus className="mr-2 h-4 w-4" />
-              Nuovo Rivenditore
-            </Button>
-          </DialogTrigger>
+
+      <Dialog open={dialogOpen} onOpenChange={(open) => {
+        setDialogOpen(open);
+        if (!open) {
+          setEditingReseller(null);
+          resetWizard();
+        }
+      }}>
           <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto" data-testid="dialog-reseller-form">
             <DialogHeader>
               <DialogTitle>{editingReseller ? "Modifica Rivenditore" : "Nuovo Rivenditore"}</DialogTitle>
@@ -479,40 +480,42 @@ export default function AdminResellers() {
                     <div key={step.id} className="flex flex-col items-center flex-1">
                       <div 
                         className={`w-10 h-10 rounded-full flex items-center justify-center border-2 transition-colors ${
-                          isActive ? 'bg-primary border-primary text-primary-foreground' : 
-                          isPast ? 'bg-primary/20 border-primary text-primary' : 
-                          'bg-muted border-muted-foreground/30 text-muted-foreground'
+                          isActive ? 'bg-gradient-to-br from-violet-500 to-purple-600 border-violet-500 text-white' : 
+                          isPast ? 'bg-emerald-500 border-emerald-500 text-white' : 
+                          'bg-slate-100 dark:bg-slate-800 border-slate-300 dark:border-slate-600 text-slate-400'
                         }`}
                       >
                         {isPast ? <Check className="h-5 w-5" /> : <StepIcon className="h-5 w-5" />}
                       </div>
-                      <span className={`text-xs mt-1 text-center ${isActive ? 'text-foreground font-medium' : 'text-muted-foreground'}`}>
+                      <span className={`text-xs mt-1 text-center ${isActive ? 'text-slate-900 dark:text-white font-medium' : 'text-slate-500 dark:text-slate-400'}`}>
                         {step.title}
                       </span>
                     </div>
                   );
                 })}
               </div>
-              <Progress value={progressPercent} className="h-1" />
+              <Progress value={progressPercent} className="h-1.5 bg-slate-200 dark:bg-slate-700" />
 
               <div className="min-h-[280px]">
                 {wizardStep === 1 && !editingReseller && (
                   <div className="space-y-4">
                     <p className="text-sm text-muted-foreground">Inserisci le credenziali di accesso per il nuovo rivenditore.</p>
                     <div className="space-y-2">
-                      <Label htmlFor="username">Username</Label>
+                      <Label htmlFor="username" className="text-slate-700 dark:text-slate-300">Username</Label>
                       <Input 
                         id="username" 
+                        className="h-11 rounded-xl"
                         value={formData.username}
                         onChange={(e) => setFormData(prev => ({ ...prev, username: e.target.value }))}
                         data-testid="input-username" 
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="password">Password</Label>
+                      <Label htmlFor="password" className="text-slate-700 dark:text-slate-300">Password</Label>
                       <Input 
                         id="password" 
                         type="password"
+                        className="h-11 rounded-xl"
                         value={formData.password}
                         onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
                         data-testid="input-password" 
@@ -525,28 +528,31 @@ export default function AdminResellers() {
                   <div className="space-y-4">
                     <p className="text-sm text-muted-foreground">Informazioni di base del rivenditore.</p>
                     <div className="space-y-2">
-                      <Label htmlFor="fullName">Nome Completo *</Label>
+                      <Label htmlFor="fullName" className="text-slate-700 dark:text-slate-300">Nome Completo *</Label>
                       <Input 
                         id="fullName"
+                        className="h-11 rounded-xl"
                         value={formData.fullName}
                         onChange={(e) => setFormData(prev => ({ ...prev, fullName: e.target.value }))}
                         data-testid="input-fullName" 
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="email">Email *</Label>
+                      <Label htmlFor="email" className="text-slate-700 dark:text-slate-300">Email *</Label>
                       <Input 
                         id="email"
                         type="email"
+                        className="h-11 rounded-xl"
                         value={formData.email}
                         onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
                         data-testid="input-email" 
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="phone">Telefono</Label>
+                      <Label htmlFor="phone" className="text-slate-700 dark:text-slate-300">Telefono</Label>
                       <Input 
                         id="phone"
+                        className="h-11 rounded-xl"
                         value={formData.phone}
                         onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
                         data-testid="input-phone" 
@@ -627,27 +633,30 @@ export default function AdminResellers() {
                     <p className="text-sm text-muted-foreground">Dati fiscali e fatturazione (opzionali).</p>
                     <div className="grid grid-cols-2 gap-3">
                       <div className="space-y-2">
-                        <Label htmlFor="ragioneSociale">Ragione Sociale</Label>
+                        <Label htmlFor="ragioneSociale" className="text-slate-700 dark:text-slate-300">Ragione Sociale</Label>
                         <Input 
                           id="ragioneSociale"
+                          className="h-11 rounded-xl"
                           value={formData.ragioneSociale}
                           onChange={(e) => setFormData(prev => ({ ...prev, ragioneSociale: e.target.value }))}
                           data-testid="input-ragioneSociale" 
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="partitaIva">Partita IVA</Label>
+                        <Label htmlFor="partitaIva" className="text-slate-700 dark:text-slate-300">Partita IVA</Label>
                         <Input 
                           id="partitaIva"
+                          className="h-11 rounded-xl"
                           value={formData.partitaIva}
                           onChange={(e) => setFormData(prev => ({ ...prev, partitaIva: e.target.value }))}
                           data-testid="input-partitaIva" 
                         />
                       </div>
                       <div className="space-y-2 col-span-2">
-                        <Label htmlFor="codiceFiscale">Codice Fiscale</Label>
+                        <Label htmlFor="codiceFiscale" className="text-slate-700 dark:text-slate-300">Codice Fiscale</Label>
                         <Input 
                           id="codiceFiscale"
+                          className="h-11 rounded-xl"
                           value={formData.codiceFiscale}
                           onChange={(e) => setFormData(prev => ({ ...prev, codiceFiscale: e.target.value }))}
                           data-testid="input-codiceFiscale" 
@@ -671,9 +680,10 @@ export default function AdminResellers() {
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="citta">Città</Label>
+                        <Label htmlFor="citta" className="text-slate-700 dark:text-slate-300">Città</Label>
                         <Input 
                           id="citta"
+                          className="h-11 rounded-xl"
                           value={addressData.citta}
                           onChange={(e) => setAddressData(prev => ({ ...prev, citta: e.target.value }))}
                           data-testid="input-citta" 
@@ -681,19 +691,21 @@ export default function AdminResellers() {
                       </div>
                       <div className="grid grid-cols-2 gap-2">
                         <div className="space-y-2">
-                          <Label htmlFor="cap">CAP</Label>
+                          <Label htmlFor="cap" className="text-slate-700 dark:text-slate-300">CAP</Label>
                           <Input 
                             id="cap"
+                            className="h-11 rounded-xl"
                             value={addressData.cap}
                             onChange={(e) => setAddressData(prev => ({ ...prev, cap: e.target.value }))}
                             data-testid="input-cap" 
                           />
                         </div>
                         <div className="space-y-2">
-                          <Label htmlFor="provincia">Prov.</Label>
+                          <Label htmlFor="provincia" className="text-slate-700 dark:text-slate-300">Prov.</Label>
                           <Input 
                             id="provincia"
                             maxLength={2}
+                            className="h-11 rounded-xl"
                             value={addressData.provincia}
                             onChange={(e) => setAddressData(prev => ({ ...prev, provincia: e.target.value }))}
                             placeholder="XX"
@@ -702,10 +714,11 @@ export default function AdminResellers() {
                         </div>
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="codiceUnivoco">Codice SDI</Label>
+                        <Label htmlFor="codiceUnivoco" className="text-slate-700 dark:text-slate-300">Codice SDI</Label>
                         <Input 
                           id="codiceUnivoco"
                           maxLength={7}
+                          className="h-11 rounded-xl"
                           value={formData.codiceUnivoco}
                           onChange={(e) => setFormData(prev => ({ ...prev, codiceUnivoco: e.target.value }))}
                           placeholder="7 caratteri"
@@ -713,10 +726,11 @@ export default function AdminResellers() {
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="pec">PEC</Label>
+                        <Label htmlFor="pec" className="text-slate-700 dark:text-slate-300">PEC</Label>
                         <Input 
                           id="pec"
                           type="email"
+                          className="h-11 rounded-xl"
                           value={formData.pec}
                           onChange={(e) => setFormData(prev => ({ ...prev, pec: e.target.value }))}
                           placeholder="email@pec.it"
@@ -724,9 +738,10 @@ export default function AdminResellers() {
                         />
                       </div>
                       <div className="space-y-2 col-span-2">
-                        <Label htmlFor="iban">IBAN</Label>
+                        <Label htmlFor="iban" className="text-slate-700 dark:text-slate-300">IBAN</Label>
                         <Input 
                           id="iban"
+                          className="h-11 rounded-xl"
                           value={formData.iban}
                           onChange={(e) => setFormData(prev => ({ ...prev, iban: e.target.value }))}
                           placeholder="IT..."
@@ -741,12 +756,12 @@ export default function AdminResellers() {
                   <div className="space-y-4">
                     <p className="text-sm text-muted-foreground">Configurazione categoria e affiliazione.</p>
                     <div className="space-y-2">
-                      <Label htmlFor="resellerCategory">Categoria</Label>
+                      <Label htmlFor="resellerCategory" className="text-slate-700 dark:text-slate-300">Categoria</Label>
                       <Select value={selectedCategory} onValueChange={(val) => {
                         setSelectedCategory(val);
                         if (val !== 'standard') setSelectedParentResellerId("");
                       }}>
-                        <SelectTrigger id="resellerCategory" data-testid="select-reseller-category">
+                        <SelectTrigger id="resellerCategory" className="h-11 rounded-xl" data-testid="select-reseller-category">
                           <SelectValue placeholder="Seleziona categoria" />
                         </SelectTrigger>
                         <SelectContent>
@@ -763,9 +778,9 @@ export default function AdminResellers() {
                     </div>
                     {selectedCategory === 'standard' && parentResellers.length > 0 && (
                       <div className="space-y-2">
-                        <Label htmlFor="parentResellerId">Rivenditore Padre (opzionale)</Label>
+                        <Label htmlFor="parentResellerId" className="text-slate-700 dark:text-slate-300">Rivenditore Padre (opzionale)</Label>
                         <Select value={selectedParentResellerId || "none"} onValueChange={(val) => setSelectedParentResellerId(val === "none" ? "" : val)}>
-                          <SelectTrigger id="parentResellerId" data-testid="select-parent-reseller">
+                          <SelectTrigger id="parentResellerId" className="h-11 rounded-xl" data-testid="select-parent-reseller">
                             <SelectValue placeholder="Nessun rivenditore padre" />
                           </SelectTrigger>
                           <SelectContent>
@@ -845,6 +860,7 @@ export default function AdminResellers() {
                 <Button 
                   type="button" 
                   variant="outline" 
+                  className="rounded-xl"
                   onClick={prevStep}
                   disabled={isFirstStep()}
                   data-testid="button-wizard-prev"
@@ -855,6 +871,7 @@ export default function AdminResellers() {
                 {isLastStep() ? (
                   <Button 
                     type="button"
+                    className="rounded-xl bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700"
                     onClick={handleFinalSubmit}
                     disabled={createResellerMutation.isPending || updateResellerMutation.isPending}
                     data-testid="button-submit"
@@ -865,6 +882,7 @@ export default function AdminResellers() {
                 ) : (
                   <Button 
                     type="button"
+                    className="rounded-xl bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700"
                     onClick={nextStep}
                     disabled={!canProceedToNextStep()}
                     data-testid="button-wizard-next"
@@ -877,22 +895,21 @@ export default function AdminResellers() {
             </div>
           </DialogContent>
         </Dialog>
-      </div>
 
-      <Card>
+      <Card className="border-0 shadow-lg bg-white dark:bg-slate-800/50">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
+          <CardTitle className="flex items-center gap-2 text-slate-900 dark:text-white">
             <Store className="h-5 w-5" />
             Elenco Rivenditori
           </CardTitle>
           <div className="flex gap-4 items-center">
             <div className="relative flex-1">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
               <Input
                 placeholder="Cerca rivenditori..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-8"
+                className="pl-12 h-12 rounded-xl border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50"
                 data-testid="input-search"
               />
             </div>
@@ -906,29 +923,30 @@ export default function AdminResellers() {
               <Skeleton className="h-10 w-full" />
             </div>
           ) : filteredResellers.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
+            <div className="text-center py-8 text-slate-500">
               Nessun rivenditore trovato
             </div>
           ) : (
+            <div className="rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
             <Table>
-              <TableHeader>
+              <TableHeader className="bg-slate-50 dark:bg-slate-800/50">
                 <TableRow>
-                  <TableHead>Nome</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Telefono</TableHead>
-                  <TableHead>Categoria</TableHead>
-                  <TableHead>Rivenditore Padre</TableHead>
-                  <TableHead>Clienti</TableHead>
-                  <TableHead>Centri Rip.</TableHead>
-                  <TableHead>Sub-Reseller</TableHead>
-                  <TableHead>Stato</TableHead>
-                  <TableHead className="text-right">Azioni</TableHead>
+                  <TableHead className="text-slate-600 dark:text-slate-400">Nome</TableHead>
+                  <TableHead className="text-slate-600 dark:text-slate-400">Email</TableHead>
+                  <TableHead className="text-slate-600 dark:text-slate-400">Telefono</TableHead>
+                  <TableHead className="text-slate-600 dark:text-slate-400">Categoria</TableHead>
+                  <TableHead className="text-slate-600 dark:text-slate-400">Rivenditore Padre</TableHead>
+                  <TableHead className="text-slate-600 dark:text-slate-400">Clienti</TableHead>
+                  <TableHead className="text-slate-600 dark:text-slate-400">Centri Rip.</TableHead>
+                  <TableHead className="text-slate-600 dark:text-slate-400">Sub-Reseller</TableHead>
+                  <TableHead className="text-slate-600 dark:text-slate-400">Stato</TableHead>
+                  <TableHead className="text-right text-slate-600 dark:text-slate-400">Azioni</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredResellers.map((reseller) => (
-                  <TableRow key={reseller.id} data-testid={`row-reseller-${reseller.id}`}>
-                    <TableCell className="font-medium" data-testid={`text-fullName-${reseller.id}`}>
+                  <TableRow key={reseller.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/30" data-testid={`row-reseller-${reseller.id}`}>
+                    <TableCell className="font-medium text-slate-900 dark:text-white" data-testid={`text-fullName-${reseller.id}`}>
                       <div className="flex items-center gap-3">
                         <Avatar className="h-8 w-8">
                           {reseller.logoUrl ? (
@@ -941,15 +959,15 @@ export default function AdminResellers() {
                         <span>{reseller.fullName}</span>
                       </div>
                     </TableCell>
-                    <TableCell data-testid={`text-email-${reseller.id}`}>{reseller.email}</TableCell>
-                    <TableCell data-testid={`text-phone-${reseller.id}`}>{reseller.phone || "-"}</TableCell>
+                    <TableCell className="text-slate-500" data-testid={`text-email-${reseller.id}`}>{reseller.email}</TableCell>
+                    <TableCell className="text-slate-500" data-testid={`text-phone-${reseller.id}`}>{reseller.phone || "-"}</TableCell>
                     <TableCell data-testid={`text-category-${reseller.id}`}>
                       <Badge variant="outline">
                         {reseller.resellerCategory === 'franchising' ? 'Franchising' : 
                          reseller.resellerCategory === 'gdo' ? 'GDO' : 'Standard'}
                       </Badge>
                     </TableCell>
-                    <TableCell data-testid={`text-parent-${reseller.id}`}>
+                    <TableCell className="text-slate-500" data-testid={`text-parent-${reseller.id}`}>
                       {reseller.parentResellerId ? (
                         <span className="text-sm">
                           {resellers.find(r => r.id === reseller.parentResellerId)?.fullName || '-'}
@@ -1010,6 +1028,7 @@ export default function AdminResellers() {
                           <Button
                             variant="ghost"
                             size="icon"
+                            className="hover:bg-violet-100 hover:text-violet-600"
                             title="Visualizza dettagli"
                             data-testid={`button-detail-${reseller.id}`}
                           >
@@ -1019,6 +1038,7 @@ export default function AdminResellers() {
                         <Button
                           variant="ghost"
                           size="icon"
+                          className="hover:bg-amber-100 hover:text-amber-600"
                           onClick={() => {
                             setEditingReseller(reseller);
                             setFormData({
@@ -1057,6 +1077,7 @@ export default function AdminResellers() {
                         <Button
                           variant="ghost"
                           size="icon"
+                          className="hover:bg-violet-100 hover:text-violet-600"
                           onClick={() => handleResetPasswordClick(reseller)}
                           title="Reset password"
                           data-testid={`button-reset-password-${reseller.id}`}
@@ -1064,8 +1085,9 @@ export default function AdminResellers() {
                           <KeyRound className="h-4 w-4" />
                         </Button>
                         <Button
-                          variant="destructive"
+                          variant="ghost"
                           size="icon"
+                          className="hover:bg-red-100 hover:text-red-600"
                           onClick={() => handleDeleteClick(reseller)}
                           title="Elimina rivenditore"
                           data-testid={`button-delete-${reseller.id}`}
@@ -1078,6 +1100,7 @@ export default function AdminResellers() {
                 ))}
               </TableBody>
             </Table>
+            </div>
           )}
         </CardContent>
       </Card>
@@ -1130,10 +1153,11 @@ export default function AdminResellers() {
               Stai per resettare la password di <strong>{resellerToResetPassword?.fullName}</strong>.
             </p>
             <div className="space-y-2">
-              <Label htmlFor="newPassword">Nuova Password</Label>
+              <Label htmlFor="newPassword" className="text-slate-700 dark:text-slate-300">Nuova Password</Label>
               <Input
                 id="newPassword"
                 type="password"
+                className="h-11 rounded-xl"
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
                 placeholder="Inserisci nuova password (min. 4 caratteri)"
@@ -1143,12 +1167,14 @@ export default function AdminResellers() {
             <div className="flex justify-end gap-2">
               <Button
                 variant="outline"
+                className="rounded-xl"
                 onClick={() => setResetPasswordDialogOpen(false)}
                 data-testid="button-cancel-reset-password"
               >
                 Annulla
               </Button>
               <Button
+                className="rounded-xl bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700"
                 onClick={confirmResetPassword}
                 disabled={newPassword.length < 4 || resetPasswordMutation.isPending}
                 data-testid="button-confirm-reset-password"
