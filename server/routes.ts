@@ -24165,10 +24165,12 @@ export function registerRoutes(app: Express): Server {
       // Get orders from MobileSentrix API
       const service = new MobilesentrixService(credential);
       try {
+        console.log("MobileSentrix - Fetching orders from API...");
         const apiOrders = await service.listOrders({ page: 1, per_page: 50 });
+        console.log("MobileSentrix - API returned orders:", apiOrders.orders?.length || 0);
         
         // Convert API orders to our format
-        const orders = apiOrders.orders.map((o: any) => ({
+        const orders = (apiOrders.orders || []).map((o: any) => ({
           id: o.order_id,
           mobilesentrixOrderId: o.order_id,
           orderNumber: o.order_number,
@@ -24188,12 +24190,13 @@ export function registerRoutes(app: Express): Server {
         
         // Combine: API orders first, then pending local orders
         res.json([...orders, ...pendingLocalOrders]);
-      } catch (apiError) {
-        console.log("Could not fetch from API, falling back to local:", apiError);
+      } catch (apiError: any) {
+        console.log("MobileSentrix - Could not fetch from API, falling back to local:", apiError.message);
         const orders = await storage.listMobilesentrixOrders(credential.id);
         res.json(orders);
       }
     } catch (error: any) {
+      console.error("MobileSentrix orders error:", error);
       res.status(400).send(error.message);
     }
   });
