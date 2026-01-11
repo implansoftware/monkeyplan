@@ -138,12 +138,16 @@ export default function MobilesentrixCatalogPage() {
 
   const hasMoreProducts = accumulatedProducts.length < totalProducts;
 
+  // Tasso di cambio USD -> EUR (aggiornabile)
+  const USD_TO_EUR_RATE = 0.92;
+  
   const formatPrice = (price: number | string) => {
     const numPrice = typeof price === "string" ? parseFloat(price) : price;
+    const eurPrice = numPrice * USD_TO_EUR_RATE;
     return new Intl.NumberFormat("it-IT", {
       style: "currency",
-      currency: "USD",
-    }).format(numPrice);
+      currency: "EUR",
+    }).format(eurPrice);
   };
 
   if (loadingCredential) {

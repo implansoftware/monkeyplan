@@ -102,8 +102,16 @@ export default function MobilesentrixCartPage() {
     },
   });
 
+  // Tasso di cambio USD -> EUR (aggiornabile)
+  const USD_TO_EUR_RATE = 0.92;
+  
   const formatPrice = (cents: number) => {
-    return (cents / 100).toFixed(2) + " USD";
+    const usdAmount = cents / 100;
+    const eurAmount = usdAmount * USD_TO_EUR_RATE;
+    return new Intl.NumberFormat("it-IT", {
+      style: "currency",
+      currency: "EUR",
+    }).format(eurAmount);
   };
 
   if (isLoading) {
