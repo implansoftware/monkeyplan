@@ -258,9 +258,9 @@ export default function ResellerPosOverview() {
               <div key={tx.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
                 <div className="flex items-center gap-3">
                   {tx.type === "sale" ? (
-                    <CheckCircle className="h-5 w-5 text-green-500" />
+                    <CheckCircle className="h-5 w-5 text-blue-500" />
                   ) : (
-                    <XCircle className="h-5 w-5 text-red-500" />
+                    <XCircle className="h-5 w-5 text-cyan-500" />
                   )}
                   <div>
                     <div className="font-medium">{tx.transactionNumber}</div>
@@ -270,7 +270,7 @@ export default function ResellerPosOverview() {
                   </div>
                 </div>
                 <div className="text-right">
-                  <div className={`font-bold ${tx.type === "refund" ? "text-red-500" : ""}`}>
+                  <div className={`font-bold ${tx.type === "refund" ? "text-cyan-600" : ""}`}>
                     {tx.type === "refund" ? "-" : ""}{formatCurrency(tx.totalAmount)}
                   </div>
                   <Badge variant="outline" className="text-xs">
