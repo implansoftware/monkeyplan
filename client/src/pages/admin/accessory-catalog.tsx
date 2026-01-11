@@ -1,4 +1,5 @@
 import { useState, useRef } from "react";
+import { BarcodeDisplay } from "@/components/barcode-display";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
@@ -847,6 +848,7 @@ export default function AdminAccessoryCatalog() {
                   <TableRow>
                     <TableHead>Foto</TableHead>
                     <TableHead>Prodotto</TableHead>
+                    <TableHead>Barcode</TableHead>
                     <TableHead>Rivenditore</TableHead>
                     <TableHead>Tipo</TableHead>
                     <TableHead>Compatibilità</TableHead>
@@ -881,6 +883,9 @@ export default function AdminAccessoryCatalog() {
                           </div>
                           <div className="text-xs text-muted-foreground">SKU: {accessory.sku}</div>
                         </div>
+                      </TableCell>
+                      <TableCell>
+                        <BarcodeDisplay value={accessory.barcode || ""} size="sm" />
                       </TableCell>
                       <TableCell>
                         {assignmentsByProductId[accessory.id]?.length > 0 ? (

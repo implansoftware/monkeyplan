@@ -32,29 +32,8 @@ export function BarcodeDisplay({
   useEffect(() => {
     if (!value) return;
     
-    const generateBarcode = async () => {
-      try {
-        const bwipjs = await import("bwip-js");
-        
-        const canvas = document.createElement("canvas");
-        bwipjs.toCanvas(canvas, {
-          bcid: "code128",
-          text: value,
-          scale: 3,
-          height: 10,
-          includetext: true,
-          textxalign: "center",
-          textsize: 10,
-          textgaps: 2,
-        });
-        
-        setBarcodeDataUrl(canvas.toDataURL("image/png"));
-      } catch (error) {
-        console.error("Errore generazione barcode:", error);
-      }
-    };
-    
-    generateBarcode();
+    // Usa l'endpoint API per generare l'immagine del barcode
+    setBarcodeDataUrl(`/api/barcode/${encodeURIComponent(value)}`);
   }, [value]);
 
   const handleCopy = async () => {

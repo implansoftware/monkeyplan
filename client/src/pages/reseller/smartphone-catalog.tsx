@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { BarcodeDisplay } from "@/components/barcode-display";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
@@ -773,6 +774,7 @@ export default function SmartphoneCatalog() {
                   <TableRow>
                     <TableHead className="w-16">Foto</TableHead>
                     <TableHead>Dispositivo</TableHead>
+                    <TableHead>Barcode</TableHead>
                     <TableHead>Categoria</TableHead>
                     <TableHead>Tipo</TableHead>
                     <TableHead>Fornitore</TableHead>
@@ -807,6 +809,9 @@ export default function SmartphoneCatalog() {
                         </div>
                       </TableCell>
                       <TableCell>
+                      <TableCell>
+                        <BarcodeDisplay value={smartphone.barcode || ""} size="sm" />
+                      </TableCell>
                         {smartphone.category ? (
                           <Badge variant="outline" className="text-xs">
                             {DEVICE_CATEGORIES.find(c => c.value === smartphone.category)?.label || smartphone.category}

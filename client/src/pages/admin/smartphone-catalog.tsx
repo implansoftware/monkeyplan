@@ -12,6 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Smartphone, Search, Plus, Pencil, Trash2, Battery, HardDrive, Loader2, Store, ImagePlus, X, Image, Users, UserPlus, Eye, EyeOff, Warehouse, Link2 } from "lucide-react";
+import { BarcodeDisplay } from "@/components/barcode-display";
 import { Switch } from "@/components/ui/switch";
 import { Skeleton } from "@/components/ui/skeleton";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -871,6 +872,7 @@ export default function AdminSmartphoneCatalog() {
                   <TableRow>
                     <TableHead>Foto</TableHead>
                     <TableHead>Dispositivo</TableHead>
+                    <TableHead>Barcode</TableHead>
                     <TableHead>Categoria</TableHead>
                     <TableHead>Rivenditore</TableHead>
                     <TableHead className="text-right">Prezzo</TableHead>
@@ -903,6 +905,9 @@ export default function AdminSmartphoneCatalog() {
                           </div>
                           <div className="text-xs text-muted-foreground">SKU: {smartphone.sku}</div>
                         </div>
+                      </TableCell>
+                      <TableCell>
+                        <BarcodeDisplay value={smartphone.barcode || ""} size="sm" />
                       </TableCell>
                       <TableCell>
                         {smartphone.category ? (

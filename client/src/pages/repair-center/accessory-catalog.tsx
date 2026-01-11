@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { BarcodeDisplay } from "@/components/barcode-display";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useQuery } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
@@ -186,6 +187,7 @@ export default function RepairCenterAccessoryCatalog() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Prodotto</TableHead>
+                    <TableHead>Barcode</TableHead>
                     <TableHead>Tipo</TableHead>
                     <TableHead>Compatibilità</TableHead>
                     <TableHead className="text-right">Prezzo B2B</TableHead>
@@ -220,6 +222,9 @@ export default function RepairCenterAccessoryCatalog() {
                         </TableCell>
                         <TableCell>
                           <Badge variant="outline">
+                        <TableCell>
+                          <BarcodeDisplay value={acc.barcode || ""} size="sm" />
+                        </TableCell>
                             <TypeIcon className="h-3 w-3 mr-1" />
                             {typeInfo.label}
                           </Badge>
