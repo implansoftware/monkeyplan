@@ -468,22 +468,36 @@ export class MobilesentrixService {
   }
 
   async getBrands(): Promise<string[]> {
-    // Get products and extract unique manufacturers
-    const result = await this.request<any>("/api/rest/products", "GET", undefined, {
-      "limit": "100",
-      "page": "1"
-    });
+    // Get products from multiple pages to extract more manufacturers
+    const brands = new Set<string>();
+    const pagesToFetch = 10; // Fetch 10 pages of 100 products each = 1000 products
     
-    if (result.success && result.data) {
-      const brands = new Set<string>();
-      Object.values(result.data).forEach((p: any) => {
-        if (p.manufacturer_text) {
-          brands.add(p.manufacturer_text);
-        }
-      });
-      return Array.from(brands).sort();
+    const fetchPromises = [];
+    for (let page = 1; page <= pagesToFetch; page++) {
+      fetchPromises.push(
+        this.request<any>("/api/rest/products", "GET", undefined, {
+          "limit": "100",
+          "page": String(page)
+        }).catch(err => {
+          console.error(`Error fetching brands page ${page}:`, err);
+          return null;
+        })
+      );
     }
-    return [];
+    
+    const results = await Promise.all(fetchPromises);
+    
+    for (const result of results) {
+      if (result?.success && result?.data) {
+        Object.values(result.data).forEach((p: any) => {
+          if (p.manufacturer_text) {
+            brands.add(p.manufacturer_text);
+          }
+        });
+      }
+    }
+    
+    return Array.from(brands).sort();
   }
 
   async getAccountInfo(): Promise<{ name: string; email: string; balance?: number }> {
