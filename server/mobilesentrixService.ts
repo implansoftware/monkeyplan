@@ -723,6 +723,68 @@ export class MobilesentrixService {
     throw new Error(result.message || "Ordine non trovato");
   }
 
+  async getOrderDetails(orderId: string): Promise<{
+    entity_id: string;
+    increment_id: string;
+    status: string;
+    grand_total: string;
+    subtotal: string;
+    shipping_amount: string;
+    tax_amount: string;
+    discount_amount: string;
+    created_at: string;
+    updated_at: string;
+    shipping_description: string;
+    tracking_number: string | null;
+    payment_method: string;
+    customer_email: string;
+    addresses: Array<{
+      firstname: string;
+      lastname: string;
+      street: string;
+      city: string;
+      postcode: string;
+      country_id: string;
+      telephone: string;
+      company: string;
+      address_type: string;
+    }>;
+    order_items: Array<{
+      item_id: string;
+      sku: string;
+      name: string;
+      qty_ordered: string;
+      price: string;
+      base_row_total: string;
+    }>;
+  }> {
+    const result = await this.request<any>(`/api/rest/orders/${orderId}`);
+    console.log("MobileSentrix getOrderDetails response:", JSON.stringify(result).substring(0, 500));
+    
+    if (result.success && result.data) {
+      const data = result.data;
+      return {
+        entity_id: String(data.entity_id || orderId),
+        increment_id: data.increment_id || String(orderId),
+        status: data.status || "unknown",
+        grand_total: data.grand_total || "0",
+        subtotal: data.subtotal || "0",
+        shipping_amount: data.shipping_amount || "0",
+        tax_amount: data.tax_amount || "0",
+        discount_amount: data.discount_amount || "0",
+        created_at: data.created_at || new Date().toISOString(),
+        updated_at: data.updated_at || new Date().toISOString(),
+        shipping_description: data.shipping_description || "",
+        tracking_number: data.tracking_number || null,
+        payment_method: data.payment_method || "",
+        customer_email: data.customer_email || "",
+        addresses: data.addresses || [],
+        order_items: data.order_items || []
+      };
+    }
+    throw new Error(result.message || "Ordine non trovato");
+  }
+
   async listOrders(params?: { page?: number; per_page?: number }): Promise<{ orders: MobilesentrixOrderResponse[]; total: number }> {
     const queryParams: Record<string, string> = {};
     const page = params?.page || 1;

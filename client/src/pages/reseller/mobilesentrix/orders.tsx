@@ -2,11 +2,15 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Separator } from "@/components/ui/separator";
 import { useQuery } from "@tanstack/react-query";
-import { Package, ArrowLeft, ShoppingCart, Clock, CheckCircle, Truck, XCircle, ExternalLink } from "lucide-react";
+import { Package, ArrowLeft, ShoppingCart, Clock, CheckCircle, Truck, XCircle, ExternalLink, Eye, MapPin, CreditCard } from "lucide-react";
 import { Link } from "wouter";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
+import { useState } from "react";
+import { apiRequest } from "@/lib/queryClient";
 
 type MobilesentrixOrder = {
   id: string;
@@ -20,33 +24,102 @@ type MobilesentrixOrder = {
   createdAt: string;
 };
 
+type OrderDetails = {
+  entity_id: string;
+  increment_id: string;
+  status: string;
+  grand_total: string;
+  subtotal: string;
+  shipping_amount: string;
+  tax_amount: string;
+  discount_amount: string;
+  created_at: string;
+  updated_at: string;
+  shipping_description: string;
+  tracking_number: string | null;
+  payment_method: string;
+  customer_email: string;
+  addresses: Array<{
+    firstname: string;
+    lastname: string;
+    street: string;
+    city: string;
+    postcode: string;
+    country_id: string;
+    telephone: string;
+    company: string;
+    address_type: string;
+  }>;
+  order_items: Array<{
+    item_id: string;
+    sku: string;
+    name: string;
+    qty_ordered: string;
+    price: string;
+    base_row_total: string;
+  }>;
+};
+
 const statusConfig: Record<string, { label: string; variant: "default" | "secondary" | "outline" | "destructive"; icon: typeof Clock }> = {
   pending: { label: "In Attesa", variant: "secondary", icon: Clock },
   processing: { label: "In Elaborazione", variant: "default", icon: Package },
   shipped: { label: "Spedito", variant: "default", icon: Truck },
+  Shipped: { label: "Spedito", variant: "default", icon: Truck },
+  complete: { label: "Completato", variant: "default", icon: CheckCircle },
   completed: { label: "Completato", variant: "default", icon: CheckCircle },
   cancelled: { label: "Annullato", variant: "destructive", icon: XCircle },
+  canceled: { label: "Annullato", variant: "destructive", icon: XCircle },
 };
 
 export default function MobilesentrixOrdersPage() {
+  const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
+  const [orderDetails, setOrderDetails] = useState<OrderDetails | null>(null);
+  const [loadingDetails, setLoadingDetails] = useState(false);
+  const [detailsError, setDetailsError] = useState<string | null>(null);
+
   const { data: orders, isLoading } = useQuery<MobilesentrixOrder[]>({
     queryKey: ["/api/mobilesentrix/orders"],
   });
 
-  // Tasso di cambio USD -> EUR (aggiornabile)
-  const USD_TO_EUR_RATE = 0.92;
-  
-  const formatPrice = (cents: number) => {
-    const usdAmount = cents / 100;
-    const eurAmount = usdAmount * USD_TO_EUR_RATE;
+  const formatPrice = (amount: number | string) => {
+    const numAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
     return new Intl.NumberFormat("it-IT", {
       style: "currency",
       currency: "EUR",
-    }).format(eurAmount);
+    }).format(numAmount);
   };
 
   const getStatusConfig = (status: string) => {
     return statusConfig[status] || { label: status, variant: "secondary" as const, icon: Clock };
+  };
+
+  const handleViewDetails = async (order: MobilesentrixOrder) => {
+    const orderId = order.mobilesentrixOrderId;
+    if (orderId.startsWith('pending-')) {
+      setDetailsError("Ordine in elaborazione. I dettagli saranno disponibili a breve.");
+      setSelectedOrderId(orderId);
+      return;
+    }
+    
+    setSelectedOrderId(orderId);
+    setLoadingDetails(true);
+    setDetailsError(null);
+    setOrderDetails(null);
+    
+    try {
+      const response = await apiRequest("GET", `/api/mobilesentrix/orders/${orderId}/details`);
+      const data = await response.json();
+      
+      if (data.success && data.data) {
+        setOrderDetails(data.data);
+      } else {
+        setDetailsError(data.message || "Impossibile caricare i dettagli");
+      }
+    } catch (error: any) {
+      setDetailsError(error.message || "Errore nel caricamento dei dettagli");
+    } finally {
+      setLoadingDetails(false);
+    }
   };
 
   if (isLoading) {
@@ -57,6 +130,9 @@ export default function MobilesentrixOrdersPage() {
       </div>
     );
   }
+
+  const shippingAddress = orderDetails?.addresses?.find(a => a.address_type === 'shipping');
+  const billingAddress = orderDetails?.addresses?.find(a => a.address_type === 'billing');
 
   return (
     <div className="p-6 space-y-6">
@@ -105,7 +181,7 @@ export default function MobilesentrixOrdersPage() {
             const StatusIcon = config.icon;
             
             return (
-              <Card key={order.id} data-testid={`order-card-${order.id}`}>
+              <Card key={order.id} data-testid={`order-card-${order.id}`} className="hover-elevate cursor-pointer" onClick={() => handleViewDetails(order)}>
                 <CardContent className="p-6">
                   <div className="flex items-start justify-between flex-wrap gap-4">
                     <div className="space-y-2">
@@ -136,9 +212,14 @@ export default function MobilesentrixOrdersPage() {
                         )}
                       </div>
                     </div>
-                    <div className="text-right">
-                      <p className="text-2xl font-bold">{formatPrice(order.totalAmount)}</p>
-                      <p className="text-xs text-muted-foreground">ID MobileSentrix: {order.mobilesentrixOrderId}</p>
+                    <div className="text-right flex items-center gap-4">
+                      <div>
+                        <p className="text-2xl font-bold">{formatPrice(order.totalAmount / 100)}</p>
+                        <p className="text-xs text-muted-foreground">ID MobileSentrix: {order.mobilesentrixOrderId}</p>
+                      </div>
+                      <Button variant="ghost" size="icon" data-testid={`button-view-order-${order.id}`}>
+                        <Eye className="h-5 w-5" />
+                      </Button>
                     </div>
                   </div>
                 </CardContent>
@@ -147,6 +228,125 @@ export default function MobilesentrixOrdersPage() {
           })}
         </div>
       )}
+
+      <Dialog open={!!selectedOrderId} onOpenChange={(open) => !open && setSelectedOrderId(null)}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Package className="h-5 w-5" />
+              Dettagli Ordine #{orderDetails?.increment_id || selectedOrderId}
+            </DialogTitle>
+            <DialogDescription>
+              Informazioni complete sull'ordine
+            </DialogDescription>
+          </DialogHeader>
+
+          {loadingDetails && (
+            <div className="space-y-4">
+              <Skeleton className="h-20 w-full" />
+              <Skeleton className="h-40 w-full" />
+              <Skeleton className="h-32 w-full" />
+            </div>
+          )}
+
+          {detailsError && (
+            <div className="text-center py-8">
+              <XCircle className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
+              <p className="text-muted-foreground">{detailsError}</p>
+            </div>
+          )}
+
+          {orderDetails && (
+            <div className="space-y-6">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="text-center p-3 bg-muted rounded-md">
+                  <p className="text-sm text-muted-foreground">Subtotale</p>
+                  <p className="text-lg font-semibold">{formatPrice(orderDetails.subtotal)}</p>
+                </div>
+                <div className="text-center p-3 bg-muted rounded-md">
+                  <p className="text-sm text-muted-foreground">Spedizione</p>
+                  <p className="text-lg font-semibold">{formatPrice(orderDetails.shipping_amount)}</p>
+                </div>
+                <div className="text-center p-3 bg-muted rounded-md">
+                  <p className="text-sm text-muted-foreground">Tasse</p>
+                  <p className="text-lg font-semibold">{formatPrice(orderDetails.tax_amount)}</p>
+                </div>
+                <div className="text-center p-3 bg-primary/10 rounded-md">
+                  <p className="text-sm text-muted-foreground">Totale</p>
+                  <p className="text-lg font-bold">{formatPrice(orderDetails.grand_total)}</p>
+                </div>
+              </div>
+
+              <div className="grid md:grid-cols-2 gap-4">
+                <div className="p-4 border rounded-md">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Truck className="h-4 w-4" />
+                    <h4 className="font-semibold">Spedizione</h4>
+                  </div>
+                  <p className="text-sm">{orderDetails.shipping_description || "N/A"}</p>
+                  {orderDetails.tracking_number && (
+                    <p className="text-sm mt-1">
+                      <span className="text-muted-foreground">Tracking:</span> {orderDetails.tracking_number}
+                    </p>
+                  )}
+                </div>
+                <div className="p-4 border rounded-md">
+                  <div className="flex items-center gap-2 mb-2">
+                    <CreditCard className="h-4 w-4" />
+                    <h4 className="font-semibold">Pagamento</h4>
+                  </div>
+                  <p className="text-sm">{orderDetails.payment_method || "N/A"}</p>
+                </div>
+              </div>
+
+              {shippingAddress && (
+                <div className="p-4 border rounded-md">
+                  <div className="flex items-center gap-2 mb-2">
+                    <MapPin className="h-4 w-4" />
+                    <h4 className="font-semibold">Indirizzo di Spedizione</h4>
+                  </div>
+                  <p className="text-sm">
+                    {shippingAddress.firstname} {shippingAddress.lastname}
+                    {shippingAddress.company && <span className="block text-muted-foreground">{shippingAddress.company}</span>}
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    {shippingAddress.street}<br />
+                    {shippingAddress.postcode} {shippingAddress.city}, {shippingAddress.country_id}
+                  </p>
+                  {shippingAddress.telephone && (
+                    <p className="text-sm text-muted-foreground mt-1">Tel: {shippingAddress.telephone}</p>
+                  )}
+                </div>
+              )}
+
+              <div>
+                <h4 className="font-semibold mb-3">Articoli Ordinati ({orderDetails.order_items?.length || 0})</h4>
+                <div className="space-y-2">
+                  {orderDetails.order_items?.map((item, index) => (
+                    <div key={item.item_id || index} className="flex items-start justify-between p-3 border rounded-md gap-4">
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-sm truncate">{item.name}</p>
+                        <p className="text-xs text-muted-foreground">SKU: {item.sku}</p>
+                      </div>
+                      <div className="text-right shrink-0">
+                        <p className="text-sm">Qtà: {parseFloat(item.qty_ordered)}</p>
+                        <p className="font-semibold">{formatPrice(item.base_row_total)}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="text-xs text-muted-foreground pt-2 border-t">
+                <p>Creato: {format(new Date(orderDetails.created_at), "d MMMM yyyy, HH:mm", { locale: it })}</p>
+                {orderDetails.updated_at && (
+                  <p>Aggiornato: {format(new Date(orderDetails.updated_at), "d MMMM yyyy, HH:mm", { locale: it })}</p>
+                )}
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

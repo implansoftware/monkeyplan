@@ -24193,6 +24193,29 @@ export function registerRoutes(app: Express): Server {
       res.status(400).send(error.message);
     }
   });
+  // GET /api/mobilesentrix/orders/:id/details - Get full order details from MobileSentrix API
+  app.get("/api/mobilesentrix/orders/:id/details", requireAuth, requireRole("reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const { id } = req.params;
+      
+      const credential = await storage.getMobilesentrixCredentialByReseller(req.user.id);
+      if (!credential) {
+        return res.status(400).json({ success: false, message: "Credenziali MobileSentrix non configurate" });
+      }
+      
+      const service = new MobilesentrixService(credential);
+      const orderDetails = await service.getOrderDetails(id);
+      
+      res.json({ success: true, data: orderDetails });
+    } catch (error: any) {
+      console.error("Error fetching order details:", error);
+      res.status(400).json({ success: false, message: error.message });
+    }
+  });
+
+
 
 
   // GET /api/mobilesentrix/addresses - Get customer addresses from MobileSentrix orders
