@@ -23572,21 +23572,17 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  // POST /api/mobilesentrix/credentials - Create/update MobileSentrix credentials (uses env vars)
+  // POST /api/mobilesentrix/credentials - Create/update MobileSentrix credentials
   app.post("/api/mobilesentrix/credentials", requireAuth, requireRole("reseller"), async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
-      // Use environment variables for OAuth app credentials
-      const consumerName = process.env.MOBILESENTRIX_CONSUMER_NAME;
-      const consumerKey = process.env.MOBILESENTRIX_CONSUMER_KEY;
-      const consumerSecret = process.env.MOBILESENTRIX_CONSUMER_SECRET;
-      
+      const { consumerName, consumerKey, consumerSecret, environment } = req.body;
       if (!consumerName || !consumerKey || !consumerSecret) {
-        return res.status(500).send("Credenziali MobileSentrix non configurate nel server");
+        return res.status(400).send("Consumer Name, Consumer Key e Consumer Secret sono obbligatori");
       }
 
-      const environment = "production";
+      const validEnvironment = environment === "staging" ? "staging" : "production";
       const existing = await storage.getMobilesentrixCredentialByReseller(req.user.id);
       
       if (existing) {
@@ -23594,7 +23590,7 @@ export function registerRoutes(app: Express): Server {
           consumerName,
           consumerKey,
           consumerSecret,
-          environment,
+          environment: validEnvironment,
         });
         res.json(updated);
       } else {
@@ -23603,7 +23599,7 @@ export function registerRoutes(app: Express): Server {
           consumerName,
           consumerKey,
           consumerSecret,
-          environment,
+          environment: validEnvironment,
           isActive: true,
         });
         res.json(created);
