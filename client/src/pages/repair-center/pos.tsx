@@ -105,6 +105,7 @@ const paymentMethodLabels: Record<string, { label: string; icon: typeof CreditCa
   card: { label: "Carta", icon: CreditCard },
   pos_terminal: { label: "POS", icon: CreditCard },
   satispay: { label: "Satispay", icon: Wallet },
+  mixed: { label: "Misto", icon: Calculator },
 };
 
 export default function PosPage() {
@@ -112,7 +113,7 @@ export default function PosPage() {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [barcodeInput, setBarcodeInput] = useState("");
-  const [selectedPayment, setSelectedPayment] = useState<"cash" | "card" | "pos_terminal" | "satispay">("cash");
+  const [selectedPayment, setSelectedPayment] = useState<"cash" | "card" | "pos_terminal" | "satispay" | "mixed">("cash");
   const [cashReceived, setCashReceived] = useState<string>("");
   const [discountAmount, setDiscountAmount] = useState<string>("");
   const [transactionNotes, setTransactionNotes] = useState("");

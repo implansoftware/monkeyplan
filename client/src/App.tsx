@@ -66,6 +66,7 @@ import AdminUtilityPractices from "@/pages/admin/utility/practices";
 import AdminUtilityPracticeDetail from "@/pages/admin/utility/practice-detail";
 import AdminUtilityCommissions from "@/pages/admin/utility/commissions";
 import AdminUtilityReports from "@/pages/admin/utility/reports";
+import AdminPosOverview from "@/pages/admin/pos-overview";
 
 // Reseller pages
 import ResellerDashboard from "@/pages/reseller/dashboard";
@@ -134,6 +135,7 @@ import ResellerHrWorkProfiles from "@/pages/reseller/hr/work-profiles";
 import ResellerHrExpenses from "@/pages/reseller/hr/expenses";
 import ResellerHrSickLeave from "@/pages/reseller/hr/sick-leave";
 import ResellerHrCalendar from "@/pages/reseller/hr/calendar";
+import ResellerPosOverview from "@/pages/reseller/pos-overview";
 
 // Repair Center pages
 import RepairCenterDashboard from "@/pages/repair-center/dashboard";
@@ -305,6 +307,7 @@ function Router() {
       <ProtectedRoute path="/admin/hr/expenses" component={AdminHRExpenses} />
       <ProtectedRoute path="/admin/hr/attendance" component={AdminHRAttendance} />
       <ProtectedRoute path="/admin/hr/calendar" component={AdminHRCalendar} />
+      <ProtectedRoute path="/admin/pos" component={AdminPosOverview} />
       
       {/* Reseller routes - accessible by reseller and reseller_staff */}
       <ProtectedRoute path="/reseller" component={ResellerDashboard} allowedRoles={["reseller", "reseller_staff"]} />
@@ -330,6 +333,7 @@ function Router() {
       <ProtectedRoute path="/reseller/tickets" component={ResellerTickets} allowedRoles={["reseller", "reseller_staff"]} />
       <ProtectedRoute path="/reseller/tickets/:id" component={ResellerTicketDetail} allowedRoles={["reseller", "reseller_staff"]} />
       <ProtectedRoute path="/reseller/guide" component={ResellerGuide} allowedRoles={["reseller", "reseller_staff"]} />
+      <ProtectedRoute path="/reseller/pos" component={ResellerPosOverview} allowedRoles={["reseller", "reseller_staff"]} />
       <ProtectedRoute path="/reseller/utility" component={ResellerUtility} allowedRoles={["reseller", "reseller_staff"]} />
       <ProtectedRoute path="/reseller/utility/suppliers" component={ResellerUtilitySuppliers} allowedRoles={["reseller", "reseller_staff"]} />
       <ProtectedRoute path="/reseller/utility/services" component={ResellerUtilityServices} allowedRoles={["reseller", "reseller_staff"]} />

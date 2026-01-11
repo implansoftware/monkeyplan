@@ -72,6 +72,7 @@ import { ContextSwitcher } from "@/components/ContextSwitcher";
 const menuItems = {
   admin: [
     { title: "Dashboard", url: "/", icon: LayoutDashboard, group: "Dashboard" },
+    { title: "Panoramica POS", url: "/admin/pos", icon: Receipt, group: "Dashboard" },
     { title: "Clienti", url: "/admin/customers", icon: Users, group: "Clienti & Rivenditori" },
     { title: "Rivenditori", url: "/admin/resellers", icon: Store, group: "Clienti & Rivenditori" },
     { title: "Team Rivenditori", url: "/admin/reseller-teams", icon: UsersRound, group: "Clienti & Rivenditori" },
@@ -162,6 +163,7 @@ const menuItems = {
   ],
   reseller: [
     { title: "Dashboard", url: "/reseller", icon: LayoutDashboard, group: "Dashboard" },
+    { title: "Panoramica POS", url: "/reseller/pos", icon: Receipt, group: "Dashboard" },
     { title: "Dashboard HR", url: "/reseller/hr", icon: Briefcase, group: "Gestione HR" },
     { title: "Team", url: "/reseller/team", icon: UsersRound, group: "Gestione HR" },
     { title: "Presenze", url: "/reseller/hr/attendance", icon: Clock, group: "Gestione HR" },
