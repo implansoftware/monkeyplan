@@ -31287,6 +31287,32 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+
+  // Prodotti magazzino per POS
+  app.get("/api/repair-center/pos/products", requireRole("repair_center", "repair_center_staff"), async (req, res) => {
+    try {
+      const repairCenterId = req.user!.repairCenterId || req.user!.id;
+      const search = req.query.search as string | undefined;
+      
+      // Trova il magazzino del repair center
+      const warehouseList = await storage.listWarehouses({ 
+        ownerType: 'repair_center', 
+        ownerId: repairCenterId 
+      });
+      
+      if (warehouseList.length === 0) {
+        return res.json([]);
+      }
+      
+      const warehouse = warehouseList[0];
+      const productsWithStock = await storage.listWarehouseProductsWithStock(warehouse.id, search);
+      
+      res.json(productsWithStock);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   // Cerca prodotto per barcode
   app.get("/api/repair-center/pos/product/barcode/:barcode", requireRole("repair_center", "repair_center_staff"), async (req, res) => {
     try {

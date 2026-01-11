@@ -69,7 +69,9 @@ type Product = {
   sku: string | null;
   barcode: string | null;
   sellingPrice: number | null;
+  unitPrice: number | null;
   category: string | null;
+  availableQuantity?: number;
 };
 
 type CartItem = {
@@ -140,8 +142,8 @@ export default function PosPage() {
     queryKey: ["/api/repair-center/pos/stats/daily"],
   });
 
-  const { data: products = [] } = useQuery<Product[]>({
-    queryKey: ["/api/repair-center/products"],
+  const { data: products = [], isLoading: productsLoading } = useQuery<Product[]>({
+    queryKey: ["/api/repair-center/pos/products"],
   });
 
   const filteredProducts = products.filter(p => 
@@ -211,7 +213,7 @@ export default function PosPage() {
     : 0;
 
   const addToCart = (product: Product) => {
-    const price = product.sellingPrice || 0;
+    const price = product.sellingPrice || product.unitPrice || 0;
     const existing = cart.find(item => item.productId === product.id);
     
     if (existing) {
@@ -458,24 +460,55 @@ export default function PosPage() {
                   />
                 </div>
                 <ScrollArea className="h-[calc(100%-3rem)]">
-                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
-                    {filteredProducts.map((product) => (
-                      <button
-                        key={product.id}
-                        onClick={() => addToCart(product)}
-                        className="p-3 rounded-lg border bg-card hover-elevate active-elevate-2 text-left transition-colors"
-                        data-testid={`button-product-${product.id}`}
-                      >
-                        <div className="font-medium text-sm line-clamp-2">{product.name}</div>
-                        {product.sku && (
-                          <div className="text-xs text-muted-foreground mt-1">{product.sku}</div>
-                        )}
-                        <div className="font-semibold text-primary mt-1">
-                          {formatCurrency(product.sellingPrice || 0)}
-                        </div>
-                      </button>
-                    ))}
-                  </div>
+                  {productsLoading ? (
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+                      {[1,2,3,4,5,6,7,8].map(i => <Skeleton key={i} className="h-24 w-full" />)}
+                    </div>
+                  ) : filteredProducts.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center h-40 text-muted-foreground">
+                      <AlertCircle className="w-12 h-12 mb-2 opacity-50" />
+                      <span>Nessun prodotto in magazzino</span>
+                      <span className="text-sm">Aggiungi prodotti dal gestionale</span>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+                      {filteredProducts.map((product) => {
+                        const isOutOfStock = product.availableQuantity !== undefined && product.availableQuantity <= 0;
+                        const price = product.sellingPrice || product.unitPrice || 0;
+                        return (
+                          <button
+                            key={product.id}
+                            onClick={() => !isOutOfStock && addToCart(product)}
+                            disabled={isOutOfStock}
+                            className={`p-3 rounded-lg border bg-card text-left transition-colors min-h-[100px] ${
+                              isOutOfStock 
+                                ? "opacity-50 cursor-not-allowed" 
+                                : "hover-elevate active-elevate-2"
+                            }`}
+                            data-testid={`button-product-${product.id}`}
+                          >
+                            <div className="font-medium text-sm line-clamp-2">{product.name}</div>
+                            {product.sku && (
+                              <div className="text-xs text-muted-foreground mt-1">{product.sku}</div>
+                            )}
+                            <div className="flex items-center justify-between mt-2">
+                              <div className="font-semibold text-primary">
+                                {formatCurrency(price)}
+                              </div>
+                              {product.availableQuantity !== undefined && (
+                                <Badge 
+                                  variant={isOutOfStock ? "destructive" : "secondary"}
+                                  className="text-xs"
+                                >
+                                  {isOutOfStock ? "Esaurito" : `${product.availableQuantity} disp.`}
+                                </Badge>
+                              )}
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
                 </ScrollArea>
               </TabsContent>
 
@@ -669,19 +702,115 @@ export default function PosPage() {
             </div>
 
             {selectedPayment === "cash" && (
-              <div>
-                <Label>Contanti Ricevuti (EUR)</Label>
-                <Input
-                  type="number"
-                  placeholder="0.00"
-                  value={cashReceived}
-                  onChange={(e) => setCashReceived(e.target.value)}
-                  className="text-lg h-12"
-                  data-testid="input-cash-received"
-                />
+              <div className="space-y-3">
+                <div>
+                  <Label>Contanti Ricevuti (EUR)</Label>
+                  <Input
+                    type="number"
+                    placeholder="0.00"
+                    value={cashReceived}
+                    onChange={(e) => setCashReceived(e.target.value)}
+                    className="text-lg h-12 text-center font-bold"
+                    data-testid="input-cash-received"
+                  />
+                </div>
+                
+                {/* Tastierino Numerico */}
+                <div className="grid grid-cols-4 gap-1">
+                  {["7", "8", "9", "C"].map((key) => (
+                    <Button
+                      key={key}
+                      variant={key === "C" ? "destructive" : "outline"}
+                      className="h-12 text-lg font-bold"
+                      onClick={() => {
+                        if (key === "C") {
+                          setCashReceived("");
+                        } else {
+                          setCashReceived(prev => prev + key);
+                        }
+                      }}
+                      data-testid={`keypad-${key}`}
+                    >
+                      {key}
+                    </Button>
+                  ))}
+                  {["4", "5", "6", "←"].map((key) => (
+                    <Button
+                      key={key}
+                      variant="outline"
+                      className="h-12 text-lg font-bold"
+                      onClick={() => {
+                        if (key === "←") {
+                          setCashReceived(prev => prev.slice(0, -1));
+                        } else {
+                          setCashReceived(prev => prev + key);
+                        }
+                      }}
+                      data-testid={`keypad-${key}`}
+                    >
+                      {key}
+                    </Button>
+                  ))}
+                  {["1", "2", "3", "."].map((key) => (
+                    <Button
+                      key={key}
+                      variant="outline"
+                      className="h-12 text-lg font-bold"
+                      onClick={() => {
+                        if (key === "." && cashReceived.includes(".")) return;
+                        setCashReceived(prev => prev + key);
+                      }}
+                      data-testid={`keypad-${key}`}
+                    >
+                      {key}
+                    </Button>
+                  ))}
+                  <Button
+                    variant="outline"
+                    className="h-12 text-lg font-bold col-span-2"
+                    onClick={() => setCashReceived(prev => prev + "0")}
+                    data-testid="keypad-0"
+                  >
+                    0
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="h-12 text-lg font-bold"
+                    onClick={() => setCashReceived(prev => prev + "00")}
+                    data-testid="keypad-00"
+                  >
+                    00
+                  </Button>
+                  <Button
+                    className="h-12 text-lg font-bold bg-gradient-to-r from-blue-500 to-cyan-500"
+                    onClick={() => setCashReceived((cartTotal / 100).toFixed(2))}
+                    data-testid="keypad-exact"
+                  >
+                    Esatto
+                  </Button>
+                </div>
+
+                {/* Quick amount buttons */}
+                <div className="grid grid-cols-4 gap-1">
+                  {[5, 10, 20, 50].map((amount) => (
+                    <Button
+                      key={amount}
+                      variant="secondary"
+                      className="h-10"
+                      onClick={() => setCashReceived(amount.toString())}
+                      data-testid={`quick-${amount}`}
+                    >
+                      {amount}€
+                    </Button>
+                  ))}
+                </div>
+
                 {parseFloat(cashReceived || "0") * 100 >= cartTotal && (
-                  <div className="mt-2 p-2 rounded bg-green-500/10 text-green-600 text-center font-semibold">
-                    Resto: {formatCurrency(changeAmount)}
+                  <div className="p-3 rounded-lg bg-gradient-to-r from-blue-500/10 to-cyan-500/10 border border-blue-500/30 text-center">
+                    <div className="text-sm text-muted-foreground">Resto da dare</div>
+                    <div className="text-2xl font-bold text-blue-600">
+                      {formatCurrency(changeAmount)}
+                    </div>
                   </div>
                 )}
               </div>
