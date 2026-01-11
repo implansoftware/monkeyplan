@@ -236,6 +236,13 @@ const menuItems = {
     { title: "Appuntamenti", url: "/repair-center/appointments", icon: CalendarCheck, group: "Lavorazioni" },
     { title: "Listino Interventi", url: "/repair-center/service-catalog", icon: Receipt, group: "Lavorazioni" },
     { title: "Richieste Remote", url: "/repair-center/remote-requests", icon: Send, group: "Lavorazioni" },
+    // Utility
+    { title: "Utility", url: "/repair-center/utility", icon: Zap, group: "Utility" },
+    { title: "Fornitori Utility", url: "/repair-center/utility/suppliers", icon: Phone, group: "Utility" },
+    { title: "Listino Servizi", url: "/repair-center/utility/services", icon: Package, group: "Utility" },
+    { title: "Pratiche", url: "/repair-center/utility/practices", icon: FileCheck, group: "Utility" },
+    { title: "Compensi", url: "/repair-center/utility/commissions", icon: Coins, group: "Utility" },
+    { title: "Report Utility", url: "/repair-center/utility/reports", icon: PieChart, group: "Utility" },
     // Magazzino
     { title: "Magazzino", url: "/repair-center/warehouses", icon: Warehouse, group: "Magazzino" },
     { title: "Prodotti", url: "/repair-center/products", icon: Package, group: "Magazzino" },
@@ -259,13 +266,6 @@ const menuItems = {
     // Fornitori
     { title: "Anagrafica Fornitori", url: "/repair-center/suppliers", icon: Truck, group: "Fornitori" },
     { title: "Ordini a Fornitori", url: "/repair-center/supplier-orders", icon: ShoppingCart, group: "Fornitori" },
-    // Utility
-    { title: "Utility", url: "/repair-center/utility", icon: Zap, group: "Utility" },
-    { title: "Fornitori Utility", url: "/repair-center/utility/suppliers", icon: Phone, group: "Utility" },
-    { title: "Listino Servizi", url: "/repair-center/utility/services", icon: Package, group: "Utility" },
-    { title: "Pratiche", url: "/repair-center/utility/practices", icon: FileCheck, group: "Utility" },
-    { title: "Compensi", url: "/repair-center/utility/commissions", icon: Coins, group: "Utility" },
-    { title: "Report Utility", url: "/repair-center/utility/reports", icon: PieChart, group: "Utility" },
   ],
   customer: [
     { title: "Dashboard", url: "/customer", icon: LayoutDashboard, group: "Principale" },
