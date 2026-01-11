@@ -276,18 +276,21 @@ export default function AdminRepairCenters() {
   return (
     <div className="space-y-6">
       {/* Hero Header */}
-      <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-primary/5 via-primary/10 to-slate-100 dark:from-primary/10 dark:via-primary/5 dark:to-slate-900 p-6 border">
-        <div className="absolute inset-0 opacity-[0.03]" style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23000' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-600 via-blue-500 to-cyan-500 p-8">
+        <div className="absolute top-0 -right-20 w-64 h-64 bg-cyan-400/20 rounded-full blur-3xl" />
+        <div className="absolute -bottom-10 -left-10 w-48 h-48 bg-blue-500/20 rounded-full blur-3xl" />
+        <div className="absolute inset-0 opacity-10" style={{
+          backgroundImage: `linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)`,
+          backgroundSize: '40px 40px'
         }} />
-        <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="flex items-center gap-3 mb-1">
-            <div className="h-10 w-10 rounded-xl bg-primary text-primary-foreground flex items-center justify-center shadow-lg shadow-primary/25">
-              <Building className="h-5 w-5" />
+        <div className="relative z-10 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/20 backdrop-blur-sm border border-white/30">
+              <Building className="h-7 w-7 text-white" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold tracking-tight">Centri di Riparazione</h1>
-              <p className="text-sm text-muted-foreground">Gestisci tutti i centri di riparazione della rete</p>
+              <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">Centri di Riparazione</h1>
+              <p className="text-blue-100/80 mt-1">Gestisci tutti i centri della rete</p>
             </div>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
@@ -295,12 +298,21 @@ export default function AdminRepairCenters() {
               <Button 
                 variant="outline" 
                 onClick={() => setBackfillDialogOpen(true)}
+                className="bg-white/10 border-white/30 text-white hover:bg-white/20"
                 data-testid="button-backfill-accounts"
               >
-                <AlertTriangle className="h-4 w-4 mr-2 text-orange-500" />
+                <AlertTriangle className="h-4 w-4 mr-2 text-orange-300" />
                 {orphansData.orphanCount} centri senza account
               </Button>
             )}
+            <Button 
+              onClick={() => { resetWizard(); setDialogOpen(true); }} 
+              className="bg-white text-blue-700 hover:bg-white/90 shadow-lg rounded-xl" 
+              data-testid="button-new-center"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Nuovo Centro
+            </Button>
           </div>
         </div>
       </div>
@@ -312,12 +324,6 @@ export default function AdminRepairCenters() {
             resetWizard();
           }
         }}>
-          <DialogTrigger asChild>
-            <Button onClick={() => resetWizard()} data-testid="button-new-center">
-              <Plus className="h-4 w-4 mr-2" />
-              Nuovo Centro
-            </Button>
-          </DialogTrigger>
           <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto" data-testid="dialog-center-form">
             <DialogHeader>
               <DialogTitle>{editingCenter ? "Modifica Centro" : "Nuovo Centro di Riparazione"}</DialogTitle>
@@ -333,9 +339,9 @@ export default function AdminRepairCenters() {
                     <div key={step.id} className="flex flex-col items-center flex-1">
                       <div 
                         className={`w-10 h-10 rounded-full flex items-center justify-center border-2 transition-colors ${
-                          isActive ? 'bg-primary border-primary text-primary-foreground' : 
-                          isPast ? 'bg-primary/20 border-primary text-primary' : 
-                          'bg-muted border-muted-foreground/30 text-muted-foreground'
+                          isActive ? 'bg-gradient-to-br from-blue-500 to-cyan-600 border-blue-500 text-white' : 
+                          isPast ? 'bg-emerald-500 border-emerald-500 text-white' : 
+                          'bg-slate-100 dark:bg-slate-800 border-slate-300 dark:border-slate-600 text-slate-400'
                         }`}
                       >
                         {isPast ? <Check className="h-5 w-5" /> : <StepIcon className="h-5 w-5" />}
@@ -354,29 +360,32 @@ export default function AdminRepairCenters() {
                   <div className="space-y-4">
                     <p className="text-sm text-muted-foreground">Informazioni di base del centro di riparazione.</p>
                     <div className="space-y-2">
-                      <Label htmlFor="name">Nome Centro *</Label>
+                      <Label htmlFor="name" className="text-slate-700 dark:text-slate-300">Nome Centro *</Label>
                       <Input 
                         id="name"
+                        className="h-11 rounded-xl"
                         value={formData.name}
                         onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
                         data-testid="input-name" 
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="email">Email *</Label>
+                      <Label htmlFor="email" className="text-slate-700 dark:text-slate-300">Email *</Label>
                       <Input 
                         id="email"
                         type="email"
+                        className="h-11 rounded-xl"
                         value={formData.email}
                         onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
                         data-testid="input-email" 
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="phone">Telefono *</Label>
+                      <Label htmlFor="phone" className="text-slate-700 dark:text-slate-300">Telefono *</Label>
                       <Input 
                         id="phone"
                         type="tel"
+                        className="h-11 rounded-xl"
                         value={formData.phone}
                         onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
                         data-testid="input-phone" 
@@ -384,10 +393,11 @@ export default function AdminRepairCenters() {
                     </div>
                     {!editingCenter && (
                       <div className="space-y-2">
-                        <Label htmlFor="password">Password Account * (min 6 caratteri)</Label>
+                        <Label htmlFor="password" className="text-slate-700 dark:text-slate-300">Password Account * (min 6 caratteri)</Label>
                         <Input 
                           id="password"
                           type="password"
+                          className="h-11 rounded-xl"
                           value={formData.password}
                           onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
                           placeholder="Password per accesso al centro"
@@ -405,7 +415,7 @@ export default function AdminRepairCenters() {
                   <div className="space-y-4">
                     <p className="text-sm text-muted-foreground">Indirizzo e ubicazione del centro.</p>
                     <div className="space-y-2">
-                      <Label>Indirizzo *</Label>
+                      <Label className="text-slate-700 dark:text-slate-300">Indirizzo *</Label>
                       <AddressAutocomplete
                         value={addressData.address}
                         onChange={(val) => setAddressData(prev => ({ ...prev, address: val }))}
@@ -418,14 +428,16 @@ export default function AdminRepairCenters() {
                           });
                         }}
                         placeholder="Inizia a digitare..."
+                        className="h-11 rounded-xl"
                         data-testid="input-address"
                       />
                     </div>
                     <div className="grid grid-cols-2 gap-3">
                       <div className="space-y-2">
-                        <Label htmlFor="city">Città *</Label>
+                        <Label htmlFor="city" className="text-slate-700 dark:text-slate-300">Città *</Label>
                         <Input 
                           id="city"
+                          className="h-11 rounded-xl"
                           value={addressData.city}
                           onChange={(e) => setAddressData(prev => ({ ...prev, city: e.target.value }))}
                           data-testid="input-city" 
@@ -433,19 +445,21 @@ export default function AdminRepairCenters() {
                       </div>
                       <div className="grid grid-cols-2 gap-2">
                         <div className="space-y-2">
-                          <Label htmlFor="cap">CAP</Label>
+                          <Label htmlFor="cap" className="text-slate-700 dark:text-slate-300">CAP</Label>
                           <Input 
                             id="cap"
+                            className="h-11 rounded-xl"
                             value={addressData.cap}
                             onChange={(e) => setAddressData(prev => ({ ...prev, cap: e.target.value }))}
                             data-testid="input-cap" 
                           />
                         </div>
                         <div className="space-y-2">
-                          <Label htmlFor="provincia">Prov.</Label>
+                          <Label htmlFor="provincia" className="text-slate-700 dark:text-slate-300">Prov.</Label>
                           <Input 
                             id="provincia"
                             maxLength={2}
+                            className="h-11 rounded-xl"
                             value={addressData.provincia}
                             onChange={(e) => setAddressData(prev => ({ ...prev, provincia: e.target.value }))}
                             placeholder="XX"
@@ -462,37 +476,41 @@ export default function AdminRepairCenters() {
                     <p className="text-sm text-muted-foreground">Dati fiscali e fatturazione (opzionali).</p>
                     <div className="grid grid-cols-2 gap-3">
                       <div className="space-y-2">
-                        <Label htmlFor="ragioneSociale">Ragione Sociale</Label>
+                        <Label htmlFor="ragioneSociale" className="text-slate-700 dark:text-slate-300">Ragione Sociale</Label>
                         <Input 
                           id="ragioneSociale"
+                          className="h-11 rounded-xl"
                           value={formData.ragioneSociale}
                           onChange={(e) => setFormData(prev => ({ ...prev, ragioneSociale: e.target.value }))}
                           data-testid="input-ragioneSociale" 
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="partitaIva">Partita IVA</Label>
+                        <Label htmlFor="partitaIva" className="text-slate-700 dark:text-slate-300">Partita IVA</Label>
                         <Input 
                           id="partitaIva"
+                          className="h-11 rounded-xl"
                           value={formData.partitaIva}
                           onChange={(e) => setFormData(prev => ({ ...prev, partitaIva: e.target.value }))}
                           data-testid="input-partitaIva" 
                         />
                       </div>
                       <div className="space-y-2 col-span-2">
-                        <Label htmlFor="codiceFiscale">Codice Fiscale</Label>
+                        <Label htmlFor="codiceFiscale" className="text-slate-700 dark:text-slate-300">Codice Fiscale</Label>
                         <Input 
                           id="codiceFiscale"
+                          className="h-11 rounded-xl"
                           value={formData.codiceFiscale}
                           onChange={(e) => setFormData(prev => ({ ...prev, codiceFiscale: e.target.value }))}
                           data-testid="input-codiceFiscale" 
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="codiceUnivoco">Codice SDI</Label>
+                        <Label htmlFor="codiceUnivoco" className="text-slate-700 dark:text-slate-300">Codice SDI</Label>
                         <Input 
                           id="codiceUnivoco"
                           maxLength={7}
+                          className="h-11 rounded-xl"
                           value={formData.codiceUnivoco}
                           onChange={(e) => setFormData(prev => ({ ...prev, codiceUnivoco: e.target.value }))}
                           placeholder="7 caratteri"
@@ -500,10 +518,11 @@ export default function AdminRepairCenters() {
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="pec">PEC</Label>
+                        <Label htmlFor="pec" className="text-slate-700 dark:text-slate-300">PEC</Label>
                         <Input 
                           id="pec"
                           type="email"
+                          className="h-11 rounded-xl"
                           value={formData.pec}
                           onChange={(e) => setFormData(prev => ({ ...prev, pec: e.target.value }))}
                           placeholder="email@pec.it"
@@ -511,9 +530,10 @@ export default function AdminRepairCenters() {
                         />
                       </div>
                       <div className="space-y-2 col-span-2">
-                        <Label htmlFor="iban">IBAN</Label>
+                        <Label htmlFor="iban" className="text-slate-700 dark:text-slate-300">IBAN</Label>
                         <Input 
                           id="iban"
+                          className="h-11 rounded-xl"
                           value={formData.iban}
                           onChange={(e) => setFormData(prev => ({ ...prev, iban: e.target.value }))}
                           placeholder="IT..."
@@ -528,7 +548,7 @@ export default function AdminRepairCenters() {
                   <div className="space-y-4">
                     <p className="text-sm text-muted-foreground">Configurazione affiliazione e tariffe.</p>
                     <div className="space-y-2">
-                      <Label htmlFor="resellerId">Rivenditore di Appartenenza</Label>
+                      <Label htmlFor="resellerId" className="text-slate-700 dark:text-slate-300">Rivenditore di Appartenenza</Label>
                       <Select 
                         value={selectedResellerId} 
                         onValueChange={(value) => {
@@ -536,7 +556,7 @@ export default function AdminRepairCenters() {
                           setSelectedSubResellerId("");
                         }}
                       >
-                        <SelectTrigger id="resellerId" data-testid="select-reseller-id">
+                        <SelectTrigger id="resellerId" className="h-11 rounded-xl" data-testid="select-reseller-id">
                           <SelectValue placeholder="Seleziona un rivenditore" />
                         </SelectTrigger>
                         <SelectContent>
@@ -554,12 +574,12 @@ export default function AdminRepairCenters() {
                     
                     {selectedResellerId && subResellers.length > 0 && (
                       <div className="space-y-2">
-                        <Label htmlFor="subResellerId">Sub-Reseller di Riferimento</Label>
+                        <Label htmlFor="subResellerId" className="text-slate-700 dark:text-slate-300">Sub-Reseller di Riferimento</Label>
                         <Select 
                           value={selectedSubResellerId || "none"} 
                           onValueChange={(value) => setSelectedSubResellerId(value === "none" ? "" : value)}
                         >
-                          <SelectTrigger id="subResellerId" data-testid="select-sub-reseller-id">
+                          <SelectTrigger id="subResellerId" className="h-11 rounded-xl" data-testid="select-sub-reseller-id">
                             <SelectValue placeholder="Seleziona un sub-reseller (opzionale)" />
                           </SelectTrigger>
                           <SelectContent>
@@ -583,7 +603,7 @@ export default function AdminRepairCenters() {
                         Tariffa Manodopera
                       </h4>
                       <div className="space-y-2">
-                        <Label htmlFor="hourlyRate">Tariffa Oraria (EUR)</Label>
+                        <Label htmlFor="hourlyRate" className="text-slate-700 dark:text-slate-300">Tariffa Oraria (EUR)</Label>
                         <div className="relative">
                           <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">€</span>
                           <Input
@@ -594,7 +614,7 @@ export default function AdminRepairCenters() {
                             placeholder="35.00"
                             value={hourlyRateEuros}
                             onChange={(e) => setHourlyRateEuros(e.target.value)}
-                            className="pl-7"
+                            className="pl-7 h-11 rounded-xl"
                             data-testid="input-hourly-rate"
                           />
                         </div>
@@ -612,6 +632,7 @@ export default function AdminRepairCenters() {
                 <Button 
                   type="button" 
                   variant="outline" 
+                  className="rounded-xl"
                   onClick={prevStep}
                   disabled={isFirstStep()}
                   data-testid="button-wizard-prev"
@@ -622,6 +643,7 @@ export default function AdminRepairCenters() {
                 {isLastStep() ? (
                   <Button 
                     type="button"
+                    className="rounded-xl bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700"
                     onClick={handleFinalSubmit}
                     disabled={createCenterMutation.isPending || updateCenterMutation.isPending}
                     data-testid="button-submit-center"
@@ -632,6 +654,7 @@ export default function AdminRepairCenters() {
                 ) : (
                   <Button 
                     type="button"
+                    className="rounded-xl bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700"
                     onClick={nextStep}
                     disabled={!canProceedToNextStep()}
                     data-testid="button-wizard-next"
@@ -720,15 +743,23 @@ export default function AdminRepairCenters() {
         </AlertDialogContent>
       </AlertDialog>
 
-      <Card>
+      <Card className="border-0 shadow-lg bg-white dark:bg-slate-800/50">
         <CardHeader>
+          <div className="flex items-center justify-between gap-4 mb-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-600">
+                <Building className="h-5 w-5 text-white" />
+              </div>
+              <h2 className="text-lg font-semibold">Elenco Centri</h2>
+            </div>
+          </div>
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
             <Input
               placeholder="Cerca per nome o città..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9"
+              className="pl-12 h-12 rounded-xl border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50"
               data-testid="input-search-centers"
             />
           </div>
@@ -746,124 +777,130 @@ export default function AdminRepairCenters() {
               <p>Nessun centro di riparazione trovato</p>
             </div>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Nome</TableHead>
-                  <TableHead>Località</TableHead>
-                  <TableHead>Rivenditore</TableHead>
-                  <TableHead>Contatti</TableHead>
-                  <TableHead>Stato</TableHead>
-                  <TableHead className="text-right">Azioni</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredCenters.map((center) => (
-                  <TableRow key={center.id} data-testid={`row-center-${center.id}`}>
-                    <TableCell className="font-medium">{center.name}</TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2 text-sm">
-                        <MapPin className="h-4 w-4 text-muted-foreground" />
-                        <div>
-                          <div>{center.city}</div>
-                          <div className="text-xs text-muted-foreground">{center.address}</div>
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      {center.resellerId ? (
+            <div className="rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-slate-50 dark:bg-slate-800/50">
+                    <TableHead className="text-slate-600 dark:text-slate-400">Nome</TableHead>
+                    <TableHead className="text-slate-600 dark:text-slate-400">Località</TableHead>
+                    <TableHead className="text-slate-600 dark:text-slate-400">Rivenditore</TableHead>
+                    <TableHead className="text-slate-600 dark:text-slate-400">Contatti</TableHead>
+                    <TableHead className="text-slate-600 dark:text-slate-400">Stato</TableHead>
+                    <TableHead className="text-slate-600 dark:text-slate-400 text-right">Azioni</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredCenters.map((center) => (
+                    <TableRow key={center.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/30" data-testid={`row-center-${center.id}`}>
+                      <TableCell className="font-medium">{center.name}</TableCell>
+                      <TableCell>
                         <div className="flex items-center gap-2 text-sm">
-                          <Store className="h-4 w-4 text-muted-foreground" />
-                          <span>{resellers.find(r => r.id === center.resellerId)?.fullName || 'Rivenditore non trovato'}</span>
+                          <MapPin className="h-4 w-4 text-muted-foreground" />
+                          <div>
+                            <div>{center.city}</div>
+                            <div className="text-xs text-muted-foreground">{center.address}</div>
+                          </div>
                         </div>
-                      ) : (
-                        <span className="text-muted-foreground text-sm">-</span>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <div className="text-sm space-y-1">
-                        <div className="flex items-center gap-2">
-                          <Phone className="h-3 w-3 text-muted-foreground" />
-                          {center.phone}
+                      </TableCell>
+                      <TableCell>
+                        {center.resellerId ? (
+                          <Badge className="bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
+                            {resellers.find(r => r.id === center.resellerId)?.fullName || 'Rivenditore'}
+                          </Badge>
+                        ) : (
+                          <span className="text-muted-foreground text-sm">-</span>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <div className="text-sm space-y-1">
+                          <div className="flex items-center gap-2">
+                            <Phone className="h-3 w-3 text-muted-foreground" />
+                            {center.phone}
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Mail className="h-3 w-3 text-muted-foreground" />
+                            {center.email}
+                          </div>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <Mail className="h-3 w-3 text-muted-foreground" />
-                          {center.email}
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={center.isActive ? "default" : "secondary"}>
-                        {center.isActive ? "Attivo" : "Inattivo"}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
-                        <Link href={`/admin/repair-centers/${center.id}`}>
+                      </TableCell>
+                      <TableCell>
+                        <Badge className={center.isActive ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300" : "bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300"}>
+                          {center.isActive ? "Attivo" : "Inattivo"}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-1">
+                          <Link href={`/admin/repair-centers/${center.id}`}>
+                            <Button 
+                              variant="ghost" 
+                              size="icon"
+                              className="hover:bg-blue-100 hover:text-blue-600 dark:hover:bg-blue-900/30"
+                              data-testid={`button-view-${center.id}`}
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                          </Link>
                           <Button 
                             variant="ghost" 
-                            size="icon"
-                            data-testid={`button-view-${center.id}`}
+                            size="icon" 
+                            className="hover:bg-amber-100 hover:text-amber-600 dark:hover:bg-amber-900/30"
+                            onClick={() => {
+                              setEditingCenter(center);
+                              setWizardStep(1);
+                              setFormData({
+                                name: center.name || "",
+                                phone: center.phone || "",
+                                email: center.email || "",
+                                password: "",
+                                ragioneSociale: center.ragioneSociale || "",
+                                partitaIva: center.partitaIva || "",
+                                codiceFiscale: center.codiceFiscale || "",
+                                codiceUnivoco: center.codiceUnivoco || "",
+                                pec: center.pec || "",
+                                iban: center.iban || "",
+                              });
+                              setAddressData({
+                                address: center.address || "",
+                                city: center.city || "",
+                                cap: center.cap || "",
+                                provincia: center.provincia || "",
+                              });
+                              setSelectedResellerId(center.resellerId || "");
+                              setSelectedSubResellerId(center.subResellerId || "");
+                              setHourlyRateEuros(center.hourlyRateCents ? (center.hourlyRateCents / 100).toFixed(2) : "");
+                              setDialogOpen(true);
+                            }}
+                            data-testid={`button-edit-${center.id}`}
                           >
-                            <Eye className="h-4 w-4" />
+                            <Pencil className="h-4 w-4" />
                           </Button>
-                        </Link>
-                        <Button 
-                          variant="ghost" 
-                          size="icon" 
-                          onClick={() => {
-                            setEditingCenter(center);
-                            setWizardStep(1);
-                            setFormData({
-                              name: center.name || "",
-                              phone: center.phone || "",
-                              email: center.email || "",
-                              ragioneSociale: center.ragioneSociale || "",
-                              partitaIva: center.partitaIva || "",
-                              codiceFiscale: center.codiceFiscale || "",
-                              codiceUnivoco: center.codiceUnivoco || "",
-                              pec: center.pec || "",
-                              iban: center.iban || "",
-                            });
-                            setAddressData({
-                              address: center.address || "",
-                              city: center.city || "",
-                              cap: center.cap || "",
-                              provincia: center.provincia || "",
-                            });
-                            setSelectedResellerId(center.resellerId || "");
-                            setSelectedSubResellerId(center.subResellerId || "");
-                            setHourlyRateEuros(center.hourlyRateCents ? (center.hourlyRateCents / 100).toFixed(2) : "");
-                            setDialogOpen(true);
-                          }}
-                          data-testid={`button-edit-${center.id}`}
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleResetPasswordClick(center)}
-                          title="Reset password"
-                          data-testid={`button-reset-password-${center.id}`}
-                        >
-                          <KeyRound className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => deleteCenterMutation.mutate(center.id)}
-                          disabled={deleteCenterMutation.isPending}
-                          data-testid={`button-delete-${center.id}`}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="hover:bg-blue-100 hover:text-blue-600 dark:hover:bg-blue-900/30"
+                            onClick={() => handleResetPasswordClick(center)}
+                            title="Reset password"
+                            data-testid={`button-reset-password-${center.id}`}
+                          >
+                            <KeyRound className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="hover:bg-red-100 hover:text-red-600 dark:hover:bg-red-900/30"
+                            onClick={() => deleteCenterMutation.mutate(center.id)}
+                            disabled={deleteCenterMutation.isPending}
+                            data-testid={`button-delete-${center.id}`}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           )}
         </CardContent>
       </Card>
