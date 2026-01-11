@@ -220,6 +220,8 @@ const menuItems = {
   repair_center: [
     // Dashboard
     { title: "Dashboard", url: "/repair-center", icon: LayoutDashboard, group: "Dashboard" },
+    // POS - Cassa
+    { title: "Cassa POS", url: "/repair-center/pos", icon: Receipt, group: "Dashboard" },
     // Gestione HR
     { title: "Dashboard HR", url: "/repair-center/hr", icon: Briefcase, group: "Gestione HR" },
     { title: "Team", url: "/repair-center/team", icon: UsersRound, group: "Gestione HR" },

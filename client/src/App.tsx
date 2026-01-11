@@ -168,6 +168,7 @@ import RepairCenterCart from "@/pages/repair-center/cart";
 import RepairCenterTeam from "@/pages/repair-center/team";
 import RepairCenterSuppliers from "@/pages/repair-center/suppliers";
 import RepairCenterSupplierOrders from "@/pages/repair-center/supplier-orders";
+import RepairCenterPos from "@/pages/repair-center/pos";
 
 // Repair Center HR pages
 import RepairCenterHrDashboard from "@/pages/repair-center/hr/index";
@@ -424,6 +425,7 @@ function Router() {
       <ProtectedRoute path="/repair-center/remote-requests" component={RepairCenterRemoteRequests} />
       <ProtectedRoute path="/repair-center/diagnostics" component={DiagnosisList} />
       <ProtectedRoute path="/repair-center/quotes" component={QuotesList} />
+      <ProtectedRoute path="/repair-center/pos" component={RepairCenterPos} />
       
       {/* Customer routes */}
       <ProtectedRoute path="/customer" component={CustomerDashboard} />
