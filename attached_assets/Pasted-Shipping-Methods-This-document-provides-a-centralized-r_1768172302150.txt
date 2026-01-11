@@ -1,0 +1,330 @@
+Shipping Methods
+This document provides a centralized reference for shipping methods across multiple domains.
+It clearly defines which delivery options are enabled for each website.
+
+By consolidating this data, teams can quickly validate configurations and prevent domain-level mismatches.
+It also simplifies maintenance and ensures consistent order processing across all storefronts.
+
+US Shipping methods with ship code.
+Shipping Method Code
+
+Shipping Method Name
+
+flatrate1
+
+In Store Pick Up
+
+flatrate3
+
+FedEx Ground
+
+flatrate3hd
+
+FedEx Home Delivery
+
+flatrate5
+
+FedEx Standard Overnight
+
+flatrate6
+
+FedEx Priority Overnight
+
+flatrate4
+
+FedEx 2Day
+
+flatrate4pak
+
+FedEx 2Day (One Rate)
+
+flatrate8
+
+FedEx Saturday
+
+flatrate10
+
+FedEx International Priority
+
+flatrate11
+
+FedEx International Economy
+
+flatrate14
+
+USPS First Class (Ground)
+
+flatrate7
+
+Add to Existing Order
+
+flatrate16
+
+Add To next Order
+
+flatrate13
+
+OWN SHIPPING
+
+futureorder
+
+Reserve Stock For Future
+
+flatrate003
+
+UPS Ground
+
+amazonground
+
+Amazon Ground
+
+flatrate013
+
+UPS Standard Overnight
+
+flatrate002
+
+UPS 2Day
+
+flatrate001
+
+UPS Priority Overnight
+
+flatrate001s
+
+UPS Saturday Delivery
+
+flatrate007
+
+UPS International Priority
+
+flatrate008
+
+UPS International Economy
+
+flatrate0u0
+
+USPS Ground Advantage
+
+flatrate0u1
+
+USPS Priority Mail
+
+flatrate0u2
+
+USPS Priority Mail Express
+
+Canada Shipping method with ship code.
+Shipping Method Code
+
+Shipping Method Name
+
+flatrate1
+
+In Store Pick Up
+
+flatrate3
+
+FedEx Ground
+
+flatrate5
+
+FedEx Standard Overnight
+
+flatrate6
+
+FedEx Priority Overnight
+
+flatrate8
+
+Fedex Saturday Delivery
+
+flatrate9
+
+FedEx Saver
+
+flatrate7
+
+Add To My Existing Order
+
+flatrate16
+
+Add To next Order
+
+flatrate13
+
+OWN SHIPPING
+
+futureorder
+
+Reserve Stock For Future
+
+flatrateuni
+
+UniUni Standard
+
+UK Shipping method with ship code.
+Shipping Method Code
+
+Shipping Method Name
+
+flatrate1
+
+In Store Pick Up
+
+flatrate17
+
+FedEx Priority
+
+flatrate18
+
+FedEx Priority Express
+
+flatrate10
+
+FedEx International Priority
+
+flatrate19
+
+FedEx Regional Economy
+
+flatrate20
+
+FedEx International Priority Express
+
+flatrate7
+
+Add To My Existing Order
+
+flatrate16
+
+Add To next Order
+
+flatrate13
+
+OWN SHIPPING
+
+futureorder
+
+Reserve Stock For Future
+
+flatrate007i
+
+UPS Worldwide Express
+
+flatrate011i
+
+UPS Standard (International)
+
+flatrate065i
+
+UPS Express Saver (International)
+
+flatrate0r0
+
+Royal Mail Tracked 24
+
+flatrate0r1
+
+Royal Mail Tracked 48
+
+Europe Shipping method with ship code.
+Shipping Method Code
+
+Shipping Method Name
+
+flatrate1
+
+In Store Pick Up
+
+flatrate17
+
+FedEx Priority
+
+flatrate18
+
+FedEx Priority Express
+
+flatrate10
+
+FedEx Priority
+
+flatrate19
+
+FedEx Regional Economy
+
+flatrate20
+
+FedEx Priority Express
+
+flatrate11
+
+FedEx Economy
+
+flatrate7
+
+Add To My Existing Order
+
+flatrate16
+
+Add To next Order
+
+flatrate13
+
+OWN SHIPPING
+
+futureorder
+
+Reserve Stock For Future
+
+flatrate001s
+
+UPS Saturday Delivery
+
+flatrate011
+
+UPS Standard
+
+flatrate007i
+
+UPS Worldwide Express
+
+flatrate011i
+
+UPS Standard (International)
+
+flatrate065i
+
+UPS Express Saver
+
+flatrate0d0
+
+DHL Domestic 12:00
+
+flatrate0d1
+
+DHL Domestic
+
+flatrate0p0
+
+PostNL Standard Delivery
+
+flatrate0p1
+
+PostNL Delivery before 12:00
+
+flatrate0p2
+
+PostNL Collection at PostNL point
+
+flatrate0d3
+
+DHL Express 12:00
+
+flatrate0d4
+
+DHL Express Worldwide
+
+flatrate0d5
+
+DHL Economy Select
