@@ -24315,7 +24315,13 @@ export function registerRoutes(app: Express): Server {
       const addresses = await mobilesentrixService.getCustomerAddresses();
       const countryId = addresses.length > 0 ? addresses[0].country_id : "IT";
       
-      const methods = getShippingMethodsForCountry(countryId);
+      // Try to get methods from API first
+      const msMethods = await mobilesentrixService.getAvailableShippingMethods();
+      console.log("MobileSentrix available shipping methods:", JSON.stringify(msMethods));
+      
+      const methods = msMethods.length > 0 
+        ? msMethods.map(m => ({ code: m.code, name: m.title, region: countryId }))
+        : getShippingMethodsForCountry(countryId);
       const defaultMethod = getDefaultShippingMethod(countryId);
       
       res.json({ methods, defaultMethod, countryId });

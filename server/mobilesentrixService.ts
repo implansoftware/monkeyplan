@@ -608,6 +608,47 @@ export class MobilesentrixService {
     throw new Error("Ordine creato ma risposta non valida");
   }
 
+  // Get available shipping methods from API
+  async getAvailableShippingMethods(quoteId?: string): Promise<{ code: string; title: string; }[]> {
+    try {
+      // Try to get shipping methods from the API
+      const endpoint = quoteId 
+        ? `/api/rest/cart/${quoteId}/shipping-methods`
+        : "/api/rest/shipping-methods";
+      
+      const result = await this.request<any>(endpoint);
+      console.log("MobileSentrix shipping methods response:", JSON.stringify(result));
+      
+      if (result.success && result.data) {
+        const methods: { code: string; title: string; }[] = [];
+        
+        // Handle different response formats
+        if (Array.isArray(result.data)) {
+          result.data.forEach((m: any) => {
+            methods.push({
+              code: m.code || m.method_code || m.carrier_code + "_" + m.method_code,
+              title: m.title || m.method_title || m.carrier_title
+            });
+          });
+        } else if (typeof result.data === 'object') {
+          Object.entries(result.data).forEach(([key, val]: [string, any]) => {
+            methods.push({
+              code: val.code || key,
+              title: val.title || val.method_title || key
+            });
+          });
+        }
+        
+        return methods;
+      }
+      
+      return [];
+    } catch (error) {
+      console.log("MobileSentrix - Could not fetch shipping methods:", error);
+      return [];
+    }
+  }
+
   async getOrder(orderId: string): Promise<MobilesentrixOrderResponse> {
     const result = await this.request<any>(`/api/rest/orders/${orderId}`);
     if (result.success && result.data) {
