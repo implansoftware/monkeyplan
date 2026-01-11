@@ -338,47 +338,70 @@ export default function AdminResellerTeam() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-4">
-        <Link href="/admin/resellers">
-          <Button variant="ghost" size="icon" data-testid="button-back">
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
-        </Link>
-        <div className="flex-1">
-          <h1 className="text-2xl font-semibold mb-1">Team di {reseller?.fullName || "Rivenditore"}</h1>
-          <p className="text-muted-foreground flex items-center gap-2">
-            <Store className="h-4 w-4" />
-            Gestisci i collaboratori del rivenditore e i loro permessi
-          </p>
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-600 via-blue-500 to-cyan-500 p-8">
+        <div className="absolute top-0 -right-20 w-64 h-64 bg-cyan-400/20 rounded-full blur-3xl" />
+        <div className="absolute -bottom-10 -left-10 w-48 h-48 bg-blue-500/20 rounded-full blur-3xl" />
+        <div className="absolute inset-0 opacity-10" style={{
+          backgroundImage: `linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)`,
+          backgroundSize: '40px 40px'
+        }} />
+        <div className="relative z-10">
+          <Link href="/admin/resellers">
+            <Button variant="ghost" size="sm" className="text-white/80 hover:text-white hover:bg-white/10 mb-4" data-testid="button-back">
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Torna ai rivenditori
+            </Button>
+          </Link>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/20 backdrop-blur-sm border border-white/30">
+                <Users className="h-7 w-7 text-white" />
+              </div>
+              <div>
+                <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">Team di {reseller?.fullName || "Rivenditore"}</h1>
+                <p className="text-blue-100/80 mt-1 flex items-center gap-2">
+                  <Store className="h-4 w-4" />
+                  Gestisci i collaboratori e i loro permessi
+                </p>
+              </div>
+            </div>
+            <Button onClick={() => setWizardOpen(true)} className="bg-white text-blue-700 hover:bg-white/90 shadow-lg rounded-xl" data-testid="button-new-staff">
+              <Plus className="h-4 w-4 mr-2" />
+              Nuovo Collaboratore
+            </Button>
+          </div>
         </div>
-        <Button onClick={() => setWizardOpen(true)} data-testid="button-new-staff">
-          <Plus className="h-4 w-4 mr-2" />
-          Nuovo Collaboratore
-        </Button>
       </div>
 
-      <Card>
+      <Card className="border-0 shadow-lg bg-white dark:bg-slate-800/50">
         <CardHeader>
-          <CardTitle>Ricerca</CardTitle>
+          <CardTitle className="flex items-center gap-3">
+            <div className="p-2 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-600">
+              <Search className="h-5 w-5 text-white" />
+            </div>
+            Ricerca
+          </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="relative">
-            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
             <Input
               placeholder="Cerca per nome, email o username..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-8"
+              className="pl-12 h-12 rounded-xl border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50"
               data-testid="input-search"
             />
           </div>
         </CardContent>
       </Card>
 
-      <Card>
+      <Card className="border-0 shadow-lg bg-white dark:bg-slate-800/50">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Users className="h-5 w-5" />
+          <CardTitle className="flex items-center gap-3">
+            <div className="p-2 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-600">
+              <Users className="h-5 w-5 text-white" />
+            </div>
             Membri del Team ({filteredMembers.length})
           </CardTitle>
         </CardHeader>
@@ -386,101 +409,109 @@ export default function AdminResellerTeam() {
           {isLoading ? (
             <div className="space-y-2">
               {[1, 2, 3].map((i) => (
-                <Skeleton key={i} className="h-16 w-full" />
+                <Skeleton key={i} className="h-16 w-full rounded-xl" />
               ))}
             </div>
           ) : filteredMembers.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              {staffMembers.length === 0
-                ? "Nessun collaboratore nel team. Aggiungi il primo membro!"
-                : "Nessun collaboratore trovato"}
+            <div className="text-center py-16 bg-slate-50 dark:bg-slate-800/30 rounded-xl">
+              <Users className="h-16 w-16 mx-auto mb-4 text-slate-300" />
+              <p className="text-slate-500 text-lg">
+                {staffMembers.length === 0
+                  ? "Nessun collaboratore nel team. Aggiungi il primo membro!"
+                  : "Nessun collaboratore trovato"}
+              </p>
             </div>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Nome Completo</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Username</TableHead>
-                  <TableHead>Stato</TableHead>
-                  <TableHead>Permessi</TableHead>
-                  <TableHead>Centri Assegnati</TableHead>
-                  <TableHead>Data Creazione</TableHead>
-                  <TableHead>Azioni</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredMembers.map((member) => (
-                  <TableRow key={member.id} data-testid={`row-staff-${member.id}`}>
-                    <TableCell className="font-medium" data-testid={`text-name-${member.id}`}>
-                      {member.fullName}
-                    </TableCell>
-                    <TableCell>{member.email}</TableCell>
-                    <TableCell className="font-mono text-sm">{member.username}</TableCell>
-                    <TableCell>
-                      {member.isActive ? (
-                        <Badge variant="outline">Attivo</Badge>
-                      ) : (
-                        <Badge variant="destructive">Disattivato</Badge>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="secondary" data-testid={`badge-permissions-${member.id}`}>
-                        {getPermissionCount(member)} permessi
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      {member.assignedRepairCenters && member.assignedRepairCenters.length > 0 ? (
-                        <div className="flex flex-wrap gap-1">
-                          {member.assignedRepairCenters.map((rc) => (
-                            <Badge key={rc.id} variant="outline" data-testid={`badge-center-${member.id}-${rc.id}`}>
-                              {rc.name}
-                            </Badge>
-                          ))}
-                        </div>
-                      ) : (
-                        <span className="text-muted-foreground text-sm">-</span>
-                      )}
-                    </TableCell>
-                    <TableCell>{format(new Date(member.createdAt), "dd/MM/yyyy")}</TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-1">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => openPermissionsDialog(member)}
-                          title="Gestisci permessi"
-                          data-testid={`button-permissions-${member.id}`}
-                        >
-                          <Shield className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => openEditDialog(member)}
-                          title="Modifica utente"
-                          data-testid={`button-edit-${member.id}`}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => {
-                            setSelectedMember(member);
-                            setDeleteDialogOpen(true);
-                          }}
-                          title="Elimina utente"
-                          data-testid={`button-delete-${member.id}`}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
+            <div className="rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-slate-50 dark:bg-slate-800/50">
+                    <TableHead className="text-slate-600 dark:text-slate-400">Nome Completo</TableHead>
+                    <TableHead className="text-slate-600 dark:text-slate-400">Email</TableHead>
+                    <TableHead className="text-slate-600 dark:text-slate-400">Username</TableHead>
+                    <TableHead className="text-slate-600 dark:text-slate-400">Stato</TableHead>
+                    <TableHead className="text-slate-600 dark:text-slate-400">Permessi</TableHead>
+                    <TableHead className="text-slate-600 dark:text-slate-400">Centri Assegnati</TableHead>
+                    <TableHead className="text-slate-600 dark:text-slate-400">Data Creazione</TableHead>
+                    <TableHead className="text-slate-600 dark:text-slate-400">Azioni</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {filteredMembers.map((member) => (
+                    <TableRow key={member.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/30" data-testid={`row-staff-${member.id}`}>
+                      <TableCell className="font-medium text-slate-900 dark:text-white" data-testid={`text-name-${member.id}`}>
+                        {member.fullName}
+                      </TableCell>
+                      <TableCell className="text-slate-500">{member.email}</TableCell>
+                      <TableCell className="font-mono text-sm text-slate-500">{member.username}</TableCell>
+                      <TableCell>
+                        {member.isActive ? (
+                          <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100">Attivo</Badge>
+                        ) : (
+                          <Badge className="bg-slate-100 text-slate-600 hover:bg-slate-100">Disattivato</Badge>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-100" data-testid={`badge-permissions-${member.id}`}>
+                          {getPermissionCount(member)} permessi
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        {member.assignedRepairCenters && member.assignedRepairCenters.length > 0 ? (
+                          <div className="flex flex-wrap gap-1">
+                            {member.assignedRepairCenters.map((rc) => (
+                              <Badge key={rc.id} className="bg-cyan-100 text-cyan-700 hover:bg-cyan-100" data-testid={`badge-center-${member.id}-${rc.id}`}>
+                                {rc.name}
+                              </Badge>
+                            ))}
+                          </div>
+                        ) : (
+                          <span className="text-slate-400 text-sm">-</span>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-slate-500">{format(new Date(member.createdAt), "dd/MM/yyyy")}</TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-1">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="hover:bg-blue-100 hover:text-blue-600"
+                            onClick={() => openPermissionsDialog(member)}
+                            title="Gestisci permessi"
+                            data-testid={`button-permissions-${member.id}`}
+                          >
+                            <Shield className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="hover:bg-amber-100 hover:text-amber-600"
+                            onClick={() => openEditDialog(member)}
+                            title="Modifica utente"
+                            data-testid={`button-edit-${member.id}`}
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="hover:bg-red-100 hover:text-red-600"
+                            onClick={() => {
+                              setSelectedMember(member);
+                              setDeleteDialogOpen(true);
+                            }}
+                            title="Elimina utente"
+                            data-testid={`button-delete-${member.id}`}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           )}
         </CardContent>
       </Card>
@@ -488,7 +519,10 @@ export default function AdminResellerTeam() {
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
           <DialogHeader>
-            <DialogTitle>
+            <DialogTitle className="flex items-center gap-3">
+              <div className="p-2 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-600">
+                <Users className="h-5 w-5 text-white" />
+              </div>
               {isEditing ? "Modifica Collaboratore" : "Nuovo Collaboratore"}
             </DialogTitle>
             <DialogDescription>
@@ -507,9 +541,9 @@ export default function AdminResellerTeam() {
                   name="fullName"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Nome Completo</FormLabel>
+                      <FormLabel className="text-slate-700 dark:text-slate-300">Nome Completo</FormLabel>
                       <FormControl>
-                        <Input {...field} placeholder="Mario Rossi" data-testid="input-fullname" />
+                        <Input {...field} placeholder="Mario Rossi" className="h-11 rounded-xl" data-testid="input-fullname" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -521,9 +555,9 @@ export default function AdminResellerTeam() {
                   name="email"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Email</FormLabel>
+                      <FormLabel className="text-slate-700 dark:text-slate-300">Email</FormLabel>
                       <FormControl>
-                        <Input {...field} type="email" placeholder="mario@esempio.it" data-testid="input-email" />
+                        <Input {...field} type="email" placeholder="mario@esempio.it" className="h-11 rounded-xl" data-testid="input-email" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -537,9 +571,9 @@ export default function AdminResellerTeam() {
                       name="username"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Username</FormLabel>
+                          <FormLabel className="text-slate-700 dark:text-slate-300">Username</FormLabel>
                           <FormControl>
-                            <Input {...field} placeholder="mario.rossi" data-testid="input-username" />
+                            <Input {...field} placeholder="mario.rossi" className="h-11 rounded-xl" data-testid="input-username" />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -551,9 +585,9 @@ export default function AdminResellerTeam() {
                       name="password"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Password</FormLabel>
+                          <FormLabel className="text-slate-700 dark:text-slate-300">Password</FormLabel>
                           <FormControl>
-                            <Input {...field} type="password" placeholder="••••••" data-testid="input-password" />
+                            <Input {...field} type="password" placeholder="••••••" className="h-11 rounded-xl" data-testid="input-password" />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -567,9 +601,9 @@ export default function AdminResellerTeam() {
                   name="phone"
                   render={({ field }) => (
                     <FormItem className={isEditing ? "col-span-2" : ""}>
-                      <FormLabel>Telefono (opzionale)</FormLabel>
+                      <FormLabel className="text-slate-700 dark:text-slate-300">Telefono (opzionale)</FormLabel>
                       <FormControl>
-                        <Input {...field} placeholder="+39 333 1234567" data-testid="input-phone" />
+                        <Input {...field} placeholder="+39 333 1234567" className="h-11 rounded-xl" data-testid="input-phone" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -579,11 +613,11 @@ export default function AdminResellerTeam() {
 
               {repairCenters.length > 0 && (
                 <div className="space-y-3">
-                  <Label className="text-base font-medium">Centri di Riparazione Assegnati</Label>
-                  <p className="text-sm text-muted-foreground">
+                  <Label className="text-base font-medium text-slate-700 dark:text-slate-300">Centri di Riparazione Assegnati</Label>
+                  <p className="text-sm text-slate-500">
                     Seleziona i centri a cui questo collaboratore avrà accesso
                   </p>
-                  <div className="border rounded-lg p-4 max-h-40 overflow-y-auto">
+                  <div className="border border-slate-200 dark:border-slate-700 rounded-xl p-4 max-h-40 overflow-y-auto bg-slate-50 dark:bg-slate-800/30">
                     <div className="space-y-2">
                       {repairCenters.map((center) => (
                         <div key={center.id} className="flex items-center space-x-2">
@@ -601,7 +635,7 @@ export default function AdminResellerTeam() {
                           />
                           <label
                             htmlFor={`center-${center.id}`}
-                            className="text-sm font-medium leading-none cursor-pointer"
+                            className="text-sm font-medium leading-none cursor-pointer text-slate-700 dark:text-slate-300"
                           >
                             {center.name}
                           </label>
@@ -614,17 +648,17 @@ export default function AdminResellerTeam() {
 
               {!isEditing && (
                 <div className="space-y-3">
-                  <Label className="text-base font-medium">Permessi Iniziali</Label>
-                  <p className="text-sm text-muted-foreground">
+                  <Label className="text-base font-medium text-slate-700 dark:text-slate-300">Permessi Iniziali</Label>
+                  <p className="text-sm text-slate-500">
                     Puoi configurare i permessi dettagliati dopo la creazione
                   </p>
-                  <div className="border rounded-lg p-4 max-h-60 overflow-y-auto">
+                  <div className="border border-slate-200 dark:border-slate-700 rounded-xl p-4 max-h-60 overflow-y-auto bg-slate-50 dark:bg-slate-800/30">
                     <div className="space-y-2">
                       {MODULES.map((module) => (
-                        <div key={module.id} className="flex items-center justify-between py-2 border-b last:border-0">
+                        <div key={module.id} className="flex items-center justify-between py-2 border-b border-slate-200 dark:border-slate-700 last:border-0">
                           <div>
-                            <div className="font-medium text-sm">{module.name}</div>
-                            <div className="text-xs text-muted-foreground">{module.description}</div>
+                            <div className="font-medium text-sm text-slate-900 dark:text-white">{module.name}</div>
+                            <div className="text-xs text-slate-500">{module.description}</div>
                           </div>
                           <Switch
                             checked={
@@ -644,13 +678,14 @@ export default function AdminResellerTeam() {
               )}
               </div>
 
-              <DialogFooter className="pt-4 border-t mt-4">
-                <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
+              <DialogFooter className="pt-4 border-t border-slate-200 dark:border-slate-700 mt-4">
+                <Button type="button" variant="outline" onClick={() => setDialogOpen(false)} className="rounded-xl">
                   Annulla
                 </Button>
                 <Button
                   type="submit"
                   disabled={createMutation.isPending || updateMutation.isPending}
+                  className="rounded-xl bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700"
                   data-testid="button-save-staff"
                 >
                   {isEditing ? "Salva Modifiche" : "Crea Collaboratore"}
@@ -664,8 +699,10 @@ export default function AdminResellerTeam() {
       <Dialog open={permissionsDialogOpen} onOpenChange={setPermissionsDialogOpen}>
         <DialogContent className="max-w-4xl max-h-[80vh] overflow-hidden flex flex-col">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <UserCog className="h-5 w-5" />
+            <DialogTitle className="flex items-center gap-3">
+              <div className="p-2 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-600">
+                <UserCog className="h-5 w-5 text-white" />
+              </div>
               Permessi di {selectedMember?.fullName}
             </DialogTitle>
             <DialogDescription>
@@ -674,68 +711,71 @@ export default function AdminResellerTeam() {
           </DialogHeader>
 
           <div className="flex-1 overflow-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-[250px]">Modulo</TableHead>
-                  {PERMISSION_ACTIONS.map((action) => (
-                    <TableHead key={action.id} className="text-center w-[100px]">
-                      <div className="flex flex-col items-center gap-1">
-                        <action.icon className="h-4 w-4" />
-                        <span className="text-xs">{action.label}</span>
-                      </div>
-                    </TableHead>
-                  ))}
-                  <TableHead className="text-center w-[100px]">Tutti</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {MODULES.map((module) => {
-                  const modulePerms = localPermissions[module.id] || {};
-                  const allChecked =
-                    modulePerms.canRead &&
-                    modulePerms.canCreate &&
-                    modulePerms.canUpdate &&
-                    modulePerms.canDelete;
-
-                  return (
-                    <TableRow key={module.id}>
-                      <TableCell>
-                        <div>
-                          <div className="font-medium">{module.name}</div>
-                          <div className="text-xs text-muted-foreground">{module.description}</div>
+            <div className="rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-slate-50 dark:bg-slate-800/50">
+                    <TableHead className="w-[250px] text-slate-600 dark:text-slate-400">Modulo</TableHead>
+                    {PERMISSION_ACTIONS.map((action) => (
+                      <TableHead key={action.id} className="text-center w-[100px] text-slate-600 dark:text-slate-400">
+                        <div className="flex flex-col items-center gap-1">
+                          <action.icon className="h-4 w-4" />
+                          <span className="text-xs">{action.label}</span>
                         </div>
-                      </TableCell>
-                      {PERMISSION_ACTIONS.map((action) => (
-                        <TableCell key={action.id} className="text-center">
+                      </TableHead>
+                    ))}
+                    <TableHead className="text-center w-[100px] text-slate-600 dark:text-slate-400">Tutti</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {MODULES.map((module) => {
+                    const modulePerms = localPermissions[module.id] || {};
+                    const allChecked =
+                      modulePerms.canRead &&
+                      modulePerms.canCreate &&
+                      modulePerms.canUpdate &&
+                      modulePerms.canDelete;
+
+                    return (
+                      <TableRow key={module.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/30">
+                        <TableCell>
+                          <div>
+                            <div className="font-medium text-slate-900 dark:text-white">{module.name}</div>
+                            <div className="text-xs text-slate-500">{module.description}</div>
+                          </div>
+                        </TableCell>
+                        {PERMISSION_ACTIONS.map((action) => (
+                          <TableCell key={action.id} className="text-center">
+                            <Checkbox
+                              checked={modulePerms[action.id] || false}
+                              onCheckedChange={() => togglePermission(module.id, action.id)}
+                              data-testid={`checkbox-${module.id}-${action.id}`}
+                            />
+                          </TableCell>
+                        ))}
+                        <TableCell className="text-center">
                           <Checkbox
-                            checked={modulePerms[action.id] || false}
-                            onCheckedChange={() => togglePermission(module.id, action.id)}
-                            data-testid={`checkbox-${module.id}-${action.id}`}
+                            checked={allChecked}
+                            onCheckedChange={(checked) => toggleAllForModule(module.id, !!checked)}
+                            data-testid={`checkbox-${module.id}-all`}
                           />
                         </TableCell>
-                      ))}
-                      <TableCell className="text-center">
-                        <Checkbox
-                          checked={allChecked}
-                          onCheckedChange={(checked) => toggleAllForModule(module.id, !!checked)}
-                          data-testid={`checkbox-${module.id}-all`}
-                        />
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </div>
           </div>
 
-          <DialogFooter className="pt-4 border-t">
-            <Button variant="outline" onClick={() => setPermissionsDialogOpen(false)}>
+          <DialogFooter className="pt-4 border-t border-slate-200 dark:border-slate-700">
+            <Button variant="outline" onClick={() => setPermissionsDialogOpen(false)} className="rounded-xl">
               Annulla
             </Button>
             <Button
               onClick={handleSavePermissions}
               disabled={updateMutation.isPending}
+              className="rounded-xl bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700"
               data-testid="button-save-permissions"
             >
               Salva Permessi
@@ -747,19 +787,25 @@ export default function AdminResellerTeam() {
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Conferma Eliminazione</DialogTitle>
+            <DialogTitle className="flex items-center gap-3">
+              <div className="p-2 rounded-xl bg-gradient-to-br from-red-500 to-red-600">
+                <Trash2 className="h-5 w-5 text-white" />
+              </div>
+              Conferma Eliminazione
+            </DialogTitle>
             <DialogDescription>
               Sei sicuro di voler eliminare {selectedMember?.fullName} dal team? Questa azione non può essere annullata.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
+            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)} className="rounded-xl">
               Annulla
             </Button>
             <Button
               variant="destructive"
               onClick={() => selectedMember && deleteMutation.mutate(selectedMember.id)}
               disabled={deleteMutation.isPending}
+              className="rounded-xl"
               data-testid="button-confirm-delete"
             >
               Elimina
