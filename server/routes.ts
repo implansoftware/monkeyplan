@@ -24195,6 +24195,25 @@ export function registerRoutes(app: Express): Server {
   });
 
 
+  // GET /api/mobilesentrix/addresses - Get customer addresses from MobileSentrix orders
+  app.get("/api/mobilesentrix/addresses", requireAuth, requireRole("reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const credential = await storage.getMobilesentrixCredentialByReseller(req.user.id);
+      if (!credential) {
+        return res.status(404).send("Credenziali MobileSentrix non configurate");
+      }
+
+      const { getMobilesentrixService } = await import("./mobilesentrixService");
+      const mobilesentrixService = getMobilesentrixService(credential);
+      const addresses = await mobilesentrixService.getCustomerAddresses();
+      res.json(addresses);
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+
   // GET /api/mobilesentrix/catalog/categories - Get MobileSentrix categories
   app.get("/api/mobilesentrix/catalog/categories", requireAuth, requireRole("reseller"), async (req, res) => {
     try {
