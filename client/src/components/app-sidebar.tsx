@@ -218,7 +218,9 @@ const menuItems = {
     { title: "Profilo", url: "/profile", icon: UserCircle, group: "Account" },
   ],
   repair_center: [
-    { title: "Dashboard", url: "/repair-center", icon: LayoutDashboard, group: "Principale" },
+    // Dashboard
+    { title: "Dashboard", url: "/repair-center", icon: LayoutDashboard, group: "Dashboard" },
+    // Gestione HR
     { title: "Dashboard HR", url: "/repair-center/hr", icon: Briefcase, group: "Gestione HR" },
     { title: "Team", url: "/repair-center/team", icon: UsersRound, group: "Gestione HR" },
     { title: "Presenze", url: "/repair-center/hr/attendance", icon: Clock, group: "Gestione HR" },
@@ -227,27 +229,37 @@ const menuItems = {
     { title: "Rimborsi Spese", url: "/repair-center/hr/expenses", icon: ReceiptText, group: "Gestione HR" },
     { title: "Malattie", url: "/repair-center/hr/sick-leave", icon: Stethoscope, group: "Gestione HR" },
     { title: "Calendario Team", url: "/repair-center/hr/calendar", icon: CalendarCheck, group: "Gestione HR" },
+    // Assistenza
     { title: "Ticket", url: "/repair-center/tickets", icon: Ticket, group: "Assistenza" },
-    { title: "Richieste Remote", url: "/repair-center/remote-requests", icon: Send, group: "Lavorazioni" },
+    // Lavorazioni
     { title: "Lavorazioni", url: "/repair-center/repairs", icon: Wrench, group: "Lavorazioni" },
     { title: "Appuntamenti", url: "/repair-center/appointments", icon: CalendarCheck, group: "Lavorazioni" },
     { title: "Listino Interventi", url: "/repair-center/service-catalog", icon: Receipt, group: "Lavorazioni" },
+    { title: "Richieste Remote", url: "/repair-center/remote-requests", icon: Send, group: "Lavorazioni" },
+    // Magazzino
     { title: "Magazzino", url: "/repair-center/warehouses", icon: Warehouse, group: "Magazzino" },
     { title: "Prodotti", url: "/repair-center/products", icon: Package, group: "Magazzino" },
+    // Cataloghi
     { title: "Dispositivi", url: "/repair-center/dispositivi", icon: Smartphone, group: "Cataloghi" },
     { title: "Accessori", url: "/repair-center/accessory-catalog", icon: ShoppingCart, group: "Cataloghi" },
     { title: "Ricambi", url: "/repair-center/spare-parts-catalog", icon: Wrench, group: "Cataloghi" },
     { title: "Carrello", url: "/repair-center/cart", icon: ShoppingCart, group: "Cataloghi" },
+    // Gestione
     { title: "Clienti", url: "/repair-center/customers", icon: Users, group: "Gestione" },
     { title: "Impostazioni", url: "/repair-center/settings", icon: Settings, group: "Gestione" },
+    // Acquisti B2B
     { title: "Catalogo B2B", url: "/repair-center/b2b-catalog", icon: ShoppingCart, group: "Acquisti B2B" },
     { title: "Ordini B2B", url: "/repair-center/b2b-orders", icon: FileText, group: "Acquisti B2B" },
     { title: "Resi B2B", url: "/repair-center/b2b-returns", icon: RotateCcw, group: "Acquisti B2B" },
+    // Interscambio
     { title: "Panoramica", url: "/repair-center/transfer-requests/overview", icon: ArrowRightLeft, group: "Interscambio" },
     { title: "Nuova Richiesta", url: "/repair-center/transfer-requests", icon: Send, group: "Interscambio" },
+    // Marketplace
     { title: "Marketplace Rivenditori", url: "/repair-center/marketplace", icon: Store, group: "Marketplace" },
+    // Fornitori
     { title: "Anagrafica Fornitori", url: "/repair-center/suppliers", icon: Truck, group: "Fornitori" },
     { title: "Ordini a Fornitori", url: "/repair-center/supplier-orders", icon: ShoppingCart, group: "Fornitori" },
+    // Utility
     { title: "Utility", url: "/repair-center/utility", icon: Zap, group: "Utility" },
     { title: "Fornitori Utility", url: "/repair-center/utility/suppliers", icon: Phone, group: "Utility" },
     { title: "Listino Servizi", url: "/repair-center/utility/services", icon: Package, group: "Utility" },
