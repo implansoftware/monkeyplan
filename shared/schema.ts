@@ -6118,3 +6118,177 @@ export type HrClockEventStatus = "valid" | "pending_validation" | "validated" | 
 export type HrCertificateType = "malattia" | "infortunio" | "maternita" | "altro";
 export type HrNotificationChannel = "in_app" | "email" | "sms";
 export type HrAuditAction = "create" | "update" | "delete" | "approve" | "reject" | "clock_in" | "clock_out" | "validate";
+
+// ==========================================
+// POS (Point of Sale) - Cassa Digitale
+// ==========================================
+
+// Enum stato sessione POS
+export const posSessionStatusEnum = pgEnum("pos_session_status", [
+  "open",      // Cassa aperta
+  "closed",    // Cassa chiusa
+]);
+
+// Enum stato transazione POS
+export const posTransactionStatusEnum = pgEnum("pos_transaction_status", [
+  "completed",       // Vendita completata
+  "refunded",        // Completamente rimborsata
+  "partial_refund",  // Parzialmente rimborsata
+  "voided",          // Annullata
+]);
+
+// Enum metodo pagamento POS
+export const posPaymentMethodEnum = pgEnum("pos_payment_method", [
+  "cash",           // Contanti
+  "card",           // Carta credito/debito
+  "pos_terminal",   // Terminale POS
+  "satispay",       // Satispay
+  "mixed",          // Pagamento misto
+]);
+
+// Sessioni Cassa POS
+export const posSessions = pgTable("pos_sessions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  repairCenterId: varchar("repair_center_id").notNull().references(() => repairCenters.id, { onDelete: "cascade" }),
+  operatorId: varchar("operator_id").notNull().references(() => users.id),
+  
+  // Stato sessione
+  status: posSessionStatusEnum("status").notNull().default("open"),
+  
+  // Timestamp
+  openedAt: timestamp("opened_at").notNull().defaultNow(),
+  closedAt: timestamp("closed_at"),
+  
+  // Fondo cassa (in centesimi)
+  openingCash: integer("opening_cash").notNull().default(0),
+  closingCash: integer("closing_cash"),
+  expectedCash: integer("expected_cash"),
+  cashDifference: integer("cash_difference"),
+  
+  // Totali sessione
+  totalSales: integer("total_sales").notNull().default(0),
+  totalTransactions: integer("total_transactions").notNull().default(0),
+  totalCashSales: integer("total_cash_sales").notNull().default(0),
+  totalCardSales: integer("total_card_sales").notNull().default(0),
+  totalRefunds: integer("total_refunds").notNull().default(0),
+  
+  // Note
+  openingNotes: text("opening_notes"),
+  closingNotes: text("closing_notes"),
+  
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+// Transazioni POS (vendite al banco)
+export const posTransactions = pgTable("pos_transactions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  transactionNumber: varchar("transaction_number", { length: 50 }).notNull().unique(),
+  
+  // Riferimenti
+  repairCenterId: varchar("repair_center_id").notNull().references(() => repairCenters.id, { onDelete: "cascade" }),
+  sessionId: varchar("session_id").references(() => posSessions.id),
+  customerId: varchar("customer_id").references(() => users.id), // Opzionale per vendita anonima
+  operatorId: varchar("operator_id").notNull().references(() => users.id),
+  
+  // Totali (in centesimi)
+  subtotal: integer("subtotal").notNull(),
+  discountAmount: integer("discount_amount").notNull().default(0),
+  discountPercent: real("discount_percent"),
+  taxRate: real("tax_rate").notNull().default(22), // IVA 22%
+  taxAmount: integer("tax_amount").notNull().default(0),
+  total: integer("total").notNull(),
+  
+  // Pagamento
+  paymentMethod: posPaymentMethodEnum("payment_method").notNull(),
+  cashReceived: integer("cash_received"), // Per calcolo resto
+  changeGiven: integer("change_given"),   // Resto dato
+  cardLastFour: varchar("card_last_four", { length: 4 }), // Ultime 4 cifre carta
+  paymentReference: varchar("payment_reference", { length: 100 }), // Riferimento transazione
+  
+  // Stato
+  status: posTransactionStatusEnum("status").notNull().default("completed"),
+  refundedAmount: integer("refunded_amount").default(0),
+  refundReason: text("refund_reason"),
+  refundedAt: timestamp("refunded_at"),
+  refundedBy: varchar("refunded_by").references(() => users.id),
+  
+  // Note
+  notes: text("notes"),
+  customerNotes: text("customer_notes"),
+  
+  // Meta
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+// Righe Transazione POS
+export const posTransactionItems = pgTable("pos_transaction_items", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  transactionId: varchar("transaction_id").notNull().references(() => posTransactions.id, { onDelete: "cascade" }),
+  
+  // Prodotto
+  productId: varchar("product_id").notNull().references(() => products.id),
+  productName: text("product_name").notNull(),
+  productSku: varchar("product_sku", { length: 100 }),
+  productBarcode: varchar("product_barcode", { length: 100 }),
+  
+  // Quantità e prezzi (in centesimi)
+  quantity: integer("quantity").notNull(),
+  unitPrice: integer("unit_price").notNull(),
+  discount: integer("discount").notNull().default(0),
+  totalPrice: integer("total_price").notNull(),
+  
+  // Tracking inventario
+  inventoryDeducted: boolean("inventory_deducted").notNull().default(false),
+  warehouseId: varchar("warehouse_id").references(() => warehouses.id),
+  
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+// Insert Schemas POS
+export const insertPosSessionSchema = createInsertSchema(posSessions).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  closedAt: true,
+  closingCash: true,
+  expectedCash: true,
+  cashDifference: true,
+  totalSales: true,
+  totalTransactions: true,
+  totalCashSales: true,
+  totalCardSales: true,
+  totalRefunds: true,
+  closingNotes: true,
+});
+
+export const insertPosTransactionSchema = createInsertSchema(posTransactions).omit({
+  id: true,
+  transactionNumber: true,
+  createdAt: true,
+  updatedAt: true,
+  refundedAmount: true,
+  refundReason: true,
+  refundedAt: true,
+  refundedBy: true,
+});
+
+export const insertPosTransactionItemSchema = createInsertSchema(posTransactionItems).omit({
+  id: true,
+  createdAt: true,
+});
+
+// Types POS
+export type PosSession = typeof posSessions.$inferSelect;
+export type InsertPosSession = z.infer<typeof insertPosSessionSchema>;
+
+export type PosTransaction = typeof posTransactions.$inferSelect;
+export type InsertPosTransaction = z.infer<typeof insertPosTransactionSchema>;
+
+export type PosTransactionItem = typeof posTransactionItems.$inferSelect;
+export type InsertPosTransactionItem = z.infer<typeof insertPosTransactionItemSchema>;
+
+export type PosSessionStatus = "open" | "closed";
+export type PosTransactionStatus = "completed" | "refunded" | "partial_refund" | "voided";
+export type PosPaymentMethod = "cash" | "card" | "pos_terminal" | "satispay" | "mixed";
