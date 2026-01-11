@@ -24152,7 +24152,7 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  // GET /api/mobilesentrix/orders - Get order history
+  // GET /api/mobilesentrix/orders - Get order history from API and local storage
   app.get("/api/mobilesentrix/orders", requireAuth, requireRole("reseller"), async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
@@ -24162,8 +24162,37 @@ export function registerRoutes(app: Express): Server {
         return res.status(404).send("Credenziali MobileSentrix non configurate");
       }
       
-      const orders = await storage.listMobilesentrixOrders(credential.id);
-      res.json(orders);
+      // Get orders from MobileSentrix API
+      const service = new MobilesentrixService(credential);
+      try {
+        const apiOrders = await service.listOrders({ page: 1, per_page: 50 });
+        
+        // Convert API orders to our format
+        const orders = apiOrders.orders.map((o: any) => ({
+          id: o.order_id,
+          mobilesentrixOrderId: o.order_id,
+          orderNumber: o.order_number,
+          status: o.status?.toLowerCase() || "pending",
+          totalAmount: Math.round((o.total || 0) * 100),
+          currency: "EUR",
+          shippingMethod: null,
+          trackingNumber: null,
+          createdAt: o.created_at
+        }));
+        
+        // Also get local pending orders
+        const localOrders = await storage.listMobilesentrixOrders(credential.id);
+        const pendingLocalOrders = localOrders.filter((lo: any) => 
+          lo.mobilesentrixOrderId?.startsWith('pending-')
+        );
+        
+        // Combine: API orders first, then pending local orders
+        res.json([...orders, ...pendingLocalOrders]);
+      } catch (apiError) {
+        console.log("Could not fetch from API, falling back to local:", apiError);
+        const orders = await storage.listMobilesentrixOrders(credential.id);
+        res.json(orders);
+      }
     } catch (error: any) {
       res.status(400).send(error.message);
     }
