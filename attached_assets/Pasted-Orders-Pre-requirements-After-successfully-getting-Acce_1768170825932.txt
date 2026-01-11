@@ -1,0 +1,1371 @@
+Orders
+Pre-requirements
+After successfully getting Access Token and Access Token Secret, Below are things that need to pass it every request in Authorization:
+
+Consumer Key
+
+Consumer Secret
+
+Access Token
+
+Access Token Secret
+
+ 
+
+REST API: Orders
+
+URI: /orders
+
+HTTP Method: GET /orders
+
+URI: /orders/:id
+
+HTTP Method: GET /orders/:id
+
+URI: /orders?limit=num&page=num
+
+HTTP Method: GET /orders?limit=num&page=num
+
+URI: /orders/:id/misssing
+
+HTTP Method: GET /orders/:id/misssing
+
+URI: /orders?limit=num&include_child=with&child_id=:id,:id&page=num
+
+HTTP Method: GET /orders?limit=num&include_child=with&child_id=:id,:id&page=num
+
+URI: /order/:id/comment
+
+HTTP Method: POST /order/:id/comment
+
+Sales Order Parameters Details
+
+Possible HTTP Status Codes
+
+ 
+
+REST API: Sales Orders
+URI: /orders 
+Allows you to retrieve information on existing order/orders.
+
+URL Structure: {{baseurl}}/api/rest/orders
+HTTP Method: GET /orders 
+
+
+Description: Allows you to retrieve the list of existing orders. Each order contains the following information: general order information, information on ordered items, and order addresses (both billing and shipping).
+Authentication: Admin
+Parameters: No Parameters
+
+
+
+GET {{baseurl}}/api/rest/orders
+Response Example: JSON
+
+{
+    "76": {
+        "entity_id": "76",
+        "status": "complete",
+        "shipping_description": "In-Store pickup - In-Store",
+        "customer_id": "21",
+        "discount_amount": "0.0000",
+        "grand_total": "392.5000",
+        "shipping_amount": "0.0000",
+        "shipping_tax_amount": "0.0000",
+        "subtotal": "392.5000",
+        "tax_amount": "0.0000",
+        "increment_id": "4619",
+        "customer_email": "joh_176@gmail.com",
+        "store_currency_code": "USD",
+        "created_at": "2014-04-07 15:42:36",
+        "updated_at": "2020-10-19 07:34:59",
+        "store_location_id": null,
+        "delivery_date": null,
+        "payment_method": "banktransfer",
+        "tracking_number": null,
+        "tax_name": null,
+        "tax_rate": null,
+        "addresses": [
+            {
+                "region": "District of Columbia",
+                "postcode": "20009",
+                "lastname": ".",
+                "street": "2001 13th St NW",
+                "city": "Washington",
+                "email": "john_1@gmail.com",
+                "telephone": "(123) 456-7890",
+                "country_id": "US",
+                "firstname": "john",
+                "address_type": "billing",
+                "company": "Mobile phone company"
+            },
+            {
+                "region": "District of Columbia",
+                "postcode": "20009",
+                "lastname": ".",
+                "street": "2001 13th St NW",
+                "city": "Washington",
+                "email": "joh_1@gmail.com",
+                "telephone": "(123) 456-7890",
+                "country_id": "US",
+                "firstname": "john",
+                "address_type": "shipping",
+                "company": "Mobile phone company"
+            }
+        ],
+        "order_items": [
+            {
+                "item_id": "184",
+                "sku": "107082000201",
+                "name": "IPHONE 4S Battery",
+                "qty_canceled": "0.0000",
+                "qty_invoiced": "1.0000",
+                "qty_ordered": "1.0000",
+                "qty_refunded": "0.0000",
+                "qty_shipped": "1.0000",
+                "price": "29.0800",
+                "base_original_price": "29.0800",
+                "tax_percent": "0.0000",
+                "tax_amount": "0.0000",
+                "discount_amount": "0.0000",
+                "base_row_total": "29.0800",
+                "product_attribute_setid": "4"
+            },
+            {
+                "item_id": "185",
+                "sku": "107082000101",
+                "name": "IPHONE 4 Battery",
+                "qty_canceled": "0.0000",
+                "qty_invoiced": "1.0000",
+                "qty_ordered": "1.0000",
+                "qty_refunded": "0.0000",
+                "qty_shipped": "1.0000",
+                "price": "29.0800",
+                "base_original_price": "29.0800",
+                "tax_percent": "0.0000",
+                "tax_amount": "0.0000",
+                "discount_amount": "0.0000",
+                "base_row_total": "29.0800",
+                "product_attribute_setid": "4"
+            },
+            {
+                "item_id": "186",
+                "sku": "107082000404",
+                "name": "iPhone 5c LCD Assembly Black",
+                "qty_canceled": "0.0000",
+                "qty_invoiced": "1.0000",
+                "qty_ordered": "1.0000",
+                "qty_refunded": "0.0000",
+                "qty_shipped": "1.0000",
+                "price": "29.0800",
+                "base_original_price": "29.0800",
+                "tax_percent": "0.0000",
+                "tax_amount": "0.0000",
+                "discount_amount": "0.0000",
+                "base_row_total": "29.0800",
+                "product_attribute_setid": "4"
+            },
+            {
+                "item_id": "187",
+                "sku": "107082000303",
+                "name": "iPhone 5 Battery",
+                "qty_canceled": "0.0000",
+                "qty_invoiced": "5.0000",
+                "qty_ordered": "5.0000",
+                "qty_refunded": "0.0000",
+                "qty_shipped": "5.0000",
+                "price": "3.5000",
+                "base_price": "3.5000",
+                "base_original_price": "3.5000",
+                "tax_percent": "0.0000",
+                "tax_amount": "0.0000",
+                "base_tax_amount": "0.0000",
+                "discount_amount": "0.0000",
+                "base_discount_amount": "0.0000",
+                "base_row_total": "17.5000",
+                "price_incl_tax": "3.5000",
+                "base_price_incl_tax": "3.5000",
+                "base_row_total_incl_tax": "17.5000"
+            }
+        ]
+    },
+    "81": {
+        "entity_id": "81",
+        "status": "complete",
+        "shipping_description": "FedEx - Ground   :",
+        "customer_id": null,
+        "discount_amount": "0.0000",
+        "grand_total": "289.3800",
+        "shipping_amount": "13.5000",
+        "shipping_tax_amount": "0.0000",
+        "subtotal": "275.8800",
+        "tax_amount": "0.0000",
+        "increment_id": "4627",
+        "customer_email": "jon_181@gmail.com",
+        "store_currency_code": "USD",
+        "created_at": "2014-04-07 17:48:04",
+        "updated_at": "2020-10-19 07:34:59",
+        "store_location_id": null,
+        "delivery_date": null,
+        "tax_name": null,
+        "tax_rate": null,
+        "payment_method": "banktransfer",
+        "tracking_number": null,
+        "addresses": [
+            {
+                "region": "North Carolina",
+                "postcode": "28205",
+                "lastname": "deo ",
+                "street": "4113 Monroe RD",
+                "city": "Charlotte",
+                "email": "jon_1@gmail.com",
+                "telephone": "(123) 456-7890",
+                "country_id": "US",
+                "firstname": "Omer",
+                "address_type": "billing",
+                "company": "Mobile phone company"
+            },
+            {
+                "region": "North Carolina",
+                "postcode": "28205",
+                "lastname": "deo ",
+                "street": "4113 Monroe RD",
+                "city": "Charlotte",
+                "email": "joh_1@gmail.com",
+                "telephone": "(123) 456-7890",
+                "country_id": "US",
+                "firstname": "Omer",
+                "address_type": "shipping",
+                "company": "Mobile phone company"
+            }
+        ],
+        "order_items": [
+            {
+                "item_id": "220",
+                "sku": "107082000218",
+                "name": "iphone 4S LCD Assembly White",
+                "qty_canceled": "0.0000",
+                "qty_invoiced": "1.0000",
+                "qty_ordered": "1.0000",
+                "qty_refunded": "0.0000",
+                "qty_shipped": "1.0000",
+                "price": "29.0800",
+                "base_original_price": "29.0800",
+                "tax_percent": "0.0000",
+                "tax_amount": "0.0000",
+                "discount_amount": "0.0000",
+                "base_row_total": "29.0800",
+                "product_attribute_setid": "4"
+            },
+            {
+                "item_id": "221",
+                "sku": "107082000219",
+                "name": "iphone 4S LCD Assembly Black",
+                "qty_canceled": "0.0000",
+                "qty_invoiced": "1.0000",
+                "qty_ordered": "1.0000",
+                "qty_refunded": "0.0000",
+                "qty_shipped": "1.0000",
+                "price": "29.0800",
+                "base_original_price": "29.0800",
+                "tax_percent": "0.0000",
+                "tax_amount": "0.0000",
+                "discount_amount": "0.0000",
+                "base_row_total": "29.0800",
+                "product_attribute_setid": "4"
+            },
+            {
+                "item_id": "222",
+                "sku": "107082000129",
+                "name": "iphone 4 LCD Assembly CDMA Black",
+                "qty_canceled": "0.0000",
+                "qty_invoiced": "1.0000",
+                "qty_ordered": "1.0000",
+                "qty_refunded": "0.0000",
+                "qty_shipped": "1.0000",
+                "price": "29.0800",
+                "base_original_price": "29.0800",
+                "tax_percent": "0.0000",
+                "tax_amount": "0.0000",
+                "discount_amount": "0.0000",
+                "base_row_total": "29.0800",
+                "product_attribute_setid": "4"
+            }
+        ]
+    }
+}
+
+
+Authentication: Customer
+Parameters: No Parameters
+
+GET {{baseurl}}/api/rest/orders
+Response Example: JSON
+
+{
+    "1628951": {
+        "entity_id": "1628951",
+        "status": "complete",
+        "shipping_description": "Fedex International Priority",
+        "customer_id": "121466",
+        "discount_amount": "0.0000",
+        "grand_total": "4928.5900",
+        "shipping_amount": "50.0000",
+        "shipping_tax_amount": "0.0000",
+        "subtotal": "4878.5900",
+        "tax_amount": "0.0000",
+        "increment_id": "100421394",
+        "customer_email": "john_11628951@gmail.com",
+        "store_currency_code": "USD",
+        "created_at": "2019-03-26 17:56:50",
+        "updated_at": "2020-08-25 05:55:25",
+        "shipping_incl_tax": "50.0000",
+        "store_location_id": null,
+        "delivery_date": "2019-03-27 12:00:00",
+        "payment_method": "mygateway",
+        "tax_name": null,
+        "tax_rate": null,
+        "tracking_number": "786270127083",
+        "addresses": [
+            {
+                "region": "Quebec",
+                "postcode": "J7H 1H9",
+                "lastname": "Manager",
+                "street": "3022 CH DE LA RIVIERE-CACHEE",
+                "city": "Boisbriand",
+                "telephone": "1234567890",
+                "country_id": "CA",
+                "firstname": "Store",
+                "address_type": "billing",
+                "company": "Mobile phone company"
+            },
+            {
+                "region": "Quebec",
+                "postcode": "J7H 1H9",
+                "lastname": "Manager",
+                "street": "3022 CH DE LA RIVIERE-CACHEE",
+                "city": "Boisbriand",
+                "telephone": "1234567890",
+                "country_id": "CA",
+                "firstname": "Store",
+                "address_type": "shipping",
+                "company": "Mobile phone company"
+            }
+        ],
+        "order_items": [
+            {
+                "item_id": "33491573",
+                "sku": "109082007401",
+                "name": "LCD Assembly Without Frame Compatible For Motorola Moto G Stylus 5G (XT2131 / 2021) (Refurbished) (All Colors)",
+                "qty_canceled": "0.0000",
+                "qty_invoiced": "1.0000",
+                "qty_ordered": "1.0000",
+                "qty_refunded": "0.0000",
+                "qty_shipped": "1.0000",
+                "price": "29.0800",
+                "base_original_price": "29.0800",
+                "tax_percent": "0.0000",
+                "tax_amount": "0.0000",
+                "discount_amount": "0.0000",
+                "base_row_total": "29.0800",
+                "product_attribute_setid": "4"
+            },
+            {
+                "item_id": "7460915",
+                "sku": "107081016215",
+                "name": "Charging Port For Galaxy Tab E 9.6\" (T560)",
+                "qty_canceled": "0.0000",
+                "qty_invoiced": "1.0000",
+                "qty_ordered": "1.0000",
+                "qty_refunded": "0.0000",
+                "qty_shipped": "1.0000",
+                "price": "29.0800",
+                "base_original_price": "29.0800",
+                "tax_percent": "0.0000",
+                "tax_amount": "0.0000",
+                "discount_amount": "0.0000",
+                "base_row_total": "29.0800",
+                "product_attribute_setid": "4"
+            },
+            {
+                "item_id": "7460918",
+                "sku": "107082000102",
+                "name": "LCD Assembly For iPhone 4 (GSM) (Aftermarket Plus Quality) (Black)",
+                "qty_canceled": "0.0000",
+                "qty_invoiced": "1.0000",
+                "qty_ordered": "1.0000",
+                "qty_refunded": "0.0000",
+                "qty_shipped": "1.0000",
+                "price": "29.0800",
+                "base_original_price": "29.0800",
+                "tax_percent": "0.0000",
+                "tax_amount": "0.0000",
+                "discount_amount": "0.0000",
+                "base_row_total": "29.0800",
+                "product_attribute_setid": "4"
+            },
+            {
+                "item_id": "7460921",
+                "sku": "107082000401",
+                "name": "LCD Assembly for iPhone 5C (Aftermarket Plus Quality, Tianma) (Black)",
+                "qty_canceled": "0.0000",
+                "qty_invoiced": "1.0000",
+                "qty_ordered": "1.0000",
+                "qty_refunded": "0.0000",
+                "qty_shipped": "1.0000",
+                "price": "29.0800",
+                "base_original_price": "29.0800",
+                "tax_percent": "0.0000",
+                "tax_amount": "0.0000",
+                "discount_amount": "0.0000",
+                "base_row_total": "29.0800",
+                "product_attribute_setid": "4"
+            },
+            {
+                "item_id": 63085368,
+                "parent_item_id": null,
+                "product_id": 122352,
+                "sku": "9029619200211",
+                "name": "Pre-Owned Device -  Galaxy Watch Active 2 (GPS & Cellular Unlocked) 40MM Gold - Grade D ",
+                "qty_canceled": "0.0000",
+                "qty_invoiced": "2.0000",
+                "qty_ordered": "2.0000",
+                "qty_refunded": "0.0000",
+                "qty_shipped": "0.0000",
+                "price": "18.9700",
+                "row_total": "37.9400",
+                "price_incl_tax": "20.1100",
+                "row_total_incl_tax": "40.2200",
+                "product_attribute_setid": 10,
+                "imei": [
+                    "359184101916178",
+                    "359184104576755"
+                ]
+            }
+        ]
+    }
+ 
+
+URI: /orders/:id 
+
+
+
+
+HTTP Method: GET /orders/:id 
+
+URL Structure: {{baseurl}}/api/rest/orders/:id
+Note: Change page number and you will get data using pagination
+Description: Allows you to retrieve information on a required simple order.
+Authentication: Customer
+Parameters: No Parameters
+
+
+GET {{baseurl}}/api/rest/orders/1628951
+Response Example: JSON
+
+{
+    "entity_id": "1628951",
+    "status": "complete",
+    "shipping_description": "Fedex International Priority",
+    "customer_id": "121466",
+    "discount_amount": "0.0000",
+    "grand_total": "4928.5900",
+    "shipping_amount": "50.0000",
+    "shipping_tax_amount": "0.0000",
+    "subtotal": "4878.5900",
+    "tax_amount": "0.0000",
+    "increment_id": "100421394",
+    "customer_email": "john_11628951@gmail.com",
+    "store_currency_code": "USD",
+    "created_at": "2019-03-26 17:56:50",
+    "updated_at": "2020-08-25 05:55:25",
+    "shipping_incl_tax": "50.0000",
+    "store_location_id": null,
+    "delivery_date": "2019-03-27 12:00:00",
+    "payment_method": "mygateway",
+    "tracking_number": "786270127083",
+    "tax_name": null,
+    "tax_rate": null,
+    "addresses": [
+        {
+            "region": "Quebec",
+            "postcode": "J7H 1H9",
+            "lastname": "Manager",
+            "street": "3022 CH DE LA RIVIERE-CACHEE",
+            "city": "Boisbriand",
+            "telephone": "1234567890",
+            "country_id": "CA",
+            "firstname": "Store",
+            "address_type": "billing",
+            "company": "Mobile phone company"
+        },
+        {
+            "region": "Quebec",
+            "postcode": "J7H 1H9",
+            "lastname": "Manager",
+            "street": "3022 CH DE LA RIVIERE-CACHEE",
+            "city": "Boisbriand",
+            "telephone": "1234567890",
+            "country_id": "CA",
+            "firstname": "Store",
+            "address_type": "shipping",
+            "company": "Mobile phone company"
+        }
+    ],
+    "order_items": [
+        {
+            "item_id": "7460912",
+            "sku": "107081016105",
+            "name": "LCD ONLY For Galaxy Tab E 8.0\" (T377)",
+            "qty_canceled": "0.0000",
+            "qty_invoiced": "1.0000",
+            "qty_ordered": "1.0000",
+            "qty_refunded": "0.0000",
+            "qty_shipped": "1.0000",
+            "price": "29.0800",
+            "base_original_price": "29.0800",
+            "tax_percent": "0.0000",
+            "tax_amount": "0.0000",
+            "discount_amount": "0.0000",
+            "base_row_total": "29.0800",
+            "product_attribute_setid": "4"
+        },
+        {
+            "item_id": "7460915",
+            "sku": "107081016215",
+            "name": "Charging Port For Galaxy Tab E 9.6\" (T560)",
+            "qty_canceled": "0.0000",
+            "qty_invoiced": "1.0000",
+            "qty_ordered": "1.0000",
+            "qty_refunded": "0.0000",
+            "qty_shipped": "1.0000",
+            "price": "29.0800",
+            "base_original_price": "29.0800",
+            "tax_percent": "0.0000",
+            "tax_amount": "0.0000",
+            "discount_amount": "0.0000",
+            "base_row_total": "29.0800",
+            "product_attribute_setid": "4"
+        }
+    ]
+}
+ 
+
+URI: /orders?limit=num&page=num 
+
+
+
+
+HTTP Method: GET /orders?limit=num&page=num 
+
+
+URL Structure: {{baseurl}}/api/rest/orders?limit=num&page=num
+Note: Change page number and you will get data using pagination
+Description: Allows you to retrieve information on a required simple order.
+Authentication: Admin
+Parameters: No Parameters
+
+
+
+GET {{baseurl}}/api/rest/orders?limit=20&page=2
+Response Example: JSON
+
+{
+    "156": {
+        "entity_id": "156",
+        "status": "complete",
+        "shipping_description": "In-Store pickup - In-Store",
+        "customer_id": "35",
+        "discount_amount": "0.0000",
+        "grand_total": "440.0000",
+        "shipping_amount": "0.0000",
+        "shipping_tax_amount": "0.0000",
+        "subtotal": "440.0000",
+        "tax_amount": "0.0000",
+        "increment_id": "4764",
+        "customer_email": "john_1156@gmail.com",
+        "store_currency_code": "USD",
+        "created_at": "2014-04-21 21:18:08",
+        "updated_at": "2020-10-19 07:35:00",
+        "store_location_id": null,
+        "delivery_date": null,
+        "payment_method": "banktransfer",
+        "tracking_number": null,
+        "tax_name": null,
+        "tax_rate": null,
+        "addresses": [
+            {
+                "region": "Georgia",
+                "postcode": "31909",
+                "lastname": "Anderson",
+                "street": "3131 Manchester Expressway",
+                "city": "Columbus",
+                "email": "john_1@yahoo.com",
+                "telephone": "(123) 456-7890",
+                "country_id": "US",
+                "firstname": "Amar",
+                "address_type": "billing",
+                "company": "Mobile company"
+            },
+            {
+                "region": "Georgia",
+                "postcode": "31909",
+                "lastname": "Anderson",
+                "street": "3131 Manchester Expressway",
+                "city": "Columbus",
+                "email": "john_1@yahoo.com",
+                "telephone": "(123) 456-7890",
+                "country_id": "US",
+                "firstname": "Amar",
+                "address_type": "shipping",
+                "company": "Mobile company"
+            }
+        ],
+        "order_items": [
+            {
+                "item_id": "751",
+                "sku": "107082000129",
+                "name": "iphone 4 LCD Assembly CDMA Black",
+                "qty_canceled": "0.0000",
+                "qty_invoiced": "1.0000",
+                "qty_ordered": "1.0000",
+                "qty_refunded": "0.0000",
+                "qty_shipped": "1.0000",
+                "price": "29.0800",
+                "base_original_price": "29.0800",
+                "tax_percent": "0.0000",
+                "tax_amount": "0.0000",
+                "discount_amount": "0.0000",
+                "base_row_total": "29.0800",
+                "product_attribute_setid": "4"
+            },
+            {
+                "item_id": "752",
+                "sku": "107082000128",
+                "name": "iphone 4 LCD Assembly CDMA White",
+                "qty_canceled": "0.0000",
+                "qty_invoiced": "1.0000",
+                "qty_ordered": "1.0000",
+                "qty_refunded": "0.0000",
+                "qty_shipped": "1.0000",
+                "price": "29.0800",
+                "base_original_price": "29.0800",
+                "tax_percent": "0.0000",
+                "tax_amount": "0.0000",
+                "discount_amount": "0.0000",
+                "base_row_total": "29.0800",
+                "product_attribute_setid": "4"
+            }
+        ]
+    },
+    "163": {
+        "entity_id": "163",
+        "status": "complete",
+        "shipping_description": "FedEx - Ground   :",
+        "customer_id": "53",
+        "discount_amount": "0.0000",
+        "grand_total": "2211.7900",
+        "shipping_amount": "20.0000",
+        "shipping_tax_amount": "0.0000",
+        "subtotal": "2191.7900",
+        "tax_amount": "0.0000",
+        "increment_id": "4765",
+        "customer_email": "john_1163@gmail.com",
+        "store_currency_code": "USD",
+        "created_at": "2014-04-21 22:06:28",
+        "updated_at": "2020-10-19 07:35:00",
+        "store_location_id": null,
+        "delivery_date": null,
+        "payment_method": "cashondelivery",
+        "tracking_number": null,
+        "tax_name": null,
+        "tax_rate": null,
+        "addresses": [
+            {
+                "region": "Pennsylvania",
+                "postcode": "19605",
+                "lastname": "Bhatia",
+                "street": "3050 North 5th St Hwy\nFairgrounds Square Mall",
+                "city": "Reading",
+                "email": null,
+                "telephone": "(123) 456-7890",
+                "country_id": "US",
+                "firstname": "Varun ",
+                "address_type": "billing",
+                "company": "Mobile company"
+            },
+            {
+                "region": "Pennsylvania",
+                "postcode": "19605",
+                "lastname": "Bhatia",
+                "street": "3050 North 5th St Hwy\nFairgrounds Square Mall",
+                "city": "Reading",
+                "email": null,
+                "telephone": "(123) 456-7890",
+                "country_id": "US",
+                "firstname": "Varun ",
+                "address_type": "shipping",
+                "company": "Mobile company"
+            }
+        ],
+        "order_items": [
+            {
+                "item_id": "767",
+                "sku": "107082003051",
+                "name": "Samsung Galaxy S4 LCD Assembly GSM White w/Frame",
+                "qty_canceled": "0.0000",
+                "qty_invoiced": "1.0000",
+                "qty_ordered": "1.0000",
+                "qty_refunded": "0.0000",
+                "qty_shipped": "1.0000",
+                "price": "29.0800",
+                "base_original_price": "29.0800",
+                "tax_percent": "0.0000",
+                "tax_amount": "0.0000",
+                "discount_amount": "0.0000",
+                "base_row_total": "29.0800",
+                "product_attribute_setid": "4"
+            },
+            {
+                "item_id": "768",
+                "sku": "107082003052",
+                "name": "Samsung Galaxy S4 LCD Assembly GSM Black W/Frame",
+                "qty_canceled": "0.0000",
+                "qty_invoiced": "1.0000",
+                "qty_ordered": "1.0000",
+                "qty_refunded": "0.0000",
+                "qty_shipped": "1.0000",
+                "price": "29.0800",
+                "base_original_price": "29.0800",
+                "tax_percent": "0.0000",
+                "tax_amount": "0.0000",
+                "discount_amount": "0.0000",
+                "base_row_total": "29.0800",
+                "product_attribute_setid": "4"
+            },
+            {
+                "item_id": "769",
+                "sku": "107082000301",
+                "name": "iPhone 5 LCD Assembly White",
+                "qty_canceled": "0.0000",
+                "qty_invoiced": "1.0000",
+                "qty_ordered": "1.0000",
+                "qty_refunded": "0.0000",
+                "qty_shipped": "1.0000",
+                "price": "29.0800",
+                "base_original_price": "29.0800",
+                "tax_percent": "0.0000",
+                "tax_amount": "0.0000",
+                "discount_amount": "0.0000",
+                "base_row_total": "29.0800",
+                "product_attribute_setid": "4"
+            }
+        ]
+    }
+}
+ 
+
+Authentication: Customer
+Parameters: No Parameters
+
+GET {{baseurl}}/api/rest/orders?limit=20&page=2
+Response Example: JSON
+
+{
+    "1959976": {
+        "entity_id": "1959976",
+        "status": "complete",
+        "shipping_description": "Fedex International Priority",
+        "customer_id": "121466",
+        "discount_amount": "0.0000",
+        "grand_total": "0.0100",
+        "shipping_amount": "0.0000",
+        "shipping_tax_amount": "0.0000",
+        "subtotal": "0.0100",
+        "tax_amount": "0.0000",
+        "increment_id": "100535859",
+        "customer_email": "john_11959976@gmail.com",
+        "store_currency_code": "USD",
+        "created_at": "2019-07-16 20:37:37",
+        "updated_at": "2020-08-25 05:55:25",
+        "shipping_incl_tax": "0.0000",
+        "store_location_id": null,
+        "delivery_date": "2019-07-16 12:00:00",
+        "payment_method": "mygateway",
+        "tracking_number": "788501588455",
+        "tax_name": null,
+        "tax_rate": null,
+        "addresses": [
+            {
+                "region": "Virginia",
+                "postcode": "20151",
+                "lastname": "Boisbriand",
+                "street": "4315 Walney Rd",
+                "city": "chantilly",
+                "telephone": "(123) 456-7890",
+                "country_id": "US",
+                "firstname": "MK3",
+                "address_type": "billing",
+                "company": null
+            },
+            {
+                "region": "Quebec",
+                "postcode": "J7H 1H9",
+                "lastname": "Boisbriand",
+                "street": "3022 CH DE LA RIVIÈRE-CACHÉE",
+                "city": "Boisbriand",
+                "telephone": "1234567890",
+                "country_id": "CA",
+                "firstname": "Gestion -",
+                "address_type": "shipping",
+                "company": "Mobile company"
+            }
+        ],
+        "order_items": [
+            {
+                "item_id": "9568747",
+                "sku": "CARTEXTRA2",
+                "name": "100530556, 100530557, 100530559 ",
+                "qty_canceled": "0.0000",
+                "qty_invoiced": "1.0000",
+                "qty_ordered": "1.0000",
+                "qty_refunded": "0.0000",
+                "qty_shipped": "1.0000",
+                "price": "29.0800",
+                "base_original_price": "29.0800",
+                "tax_percent": "0.0000",
+                "tax_amount": "0.0000",
+                "discount_amount": "0.0000",
+                "base_row_total": "29.0800",
+                "product_attribute_setid": "4"
+            }
+        ]
+    },
+    "1981114": {
+        "entity_id": "1981114",
+        "status": "complete",
+        "shipping_description": "Fedex International Economy",
+        "customer_id": "121466",
+        "discount_amount": "0.0000",
+        "grand_total": "6092.3900",
+        "shipping_amount": "20.0000",
+        "shipping_tax_amount": "0.0000",
+        "subtotal": "7333.7800",
+        "tax_amount": "0.0000",
+        "increment_id": "100543239",
+        "customer_email": "john_11981114@gmail.com",
+        "store_currency_code": "USD",
+        "created_at": "2019-07-23 15:56:09",
+        "updated_at": "2020-08-25 05:55:25",
+        "shipping_incl_tax": "20.0000",
+        "store_location_id": null,
+        "delivery_date": "2019-07-25 17:00:00",
+        "payment_method": "mygateway",
+        "tracking_number": "788650303716, 788650303120",
+        "tax_name": null,
+        "tax_rate": null,
+        "addresses": [
+            {
+                "region": "Quebec",
+                "postcode": "J7H 1H9",
+                "lastname": "Boisbriand",
+                "street": "3022 CH DE LA RIVIÈRE-CACHÉE",
+                "city": "Boisbriand",
+                "telephone": "1234567890",
+                "country_id": "CA",
+                "firstname": "Gestion -",
+                "address_type": "billing",
+                "company": "Mobile company"
+            },
+            {
+                "region": "Quebec",
+                "postcode": "J7H 1H9",
+                "lastname": "Boisbriand",
+                "street": "3022 CH DE LA RIVIÈRE-CACHÉE",
+                "city": "Boisbriand",
+                "telephone": "1234567890",
+                "country_id": "CA",
+                "firstname": "Gestion -",
+                "address_type": "shipping",
+                "company": "Mobile company"
+            }
+        ],
+        "order_items": [
+            {
+                "item_id": "9708445",
+                "sku": "107082005802",
+                "name": "LCD Assembly without Frame For Alcatel Idol 3 (6045 6045O) (Black)",
+                "qty_canceled": "0.0000",
+                "qty_invoiced": "1.0000",
+                "qty_ordered": "1.0000",
+                "qty_refunded": "0.0000",
+                "qty_shipped": "1.0000",
+                "price": "29.0800",
+                "base_original_price": "29.0800",
+                "tax_percent": "0.0000",
+                "tax_amount": "0.0000",
+                "discount_amount": "0.0000",
+                "base_row_total": "29.0800",
+                "product_attribute_setid": "4"
+            },
+            {
+                "item_id": "9708448",
+                "sku": "107082005502",
+                "name": "LCD Assembly without Frame For Alcatel Idol 4 (6055P 6055U) (Black)",
+                "qty_canceled": "0.0000",
+                "qty_invoiced": "1.0000",
+                "qty_ordered": "1.0000",
+                "qty_refunded": "0.0000",
+                "qty_shipped": "1.0000",
+                "price": "29.0800",
+                "base_original_price": "29.0800",
+                "tax_percent": "0.0000",
+                "tax_amount": "0.0000",
+                "discount_amount": "0.0000",
+                "base_row_total": "29.0800",
+                "product_attribute_setid": "4"
+            },
+            {
+                "item_id": 63085368,
+                "parent_item_id": null,
+                "product_id": 122352,
+                "sku": "9029619200211",
+                "name": "Pre-Owned Device -  Galaxy Watch Active 2 (GPS & Cellular Unlocked) 40MM Gold - Grade D ",
+                "qty_canceled": "0.0000",
+                "qty_invoiced": "2.0000",
+                "qty_ordered": "2.0000",
+                "qty_refunded": "0.0000",
+                "qty_shipped": "0.0000",
+                "price": "18.9700",
+                "row_total": "37.9400",
+                "price_incl_tax": "20.1100",
+                "row_total_incl_tax": "40.2200",
+                "product_attribute_setid": 10,
+                "imei": [
+                    "359184101916178",
+                    "359184104576755"
+                ]
+            }
+        ]
+    }
+}
+ 
+
+URI: /orders/:id/missing 
+
+
+
+
+HTTP Method: GET /orders/:id/missing 
+
+
+URL Structure: {{baseurl}}/api/rest/orders/:id/missing
+Note: Pass order entity_id and get missing details of the order from GET /orders API
+Description: Allows you to retrieve the missing information of the order.
+Authentication: Admin
+Parameters: No Parameters
+
+
+
+GET {{baseurl}}/api/rest/orders/:id/missing
+Response Example: JSON
+
+[{
+  "order_id": "6439458",
+  "product_id": "108415",
+  "sku": "107082072613",
+  "product_name": "OLED Assembly Without Frame Compatible For Samsung Galaxy S10 Lite (Refurbished) (All Colors)",
+  "product_price": "96.3400",
+  "missing_qty": "2",
+  "paid_method": "pending_payment",
+  "action_date": "2022-02-14 05:55:23",
+  "exchange_order_id": null,
+  "exchange_order_ref": null,
+  "exchange_payment_method": null,
+  "imei": null,
+  "reason": "Product Not In Stock"
+},
+{
+  "order_id": "6439458",
+  "product_id": "108415",
+  "sku": "107082072613",
+  "product_name": "OLED Assembly Without Frame Compatible For Samsung Galaxy S10 Lite (Refurbished) (All Colors)",
+  "product_price": "96.3400",
+  "missing_qty": "2",
+  "paid_method": "pending_payment",
+  "action_date": "2022-02-14 05:55:23",
+  "exchange_order_id": null,
+  "exchange_order_ref": null,
+  "exchange_payment_method": null,
+  "imei": null,
+  "reason": "Product Not In Stock"
+}]
+ 
+
+URI: /orders?limit=num&include_child=with&child_id=:id,:id&page=num
+HTTP Method: GET /orders?limit=num&include_child=with&child_id=:id,:id&page=num 
+
+
+URL Structure: {{baseurl}}/api/rest/orders?limit=num&include_child=with&child_id=:id,:id&page=num
+Note: Pass parameter include_child value is with or only and get orders based on child users ID from GET /orders API
+Description: Allows you to retrieve the orders for particular child users.
+Authentication: Customer
+Parameters:
+
+
+
+include_child=with means child users' orders with own orders
+
+include_child=only means only child users' orders (not own orders)
+
+GET {{baseurl}}/api/rest/orders?limit=100&include_child=only&child_id=123,456&page=1
+Response Example: JSON
+
+{
+    "1959976": {
+        "entity_id": "1959976",
+        "status": "complete",
+        "shipping_description": "Fedex International Priority",
+        "customer_id": "123",
+        "discount_amount": "0.0000",
+        "grand_total": "0.0100",
+        "shipping_amount": "0.0000",
+        "shipping_tax_amount": "0.0000",
+        "subtotal": "0.0100",
+        "tax_amount": "0.0000",
+        "increment_id": "100535859",
+        "customer_email": "john_11959976@gmail.com",
+        "store_currency_code": "USD",
+        "created_at": "2019-07-16 20:37:37",
+        "updated_at": "2020-08-25 05:55:25",
+        "shipping_incl_tax": "0.0000",
+        "store_location_id": null,
+        "delivery_date": "2019-07-16 12:00:00",
+        "payment_method": "mygateway",
+        "tracking_number": "788501588455",
+        "tax_name": null,
+        "tax_rate": null,
+        "addresses": [
+            {
+                "region": "Virginia",
+                "postcode": "20151",
+                "lastname": "Boisbriand",
+                "street": "4315 Walney Rd",
+                "city": "chantilly",
+                "telephone": "(123) 456-7890",
+                "country_id": "US",
+                "firstname": "MK3",
+                "address_type": "billing",
+                "company": null
+            },
+            {
+                "region": "Quebec",
+                "postcode": "J7H 1H9",
+                "lastname": "Boisbriand",
+                "street": "3022 CH DE LA RIVIÈRE-CACHÉE",
+                "city": "Boisbriand",
+                "telephone": "1234567890",
+                "country_id": "CA",
+                "firstname": "Gestion -",
+                "address_type": "shipping",
+                "company": "Mobile company"
+            }
+        ],
+        "order_items": [
+            {
+                "item_id": "9568747",
+                "sku": "CARTEXTRA2",
+                "name": "100530556, 100530557, 100530559 ",
+                "qty_canceled": "0.0000",
+                "qty_invoiced": "1.0000",
+                "qty_ordered": "1.0000",
+                "qty_refunded": "0.0000",
+                "qty_shipped": "1.0000",
+                "price": "29.0800",
+                "base_original_price": "29.0800",
+                "tax_percent": "0.0000",
+                "tax_amount": "0.0000",
+                "discount_amount": "0.0000",
+                "base_row_total": "29.0800",
+                "product_attribute_setid": "4"
+            }
+        ]
+    },
+    "1981114": {
+        "entity_id": "1981114",
+        "status": "complete",
+        "shipping_description": "Fedex International Economy",
+        "customer_id": "456",
+        "discount_amount": "0.0000",
+        "grand_total": "6092.3900",
+        "shipping_amount": "20.0000",
+        "shipping_tax_amount": "0.0000",
+        "subtotal": "7333.7800",
+        "tax_amount": "0.0000",
+        "increment_id": "100543239",
+        "customer_email": "john_11981114@gmail.com",
+        "store_currency_code": "USD",
+        "created_at": "2019-07-23 15:56:09",
+        "updated_at": "2020-08-25 05:55:25",
+        "shipping_incl_tax": "20.0000",
+        "store_location_id": null,
+        "delivery_date": "2019-07-25 17:00:00",
+        "payment_method": "mygateway",
+        "tracking_number": "788650303716, 788650303120",
+        "tax_name": null,
+        "tax_rate": null,
+        "addresses": [
+            {
+                "region": "Quebec",
+                "postcode": "J7H 1H9",
+                "lastname": "Boisbriand",
+                "street": "3022 CH DE LA RIVIÈRE-CACHÉE",
+                "city": "Boisbriand",
+                "telephone": "1234567890",
+                "country_id": "CA",
+                "firstname": "Gestion -",
+                "address_type": "billing",
+                "company": "Mobile company"
+            },
+            {
+                "region": "Quebec",
+                "postcode": "J7H 1H9",
+                "lastname": "Boisbriand",
+                "street": "3022 CH DE LA RIVIÈRE-CACHÉE",
+                "city": "Boisbriand",
+                "telephone": "1234567890",
+                "country_id": "CA",
+                "firstname": "Gestion -",
+                "address_type": "shipping",
+                "company": "Mobile company"
+            }
+        ],
+        "order_items": [
+            {
+                "item_id": "9708445",
+                "sku": "107082005802",
+                "name": "LCD Assembly without Frame For Alcatel Idol 3 (6045 6045O) (Black)",
+                "qty_canceled": "0.0000",
+                "qty_invoiced": "1.0000",
+                "qty_ordered": "1.0000",
+                "qty_refunded": "0.0000",
+                "qty_shipped": "1.0000",
+                "price": "29.0800",
+                "base_original_price": "29.0800",
+                "tax_percent": "0.0000",
+                "tax_amount": "0.0000",
+                "discount_amount": "0.0000",
+                "base_row_total": "29.0800",
+                "product_attribute_setid": "4"
+            },
+            {
+                "item_id": "9708448",
+                "sku": "107082005502",
+                "name": "LCD Assembly without Frame For Alcatel Idol 4 (6055P 6055U) (Black)",
+                "qty_canceled": "0.0000",
+                "qty_invoiced": "1.0000",
+                "qty_ordered": "1.0000",
+                "qty_refunded": "0.0000",
+                "qty_shipped": "1.0000",
+                "price": "29.0800",
+                "base_original_price": "29.0800",
+                "tax_percent": "0.0000",
+                "tax_amount": "0.0000",
+                "discount_amount": "0.0000",
+                "base_row_total": "29.0800",
+                "product_attribute_setid": "4"
+            },
+            {
+                "item_id": "9708451",
+                "sku": "107082005519",
+                "name": "Power Button and Headphone Jack For Alcatel Idol 4 (6055P 6055U)",
+                "qty_canceled": "0.0000",
+                "qty_invoiced": "1.0000",
+                "qty_ordered": "1.0000",
+                "qty_refunded": "0.0000",
+                "qty_shipped": "1.0000",
+                "price": "29.0800",
+                "base_original_price": "29.0800",
+                "tax_percent": "0.0000",
+                "tax_amount": "0.0000",
+                "discount_amount": "0.0000",
+                "base_row_total": "29.0800",
+                "product_attribute_setid": "4"
+            }
+        ]
+    }
+}
+ 
+
+Sales Order Parameters Details 
+store_location_id = This is the value of the store ID which are associate to user who is creating order
+entity_id = This is the order number that is unique for API usage
+increment_id = This is the order number that is unique to Customer
+created_at = This is the date-time value when order is created
+updated_at = This is the date-time value when the order is lastly updated
+customer_id = This is the customer’s unique ID
+customer_email = This is the customer’s email
+status = This is the value for order status
+store_currency_code = This is currency code as you have created order in this currency
+shipping_tax_amount = This is the tax amount value that is applied to the shipping charge
+delivery_date = This is the expected delivery date of the order
+tracking_number = This is the tracking number of any shipping service; FedEx / USPS / UPS
+subtotal = This is the total of the products price
+subtotal_incl_tax = This is the total of the products price with tax
+shipping_amount = This is shipping charge which is applied on whole order based on shipping service
+shipping_incl_tax = This is the amount sum of shipping charge + shipping charge tax amount
+tax_amount = This is the tax amount that is applied on the whole order
+tax_name = Name of tax that has been applied
+tax_rate = Percentage of rate that has been applied
+grand_total = This is the amount which sum of subtotal, shipping_amount, tax_amount and minus discount_amount
+discount_amount = This is the value if any discount is applied on order
+shipping_description = This is the shipping service name that is used in order
+payment_method = This is the payment method that is used in order
+
+banktransfer = Bank Transfer
+
+cashondelivery = Cash On Delivery (COD)
+
+mygateway = Net Terms Payment
+
+paypal_direct = Credit Card
+
+paypal_express = PayPal
+
+customercredit = Internal Credit
+
+checkmo = Pay In Store
+
+exchangepayment = Exchange
+
+paypalinvoice = PayPal Send Invoice
+
+crossshipment = Cross Shipment
+
+behalf = Behalf
+
+gene_braintree_creditcard = Credit Card
+
+gene_braintree_paypal = PayPal
+
+creditcard = Credit Card
+
+sampleorder = Sample Order
+
+venmo = Venmo
+
+
+order_items = This is the collection of products that are considered in order
+item_id = This is the unique ID of the particular product in a particular order
+name = This is the name of the product
+sku = This is the SKU of the product
+qty_shipped = This is the value of how many quantities are shipped
+qty_ordered = This is the value of how many quantities are ordered
+qty_canceled = This is the value of how many quantities are canceled during cancel order
+qty_refunded = This is the value of how many quantities are refunded during missing the product details
+price = This is the amount of product price * shipped qty for Customer API
+price = This is the amount of product price for Admin API
+base_row_total = This is the amount of product price * shipped qty
+base_price_incl_tax = This is the amount of product price + Tax on particular product price
+base_row_total_incl_tax = This is the amount of product price * shipped qty + Tax on particular product price
+tax_percent = This is the tax percentage value of the order items
+tax_amount = This is the amount of Tax 
+price_incl_tax = This is the amount of product price * shipped qty + product tax for Customer API
+price_incl_tax = This is the amount of product price + product tax for Admin API
+
+product_attribute_setid = This is the number that is considered a product in which set Parts / Battery / Tools / Devices / Accessories
+
+imei = This is the Device Imei number when sales order have a device items.
+
+4 = Parts
+
+10 = Devicesystem
+
+12 = Macbook Parts
+
+13 = Game Console
+
+14 = Battery
+
+17 = Tools
+
+20 = Accessories
+
+addresses = This is the collection of Billing and shipping addresses
+address_type = This is the “billing” or “shipping” value of the order address
+firstname  = This is the first name that is used in order to address
+lastname = This is the last name that is used in order to address
+company = This is the company name that is used in order to address
+street = This is the Street1 and Street2 which is used in order to address
+city = This is the city name that is used in order to address
+region = This is the region/state which is used in order to address
+postcode = This is the postcode that is used in order to address
+country_id = This is the country shortcode that is used in order to address
+telephone = This is the telephone which is used in order to address
+order_id = This is the order number same as entity_id that is unique for API usage
+product_id = This is the product unique ID
+sku = This is the product sku which is available in order
+product_name = This is the product name which is available in order
+product_price = This is the product price of the order
+missing_qty = This is the qty of missing product in order
+paid_method = This is the payment type value to know how the customer has received a refund for the missing product
+
+pending_payment = That means missing product refund is pending
+
+Internal Credit = That means customer refund Internal Credit
+
+Net Terms = That means customer refund in Net Terms
+
+
+action_date = This is the date where the missing product is added in order
+exchange_order_id = This is order ID (entity_id) when exchanging the product again order’s product 
+exchange_order_ref = This is order number (increment_id) when exchanging the product again order’s product 
+exchange_payment_method = This is the value of the payment method of the exchange order
+imei = This is the value for device product to identify particular devices
+reason = This is the value for identification why missing product is added in order
+
+URI: /orders/:id/comment 
+HTTP Method: POST /order/:id/comment 
+
+
+URL Structure: {{baseurl}}/api/rest/order/:id/comment
+Note: Pass order entity_id and pass comment details of the order from POST /orders API
+Description: Allows you to add the comment of the order.
+Authentication: Admin, Customer
+Parameters: Comment
+
+
+
+{
+  "comment" :"comment text",
+  "customrest" : 1
+}
+POST {{baseurl}}/api/rest/order/:id/comment
+Response Example: JSON
+
+{}
+ 
+
+Possible HTTP Status Codes 
+Status Code
+
+Message
+
+Description
+
+404
+
+Resource not found.
+
+The required resource is not found.
+
+405
+
+Resource method not implemented yet.
+
+The required method is not implemented yet.
+
+405
+
+Resource does not support method.
+
+The current resource does not support the specified method.

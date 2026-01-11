@@ -473,47 +473,64 @@ export class MobilesentrixService {
       throw new Error("Carrello creato ma quote_id non restituito. Risposta: " + JSON.stringify(cartResult.data));
     }
 
-    // Step 2: Get address from previous orders (since /customer endpoint doesn't exist)
-    console.log("MobileSentrix - Fetching orders to get address...");
+    // Step 2: Get customer_id from previous orders, then fetch addresses
+    console.log("MobileSentrix - Fetching orders to get customer_id...");
     let addressId: string | null = null;
+    let customerId: string | null = null;
     
     try {
       const ordersResult = await this.request<any>("/api/rest/orders", "GET", undefined, { limit: "1", page: "1" });
-      console.log("MobileSentrix orders response for address:", JSON.stringify(ordersResult).substring(0, 500));
+      console.log("MobileSentrix orders response:", JSON.stringify(ordersResult).substring(0, 500));
       
       if (ordersResult.success && ordersResult.data) {
-        // Get first order and extract address
         const orders = Object.values(ordersResult.data);
         if (orders.length > 0) {
           const firstOrder = orders[0] as any;
-          if (firstOrder.addresses && Array.isArray(firstOrder.addresses)) {
-            const billingAddr = firstOrder.addresses.find((a: any) => a.address_type === "billing");
-            const shippingAddr = firstOrder.addresses.find((a: any) => a.address_type === "shipping");
-            addressId = billingAddr?.entity_id || shippingAddr?.entity_id || null;
-          }
+          customerId = firstOrder.customer_id ? String(firstOrder.customer_id) : null;
         }
       }
     } catch (error) {
-      console.log("MobileSentrix - Could not fetch orders for address:", error);
+      console.log("MobileSentrix - Could not fetch orders:", error);
+    }
+    
+    // Try to get address from /customers/:customer_id/addresses
+    if (customerId) {
+      console.log("MobileSentrix - Fetching addresses for customer:", customerId);
+      try {
+        const addressesResult = await this.request<any>(`/api/rest/customers/${customerId}/addresses`);
+        console.log("MobileSentrix addresses response:", JSON.stringify(addressesResult).substring(0, 500));
+        
+        if (addressesResult.success && addressesResult.data) {
+          // Get first address entity_id
+          const addresses = Object.values(addressesResult.data);
+          if (addresses.length > 0) {
+            const firstAddr = addresses[0] as any;
+            addressId = firstAddr.entity_id || firstAddr.id || null;
+            console.log("MobileSentrix - Found address ID:", addressId);
+          }
+        }
+      } catch (error) {
+        console.log("MobileSentrix - Could not fetch addresses:", error);
+      }
+    }
+    
+    if (!addressId) {
+      throw new Error("Nessun indirizzo di spedizione trovato nel tuo account MobileSentrix. Verifica di avere un indirizzo configurato sul sito MobileSentrix.");
     }
 
     // Step 3: Create order using quote_id
     // Default shipping method: FedEx Ground = flatrate3_flatrate3
     const selectedShipping = shippingMethod || "flatrate3_flatrate3";
     
-    // Build order request - some fields may be optional if customer has default address
+    // Build order request with required address IDs
     const orderRequest: any = {
       customrest: "1",
       quote_id: String(quoteId),
+      billing_id: String(addressId),
+      shipping_id: String(addressId),
       shipping_method: selectedShipping,
       payment_method: "mygateway"
     };
-    
-    // Only add address IDs if we found them
-    if (addressId) {
-      orderRequest.billing_id = String(addressId);
-      orderRequest.shipping_id = String(addressId);
-    }
     
     console.log("MobileSentrix - Creating order with request:", JSON.stringify(orderRequest));
     

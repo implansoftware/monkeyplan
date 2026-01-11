@@ -1,0 +1,123 @@
+Create Order
+Pre-requirements
+After successfully getting Access Token and Access Token Secret, Below are things that need to pass it every request in Authorization:
+
+Consumer Key
+
+Consumer Secret
+
+Access Token
+
+Access Token Secret
+
+ 
+
+REST API: Create Order
+
+URI: /createorder
+
+HTTP Method: POST /createorder
+
+ 
+
+REST API: Create Order
+URI: /createorder 
+Allows you to retrieve information on existing order/orders.
+
+URL Structure: {{baseurl}}/api/rest/createorder
+
+HTTP Method: POST /createorder  
+
+
+Description: Allows you to create an order. You need to pass some parameters to create an order.
+Authentication: Customer
+
+
+
+POST {{baseurl}}/api/rest/createorder
+Request Body raw: JSON
+
+{
+	"customrest": "1",
+	"quote_id": "11885161",
+	"billing_id": "11316",
+	"shipping_id": "11316",
+	"shipping_method": "flatrate5_flatrate5",
+	"payment_method": "mygateway",
+	"po_number": "xyz"
+}
+ 
+
+Parameters:
+
+customrest: Pass 1 hard-coded
+quote_id: You will get quote id when executing GET / POST API Cart 
+
+billing_id: This is for billing address. Need to pass ID of the address ID Customer | URI: /customers/:customer_id/addresses [inlineExtension] 
+
+shipping_id: This is for shipping address. Need to pass ID of the address ID Customer | URI: /customers/:customer_id/addresses [inlineExtension] 
+
+shipping_method:
+
+Shipping Method
+
+Shipping code
+
+FedEx Standard Overnight
+
+flatrate5_flatrate5
+
+FedEx Priority Overnight
+
+flatrate6_flatrate6
+
+Fedex Saturday Delivery
+
+flatrate8_flatrate8
+
+FedEx Ground
+
+flatrate3_flatrate3
+
+FedEx 2Day
+
+flatrate4_flatrate4
+
+UPS Standard Overnight
+
+flatrate013_flatrate013
+
+UPS Ground
+
+flatrate003_flatrate003
+
+UPS Priority Overnight
+
+flatrate001_flatrate001
+
+UPS 2nd Day Air
+
+flatrate002_flatrate002
+
+UPS Saturday Delivery
+
+flatrate001s_flatrate001s
+
+USPS First Class
+
+flatrate14_flatrate14
+
+ 
+
+payment_method: Currently we are creating order only for Net Term Payment method. Pass mygateway 
+
+Response:
+
+{
+    "status": 1,
+    "increment_id": "103761318",
+    "order_id": "9060401"
+}
+ 
+
+po_number: user can set own reference number in this parameter for specific order
