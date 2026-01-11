@@ -2923,6 +2923,21 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Backfill barcode per prodotti esistenti senza barcode
+  app.post("/api/admin/products/backfill-barcodes", requireRole("admin"), async (req, res) => {
+    try {
+      const result = await storage.backfillProductBarcodes();
+      res.json({
+        success: true,
+        message: `Aggiornati ${result.updated} prodotti con barcode`,
+        updated: result.updated,
+        errors: result.errors,
+      });
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
   app.delete("/api/admin/products/:id", requireRole("admin"), async (req, res) => {
     try {
       await storage.deleteProduct(req.params.id);

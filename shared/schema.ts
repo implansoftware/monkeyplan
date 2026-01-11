@@ -720,6 +720,7 @@ export const products = pgTable("products", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   name: text("name").notNull(),
   sku: text("sku").notNull().unique(),
+  barcode: text("barcode").unique(), // Barcode univoco formato MP-AAMM-XXXXXX
   category: text("category").notNull(), // display, batteria, scheda_madre, cover, etc.
   productType: productTypeEnum("product_type").notNull().default("ricambio"),
   description: text("description"),

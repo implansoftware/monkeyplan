@@ -1519,8 +1519,75 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createProduct(insertProduct: InsertProduct): Promise<Product> {
-    const [product] = await db.insert(products).values(insertProduct).returning();
+    // Genera barcode univoco se non fornito
+    let barcode = insertProduct.barcode;
+    if (!barcode) {
+      barcode = await this.generateUniqueBarcode();
+    }
+    
+    const [product] = await db.insert(products).values({ ...insertProduct, barcode }).returning();
     return product;
+  }
+  
+  // Genera barcode univoco formato MP-AAMM-XXXXXX
+  private async generateUniqueBarcode(): Promise<string> {
+    const chars = "ABCDEFGHJKMNPQRSTUVWXYZ0123456789";
+    let attempts = 0;
+    const maxAttempts = 10;
+    
+    while (attempts < maxAttempts) {
+      const now = new Date();
+      const year = now.getFullYear().toString().slice(-2);
+      const month = (now.getMonth() + 1).toString().padStart(2, "0");
+      
+      let random = "";
+      for (let i = 0; i < 6; i++) {
+        random += chars.charAt(Math.floor(Math.random() * chars.length));
+      }
+      
+      const barcode = `MP-${year}${month}-${random}`;
+      
+      // Verifica unicità
+      const existing = await db.select({ id: products.id })
+        .from(products)
+        .where(eq(products.barcode, barcode))
+        .limit(1);
+      
+      if (existing.length === 0) {
+        return barcode;
+      }
+      
+      attempts++;
+    }
+    
+    // Fallback con timestamp
+    const timestamp = Date.now().toString(36).toUpperCase();
+    return `MP-${new Date().getFullYear().toString().slice(-2)}${(new Date().getMonth() + 1).toString().padStart(2, "0")}-${timestamp.slice(-6)}`;
+  }
+
+  // Backfill barcode per prodotti esistenti senza barcode
+  async backfillProductBarcodes(): Promise<{ updated: number; errors: string[] }> {
+    const errors: string[] = [];
+    let updated = 0;
+    
+    // Trova prodotti senza barcode
+    const productsWithoutBarcode = await db.select({ id: products.id, name: products.name })
+      .from(products)
+      .where(isNull(products.barcode));
+    
+    for (const product of productsWithoutBarcode) {
+      try {
+        const barcode = await this.generateUniqueBarcode();
+        await db.update(products)
+          .set({ barcode, updatedAt: new Date() })
+          .where(eq(products.id, product.id));
+        updated++;
+      } catch (error) {
+        errors.push(`Errore per prodotto ${product.id}: ${error}`);
+      }
+    }
+    
+    return { updated, errors };
   }
 
   async deleteProduct(id: string): Promise<void> {
