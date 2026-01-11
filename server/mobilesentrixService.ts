@@ -397,6 +397,8 @@ export class MobilesentrixService {
 
   async createOrder(items: MobilesentrixCartItem[], shippingAddress: MobilesentrixAddress, shippingMethod?: string): Promise<MobilesentrixOrderResponse> {
     // Step 1: Add items to cart (MobileSentrix requires "customrest": 1 and "products" array)
+    console.log("MobileSentrix createOrder - Adding items to cart:", JSON.stringify(items));
+    
     const cartResult = await this.request<any>("/api/rest/cart", "POST", {
       customrest: 1,
       products: items.map(item => ({
@@ -405,6 +407,8 @@ export class MobilesentrixService {
       }))
     });
     
+    console.log("MobileSentrix cart response:", JSON.stringify(cartResult));
+    
     if (!cartResult.success) {
       throw new Error(cartResult.message || "Errore nell'aggiunta prodotti al carrello MobileSentrix");
     }
@@ -412,7 +416,8 @@ export class MobilesentrixService {
     // Get quote_id from cart response
     const quoteId = cartResult.data?.quote_id;
     if (!quoteId) {
-      throw new Error("Carrello creato ma quote_id non restituito");
+      console.log("MobileSentrix cart data without quote_id:", JSON.stringify(cartResult.data));
+      throw new Error("Carrello creato ma quote_id non restituito. Risposta: " + JSON.stringify(cartResult.data));
     }
 
     // Step 2: Get customer addresses for billing/shipping
