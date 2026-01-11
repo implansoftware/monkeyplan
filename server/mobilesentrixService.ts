@@ -1,14 +1,14 @@
 import { MobilesentrixCredential } from "@shared/schema";
 import crypto from "crypto";
 
-// MobileSentrix environments (official documentation)
-// Production: https://www.mobilesentrix.com
-// Staging: https://preprod.mobilesentrix.com
+// MobileSentrix environments
+// Production: https://www.mobilesentrix.eu
+// Staging: https://preprod.mobilesentrix.eu
 function getMobilesentrixBaseUrl(environment: string): string {
   if (environment === "staging") {
-    return "https://preprod.mobilesentrix.com";
+    return "https://preprod.mobilesentrix.eu";
   }
-  return "https://www.mobilesentrix.com";
+  return "https://www.mobilesentrix.eu";
 }
 
 interface MobilesentrixApiResponse<T> {
@@ -254,50 +254,32 @@ export class MobilesentrixService {
 
   async testConnection(): Promise<{ success: boolean; message: string }> {
     try {
-      // MobileSentrix REST API - test with admin user list endpoint
-      // Requires access_token for Bearer authentication
-      const credential = this.credential as any;
-      
-      if (!credential.accessToken) {
-        return { 
-          success: false, 
-          message: "Access Token non configurato. Completa prima l'autenticazione OAuth con MobileSentrix." 
-        };
-      }
-      
-      const url = `${this.baseUrl}/api/rest/adminuser`;
-      const response = await fetch(url, {
-        method: "GET",
-        headers: {
-          "Authorization": `Bearer ${credential.accessToken}`,
-          "Content-Type": "application/json",
-          "Accept": "application/json",
-        },
+      // Test connection using OAuth 1.0a with Consumer Key/Secret
+      // Try to fetch categories or products to verify credentials
+      const result = await this.request<any>("/rest/V1/products", "GET", undefined, {
+        "searchCriteria[pageSize]": "1"
       });
       
-      const contentType = response.headers.get("content-type") || "";
-      const responseText = await response.text();
-      
-      // Check if response is HTML (indicates auth failure or invalid endpoint)
-      if (contentType.includes("text/html") || responseText.trim().startsWith("<!DOCTYPE") || responseText.trim().startsWith("<html")) {
+      if (result.success) {
         return { 
-          success: false, 
-          message: `L'API MobileSentrix ha restituito HTML invece di JSON. Verifica l'Access Token. (Status: ${response.status})` 
+          success: true, 
+          message: "Connessione riuscita - API MobileSentrix attiva. Catalogo accessibile." 
         };
       }
       
-      if (!response.ok) {
-        let errorMessage = `HTTP Error ${response.status}`;
-        try {
-          const errorJson = JSON.parse(responseText);
-          errorMessage = errorJson.messages?.error?.[0]?.message || errorJson.message || errorMessage;
-        } catch {
-          errorMessage = responseText.substring(0, 200) || errorMessage;
-        }
-        return { success: false, message: errorMessage };
+      // If products endpoint fails, try categories
+      const catResult = await this.request<any>("/rest/V1/categories");
+      if (catResult.success) {
+        return { 
+          success: true, 
+          message: "Connessione riuscita - API MobileSentrix attiva." 
+        };
       }
       
-      return { success: true, message: "Connessione riuscita - API MobileSentrix attiva" };
+      return { 
+        success: false, 
+        message: result.message || "Errore di connessione all'API MobileSentrix. Verifica Consumer Key e Secret." 
+      };
     } catch (error: any) {
       return { success: false, message: error.message || "Errore di connessione" };
     }
@@ -305,7 +287,7 @@ export class MobilesentrixService {
 
   async getCategories(): Promise<MobilesentrixCategory[]> {
     // Magento 2 REST API - categories endpoint
-    const result = await this.request<any>("/categories");
+    const result = await this.request<any>("/rest/V1/categories");
     if (result.success && result.data) {
       const extractCategories = (cat: any): MobilesentrixCategory[] => {
         const cats: MobilesentrixCategory[] = [{
@@ -355,7 +337,7 @@ export class MobilesentrixService {
     queryParams["searchCriteria[currentPage]"] = String(page);
     queryParams["searchCriteria[pageSize]"] = String(perPage);
 
-    const result = await this.request<any>("/products", "GET", undefined, queryParams);
+    const result = await this.request<any>("/rest/V1/products", "GET", undefined, queryParams);
 
     if (result.success && result.data) {
       const items = result.data.items || [];
@@ -395,7 +377,7 @@ export class MobilesentrixService {
 
   async getProduct(productId: string): Promise<MobilesentrixProduct> {
     // Magento 2 REST API - get product by SKU
-    const result = await this.request<any>(`/products/${encodeURIComponent(productId)}`);
+    const result = await this.request<any>(`/rest/V1/products/${encodeURIComponent(productId)}`);
     if (result.success && result.data) {
       const p = result.data;
       const getAttr = (code: string) => {
@@ -423,7 +405,7 @@ export class MobilesentrixService {
 
   async createOrder(items: MobilesentrixCartItem[], shippingAddress: MobilesentrixAddress, shippingMethod?: string): Promise<MobilesentrixOrderResponse> {
     // First create a cart
-    const cartResult = await this.request<string>("/carts/mine", "POST");
+    const cartResult = await this.request<string>("/rest/V1/carts/mine", "POST");
     if (!cartResult.success) {
       throw new Error("Errore nella creazione del carrello");
     }
@@ -431,7 +413,7 @@ export class MobilesentrixService {
 
     // Add items to cart
     for (const item of items) {
-      await this.request<any>(`/carts/mine/items`, "POST", {
+      await this.request<any>(`/rest/V1/carts/mine/items`, "POST", {
         cartItem: {
           sku: item.sku,
           qty: item.quantity,
@@ -441,7 +423,7 @@ export class MobilesentrixService {
     }
 
     // Set shipping address and create order
-    const orderResult = await this.request<any>("/carts/mine/order", "PUT", {
+    const orderResult = await this.request<any>("/rest/V1/carts/mine/order", "PUT", {
       paymentMethod: { method: "checkmo" }
     });
 
@@ -458,7 +440,7 @@ export class MobilesentrixService {
   }
 
   async getOrder(orderId: string): Promise<MobilesentrixOrderResponse> {
-    const result = await this.request<any>(`/orders/${orderId}`);
+    const result = await this.request<any>(`/rest/V1/orders/${orderId}`);
     if (result.success && result.data) {
       return {
         order_id: String(result.data.entity_id),
@@ -478,7 +460,7 @@ export class MobilesentrixService {
     queryParams["searchCriteria[currentPage]"] = String(page);
     queryParams["searchCriteria[pageSize]"] = String(perPage);
 
-    const result = await this.request<any>("/orders", "GET", undefined, queryParams);
+    const result = await this.request<any>("/rest/V1/orders", "GET", undefined, queryParams);
     if (result.success && result.data) {
       const orders = (result.data.items || []).map((o: any) => ({
         order_id: String(o.entity_id),
@@ -497,7 +479,7 @@ export class MobilesentrixService {
 
   async getBrands(): Promise<string[]> {
     // Magento 2 - get manufacturer attribute options
-    const result = await this.request<any>("/products/attributes/manufacturer");
+    const result = await this.request<any>("/rest/V1/products/attributes/manufacturer");
     if (result.success && result.data?.options) {
       return result.data.options.filter((o: any) => o.value).map((o: any) => o.label);
     }
@@ -505,7 +487,7 @@ export class MobilesentrixService {
   }
 
   async getAccountInfo(): Promise<{ name: string; email: string; balance?: number }> {
-    const result = await this.request<any>("/customers/me");
+    const result = await this.request<any>("/rest/V1/customers/me");
     if (result.success && result.data) {
       return {
         name: `${result.data.firstname || ""} ${result.data.lastname || ""}`.trim(),
