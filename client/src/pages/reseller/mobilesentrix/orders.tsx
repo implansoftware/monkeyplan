@@ -81,8 +81,14 @@ export default function MobilesentrixOrdersPage() {
     queryKey: ["/api/mobilesentrix/orders"],
   });
 
-  const formatPrice = (amount: number | string) => {
+  const formatPrice = (amount: number | string | undefined | null) => {
+    if (amount === undefined || amount === null || amount === '') {
+      return "0,00 €";
+    }
     const numAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
+    if (isNaN(numAmount)) {
+      return "0,00 €";
+    }
     return new Intl.NumberFormat("it-IT", {
       style: "currency",
       currency: "EUR",
@@ -322,18 +328,25 @@ export default function MobilesentrixOrdersPage() {
               <div>
                 <h4 className="font-semibold mb-3">Articoli Ordinati ({orderDetails.order_items?.length || 0})</h4>
                 <div className="space-y-2">
-                  {orderDetails.order_items?.map((item, index) => (
-                    <div key={item.item_id || index} className="flex items-start justify-between p-3 border rounded-md gap-4">
-                      <div className="flex-1 min-w-0">
-                        <p className="font-medium text-sm truncate">{item.name}</p>
-                        <p className="text-xs text-muted-foreground">SKU: {item.sku}</p>
+                  {orderDetails.order_items?.map((item, index) => {
+                    const qty = parseFloat(item.qty_ordered) || 1;
+                    const unitPrice = parseFloat(item.price) || 0;
+                    const rowTotal = item.base_row_total ? parseFloat(item.base_row_total) : (unitPrice * qty);
+                    
+                    return (
+                      <div key={item.item_id || index} className="flex items-start justify-between p-3 border rounded-md gap-4">
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium text-sm truncate">{item.name || "Prodotto"}</p>
+                          <p className="text-xs text-muted-foreground">SKU: {item.sku}</p>
+                          <p className="text-xs text-muted-foreground">{formatPrice(unitPrice)} cad.</p>
+                        </div>
+                        <div className="text-right shrink-0">
+                          <p className="text-sm">Qtà: {qty}</p>
+                          <p className="font-semibold">{formatPrice(rowTotal)}</p>
+                        </div>
                       </div>
-                      <div className="text-right shrink-0">
-                        <p className="text-sm">Qtà: {parseFloat(item.qty_ordered)}</p>
-                        <p className="font-semibold">{formatPrice(item.base_row_total)}</p>
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
 
