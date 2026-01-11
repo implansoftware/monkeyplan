@@ -119,10 +119,13 @@ import {
   hrExpenseReports, HrExpenseReport, InsertHrExpenseReport,
   hrExpenseItems, HrExpenseItem, InsertHrExpenseItem,
   hrNotifications, HrNotification, InsertHrNotification,
-  hrAuditLogs, HrAuditLog, InsertHrAuditLog
+  hrAuditLogs, HrAuditLog, InsertHrAuditLog,
+  posSessions, PosSession, InsertPosSession,
+  posTransactions, PosTransaction, InsertPosTransaction, PosTransactionStatus,
+  posTransactionItems, PosTransactionItem, InsertPosTransactionItem
 } from "@shared/schema";
 import { db, pool } from "./db";
-import { eq, and, or, desc, lt, gt, gte, lte, sql, not, inArray, isNull, ilike } from "drizzle-orm";
+import { eq, and, or, desc, lt, gt, gte, lte, sql, not, inArray, isNull, ilike, SQL } from "drizzle-orm";
 import session from "express-session";
 import connectPg from "connect-pg-simple";
 
@@ -9657,6 +9660,408 @@ export class DatabaseStorage implements IStorage {
       startDate: l.startDate,
       endDate: l.endDate,
     }));
+  }
+
+  // ==========================================
+  // POS (Point of Sale) - Cassa Digitale
+  // ==========================================
+
+  // POS Sessions
+  async createPosSession(data: InsertPosSession): Promise<PosSession> {
+    const [session] = await db.insert(posSessions).values(data).returning();
+    return session;
+  }
+
+  async getPosSession(id: string): Promise<PosSession | undefined> {
+    const [session] = await db.select().from(posSessions).where(eq(posSessions.id, id));
+    return session;
+  }
+
+  async getOpenPosSession(repairCenterId: string): Promise<PosSession | undefined> {
+    const [session] = await db.select().from(posSessions)
+      .where(and(
+        eq(posSessions.repairCenterId, repairCenterId),
+        eq(posSessions.status, 'open')
+      ))
+      .limit(1);
+    return session;
+  }
+
+  async getPosSessionsByRepairCenter(repairCenterId: string, limit = 50): Promise<PosSession[]> {
+    return db.select().from(posSessions)
+      .where(eq(posSessions.repairCenterId, repairCenterId))
+      .orderBy(desc(posSessions.openedAt))
+      .limit(limit);
+  }
+
+  async closePosSession(id: string, closingData: {
+    closingCash: number;
+    expectedCash: number;
+    cashDifference: number;
+    closingNotes?: string;
+    totalSales: number;
+    totalTransactions: number;
+    totalCashSales: number;
+    totalCardSales: number;
+    totalRefunds: number;
+  }): Promise<PosSession | undefined> {
+    const [session] = await db.update(posSessions)
+      .set({
+        status: 'closed',
+        closedAt: new Date(),
+        ...closingData,
+        updatedAt: new Date(),
+      })
+      .where(eq(posSessions.id, id))
+      .returning();
+    return session;
+  }
+
+  async updatePosSessionTotals(sessionId: string, updates: {
+    totalSales?: number;
+    totalTransactions?: number;
+    totalCashSales?: number;
+    totalCardSales?: number;
+    totalRefunds?: number;
+  }): Promise<void> {
+    await db.update(posSessions)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(posSessions.id, sessionId));
+  }
+
+  // POS Transactions
+  async createPosTransaction(data: InsertPosTransaction & { transactionNumber: string }): Promise<PosTransaction> {
+    const [transaction] = await db.insert(posTransactions).values(data).returning();
+    return transaction;
+  }
+
+  async getPosTransaction(id: string): Promise<PosTransaction | undefined> {
+    const [transaction] = await db.select().from(posTransactions).where(eq(posTransactions.id, id));
+    return transaction;
+  }
+
+  async getPosTransactionByNumber(transactionNumber: string): Promise<PosTransaction | undefined> {
+    const [transaction] = await db.select().from(posTransactions)
+      .where(eq(posTransactions.transactionNumber, transactionNumber));
+    return transaction;
+  }
+
+  async getPosTransactionsBySession(sessionId: string): Promise<PosTransaction[]> {
+    return db.select().from(posTransactions)
+      .where(eq(posTransactions.sessionId, sessionId))
+      .orderBy(desc(posTransactions.createdAt));
+  }
+
+  async getPosTransactionsByRepairCenter(repairCenterId: string, options?: {
+    startDate?: Date;
+    endDate?: Date;
+    status?: PosTransactionStatus;
+    limit?: number;
+    offset?: number;
+  }): Promise<PosTransaction[]> {
+    const conditions = [eq(posTransactions.repairCenterId, repairCenterId)];
+    
+    if (options?.startDate) {
+      conditions.push(gte(posTransactions.createdAt, options.startDate));
+    }
+    if (options?.endDate) {
+      conditions.push(lte(posTransactions.createdAt, options.endDate));
+    }
+    if (options?.status) {
+      conditions.push(eq(posTransactions.status, options.status));
+    }
+
+    return db.select().from(posTransactions)
+      .where(and(...conditions))
+      .orderBy(desc(posTransactions.createdAt))
+      .limit(options?.limit || 100)
+      .offset(options?.offset || 0);
+  }
+
+  async updatePosTransactionStatus(id: string, status: PosTransactionStatus, refundData?: {
+    refundedAmount?: number;
+    refundReason?: string;
+    refundedBy?: string;
+  }): Promise<PosTransaction | undefined> {
+    const updateData: Partial<PosTransaction> = {
+      status,
+      updatedAt: new Date(),
+    };
+    
+    if (refundData) {
+      updateData.refundedAmount = refundData.refundedAmount;
+      updateData.refundReason = refundData.refundReason;
+      updateData.refundedBy = refundData.refundedBy;
+      updateData.refundedAt = new Date();
+    }
+
+    const [transaction] = await db.update(posTransactions)
+      .set(updateData)
+      .where(eq(posTransactions.id, id))
+      .returning();
+    return transaction;
+  }
+
+  async generatePosTransactionNumber(repairCenterId: string): Promise<string> {
+    const now = new Date();
+    const yymm = `${now.getFullYear().toString().slice(-2)}${(now.getMonth() + 1).toString().padStart(2, '0')}`;
+    
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
+    
+    const [result] = await db.select({ count: sql<number>`count(*)` })
+      .from(posTransactions)
+      .where(and(
+        eq(posTransactions.repairCenterId, repairCenterId),
+        gte(posTransactions.createdAt, startOfMonth),
+        lte(posTransactions.createdAt, endOfMonth)
+      ));
+    
+    const nextNumber = (result?.count || 0) + 1;
+    return `POS-${yymm}-${nextNumber.toString().padStart(4, '0')}`;
+  }
+
+  // POS Transaction Items
+  async createPosTransactionItems(items: InsertPosTransactionItem[]): Promise<PosTransactionItem[]> {
+    if (items.length === 0) return [];
+    return db.insert(posTransactionItems).values(items).returning();
+  }
+
+  async getPosTransactionItems(transactionId: string): Promise<PosTransactionItem[]> {
+    return db.select().from(posTransactionItems)
+      .where(eq(posTransactionItems.transactionId, transactionId));
+  }
+
+  async markPosItemsInventoryDeducted(transactionId: string): Promise<void> {
+    await db.update(posTransactionItems)
+      .set({ inventoryDeducted: true })
+      .where(eq(posTransactionItems.transactionId, transactionId));
+  }
+
+  // POS Statistics
+  async getPosSessionStats(repairCenterId: string, startDate: Date, endDate: Date): Promise<{
+    totalSessions: number;
+    totalSales: number;
+    totalTransactions: number;
+    averagePerTransaction: number;
+    cashSales: number;
+    cardSales: number;
+  }> {
+    const sessions = await db.select().from(posSessions)
+      .where(and(
+        eq(posSessions.repairCenterId, repairCenterId),
+        gte(posSessions.openedAt, startDate),
+        lte(posSessions.openedAt, endDate)
+      ));
+
+    const totalSessions = sessions.length;
+    const totalSales = sessions.reduce((sum, s) => sum + (s.totalSales || 0), 0);
+    const totalTransactions = sessions.reduce((sum, s) => sum + (s.totalTransactions || 0), 0);
+    const cashSales = sessions.reduce((sum, s) => sum + (s.totalCashSales || 0), 0);
+    const cardSales = sessions.reduce((sum, s) => sum + (s.totalCardSales || 0), 0);
+
+    return {
+      totalSessions,
+      totalSales,
+      totalTransactions,
+      averagePerTransaction: totalTransactions > 0 ? totalSales / totalTransactions : 0,
+      cashSales,
+      cardSales,
+    };
+  }
+
+  async getPosDailySummary(repairCenterId: string, date: Date): Promise<{
+    date: Date;
+    totalSales: number;
+    transactionCount: number;
+    cashSales: number;
+    cardSales: number;
+    refunds: number;
+    topProducts: { productId: string; productName: string; quantity: number; total: number }[];
+  }> {
+    const startOfDay = new Date(date);
+    startOfDay.setHours(0, 0, 0, 0);
+    const endOfDay = new Date(date);
+    endOfDay.setHours(23, 59, 59, 999);
+
+    const transactions = await this.getPosTransactionsByRepairCenter(repairCenterId, {
+      startDate: startOfDay,
+      endDate: endOfDay,
+    });
+
+    const completedTransactions = transactions.filter(t => t.status === 'completed');
+    const refundedTransactions = transactions.filter(t => 
+      t.status === 'refunded' || t.status === 'partial_refund'
+    );
+
+    const totalSales = completedTransactions.reduce((sum, t) => sum + t.total, 0);
+    const cashSales = completedTransactions
+      .filter(t => t.paymentMethod === 'cash')
+      .reduce((sum, t) => sum + t.total, 0);
+    const cardSales = completedTransactions
+      .filter(t => t.paymentMethod === 'card' || t.paymentMethod === 'pos_terminal')
+      .reduce((sum, t) => sum + t.total, 0);
+    const refunds = refundedTransactions.reduce((sum, t) => sum + (t.refundedAmount || 0), 0);
+
+    // Get top products
+    const productMap = new Map<string, { productName: string; quantity: number; total: number }>();
+    for (const t of completedTransactions) {
+      const items = await this.getPosTransactionItems(t.id);
+      for (const item of items) {
+        const existing = productMap.get(item.productId);
+        if (existing) {
+          existing.quantity += item.quantity;
+          existing.total += item.totalPrice;
+        } else {
+          productMap.set(item.productId, {
+            productName: item.productName,
+            quantity: item.quantity,
+            total: item.totalPrice,
+          });
+        }
+      }
+    }
+
+    const topProducts = Array.from(productMap.entries())
+      .map(([productId, data]) => ({ productId, ...data }))
+      .sort((a, b) => b.total - a.total)
+      .slice(0, 10);
+
+    return {
+      date,
+      totalSales,
+      transactionCount: completedTransactions.length,
+      cashSales,
+      cardSales,
+      refunds,
+      topProducts,
+    };
+  }
+
+  // Get all POS sessions for reseller's repair centers
+  async getPosSessionsForReseller(resellerId: string, options?: {
+    startDate?: Date;
+    endDate?: Date;
+    limit?: number;
+  }): Promise<(PosSession & { repairCenterName: string })[]> {
+    const conditions = [eq(repairCenters.resellerId, resellerId)];
+    
+    if (options?.startDate) {
+      conditions.push(gte(posSessions.openedAt, options.startDate));
+    }
+    if (options?.endDate) {
+      conditions.push(lte(posSessions.openedAt, options.endDate));
+    }
+
+    const result = await db.select({
+      session: posSessions,
+      repairCenterName: repairCenters.name,
+    })
+    .from(posSessions)
+    .innerJoin(repairCenters, eq(posSessions.repairCenterId, repairCenters.id))
+    .where(and(...conditions))
+    .orderBy(desc(posSessions.openedAt))
+    .limit(options?.limit || 100);
+
+    return result.map(r => ({
+      ...r.session,
+      repairCenterName: r.repairCenterName,
+    }));
+  }
+
+  // Get all POS transactions for admin (global view)
+  async getAllPosTransactions(options?: {
+    startDate?: Date;
+    endDate?: Date;
+    status?: PosTransactionStatus;
+    limit?: number;
+    offset?: number;
+  }): Promise<(PosTransaction & { repairCenterName: string })[]> {
+    const conditions: SQL[] = [];
+    
+    if (options?.startDate) {
+      conditions.push(gte(posTransactions.createdAt, options.startDate));
+    }
+    if (options?.endDate) {
+      conditions.push(lte(posTransactions.createdAt, options.endDate));
+    }
+    if (options?.status) {
+      conditions.push(eq(posTransactions.status, options.status));
+    }
+
+    const result = await db.select({
+      transaction: posTransactions,
+      repairCenterName: repairCenters.name,
+    })
+    .from(posTransactions)
+    .innerJoin(repairCenters, eq(posTransactions.repairCenterId, repairCenters.id))
+    .where(conditions.length > 0 ? and(...conditions) : undefined)
+    .orderBy(desc(posTransactions.createdAt))
+    .limit(options?.limit || 100)
+    .offset(options?.offset || 0);
+
+    return result.map(r => ({
+      ...r.transaction,
+      repairCenterName: r.repairCenterName,
+    }));
+  }
+
+  // Get global POS statistics for admin
+  async getGlobalPosStats(startDate: Date, endDate: Date): Promise<{
+    totalSessions: number;
+    totalTransactions: number;
+    totalSales: number;
+    averagePerTransaction: number;
+    byRepairCenter: {
+      repairCenterId: string;
+      repairCenterName: string;
+      totalSales: number;
+      transactionCount: number;
+    }[];
+  }> {
+    const sessions = await db.select({
+      session: posSessions,
+      repairCenterName: repairCenters.name,
+    })
+    .from(posSessions)
+    .innerJoin(repairCenters, eq(posSessions.repairCenterId, repairCenters.id))
+    .where(and(
+      gte(posSessions.openedAt, startDate),
+      lte(posSessions.openedAt, endDate)
+    ));
+
+    const totalSessions = sessions.length;
+    const totalSales = sessions.reduce((sum, s) => sum + (s.session.totalSales || 0), 0);
+    const totalTransactions = sessions.reduce((sum, s) => sum + (s.session.totalTransactions || 0), 0);
+
+    // Group by repair center
+    const rcMap = new Map<string, { name: string; totalSales: number; transactionCount: number }>();
+    for (const s of sessions) {
+      const existing = rcMap.get(s.session.repairCenterId);
+      if (existing) {
+        existing.totalSales += s.session.totalSales || 0;
+        existing.transactionCount += s.session.totalTransactions || 0;
+      } else {
+        rcMap.set(s.session.repairCenterId, {
+          name: s.repairCenterName,
+          totalSales: s.session.totalSales || 0,
+          transactionCount: s.session.totalTransactions || 0,
+        });
+      }
+    }
+
+    return {
+      totalSessions,
+      totalTransactions,
+      totalSales,
+      averagePerTransaction: totalTransactions > 0 ? totalSales / totalTransactions : 0,
+      byRepairCenter: Array.from(rcMap.entries()).map(([id, data]) => ({
+        repairCenterId: id,
+        repairCenterName: data.name,
+        totalSales: data.totalSales,
+        transactionCount: data.transactionCount,
+      })),
+    };
   }
 }
 
