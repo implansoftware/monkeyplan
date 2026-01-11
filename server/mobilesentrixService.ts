@@ -594,14 +594,26 @@ export class MobilesentrixService {
     
     console.log("MobileSentrix - Creating order with request:", JSON.stringify(orderRequest));
     
+    // Get latest order before creating new one (to verify creation even if API returns error)
+    let lastOrderId: string | null = null;
+    try {
+      const beforeOrders = await this.request<any>("/api/rest/orders", "GET", undefined, { limit: "1", page: "1" });
+      if (beforeOrders.success && beforeOrders.data) {
+        const orderIds = Object.keys(beforeOrders.data);
+        if (orderIds.length > 0) {
+          lastOrderId = orderIds[0];
+          console.log("MobileSentrix - Last order ID before create:", lastOrderId);
+        }
+      }
+    } catch (e) {
+      console.log("MobileSentrix - Could not get last order:", e);
+    }
+    
     const orderResult = await this.request<any>("/api/rest/createorder", "POST", orderRequest);
     console.log("MobileSentrix createorder response:", JSON.stringify(orderResult));
 
-    if (!orderResult.success) {
-      throw new Error(orderResult.message || "Errore nella creazione dell'ordine: " + JSON.stringify(orderResult));
-    }
-
-    if (orderResult.data?.order_id || orderResult.data?.increment_id) {
+    // If API returns success with order data, use it
+    if (orderResult.success && (orderResult.data?.order_id || orderResult.data?.increment_id)) {
       return {
         order_id: String(orderResult.data.order_id || orderResult.data.increment_id),
         order_number: orderResult.data.increment_id || String(orderResult.data.order_id),
@@ -610,8 +622,34 @@ export class MobilesentrixService {
         created_at: new Date().toISOString()
       };
     }
-
-    throw new Error("Ordine creato ma risposta non valida");
+    
+    // API returned error, but order might still be created! Check for new orders
+    console.log("MobileSentrix - API returned error, checking if order was created anyway...");
+    await new Promise(resolve => setTimeout(resolve, 1500)); // Wait for order to be processed
+    
+    try {
+      const afterOrders = await this.request<any>("/api/rest/orders", "GET", undefined, { limit: "3", page: "1" });
+      if (afterOrders.success && afterOrders.data) {
+        const orderIds = Object.keys(afterOrders.data);
+        // Check if there's a new order that wasn't there before
+        if (orderIds.length > 0 && orderIds[0] !== lastOrderId) {
+          const newOrder = afterOrders.data[orderIds[0]];
+          console.log("MobileSentrix - New order found despite error:", newOrder.increment_id);
+          return {
+            order_id: String(newOrder.entity_id || orderIds[0]),
+            order_number: newOrder.increment_id || String(newOrder.entity_id),
+            status: newOrder.status || "pending",
+            total: parseFloat(newOrder.grand_total) || items.reduce((sum, i) => sum + (i.price * i.quantity), 0),
+            created_at: newOrder.created_at || new Date().toISOString()
+          };
+        }
+      }
+    } catch (e) {
+      console.log("MobileSentrix - Could not verify order creation:", e);
+    }
+    
+    // No new order found, throw the original error
+    throw new Error(orderResult.message || "Errore nella creazione dell'ordine: " + JSON.stringify(orderResult));
   }
 
   // Get available shipping methods from API
