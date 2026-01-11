@@ -283,7 +283,7 @@ export default function MobilesentrixSettingsPage() {
                     {credential.environment === "production" ? "Produzione" : "Staging"}
                   </Badge>
                   <span className="text-sm text-muted-foreground">
-                    {credential.environment === "production" ? "www.mobilesentrix.com" : "preprod.mobilesentrix.com"}
+                    {credential.environment === "production" ? "www.mobilesentrix.eu" : "preprod.mobilesentrix.eu"}
                   </span>
                 </div>
               </div>
@@ -443,14 +443,14 @@ export default function MobilesentrixSettingsPage() {
                   <SelectValue placeholder="Seleziona ambiente" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="production">Produzione (www.mobilesentrix.com)</SelectItem>
-                  <SelectItem value="staging">Staging (preprod.mobilesentrix.com)</SelectItem>
+                  <SelectItem value="production">Produzione (www.mobilesentrix.eu)</SelectItem>
+                  <SelectItem value="staging">Staging (preprod.mobilesentrix.eu)</SelectItem>
                 </SelectContent>
               </Select>
               <p className="text-sm text-muted-foreground">
                 Puoi ottenere le tue credenziali OAuth dal pannello MobileSentrix.{" "}
                 <a
-                  href="https://www.mobilesentrix.com"
+                  href="https://www.mobilesentrix.eu"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-primary hover:underline inline-flex items-center gap-1"

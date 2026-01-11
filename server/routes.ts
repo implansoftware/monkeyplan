@@ -23636,8 +23636,8 @@ export function registerRoutes(app: Express): Server {
       }
 
       const baseUrl = credential.environment === "staging" 
-        ? "https://preprod.mobilesentrix.com" 
-        : "https://www.mobilesentrix.com";
+        ? "https://preprod.mobilesentrix.eu" 
+        : "https://www.mobilesentrix.eu";
       
       // Get the app's base URL for callback
       const protocol = req.headers['x-forwarded-proto'] || req.protocol || 'https';
@@ -23711,8 +23711,8 @@ export function registerRoutes(app: Express): Server {
       }
 
       const baseUrl = credential.environment === "staging" 
-        ? "https://preprod.mobilesentrix.com" 
-        : "https://www.mobilesentrix.com";
+        ? "https://preprod.mobilesentrix.eu" 
+        : "https://www.mobilesentrix.eu";
       
       // Exchange tokens for access token
       const exchangeResponse = await fetch(`${baseUrl}/oauth/authorize/identifiercallback`, {
