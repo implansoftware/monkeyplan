@@ -79,11 +79,13 @@ export const SHIPPING_METHODS = {
     { code: "flatrate001s_flatrate001s", name: "UPS Saturday Delivery", region: "US" },
     { code: "flatrate14_flatrate14", name: "USPS First Class", region: "US" },
   ],
-  // EU methods (MobileSentrix EU - try different formats)
+  // EU methods - same as US per MobileSentrix API documentation
   EU: [
-    { code: "tablerate_bestway", name: "FedEx Priority", region: "EU" },
-    { code: "freeshipping_freeshipping", name: "Free Shipping", region: "EU" },
-    { code: "flatrate_flatrate", name: "Flat Rate", region: "EU" },
+    { code: "flatrate6_flatrate6", name: "FedEx Priority Overnight", region: "EU" },
+    { code: "flatrate5_flatrate5", name: "FedEx Standard Overnight", region: "EU" },
+    { code: "flatrate4_flatrate4", name: "FedEx 2Day", region: "EU" },
+    { code: "flatrate3_flatrate3", name: "FedEx Ground", region: "EU" },
+    { code: "flatrate8_flatrate8", name: "FedEx Saturday Delivery", region: "EU" },
   ],
   // International
   INTL: [
@@ -96,7 +98,7 @@ export const SHIPPING_METHODS = {
 export function getDefaultShippingMethod(countryId: string): string {
   const euCountries = ["IT", "DE", "FR", "ES", "NL", "BE", "AT", "PT", "GR", "PL", "CZ", "SK", "HU", "RO", "BG", "HR", "SI", "LT", "LV", "EE", "IE", "FI", "SE", "DK"];
   if (euCountries.includes(countryId)) {
-    return "tablerate_bestway"; // Try tablerate for EU
+    return "flatrate6_flatrate6"; // FedEx Priority Overnight for EU
   }
   if (countryId === "US") {
     return "flatrate3_flatrate3"; // FedEx Ground for US
