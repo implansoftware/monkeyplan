@@ -5,13 +5,20 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import {
-  Package, Search, Loader2, Settings, AlertTriangle, Image, ShoppingCart, Plus
+  Package, Search, Loader2, Settings, AlertTriangle, Image, ShoppingCart, Plus, Filter, X
 } from "lucide-react";
 import { Link } from "wouter";
+
+type MobilesentrixCategory = {
+  id: string;
+  name: string;
+  parent_id: string | null;
+};
 
 type MobilesentrixProduct = {
   id: string;
@@ -41,10 +48,24 @@ export default function MobilesentrixCatalogPage() {
   const [totalProducts, setTotalProducts] = useState(0);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [addingToCart, setAddingToCart] = useState<string | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<string>("");
+  const [selectedBrand, setSelectedBrand] = useState<string>("");
   const perPage = 20;
 
   const { data: cartCount } = useQuery<{ count: number }>({
     queryKey: ["/api/mobilesentrix/cart/count"],
+  });
+
+  // Fetch categories
+  const { data: categories } = useQuery<MobilesentrixCategory[]>({
+    queryKey: ["/api/mobilesentrix/catalog/categories"],
+    staleTime: 10 * 60 * 1000,
+  });
+
+  // Fetch brands
+  const { data: brands } = useQuery<string[]>({
+    queryKey: ["/api/mobilesentrix/catalog/brands"],
+    staleTime: 10 * 60 * 1000,
   });
 
   const addToCartMutation = useMutation({
@@ -89,18 +110,36 @@ export default function MobilesentrixCatalogPage() {
     return () => clearTimeout(timer);
   }, [searchQuery, debouncedSearch]);
 
+  // Reset when filters change
+  useEffect(() => {
+    setAccumulatedProducts([]);
+    setCurrentPage(1);
+    setTotalProducts(0);
+  }, [selectedCategory, selectedBrand]);
+
+  const clearFilters = () => {
+    setSelectedCategory("");
+    setSelectedBrand("");
+    setSearchQuery("");
+    setDebouncedSearch("");
+  };
+
+  const hasActiveFilters = selectedCategory || selectedBrand || debouncedSearch;
+
   const { data: productsData, isLoading: loadingProducts, isFetching, error: productsError } = useQuery<{
     products: MobilesentrixProduct[];
     total: number;
     page: number;
     per_page: number;
   }>({
-    queryKey: ["/api/mobilesentrix/catalog/products", debouncedSearch, currentPage],
+    queryKey: ["/api/mobilesentrix/catalog/products", debouncedSearch, currentPage, selectedCategory, selectedBrand],
     queryFn: async () => {
       const params = new URLSearchParams();
-      params.append("search", debouncedSearch);
+      if (debouncedSearch) params.append("search", debouncedSearch);
       params.append("page", String(currentPage));
       params.append("per_page", String(perPage));
+      if (selectedCategory) params.append("category_id", selectedCategory);
+      if (selectedBrand) params.append("brand", selectedBrand);
       
       const res = await fetch(`/api/mobilesentrix/catalog/products?${params}`);
       if (!res.ok) {
@@ -109,7 +148,7 @@ export default function MobilesentrixCatalogPage() {
       }
       return res.json();
     },
-    enabled: !!credential?.isActive && debouncedSearch.length >= 2,
+    enabled: !!credential?.isActive && (debouncedSearch.length >= 2 || !!selectedCategory || !!selectedBrand),
     staleTime: 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
     retry: false,
@@ -210,17 +249,17 @@ export default function MobilesentrixCatalogPage() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Search className="h-5 w-5" />
-            Cerca Prodotti
+            <Filter className="h-5 w-5" />
+            Cerca e Filtra Prodotti
           </CardTitle>
-          <CardDescription>Inserisci almeno 2 caratteri per cercare nel catalogo MobileSentrix</CardDescription>
+          <CardDescription>Usa la ricerca o i filtri per trovare prodotti nel catalogo MobileSentrix</CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-4">
           <div className="flex items-center gap-4">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Cerca per nome, SKU, marca..."
+                placeholder="Cerca per nome, SKU..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-10"
@@ -231,10 +270,67 @@ export default function MobilesentrixCatalogPage() {
               <Loader2 className="h-5 w-5 animate-spin" />
             )}
           </div>
+          
+          <div className="flex flex-wrap items-center gap-4">
+            <div className="flex-1 min-w-[200px]">
+              <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                <SelectTrigger data-testid="select-category">
+                  <SelectValue placeholder="Tutte le categorie" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Tutte le categorie</SelectItem>
+                  {categories?.map((cat) => (
+                    <SelectItem key={cat.id} value={cat.id}>
+                      {cat.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="flex-1 min-w-[200px]">
+              <Select value={selectedBrand} onValueChange={setSelectedBrand}>
+                <SelectTrigger data-testid="select-brand">
+                  <SelectValue placeholder="Tutte le marche" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Tutte le marche</SelectItem>
+                  {brands?.map((brand) => (
+                    <SelectItem key={brand} value={brand}>
+                      {brand}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            
+            {hasActiveFilters && (
+              <Button variant="outline" size="sm" onClick={clearFilters} data-testid="button-clear-filters">
+                <X className="h-4 w-4 mr-1" />
+                Pulisci filtri
+              </Button>
+            )}
+          </div>
+          
+          {hasActiveFilters && (
+            <div className="flex flex-wrap gap-2">
+              {debouncedSearch && (
+                <Badge variant="secondary">Ricerca: "{debouncedSearch}"</Badge>
+              )}
+              {selectedCategory && categories && (
+                <Badge variant="secondary">
+                  Categoria: {categories.find(c => c.id === selectedCategory)?.name}
+                </Badge>
+              )}
+              {selectedBrand && (
+                <Badge variant="secondary">Marca: {selectedBrand}</Badge>
+              )}
+            </div>
+          )}
         </CardContent>
       </Card>
 
-      {productsError && debouncedSearch.length >= 2 && (
+      {productsError && hasActiveFilters && (
         <Alert variant="destructive">
           <AlertTriangle className="h-4 w-4" />
           <AlertDescription>
@@ -243,7 +339,7 @@ export default function MobilesentrixCatalogPage() {
         </Alert>
       )}
 
-      {debouncedSearch.length >= 2 && !productsError && (
+      {hasActiveFilters && !productsError && (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <p className="text-sm text-muted-foreground">
@@ -354,22 +450,21 @@ export default function MobilesentrixCatalogPage() {
         </div>
       )}
 
-      {debouncedSearch.length > 0 && debouncedSearch.length < 2 && (
+      {debouncedSearch.length > 0 && debouncedSearch.length < 2 && !selectedCategory && !selectedBrand && (
         <Alert>
           <AlertDescription>
-            Inserisci almeno 2 caratteri per avviare la ricerca nel catalogo.
+            Inserisci almeno 2 caratteri per cercare, oppure seleziona una categoria o marca.
           </AlertDescription>
         </Alert>
       )}
 
-      {!debouncedSearch && (
+      {!hasActiveFilters && (
         <Card>
           <CardContent className="p-8 text-center">
-            <Search className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+            <Filter className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
             <h3 className="font-semibold text-lg mb-2">Cerca nel catalogo MobileSentrix</h3>
             <p className="text-muted-foreground">
-              Usa la barra di ricerca sopra per trovare ricambi per smartphone e tablet.
-              Cerca per nome prodotto, SKU, marca o modello.
+              Usa la barra di ricerca o seleziona una categoria/marca per trovare ricambi per smartphone e tablet.
             </p>
           </CardContent>
         </Card>
