@@ -307,6 +307,8 @@ const integratedSuppliersConfig = [
     label: "MobileSentrix",
     routes: [
       { title: "Catalogo", path: "/catalog", icon: Package },
+      { title: "Carrello", path: "/cart", icon: ShoppingCart },
+      { title: "I Miei Ordini", path: "/orders", icon: ClipboardList },
       { title: "Configurazione", path: "/settings", icon: Settings },
     ],
   },
