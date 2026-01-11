@@ -396,23 +396,70 @@ export class MobilesentrixService {
   }
 
   async createOrder(items: MobilesentrixCartItem[], shippingAddress: MobilesentrixAddress, shippingMethod?: string): Promise<MobilesentrixOrderResponse> {
-    // Create cart and add items
+    // Step 1: Add items to cart (MobileSentrix requires "customrest": 1 and "products" array)
     const cartResult = await this.request<any>("/api/rest/cart", "POST", {
-      items: items.map(item => ({
+      customrest: 1,
+      products: items.map(item => ({
         sku: item.sku,
         qty: item.quantity
       }))
     });
     
     if (!cartResult.success) {
-      throw new Error(cartResult.message || "Errore nella creazione del carrello");
+      throw new Error(cartResult.message || "Errore nell'aggiunta prodotti al carrello MobileSentrix");
     }
 
-    // The cart response should contain order info or cart ID for checkout
-    if (cartResult.data?.order_id) {
+    // Get quote_id from cart response
+    const quoteId = cartResult.data?.quote_id;
+    if (!quoteId) {
+      throw new Error("Carrello creato ma quote_id non restituito");
+    }
+
+    // Step 2: Get customer addresses for billing/shipping
+    const customerResult = await this.request<any>("/api/rest/customer");
+    if (!customerResult.success || !customerResult.data) {
+      throw new Error("Impossibile recuperare informazioni cliente");
+    }
+
+    // Get first address ID (or use the one provided)
+    let addressId = customerResult.data.default_billing || customerResult.data.default_shipping;
+    
+    // If no default address, try to get addresses list
+    if (!addressId) {
+      const addressesResult = await this.request<any>("/api/rest/customers/addresses");
+      if (addressesResult.success && addressesResult.data) {
+        const addresses = Object.values(addressesResult.data);
+        if (addresses.length > 0) {
+          addressId = (addresses[0] as any).entity_id || (addresses[0] as any).id;
+        }
+      }
+    }
+
+    if (!addressId) {
+      throw new Error("Nessun indirizzo di spedizione configurato nel tuo account MobileSentrix");
+    }
+
+    // Step 3: Create order using quote_id
+    // Default shipping method: FedEx Ground = flatrate3_flatrate3
+    const selectedShipping = shippingMethod || "flatrate3_flatrate3";
+    
+    const orderResult = await this.request<any>("/api/rest/createorder", "POST", {
+      customrest: "1",
+      quote_id: String(quoteId),
+      billing_id: String(addressId),
+      shipping_id: String(addressId),
+      shipping_method: selectedShipping,
+      payment_method: "mygateway"
+    });
+
+    if (!orderResult.success) {
+      throw new Error(orderResult.message || "Errore nella creazione dell'ordine");
+    }
+
+    if (orderResult.data?.order_id || orderResult.data?.increment_id) {
       return {
-        order_id: String(cartResult.data.order_id),
-        order_number: cartResult.data.increment_id || String(cartResult.data.order_id),
+        order_id: String(orderResult.data.order_id || orderResult.data.increment_id),
+        order_number: orderResult.data.increment_id || String(orderResult.data.order_id),
         status: "pending",
         total: items.reduce((sum, i) => sum + (i.price * i.quantity), 0),
         created_at: new Date().toISOString()
