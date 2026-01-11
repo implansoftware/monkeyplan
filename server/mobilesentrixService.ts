@@ -436,9 +436,16 @@ export class MobilesentrixService {
     }
 
     // Step 2: Get customer addresses for billing/shipping
+    console.log("MobileSentrix - Fetching customer info...");
     const customerResult = await this.request<any>("/api/rest/customer");
-    if (!customerResult.success || !customerResult.data) {
-      throw new Error("Impossibile recuperare informazioni cliente");
+    console.log("MobileSentrix customer response:", JSON.stringify(customerResult));
+    
+    if (!customerResult.success) {
+      throw new Error("Impossibile recuperare informazioni cliente: " + (customerResult.message || "errore sconosciuto"));
+    }
+    
+    if (!customerResult.data) {
+      throw new Error("Nessun dato cliente ricevuto da MobileSentrix");
     }
 
     // Get first address ID (or use the one provided)
