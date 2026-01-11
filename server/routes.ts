@@ -31027,14 +31027,20 @@ export function registerRoutes(app: Express): Server {
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }
+  });
 
   // Genera immagine barcode PNG
   app.get("/api/barcode/:code", async (req, res) => {
     try {
-      const bwipjs = await import("bwip-js");
+      const bwipjsModule = await import("bwip-js");
+      const bwipjs = bwipjsModule.default || bwipjsModule;
       const { code } = req.params;
       
-      const png = bwipjs.toBuffer({
+      if (!code || code.length < 1) {
+        return res.status(400).send("Codice barcode mancante");
+      }
+      
+      const png = await bwipjs.toBuffer({
         bcid: "code128",
         text: code,
         scale: 3,
@@ -31049,9 +31055,10 @@ export function registerRoutes(app: Express): Server {
       res.set("Cache-Control", "public, max-age=31536000");
       res.send(png);
     } catch (error: any) {
+      console.error("Barcode generation error:", error);
       res.status(500).send("Errore generazione barcode");
     }
   });
-  });
+
   return httpServer;
 }
