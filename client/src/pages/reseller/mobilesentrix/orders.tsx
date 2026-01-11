@@ -334,9 +334,12 @@ export default function MobilesentrixOrdersPage() {
                     const rowTotal = item.base_row_total ? parseFloat(item.base_row_total) : (unitPrice * qty);
                     
                     return (
-                      <div key={item.item_id || index} className="flex items-start justify-between p-3 border rounded-md gap-4">
+                      <div key={item.item_id || index} className="flex items-start gap-3 p-3 border rounded-md">
+                        <div className="w-12 h-12 bg-muted rounded-md flex items-center justify-center shrink-0">
+                          <Package className="h-6 w-6 text-muted-foreground" />
+                        </div>
                         <div className="flex-1 min-w-0">
-                          <p className="font-medium text-sm truncate">{item.name || "Prodotto"}</p>
+                          <p className="font-medium text-sm">{item.name || "Prodotto"}</p>
                           <p className="text-xs text-muted-foreground">SKU: {item.sku}</p>
                           <p className="text-xs text-muted-foreground">{formatPrice(unitPrice)} cad.</p>
                         </div>
