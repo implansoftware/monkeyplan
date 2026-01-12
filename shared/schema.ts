@@ -6205,10 +6205,23 @@ export const posPaymentMethodEnum = pgEnum("pos_payment_method", [
   "mixed",          // Pagamento misto
 ]);
 
+// Registri di cassa POS (più casse per centro riparazione)
+export const posRegisters = pgTable("pos_registers", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  repairCenterId: varchar("repair_center_id").notNull().references(() => repairCenters.id, { onDelete: "cascade" }),
+  name: varchar("name", { length: 100 }).notNull(),
+  description: text("description"),
+  isActive: boolean("is_active").notNull().default(true),
+  isDefault: boolean("is_default").notNull().default(false),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
 // Sessioni Cassa POS
 export const posSessions = pgTable("pos_sessions", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   repairCenterId: varchar("repair_center_id").notNull().references(() => repairCenters.id, { onDelete: "cascade" }),
+  registerId: varchar("register_id").references(() => posRegisters.id, { onDelete: "set null" }),
   operatorId: varchar("operator_id").notNull().references(() => users.id),
   
   // Stato sessione
@@ -6246,6 +6259,7 @@ export const posTransactions = pgTable("pos_transactions", {
   
   // Riferimenti
   repairCenterId: varchar("repair_center_id").notNull().references(() => repairCenters.id, { onDelete: "cascade" }),
+  registerId: varchar("register_id").references(() => posRegisters.id, { onDelete: "set null" }),
   sessionId: varchar("session_id").references(() => posSessions.id),
   customerId: varchar("customer_id").references(() => users.id), // Opzionale per vendita anonima
   operatorId: varchar("operator_id").notNull().references(() => users.id),
@@ -6310,6 +6324,12 @@ export const posTransactionItems = pgTable("pos_transaction_items", {
 });
 
 // Insert Schemas POS
+export const insertPosRegisterSchema = createInsertSchema(posRegisters).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 export const insertPosSessionSchema = createInsertSchema(posSessions).omit({
   id: true,
   createdAt: true,
@@ -6343,6 +6363,9 @@ export const insertPosTransactionItemSchema = createInsertSchema(posTransactionI
 });
 
 // Types POS
+export type PosRegister = typeof posRegisters.$inferSelect;
+export type InsertPosRegister = z.infer<typeof insertPosRegisterSchema>;
+
 export type PosSession = typeof posSessions.$inferSelect;
 export type InsertPosSession = z.infer<typeof insertPosSessionSchema>;
 
