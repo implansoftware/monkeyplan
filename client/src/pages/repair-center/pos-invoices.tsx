@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Search, ShoppingCart, Eye, Receipt, FileText, Package } from "lucide-react";
+import { Search, ShoppingCart, Eye, Receipt, FileText, Package, Store } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { format } from "date-fns";
@@ -23,6 +23,8 @@ interface SaleTransaction {
   itemCount: number;
   createdAt: string;
   hasInvoice: boolean;
+  registerId: string | null;
+  registerName: string | null;
 }
 
 export default function SalesHistoryPage() {
@@ -154,6 +156,7 @@ export default function SalesHistoryPage() {
                   <TableRow>
                     <TableHead>Numero</TableHead>
                     <TableHead>Data</TableHead>
+                    <TableHead>Cassa</TableHead>
                     <TableHead>Articoli</TableHead>
                     <TableHead>Pagamento</TableHead>
                     <TableHead>Importo</TableHead>
@@ -167,6 +170,16 @@ export default function SalesHistoryPage() {
                       <TableCell className="font-medium font-mono text-sm">{tx.transactionNumber}</TableCell>
                       <TableCell>
                         {format(new Date(tx.createdAt), "dd MMM yyyy, HH:mm", { locale: it })}
+                      </TableCell>
+                      <TableCell>
+                        {tx.registerName ? (
+                          <div className="flex items-center gap-1">
+                            <Store className="h-3.5 w-3.5 text-muted-foreground" />
+                            <span>{tx.registerName}</span>
+                          </div>
+                        ) : (
+                          <span className="text-muted-foreground">-</span>
+                        )}
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-1">

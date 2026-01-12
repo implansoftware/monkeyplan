@@ -2692,6 +2692,8 @@ export class DatabaseStorage implements IStorage {
     itemCount: number;
     createdAt: Date;
     hasInvoice: boolean;
+    registerId: string | null;
+    registerName: string | null;
   }[]> {
     const result = await db
       .select({
@@ -2703,14 +2705,17 @@ export class DatabaseStorage implements IStorage {
         subtotal: posTransactions.subtotal,
         discount: posTransactions.discountAmount,
         createdAt: posTransactions.createdAt,
+        registerId: posTransactions.registerId,
       })
       .from(posTransactions)
       .where(eq(posTransactions.repairCenterId, repairCenterId))
       .orderBy(desc(posTransactions.createdAt));
     
     const txIds = result.map(r => r.id);
+    const registerIds = [...new Set(result.map(r => r.registerId).filter(Boolean))] as string[];
     const invoiceMap = new Map<string, boolean>();
     const itemCountMap = new Map<string, number>();
+    const registerNameMap = new Map<string, string>();
     
     if (txIds.length > 0) {
       const txInvoices = await db.select({ posTransactionId: invoices.posTransactionId })
@@ -2735,11 +2740,21 @@ export class DatabaseStorage implements IStorage {
         itemCountMap.set(item.transactionId, current + item.quantity);
       }
     }
+
+    if (registerIds.length > 0) {
+      const registers = await db.select({ id: posRegisters.id, name: posRegisters.name })
+        .from(posRegisters)
+        .where(inArray(posRegisters.id, registerIds));
+      for (const reg of registers) {
+        registerNameMap.set(reg.id, reg.name);
+      }
+    }
     
     return result.map(r => ({
       ...r,
       itemCount: itemCountMap.get(r.id) || 0,
       hasInvoice: invoiceMap.has(r.id),
+      registerName: r.registerId ? registerNameMap.get(r.registerId) || null : null,
     }));
   }
 
