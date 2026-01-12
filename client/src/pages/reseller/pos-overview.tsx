@@ -75,14 +75,28 @@ interface TransactionDetail {
   repairCenterName: string;
 }
 
+interface RepairCenter {
+  id: string;
+  name: string;
+}
+
 export default function ResellerPosOverview() {
   const [period, setPeriod] = useState("today");
+  const [repairCenterFilter, setRepairCenterFilter] = useState("all");
   const [selectedTxId, setSelectedTxId] = useState<string | null>(null);
 
+  const { data: repairCenters } = useQuery<RepairCenter[]>({
+    queryKey: ["/api/reseller/repair-centers"],
+  });
+
   const { data: stats, isLoading } = useQuery<PosStats>({
-    queryKey: ["/api/reseller/pos/stats", period],
+    queryKey: ["/api/reseller/pos/stats", period, repairCenterFilter],
     queryFn: async () => {
-      const res = await fetch(`/api/reseller/pos/stats?period=${period}`);
+      const params = new URLSearchParams({ period });
+      if (repairCenterFilter !== "all") {
+        params.set("repairCenterId", repairCenterFilter);
+      }
+      const res = await fetch(`/api/reseller/pos/stats?${params.toString()}`);
       if (!res.ok) throw new Error("Failed to fetch stats");
       return res.json();
     },
@@ -155,16 +169,31 @@ export default function ResellerPosOverview() {
             Monitoraggio casse dei tuoi centri riparazione
           </p>
         </div>
-        <Select value={period} onValueChange={setPeriod}>
-          <SelectTrigger className="w-40" data-testid="select-period">
-            <SelectValue placeholder="Periodo" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="today">Oggi</SelectItem>
-            <SelectItem value="week">Settimana</SelectItem>
-            <SelectItem value="month">Mese</SelectItem>
-          </SelectContent>
-        </Select>
+        <div className="flex items-center gap-2 flex-wrap">
+          <Select value={repairCenterFilter} onValueChange={setRepairCenterFilter}>
+            <SelectTrigger className="w-48" data-testid="select-repair-center">
+              <SelectValue placeholder="Tutti i centri" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Tutti i centri</SelectItem>
+              {repairCenters?.map((rc) => (
+                <SelectItem key={rc.id} value={rc.id}>
+                  {rc.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={period} onValueChange={setPeriod}>
+            <SelectTrigger className="w-40" data-testid="select-period">
+              <SelectValue placeholder="Periodo" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="today">Oggi</SelectItem>
+              <SelectItem value="week">Settimana</SelectItem>
+              <SelectItem value="month">Mese</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
