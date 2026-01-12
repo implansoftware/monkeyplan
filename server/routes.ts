@@ -31882,6 +31882,44 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+
+  // Genera fattura da transazione POS
+  app.post("/api/repair-center/pos/transaction/:id/generate-invoice", requireRole("repair_center", "repair_center_staff"), async (req, res) => {
+    try {
+      const repairCenterId = req.user!.repairCenterId || req.user!.id;
+      const transactionId = req.params.id;
+      
+      const transaction = await storage.getPosTransaction(transactionId);
+      if (!transaction) return res.status(404).json({ error: "Transazione non trovata" });
+      if (transaction.repairCenterId !== repairCenterId) return res.status(403).json({ error: "Non autorizzato" });
+      if (transaction.invoiceId) return res.status(400).json({ error: "Fattura già generata per questa transazione" });
+      
+      const { customerId } = req.body;
+      if (!customerId) return res.status(400).json({ error: "Cliente richiesto per la fattura" });
+      
+      const billingData = await storage.getBillingDataByUserId(customerId);
+      if (!billingData) return res.status(400).json({ error: "Dati di fatturazione mancanti per il cliente" });
+      
+      const invoice = await storage.createInvoice({
+        customerId,
+        posTransactionId: transactionId,
+        amount: transaction.subtotal - transaction.discountAmount,
+        tax: transaction.taxAmount,
+        total: transaction.total,
+        paymentStatus: "paid",
+        paymentMethod: transaction.paymentMethod,
+        paidDate: new Date(),
+        notes: `Fattura generata da vendita POS ${transaction.transactionNumber}`,
+      });
+      
+      await storage.updatePosTransactionInvoice(transactionId, invoice.id);
+      
+      res.json({ invoice, billingData });
+    } catch (error: any) {
+      console.error("POS invoice generation error:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
   // Lista transazioni sessione corrente
   app.get("/api/repair-center/pos/transactions", requireRole("repair_center", "repair_center_staff"), async (req, res) => {
     try {

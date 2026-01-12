@@ -9876,6 +9876,14 @@ export class DatabaseStorage implements IStorage {
     return transaction;
   }
 
+  async updatePosTransactionInvoice(id: string, invoiceId: string): Promise<PosTransaction> {
+    const [transaction] = await db.update(posTransactions)
+      .set({ invoiceId, updatedAt: new Date() })
+      .where(eq(posTransactions.id, id))
+      .returning();
+    return transaction;
+  }
+
   async generatePosTransactionNumber(repairCenterId: string): Promise<string> {
     const now = new Date();
     const yymm = `${now.getFullYear().toString().slice(-2)}${(now.getMonth() + 1).toString().padStart(2, '0')}`;
