@@ -32623,7 +32623,17 @@ export function registerRoutes(app: Express): Server {
       const center = await storage.getRepairCenter(session.repairCenterId);
       if (!center || center.resellerId !== resellerId) return res.status(403).json({ error: "Non autorizzato" });
       const transactions = await storage.getPosTransactionsBySession(session.id);
-      res.json({ session, transactions });
+      const operator = await storage.getUser(session.operatorId);
+      const register = session.registerId ? await storage.getPosRegister(session.registerId) : null;
+      res.json({ 
+        session: {
+          ...session,
+          repairCenterName: center.name,
+          registerName: register?.name || null,
+          operatorName: operator?.fullName || "Operatore"
+        }, 
+        transactions 
+      });
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }
