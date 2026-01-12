@@ -1,4 +1,3 @@
-import { registerExternalOrdersRoutes } from "./externalOrdersRoutes";
 import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { WebSocketServer, WebSocket } from "ws";
@@ -613,9 +612,6 @@ async function autoSyncWorkProfileFromRepairCenter(repairCenterId: string, openi
 export function registerRoutes(app: Express): Server {
   // Setup authentication routes
   setupAuth(app);
-  
-  // Register external orders routes for warehouse integration
-  registerExternalOrdersRoutes(app);
 
   // Apply automatic logging middleware to all routes
   app.use(autoLogMiddleware);

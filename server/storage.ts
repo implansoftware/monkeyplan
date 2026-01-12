@@ -45,7 +45,6 @@ import {
   TrovausatiOrder, InsertTrovausatiOrder, trovausatiCredentials, trovausatiShops, trovausatiOrders,
   FonedayCredential, InsertFonedayCredential, FonedayOrder, InsertFonedayOrder, FonedayProductsCache, InsertFonedayProductsCache,
   MobilesentrixCredential, InsertMobilesentrixCredential, MobilesentrixOrder, InsertMobilesentrixOrder, MobilesentrixCartItem, InsertMobilesentrixCartItem, MobilesentrixOrderItem, InsertMobilesentrixOrderItem,
-  ExternalProductMapping, InsertExternalProductMapping, externalProductMappings,
   ExternalIntegration, InsertExternalIntegration, externalIntegrations,
   ServiceItem, InsertServiceItem, ServiceItemPrice, InsertServiceItemPrice,
   ProductDeviceCompatibility, InsertProductDeviceCompatibility, productDeviceCompatibilities,
@@ -710,15 +709,6 @@ export interface IStorage {
   // MobileSentrix Order Items
   getMobilesentrixOrderItems(orderId: string): Promise<MobilesentrixOrderItem[]>;
   createMobilesentrixOrderItem(item: InsertMobilesentrixOrderItem): Promise<MobilesentrixOrderItem>;
-  updateMobilesentrixOrderItem(id: string, updates: Partial<InsertMobilesentrixOrderItem>): Promise<MobilesentrixOrderItem>;
-  
-  // External Product Mappings (Mappature SKU esterni → prodotti MonkeyPlan)
-  listExternalProductMappings(resellerId: string, source?: string): Promise<ExternalProductMapping[]>;
-  getExternalProductMapping(id: string): Promise<ExternalProductMapping | undefined>;
-  getExternalProductMappingBySku(resellerId: string, source: string, externalSku: string): Promise<ExternalProductMapping | undefined>;
-  createExternalProductMapping(mapping: InsertExternalProductMapping): Promise<ExternalProductMapping>;
-  updateExternalProductMapping(id: string, updates: Partial<InsertExternalProductMapping>): Promise<ExternalProductMapping>;
-  deleteExternalProductMapping(id: string): Promise<void>;
   
   // Service Catalog (Catalogo Interventi)
   listServiceItems(): Promise<ServiceItem[]>;
@@ -6356,67 +6346,6 @@ export class DatabaseStorage implements IStorage {
     return created;
   }
 
-  async updateMobilesentrixOrderItem(id: string, updates: Partial<InsertMobilesentrixOrderItem>): Promise<MobilesentrixOrderItem> {
-    const [updated] = await db.update(mobilesentrixOrderItems)
-      .set(updates)
-      .where(eq(mobilesentrixOrderItems.id, id))
-      .returning();
-    return updated;
-  }
-
-  // ==========================================
-  // EXTERNAL PRODUCT MAPPINGS
-  // ==========================================
-
-  async listExternalProductMappings(resellerId: string, source?: string): Promise<ExternalProductMapping[]> {
-    const conditions = [eq(externalProductMappings.resellerId, resellerId)];
-    if (source) {
-      conditions.push(eq(externalProductMappings.source, source as any));
-    }
-    return await db.select()
-      .from(externalProductMappings)
-      .where(and(...conditions))
-      .orderBy(desc(externalProductMappings.createdAt));
-  }
-
-  async getExternalProductMapping(id: string): Promise<ExternalProductMapping | undefined> {
-    const [mapping] = await db.select()
-      .from(externalProductMappings)
-      .where(eq(externalProductMappings.id, id))
-      .limit(1);
-    return mapping;
-  }
-
-  async getExternalProductMappingBySku(resellerId: string, source: string, externalSku: string): Promise<ExternalProductMapping | undefined> {
-    const [mapping] = await db.select()
-      .from(externalProductMappings)
-      .where(and(
-        eq(externalProductMappings.resellerId, resellerId),
-        eq(externalProductMappings.source, source as any),
-        eq(externalProductMappings.externalSku, externalSku)
-      ))
-      .limit(1);
-    return mapping;
-  }
-
-  async createExternalProductMapping(mapping: InsertExternalProductMapping): Promise<ExternalProductMapping> {
-    const [created] = await db.insert(externalProductMappings)
-      .values(mapping)
-      .returning();
-    return created;
-  }
-
-  async updateExternalProductMapping(id: string, updates: Partial<InsertExternalProductMapping>): Promise<ExternalProductMapping> {
-    const [updated] = await db.update(externalProductMappings)
-      .set({ ...updates, updatedAt: new Date() })
-      .where(eq(externalProductMappings.id, id))
-      .returning();
-    return updated;
-  }
-
-  async deleteExternalProductMapping(id: string): Promise<void> {
-    await db.delete(externalProductMappings).where(eq(externalProductMappings.id, id));
-  }
 
   // ==========================================
   // SERVICE CATALOG (CATALOGO INTERVENTI)

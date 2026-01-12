@@ -763,36 +763,6 @@ export class MobilesentrixService {
     
     if (result.success && result.data) {
       const data = result.data;
-      const orderItems = data.order_items || [];
-      
-      // Try to fetch images for each product by SKU
-      const itemsWithImages = await Promise.all(
-        orderItems.map(async (item: any) => {
-          let image_url = "";
-          try {
-            // Search for product by SKU to get image
-            const searchResult = await this.request<any>("/api/rest/products", "GET", undefined, {
-              "filter[1][attribute]": "sku",
-              "filter[1][eq]": item.sku,
-              "limit": "1"
-            });
-            if (searchResult.success && searchResult.data) {
-              const products = Object.values(searchResult.data);
-              if (products.length > 0) {
-                const p = products[0] as any;
-                image_url = p.image_url || p.default_image || "";
-              }
-            }
-          } catch (e) {
-            // Ignore image fetch errors
-          }
-          return {
-            ...item,
-            image_url
-          };
-        })
-      );
-      
       return {
         entity_id: String(data.entity_id || orderId),
         increment_id: data.increment_id || String(orderId),
@@ -809,7 +779,7 @@ export class MobilesentrixService {
         payment_method: data.payment_method || "",
         customer_email: data.customer_email || "",
         addresses: data.addresses || [],
-        order_items: itemsWithImages
+        order_items: data.order_items || []
       };
     }
     throw new Error(result.message || "Ordine non trovato");

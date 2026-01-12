@@ -1,4 +1,4 @@
-# MonkeyPlan Beta v.23
+# MonkeyPlan Beta v.22.5
 
 ## Overview
 MonkeyPlan is an enterprise-level repair management platform designed to streamline device repair workflows, inventory, ticketing, and billing. It offers a full-stack TypeScript solution for administrators, resellers, repair centers, and customers, providing comprehensive repair order management, a real-time ticketing system, and robust inventory control across four distinct user roles. The platform's core purpose is to enhance efficiency and transparency in device repair processes with a business vision to dominate the repair management software market through its comprehensive features and user-friendly design.
@@ -20,8 +20,7 @@ The backend is an `Express.js` application with TypeScript, featuring a RESTful 
 *   **Workflow Systems**: Advanced repair workflow with a 10-state enum, acceptance wizard, diagnostics, quote management, parts ordering, and detailed repair logging.
 *   **Supply Chain**: Supplier/Procurement module with multi-supplier support, order/return workflows, and external API integration for catalog sync and ordering.
 *   **Customer & Service Management**: Corporate branch management, a standardized service catalog with custom pricing, and a delivery appointment system.
-*   **Integrations**: Direct integration with SIFAR supplier API for spare parts ordering, including credential management, store mapping, catalog browsing, cart functionality, and order submission. MobileSentrix integration with OAuth 1.0a authentication, EUR pricing (0.92 conversion rate), Italian interface, and blue/cyan gradient design.
-*   **External Supplier Warehouse Integration**: Unified system for receiving orders from external suppliers (MobileSentrix, SIFAR, Foneday, TrovaUsati) directly into MonkeyPlan warehouses. Features include external product mapping (externalProductMappings table), automatic stock movements creation, and per-reseller SKU mappings for seamless inventory management.
+*   **Integrations**: Direct integration with SIFAR supplier API for spare parts ordering, including credential management, store mapping, catalog browsing, cart functionality, and order submission.
 *   **B2B Ordering System**: Multi-level B2B ordering supporting both Reseller→Admin and RepairCenter→Reseller purchase flows with automatic stock transfers, order approval workflows, shipping tracking, and receipt confirmation.
 *   **Multi-Role Ticketing**: Two ticket types - "support" (customer→admin) and "internal" (between business entities). Internal tickets enable resellers, repair centers, and admins to communicate with role-based filtering and access control. Tickets include initiator/target tracking with proper role-based visibility.
 

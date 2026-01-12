@@ -57,7 +57,6 @@ type OrderDetails = {
     qty_ordered: string;
     price: string;
     base_row_total: string;
-    image_url?: string;
   }>;
 };
 
@@ -336,20 +335,8 @@ export default function MobilesentrixOrdersPage() {
                     
                     return (
                       <div key={item.item_id || index} className="flex items-start gap-3 p-3 border rounded-md">
-                        <div className="w-12 h-12 bg-muted rounded-md flex items-center justify-center shrink-0 overflow-hidden">
-                          {item.image_url ? (
-                            <img 
-                              src={item.image_url} 
-                              alt={item.name} 
-                              className="w-full h-full object-contain"
-                              onError={(e) => {
-                                e.currentTarget.style.display = 'none';
-                                e.currentTarget.parentElement?.classList.add('fallback-icon');
-                              }}
-                            />
-                          ) : (
-                            <Package className="h-6 w-6 text-muted-foreground" />
-                          )}
+                        <div className="w-12 h-12 bg-muted rounded-md flex items-center justify-center shrink-0">
+                          <Package className="h-6 w-6 text-muted-foreground" />
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="font-medium text-sm">{item.name || "Prodotto"}</p>

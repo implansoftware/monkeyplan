@@ -2230,12 +2230,6 @@ export const sifarOrders = pgTable("sifar_orders", {
   // Link a ordine fornitore interno (opzionale)
   supplierOrderId: varchar("supplier_order_id").references(() => supplierOrders.id, { onDelete: "set null" }),
   
-  // Ricezione in magazzino MonkeyPlan
-  targetWarehouseId: varchar("target_warehouse_id").references(() => warehouses.id, { onDelete: "set null" }),
-  isReceivedInWarehouse: boolean("is_received_in_warehouse").notNull().default(false),
-  receivedAt: timestamp("received_at"),
-  receivedBy: varchar("received_by").references(() => users.id, { onDelete: "set null" }),
-  
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
@@ -2394,12 +2388,6 @@ export const trovausatiOrders = pgTable("trovausati_orders", {
   // Cache dati prodotti
   productsData: text("products_data"), // JSON array dei prodotti
   
-  // Ricezione in magazzino MonkeyPlan
-  targetWarehouseId: varchar("target_warehouse_id").references(() => warehouses.id, { onDelete: "set null" }),
-  isReceivedInWarehouse: boolean("is_received_in_warehouse").notNull().default(false),
-  receivedAt: timestamp("received_at"),
-  receivedBy: varchar("received_by").references(() => users.id, { onDelete: "set null" }),
-  
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
@@ -2465,48 +2453,6 @@ export const trovausatiModels = pgTable("trovausati_models", {
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 
-// ============ MAPPATURA PRODOTTI ESTERNI ============
-
-// Tipo sorgente ordine esterno
-export const externalSourceEnum = pgEnum("external_source", [
-  "mobilesentrix",
-  "sifar", 
-  "foneday",
-  "trovausati"
-]);
-
-// Mappatura SKU esterni → prodotti MonkeyPlan
-export const externalProductMappings = pgTable("external_product_mappings", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  resellerId: varchar("reseller_id").notNull().references(() => users.id, { onDelete: "cascade" }),
-  
-  // Sorgente e identificativo esterno
-  source: externalSourceEnum("source").notNull(),
-  externalSku: text("external_sku").notNull(),
-  externalName: text("external_name"), // Nome prodotto dal fornitore
-  externalBrand: text("external_brand"),
-  
-  // Mappatura a prodotto MonkeyPlan
-  monkeyplanProductId: varchar("monkeyplan_product_id").notNull().references(() => products.id, { onDelete: "cascade" }),
-  
-  // Auto-creato o mappato manualmente
-  autoCreated: boolean("auto_created").notNull().default(false),
-  
-  createdAt: timestamp("created_at").notNull().defaultNow(),
-  updatedAt: timestamp("updated_at").notNull().defaultNow(),
-}, (table) => ({
-  uniqueMapping: unique().on(table.resellerId, table.source, table.externalSku),
-}));
-
-export const insertExternalProductMappingSchema = createInsertSchema(externalProductMappings).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
-
-export type ExternalProductMapping = typeof externalProductMappings.$inferSelect;
-export type InsertExternalProductMapping = z.infer<typeof insertExternalProductMappingSchema>;
-
 // ============ FONEDAY INTEGRATION ============
 
 // Credenziali Foneday per reseller
@@ -2550,12 +2496,6 @@ export const fonedayOrders = pgTable("foneday_orders", {
   
   // Dati ordine completo (JSON)
   orderData: text("order_data"),
-  
-  // Ricezione in magazzino MonkeyPlan
-  targetWarehouseId: varchar("target_warehouse_id").references(() => warehouses.id, { onDelete: "set null" }),
-  isReceivedInWarehouse: boolean("is_received_in_warehouse").notNull().default(false),
-  receivedAt: timestamp("received_at"),
-  receivedBy: varchar("received_by").references(() => users.id, { onDelete: "set null" }),
   
   fonedayCreatedAt: timestamp("foneday_created_at"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
@@ -2635,12 +2575,6 @@ export const mobilesentrixOrders = pgTable("mobilesentrix_orders", {
   // Dati ordine completo (JSON)
   orderData: text("order_data"),
   
-  // Ricezione in magazzino MonkeyPlan
-  targetWarehouseId: varchar("target_warehouse_id").references(() => warehouses.id, { onDelete: "set null" }),
-  isReceivedInWarehouse: boolean("is_received_in_warehouse").notNull().default(false),
-  receivedAt: timestamp("received_at"),
-  receivedBy: varchar("received_by").references(() => users.id, { onDelete: "set null" }),
-  
   mobilesentrixCreatedAt: timestamp("mobilesentrix_created_at"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
@@ -2679,10 +2613,6 @@ export const mobilesentrixOrderItems = pgTable("mobilesentrix_order_items", {
   price: integer("price").notNull(), // In centesimi USD
   quantity: integer("quantity").notNull(),
   imageUrl: text("image_url"),
-  
-  // Mappatura a prodotto MonkeyPlan (per ricezione magazzino)
-  monkeyplanProductId: varchar("monkeyplan_product_id").references(() => products.id, { onDelete: "set null" }),
-  quantityReceived: integer("quantity_received").notNull().default(0),
   
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
