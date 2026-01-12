@@ -10215,6 +10215,112 @@ export class DatabaseStorage implements IStorage {
       })),
     };
   }
+
+  async getResellerPosOverviewStats(resellerId: string, period: string): Promise<{
+    totalSessions: number;
+    activeSessions: number;
+    todayTransactions: number;
+    todayRevenue: number;
+    todayRefunds: number;
+    paymentBreakdown: { cash: number; card: number; pos_terminal: number; satispay: number; mixed: number };
+    topRepairCenters: { id: number; name: string; transactionCount: number; revenue: number }[];
+    recentTransactions: { id: number; transactionNumber: string; type: string; paymentMethod: string; totalAmount: number; createdAt: string; repairCenterName: string }[];
+  }> {
+    const now = new Date();
+    let startDate: Date;
+    if (period === "week") {
+      startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    } else if (period === "month") {
+      startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+    } else {
+      startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    }
+
+    const subResellers = await db.select({ id: users.id })
+      .from(users)
+      .where(and(eq(users.parentResellerId, resellerId), eq(users.role, "reseller")));
+    const allResellerIds = [resellerId, ...subResellers.map(s => s.id)];
+    const centers = await this.getRepairCentersByResellerIds(allResellerIds);
+    const centerIds = centers.map(c => c.id);
+
+    if (centerIds.length === 0) {
+      return {
+        totalSessions: 0, activeSessions: 0, todayTransactions: 0, todayRevenue: 0, todayRefunds: 0,
+        paymentBreakdown: { cash: 0, card: 0, pos_terminal: 0, satispay: 0, mixed: 0 },
+        topRepairCenters: [], recentTransactions: [],
+      };
+    }
+
+    const allSessions = await db.select().from(posSessions)
+      .where(inArray(posSessions.repairCenterId, centerIds));
+    const totalSessions = allSessions.length;
+    const activeSessions = allSessions.filter(s => s.status === "open").length;
+
+    const transactions = await db.select({
+      tx: posTransactions,
+      repairCenterName: repairCenters.name,
+      repairCenterId: repairCenters.id,
+    })
+    .from(posTransactions)
+    .innerJoin(posSessions, eq(posTransactions.sessionId, posSessions.id))
+    .innerJoin(repairCenters, eq(posSessions.repairCenterId, repairCenters.id))
+    .where(and(
+      inArray(posSessions.repairCenterId, centerIds),
+      gte(posTransactions.createdAt, startDate)
+    ))
+    .orderBy(desc(posTransactions.createdAt));
+
+    let todayRevenue = 0;
+    let todayRefunds = 0;
+    const paymentBreakdown = { cash: 0, card: 0, pos_terminal: 0, satispay: 0, mixed: 0 };
+
+    for (const t of transactions) {
+      if (t.tx.type === "sale") {
+        todayRevenue += t.tx.totalAmount || 0;
+      } else if (t.tx.type === "refund") {
+        todayRefunds += t.tx.totalAmount || 0;
+      }
+      const method = t.tx.paymentMethod as keyof typeof paymentBreakdown;
+      if (method && paymentBreakdown.hasOwnProperty(method)) {
+        paymentBreakdown[method] += t.tx.totalAmount || 0;
+      }
+    }
+
+    const rcStats = new Map<string, { id: string; name: string; transactionCount: number; revenue: number }>();
+    for (const t of transactions) {
+      const existing = rcStats.get(t.repairCenterId);
+      if (existing) {
+        existing.transactionCount++;
+        if (t.tx.type === "sale") existing.revenue += t.tx.totalAmount || 0;
+      } else {
+        rcStats.set(t.repairCenterId, {
+          id: t.repairCenterId,
+          name: t.repairCenterName,
+          transactionCount: 1,
+          revenue: t.tx.type === "sale" ? (t.tx.totalAmount || 0) : 0,
+        });
+      }
+    }
+    const topRepairCenters = Array.from(rcStats.values())
+      .map((data, idx) => ({ id: idx + 1, name: data.name, transactionCount: data.transactionCount, revenue: data.revenue }))
+      .sort((a, b) => b.revenue - a.revenue)
+      .slice(0, 5);
+
+    const recentTransactions = transactions.slice(0, 10).map(t => ({
+      id: t.tx.id,
+      transactionNumber: t.tx.transactionNumber,
+      type: t.tx.type,
+      paymentMethod: t.tx.paymentMethod,
+      totalAmount: t.tx.totalAmount || 0,
+      createdAt: t.tx.createdAt?.toISOString() || "",
+      repairCenterName: t.repairCenterName,
+    }));
+
+    return {
+      totalSessions, activeSessions, todayTransactions: transactions.length, todayRevenue, todayRefunds,
+      paymentBreakdown, topRepairCenters, recentTransactions,
+    };
+  }
 }
 
 export const storage = new DatabaseStorage();
