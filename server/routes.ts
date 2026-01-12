@@ -48,6 +48,7 @@ import {
 import { ObjectStorageService, objectStorageClient, parseObjectPath, signObjectURL } from "./objectStorage";
 import { canAccessObject, ObjectPermission } from "./objectAcl";
 import { generateAndStoreReturnDocuments, getSignedDownloadUrl, generateTransferDDT, TransferDdtData } from "./services/shippingDocuments";
+import { generatePosReceiptPdf } from "./services/posReceipt";
 import { calculateRepairPriority } from "./helpers/priorityCalculation";
 import { db } from "./db";
 import { sql } from "drizzle-orm";
@@ -31917,6 +31918,85 @@ export function registerRoutes(app: Express): Server {
       res.json({ invoice, billingData });
     } catch (error: any) {
       console.error("POS invoice generation error:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Download PDF scontrino/fattura POS
+  app.get("/api/repair-center/pos/transaction/:id/receipt", requireRole("repair_center", "repair_center_staff"), async (req, res) => {
+    try {
+      const repairCenterId = req.user!.repairCenterId || req.user!.id;
+      const transactionId = req.params.id;
+      
+      const transaction = await storage.getPosTransaction(transactionId);
+      if (!transaction) return res.status(404).json({ error: "Transazione non trovata" });
+      if (transaction.repairCenterId !== repairCenterId) return res.status(403).json({ error: "Non autorizzato" });
+      
+      const items = await storage.getPosTransactionItems(transactionId);
+      const repairCenter = await storage.getUser(repairCenterId);
+      const operator = transaction.operatorId ? await storage.getUser(transaction.operatorId) : undefined;
+      let customer = null;
+      let billingData = null;
+      
+      if (transaction.customerId) {
+        customer = await storage.getUser(transaction.customerId);
+        billingData = await storage.getBillingDataByUserId(transaction.customerId);
+      }
+      
+      const pdfBuffer = await generatePosReceiptPdf({
+        transaction: {
+          transactionNumber: transaction.transactionNumber,
+          createdAt: transaction.createdAt,
+          subtotal: transaction.subtotal,
+          discountAmount: transaction.discountAmount,
+          taxRate: transaction.taxRate,
+          taxAmount: transaction.taxAmount,
+          total: transaction.total,
+          paymentMethod: transaction.paymentMethod,
+          cashReceived: transaction.cashReceived,
+          changeGiven: transaction.changeGiven,
+        },
+        items: items.map(item => ({
+          productName: item.productName,
+          productSku: item.productSku,
+          quantity: item.quantity,
+          unitPrice: item.unitPrice,
+          discount: item.discount,
+          totalPrice: item.totalPrice,
+        })),
+        repairCenter: {
+          name: repairCenter?.ragioneSociale || repairCenter?.fullName || repairCenter?.username || "Centro Riparazioni",
+          address: repairCenter?.indirizzo,
+          city: repairCenter?.citta,
+          postalCode: repairCenter?.cap,
+          province: repairCenter?.provincia,
+          phone: repairCenter?.phone,
+          email: repairCenter?.email,
+          partitaIva: repairCenter?.partitaIva,
+        },
+        operator: operator ? { fullName: operator.fullName || operator.username } : undefined,
+        customer: customer ? { fullName: customer.fullName, email: customer.email } : null,
+        billingData: billingData ? {
+          companyName: billingData.companyName,
+          fiscalCode: billingData.fiscalCode,
+          vatNumber: billingData.vatNumber,
+          address: billingData.address,
+          city: billingData.city,
+          postalCode: billingData.postalCode,
+          province: billingData.province,
+        } : null,
+        isInvoice: !!transaction.invoiceId,
+      });
+      
+      const filename = transaction.invoiceId 
+        ? `fattura_${transaction.transactionNumber}.pdf`
+        : `scontrino_${transaction.transactionNumber}.pdf`;
+      
+      res.setHeader("Content-Type", "application/pdf");
+      res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+      res.send(pdfBuffer);
+    } catch (error: any) {
+      console.error("POS receipt PDF error:", error);
       res.status(500).json({ error: error.message });
     }
   });

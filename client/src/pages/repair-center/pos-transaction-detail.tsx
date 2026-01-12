@@ -236,7 +236,14 @@ export default function PosTransactionDetailPage() {
         </div>
         <div className="flex items-center gap-2">
           <Badge variant={statusInfo.variant}>{statusInfo.label}</Badge>
-          <Button variant="outline" size="sm" data-testid="button-print">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            data-testid="button-print"
+            onClick={() => {
+              window.open(`/api/repair-center/pos/transaction/${transaction.id}/receipt`, '_blank');
+            }}
+          >
             <Printer className="w-4 h-4 mr-2" />
             Stampa
           </Button>
