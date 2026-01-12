@@ -32177,6 +32177,13 @@ export function registerRoutes(app: Express): Server {
       if (!items || items.length === 0) return res.status(400).json({ error: "Nessun articolo" });
       if (!paymentMethod) return res.status(400).json({ error: "Metodo pagamento richiesto" });
 
+      // Trova automaticamente il magazzino del repair center
+      const warehouseList = await storage.listWarehouses({ 
+        ownerType: 'repair_center', 
+        ownerId: repairCenterId 
+      });
+      const repairCenterWarehouseId = warehouseList.length > 0 ? warehouseList[0].id : null;
+
       let subtotal = 0;
       const processedItems = [];
       
@@ -32197,7 +32204,7 @@ export function registerRoutes(app: Express): Server {
           unitPrice,
           discount: itemDiscount,
           totalPrice,
-          warehouseId: item.warehouseId || null,
+          warehouseId: repairCenterWarehouseId,
         });
         
         subtotal += totalPrice;
