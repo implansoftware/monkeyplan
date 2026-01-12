@@ -508,7 +508,32 @@ export default function PosPage() {
 
   if (!currentSession) {
     return (
-      <div className="flex items-center justify-center min-h-[80vh] p-4">
+      <div className="flex flex-col items-center justify-center min-h-[80vh] p-4 gap-4">
+        {/* Selettore Cassa */}
+        <div className="flex items-center gap-2 mb-4">
+          <Select value={selectedRegisterId} onValueChange={setSelectedRegisterId}>
+            <SelectTrigger className="w-[220px] h-10" data-testid="select-register-closed">
+              <Store className="w-4 h-4 mr-2" />
+              <SelectValue placeholder="Seleziona cassa" />
+            </SelectTrigger>
+            <SelectContent>
+              {registers.filter(r => r.isActive).map(reg => (
+                <SelectItem key={reg.id} value={reg.id} data-testid={`select-register-closed-${reg.id}`}>
+                  <span className="flex items-center gap-2">
+                    <span className={`w-2 h-2 rounded-full ${registerSessions[reg.id] ? "bg-green-500" : "bg-gray-300"}`} />
+                    {reg.name} {reg.isDefault && "(Default)"}
+                    {registerSessions[reg.id] && <span className="text-xs text-green-600 ml-1">Aperta</span>}
+                  </span>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Link href="/repair-center/pos/registers">
+            <Button variant="ghost" size="icon" className="h-10 w-10" data-testid="button-manage-registers-closed">
+              <Settings className="w-4 h-4" />
+            </Button>
+          </Link>
+        </div>
         <Card className="max-w-md w-full">
           <CardHeader className="text-center">
             <div className="mx-auto w-16 h-16 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-full flex items-center justify-center mb-4">
