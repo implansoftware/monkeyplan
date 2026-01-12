@@ -20,106 +20,41 @@ import {
   BarChart3,
   Smartphone,
   Tablet,
-  Headphones
+  Headphones,
+  Wrench
 } from "lucide-react";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 
-function AnimatedMonkey() {
+function AnimatedHeroSection() {
   return (
-    <div className="relative w-64 h-64">
-      <svg viewBox="0 0 200 200" className="w-full h-full">
-        <defs>
-          <linearGradient id="furGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#2d2d2d" />
-            <stop offset="100%" stopColor="#1a1a1a" />
-          </linearGradient>
-          <linearGradient id="faceGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#d4a574" />
-            <stop offset="100%" stopColor="#c4956a" />
-          </linearGradient>
-        </defs>
+    <div className="relative flex flex-col items-center">
+      <div className="relative">
+        <div className="w-32 h-32 rounded-full bg-white/20 backdrop-blur-sm border-4 border-white/30 flex items-center justify-center animate-pulse">
+          <div className="w-24 h-24 rounded-full bg-gradient-to-br from-orange-400 via-yellow-400 to-amber-500 flex items-center justify-center shadow-2xl">
+            <Wrench className="w-12 h-12 text-white drop-shadow-lg" />
+          </div>
+        </div>
         
-        <g className="animate-[bounce_3s_ease-in-out_infinite]">
-          <ellipse cx="100" cy="100" rx="55" ry="50" fill="url(#furGradient)" />
-          
-          <ellipse cx="40" cy="85" rx="18" ry="20" fill="url(#furGradient)" />
-          <ellipse cx="40" cy="85" rx="12" ry="14" fill="url(#faceGradient)" />
-          <ellipse cx="160" cy="85" rx="18" ry="20" fill="url(#furGradient)" />
-          <ellipse cx="160" cy="85" rx="12" ry="14" fill="url(#faceGradient)" />
-          
-          <ellipse cx="100" cy="105" rx="35" ry="30" fill="url(#faceGradient)" />
-          
-          <g className="animate-[blink_4s_ease-in-out_infinite]">
-            <ellipse cx="75" cy="85" rx="12" ry="10" fill="white" />
-            <ellipse cx="125" cy="85" rx="12" ry="10" fill="white" />
-            <circle cx="78" cy="85" r="5" fill="#1a1a1a" className="animate-[lookAround_5s_ease-in-out_infinite]" />
-            <circle cx="128" cy="85" r="5" fill="#1a1a1a" className="animate-[lookAround_5s_ease-in-out_infinite]" />
-            <circle cx="80" cy="83" r="2" fill="white" />
-            <circle cx="130" cy="83" r="2" fill="white" />
-          </g>
-          
-          <ellipse cx="85" cy="70" rx="8" ry="3" fill="#1a1a1a" className="origin-center" />
-          <ellipse cx="115" cy="70" rx="8" ry="3" fill="#1a1a1a" className="origin-center" />
-          
-          <ellipse cx="100" cy="100" rx="8" ry="6" fill="#8B4513" />
-          <circle cx="96" cy="98" r="2" fill="#1a1a1a" />
-          <circle cx="104" cy="98" r="2" fill="#1a1a1a" />
-          
-          <path d="M 85 115 Q 100 130 115 115" stroke="#1a1a1a" strokeWidth="3" fill="none" className="animate-[smile_3s_ease-in-out_infinite]" />
-        </g>
-        
-        <g className="animate-[wave_2s_ease-in-out_infinite]" style={{ transformOrigin: '60px 150px' }}>
-          <ellipse cx="55" cy="160" rx="15" ry="12" fill="url(#furGradient)" />
-          <ellipse cx="40" cy="175" rx="12" ry="8" fill="url(#faceGradient)" />
-        </g>
-        
-        <g>
-          <rect x="130" y="140" width="35" height="50" rx="5" fill="#64B5F6" className="animate-[float_2s_ease-in-out_infinite]" />
-          <rect x="135" y="145" width="25" height="35" rx="2" fill="white" />
-          <circle cx="147" cy="185" r="3" fill="white" />
-        </g>
-        
-        <g className="animate-[headphonePulse_1.5s_ease-in-out_infinite]">
-          <path d="M 55 70 Q 55 40 100 35 Q 145 40 145 70" stroke="#1a1a1a" strokeWidth="6" fill="none" />
-          <ellipse cx="50" cy="75" rx="10" ry="12" fill="#1a1a1a" />
-          <ellipse cx="150" cy="75" rx="10" ry="12" fill="#1a1a1a" />
-          <ellipse cx="50" cy="75" rx="6" ry="8" fill="#64B5F6" />
-          <ellipse cx="150" cy="75" rx="6" ry="8" fill="#64B5F6" />
-          <path d="M 50 87 Q 50 100 60 110" stroke="#1a1a1a" strokeWidth="3" fill="none" />
-          <circle cx="62" cy="112" r="5" fill="#1a1a1a" />
-        </g>
-      </svg>
+        <div className="absolute -top-2 -right-2 w-8 h-8 rounded-full bg-emerald-400 flex items-center justify-center animate-bounce shadow-lg" style={{ animationDuration: '2s' }}>
+          <Smartphone className="w-4 h-4 text-white" />
+        </div>
+        <div className="absolute -bottom-2 -left-2 w-8 h-8 rounded-full bg-cyan-400 flex items-center justify-center animate-bounce shadow-lg" style={{ animationDuration: '2.5s', animationDelay: '0.5s' }}>
+          <Shield className="w-4 h-4 text-white" />
+        </div>
+      </div>
       
-      <style>{`
-        @keyframes blink {
-          0%, 90%, 100% { transform: scaleY(1); }
-          95% { transform: scaleY(0.1); }
-        }
-        @keyframes lookAround {
-          0%, 100% { transform: translateX(0); }
-          25% { transform: translateX(3px); }
-          75% { transform: translateX(-3px); }
-        }
-        @keyframes smile {
-          0%, 100% { d: path('M 85 115 Q 100 130 115 115'); }
-          50% { d: path('M 85 115 Q 100 135 115 115'); }
-        }
-        @keyframes wave {
-          0%, 100% { transform: rotate(0deg); }
-          25% { transform: rotate(-15deg); }
-          75% { transform: rotate(15deg); }
-        }
-        @keyframes float {
-          0%, 100% { transform: translateY(0); }
-          50% { transform: translateY(-5px); }
-        }
-        @keyframes headphonePulse {
-          0%, 100% { opacity: 1; }
-          50% { opacity: 0.9; }
-        }
-      `}</style>
+      <div className="mt-8 flex items-center gap-4">
+        <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 animate-pulse" style={{ animationDuration: '3s' }}>
+          <div className="w-2 h-2 rounded-full bg-emerald-400" />
+          <span className="text-sm text-white/90">Online</span>
+        </div>
+        <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 backdrop-blur-sm border border-white/20">
+          <BarChart3 className="w-4 h-4 text-yellow-300" />
+          <span className="text-sm text-white/90">10K+ riparazioni</span>
+        </div>
+      </div>
     </div>
   );
 }
@@ -221,8 +156,8 @@ export default function AuthPage() {
         
         <div className="relative z-10 flex flex-col justify-between p-12 text-white w-full">
           <div className="flex items-center gap-4">
-            <div className="w-16 h-16 rounded-2xl bg-white/20 backdrop-blur-sm border border-white/30 flex items-center justify-center">
-              <span className="text-3xl">🐵</span>
+            <div className="w-14 h-14 rounded-2xl bg-white/20 backdrop-blur-sm border border-white/30 flex items-center justify-center">
+              <Wrench className="w-7 h-7 text-white" />
             </div>
             <div>
               <span className="font-bold text-3xl tracking-tight">MonkeyPlan</span>
@@ -233,7 +168,7 @@ export default function AuthPage() {
           </div>
           
           <div className="flex flex-col items-center space-y-8">
-            <AnimatedMonkey />
+            <AnimatedHeroSection />
             
             <div className="text-center space-y-4 max-w-md">
               <h1 className="text-4xl font-bold leading-tight">
@@ -302,7 +237,7 @@ export default function AuthPage() {
         <div className="w-full max-w-md">
           <div className="lg:hidden flex items-center justify-center gap-3 mb-8">
             <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center">
-              <span className="text-2xl">🐵</span>
+              <Wrench className="w-7 h-7 text-white" />
             </div>
             <div>
               <span className="font-bold text-2xl text-slate-900 dark:text-white">MonkeyPlan</span>
@@ -339,7 +274,7 @@ export default function AuthPage() {
               <div className="space-y-6">
                 <div className="text-center space-y-2">
                   <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-500 mb-2">
-                    <span className="text-3xl">🐵</span>
+                    <Wrench className="w-8 h-8 text-white" />
                   </div>
                   <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Bentornato</h1>
                   <p className="text-sm text-slate-500 dark:text-slate-400">
