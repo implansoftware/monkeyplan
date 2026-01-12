@@ -32720,6 +32720,182 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Reseller POS - Void transaction
+  app.post("/api/reseller/pos/transaction/:id/void", requireRole("reseller", "reseller_staff", "sub_reseller"), async (req, res) => {
+    try {
+      const { resellerId } = getEffectiveContext(req);
+      const operatorId = req.user!.id;
+      const transaction = await storage.getPosTransaction(req.params.id);
+      
+      if (!transaction) return res.status(404).json({ error: "Transazione non trovata" });
+      
+      const center = await storage.getRepairCenter(transaction.repairCenterId);
+      if (!center || center.resellerId !== resellerId) return res.status(403).json({ error: "Non autorizzato" });
+      
+      if (transaction.status === "voided") return res.status(400).json({ error: "Transazione già annullata" });
+      if (transaction.status === "refunded") return res.status(400).json({ error: "Transazione già rimborsata, impossibile annullare" });
+
+      const { reason } = req.body;
+      if (!reason || reason.trim() === "") {
+        return res.status(400).json({ error: "Il motivo dell'annullamento è obbligatorio" });
+      }
+
+      const updated = await storage.updatePosTransactionStatus(transaction.id, "voided", {
+        voidReason: reason,
+        voidedBy: operatorId,
+        voidedAt: new Date(),
+      });
+
+      if (transaction.sessionId) {
+        const session = await storage.getPosSession(transaction.sessionId);
+        if (session) {
+          const newTotalSales = Math.max(0, (session.totalSales || 0) - transaction.total);
+          const newTotalTransactions = Math.max(0, (session.totalTransactions || 0) - 1);
+          const newTotalCashSales = transaction.paymentMethod === 'cash' 
+            ? Math.max(0, (session.totalCashSales || 0) - transaction.total)
+            : (session.totalCashSales || 0);
+          const newTotalCardSales = transaction.paymentMethod !== 'cash'
+            ? Math.max(0, (session.totalCardSales || 0) - transaction.total)
+            : (session.totalCardSales || 0);
+          await storage.updatePosSessionTotals(transaction.sessionId, {
+            totalSales: newTotalSales,
+            totalTransactions: newTotalTransactions,
+            totalCashSales: newTotalCashSales,
+            totalCardSales: newTotalCardSales,
+          });
+        }
+      }
+
+      const items = await storage.getPosTransactionItems(transaction.id);
+      for (const item of items) {
+        if (item.inventoryDeducted && item.warehouseId) {
+          await storage.updateWarehouseStockQuantity(item.warehouseId, item.productId, item.quantity);
+        }
+      }
+
+      res.json(updated);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Reseller POS - Refund transaction
+  app.post("/api/reseller/pos/transaction/:id/refund", requireRole("reseller", "reseller_staff", "sub_reseller"), async (req, res) => {
+    try {
+      const { resellerId } = getEffectiveContext(req);
+      const operatorId = req.user!.id;
+      const transaction = await storage.getPosTransaction(req.params.id);
+      
+      if (!transaction) return res.status(404).json({ error: "Transazione non trovata" });
+      
+      const center = await storage.getRepairCenter(transaction.repairCenterId);
+      if (!center || center.resellerId !== resellerId) return res.status(403).json({ error: "Non autorizzato" });
+      
+      if (transaction.status === "refunded") return res.status(400).json({ error: "Transazione già rimborsata" });
+      if (transaction.status === "voided") return res.status(400).json({ error: "Transazione annullata, impossibile rimborsare" });
+
+      const { amount, reason } = req.body;
+      const refundAmount = amount || transaction.total;
+      const isFullRefund = refundAmount >= transaction.total;
+
+      const updated = await storage.updatePosTransactionStatus(transaction.id, isFullRefund ? "refunded" : "partial_refund", {
+        refundedAmount: refundAmount,
+        refundReason: reason || "Rimborso cliente",
+        refundedBy: operatorId,
+      });
+
+      if (transaction.sessionId) {
+        const sessionTxs = await storage.getPosTransactionsBySession(transaction.sessionId);
+        const refundedTxs = sessionTxs.filter(t => t.status === "refunded" || t.status === "partial_refund");
+        await storage.updatePosSessionTotals(transaction.sessionId, { totalRefunds: refundedTxs.reduce((sum, t) => sum + (t.refundedAmount || 0), 0) });
+      }
+
+      if (isFullRefund) {
+        const items = await storage.getPosTransactionItems(transaction.id);
+        for (const item of items) {
+          if (item.inventoryDeducted && item.warehouseId) {
+            await storage.updateWarehouseStockQuantity(item.warehouseId, item.productId, item.quantity);
+          }
+        }
+      }
+
+      res.json(updated);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Reseller POS - Get receipt PDF
+  app.get("/api/reseller/pos/transaction/:id/receipt", requireRole("reseller", "reseller_staff", "sub_reseller"), async (req, res) => {
+    try {
+      const { resellerId } = getEffectiveContext(req);
+      const transactionId = req.params.id;
+      
+      const transaction = await storage.getPosTransaction(transactionId);
+      if (!transaction) return res.status(404).json({ error: "Transazione non trovata" });
+      
+      const center = await storage.getRepairCenter(transaction.repairCenterId);
+      if (!center || center.resellerId !== resellerId) return res.status(403).json({ error: "Non autorizzato" });
+      
+      const items = await storage.getPosTransactionItems(transactionId);
+      const operator = transaction.operatorId ? await storage.getUser(transaction.operatorId) : undefined;
+      let customer = null;
+      let billingData = null;
+      
+      if (transaction.customerId) {
+        customer = await storage.getUser(transaction.customerId);
+        billingData = await storage.getBillingDataByUserId(transaction.customerId);
+      }
+      
+      const pdfBuffer = await generatePosReceiptPdf({
+        transaction: {
+          transactionNumber: transaction.transactionNumber,
+          createdAt: transaction.createdAt,
+          subtotal: transaction.subtotal,
+          discountAmount: transaction.discountAmount,
+          taxAmount: transaction.taxAmount,
+          taxRate: transaction.taxRate,
+          total: transaction.total,
+          paymentMethod: transaction.paymentMethod,
+          cashReceived: transaction.cashReceived,
+          changeGiven: transaction.changeGiven,
+          status: transaction.status,
+          refundedAmount: transaction.refundedAmount,
+        },
+        items: items.map(item => ({
+          productName: item.productName,
+          productSku: item.productSku || undefined,
+          quantity: item.quantity,
+          unitPrice: item.unitPrice,
+          discount: item.discount,
+          totalPrice: item.totalPrice,
+        })),
+        repairCenter: {
+          name: center.name,
+          address: center.address || undefined,
+          phone: center.phone || undefined,
+          email: center.email || undefined,
+          vatNumber: center.vatNumber || undefined,
+        },
+        operator: operator ? { fullName: operator.fullName } : undefined,
+        customer: customer ? {
+          fullName: customer.fullName,
+          email: customer.email,
+          phone: customer.phone || undefined,
+          fiscalCode: billingData?.fiscalCode || undefined,
+          vatNumber: billingData?.vatNumber || undefined,
+        } : undefined,
+      });
+      
+      res.setHeader("Content-Type", "application/pdf");
+      res.setHeader("Content-Disposition", `inline; filename="scontrino-${transaction.transactionNumber}.pdf"`);
+      res.send(pdfBuffer);
+    } catch (error: any) {
+      console.error("Error generating receipt:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
     // Genera immagine barcode PNG
   app.get("/api/barcode/:code", async (req, res) => {
     try {
