@@ -25,7 +25,6 @@ import {
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import monkeyLogo from "@assets/Screenshot_2026-01-12_alle_10.42.47_1768210969259.png";
 
 function AnimatedMonkey() {
   return (
@@ -222,8 +221,8 @@ export default function AuthPage() {
         
         <div className="relative z-10 flex flex-col justify-between p-12 text-white w-full">
           <div className="flex items-center gap-4">
-            <div className="w-16 h-16 rounded-2xl bg-white/20 backdrop-blur-sm border border-white/30 p-2 overflow-hidden">
-              <img src={monkeyLogo} alt="MonkeyPlan" className="w-full h-full object-contain" />
+            <div className="w-16 h-16 rounded-2xl bg-white/20 backdrop-blur-sm border border-white/30 flex items-center justify-center">
+              <span className="text-3xl">🐵</span>
             </div>
             <div>
               <span className="font-bold text-3xl tracking-tight">MonkeyPlan</span>
@@ -302,8 +301,8 @@ export default function AuthPage() {
       <div className="w-full lg:w-1/2 flex items-center justify-center p-6 lg:p-12">
         <div className="w-full max-w-md">
           <div className="lg:hidden flex items-center justify-center gap-3 mb-8">
-            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-500 p-2 overflow-hidden">
-              <img src={monkeyLogo} alt="MonkeyPlan" className="w-full h-full object-contain" />
+            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center">
+              <span className="text-2xl">🐵</span>
             </div>
             <div>
               <span className="font-bold text-2xl text-slate-900 dark:text-white">MonkeyPlan</span>
@@ -339,8 +338,8 @@ export default function AuthPage() {
             <TabsContent value="login" className="mt-0">
               <div className="space-y-6">
                 <div className="text-center space-y-2">
-                  <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-500 mb-2 overflow-hidden p-2">
-                    <img src={monkeyLogo} alt="" className="w-full h-full object-contain" />
+                  <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-500 mb-2">
+                    <span className="text-3xl">🐵</span>
                   </div>
                   <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Bentornato</h1>
                   <p className="text-sm text-slate-500 dark:text-slate-400">
