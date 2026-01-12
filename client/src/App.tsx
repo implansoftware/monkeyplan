@@ -1,4 +1,4 @@
-import { Switch, Route, useLocation } from "wouter";
+import { Switch, Route, useLocation, Redirect } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -6,13 +6,44 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/not-found";
 import AuthPage from "@/pages/auth-page";
 import ProfilePage from "@/pages/profile";
-import { AuthProvider } from "@/hooks/use-auth";
+import { AuthProvider, useAuth } from "@/hooks/use-auth";
 import { ProtectedRoute } from "@/lib/protected-route";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { NotificationBell } from "@/components/NotificationBell";
 import { TicketNotificationsProvider } from "@/contexts/TicketNotificationsContext";
+import { Loader2 } from "lucide-react";
+
+function HomePage() {
+  const { user, isLoading } = useAuth();
+  
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+  
+  if (!user) {
+    return <Redirect to="/auth" />;
+  }
+  
+  switch (user.role) {
+    case "admin":
+      return <AdminDashboard />;
+    case "reseller":
+    case "reseller_staff":
+      return <Redirect to="/reseller" />;
+    case "repair_center":
+      return <Redirect to="/repair-center" />;
+    case "customer":
+      return <Redirect to="/customer" />;
+    default:
+      return <Redirect to="/auth" />;
+  }
+}
 
 // Admin pages
 import AdminDashboard from "@/pages/admin/dashboard";
@@ -249,8 +280,10 @@ function Router() {
       {/* Shared routes (all roles) */}
       <ProtectedRoute path="/profile" component={ProfilePage} />
       
+      {/* Home route - redirects based on user role */}
+      <Route path="/" component={HomePage} />
+      
       {/* Admin routes */}
-      <ProtectedRoute path="/" component={AdminDashboard} />
       <ProtectedRoute path="/admin/users" component={AdminUsers} />
       <ProtectedRoute path="/admin/customers/:id" component={AdminCustomerDetail} />
       <ProtectedRoute path="/admin/customers" component={AdminCustomers} />
