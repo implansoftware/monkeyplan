@@ -332,6 +332,7 @@ export default function PosPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/repair-center/pos/session/current", selectedRegisterId] });
+      queryClient.invalidateQueries({ queryKey: ["/api/repair-center/pos/registers/sessions"] });
       setOpenSessionDialog(false);
       setOpeningCash("");
       setSessionNotes("");
@@ -348,6 +349,7 @@ export default function PosPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/repair-center/pos/session/current", selectedRegisterId] });
+      queryClient.invalidateQueries({ queryKey: ["/api/repair-center/pos/registers/sessions"] });
       queryClient.invalidateQueries({ queryKey: ["/api/repair-center/pos/transactions", selectedRegisterId] });
       queryClient.invalidateQueries({ queryKey: ["/api/repair-center/pos/session/last-closed", selectedRegisterId] });
       setCloseSessionDialog(false);
@@ -386,6 +388,7 @@ export default function PosPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/repair-center/pos/transactions", selectedRegisterId] });
       queryClient.invalidateQueries({ queryKey: ["/api/repair-center/pos/session/current", selectedRegisterId] });
+      queryClient.invalidateQueries({ queryKey: ["/api/repair-center/pos/registers/sessions"] });
       queryClient.invalidateQueries({ queryKey: ["/api/repair-center/pos/stats/daily"] });
       setCart([]);
       setCashReceived("");
