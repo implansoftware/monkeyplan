@@ -607,10 +607,9 @@ export default function PosPage() {
                   ) : (
                     <div className="space-y-2">
                       {transactions.map((tx) => (
-                        <a
+                        <div
                           key={tx.id}
-                          href={`/repair-center/pos/transaction/${tx.id}`}
-                          className="p-3 rounded-lg border bg-card flex items-center gap-3 hover-elevate active-elevate-2 cursor-pointer block"
+                          className="p-3 rounded-lg border bg-card flex items-center gap-3"
                           data-testid={`transaction-${tx.id}`}
                         >
                           <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
@@ -631,8 +630,7 @@ export default function PosPage() {
                               <Badge variant="destructive" className="text-xs">Rimborsato</Badge>
                             )}
                           </div>
-                          <ChevronRight className="w-4 h-4 text-muted-foreground" />
-                        </a>
+                        </div>
                       ))}
                     </div>
                   )}
