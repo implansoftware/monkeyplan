@@ -51,7 +51,7 @@ interface PosRegister {
 
 export default function PosSessionsPage() {
   const [period, setPeriod] = useState("all");
-  const [selectedRegisterId, setSelectedRegisterId] = useState<string>("");
+  const [selectedRegisterId, setSelectedRegisterId] = useState<string>("all");
 
   const { data: registers = [] } = useQuery<PosRegister[]>({
     queryKey: ["/api/repair-center/pos/registers"],
@@ -60,7 +60,7 @@ export default function PosSessionsPage() {
   const { data: sessions, isLoading } = useQuery<PosSession[]>({
     queryKey: ["/api/repair-center/pos/sessions", selectedRegisterId],
     queryFn: async () => {
-      const url = selectedRegisterId 
+      const url = selectedRegisterId && selectedRegisterId !== "all" 
         ? `/api/repair-center/pos/sessions?registerId=${selectedRegisterId}`
         : "/api/repair-center/pos/sessions";
       const res = await fetch(url);
@@ -101,6 +101,12 @@ export default function PosSessionsPage() {
   };
 
   const avgPerSession = stats.totalSessions > 0 ? Math.round(stats.totalRevenue / stats.totalSessions) : 0;
+
+  const getRegisterName = (registerId: string | null) => {
+    if (!registerId) return "Cassa Principale";
+    const register = registers.find(r => r.id === registerId);
+    return register?.name || "Cassa";
+  };
 
   if (isLoading) {
     return (
@@ -145,7 +151,7 @@ export default function PosSessionsPage() {
                 <SelectValue placeholder="Tutte le casse" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Tutte le casse</SelectItem>
+                <SelectItem value="all">Tutte le casse</SelectItem>
                 {registers.map(reg => (
                   <SelectItem key={reg.id} value={reg.id}>
                     {reg.name} {reg.isDefault && "(Default)"}
@@ -248,6 +254,10 @@ export default function PosSessionsPage() {
                         ) : (
                           <Badge variant="secondary">Chiusa</Badge>
                         )}
+                        <Badge variant="outline" className="flex items-center gap-1">
+                          <Store className="w-3 h-3" />
+                          {getRegisterName(session.registerId)}
+                        </Badge>
                         <span className="text-sm font-medium">
                           {format(new Date(session.openedAt), "EEEE dd MMMM yyyy", { locale: it })}
                         </span>
