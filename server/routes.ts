@@ -32137,9 +32137,24 @@ export function registerRoutes(app: Express): Server {
       const session = await storage.getPosSession(req.params.sessionId);
       if (!session) return res.status(404).json({ error: "Sessione non trovata" });
       const center = await storage.getRepairCenter(session.repairCenterId);
-      if (!center || center.resellerId !== effectiveId) return res.status(403).json({ error: "Non autorizzato" });
+      if (!center || center.resellerId !== resellerId) return res.status(403).json({ error: "Non autorizzato" });
       const transactions = await storage.getPosTransactionsBySession(session.id);
       res.json({ session, transactions });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/reseller/pos/transaction/:transactionId", requireRole("reseller", "reseller_staff", "sub_reseller"), async (req, res) => {
+    try {
+      const { resellerId } = getEffectiveContext(req);
+      const detail = await storage.getPosTransactionDetail(req.params.transactionId);
+      if (!detail) return res.status(404).json({ error: "Transazione non trovata" });
+      const session = await storage.getPosSession(detail.transaction.sessionId);
+      if (!session) return res.status(404).json({ error: "Sessione non trovata" });
+      const center = await storage.getRepairCenter(session.repairCenterId);
+      if (!center || center.resellerId !== resellerId) return res.status(403).json({ error: "Non autorizzato" });
+      res.json({ ...detail, repairCenterName: center.name });
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }

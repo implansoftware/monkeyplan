@@ -10243,7 +10243,6 @@ export class DatabaseStorage implements IStorage {
     const centers = await this.getRepairCentersByResellerIds(allResellerIds);
     const centerIds = centers.map(c => c.id);
     
-    console.log("[POS-DEBUG] resellerId:", resellerId, "allResellerIds:", allResellerIds, "centerIds:", centerIds);
 
     if (centerIds.length === 0) {
       return {

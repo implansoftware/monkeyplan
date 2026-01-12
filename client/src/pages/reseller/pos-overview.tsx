@@ -4,6 +4,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Separator } from "@/components/ui/separator";
 import { 
   Receipt, 
   TrendingUp, 
@@ -14,7 +16,9 @@ import {
   RotateCcw,
   Clock,
   CheckCircle,
-  XCircle
+  XCircle,
+  Eye,
+  Package
 } from "lucide-react";
 import { useState } from "react";
 import { format } from "date-fns";
@@ -50,8 +54,30 @@ interface PosStats {
   }>;
 }
 
+interface TransactionDetail {
+  transaction: {
+    id: string;
+    transactionNumber: string;
+    status: string;
+    paymentMethod: string;
+    total: number;
+    subtotal: number;
+    discount: number;
+    createdAt: string;
+  };
+  items: Array<{
+    id: string;
+    productName: string;
+    quantity: number;
+    unitPrice: number;
+    totalPrice: number;
+  }>;
+  repairCenterName: string;
+}
+
 export default function ResellerPosOverview() {
   const [period, setPeriod] = useState("today");
+  const [selectedTxId, setSelectedTxId] = useState<string | null>(null);
 
   const { data: stats, isLoading } = useQuery<PosStats>({
     queryKey: ["/api/reseller/pos/stats", period],
@@ -60,6 +86,16 @@ export default function ResellerPosOverview() {
       if (!res.ok) throw new Error("Failed to fetch stats");
       return res.json();
     },
+  });
+
+  const { data: txDetail, isLoading: txLoading } = useQuery<TransactionDetail>({
+    queryKey: ["/api/reseller/pos/transaction", selectedTxId],
+    queryFn: async () => {
+      const res = await fetch(`/api/reseller/pos/transaction/${selectedTxId}`);
+      if (!res.ok) throw new Error("Failed to fetch transaction");
+      return res.json();
+    },
+    enabled: !!selectedTxId,
   });
 
   const formatCurrency = (amount: number) => {
@@ -260,9 +296,9 @@ export default function ResellerPosOverview() {
         <CardContent>
           <div className="space-y-3">
             {stats?.recentTransactions?.map((tx) => (
-              <div key={tx.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
+              <div key={tx.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/50 hover-elevate cursor-pointer" onClick={() => setSelectedTxId(tx.id.toString())} data-testid={`row-transaction-${tx.id}`}>
                 <div className="flex items-center gap-3">
-                  {tx.type === "sale" ? (
+                  {tx.type === "completed" ? (
                     <CheckCircle className="h-5 w-5 text-blue-500" />
                   ) : (
                     <XCircle className="h-5 w-5 text-cyan-500" />
@@ -274,13 +310,16 @@ export default function ResellerPosOverview() {
                     </div>
                   </div>
                 </div>
-                <div className="text-right">
-                  <div className={`font-bold ${tx.type === "refund" ? "text-cyan-600" : ""}`}>
-                    {tx.type === "refund" ? "-" : ""}{formatCurrency(tx.totalAmount)}
+                <div className="flex items-center gap-3">
+                  <div className="text-right">
+                    <div className={`font-bold ${tx.type === "refunded" ? "text-cyan-600" : ""}`}>
+                      {tx.type === "refunded" ? "-" : ""}{formatCurrency(tx.totalAmount)}
+                    </div>
+                    <Badge variant="outline" className="text-xs">
+                      {getPaymentMethodLabel(tx.paymentMethod)}
+                    </Badge>
                   </div>
-                  <Badge variant="outline" className="text-xs">
-                    {getPaymentMethodLabel(tx.paymentMethod)}
-                  </Badge>
+                  <Eye className="h-4 w-4 text-muted-foreground" />
                 </div>
               </div>
             ))}
@@ -292,6 +331,78 @@ export default function ResellerPosOverview() {
           </div>
         </CardContent>
       </Card>
+
+      <Dialog open={!!selectedTxId} onOpenChange={(open) => !open && setSelectedTxId(null)}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Receipt className="h-5 w-5 text-blue-500" />
+              Dettaglio Transazione
+            </DialogTitle>
+          </DialogHeader>
+          {txLoading ? (
+            <div className="space-y-4">
+              <Skeleton className="h-6 w-48" />
+              <Skeleton className="h-20 w-full" />
+            </div>
+          ) : txDetail ? (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-xs text-muted-foreground">Numero</p>
+                  <p className="font-medium">{txDetail.transaction.transactionNumber}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Centro</p>
+                  <p className="font-medium">{txDetail.repairCenterName}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Data</p>
+                  <p className="font-medium">{format(new Date(txDetail.transaction.createdAt), "dd/MM/yyyy HH:mm", { locale: it })}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Pagamento</p>
+                  <Badge variant="outline">{getPaymentMethodLabel(txDetail.transaction.paymentMethod)}</Badge>
+                </div>
+              </div>
+              <Separator />
+              <div>
+                <p className="text-sm font-medium mb-2 flex items-center gap-2">
+                  <Package className="h-4 w-4" /> Articoli
+                </p>
+                <div className="space-y-2">
+                  {txDetail.items.map((item) => (
+                    <div key={item.id} className="flex justify-between text-sm p-2 bg-muted/50 rounded">
+                      <div>
+                        <span className="font-medium">{item.productName}</span>
+                        <span className="text-muted-foreground ml-2">x{item.quantity}</span>
+                      </div>
+                      <span className="font-medium">{formatCurrency(item.totalPrice)}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <Separator />
+              <div className="space-y-1">
+                <div className="flex justify-between text-sm">
+                  <span>Subtotale</span>
+                  <span>{formatCurrency(txDetail.transaction.subtotal)}</span>
+                </div>
+                {txDetail.transaction.discount > 0 && (
+                  <div className="flex justify-between text-sm text-cyan-600">
+                    <span>Sconto</span>
+                    <span>-{formatCurrency(txDetail.transaction.discount)}</span>
+                  </div>
+                )}
+                <div className="flex justify-between font-bold text-lg pt-2 border-t">
+                  <span>Totale</span>
+                  <span>{formatCurrency(txDetail.transaction.total)}</span>
+                </div>
+              </div>
+            </div>
+          ) : null}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
