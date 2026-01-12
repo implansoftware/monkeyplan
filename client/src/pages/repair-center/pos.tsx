@@ -89,7 +89,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import { FileText, User, UserPlus, Store } from "lucide-react";
+import { FileText, User, UserPlus, Store, Settings } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
@@ -598,21 +598,24 @@ export default function PosPage() {
       <div className="flex-1 flex flex-col min-w-0 gap-4">
         <div className="flex items-center gap-3 flex-wrap">
           <div className="flex items-center gap-2">
-            {registers.length > 1 && (
-              <Select value={selectedRegisterId} onValueChange={setSelectedRegisterId} disabled={!!currentSession}>
-                <SelectTrigger className="w-[180px] h-8" data-testid="select-register">
-                  <Store className="w-4 h-4 mr-1" />
-                  <SelectValue placeholder="Seleziona cassa" />
-                </SelectTrigger>
-                <SelectContent>
-                  {registers.filter(r => r.isActive).map(reg => (
-                    <SelectItem key={reg.id} value={reg.id} data-testid={`select-register-${reg.id}`}>
-                      {reg.name} {reg.isDefault && "(Default)"}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            )}
+            <Select value={selectedRegisterId} onValueChange={setSelectedRegisterId} disabled={!!currentSession}>
+              <SelectTrigger className="w-[180px] h-8" data-testid="select-register">
+                <Store className="w-4 h-4 mr-1" />
+                <SelectValue placeholder="Seleziona cassa" />
+              </SelectTrigger>
+              <SelectContent>
+                {registers.filter(r => r.isActive).map(reg => (
+                  <SelectItem key={reg.id} value={reg.id} data-testid={`select-register-${reg.id}`}>
+                    {reg.name} {reg.isDefault && "(Default)"}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Link href="/repair-center/pos/registers">
+              <Button variant="ghost" size="icon" className="h-8 w-8" data-testid="button-manage-registers">
+                <Settings className="w-4 h-4" />
+              </Button>
+            </Link>
             <Badge variant="outline" className="bg-green-500/10 text-green-600 border-green-500/30">
               <div className="w-2 h-2 rounded-full bg-green-500 mr-1 animate-pulse" />
               {selectedRegister?.name || "Cassa"} Aperta
