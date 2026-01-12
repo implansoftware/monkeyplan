@@ -72,7 +72,7 @@ import { ContextSwitcher } from "@/components/ContextSwitcher";
 const menuItems = {
   admin: [
     { title: "Dashboard", url: "/", icon: LayoutDashboard, group: "Dashboard" },
-    { title: "Panoramica POS", url: "/admin/pos", icon: Receipt, group: "Dashboard" },
+    { title: "Panoramica POS", url: "/admin/pos", icon: Receipt, group: "POS" },
     { title: "Clienti", url: "/admin/customers", icon: Users, group: "Clienti & Rivenditori" },
     { title: "Rivenditori", url: "/admin/resellers", icon: Store, group: "Clienti & Rivenditori" },
     { title: "Team Rivenditori", url: "/admin/reseller-teams", icon: UsersRound, group: "Clienti & Rivenditori" },
@@ -163,9 +163,9 @@ const menuItems = {
   ],
   reseller: [
     { title: "Dashboard", url: "/reseller", icon: LayoutDashboard, group: "Dashboard" },
-    { title: "Panoramica POS", url: "/reseller/pos", icon: Receipt, group: "Dashboard" },
-    { title: "Storico Vendite", url: "/reseller/pos/sales-history", icon: ShoppingCart, group: "Dashboard" },
-    { title: "Storico Sessioni", url: "/reseller/pos/sessions", icon: Clock, group: "Dashboard" },
+    { title: "Panoramica POS", url: "/reseller/pos", icon: Receipt, group: "POS" },
+    { title: "Storico Vendite", url: "/reseller/pos/sales-history", icon: ShoppingCart, group: "POS" },
+    { title: "Storico Sessioni", url: "/reseller/pos/sessions", icon: Clock, group: "POS" },
     { title: "Dashboard HR", url: "/reseller/hr", icon: Briefcase, group: "Gestione HR" },
     { title: "Team", url: "/reseller/team", icon: UsersRound, group: "Gestione HR" },
     { title: "Presenze", url: "/reseller/hr/attendance", icon: Clock, group: "Gestione HR" },
@@ -225,10 +225,10 @@ const menuItems = {
     // Dashboard
     { title: "Dashboard", url: "/repair-center", icon: LayoutDashboard, group: "Dashboard" },
     // POS - Cassa
-    { title: "Cassa POS", url: "/repair-center/pos", icon: Receipt, group: "Dashboard" },
-    { title: "Storico Vendite", url: "/repair-center/pos/sales-history", icon: ShoppingCart, group: "Dashboard" },
-    { title: "Storico Sessioni", url: "/repair-center/pos/sessions", icon: Clock, group: "Dashboard" },
-    { title: "Gestione Casse", url: "/repair-center/pos/registers", icon: Store, group: "Dashboard" },
+    { title: "Cassa POS", url: "/repair-center/pos", icon: Receipt, group: "POS" },
+    { title: "Storico Vendite", url: "/repair-center/pos/sales-history", icon: ShoppingCart, group: "POS" },
+    { title: "Storico Sessioni", url: "/repair-center/pos/sessions", icon: Clock, group: "POS" },
+    { title: "Gestione Casse", url: "/repair-center/pos/registers", icon: Store, group: "POS" },
     // Gestione HR
     { title: "Dashboard HR", url: "/repair-center/hr", icon: Briefcase, group: "Gestione HR" },
     { title: "Team", url: "/repair-center/team", icon: UsersRound, group: "Gestione HR" },
