@@ -49,7 +49,7 @@ type TransactionDetail = {
     quantity: number;
     unitPrice: number;
     discount: number;
-    total: number;
+    totalPrice: number;
   }[];
   operator?: { id: string; fullName: string };
   session?: { id: string; openedAt: string; status: string };
@@ -296,7 +296,7 @@ export default function PosTransactionDetailPage() {
                       </div>
                     </div>
                     <div className="text-right">
-                      <div className="font-semibold text-lg">{formatCurrency(item.total)}</div>
+                      <div className="font-semibold text-lg">{formatCurrency(item.totalPrice)}</div>
                     </div>
                   </div>
                   {item.productBarcode && (
