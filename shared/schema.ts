@@ -6286,6 +6286,11 @@ export const posTransactions = pgTable("pos_transactions", {
   refundedAt: timestamp("refunded_at"),
   refundedBy: varchar("refunded_by").references(() => users.id),
   
+  // Annullamento
+  voidReason: text("void_reason"),
+  voidedAt: timestamp("voided_at"),
+  voidedBy: varchar("voided_by").references(() => users.id),
+  
   // Note
   notes: text("notes"),
   customerNotes: text("customer_notes"),

@@ -10070,21 +10070,34 @@ export class DatabaseStorage implements IStorage {
       .offset(options?.offset || 0);
   }
 
-  async updatePosTransactionStatus(id: string, status: PosTransactionStatus, refundData?: {
+  async updatePosTransactionStatus(id: string, status: PosTransactionStatus, metadata?: {
     refundedAmount?: number;
     refundReason?: string;
     refundedBy?: string;
+    voidReason?: string;
+    voidedBy?: string;
+    voidedAt?: Date;
   }): Promise<PosTransaction | undefined> {
     const updateData: Partial<PosTransaction> = {
       status,
       updatedAt: new Date(),
     };
     
-    if (refundData) {
-      updateData.refundedAmount = refundData.refundedAmount;
-      updateData.refundReason = refundData.refundReason;
-      updateData.refundedBy = refundData.refundedBy;
-      updateData.refundedAt = new Date();
+    if (metadata) {
+      // Refund fields - always set refundedAt when any refund field is present
+      if (metadata.refundedAmount !== undefined) updateData.refundedAmount = metadata.refundedAmount;
+      if (metadata.refundReason) updateData.refundReason = metadata.refundReason;
+      if (metadata.refundedBy) updateData.refundedBy = metadata.refundedBy;
+      if (metadata.refundedAmount !== undefined || metadata.refundReason || metadata.refundedBy) {
+        updateData.refundedAt = new Date();
+      }
+      // Void fields
+      if (metadata.voidReason) updateData.voidReason = metadata.voidReason;
+      if (metadata.voidedBy) updateData.voidedBy = metadata.voidedBy;
+      if (metadata.voidedAt) updateData.voidedAt = metadata.voidedAt;
+      if (metadata.voidReason || metadata.voidedBy) {
+        updateData.voidedAt = updateData.voidedAt || new Date();
+      }
     }
 
     const [transaction] = await db.update(posTransactions)
