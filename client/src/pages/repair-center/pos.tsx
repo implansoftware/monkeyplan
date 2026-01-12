@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useMemo } from "react";
+import { useLocation } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -183,6 +184,7 @@ const paymentMethodLabels: Record<string, { label: string; icon: typeof CreditCa
 
 export default function PosPage() {
   const { toast } = useToast();
+  const [, navigate] = useLocation();
   const [cart, setCart] = useState<CartItem[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [barcodeInput, setBarcodeInput] = useState("");
@@ -607,9 +609,10 @@ export default function PosPage() {
                   ) : (
                     <div className="space-y-2">
                       {transactions.map((tx) => (
-                        <div
+                        <button
                           key={tx.id}
-                          className="p-3 rounded-lg border bg-card flex items-center gap-3"
+                          onClick={() => navigate(`/repair-center/pos/transaction/${tx.id}`)}
+                          className="w-full p-3 rounded-lg border bg-card flex items-center gap-3 text-left hover-elevate active-elevate-2"
                           data-testid={`transaction-${tx.id}`}
                         >
                           <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
@@ -630,7 +633,8 @@ export default function PosPage() {
                               <Badge variant="destructive" className="text-xs">Rimborsato</Badge>
                             )}
                           </div>
-                        </div>
+                          <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                        </button>
                       ))}
                     </div>
                   )}

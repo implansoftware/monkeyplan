@@ -31868,15 +31868,14 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  // Ottieni transazione POS
+  // Ottieni dettaglio transazione POS
   app.get("/api/repair-center/pos/transaction/:id", requireRole("repair_center", "repair_center_staff"), async (req, res) => {
     try {
       const repairCenterId = req.user!.repairCenterId || req.user!.id;
-      const transaction = await storage.getPosTransaction(req.params.id);
-      if (!transaction) return res.status(404).json({ error: "Transazione non trovata" });
-      if (transaction.repairCenterId !== repairCenterId) return res.status(403).json({ error: "Non autorizzato" });
-      const items = await storage.getPosTransactionItems(transaction.id);
-      res.json({ transaction, items });
+      const detail = await storage.getPosTransactionDetail(req.params.id);
+      if (!detail) return res.status(404).json({ error: "Transazione non trovata" });
+      if (detail.transaction.repairCenterId !== repairCenterId) return res.status(403).json({ error: "Non autorizzato" });
+      res.json(detail);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }
