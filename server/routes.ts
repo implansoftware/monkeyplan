@@ -31700,6 +31700,19 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Stato sessioni di tutte le casse
+  app.get("/api/repair-center/pos/registers/sessions", requireRole("repair_center", "repair_center_staff"), async (req, res) => {
+    try {
+      const repairCenterId = req.user!.repairCenterId || req.user!.id;
+      const sessions = await storage.getAllOpenPosSessions(repairCenterId);
+      const sessionMap: Record<string, boolean> = {};
+      sessions.forEach(s => { sessionMap[s.registerId] = true; });
+      res.json(sessionMap);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   // Crea nuovo registro di cassa
   app.post("/api/repair-center/pos/registers", requireRole("repair_center", "repair_center_staff"), async (req, res) => {
     try {

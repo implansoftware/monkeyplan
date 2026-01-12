@@ -248,6 +248,12 @@ export default function PosPage() {
 
   const selectedRegister = registers.find(r => r.id === selectedRegisterId);
   
+
+  // Query per lo stato delle sessioni di tutte le casse
+  const { data: registerSessions = {} } = useQuery<Record<string, boolean>>({
+    queryKey: ["/api/repair-center/pos/registers/sessions"],
+    refetchInterval: 10000, // Aggiorna ogni 10 secondi
+  });
   const { data: currentSession, isLoading: sessionLoading } = useQuery<PosSession | null>({
     queryKey: ["/api/repair-center/pos/session/current", selectedRegisterId],
     queryFn: async () => {
@@ -598,15 +604,19 @@ export default function PosPage() {
       <div className="flex-1 flex flex-col min-w-0 gap-4">
         <div className="flex items-center gap-3 flex-wrap">
           <div className="flex items-center gap-2">
-            <Select value={selectedRegisterId} onValueChange={setSelectedRegisterId} disabled={!!currentSession}>
-              <SelectTrigger className="w-[180px] h-8" data-testid="select-register">
+            <Select value={selectedRegisterId} onValueChange={setSelectedRegisterId}>
+              <SelectTrigger className="w-[200px] h-8" data-testid="select-register">
                 <Store className="w-4 h-4 mr-1" />
                 <SelectValue placeholder="Seleziona cassa" />
               </SelectTrigger>
               <SelectContent>
                 {registers.filter(r => r.isActive).map(reg => (
                   <SelectItem key={reg.id} value={reg.id} data-testid={`select-register-${reg.id}`}>
-                    {reg.name} {reg.isDefault && "(Default)"}
+                    <span className="flex items-center gap-2">
+                      <span className={`w-2 h-2 rounded-full ${registerSessions[reg.id] ? "bg-green-500" : "bg-gray-300"}`} />
+                      {reg.name} {reg.isDefault && "(Default)"}
+                      {registerSessions[reg.id] && <span className="text-xs text-green-600 ml-1">Aperta</span>}
+                    </span>
                   </SelectItem>
                 ))}
               </SelectContent>
