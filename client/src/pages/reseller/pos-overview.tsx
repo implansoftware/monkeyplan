@@ -55,6 +55,11 @@ export default function ResellerPosOverview() {
 
   const { data: stats, isLoading } = useQuery<PosStats>({
     queryKey: ["/api/reseller/pos/stats", period],
+    queryFn: async () => {
+      const res = await fetch(`/api/reseller/pos/stats?period=${period}`);
+      if (!res.ok) throw new Error("Failed to fetch stats");
+      return res.json();
+    },
   });
 
   const formatCurrency = (amount: number) => {
