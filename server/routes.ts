@@ -32109,7 +32109,7 @@ export function registerRoutes(app: Express): Server {
 
   app.get("/api/reseller/pos/sessions", requireRole("reseller", "reseller_staff", "sub_reseller"), async (req, res) => {
     try {
-      const { effectiveId } = getEffectiveContext(req);
+      const { resellerId } = getEffectiveContext(req);
       const startDate = req.query.startDate ? new Date(req.query.startDate as string) : undefined;
       const endDate = req.query.endDate ? new Date(req.query.endDate as string) : undefined;
       const limit = parseInt(req.query.limit as string) || 100;
@@ -32122,9 +32122,9 @@ export function registerRoutes(app: Express): Server {
 
   app.get("/api/reseller/pos/stats", requireRole("reseller", "reseller_staff", "sub_reseller"), async (req, res) => {
     try {
-      const { effectiveId } = getEffectiveContext(req);
+      const { resellerId } = getEffectiveContext(req);
       const period = (req.query.period as string) || "today";
-      const stats = await storage.getResellerPosOverviewStats(effectiveId, period);
+      const stats = await storage.getResellerPosOverviewStats(resellerId, period);
       res.json(stats);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
@@ -32133,7 +32133,7 @@ export function registerRoutes(app: Express): Server {
 
   app.get("/api/reseller/pos/session/:sessionId", requireRole("reseller", "reseller_staff", "sub_reseller"), async (req, res) => {
     try {
-      const { effectiveId } = getEffectiveContext(req);
+      const { resellerId } = getEffectiveContext(req);
       const session = await storage.getPosSession(req.params.sessionId);
       if (!session) return res.status(404).json({ error: "Sessione non trovata" });
       const center = await storage.getRepairCenter(session.repairCenterId);
