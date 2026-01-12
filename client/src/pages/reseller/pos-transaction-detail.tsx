@@ -45,6 +45,7 @@ interface TransactionDetail {
     id: string;
     productName: string;
     productSku: string | null;
+    productImage?: string | null;
     quantity: number;
     unitPrice: number;
     discount: number;
@@ -171,6 +172,7 @@ export default function ResellerPosTransactionDetail() {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-16"></TableHead>
                   <TableHead>Prodotto</TableHead>
                   <TableHead>SKU</TableHead>
                   <TableHead className="text-right">Quantità</TableHead>
@@ -182,6 +184,19 @@ export default function ResellerPosTransactionDetail() {
               <TableBody>
                 {items.map(item => (
                   <TableRow key={item.id}>
+                    <TableCell>
+                      {item.productImage ? (
+                        <img 
+                          src={item.productImage} 
+                          alt={item.productName}
+                          className="w-12 h-12 object-cover rounded border"
+                        />
+                      ) : (
+                        <div className="w-12 h-12 bg-muted rounded border flex items-center justify-center">
+                          <Package className="w-5 h-5 text-muted-foreground" />
+                        </div>
+                      )}
+                    </TableCell>
                     <TableCell className="font-medium">{item.productName}</TableCell>
                     <TableCell className="font-mono text-sm">{item.productSku || "-"}</TableCell>
                     <TableCell className="text-right">{item.quantity}</TableCell>

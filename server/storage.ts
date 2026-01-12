@@ -10167,6 +10167,7 @@ export class DatabaseStorage implements IStorage {
       productSku?: string; 
       productBarcode?: string;
       productCategory?: string;
+      productImage?: string | null;
     })[];
     operator?: { id: string; fullName: string };
     session?: { id: string; openedAt: Date; status: string };
@@ -10187,11 +10188,13 @@ export class DatabaseStorage implements IStorage {
             productSku: product?.sku,
             productBarcode: product?.barcode,
             productCategory: product?.category,
+            productImage: product?.images?.[0] || null,
           };
         }
         return {
           ...item,
           productName: item.productName,
+          productImage: null,
         };
       })
     );
