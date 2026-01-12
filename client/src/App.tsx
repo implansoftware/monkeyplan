@@ -103,6 +103,7 @@ import ResellerMobilesentrixSettings from "@/pages/reseller/mobilesentrix/settin
 import ResellerMobilesentrixCatalog from "@/pages/reseller/mobilesentrix/catalog";
 import ResellerMobilesentrixCart from "@/pages/reseller/mobilesentrix/cart";
 import ResellerMobilesentrixOrders from "@/pages/reseller/mobilesentrix/orders";
+import ResellerExternalOrders from "@/pages/reseller/external-orders";
 
 // Reseller TrovaUsati pages
 import ResellerTrovausatiSettings from "@/pages/reseller/trovausati/settings";
@@ -355,6 +356,7 @@ function Router() {
       <ProtectedRoute path="/reseller/mobilesentrix/catalog" component={ResellerMobilesentrixCatalog} allowedRoles={["reseller", "reseller_staff"]} />
       <ProtectedRoute path="/reseller/mobilesentrix/cart" component={ResellerMobilesentrixCart} allowedRoles={["reseller", "reseller_staff"]} />
       <ProtectedRoute path="/reseller/mobilesentrix/orders" component={ResellerMobilesentrixOrders} allowedRoles={["reseller", "reseller_staff"]} />
+      <ProtectedRoute path="/reseller/external-orders" component={ResellerExternalOrders} allowedRoles={["reseller", "reseller_staff"]} />
       <ProtectedRoute path="/reseller/trovausati/settings" component={ResellerTrovausatiSettings} allowedRoles={["reseller", "reseller_staff"]} />
       <ProtectedRoute path="/reseller/trovausati/marketplace" component={ResellerTrovausatiMarketplace} allowedRoles={["reseller", "reseller_staff"]} />
       <ProtectedRoute path="/reseller/trovausati/valutatore" component={ResellerTrovausatiValutatore} allowedRoles={["reseller", "reseller_staff"]} />
