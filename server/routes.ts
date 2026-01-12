@@ -31787,7 +31787,7 @@ export function registerRoutes(app: Express): Server {
       const session = await storage.getOpenPosSession(repairCenterId);
       if (!session) return res.status(400).json({ error: "Nessuna sessione cassa aperta." });
 
-      const { items, paymentMethod, customerId, discountAmount, discountPercent, cashReceived, notes, customerNotes } = req.body;
+      const { items, paymentMethod, customerId, discountAmount, discountPercent, cashReceived, notes, customerNotes, invoiceRequested } = req.body;
       
       if (!items || items.length === 0) return res.status(400).json({ error: "Nessun articolo" });
       if (!paymentMethod) return res.status(400).json({ error: "Metodo pagamento richiesto" });
@@ -31845,6 +31845,7 @@ export function registerRoutes(app: Express): Server {
         changeGiven,
         notes: notes || null,
         customerNotes: customerNotes || null,
+        invoiceRequested: invoiceRequested || false,
         status: "completed",
       });
 
