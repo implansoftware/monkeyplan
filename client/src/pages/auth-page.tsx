@@ -26,39 +26,37 @@ import {
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import monkeyMascot from "@assets/generated_images/tech_support_monkey_mascot.png";
+import monkeyVideo from "@assets/generated_videos/animated_monkey_mascot_waving.mp4";
 
 function AnimatedMonkeyMascot() {
   return (
     <div className="relative flex flex-col items-center">
       <div className="relative group">
-        <div className="absolute inset-0 bg-gradient-to-r from-yellow-400 via-orange-400 to-amber-400 rounded-full blur-2xl opacity-40 animate-pulse" />
+        <div className="absolute inset-0 bg-gradient-to-r from-yellow-400 via-orange-400 to-amber-400 rounded-3xl blur-2xl opacity-30 animate-pulse" />
         
         <div 
-          className="relative w-48 h-48 rounded-full bg-white/10 backdrop-blur-sm border-4 border-white/30 flex items-center justify-center overflow-hidden shadow-2xl"
-          style={{
-            animation: 'float 3s ease-in-out infinite'
-          }}
+          className="relative w-72 h-44 rounded-2xl bg-white/10 backdrop-blur-sm border-4 border-white/30 overflow-hidden shadow-2xl"
+          style={{ animation: 'float 4s ease-in-out infinite' }}
         >
-          <img 
-            src={monkeyMascot} 
-            alt="MonkeyPlan Mascot" 
-            className="w-40 h-40 object-contain drop-shadow-lg"
-            style={{
-              animation: 'breathe 4s ease-in-out infinite'
-            }}
+          <video 
+            src={monkeyVideo}
+            autoPlay
+            loop
+            muted
+            playsInline
+            className="w-full h-full object-cover"
           />
         </div>
         
         <div 
-          className="absolute -top-1 -right-1 w-10 h-10 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center shadow-lg border-2 border-white/50"
+          className="absolute -top-2 -right-2 w-10 h-10 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center shadow-lg border-2 border-white/50"
           style={{ animation: 'bounce 2s ease-in-out infinite' }}
         >
           <Smartphone className="w-5 h-5 text-white" />
         </div>
         
         <div 
-          className="absolute -bottom-1 -left-1 w-10 h-10 rounded-full bg-gradient-to-br from-cyan-400 to-blue-500 flex items-center justify-center shadow-lg border-2 border-white/50"
+          className="absolute -bottom-2 -left-2 w-10 h-10 rounded-full bg-gradient-to-br from-cyan-400 to-blue-500 flex items-center justify-center shadow-lg border-2 border-white/50"
           style={{ animation: 'bounce 2.5s ease-in-out infinite', animationDelay: '0.5s' }}
         >
           <Wrench className="w-5 h-5 text-white" />
@@ -86,11 +84,7 @@ function AnimatedMonkeyMascot() {
       <style>{`
         @keyframes float {
           0%, 100% { transform: translateY(0px); }
-          50% { transform: translateY(-10px); }
-        }
-        @keyframes breathe {
-          0%, 100% { transform: scale(1); }
-          50% { transform: scale(1.03); }
+          50% { transform: translateY(-8px); }
         }
       `}</style>
     </div>
