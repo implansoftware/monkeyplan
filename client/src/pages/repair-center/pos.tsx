@@ -847,329 +847,198 @@ export default function PosPage() {
       </Card>
 
       <Dialog open={paymentDialog} onOpenChange={setPaymentDialog}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>Pagamento</DialogTitle>
-            <DialogDescription>Totale: {formatCurrency(cartTotal)}</DialogDescription>
+        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+          <DialogHeader className="pb-2">
+            <DialogTitle className="flex items-center justify-between">
+              <span>Pagamento</span>
+              <span className="text-lg font-bold text-primary">{formatCurrency(cartTotal)}</span>
+            </DialogTitle>
           </DialogHeader>
           
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-2">
+          <div className="space-y-3">
+            <div className="grid grid-cols-4 gap-1">
               {(["cash", "card", "pos_terminal", "satispay"] as const).map((method) => {
                 const { label, icon: Icon } = paymentMethodLabels[method];
                 return (
                   <button
                     key={method}
                     onClick={() => setSelectedPayment(method)}
-                    className={`p-4 rounded-lg border-2 flex flex-col items-center gap-2 transition-colors ${
+                    className={`p-2 rounded-md border-2 flex flex-col items-center gap-1 transition-colors ${
                       selectedPayment === method
                         ? "border-primary bg-primary/10"
                         : "border-muted hover-elevate"
                     }`}
                     data-testid={`button-payment-${method}`}
                   >
-                    <Icon className="w-6 h-6" />
-                    <span className="font-medium text-sm">{label}</span>
+                    <Icon className="w-5 h-5" />
+                    <span className="font-medium text-xs">{label}</span>
                   </button>
                 );
               })}
             </div>
 
-            <Separator />
-
-            <div className="space-y-3">
-              <Label className="flex items-center gap-2">
-                <User className="w-4 h-4" />
-                Cliente
-              </Label>
-              <div className="grid grid-cols-3 gap-2">
-                {(["guest", "existing", "new"] as const).map((type) => {
-                  const labels = {
-                    guest: { label: "Ospite", icon: User },
-                    existing: { label: "Esistente", icon: User },
-                    new: { label: "Nuovo", icon: UserPlus },
-                  };
-                  const { label, icon: Icon } = labels[type];
-                  return (
-                    <button
-                      key={type}
-                      onClick={() => {
-                        setCustomerType(type);
-                        if (type === "guest") {
-                          setSelectedCustomerId("");
-                          setCustomerSearch("");
-                        }
-                      }}
-                      className={`p-3 rounded-lg border-2 flex flex-col items-center gap-1 transition-colors ${
-                        customerType === type
-                          ? "border-primary bg-primary/10"
-                          : "border-muted hover-elevate"
-                      }`}
-                      data-testid={`button-customer-${type}`}
-                    >
-                      <Icon className="w-5 h-5" />
-                      <span className="font-medium text-xs">{label}</span>
-                    </button>
-                  );
-                })}
-              </div>
-
-              {customerType === "existing" && (
-                <div className="space-y-2 p-3 rounded-lg bg-muted/50">
-                  <Input
-                    placeholder="Cerca cliente per nome, email o telefono..."
-                    value={customerSearch}
-                    onChange={(e) => setCustomerSearch(e.target.value)}
-                    data-testid="input-customer-search"
-                  />
-                  {customers.length > 0 && !selectedCustomerId && (
-                    <div className="max-h-32 overflow-y-auto border rounded-lg bg-background">
-                      {customers.map(customer => (
-                        <button
-                          key={customer.id}
-                          onClick={() => {
-                            setSelectedCustomerId(customer.id);
-                            setCustomerSearch("");
-                          }}
-                          className="w-full p-2 text-left hover-elevate flex items-center gap-2"
-                          data-testid={`customer-option-${customer.id}`}
-                        >
-                          <User className="w-4 h-4 text-muted-foreground" />
-                          <div>
-                            <div className="font-medium text-sm">{customer.fullName}</div>
-                            <div className="text-xs text-muted-foreground">{customer.email}</div>
-                          </div>
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                  {selectedCustomer && (
-                    <div className="flex items-center justify-between p-2 bg-primary/10 rounded-lg border border-primary">
-                      <div className="flex items-center gap-2">
-                        <User className="w-4 h-4" />
-                        <div>
-                          <div className="font-medium text-sm">{selectedCustomer.fullName}</div>
-                          <div className="text-xs text-muted-foreground">{selectedCustomer.email}</div>
-                        </div>
-                      </div>
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        onClick={() => setSelectedCustomerId("")}
-                        data-testid="button-remove-customer"
-                      >
-                        <X className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {customerType === "new" && (
-                <div className="space-y-2 p-3 rounded-lg bg-muted/50">
-                  <Input
-                    placeholder="Nome completo *"
-                    value={newCustomerName}
-                    onChange={(e) => setNewCustomerName(e.target.value)}
-                    data-testid="input-new-customer-name"
-                  />
-                  <Input
-                    placeholder="Email (opzionale)"
-                    type="email"
-                    value={newCustomerEmail}
-                    onChange={(e) => setNewCustomerEmail(e.target.value)}
-                    data-testid="input-new-customer-email"
-                  />
-                  <Input
-                    placeholder="Telefono (opzionale)"
-                    value={newCustomerPhone}
-                    onChange={(e) => setNewCustomerPhone(e.target.value)}
-                    data-testid="input-new-customer-phone"
-                  />
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-sm text-muted-foreground">Cliente:</span>
+              {(["guest", "existing", "new"] as const).map((type) => {
+                const labels = { guest: "Ospite", existing: "Esistente", new: "Nuovo" };
+                return (
                   <Button
-                    variant="outline"
-                    className="w-full"
-                    disabled={!newCustomerName.trim() || createCustomerMutation.isPending}
+                    key={type}
+                    size="sm"
+                    variant={customerType === type ? "default" : "outline"}
                     onClick={() => {
-                      createCustomerMutation.mutate({
-                        fullName: newCustomerName.trim(),
-                        email: newCustomerEmail.trim() || undefined,
-                        phone: newCustomerPhone.trim() || undefined,
-                      });
+                      setCustomerType(type);
+                      if (type === "guest") {
+                        setSelectedCustomerId("");
+                        setCustomerSearch("");
+                      }
                     }}
-                    data-testid="button-create-customer"
+                    data-testid={`button-customer-${type}`}
                   >
-                    {createCustomerMutation.isPending ? (
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    ) : (
-                      <UserPlus className="w-4 h-4 mr-2" />
-                    )}
-                    Crea Cliente
+                    {labels[type]}
                   </Button>
-                </div>
-              )}
-            </div>
-
-            <Separator />
-
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <FileText className="w-4 h-4" />
-                <Label htmlFor="invoice-switch">Richiedi Fattura</Label>
+                );
+              })}
+              <div className="ml-auto flex items-center gap-2">
+                <Switch
+                  id="invoice-switch"
+                  checked={invoiceRequested}
+                  onCheckedChange={setInvoiceRequested}
+                  data-testid="switch-invoice-requested"
+                />
+                <Label htmlFor="invoice-switch" className="text-xs">Fattura</Label>
               </div>
-              <Switch
-                id="invoice-switch"
-                checked={invoiceRequested}
-                onCheckedChange={setInvoiceRequested}
-                data-testid="switch-invoice-requested"
-              />
             </div>
-            
-            {invoiceRequested && customerType === "guest" && (
-              <p className="text-xs text-amber-600">Per emettere fattura devi selezionare un cliente esistente o crearne uno nuovo</p>
-            )}
-            {invoiceRequested && customerType === "existing" && !selectedCustomerId && (
-              <p className="text-xs text-amber-600">Seleziona un cliente per emettere la fattura</p>
-            )}
-            {invoiceRequested && customerType === "new" && !selectedCustomerId && (
-              <p className="text-xs text-amber-600">Crea il cliente prima di procedere</p>
-            )}
 
-            {selectedPayment === "cash" && (
-              <div className="space-y-3">
-                <div>
-                  <Label>Contanti Ricevuti (EUR)</Label>
-                  <Input
-                    type="number"
-                    placeholder="0.00"
-                    value={cashReceived}
-                    onChange={(e) => setCashReceived(e.target.value)}
-                    className="text-lg h-12 text-center font-bold"
-                    data-testid="input-cash-received"
-                  />
-                </div>
-                
-                {/* Tastierino Numerico */}
-                <div className="grid grid-cols-4 gap-1">
-                  {["7", "8", "9", "C"].map((key) => (
-                    <Button
-                      key={key}
-                      variant={key === "C" ? "destructive" : "outline"}
-                      className="h-12 text-lg font-bold"
-                      onClick={() => {
-                        if (key === "C") {
-                          setCashReceived("");
-                        } else {
-                          setCashReceived(prev => prev + key);
-                        }
-                      }}
-                      data-testid={`keypad-${key}`}
-                    >
-                      {key}
+            {customerType === "existing" && (
+              <div className="space-y-1 p-2 rounded-md bg-muted/50">
+                {!selectedCustomer ? (
+                  <>
+                    <Input
+                      placeholder="Cerca cliente..."
+                      value={customerSearch}
+                      onChange={(e) => setCustomerSearch(e.target.value)}
+                      className="h-8 text-sm"
+                      data-testid="input-customer-search"
+                    />
+                    {customers.length > 0 && (
+                      <div className="max-h-24 overflow-y-auto border rounded bg-background">
+                        {customers.map(customer => (
+                          <button
+                            key={customer.id}
+                            onClick={() => {
+                              setSelectedCustomerId(customer.id);
+                              setCustomerSearch("");
+                            }}
+                            className="w-full p-1.5 text-left hover-elevate text-sm"
+                            data-testid={`customer-option-${customer.id}`}
+                          >
+                            <span className="font-medium">{customer.fullName}</span>
+                            <span className="text-muted-foreground ml-2 text-xs">{customer.email}</span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm"><User className="w-3 h-3 inline mr-1" />{selectedCustomer.fullName}</span>
+                    <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => setSelectedCustomerId("")} data-testid="button-remove-customer">
+                      <X className="w-3 h-3" />
                     </Button>
-                  ))}
-                  {["4", "5", "6", "←"].map((key) => (
-                    <Button
-                      key={key}
-                      variant="outline"
-                      className="h-12 text-lg font-bold"
-                      onClick={() => {
-                        if (key === "←") {
-                          setCashReceived(prev => prev.slice(0, -1));
-                        } else {
-                          setCashReceived(prev => prev + key);
-                        }
-                      }}
-                      data-testid={`keypad-${key}`}
-                    >
-                      {key}
-                    </Button>
-                  ))}
-                  {["1", "2", "3", "."].map((key) => (
-                    <Button
-                      key={key}
-                      variant="outline"
-                      className="h-12 text-lg font-bold"
-                      onClick={() => {
-                        if (key === ".") {
-                          if (cashReceived.includes(".")) return;
-                          setCashReceived(prev => prev === "" ? "0." : prev + ".");
-                        } else {
-                          setCashReceived(prev => prev + key);
-                        }
-                      }}
-                      data-testid={`keypad-${key}`}
-                    >
-                      {key}
-                    </Button>
-                  ))}
-                  <Button
-                    variant="outline"
-                    className="h-12 text-lg font-bold col-span-2"
-                    onClick={() => setCashReceived(prev => prev + "0")}
-                    data-testid="keypad-0"
-                  >
-                    0
-                  </Button>
-                  <Button
-                    variant="outline"
-                    className="h-12 text-lg font-bold"
-                    onClick={() => setCashReceived(prev => prev + "00")}
-                    data-testid="keypad-00"
-                  >
-                    00
-                  </Button>
-                  <Button
-                    className="h-12 text-lg font-bold bg-gradient-to-r from-blue-500 to-cyan-500"
-                    onClick={() => setCashReceived((cartTotal / 100).toFixed(2))}
-                    data-testid="keypad-exact"
-                  >
-                    Esatto
-                  </Button>
-                </div>
-
-                {/* Quick amount buttons */}
-                <div className="grid grid-cols-4 gap-1">
-                  {[5, 10, 20, 50].map((amount) => (
-                    <Button
-                      key={amount}
-                      variant="secondary"
-                      className="h-10"
-                      onClick={() => setCashReceived(amount.toString())}
-                      data-testid={`quick-${amount}`}
-                    >
-                      {amount}€
-                    </Button>
-                  ))}
-                </div>
-
-                {parseFloat(cashReceived || "0") * 100 >= cartTotal && (
-                  <div className="p-3 rounded-lg bg-gradient-to-r from-blue-500/10 to-cyan-500/10 border border-blue-500/30 text-center">
-                    <div className="text-sm text-muted-foreground">Resto da dare</div>
-                    <div className="text-2xl font-bold text-blue-600">
-                      {formatCurrency(changeAmount)}
-                    </div>
                   </div>
                 )}
               </div>
             )}
 
-            <div>
-              <Label>Note (opzionale)</Label>
-              <Textarea
-                placeholder="Note transazione..."
-                value={transactionNotes}
-                onChange={(e) => setTransactionNotes(e.target.value)}
-                data-testid="input-transaction-notes"
-              />
-            </div>
+            {customerType === "new" && (
+              <div className="grid grid-cols-3 gap-1 p-2 rounded-md bg-muted/50">
+                <Input placeholder="Nome *" value={newCustomerName} onChange={(e) => setNewCustomerName(e.target.value)} className="h-8 text-sm" data-testid="input-new-customer-name" />
+                <Input placeholder="Email" type="email" value={newCustomerEmail} onChange={(e) => setNewCustomerEmail(e.target.value)} className="h-8 text-sm" data-testid="input-new-customer-email" />
+                <Input placeholder="Telefono" value={newCustomerPhone} onChange={(e) => setNewCustomerPhone(e.target.value)} className="h-8 text-sm" data-testid="input-new-customer-phone" />
+                <Button size="sm" variant="outline" className="col-span-3" disabled={!newCustomerName.trim() || createCustomerMutation.isPending} onClick={() => createCustomerMutation.mutate({ fullName: newCustomerName.trim(), email: newCustomerEmail.trim() || undefined, phone: newCustomerPhone.trim() || undefined })} data-testid="button-create-customer">
+                  {createCustomerMutation.isPending ? <Loader2 className="w-3 h-3 mr-1 animate-spin" /> : <UserPlus className="w-3 h-3 mr-1" />}
+                  Crea Cliente
+                </Button>
+              </div>
+            )}
+            
+            {invoiceRequested && customerType === "guest" && (
+              <p className="text-xs text-amber-600">Fattura richiede cliente</p>
+            )}
+            {invoiceRequested && customerType === "existing" && !selectedCustomerId && (
+              <p className="text-xs text-amber-600">Seleziona cliente per fattura</p>
+            )}
+            {invoiceRequested && customerType === "new" && !selectedCustomerId && (
+              <p className="text-xs text-amber-600">Crea cliente per fattura</p>
+            )}
+
+            {selectedPayment === "cash" && (
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <Input
+                    type="number"
+                    placeholder="0.00"
+                    value={cashReceived}
+                    onChange={(e) => setCashReceived(e.target.value)}
+                    className="text-base h-10 text-center font-bold flex-1"
+                    data-testid="input-cash-received"
+                  />
+                  {[5, 10, 20, 50].map((amount) => (
+                    <Button key={amount} size="sm" variant="secondary" onClick={() => setCashReceived(amount.toString())} data-testid={`quick-${amount}`}>
+                      {amount}€
+                    </Button>
+                  ))}
+                </div>
+                
+                <div className="grid grid-cols-4 gap-1">
+                  {["7", "8", "9", "C", "4", "5", "6", "←", "1", "2", "3", "."].map((key) => (
+                    <Button
+                      key={key}
+                      variant={key === "C" ? "destructive" : "outline"}
+                      size="sm"
+                      className="h-9 text-sm font-bold"
+                      onClick={() => {
+                        if (key === "C") setCashReceived("");
+                        else if (key === "←") setCashReceived(prev => prev.slice(0, -1));
+                        else if (key === ".") {
+                          if (!cashReceived.includes(".")) setCashReceived(prev => prev === "" ? "0." : prev + ".");
+                        } else setCashReceived(prev => prev + key);
+                      }}
+                      data-testid={`keypad-${key}`}
+                    >
+                      {key}
+                    </Button>
+                  ))}
+                  <Button variant="outline" size="sm" className="h-9 font-bold col-span-2" onClick={() => setCashReceived(prev => prev + "0")} data-testid="keypad-0">0</Button>
+                  <Button variant="outline" size="sm" className="h-9 font-bold" onClick={() => setCashReceived(prev => prev + "00")} data-testid="keypad-00">00</Button>
+                  <Button size="sm" className="h-9 font-bold bg-gradient-to-r from-blue-500 to-cyan-500" onClick={() => setCashReceived((cartTotal / 100).toFixed(2))} data-testid="keypad-exact">Esatto</Button>
+                </div>
+
+                {parseFloat(cashReceived || "0") * 100 >= cartTotal && (
+                  <div className="p-2 rounded-md bg-gradient-to-r from-blue-500/10 to-cyan-500/10 border border-blue-500/30 text-center">
+                    <span className="text-xs text-muted-foreground mr-2">Resto:</span>
+                    <span className="text-lg font-bold text-blue-600">{formatCurrency(changeAmount)}</span>
+                  </div>
+                )}
+              </div>
+            )}
+
+            <Input
+              placeholder="Note (opzionale)"
+              value={transactionNotes}
+              onChange={(e) => setTransactionNotes(e.target.value)}
+              className="h-9"
+              data-testid="input-transaction-notes"
+            />
           </div>
 
-          <DialogFooter className="gap-2 sm:gap-0">
-            <Button variant="outline" onClick={() => setPaymentDialog(false)}>
+          <DialogFooter className="gap-2 sm:gap-0 pt-2">
+            <Button variant="outline" size="sm" onClick={() => setPaymentDialog(false)}>
               Annulla
             </Button>
             <Button
+              size="sm"
               onClick={handlePayment}
               disabled={createTransactionMutation.isPending || (selectedPayment === "cash" && (!cashReceived || parseFloat(cashReceived) * 100 < cartTotal))}
               className="bg-gradient-to-r from-blue-500 to-cyan-500"
