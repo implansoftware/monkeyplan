@@ -26,6 +26,7 @@ import {
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { DotLottieReact } from "@lottiefiles/dotlottie-react";
 
 function AnimatedMonkeyMascot() {
   return (
@@ -34,124 +35,15 @@ function AnimatedMonkeyMascot() {
         <div className="absolute inset-0 bg-gradient-to-r from-yellow-400 via-orange-400 to-amber-400 rounded-full blur-3xl opacity-25 animate-pulse" />
         
         <div 
-          className="relative w-56 h-56"
+          className="relative w-64 h-64"
           style={{ animation: 'float 4s ease-in-out infinite' }}
         >
-          <svg 
-            viewBox="0 0 200 200" 
+          <DotLottieReact
+            src="https://lottie.host/261cdf56-118b-11ee-8495-5b07400f76dd/VtFOjwyK8w.lottie"
+            loop
+            autoplay
             className="w-full h-full drop-shadow-2xl"
-            aria-label="MonkeyPlan Mascot"
-          >
-            <defs>
-              <linearGradient id="headsetGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stopColor="#0ea5e9" />
-                <stop offset="100%" stopColor="#06b6d4" />
-              </linearGradient>
-              <linearGradient id="tabletGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stopColor="#10b981" />
-                <stop offset="100%" stopColor="#14b8a6" />
-              </linearGradient>
-              <linearGradient id="bodyGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                <stop offset="0%" stopColor="#a78b6b" />
-                <stop offset="100%" stopColor="#8b7355" />
-              </linearGradient>
-            </defs>
-            
-            <style>{`
-              @keyframes wave {
-                0%, 100% { transform: rotate(0deg); }
-                25% { transform: rotate(15deg); }
-                75% { transform: rotate(-5deg); }
-              }
-              @keyframes blink {
-                0%, 45%, 55%, 100% { transform: scaleY(1); }
-                50% { transform: scaleY(0.1); }
-              }
-              @keyframes tailWag {
-                0%, 100% { transform: rotate(-10deg); }
-                50% { transform: rotate(10deg); }
-              }
-              @keyframes breathe {
-                0%, 100% { transform: scale(1); }
-                50% { transform: scale(1.02); }
-              }
-              @keyframes earWiggle {
-                0%, 100% { transform: rotate(0deg); }
-                50% { transform: rotate(5deg); }
-              }
-              .wave-arm { animation: wave 1.5s ease-in-out infinite; transform-origin: 145px 95px; }
-              .blink-eyes { animation: blink 4s ease-in-out infinite; transform-origin: center; }
-              .tail-wag { animation: tailWag 2s ease-in-out infinite; transform-origin: 60px 140px; }
-              .breathe { animation: breathe 3s ease-in-out infinite; transform-origin: center; }
-              .ear-wiggle { animation: earWiggle 3s ease-in-out infinite; }
-              .left-ear { transform-origin: 55px 45px; animation-delay: 0.5s; }
-              .right-ear { transform-origin: 145px 45px; }
-              @media (prefers-reduced-motion: reduce) {
-                .wave-arm, .blink-eyes, .tail-wag, .breathe, .ear-wiggle { animation: none; }
-              }
-            `}</style>
-            
-            <g className="breathe">
-              <path 
-                className="tail-wag"
-                d="M60 140 Q30 150 25 175 Q20 195 35 190 Q50 185 55 165 Q58 150 60 140" 
-                fill="url(#bodyGradient)" 
-                stroke="#7a6548" 
-                strokeWidth="1"
-              />
-              
-              <ellipse cx="100" cy="125" rx="38" ry="35" fill="url(#bodyGradient)" stroke="#7a6548" strokeWidth="1" />
-              <ellipse cx="100" cy="130" rx="28" ry="22" fill="#d4c4a8" />
-              
-              <g className="ear-wiggle left-ear">
-                <circle cx="55" cy="45" r="18" fill="url(#bodyGradient)" stroke="#7a6548" strokeWidth="1" />
-                <circle cx="55" cy="45" r="10" fill="#e8d4b8" />
-              </g>
-              <g className="ear-wiggle right-ear">
-                <circle cx="145" cy="45" r="18" fill="url(#bodyGradient)" stroke="#7a6548" strokeWidth="1" />
-                <circle cx="145" cy="45" r="10" fill="#e8d4b8" />
-              </g>
-              
-              <circle cx="100" cy="70" r="40" fill="url(#bodyGradient)" stroke="#7a6548" strokeWidth="1" />
-              <ellipse cx="100" cy="85" rx="28" ry="22" fill="#e8d4b8" />
-              
-              <g className="blink-eyes">
-                <ellipse cx="85" cy="65" rx="8" ry="10" fill="white" />
-                <ellipse cx="115" cy="65" rx="8" ry="10" fill="white" />
-                <circle cx="87" cy="66" r="5" fill="#2d1f0f" />
-                <circle cx="117" cy="66" r="5" fill="#2d1f0f" />
-                <circle cx="88" cy="64" r="2" fill="white" />
-                <circle cx="118" cy="64" r="2" fill="white" />
-              </g>
-              
-              <ellipse cx="100" cy="82" rx="6" ry="4" fill="#5a4a3a" />
-              <path d="M92 92 Q100 98 108 92" fill="none" stroke="#5a4a3a" strokeWidth="2" strokeLinecap="round" />
-              
-              <path d="M50 55 Q100 25 150 55" fill="none" stroke="url(#headsetGradient)" strokeWidth="6" strokeLinecap="round" />
-              <circle cx="50" cy="60" r="12" fill="url(#headsetGradient)" stroke="#0284c7" strokeWidth="2" />
-              <circle cx="50" cy="60" r="6" fill="#0f172a" />
-              <circle cx="150" cy="60" r="12" fill="url(#headsetGradient)" stroke="#0284c7" strokeWidth="2" />
-              <circle cx="150" cy="60" r="6" fill="#0f172a" />
-              <path d="M38 65 Q25 75 30 90 Q35 100 45 95" fill="none" stroke="url(#headsetGradient)" strokeWidth="4" strokeLinecap="round" />
-              <ellipse cx="35" cy="95" rx="8" ry="6" fill="#1f2937" stroke="url(#headsetGradient)" strokeWidth="2" />
-              
-              <ellipse cx="55" cy="115" rx="12" ry="8" fill="url(#bodyGradient)" stroke="#7a6548" strokeWidth="1" />
-              <ellipse cx="55" cy="115" rx="8" ry="5" fill="#e8d4b8" />
-              
-              <g className="wave-arm">
-                <ellipse cx="155" cy="100" rx="10" ry="15" fill="url(#bodyGradient)" stroke="#7a6548" strokeWidth="1" />
-                <ellipse cx="165" cy="85" rx="8" ry="6" fill="url(#bodyGradient)" stroke="#7a6548" strokeWidth="1" />
-                <ellipse cx="165" cy="85" rx="5" ry="4" fill="#e8d4b8" />
-              </g>
-              
-              <g transform="translate(70, 145) rotate(-15)">
-                <rect x="0" y="0" width="45" height="30" rx="4" fill="url(#tabletGradient)" stroke="#059669" strokeWidth="2" />
-                <rect x="3" y="3" width="39" height="24" rx="2" fill="#1f2937" />
-                <rect x="5" y="5" width="35" height="15" rx="1" fill="#0ea5e9" opacity="0.3" />
-                <circle cx="22" cy="25" r="2" fill="#4ade80" />
-              </g>
-            </g>
-          </svg>
+          />
         </div>
         
         <div 
