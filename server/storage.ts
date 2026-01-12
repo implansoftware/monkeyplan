@@ -156,6 +156,8 @@ export interface IStorage {
   listAllCustomerRepairCenters(): Promise<CustomerRepairCenter[]>;
   ensureCustomerRepairCenterAssociation(customerId: string, repairCenterId: string): Promise<void>;
   listCustomerIdsForRepairCenter(repairCenterId: string): Promise<string[]>;
+  searchPosCustomers(repairCenterId: string, search?: string): Promise<Array<{ id: string; fullName: string; email: string; phone: string | null }>>;
+  createQuickCustomer(repairCenterId: string, data: { fullName: string; email?: string; phone?: string }): Promise<User>;
   
   // Staff-RepairCenter Many-to-Many
   listRepairCentersForStaff(staffId: string): Promise<RepairCenter[]>;
@@ -1259,6 +1261,61 @@ export class DatabaseStorage implements IStorage {
         repairCenterId,
       });
     }
+  }
+
+  async searchPosCustomers(repairCenterId: string, search?: string): Promise<Array<{ id: string; fullName: string; email: string; phone: string | null }>> {
+    const customerIds = await this.listCustomerIdsForRepairCenter(repairCenterId);
+    if (customerIds.length === 0) return [];
+    
+    let query = db
+      .select({
+        id: users.id,
+        fullName: users.fullName,
+        email: users.email,
+        phone: users.phone,
+      })
+      .from(users)
+      .where(and(
+        inArray(users.id, customerIds),
+        eq(users.role, "customer")
+      ));
+    
+    const results = await query;
+    
+    if (search && search.trim()) {
+      const searchLower = search.toLowerCase().trim();
+      return results.filter(c => 
+        (c.fullName && c.fullName.toLowerCase().includes(searchLower)) ||
+        (c.email && c.email.toLowerCase().includes(searchLower)) ||
+        (c.phone && c.phone.includes(searchLower))
+      );
+    }
+    
+    return results.map(c => ({
+      id: c.id,
+      fullName: c.fullName || "",
+      email: c.email,
+      phone: c.phone,
+    }));
+  }
+
+  async createQuickCustomer(repairCenterId: string, data: { fullName: string; email?: string; phone?: string }): Promise<User> {
+    const username = `customer_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
+    const email = data.email || `${username}@guest.local`;
+    
+    const [newUser] = await db.insert(users).values({
+      username,
+      email,
+      password: "",
+      role: "customer",
+      fullName: data.fullName,
+      phone: data.phone || null,
+      isActive: true,
+    }).returning();
+    
+    await this.ensureCustomerRepairCenterAssociation(newUser.id, repairCenterId);
+    
+    return newUser;
   }
 
   // Staff-RepairCenter Many-to-Many

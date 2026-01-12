@@ -31688,6 +31688,45 @@ export function registerRoutes(app: Express): Server {
 
   // ==== REPAIR CENTER POS API ====
 
+  // Ricerca clienti per POS
+  app.get("/api/repair-center/pos/customers", requireRole("repair_center", "repair_center_staff"), async (req, res) => {
+    try {
+      const repairCenterId = req.user!.repairCenterId || req.user!.id;
+      const search = req.query.search as string | undefined;
+      const customers = await storage.searchPosCustomers(repairCenterId, search);
+      res.json(customers);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Creazione rapida cliente per POS
+  app.post("/api/repair-center/pos/customers", requireRole("repair_center", "repair_center_staff"), async (req, res) => {
+    try {
+      const repairCenterId = req.user!.repairCenterId || req.user!.id;
+      const { fullName, email, phone } = req.body;
+      
+      if (!fullName || !fullName.trim()) {
+        return res.status(400).json({ error: "Nome cliente obbligatorio" });
+      }
+      
+      const customer = await storage.createQuickCustomer(repairCenterId, {
+        fullName: fullName.trim(),
+        email: email?.trim() || undefined,
+        phone: phone?.trim() || undefined,
+      });
+      
+      res.json({
+        id: customer.id,
+        fullName: customer.fullName,
+        email: customer.email,
+        phone: customer.phone,
+      });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   // Ottieni sessione attiva POS
   app.get("/api/repair-center/pos/session/current", requireRole("repair_center", "repair_center_staff"), async (req, res) => {
     try {

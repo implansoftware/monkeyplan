@@ -88,7 +88,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import { FileText, User } from "lucide-react";
+import { FileText, User, UserPlus } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
@@ -212,6 +212,10 @@ export default function PosPage() {
   const [sessionNotes, setSessionNotes] = useState("");
   const [invoiceRequested, setInvoiceRequested] = useState(false);
   const [selectedCustomerId, setSelectedCustomerId] = useState<string>("");
+  const [customerType, setCustomerType] = useState<"guest" | "existing" | "new">("guest");
+  const [newCustomerName, setNewCustomerName] = useState("");
+  const [newCustomerEmail, setNewCustomerEmail] = useState("");
+  const [newCustomerPhone, setNewCustomerPhone] = useState("");
   const [customerSearch, setCustomerSearch] = useState("");
   
   const barcodeInputRef = useRef<HTMLInputElement>(null);
@@ -233,9 +237,16 @@ export default function PosPage() {
     queryKey: ["/api/repair-center/pos/products"],
   });
 
-  const { data: customers = [] } = useQuery<Customer[]>({
-    queryKey: ["/api/customers"],
-    enabled: invoiceRequested,
+  type PosCustomer = { id: string; fullName: string; email: string; phone: string | null };
+
+  const { data: customers = [] } = useQuery<PosCustomer[]>({
+    queryFn: async () => {
+      const res = await fetch(`/api/repair-center/pos/customers?search=${encodeURIComponent(customerSearch)}`, { credentials: "include" });
+      if (!res.ok) throw new Error("Errore caricamento clienti");
+      return res.json();
+    },
+    queryKey: ["/api/repair-center/pos/customers", customerSearch],
+    enabled: customerType === "existing",
   });
 
   const filteredCustomers = customers.filter(c =>
@@ -285,6 +296,25 @@ export default function PosPage() {
     },
   });
 
+  const createCustomerMutation = useMutation({
+    mutationFn: async (data: { fullName: string; email?: string; phone?: string }) => {
+      const res = await apiRequest("POST", "/api/repair-center/pos/customers", data);
+      return res.json();
+    },
+    onSuccess: (customer: PosCustomer) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/repair-center/pos/customers"] });
+      setSelectedCustomerId(customer.id);
+      setCustomerType("existing");
+      setNewCustomerName("");
+      setNewCustomerEmail("");
+      setNewCustomerPhone("");
+      toast({ title: "Cliente creato", description: `${customer.fullName} aggiunto con successo` });
+    },
+    onError: (error: any) => {
+      toast({ title: "Errore", description: error.message, variant: "destructive" });
+    },
+  });
+
   const createTransactionMutation = useMutation({
     mutationFn: async (data: any) => {
       return apiRequest("POST", "/api/repair-center/pos/transaction", data);
@@ -300,6 +330,10 @@ export default function PosPage() {
       setInvoiceRequested(false);
       setSelectedCustomerId("");
       setCustomerSearch("");
+      setCustomerType("guest");
+      setNewCustomerName("");
+      setNewCustomerEmail("");
+      setNewCustomerPhone("");
       setPaymentDialog(false);
       toast({ title: "Vendita registrata", description: "Transazione completata" });
     },
@@ -369,7 +403,7 @@ export default function PosPage() {
 
   const handlePayment = () => {
     if (cart.length === 0) return;
-    if (invoiceRequested && !selectedCustomerId) {
+    if (invoiceRequested && (customerType === "guest" || !selectedCustomerId)) {
       toast({ title: "Errore", description: "Seleziona un cliente per la fattura", variant: "destructive" });
       return;
     }
@@ -844,31 +878,53 @@ export default function PosPage() {
             <Separator />
 
             <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <FileText className="w-4 h-4" />
-                  <Label htmlFor="invoice-switch">Richiedi Fattura</Label>
-                </div>
-                <Switch
-                  id="invoice-switch"
-                  checked={invoiceRequested}
-                  onCheckedChange={setInvoiceRequested}
-                  data-testid="switch-invoice-requested"
-                />
+              <Label className="flex items-center gap-2">
+                <User className="w-4 h-4" />
+                Cliente
+              </Label>
+              <div className="grid grid-cols-3 gap-2">
+                {(["guest", "existing", "new"] as const).map((type) => {
+                  const labels = {
+                    guest: { label: "Ospite", icon: User },
+                    existing: { label: "Esistente", icon: User },
+                    new: { label: "Nuovo", icon: UserPlus },
+                  };
+                  const { label, icon: Icon } = labels[type];
+                  return (
+                    <button
+                      key={type}
+                      onClick={() => {
+                        setCustomerType(type);
+                        if (type === "guest") {
+                          setSelectedCustomerId("");
+                          setCustomerSearch("");
+                        }
+                      }}
+                      className={`p-3 rounded-lg border-2 flex flex-col items-center gap-1 transition-colors ${
+                        customerType === type
+                          ? "border-primary bg-primary/10"
+                          : "border-muted hover-elevate"
+                      }`}
+                      data-testid={`button-customer-${type}`}
+                    >
+                      <Icon className="w-5 h-5" />
+                      <span className="font-medium text-xs">{label}</span>
+                    </button>
+                  );
+                })}
               </div>
-              
-              {invoiceRequested && (
+
+              {customerType === "existing" && (
                 <div className="space-y-2 p-3 rounded-lg bg-muted/50">
-                  <Label>Seleziona Cliente</Label>
                   <Input
                     placeholder="Cerca cliente per nome, email o telefono..."
                     value={customerSearch}
                     onChange={(e) => setCustomerSearch(e.target.value)}
                     data-testid="input-customer-search"
                   />
-                  {customerSearch && filteredCustomers.length > 0 && !selectedCustomerId && (
-                    <div className="max-h-32 overflow-y-auto border rounded-lg">
-                      {filteredCustomers.map(customer => (
+                  {customers.length > 0 && !selectedCustomerId && (
+                    <div className="max-h-32 overflow-y-auto border rounded-lg bg-background">
+                      {customers.map(customer => (
                         <button
                           key={customer.id}
                           onClick={() => {
@@ -906,12 +962,78 @@ export default function PosPage() {
                       </Button>
                     </div>
                   )}
-                  {invoiceRequested && !selectedCustomerId && (
-                    <p className="text-xs text-amber-600">Seleziona un cliente per emettere la fattura</p>
-                  )}
+                </div>
+              )}
+
+              {customerType === "new" && (
+                <div className="space-y-2 p-3 rounded-lg bg-muted/50">
+                  <Input
+                    placeholder="Nome completo *"
+                    value={newCustomerName}
+                    onChange={(e) => setNewCustomerName(e.target.value)}
+                    data-testid="input-new-customer-name"
+                  />
+                  <Input
+                    placeholder="Email (opzionale)"
+                    type="email"
+                    value={newCustomerEmail}
+                    onChange={(e) => setNewCustomerEmail(e.target.value)}
+                    data-testid="input-new-customer-email"
+                  />
+                  <Input
+                    placeholder="Telefono (opzionale)"
+                    value={newCustomerPhone}
+                    onChange={(e) => setNewCustomerPhone(e.target.value)}
+                    data-testid="input-new-customer-phone"
+                  />
+                  <Button
+                    variant="outline"
+                    className="w-full"
+                    disabled={!newCustomerName.trim() || createCustomerMutation.isPending}
+                    onClick={() => {
+                      createCustomerMutation.mutate({
+                        fullName: newCustomerName.trim(),
+                        email: newCustomerEmail.trim() || undefined,
+                        phone: newCustomerPhone.trim() || undefined,
+                      });
+                    }}
+                    data-testid="button-create-customer"
+                  >
+                    {createCustomerMutation.isPending ? (
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    ) : (
+                      <UserPlus className="w-4 h-4 mr-2" />
+                    )}
+                    Crea Cliente
+                  </Button>
                 </div>
               )}
             </div>
+
+            <Separator />
+
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <FileText className="w-4 h-4" />
+                <Label htmlFor="invoice-switch">Richiedi Fattura</Label>
+              </div>
+              <Switch
+                id="invoice-switch"
+                checked={invoiceRequested}
+                onCheckedChange={setInvoiceRequested}
+                data-testid="switch-invoice-requested"
+              />
+            </div>
+            
+            {invoiceRequested && customerType === "guest" && (
+              <p className="text-xs text-amber-600">Per emettere fattura devi selezionare un cliente esistente o crearne uno nuovo</p>
+            )}
+            {invoiceRequested && customerType === "existing" && !selectedCustomerId && (
+              <p className="text-xs text-amber-600">Seleziona un cliente per emettere la fattura</p>
+            )}
+            {invoiceRequested && customerType === "new" && !selectedCustomerId && (
+              <p className="text-xs text-amber-600">Crea il cliente prima di procedere</p>
+            )}
 
             {selectedPayment === "cash" && (
               <div className="space-y-3">
