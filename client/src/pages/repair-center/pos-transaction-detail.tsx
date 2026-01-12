@@ -8,14 +8,18 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { 
   ArrowLeft, Receipt, CreditCard, Banknote, Clock, User, 
   Package, Smartphone, Printer, CheckCircle, XCircle, RotateCcw,
-  Wallet, Calculator, FileText
+  Wallet, Calculator, FileText, Ban
 } from "lucide-react";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
-import { useRef, useEffect, useMemo } from "react";
+import { useRef, useEffect, useMemo, useState } from "react";
 import bwipjs from "bwip-js";
 
 type TransactionDetail = {
@@ -156,9 +160,64 @@ export default function PosTransactionDetailPage() {
 
   const { toast } = useToast();
   
+  const [voidDialogOpen, setVoidDialogOpen] = useState(false);
+  const [refundDialogOpen, setRefundDialogOpen] = useState(false);
+  const [voidReason, setVoidReason] = useState("");
+  const [refundReason, setRefundReason] = useState("");
+  const [refundAmount, setRefundAmount] = useState("");
+  
   const { data, isLoading, error } = useQuery<TransactionDetail>({
     queryKey: ["/api/repair-center/pos/transaction", id],
     enabled: !!id,
+  });
+
+  const voidMutation = useMutation({
+    mutationFn: async (reason: string) => {
+      const res = await apiRequest("POST", `/api/repair-center/pos/transaction/${id}/void`, { reason });
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/repair-center/pos/transaction", id] });
+      queryClient.invalidateQueries({ queryKey: ["/api/repair-center/pos/sales-history"] });
+      setVoidDialogOpen(false);
+      setVoidReason("");
+      toast({
+        title: "Vendita annullata",
+        description: "La transazione è stata annullata con successo",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Errore",
+        description: error.message || "Impossibile annullare la transazione",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const refundMutation = useMutation({
+    mutationFn: async ({ amount, reason }: { amount: number; reason: string }) => {
+      const res = await apiRequest("POST", `/api/repair-center/pos/transaction/${id}/refund`, { amount, reason });
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/repair-center/pos/transaction", id] });
+      queryClient.invalidateQueries({ queryKey: ["/api/repair-center/pos/sales-history"] });
+      setRefundDialogOpen(false);
+      setRefundReason("");
+      setRefundAmount("");
+      toast({
+        title: "Rimborso effettuato",
+        description: "Il rimborso è stato registrato con successo",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Errore",
+        description: error.message || "Impossibile effettuare il rimborso",
+        variant: "destructive",
+      });
+    },
   });
 
   const generateInvoiceMutation = useMutation({
@@ -235,8 +294,34 @@ export default function PosTransactionDetailPage() {
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <Badge variant={statusInfo.variant}>{statusInfo.label}</Badge>
+          {transaction.status === "completed" && (
+            <>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                data-testid="button-refund"
+                onClick={() => {
+                  setRefundAmount((transaction.total / 100).toFixed(2));
+                  setRefundDialogOpen(true);
+                }}
+              >
+                <RotateCcw className="w-4 h-4 mr-2" />
+                Reso
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                data-testid="button-void"
+                className="text-destructive border-destructive hover:bg-destructive/10"
+                onClick={() => setVoidDialogOpen(true)}
+              >
+                <Ban className="w-4 h-4 mr-2" />
+                Annulla
+              </Button>
+            </>
+          )}
           <Button 
             variant="outline" 
             size="sm" 
@@ -444,6 +529,112 @@ export default function PosTransactionDetailPage() {
           </CardContent>
         </Card>
       )}
+
+      <Dialog open={voidDialogOpen} onOpenChange={setVoidDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Ban className="w-5 h-5 text-destructive" />
+              Annulla vendita
+            </DialogTitle>
+            <DialogDescription>
+              Stai per annullare la vendita {transaction.transactionNumber}. 
+              Questa azione ripristinerà lo stock dei prodotti venduti.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="void-reason">Motivo dell'annullamento *</Label>
+              <Textarea
+                id="void-reason"
+                placeholder="Inserisci il motivo dell'annullamento..."
+                value={voidReason}
+                onChange={(e) => setVoidReason(e.target.value)}
+                data-testid="input-void-reason"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => setVoidDialogOpen(false)}
+              data-testid="button-cancel-void"
+            >
+              Annulla
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => voidMutation.mutate(voidReason)}
+              disabled={!voidReason.trim() || voidMutation.isPending}
+              data-testid="button-confirm-void"
+            >
+              {voidMutation.isPending ? "Annullamento..." : "Conferma annullamento"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={refundDialogOpen} onOpenChange={setRefundDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <RotateCcw className="w-5 h-5" />
+              Effettua reso
+            </DialogTitle>
+            <DialogDescription>
+              Inserisci l'importo da rimborsare e il motivo del reso.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="refund-amount">Importo da rimborsare (€)</Label>
+              <Input
+                id="refund-amount"
+                type="number"
+                step="0.01"
+                min="0.01"
+                max={(transaction.total / 100).toFixed(2)}
+                placeholder="0.00"
+                value={refundAmount}
+                onChange={(e) => setRefundAmount(e.target.value)}
+                data-testid="input-refund-amount"
+              />
+              <p className="text-sm text-muted-foreground">
+                Totale originale: {formatCurrency(transaction.total)}
+              </p>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="refund-reason">Motivo del reso</Label>
+              <Textarea
+                id="refund-reason"
+                placeholder="Inserisci il motivo del reso (opzionale)..."
+                value={refundReason}
+                onChange={(e) => setRefundReason(e.target.value)}
+                data-testid="input-refund-reason"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => setRefundDialogOpen(false)}
+              data-testid="button-cancel-refund"
+            >
+              Annulla
+            </Button>
+            <Button
+              onClick={() => refundMutation.mutate({ 
+                amount: Math.round(parseFloat(refundAmount) * 100), 
+                reason: refundReason 
+              })}
+              disabled={!refundAmount || parseFloat(refundAmount) <= 0 || refundMutation.isPending}
+              data-testid="button-confirm-refund"
+            >
+              {refundMutation.isPending ? "Elaborazione..." : "Conferma reso"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
