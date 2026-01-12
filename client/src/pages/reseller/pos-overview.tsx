@@ -18,7 +18,9 @@ import {
   CheckCircle,
   XCircle,
   Eye,
-  Package
+  Package,
+  PlayCircle,
+  StopCircle
 } from "lucide-react";
 import { useState } from "react";
 import { format } from "date-fns";
@@ -80,6 +82,17 @@ interface RepairCenter {
   name: string;
 }
 
+interface PosSession {
+  id: string;
+  repairCenterName: string;
+  operatorName: string;
+  status: string;
+  openedAt: string;
+  closedAt: string | null;
+  totalSales: number;
+  totalTransactions: number;
+}
+
 export default function ResellerPosOverview() {
   const [period, setPeriod] = useState("today");
   const [repairCenterFilter, setRepairCenterFilter] = useState("all");
@@ -110,6 +123,19 @@ export default function ResellerPosOverview() {
       return res.json();
     },
     enabled: !!selectedTxId,
+  });
+
+  const { data: sessions } = useQuery<PosSession[]>({
+    queryKey: ["/api/reseller/pos/sessions/feed", repairCenterFilter],
+    queryFn: async () => {
+      const params = new URLSearchParams({ limit: "20" });
+      if (repairCenterFilter !== "all") {
+        params.set("repairCenterId", repairCenterFilter);
+      }
+      const res = await fetch(`/api/reseller/pos/sessions/feed?${params.toString()}`);
+      if (!res.ok) throw new Error("Failed to fetch sessions");
+      return res.json();
+    },
   });
 
   const formatCurrency = (amount: number) => {
@@ -355,6 +381,59 @@ export default function ResellerPosOverview() {
             {(!stats?.recentTransactions || stats.recentTransactions.length === 0) && (
               <p className="text-sm text-muted-foreground text-center py-8">
                 Nessuna transazione recente
+              </p>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Clock className="h-5 w-5 text-cyan-500" />
+            Timeline Sessioni Cassa
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-3">
+            {sessions?.map((session) => (
+              <div key={session.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/50" data-testid={`row-session-${session.id}`}>
+                <div className="flex items-center gap-3">
+                  {session.status === "open" ? (
+                    <PlayCircle className="h-5 w-5 text-green-500" />
+                  ) : (
+                    <StopCircle className="h-5 w-5 text-muted-foreground" />
+                  )}
+                  <div>
+                    <div className="font-medium">{session.repairCenterName}</div>
+                    <div className="text-xs text-muted-foreground">
+                      Operatore: {session.operatorName}
+                    </div>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className="flex items-center gap-2">
+                    {session.status === "open" ? (
+                      <Badge variant="default" className="bg-green-500">Aperta</Badge>
+                    ) : (
+                      <Badge variant="secondary">Chiusa</Badge>
+                    )}
+                  </div>
+                  <div className="text-xs text-muted-foreground mt-1">
+                    {format(new Date(session.openedAt), "dd/MM HH:mm", { locale: it })}
+                    {session.closedAt && ` - ${format(new Date(session.closedAt), "HH:mm", { locale: it })}`}
+                  </div>
+                  {session.totalTransactions > 0 && (
+                    <div className="text-xs mt-1">
+                      <span className="font-medium">{session.totalTransactions}</span> vendite · <span className="font-medium">{formatCurrency(session.totalSales)}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+            {(!sessions || sessions.length === 0) && (
+              <p className="text-sm text-muted-foreground text-center py-8">
+                Nessuna sessione recente
               </p>
             )}
           </div>
