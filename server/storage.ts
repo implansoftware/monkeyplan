@@ -9891,6 +9891,17 @@ export class DatabaseStorage implements IStorage {
     return session;
   }
 
+  async getLastClosedPosSession(repairCenterId: string): Promise<PosSession | undefined> {
+    const [session] = await db.select().from(posSessions)
+      .where(and(
+        eq(posSessions.repairCenterId, repairCenterId),
+        eq(posSessions.status, 'closed')
+      ))
+      .orderBy(desc(posSessions.closedAt))
+      .limit(1);
+    return session;
+  }
+
   async getPosSessionsByRepairCenter(repairCenterId: string, limit = 50): Promise<PosSession[]> {
     return db.select().from(posSessions)
       .where(eq(posSessions.repairCenterId, repairCenterId))

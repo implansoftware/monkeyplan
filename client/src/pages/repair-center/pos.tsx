@@ -233,6 +233,22 @@ export default function PosPage() {
     queryKey: ["/api/repair-center/pos/stats/daily"],
   });
 
+  const { data: lastClosedSession } = useQuery<PosSession | null>({
+    queryKey: ["/api/repair-center/pos/session/last-closed"],
+    queryFn: async () => {
+      const res = await fetch("/api/repair-center/pos/session/last-closed", { credentials: "include" });
+      if (!res.ok) return null;
+      return res.json();
+    },
+    enabled: !currentSession,
+  });
+
+  useEffect(() => {
+    if (openSessionDialog && lastClosedSession?.closingCash) {
+      setOpeningCash((lastClosedSession.closingCash / 100).toFixed(2));
+    }
+  }, [openSessionDialog, lastClosedSession]);
+
   const { data: products = [], isLoading: productsLoading } = useQuery<Product[]>({
     queryKey: ["/api/repair-center/pos/products"],
   });
@@ -495,6 +511,12 @@ export default function PosPage() {
                   className="text-lg h-12"
                   data-testid="input-opening-cash"
                 />
+                {lastClosedSession?.closingCash && lastClosedSession.closingCash > 0 && (
+                  <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+                    <History className="h-3 w-3" />
+                    Saldo dalla chiusura precedente: {formatCurrency(lastClosedSession.closingCash)}
+                  </p>
+                )}
               </div>
               <div>
                 <Label>Note (opzionale)</Label>

@@ -31739,7 +31739,17 @@ export function registerRoutes(app: Express): Server {
   });
 
   // Apri nuova sessione POS
-  app.post("/api/repair-center/pos/session/open", requireRole("repair_center", "repair_center_staff"), async (req, res) => {
+  app.get("/api/repair-center/pos/session/last-closed", requireRole("repair_center", "repair_center_staff"), async (req, res) => {
+    try {
+      const repairCenterId = req.user!.repairCenterId || req.user!.id;
+      const lastSession = await storage.getLastClosedPosSession(repairCenterId);
+      res.json(lastSession || null);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+    app.post("/api/repair-center/pos/session/open", requireRole("repair_center", "repair_center_staff"), async (req, res) => {
     try {
       const repairCenterId = req.user!.repairCenterId || req.user!.id;
       const operatorId = req.user!.id;
@@ -31751,10 +31761,17 @@ export function registerRoutes(app: Express): Server {
 
       const { openingCash, openingNotes } = req.body;
       
+      // Se openingCash non fornito, usa il closingCash dell'ultima sessione
+      let finalOpeningCash = openingCash;
+      if (finalOpeningCash === undefined || finalOpeningCash === null) {
+        const lastSession = await storage.getLastClosedPosSession(repairCenterId);
+        finalOpeningCash = lastSession?.closingCash || 0;
+      }
+      
       const session = await storage.createPosSession({
         repairCenterId,
         operatorId,
-        openingCash: openingCash || 0,
+        openingCash: finalOpeningCash,
         openingNotes: openingNotes || null,
       });
       
