@@ -32896,6 +32896,122 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // ========== RESELLER POS REGISTERS ==========
+
+  // Lista casse per reseller (con filtro centro riparazione)
+  app.get("/api/reseller/pos/registers", requireRole("reseller", "reseller_staff", "sub_reseller"), async (req, res) => {
+    try {
+      const { resellerId } = getEffectiveContext(req);
+      const repairCenterId = req.query.repairCenterId as string | undefined;
+      
+      if (repairCenterId) {
+        const center = await storage.getRepairCenter(repairCenterId);
+        if (!center || center.resellerId !== resellerId) {
+          return res.status(403).json({ error: "Non autorizzato" });
+        }
+        const registers = await storage.getPosRegistersByRepairCenter(repairCenterId);
+        return res.json(registers);
+      }
+      
+      // Se non specificato, ritorna casse di tutti i centri del reseller
+      const centers = await storage.getRepairCentersByReseller(resellerId);
+      const allRegisters = [];
+      for (const center of centers) {
+        const registers = await storage.getPosRegistersByRepairCenter(center.id);
+        allRegisters.push(...registers.map(r => ({ ...r, repairCenterName: center.name })));
+      }
+      res.json(allRegisters);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Crea nuova cassa per centro riparazione
+  app.post("/api/reseller/pos/registers", requireRole("reseller", "reseller_staff", "sub_reseller"), async (req, res) => {
+    try {
+      const { resellerId } = getEffectiveContext(req);
+      const { repairCenterId, name, description, isDefault } = req.body;
+      
+      if (!repairCenterId) {
+        return res.status(400).json({ error: "Centro riparazione obbligatorio" });
+      }
+      
+      const center = await storage.getRepairCenter(repairCenterId);
+      if (!center || center.resellerId !== resellerId) {
+        return res.status(403).json({ error: "Non autorizzato" });
+      }
+      
+      if (!name?.trim()) {
+        return res.status(400).json({ error: "Nome cassa obbligatorio" });
+      }
+      
+      const register = await storage.createPosRegister({
+        repairCenterId,
+        name: name.trim(),
+        description: description?.trim() || null,
+        isDefault: isDefault || false,
+      });
+      
+      res.json(register);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Modifica cassa
+  app.patch("/api/reseller/pos/registers/:registerId", requireRole("reseller", "reseller_staff", "sub_reseller"), async (req, res) => {
+    try {
+      const { resellerId } = getEffectiveContext(req);
+      const { registerId } = req.params;
+      const { name, description, isActive, isDefault } = req.body;
+      
+      const register = await storage.getPosRegister(registerId);
+      if (!register) return res.status(404).json({ error: "Cassa non trovata" });
+      
+      const center = await storage.getRepairCenter(register.repairCenterId);
+      if (!center || center.resellerId !== resellerId) {
+        return res.status(403).json({ error: "Non autorizzato" });
+      }
+      
+      const updated = await storage.updatePosRegister(registerId, {
+        name: name?.trim(),
+        description: description?.trim(),
+        isActive,
+        isDefault,
+      });
+      
+      res.json(updated);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Elimina cassa
+  app.delete("/api/reseller/pos/registers/:registerId", requireRole("reseller", "reseller_staff", "sub_reseller"), async (req, res) => {
+    try {
+      const { resellerId } = getEffectiveContext(req);
+      const { registerId } = req.params;
+      
+      const register = await storage.getPosRegister(registerId);
+      if (!register) return res.status(404).json({ error: "Cassa non trovata" });
+      
+      const center = await storage.getRepairCenter(register.repairCenterId);
+      if (!center || center.resellerId !== resellerId) {
+        return res.status(403).json({ error: "Non autorizzato" });
+      }
+      
+      const openSession = await storage.getOpenPosSession(register.repairCenterId, registerId);
+      if (openSession) {
+        return res.status(400).json({ error: "Impossibile eliminare una cassa con sessione aperta. Chiudi prima la sessione." });
+      }
+      
+      await storage.deletePosRegister(registerId);
+      res.json({ success: true });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
     // Genera immagine barcode PNG
   app.get("/api/barcode/:code", async (req, res) => {
     try {
