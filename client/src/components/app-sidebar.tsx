@@ -224,7 +224,7 @@ const menuItems = {
     { title: "Dashboard", url: "/repair-center", icon: LayoutDashboard, group: "Dashboard" },
     // POS - Cassa
     { title: "Cassa POS", url: "/repair-center/pos", icon: Receipt, group: "Dashboard" },
-    { title: "Fatture Vendita", url: "/repair-center/pos/invoices", icon: FileText, group: "Dashboard" },
+    { title: "Storico Vendite", url: "/repair-center/pos/sales-history", icon: ShoppingCart, group: "Dashboard" },
     // Gestione HR
     { title: "Dashboard HR", url: "/repair-center/hr", icon: Briefcase, group: "Gestione HR" },
     { title: "Team", url: "/repair-center/team", icon: UsersRound, group: "Gestione HR" },
