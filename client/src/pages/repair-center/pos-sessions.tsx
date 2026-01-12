@@ -15,8 +15,19 @@ import {
   Receipt,
   AlertTriangle,
   CheckCircle,
-  Store
+  Store,
+  Download,
+  FileSpreadsheet,
+  FileText,
+  File
 } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
 import { format, isToday, isThisWeek, isThisMonth, startOfDay, startOfWeek, startOfMonth } from "date-fns";
 import { it } from "date-fns/locale";
@@ -52,6 +63,8 @@ interface PosRegister {
 export default function PosSessionsPage() {
   const [period, setPeriod] = useState("all");
   const [selectedRegisterId, setSelectedRegisterId] = useState<string>("all");
+  const [isExporting, setIsExporting] = useState(false);
+  const { toast } = useToast();
 
   const { data: registers = [] } = useQuery<PosRegister[]>({
     queryKey: ["/api/repair-center/pos/registers"],
@@ -106,6 +119,55 @@ export default function PosSessionsPage() {
     if (!registerId) return "Cassa Principale";
     const register = registers.find(r => r.id === registerId);
     return register?.name || "Cassa";
+  };
+
+  const handleExport = async (format: 'csv' | 'xlsx' | 'pdf') => {
+    try {
+      setIsExporting(true);
+      
+      const params = new URLSearchParams({ format });
+      if (selectedRegisterId && selectedRegisterId !== "all") {
+        params.append('registerId', selectedRegisterId);
+      }
+      if (period && period !== "all") {
+        params.append('period', period);
+      }
+      
+      const response = await fetch(`/api/repair-center/pos/sessions/export?${params}`, {
+        credentials: 'include',
+      });
+      
+      if (!response.ok) {
+        throw new Error('Errore durante l\'export');
+      }
+      
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      
+      const filename = response.headers.get('Content-Disposition')?.match(/filename="(.+)"/)?.[1] 
+        || `sessioni_cassa.${format}`;
+      a.download = filename;
+      
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      
+      toast({
+        title: "Export completato",
+        description: `Il file ${format.toUpperCase()} è stato scaricato con successo`,
+      });
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Errore",
+        description: "Impossibile esportare i dati",
+      });
+    } finally {
+      setIsExporting(false);
+    }
   };
 
   if (isLoading) {
@@ -171,6 +233,29 @@ export default function PosSessionsPage() {
               <SelectItem value="month">Mese</SelectItem>
             </SelectContent>
           </Select>
+          
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" disabled={isExporting || filteredSessions.length === 0} data-testid="button-export">
+                <Download className="h-4 w-4 mr-2" />
+                {isExporting ? "Export..." : "Esporta"}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => handleExport('csv')} data-testid="menu-export-csv">
+                <FileText className="h-4 w-4 mr-2" />
+                Esporta CSV
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleExport('xlsx')} data-testid="menu-export-xlsx">
+                <FileSpreadsheet className="h-4 w-4 mr-2" />
+                Esporta Excel (XLSX)
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleExport('pdf')} data-testid="menu-export-pdf">
+                <File className="h-4 w-4 mr-2" />
+                Esporta PDF
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
 

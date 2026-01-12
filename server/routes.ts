@@ -31941,6 +31941,227 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Export sessioni POS (CSV, XLSX, PDF)
+  app.get("/api/repair-center/pos/sessions/export", requireRole("repair_center", "repair_center_staff"), async (req, res) => {
+    try {
+      const repairCenterId = req.user!.repairCenterId || req.user!.id;
+      const { format, registerId, startDate, endDate, status, period } = req.query;
+      
+      // Fetch sessions
+      const allSessions = await storage.getPosSessionsByRepairCenter(repairCenterId, { limit: 1000, registerId: registerId as string | undefined });
+      
+      // Apply period filter
+      const now = new Date();
+      const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      // Calculate start of week (Monday = 1) correctly handling Sunday
+      const startOfWeekDate = new Date(startOfToday);
+      const dayOfWeek = startOfWeekDate.getDay();
+      const diff = dayOfWeek === 0 ? 6 : dayOfWeek - 1; // Sunday = 0, so go back 6 days
+      startOfWeekDate.setDate(startOfWeekDate.getDate() - diff);
+      const startOfMonthDate = new Date(now.getFullYear(), now.getMonth(), 1);
+      
+      // Apply filters including period
+      let sessions = allSessions.filter(session => {
+        const sessionDate = new Date(session.openedAt);
+        
+        // Period filter
+        if (period === 'today' && sessionDate < startOfToday) return false;
+        if (period === 'week' && sessionDate < startOfWeekDate) return false;
+        if (period === 'month' && sessionDate < startOfMonthDate) return false;
+        
+        // Date range filters
+        if (startDate && sessionDate < new Date(startDate as string)) return false;
+        if (endDate && sessionDate > new Date(endDate as string)) return false;
+        if (status && session.status !== status) return false;
+        return true;
+      });
+      
+      // Get register names
+      const registers = await storage.getPosRegistersByRepairCenter(repairCenterId);
+      const registerMap = new Map(registers.map(r => [r.id, r.name]));
+      
+      // Get operator names (only for operators in sessions - scoped to prevent data leaks)
+      const operatorIds = [...new Set(sessions.map(s => s.operatorId).filter(Boolean))];
+      const userMap = new Map<string, string>();
+      for (const opId of operatorIds) {
+        const user = await storage.getUser(opId);
+        if (user) userMap.set(opId, user.fullName);
+      }
+      
+      const formatCurrency = (cents: number) => `€ ${(cents / 100).toFixed(2)}`;
+      const formatDate = (date: Date) => new Date(date).toLocaleString('it-IT');
+      
+      // Prepare export data
+      const exportData = sessions.map(s => ({
+        'ID': s.id.substring(0, 8),
+        'Cassa': s.registerId ? registerMap.get(s.registerId) || 'N/D' : 'Cassa Principale',
+        'Operatore': s.operatorId ? userMap.get(s.operatorId) || 'N/D' : 'N/D',
+        'Stato': s.status === 'open' ? 'Aperta' : 'Chiusa',
+        'Data Apertura': formatDate(s.openedAt),
+        'Data Chiusura': s.closedAt ? formatDate(s.closedAt) : '-',
+        'Fondo Cassa Iniziale': formatCurrency(s.openingCash),
+        'Fondo Cassa Finale': s.closingCash !== null ? formatCurrency(s.closingCash) : '-',
+        'Totale Vendite': formatCurrency(s.totalSales),
+        'Vendite Contanti': formatCurrency(s.totalCashSales),
+        'Vendite Carta': formatCurrency(s.totalCardSales),
+        'Transazioni': s.totalTransactions || 0,
+        'Rimborsi': formatCurrency(s.totalRefunds),
+        'Differenza Cassa': s.cashDifference !== null ? formatCurrency(s.cashDifference) : '-',
+        'Note Apertura': s.openingNotes || '-',
+        'Note Chiusura': s.closingNotes || '-',
+      }));
+      
+      // Define stable headers for export
+      const stableHeaders = ['ID', 'Cassa', 'Operatore', 'Stato', 'Data Apertura', 'Data Chiusura', 'Fondo Cassa Iniziale', 'Fondo Cassa Finale', 'Totale Vendite', 'Vendite Contanti', 'Vendite Carta', 'Transazioni', 'Rimborsi', 'Differenza Cassa', 'Note Apertura', 'Note Chiusura'];
+      
+      if (format === 'csv') {
+        // Generate CSV with stable headers
+        const csvRows = [
+          stableHeaders.join(';'),
+          ...exportData.map(row => stableHeaders.map(h => `"${String((row as any)[h] ?? '').replace(/"/g, '""')}"`).join(';'))
+        ];
+        const csv = csvRows.join('\n');
+        
+        res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+        res.setHeader('Content-Disposition', `attachment; filename="sessioni_cassa_${new Date().toISOString().split('T')[0]}.csv"`);
+        res.send('\ufeff' + csv); // BOM for Excel UTF-8
+        
+      } else if (format === 'xlsx') {
+        // Generate XLSX
+        const workbook = new ExcelJS.Workbook();
+        workbook.creator = 'MonkeyPlan POS';
+        workbook.created = new Date();
+        
+        const worksheet = workbook.addWorksheet('Sessioni Cassa');
+        
+        // Always add headers even if empty
+        worksheet.addRow(stableHeaders);
+        
+        if (exportData.length > 0) {
+          
+          // Style header
+          worksheet.getRow(1).font = { bold: true };
+          worksheet.getRow(1).fill = {
+            type: 'pattern',
+            pattern: 'solid',
+            fgColor: { argb: 'FF4A90A4' }
+          };
+          worksheet.getRow(1).font = { bold: true, color: { argb: 'FFFFFFFF' } };
+          
+        // Add data rows using stable headers
+        exportData.forEach(row => {
+          worksheet.addRow(stableHeaders.map(h => (row as any)[h] ?? ''));
+        });
+          
+          // Auto-width columns
+          worksheet.columns.forEach(column => {
+            let maxLength = 10;
+            column.eachCell?.({ includeEmpty: true }, cell => {
+              const cellLength = cell.value ? String(cell.value).length : 10;
+              if (cellLength > maxLength) maxLength = Math.min(cellLength, 50);
+            });
+            column.width = maxLength + 2;
+          });
+        }
+        
+        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        res.setHeader('Content-Disposition', `attachment; filename="sessioni_cassa_${new Date().toISOString().split('T')[0]}.xlsx"`);
+        
+        const buffer = await workbook.xlsx.writeBuffer();
+        res.send(buffer);
+        
+      } else if (format === 'pdf') {
+        // Generate PDF
+        const PDFDocument = (await import('pdfkit')).default;
+        const doc = new PDFDocument({ margin: 30, size: 'A4', layout: 'landscape' });
+        
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', `attachment; filename="sessioni_cassa_${new Date().toISOString().split('T')[0]}.pdf"`);
+        
+        doc.pipe(res);
+        
+        // Title
+        doc.fontSize(18).fillColor('#1a5f7a').text('Storico Sessioni Cassa', { align: 'center' });
+        doc.moveDown(0.5);
+        doc.fontSize(10).fillColor('#666').text(`Generato il: ${new Date().toLocaleString('it-IT')}`, { align: 'center' });
+        doc.moveDown();
+        
+        // Summary
+        const openCount = sessions.filter(s => s.status === 'open').length;
+        const closedCount = sessions.filter(s => s.status === 'closed').length;
+        const totalRevenue = sessions.reduce((sum, s) => sum + (s.totalSales || 0), 0);
+        const totalTx = sessions.reduce((sum, s) => sum + (s.totalTransactions || 0), 0);
+        
+        doc.fontSize(11).fillColor('#333');
+        doc.text(`Totale Sessioni: ${sessions.length} (${openCount} aperte, ${closedCount} chiuse)`);
+        doc.text(`Totale Incassi: ${formatCurrency(totalRevenue)}`);
+        doc.text(`Totale Transazioni: ${totalTx}`);
+        doc.moveDown();
+        
+        // Table headers
+        const tableTop = doc.y;
+        const colWidths = [60, 80, 90, 50, 80, 80, 60, 60];
+        const headers = ['Cassa', 'Operatore', 'Apertura', 'Stato', 'Vendite', 'Contanti', 'Carta', 'Trans.'];
+        
+        doc.fontSize(9).fillColor('#fff');
+        let xPos = 30;
+        doc.rect(30, tableTop - 3, 760, 18).fill('#1a5f7a');
+        headers.forEach((header, i) => {
+          doc.fillColor('#fff').text(header, xPos + 2, tableTop, { width: colWidths[i], align: 'left' });
+          xPos += colWidths[i];
+        });
+        
+        // Table rows
+        let yPos = tableTop + 20;
+        doc.fillColor('#333');
+        
+        sessions.slice(0, 30).forEach((session, idx) => {
+          if (yPos > 550) {
+            doc.addPage();
+            yPos = 50;
+          }
+          
+          const bgColor = idx % 2 === 0 ? '#f8f9fa' : '#ffffff';
+          doc.rect(30, yPos - 3, 760, 16).fill(bgColor);
+          
+          xPos = 30;
+          const rowData = [
+            session.registerId ? (registerMap.get(session.registerId) || 'N/D').substring(0, 12) : 'Principale',
+            (session.operatorId ? userMap.get(session.operatorId) || 'N/D' : 'N/D').substring(0, 15),
+            new Date(session.openedAt).toLocaleDateString('it-IT'),
+            session.status === 'open' ? 'Aperta' : 'Chiusa',
+            formatCurrency(session.totalSales),
+            formatCurrency(session.totalCashSales),
+            formatCurrency(session.totalCardSales),
+            String(session.totalTransactions || 0),
+          ];
+          
+          doc.fontSize(8).fillColor('#333');
+          rowData.forEach((cell, i) => {
+            doc.text(cell, xPos + 2, yPos, { width: colWidths[i], align: 'left' });
+            xPos += colWidths[i];
+          });
+          
+          yPos += 16;
+        });
+        
+        if (sessions.length > 30) {
+          doc.moveDown();
+          doc.fontSize(9).fillColor('#666').text(`... e altre ${sessions.length - 30} sessioni`, { align: 'center' });
+        }
+        
+        doc.end();
+        
+      } else {
+        res.status(400).json({ error: "Formato non supportato. Usa: csv, xlsx, pdf" });
+      }
+      
+    } catch (error: any) {
+      console.error("Export sessions error:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   // Crea transazione POS
   app.post("/api/repair-center/pos/transaction", requireRole("repair_center", "repair_center_staff"), async (req, res) => {
     try {
