@@ -1125,6 +1125,20 @@ export default function PosPage() {
                 className="text-lg h-12"
                 data-testid="input-closing-cash"
               />
+              <p className="text-xs text-muted-foreground mt-2">
+                Inserisci l'importo che lasci in cassa. La differenza rispetto ai contanti attesi verrà registrata come prelievo.
+              </p>
+              {closingCash && parseFloat(closingCash) < ((currentSession?.openingCash || 0) + (currentSession?.totalCashSales || 0) - (currentSession?.totalRefunds || 0)) / 100 && (
+                <div className="mt-2 p-2 rounded bg-amber-500/10 border border-amber-500/20">
+                  <p className="text-xs text-amber-600 dark:text-amber-400 flex items-center gap-1">
+                    <Banknote className="h-3 w-3" />
+                    Prelievo: {formatCurrency(
+                      ((currentSession?.openingCash || 0) + (currentSession?.totalCashSales || 0) - (currentSession?.totalRefunds || 0)) - 
+                      Math.round(parseFloat(closingCash) * 100)
+                    )}
+                  </p>
+                </div>
+              )}
             </div>
 
             <div>
