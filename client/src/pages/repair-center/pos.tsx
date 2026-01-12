@@ -302,6 +302,7 @@ export default function PosPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/repair-center/pos/session/current"] });
       queryClient.invalidateQueries({ queryKey: ["/api/repair-center/pos/transactions"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/repair-center/pos/session/last-closed"] });
       setCloseSessionDialog(false);
       setClosingCash("");
       setSessionNotes("");
