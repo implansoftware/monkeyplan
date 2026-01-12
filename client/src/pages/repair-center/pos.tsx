@@ -511,7 +511,7 @@ export default function PosPage() {
                   className="text-lg h-12"
                   data-testid="input-opening-cash"
                 />
-                {lastClosedSession?.closingCash && lastClosedSession.closingCash > 0 && (
+                {lastClosedSession && lastClosedSession.closingCash != null && lastClosedSession.closingCash > 0 && (
                   <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
                     <History className="h-3 w-3" />
                     Saldo dalla chiusura precedente: {formatCurrency(lastClosedSession.closingCash)}
