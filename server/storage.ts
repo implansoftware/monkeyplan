@@ -10455,6 +10455,176 @@ export class DatabaseStorage implements IStorage {
       paymentBreakdown, topRepairCenters, recentTransactions,
     };
   }
+
+  async getAdminPosOverviewStats(period: string, resellerId?: string): Promise<{
+    totalSessions: number;
+    activeSessions: number;
+    todayTransactions: number;
+    todayRevenue: number;
+    todayRefunds: number;
+    paymentBreakdown: { cash: number; card: number; pos_terminal: number; satispay: number; mixed: number };
+    topRepairCenters: { id: number; name: string; transactionCount: number; revenue: number }[];
+    recentTransactions: { id: string; transactionNumber: string; type: string; paymentMethod: string; totalAmount: number; createdAt: string; repairCenterName: string }[];
+    recentSessions: { id: string; repairCenterName: string; operatorName: string; status: string; openedAt: string; closedAt: string | null; totalSales: number; totalTransactions: number }[];
+  }> {
+    const now = new Date();
+    let startDate: Date;
+    if (period === "week") {
+      startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    } else if (period === "month") {
+      startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+    } else {
+      startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    }
+
+    let centerIds: string[] = [];
+    if (resellerId) {
+      const subResellers = await db.select({ id: users.id })
+        .from(users)
+        .where(and(eq(users.parentResellerId, resellerId), eq(users.role, "reseller")));
+      const allResellerIds = [resellerId, ...subResellers.map(s => s.id)];
+      const centers = await this.getRepairCentersByResellerIds(allResellerIds);
+      centerIds = centers.map(c => c.id);
+    }
+
+    const sessionConditions: SQL[] = [];
+    if (centerIds.length > 0) {
+      sessionConditions.push(inArray(posSessions.repairCenterId, centerIds));
+    }
+
+    const allSessions = await db.select({
+      session: posSessions,
+      repairCenterName: repairCenters.name,
+      operatorName: users.fullName,
+    })
+    .from(posSessions)
+    .innerJoin(repairCenters, eq(posSessions.repairCenterId, repairCenters.id))
+    .leftJoin(users, eq(posSessions.operatorId, users.id))
+    .where(sessionConditions.length > 0 ? and(...sessionConditions) : undefined)
+    .orderBy(desc(posSessions.openedAt))
+    .limit(200);
+
+    const totalSessions = allSessions.length;
+    const activeSessions = allSessions.filter(s => s.session.status === "open").length;
+
+    const txConditions: SQL[] = [gte(posTransactions.createdAt, startDate)];
+    if (centerIds.length > 0) {
+      txConditions.push(inArray(posTransactions.repairCenterId, centerIds));
+    }
+
+    const transactions = await db.select({
+      tx: posTransactions,
+      repairCenterName: repairCenters.name,
+      repairCenterId: repairCenters.id,
+    })
+    .from(posTransactions)
+    .innerJoin(repairCenters, eq(posTransactions.repairCenterId, repairCenters.id))
+    .where(and(...txConditions))
+    .orderBy(desc(posTransactions.createdAt));
+
+    let todayRevenue = 0;
+    let todayRefunds = 0;
+    const paymentBreakdown = { cash: 0, card: 0, pos_terminal: 0, satispay: 0, mixed: 0 };
+
+    for (const t of transactions) {
+      if (t.tx.status === "completed") {
+        todayRevenue += t.tx.total || 0;
+      } else if (t.tx.status === "refunded") {
+        todayRefunds += t.tx.refundedAmount || 0;
+      }
+      const method = t.tx.paymentMethod as keyof typeof paymentBreakdown;
+      if (method && paymentBreakdown.hasOwnProperty(method)) {
+        paymentBreakdown[method] += t.tx.total || 0;
+      }
+    }
+
+    const rcStats = new Map<string, { id: string; name: string; transactionCount: number; revenue: number }>();
+    for (const t of transactions) {
+      const existing = rcStats.get(t.repairCenterId);
+      if (existing) {
+        existing.transactionCount++;
+        if (t.tx.status === "completed") existing.revenue += t.tx.total || 0;
+      } else {
+        rcStats.set(t.repairCenterId, {
+          id: t.repairCenterId,
+          name: t.repairCenterName,
+          transactionCount: 1,
+          revenue: t.tx.status === "completed" ? (t.tx.total || 0) : 0,
+        });
+      }
+    }
+    const topRepairCenters = Array.from(rcStats.values())
+      .map((data, idx) => ({ id: idx + 1, name: data.name, transactionCount: data.transactionCount, revenue: data.revenue }))
+      .sort((a, b) => b.revenue - a.revenue)
+      .slice(0, 5);
+
+    const recentTransactions = transactions.slice(0, 10).map(t => ({
+      id: t.tx.id,
+      transactionNumber: t.tx.transactionNumber,
+      type: t.tx.status,
+      paymentMethod: t.tx.paymentMethod,
+      totalAmount: t.tx.total || 0,
+      createdAt: t.tx.createdAt?.toISOString() || "",
+      repairCenterName: t.repairCenterName,
+    }));
+
+    const recentSessions = allSessions.slice(0, 20).map(s => ({
+      id: s.session.id,
+      repairCenterName: s.repairCenterName,
+      operatorName: s.operatorName || "N/D",
+      status: s.session.status,
+      openedAt: s.session.openedAt?.toISOString() || "",
+      closedAt: s.session.closedAt?.toISOString() || null,
+      totalSales: s.session.totalSales || 0,
+      totalTransactions: s.session.totalTransactions || 0,
+    }));
+
+    return {
+      totalSessions, activeSessions, todayTransactions: transactions.length, todayRevenue, todayRefunds,
+      paymentBreakdown, topRepairCenters, recentTransactions, recentSessions,
+    };
+  }
+
+  async getResellerPosSessionsFeed(resellerId: string, options?: {
+    limit?: number;
+    repairCenterId?: string;
+  }): Promise<{ id: string; repairCenterName: string; operatorName: string; status: string; openedAt: string; closedAt: string | null; totalSales: number; totalTransactions: number }[]> {
+    const subResellers = await db.select({ id: users.id })
+      .from(users)
+      .where(and(eq(users.parentResellerId, resellerId), eq(users.role, "reseller")));
+    const allResellerIds = [resellerId, ...subResellers.map(s => s.id)];
+    const centers = await this.getRepairCentersByResellerIds(allResellerIds);
+    let centerIds = centers.map(c => c.id);
+    
+    if (options?.repairCenterId && centerIds.includes(options.repairCenterId)) {
+      centerIds = [options.repairCenterId];
+    }
+
+    if (centerIds.length === 0) return [];
+
+    const sessions = await db.select({
+      session: posSessions,
+      repairCenterName: repairCenters.name,
+      operatorName: users.fullName,
+    })
+    .from(posSessions)
+    .innerJoin(repairCenters, eq(posSessions.repairCenterId, repairCenters.id))
+    .leftJoin(users, eq(posSessions.operatorId, users.id))
+    .where(inArray(posSessions.repairCenterId, centerIds))
+    .orderBy(desc(posSessions.openedAt))
+    .limit(options?.limit || 20);
+
+    return sessions.map(s => ({
+      id: s.session.id,
+      repairCenterName: s.repairCenterName,
+      operatorName: s.operatorName || "N/D",
+      status: s.session.status,
+      openedAt: s.session.openedAt?.toISOString() || "",
+      closedAt: s.session.closedAt?.toISOString() || null,
+      totalSales: s.session.totalSales || 0,
+      totalTransactions: s.session.totalTransactions || 0,
+    }));
+  }
 }
 
 export const storage = new DatabaseStorage();

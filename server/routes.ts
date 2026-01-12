@@ -32214,9 +32214,9 @@ export function registerRoutes(app: Express): Server {
 
   app.get("/api/admin/pos/stats", requireRole("admin", "admin_staff"), async (req, res) => {
     try {
-      const startDate = new Date(req.query.startDate as string || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000));
-      const endDate = new Date(req.query.endDate as string || new Date());
-      const stats = await storage.getGlobalPosStats(startDate, endDate);
+      const period = (req.query.period as string) || "today";
+      const resellerId = req.query.resellerId as string | undefined;
+      const stats = await storage.getAdminPosOverviewStats(period, resellerId);
       res.json(stats);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
@@ -32237,7 +32237,30 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  // Genera immagine barcode PNG
+  app.get("/api/admin/pos/sessions", requireRole("admin", "admin_staff"), async (req, res) => {
+    try {
+      const period = (req.query.period as string) || "today";
+      const resellerId = req.query.resellerId as string | undefined;
+      const stats = await storage.getAdminPosOverviewStats(period, resellerId);
+      res.json(stats.recentSessions);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/reseller/pos/sessions/feed", requireRole("reseller", "reseller_staff", "sub_reseller"), async (req, res) => {
+    try {
+      const { resellerId } = getEffectiveContext(req);
+      const limit = parseInt(req.query.limit as string) || 20;
+      const repairCenterId = req.query.repairCenterId as string | undefined;
+      const sessions = await storage.getResellerPosSessionsFeed(resellerId, { limit, repairCenterId });
+      res.json(sessions);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+    // Genera immagine barcode PNG
   app.get("/api/barcode/:code", async (req, res) => {
     try {
       const bwipjsModule = await import("bwip-js");
