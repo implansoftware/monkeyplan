@@ -2612,6 +2612,17 @@ export class DatabaseStorage implements IStorage {
     return invoice;
   }
 
+  async getPosInvoicesByRepairCenter(repairCenterId: string): Promise<Invoice[]> {
+    const result = await db
+      .select({ invoice: invoices })
+      .from(invoices)
+      .innerJoin(posTransactions, eq(invoices.posTransactionId, posTransactions.id))
+      .where(eq(posTransactions.repairCenterId, repairCenterId))
+      .orderBy(desc(invoices.createdAt));
+    
+    return result.map(r => r.invoice);
+  }
+
   // Billing Data
   async getBillingDataByUserId(userId: string): Promise<BillingData | undefined> {
     const [data] = await db.select().from(billingData).where(eq(billingData.userId, userId));
