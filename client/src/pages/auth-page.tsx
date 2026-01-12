@@ -26,35 +26,73 @@ import {
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import monkeyMascot from "@assets/generated_images/tech_support_monkey_mascot.png";
 
-function AnimatedHeroSection() {
+function AnimatedMonkeyMascot() {
   return (
     <div className="relative flex flex-col items-center">
-      <div className="relative">
-        <div className="w-32 h-32 rounded-full bg-white/20 backdrop-blur-sm border-4 border-white/30 flex items-center justify-center animate-pulse">
-          <div className="w-24 h-24 rounded-full bg-gradient-to-br from-orange-400 via-yellow-400 to-amber-500 flex items-center justify-center shadow-2xl">
-            <Wrench className="w-12 h-12 text-white drop-shadow-lg" />
-          </div>
+      <div className="relative group">
+        <div className="absolute inset-0 bg-gradient-to-r from-yellow-400 via-orange-400 to-amber-400 rounded-full blur-2xl opacity-40 animate-pulse" />
+        
+        <div 
+          className="relative w-48 h-48 rounded-full bg-white/10 backdrop-blur-sm border-4 border-white/30 flex items-center justify-center overflow-hidden shadow-2xl"
+          style={{
+            animation: 'float 3s ease-in-out infinite'
+          }}
+        >
+          <img 
+            src={monkeyMascot} 
+            alt="MonkeyPlan Mascot" 
+            className="w-40 h-40 object-contain drop-shadow-lg"
+            style={{
+              animation: 'breathe 4s ease-in-out infinite'
+            }}
+          />
         </div>
         
-        <div className="absolute -top-2 -right-2 w-8 h-8 rounded-full bg-emerald-400 flex items-center justify-center animate-bounce shadow-lg" style={{ animationDuration: '2s' }}>
-          <Smartphone className="w-4 h-4 text-white" />
+        <div 
+          className="absolute -top-1 -right-1 w-10 h-10 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center shadow-lg border-2 border-white/50"
+          style={{ animation: 'bounce 2s ease-in-out infinite' }}
+        >
+          <Smartphone className="w-5 h-5 text-white" />
         </div>
-        <div className="absolute -bottom-2 -left-2 w-8 h-8 rounded-full bg-cyan-400 flex items-center justify-center animate-bounce shadow-lg" style={{ animationDuration: '2.5s', animationDelay: '0.5s' }}>
-          <Shield className="w-4 h-4 text-white" />
+        
+        <div 
+          className="absolute -bottom-1 -left-1 w-10 h-10 rounded-full bg-gradient-to-br from-cyan-400 to-blue-500 flex items-center justify-center shadow-lg border-2 border-white/50"
+          style={{ animation: 'bounce 2.5s ease-in-out infinite', animationDelay: '0.5s' }}
+        >
+          <Wrench className="w-5 h-5 text-white" />
+        </div>
+        
+        <div 
+          className="absolute top-1/2 -right-4 w-8 h-8 rounded-full bg-gradient-to-br from-yellow-400 to-orange-500 flex items-center justify-center shadow-lg border-2 border-white/50"
+          style={{ animation: 'bounce 3s ease-in-out infinite', animationDelay: '1s' }}
+        >
+          <Zap className="w-4 h-4 text-white" />
         </div>
       </div>
       
-      <div className="mt-8 flex items-center gap-4">
-        <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 animate-pulse" style={{ animationDuration: '3s' }}>
-          <div className="w-2 h-2 rounded-full bg-emerald-400" />
-          <span className="text-sm text-white/90">Online</span>
+      <div className="mt-6 flex items-center gap-3">
+        <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/15 backdrop-blur-sm border border-white/25">
+          <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+          <span className="text-sm text-white font-medium">Online</span>
         </div>
-        <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 backdrop-blur-sm border border-white/20">
+        <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/15 backdrop-blur-sm border border-white/25">
           <BarChart3 className="w-4 h-4 text-yellow-300" />
-          <span className="text-sm text-white/90">10K+ riparazioni</span>
+          <span className="text-sm text-white font-medium">10K+ riparazioni</span>
         </div>
       </div>
+      
+      <style>{`
+        @keyframes float {
+          0%, 100% { transform: translateY(0px); }
+          50% { transform: translateY(-10px); }
+        }
+        @keyframes breathe {
+          0%, 100% { transform: scale(1); }
+          50% { transform: scale(1.03); }
+        }
+      `}</style>
     </div>
   );
 }
@@ -168,7 +206,7 @@ export default function AuthPage() {
           </div>
           
           <div className="flex flex-col items-center space-y-8">
-            <AnimatedHeroSection />
+            <AnimatedMonkeyMascot />
             
             <div className="text-center space-y-4 max-w-md">
               <h1 className="text-4xl font-bold leading-tight">
