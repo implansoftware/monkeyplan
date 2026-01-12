@@ -6059,7 +6059,22 @@ export function registerRoutes(app: Express): Server {
           const warehouseId = stock.warehouseId;
           if (warehouseId && stock.quantity > 0 && accessibleWarehouseIds.has(warehouseId)) {
             // Use warehouse stock system
-            await storage.updateWarehouseStockQuantity(warehouseId, product.id, stock.quantity);
+            await storage.updateWarehouseStockQuantity(
+              repairCenterWarehouse.id,
+              item.productId,
+              -item.quantity // Decremento negativo
+            );
+            // Registra movimento inventario
+            await storage.createWarehouseMovement({
+              warehouseId: repairCenterWarehouse.id,
+              productId: item.productId,
+              movementType: "scarico",
+              quantity: item.quantity,
+              referenceType: "pos_transaction",
+              referenceId: transaction.id,
+              notes: `Vendita POS ${transaction.transactionNumber}`,
+              createdBy: operatorId,
+            });warehouseId, product.id, stock.quantity);
             await storage.createWarehouseMovement({
               warehouseId,
               productId: product.id,
@@ -11244,6 +11259,21 @@ export function registerRoutes(app: Express): Server {
               ? stockEntry.location.trim() 
               : null;
             await storage.updateWarehouseStockQuantity(
+              repairCenterWarehouse.id,
+              item.productId,
+              -item.quantity // Decremento negativo
+            );
+            // Registra movimento inventario
+            await storage.createWarehouseMovement({
+              warehouseId: repairCenterWarehouse.id,
+              productId: item.productId,
+              movementType: "scarico",
+              quantity: item.quantity,
+              referenceType: "pos_transaction",
+              referenceId: transaction.id,
+              notes: `Vendita POS ${transaction.transactionNumber}`,
+              createdBy: operatorId,
+            });
               stockEntry.warehouseId,
               product.id,
               stockEntry.quantity,
@@ -11525,7 +11555,22 @@ export function registerRoutes(app: Express): Server {
       });
       
       // Update warehouse stock (passes location for new entries)
-      await storage.updateWarehouseStockQuantity(warehouseId, req.params.id, difference, locationValue);
+      await storage.updateWarehouseStockQuantity(
+              repairCenterWarehouse.id,
+              item.productId,
+              -item.quantity // Decremento negativo
+            );
+            // Registra movimento inventario
+            await storage.createWarehouseMovement({
+              warehouseId: repairCenterWarehouse.id,
+              productId: item.productId,
+              movementType: "scarico",
+              quantity: item.quantity,
+              referenceType: "pos_transaction",
+              referenceId: transaction.id,
+              notes: `Vendita POS ${transaction.transactionNumber}`,
+              createdBy: operatorId,
+            });warehouseId, req.params.id, difference, locationValue);
       
       // Get updated stocks
       const updatedStocks = await storage.getProductWarehouseStocks(req.params.id);
@@ -11689,6 +11734,21 @@ export function registerRoutes(app: Express): Server {
               ? stockEntry.location.trim() 
               : null;
             await storage.updateWarehouseStockQuantity(
+              repairCenterWarehouse.id,
+              item.productId,
+              -item.quantity // Decremento negativo
+            );
+            // Registra movimento inventario
+            await storage.createWarehouseMovement({
+              warehouseId: repairCenterWarehouse.id,
+              productId: item.productId,
+              movementType: "scarico",
+              quantity: item.quantity,
+              referenceType: "pos_transaction",
+              referenceId: transaction.id,
+              notes: `Vendita POS ${transaction.transactionNumber}`,
+              createdBy: operatorId,
+            });
               stockEntry.warehouseId, 
               createdProduct.id, 
               stockEntry.quantity,
@@ -12031,6 +12091,21 @@ export function registerRoutes(app: Express): Server {
               ? stockEntry.location.trim() 
               : null;
             await storage.updateWarehouseStockQuantity(
+              repairCenterWarehouse.id,
+              item.productId,
+              -item.quantity // Decremento negativo
+            );
+            // Registra movimento inventario
+            await storage.createWarehouseMovement({
+              warehouseId: repairCenterWarehouse.id,
+              productId: item.productId,
+              movementType: "scarico",
+              quantity: item.quantity,
+              referenceType: "pos_transaction",
+              referenceId: transaction.id,
+              notes: `Vendita POS ${transaction.transactionNumber}`,
+              createdBy: operatorId,
+            });
               stockEntry.warehouseId, 
               createdProduct.id, 
               stockEntry.quantity,
@@ -20176,7 +20251,22 @@ export function registerRoutes(app: Express): Server {
             });
             
             // Update warehouse stock
-            await storage.updateWarehouseStockQuantity(targetWarehouseId, currentItem.product_id, delta);
+            await storage.updateWarehouseStockQuantity(
+              repairCenterWarehouse.id,
+              item.productId,
+              -item.quantity // Decremento negativo
+            );
+            // Registra movimento inventario
+            await storage.createWarehouseMovement({
+              warehouseId: repairCenterWarehouse.id,
+              productId: item.productId,
+              movementType: "scarico",
+              quantity: item.quantity,
+              referenceType: "pos_transaction",
+              referenceId: transaction.id,
+              notes: `Vendita POS ${transaction.transactionNumber}`,
+              createdBy: operatorId,
+            });targetWarehouseId, currentItem.product_id, delta);
           }
           
           // Also update legacy inventory if repair center exists (backward compatibility)
@@ -25759,7 +25849,22 @@ export function registerRoutes(app: Express): Server {
         notes: notes || `Trasferimento verso ${destWarehouse.name}`,
         createdBy: req.user.id,
       });
-      await storage.updateWarehouseStockQuantity(sourceWarehouseId, productId, -quantity);
+      await storage.updateWarehouseStockQuantity(
+              repairCenterWarehouse.id,
+              item.productId,
+              -item.quantity // Decremento negativo
+            );
+            // Registra movimento inventario
+            await storage.createWarehouseMovement({
+              warehouseId: repairCenterWarehouse.id,
+              productId: item.productId,
+              movementType: "scarico",
+              quantity: item.quantity,
+              referenceType: "pos_transaction",
+              referenceId: transaction.id,
+              notes: `Vendita POS ${transaction.transactionNumber}`,
+              createdBy: operatorId,
+            });sourceWarehouseId, productId, -quantity);
       
       // Create movement for destination warehouse (trasferimento_in)
       await storage.createWarehouseMovement({
@@ -25772,7 +25877,22 @@ export function registerRoutes(app: Express): Server {
         notes: notes || `Trasferimento da ${sourceWarehouse.name}`,
         createdBy: req.user.id,
       });
-      await storage.updateWarehouseStockQuantity(destinationWarehouseId, productId, quantity);
+      await storage.updateWarehouseStockQuantity(
+              repairCenterWarehouse.id,
+              item.productId,
+              -item.quantity // Decremento negativo
+            );
+            // Registra movimento inventario
+            await storage.createWarehouseMovement({
+              warehouseId: repairCenterWarehouse.id,
+              productId: item.productId,
+              movementType: "scarico",
+              quantity: item.quantity,
+              referenceType: "pos_transaction",
+              referenceId: transaction.id,
+              notes: `Vendita POS ${transaction.transactionNumber}`,
+              createdBy: operatorId,
+            });destinationWarehouseId, productId, quantity);
       
       res.json({ 
         success: true, 
@@ -25936,7 +26056,22 @@ export function registerRoutes(app: Express): Server {
       });
       
       const quantityDelta = ['carico', 'trasferimento_in'].includes(movementType) ? quantity : -quantity;
-      await storage.updateWarehouseStockQuantity(req.params.warehouseId, productId, quantityDelta);
+      await storage.updateWarehouseStockQuantity(
+              repairCenterWarehouse.id,
+              item.productId,
+              -item.quantity // Decremento negativo
+            );
+            // Registra movimento inventario
+            await storage.createWarehouseMovement({
+              warehouseId: repairCenterWarehouse.id,
+              productId: item.productId,
+              movementType: "scarico",
+              quantity: item.quantity,
+              referenceType: "pos_transaction",
+              referenceId: transaction.id,
+              notes: `Vendita POS ${transaction.transactionNumber}`,
+              createdBy: operatorId,
+            });req.params.warehouseId, productId, quantityDelta);
       res.status(201).json(movement);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
@@ -26045,7 +26180,22 @@ export function registerRoutes(app: Express): Server {
         updates.shippedAt = new Date();
         for (const item of items) {
           await storage.updateWarehouseTransferItem(item.id, { shippedQuantity: item.shippedQuantity });
-          await storage.updateWarehouseStockQuantity(transfer.sourceWarehouseId, item.productId, -item.shippedQuantity);
+          await storage.updateWarehouseStockQuantity(
+              repairCenterWarehouse.id,
+              item.productId,
+              -item.quantity // Decremento negativo
+            );
+            // Registra movimento inventario
+            await storage.createWarehouseMovement({
+              warehouseId: repairCenterWarehouse.id,
+              productId: item.productId,
+              movementType: "scarico",
+              quantity: item.quantity,
+              referenceType: "pos_transaction",
+              referenceId: transaction.id,
+              notes: `Vendita POS ${transaction.transactionNumber}`,
+              createdBy: operatorId,
+            });transfer.sourceWarehouseId, item.productId, -item.shippedQuantity);
           await storage.createWarehouseMovement({
             warehouseId: transfer.sourceWarehouseId,
             productId: item.productId,
@@ -26060,7 +26210,22 @@ export function registerRoutes(app: Express): Server {
         updates.receivedAt = new Date();
         for (const item of items) {
           await storage.updateWarehouseTransferItem(item.id, { receivedQuantity: item.receivedQuantity });
-          await storage.updateWarehouseStockQuantity(transfer.destinationWarehouseId, item.productId, item.receivedQuantity);
+          await storage.updateWarehouseStockQuantity(
+              repairCenterWarehouse.id,
+              item.productId,
+              -item.quantity // Decremento negativo
+            );
+            // Registra movimento inventario
+            await storage.createWarehouseMovement({
+              warehouseId: repairCenterWarehouse.id,
+              productId: item.productId,
+              movementType: "scarico",
+              quantity: item.quantity,
+              referenceType: "pos_transaction",
+              referenceId: transaction.id,
+              notes: `Vendita POS ${transaction.transactionNumber}`,
+              createdBy: operatorId,
+            });transfer.destinationWarehouseId, item.productId, item.receivedQuantity);
           await storage.createWarehouseMovement({
             warehouseId: transfer.destinationWarehouseId,
             productId: item.productId,
@@ -26300,7 +26465,22 @@ export function registerRoutes(app: Express): Server {
       if (items && Array.isArray(items)) {
         for (const item of items) {
           await storage.updateTransferRequestItem(item.id, { receivedQuantity: item.receivedQuantity });
-          await storage.updateWarehouseStockQuantity(request.requesterWarehouseId, item.productId, item.receivedQuantity);
+          await storage.updateWarehouseStockQuantity(
+              repairCenterWarehouse.id,
+              item.productId,
+              -item.quantity // Decremento negativo
+            );
+            // Registra movimento inventario
+            await storage.createWarehouseMovement({
+              warehouseId: repairCenterWarehouse.id,
+              productId: item.productId,
+              movementType: "scarico",
+              quantity: item.quantity,
+              referenceType: "pos_transaction",
+              referenceId: transaction.id,
+              notes: `Vendita POS ${transaction.transactionNumber}`,
+              createdBy: operatorId,
+            });request.requesterWarehouseId, item.productId, item.receivedQuantity);
           await storage.createWarehouseMovement({
             warehouseId: request.requesterWarehouseId,
             productId: item.productId,
@@ -26464,6 +26644,21 @@ export function registerRoutes(app: Express): Server {
           if (requestItem && item.receivedQuantity > 0) {
             // Add to destination warehouse
             await storage.updateWarehouseStockQuantity(
+              repairCenterWarehouse.id,
+              item.productId,
+              -item.quantity // Decremento negativo
+            );
+            // Registra movimento inventario
+            await storage.createWarehouseMovement({
+              warehouseId: repairCenterWarehouse.id,
+              productId: item.productId,
+              movementType: "scarico",
+              quantity: item.quantity,
+              referenceType: "pos_transaction",
+              referenceId: transaction.id,
+              notes: `Vendita POS ${transaction.transactionNumber}`,
+              createdBy: operatorId,
+            });
               request.requesterWarehouseId, 
               requestItem.productId, 
               item.receivedQuantity
@@ -26687,7 +26882,22 @@ export function registerRoutes(app: Express): Server {
       if (items && Array.isArray(items)) {
         for (const item of items) {
           await storage.updateTransferRequestItem(item.id, { shippedQuantity: item.shippedQuantity });
-          await storage.updateWarehouseStockQuantity(request.sourceWarehouseId, item.productId, -item.shippedQuantity);
+          await storage.updateWarehouseStockQuantity(
+              repairCenterWarehouse.id,
+              item.productId,
+              -item.quantity // Decremento negativo
+            );
+            // Registra movimento inventario
+            await storage.createWarehouseMovement({
+              warehouseId: repairCenterWarehouse.id,
+              productId: item.productId,
+              movementType: "scarico",
+              quantity: item.quantity,
+              referenceType: "pos_transaction",
+              referenceId: transaction.id,
+              notes: `Vendita POS ${transaction.transactionNumber}`,
+              createdBy: operatorId,
+            });request.sourceWarehouseId, item.productId, -item.shippedQuantity);
           await storage.createWarehouseMovement({
             warehouseId: request.sourceWarehouseId,
             productId: item.productId,
@@ -26992,7 +27202,22 @@ export function registerRoutes(app: Express): Server {
       if (items && Array.isArray(items)) {
         for (const item of items) {
           await storage.updateTransferRequestItem(item.id, { shippedQuantity: item.shippedQuantity });
-          await storage.updateWarehouseStockQuantity(request.sourceWarehouseId, item.productId, -item.shippedQuantity);
+          await storage.updateWarehouseStockQuantity(
+              repairCenterWarehouse.id,
+              item.productId,
+              -item.quantity // Decremento negativo
+            );
+            // Registra movimento inventario
+            await storage.createWarehouseMovement({
+              warehouseId: repairCenterWarehouse.id,
+              productId: item.productId,
+              movementType: "scarico",
+              quantity: item.quantity,
+              referenceType: "pos_transaction",
+              referenceId: transaction.id,
+              notes: `Vendita POS ${transaction.transactionNumber}`,
+              createdBy: operatorId,
+            });request.sourceWarehouseId, item.productId, -item.shippedQuantity);
           await storage.createWarehouseMovement({
             warehouseId: request.sourceWarehouseId,
             productId: item.productId,
@@ -27304,7 +27529,22 @@ export function registerRoutes(app: Express): Server {
       // Execute stock transfer
       for (const item of items) {
         // Decrement admin warehouse stock (trasferimento_out = uscita verso reseller)
-        await storage.updateWarehouseStockQuantity(adminWarehouse.id, item.productId, -item.quantity);
+        await storage.updateWarehouseStockQuantity(
+              repairCenterWarehouse.id,
+              item.productId,
+              -item.quantity // Decremento negativo
+            );
+            // Registra movimento inventario
+            await storage.createWarehouseMovement({
+              warehouseId: repairCenterWarehouse.id,
+              productId: item.productId,
+              movementType: "scarico",
+              quantity: item.quantity,
+              referenceType: "pos_transaction",
+              referenceId: transaction.id,
+              notes: `Vendita POS ${transaction.transactionNumber}`,
+              createdBy: operatorId,
+            });adminWarehouse.id, item.productId, -item.quantity);
         await storage.createWarehouseMovement({
           warehouseId: adminWarehouse.id,
           productId: item.productId,
@@ -27317,7 +27557,22 @@ export function registerRoutes(app: Express): Server {
         });
         
         // Increment reseller warehouse stock (trasferimento_in = ingresso da admin)
-        await storage.updateWarehouseStockQuantity(resellerWarehouse.id, item.productId, item.quantity);
+        await storage.updateWarehouseStockQuantity(
+              repairCenterWarehouse.id,
+              item.productId,
+              -item.quantity // Decremento negativo
+            );
+            // Registra movimento inventario
+            await storage.createWarehouseMovement({
+              warehouseId: repairCenterWarehouse.id,
+              productId: item.productId,
+              movementType: "scarico",
+              quantity: item.quantity,
+              referenceType: "pos_transaction",
+              referenceId: transaction.id,
+              notes: `Vendita POS ${transaction.transactionNumber}`,
+              createdBy: operatorId,
+            });resellerWarehouse.id, item.productId, item.quantity);
         await storage.createWarehouseMovement({
           warehouseId: resellerWarehouse.id,
           productId: item.productId,
@@ -27748,7 +28003,22 @@ export function registerRoutes(app: Express): Server {
       // Restore stock to admin warehouse and remove from reseller
       for (const item of items) {
         // Add to admin warehouse
-        await storage.updateWarehouseStockQuantity(adminWarehouse.id, item.productId, item.quantity);
+        await storage.updateWarehouseStockQuantity(
+              repairCenterWarehouse.id,
+              item.productId,
+              -item.quantity // Decremento negativo
+            );
+            // Registra movimento inventario
+            await storage.createWarehouseMovement({
+              warehouseId: repairCenterWarehouse.id,
+              productId: item.productId,
+              movementType: "scarico",
+              quantity: item.quantity,
+              referenceType: "pos_transaction",
+              referenceId: transaction.id,
+              notes: `Vendita POS ${transaction.transactionNumber}`,
+              createdBy: operatorId,
+            });adminWarehouse.id, item.productId, item.quantity);
         await storage.createWarehouseMovement({
           warehouseId: adminWarehouse.id,
           productId: item.productId,
@@ -27759,7 +28029,22 @@ export function registerRoutes(app: Express): Server {
         
         // Remove from reseller warehouse if exists
         if (resellerWarehouse) {
-          await storage.updateWarehouseStockQuantity(resellerWarehouse.id, item.productId, -item.quantity);
+          await storage.updateWarehouseStockQuantity(
+              repairCenterWarehouse.id,
+              item.productId,
+              -item.quantity // Decremento negativo
+            );
+            // Registra movimento inventario
+            await storage.createWarehouseMovement({
+              warehouseId: repairCenterWarehouse.id,
+              productId: item.productId,
+              movementType: "scarico",
+              quantity: item.quantity,
+              referenceType: "pos_transaction",
+              referenceId: transaction.id,
+              notes: `Vendita POS ${transaction.transactionNumber}`,
+              createdBy: operatorId,
+            });resellerWarehouse.id, item.productId, -item.quantity);
           await storage.createWarehouseMovement({
             warehouseId: resellerWarehouse.id,
             productId: item.productId,
@@ -28169,7 +28454,22 @@ export function registerRoutes(app: Express): Server {
       // Transfer stock and create movements
       for (const item of items) {
         // Remove from seller
-        await storage.updateWarehouseStockQuantity(sellerWarehouse.id, item.productId, -item.quantity);
+        await storage.updateWarehouseStockQuantity(
+              repairCenterWarehouse.id,
+              item.productId,
+              -item.quantity // Decremento negativo
+            );
+            // Registra movimento inventario
+            await storage.createWarehouseMovement({
+              warehouseId: repairCenterWarehouse.id,
+              productId: item.productId,
+              movementType: "scarico",
+              quantity: item.quantity,
+              referenceType: "pos_transaction",
+              referenceId: transaction.id,
+              notes: `Vendita POS ${transaction.transactionNumber}`,
+              createdBy: operatorId,
+            });sellerWarehouse.id, item.productId, -item.quantity);
         await storage.createWarehouseMovement({
           warehouseId: sellerWarehouse.id,
           productId: item.productId,
@@ -28181,7 +28481,22 @@ export function registerRoutes(app: Express): Server {
         });
         
         // Add to buyer
-        await storage.updateWarehouseStockQuantity(buyerWarehouse.id, item.productId, item.quantity);
+        await storage.updateWarehouseStockQuantity(
+              repairCenterWarehouse.id,
+              item.productId,
+              -item.quantity // Decremento negativo
+            );
+            // Registra movimento inventario
+            await storage.createWarehouseMovement({
+              warehouseId: repairCenterWarehouse.id,
+              productId: item.productId,
+              movementType: "scarico",
+              quantity: item.quantity,
+              referenceType: "pos_transaction",
+              referenceId: transaction.id,
+              notes: `Vendita POS ${transaction.transactionNumber}`,
+              createdBy: operatorId,
+            });buyerWarehouse.id, item.productId, item.quantity);
         await storage.createWarehouseMovement({
           warehouseId: buyerWarehouse.id,
           productId: item.productId,
@@ -28743,7 +29058,22 @@ export function registerRoutes(app: Express): Server {
       const items = await storage.listRepairCenterPurchaseOrderItems(order.id);
       for (const item of items) {
         // Deduct from reseller
-        await storage.updateWarehouseStockQuantity(resellerWarehouse.id, item.productId, -item.quantity);
+        await storage.updateWarehouseStockQuantity(
+              repairCenterWarehouse.id,
+              item.productId,
+              -item.quantity // Decremento negativo
+            );
+            // Registra movimento inventario
+            await storage.createWarehouseMovement({
+              warehouseId: repairCenterWarehouse.id,
+              productId: item.productId,
+              movementType: "scarico",
+              quantity: item.quantity,
+              referenceType: "pos_transaction",
+              referenceId: transaction.id,
+              notes: `Vendita POS ${transaction.transactionNumber}`,
+              createdBy: operatorId,
+            });resellerWarehouse.id, item.productId, -item.quantity);
         await storage.createWarehouseMovement({
           warehouseId: resellerWarehouse.id,
           productId: item.productId,
@@ -28756,7 +29086,22 @@ export function registerRoutes(app: Express): Server {
         });
         
         // Add to repair center
-        await storage.updateWarehouseStockQuantity(rcWarehouse.id, item.productId, item.quantity);
+        await storage.updateWarehouseStockQuantity(
+              repairCenterWarehouse.id,
+              item.productId,
+              -item.quantity // Decremento negativo
+            );
+            // Registra movimento inventario
+            await storage.createWarehouseMovement({
+              warehouseId: repairCenterWarehouse.id,
+              productId: item.productId,
+              movementType: "scarico",
+              quantity: item.quantity,
+              referenceType: "pos_transaction",
+              referenceId: transaction.id,
+              notes: `Vendita POS ${transaction.transactionNumber}`,
+              createdBy: operatorId,
+            });rcWarehouse.id, item.productId, item.quantity);
         await storage.createWarehouseMovement({
           warehouseId: rcWarehouse.id,
           productId: item.productId,
@@ -31859,6 +32204,21 @@ export function registerRoutes(app: Express): Server {
         for (const item of processedItems) {
           try {
             await storage.updateWarehouseStockQuantity(
+              repairCenterWarehouse.id,
+              item.productId,
+              -item.quantity // Decremento negativo
+            );
+            // Registra movimento inventario
+            await storage.createWarehouseMovement({
+              warehouseId: repairCenterWarehouse.id,
+              productId: item.productId,
+              movementType: "scarico",
+              quantity: item.quantity,
+              referenceType: "pos_transaction",
+              referenceId: transaction.id,
+              notes: `Vendita POS ${transaction.transactionNumber}`,
+              createdBy: operatorId,
+            });
               repairCenterWarehouse.id,
               item.productId,
               -item.quantity // Decremento negativo
