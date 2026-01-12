@@ -31852,6 +31852,25 @@ export function registerRoutes(app: Express): Server {
         processedItems.map(item => ({ transactionId: transaction.id, ...item, inventoryDeducted: false }))
       );
 
+
+      // Decrementa magazzino per ogni prodotto venduto
+      const repairCenterWarehouse = await storage.getWarehouseByOwner('repair_center', repairCenterId);
+      if (repairCenterWarehouse) {
+        for (const item of processedItems) {
+          try {
+            await storage.updateWarehouseStockQuantity(
+              repairCenterWarehouse.id,
+              item.productId,
+              -item.quantity // Decremento negativo
+            );
+          } catch (stockError) {
+            console.warn(`Could not decrement stock for product ${item.productId}:`, stockError);
+          }
+        }
+        // Marca gli items come inventario decrementato
+        await storage.markPosItemsInventoryDeducted(transaction.id);
+      }
+
       const sessionTxs = await storage.getPosTransactionsBySession(session.id);
       const completedTxs = sessionTxs.filter(t => t.status === "completed");
       await storage.updatePosSessionTotals(session.id, {
