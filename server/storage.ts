@@ -10224,7 +10224,7 @@ export class DatabaseStorage implements IStorage {
     todayRefunds: number;
     paymentBreakdown: { cash: number; card: number; pos_terminal: number; satispay: number; mixed: number };
     topRepairCenters: { id: number; name: string; transactionCount: number; revenue: number }[];
-    recentTransactions: { id: number; transactionNumber: string; type: string; paymentMethod: string; totalAmount: number; createdAt: string; repairCenterName: string }[];
+    recentTransactions: { id: string; transactionNumber: string; type: string; paymentMethod: string; totalAmount: number; createdAt: string; repairCenterName: string }[];
   }> {
     const now = new Date();
     let startDate: Date;
@@ -10275,14 +10275,14 @@ export class DatabaseStorage implements IStorage {
     const paymentBreakdown = { cash: 0, card: 0, pos_terminal: 0, satispay: 0, mixed: 0 };
 
     for (const t of transactions) {
-      if (t.tx.type === "sale") {
-        todayRevenue += t.tx.totalAmount || 0;
-      } else if (t.tx.type === "refund") {
-        todayRefunds += t.tx.totalAmount || 0;
+      if (t.tx.status === "completed") {
+        todayRevenue += t.tx.total || 0;
+      } else if (t.tx.status === "refunded") {
+        todayRefunds += t.tx.refundedAmount || 0;
       }
       const method = t.tx.paymentMethod as keyof typeof paymentBreakdown;
       if (method && paymentBreakdown.hasOwnProperty(method)) {
-        paymentBreakdown[method] += t.tx.totalAmount || 0;
+        paymentBreakdown[method] += t.tx.total || 0;
       }
     }
 
@@ -10291,13 +10291,13 @@ export class DatabaseStorage implements IStorage {
       const existing = rcStats.get(t.repairCenterId);
       if (existing) {
         existing.transactionCount++;
-        if (t.tx.type === "sale") existing.revenue += t.tx.totalAmount || 0;
+        if (t.tx.status === "completed") existing.revenue += t.tx.total || 0;
       } else {
         rcStats.set(t.repairCenterId, {
           id: t.repairCenterId,
           name: t.repairCenterName,
           transactionCount: 1,
-          revenue: t.tx.type === "sale" ? (t.tx.totalAmount || 0) : 0,
+          revenue: t.tx.status === "completed" ? (t.tx.total || 0) : 0,
         });
       }
     }
@@ -10309,9 +10309,9 @@ export class DatabaseStorage implements IStorage {
     const recentTransactions = transactions.slice(0, 10).map(t => ({
       id: t.tx.id,
       transactionNumber: t.tx.transactionNumber,
-      type: t.tx.type,
+      type: t.tx.status,
       paymentMethod: t.tx.paymentMethod,
-      totalAmount: t.tx.totalAmount || 0,
+      totalAmount: t.tx.total || 0,
       createdAt: t.tx.createdAt?.toISOString() || "",
       repairCenterName: t.repairCenterName,
     }));

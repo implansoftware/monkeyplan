@@ -32123,13 +32123,8 @@ export function registerRoutes(app: Express): Server {
   app.get("/api/reseller/pos/stats", requireRole("reseller", "reseller_staff", "sub_reseller"), async (req, res) => {
     try {
       const { effectiveId } = getEffectiveContext(req);
-      const startDate = new Date(req.query.startDate as string || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000));
-      const endDate = new Date(req.query.endDate as string || new Date());
-      const centers = await storage.getRepairCentersByReseller(effectiveId);
-      const stats = await Promise.all(centers.map(async (center) => {
-        const centerStats = await storage.getPosSessionStats(center.id, startDate, endDate);
-        return { repairCenterId: center.id, repairCenterName: center.name, ...centerStats };
-      }));
+      const period = (req.query.period as string) || "today";
+      const stats = await storage.getResellerPosOverviewStats(effectiveId, period);
       res.json(stats);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
