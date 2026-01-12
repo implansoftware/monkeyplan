@@ -32682,6 +32682,22 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+
+  app.get("/api/reseller/pos/transactions", requireRole("reseller", "reseller_staff", "sub_reseller"), async (req, res) => {
+    try {
+      const { resellerId } = getEffectiveContext(req);
+      const startDate = req.query.startDate ? new Date(req.query.startDate as string) : undefined;
+      const endDate = req.query.endDate ? new Date(req.query.endDate as string) : undefined;
+      const status = req.query.status as any;
+      const repairCenterId = req.query.repairCenterId as string | undefined;
+      const limit = parseInt(req.query.limit as string) || 100;
+      const offset = parseInt(req.query.offset as string) || 0;
+      const transactions = await storage.getPosTransactionsForReseller(resellerId, { startDate, endDate, status, repairCenterId, limit, offset });
+      res.json(transactions);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
   app.get("/api/reseller/pos/sessions/feed", requireRole("reseller", "reseller_staff", "sub_reseller"), async (req, res) => {
     try {
       const { resellerId } = getEffectiveContext(req);

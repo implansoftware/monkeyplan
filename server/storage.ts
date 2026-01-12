@@ -10410,6 +10410,49 @@ export class DatabaseStorage implements IStorage {
     }));
   }
 
+  async getPosTransactionsForReseller(resellerId: string, options?: {
+    startDate?: Date;
+    endDate?: Date;
+    status?: PosTransactionStatus;
+    repairCenterId?: string;
+    limit?: number;
+    offset?: number;
+  }): Promise<(PosTransaction & { repairCenterName: string; registerName: string | null })[]> {
+    const conditions: SQL[] = [eq(repairCenters.resellerId, resellerId)];
+    
+    if (options?.startDate) {
+      conditions.push(gte(posTransactions.createdAt, options.startDate));
+    }
+    if (options?.endDate) {
+      conditions.push(lte(posTransactions.createdAt, options.endDate));
+    }
+    if (options?.status) {
+      conditions.push(eq(posTransactions.status, options.status));
+    }
+    if (options?.repairCenterId) {
+      conditions.push(eq(posTransactions.repairCenterId, options.repairCenterId));
+    }
+
+    const result = await db.select({
+      transaction: posTransactions,
+      repairCenterName: repairCenters.name,
+      registerName: posRegisters.name,
+    })
+    .from(posTransactions)
+    .innerJoin(repairCenters, eq(posTransactions.repairCenterId, repairCenters.id))
+    .leftJoin(posRegisters, eq(posTransactions.registerId, posRegisters.id))
+    .where(and(...conditions))
+    .orderBy(desc(posTransactions.createdAt))
+    .limit(options?.limit || 100)
+    .offset(options?.offset || 0);
+
+    return result.map(r => ({
+      ...r.transaction,
+      repairCenterName: r.repairCenterName,
+      registerName: r.registerName,
+    }));
+  }
+
   // Get global POS statistics for admin
   async getGlobalPosStats(startDate: Date, endDate: Date): Promise<{
     totalSessions: number;
