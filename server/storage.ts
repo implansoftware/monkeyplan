@@ -10347,7 +10347,7 @@ export class DatabaseStorage implements IStorage {
     startDate?: Date;
     endDate?: Date;
     limit?: number;
-  }): Promise<(PosSession & { repairCenterName: string })[]> {
+  }): Promise<(PosSession & { repairCenterName: string; registerName: string | null; operatorName: string })[]> {
     const conditions = [eq(repairCenters.resellerId, resellerId)];
     
     if (options?.startDate) {
@@ -10360,9 +10360,13 @@ export class DatabaseStorage implements IStorage {
     const result = await db.select({
       session: posSessions,
       repairCenterName: repairCenters.name,
+      registerName: posRegisters.name,
+      operatorName: users.fullName,
     })
     .from(posSessions)
     .innerJoin(repairCenters, eq(posSessions.repairCenterId, repairCenters.id))
+    .innerJoin(users, eq(posSessions.operatorId, users.id))
+    .leftJoin(posRegisters, eq(posSessions.registerId, posRegisters.id))
     .where(and(...conditions))
     .orderBy(desc(posSessions.openedAt))
     .limit(options?.limit || 100);
@@ -10370,6 +10374,8 @@ export class DatabaseStorage implements IStorage {
     return result.map(r => ({
       ...r.session,
       repairCenterName: r.repairCenterName,
+      registerName: r.registerName,
+      operatorName: r.operatorName || "Operatore",
     }));
   }
 
