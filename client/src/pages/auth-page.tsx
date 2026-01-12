@@ -39,7 +39,7 @@ function AnimatedMonkeyMascot() {
           style={{ animation: 'float 4s ease-in-out infinite' }}
         >
           <DotLottieReact
-            src="https://lottie.host/261cdf56-118b-11ee-8495-5b07400f76dd/VtFOjwyK8w.lottie"
+            src="https://assets-v2.lottiefiles.com/a/261cdf56-118b-11ee-8495-5b07400f76dd/VtFOjwyK8w.lottie"
             loop
             autoplay
             className="w-full h-full drop-shadow-2xl"
