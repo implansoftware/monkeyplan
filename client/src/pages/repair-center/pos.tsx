@@ -149,6 +149,7 @@ type CartItem = {
   name: string;
   sku: string | null;
   barcode: string | null;
+  category: string | null;
   quantity: number;
   unitPrice: number;
   discount: number;
@@ -298,6 +299,7 @@ export default function PosPage() {
         name: product.name,
         sku: product.sku,
         barcode: product.barcode,
+        category: product.category,
         quantity: 1,
         unitPrice: price,
         discount: 0,
@@ -657,50 +659,60 @@ export default function PosPage() {
                 <span>Carrello vuoto</span>
               </div>
             ) : (
-              <div className="space-y-2">
+              <div className="space-y-3">
                 {cart.map((item) => (
                   <div
                     key={item.productId}
-                    className="p-2 rounded border bg-muted/30 flex items-start gap-2"
+                    className="p-3 rounded border bg-muted/30"
                     data-testid={`cart-item-${item.productId}`}
                   >
-                    <div className="flex-1 min-w-0">
-                      <div className="font-medium text-sm line-clamp-1">{item.name}</div>
-                      <div className="text-xs text-muted-foreground">
-                        {formatCurrency(item.unitPrice)} x {item.quantity}
+                    <div className="flex items-start gap-2 mb-2">
+                      <ProductImage category={item.category} size="sm" />
+                      <div className="flex-1 min-w-0">
+                        <div className="font-medium text-sm line-clamp-1">{item.name}</div>
+                        <div className="text-xs text-muted-foreground">
+                          {formatCurrency(item.unitPrice)} x {item.quantity}
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="font-semibold text-sm">{formatCurrency(item.totalPrice)}</div>
                       </div>
                     </div>
-                    <div className="flex items-center gap-1">
+                    {item.barcode && (
+                      <div className="mb-2 flex justify-center">
+                        <BarcodeDisplay code={item.barcode} width={120} height={28} />
+                      </div>
+                    )}
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-1">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7"
+                          onClick={() => updateQuantity(item.productId, -1)}
+                          data-testid={`button-decrease-${item.productId}`}
+                        >
+                          <Minus className="w-3 h-3" />
+                        </Button>
+                        <span className="w-6 text-center font-medium">{item.quantity}</span>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7"
+                          onClick={() => updateQuantity(item.productId, 1)}
+                          data-testid={`button-increase-${item.productId}`}
+                        >
+                          <Plus className="w-3 h-3" />
+                        </Button>
+                      </div>
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-7 w-7"
-                        onClick={() => updateQuantity(item.productId, -1)}
-                        data-testid={`button-decrease-${item.productId}`}
-                      >
-                        <Minus className="w-3 h-3" />
-                      </Button>
-                      <span className="w-6 text-center font-medium">{item.quantity}</span>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-7 w-7"
-                        onClick={() => updateQuantity(item.productId, 1)}
-                        data-testid={`button-increase-${item.productId}`}
-                      >
-                        <Plus className="w-3 h-3" />
-                      </Button>
-                    </div>
-                    <div className="text-right min-w-[60px]">
-                      <div className="font-semibold text-sm">{formatCurrency(item.totalPrice)}</div>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-6 w-6 text-destructive hover:text-destructive"
+                        className="h-7 w-7 text-destructive hover:text-destructive"
                         onClick={() => removeFromCart(item.productId)}
                         data-testid={`button-remove-${item.productId}`}
                       >
-                        <Trash2 className="w-3 h-3" />
+                        <Trash2 className="w-4 h-4" />
                       </Button>
                     </div>
                   </div>
