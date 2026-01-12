@@ -87,6 +87,8 @@ function ProductImage({ category, size = "md" }: { category?: string | null; siz
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
+import { FileText, User } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
@@ -167,6 +169,13 @@ type DailyStats = {
   topProducts: { productId: string; productName: string; quantity: number; total: number }[];
 };
 
+type Customer = {
+  id: string;
+  fullName: string;
+  email: string;
+  phone: string | null;
+};
+
 const formatCurrency = (cents: number) => {
   return new Intl.NumberFormat("it-IT", {
     style: "currency",
@@ -199,6 +208,9 @@ export default function PosPage() {
   const [openingCash, setOpeningCash] = useState<string>("");
   const [closingCash, setClosingCash] = useState<string>("");
   const [sessionNotes, setSessionNotes] = useState("");
+  const [invoiceRequested, setInvoiceRequested] = useState(false);
+  const [selectedCustomerId, setSelectedCustomerId] = useState<string>("");
+  const [customerSearch, setCustomerSearch] = useState("");
   
   const barcodeInputRef = useRef<HTMLInputElement>(null);
   
@@ -218,6 +230,19 @@ export default function PosPage() {
   const { data: products = [], isLoading: productsLoading } = useQuery<Product[]>({
     queryKey: ["/api/repair-center/pos/products"],
   });
+
+  const { data: customers = [] } = useQuery<Customer[]>({
+    queryKey: ["/api/customers"],
+    enabled: invoiceRequested,
+  });
+
+  const filteredCustomers = customers.filter(c =>
+    c.fullName.toLowerCase().includes(customerSearch.toLowerCase()) ||
+    c.email.toLowerCase().includes(customerSearch.toLowerCase()) ||
+    c.phone?.includes(customerSearch)
+  ).slice(0, 10);
+
+  const selectedCustomer = customers.find(c => c.id === selectedCustomerId);
 
   const filteredProducts = products.filter(p => 
     p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -270,6 +295,9 @@ export default function PosPage() {
       setCashReceived("");
       setDiscountAmount("");
       setTransactionNotes("");
+      setInvoiceRequested(false);
+      setSelectedCustomerId("");
+      setCustomerSearch("");
       setPaymentDialog(false);
       toast({ title: "Vendita registrata", description: "Transazione completata" });
     },
@@ -339,6 +367,10 @@ export default function PosPage() {
 
   const handlePayment = () => {
     if (cart.length === 0) return;
+    if (invoiceRequested && !selectedCustomerId) {
+      toast({ title: "Errore", description: "Seleziona un cliente per la fattura", variant: "destructive" });
+      return;
+    }
     
     createTransactionMutation.mutate({
       items: cart.map(item => ({
@@ -351,6 +383,8 @@ export default function PosPage() {
       discountAmount: discount,
       cashReceived: selectedPayment === "cash" ? Math.round(parseFloat(cashReceived || "0") * 100) : undefined,
       notes: transactionNotes || undefined,
+      customerId: selectedCustomerId || undefined,
+      invoiceRequested,
     });
   };
 
@@ -795,6 +829,78 @@ export default function PosPage() {
                   </button>
                 );
               })}
+            </div>
+
+            <Separator />
+
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <FileText className="w-4 h-4" />
+                  <Label htmlFor="invoice-switch">Richiedi Fattura</Label>
+                </div>
+                <Switch
+                  id="invoice-switch"
+                  checked={invoiceRequested}
+                  onCheckedChange={setInvoiceRequested}
+                  data-testid="switch-invoice-requested"
+                />
+              </div>
+              
+              {invoiceRequested && (
+                <div className="space-y-2 p-3 rounded-lg bg-muted/50">
+                  <Label>Seleziona Cliente</Label>
+                  <Input
+                    placeholder="Cerca cliente per nome, email o telefono..."
+                    value={customerSearch}
+                    onChange={(e) => setCustomerSearch(e.target.value)}
+                    data-testid="input-customer-search"
+                  />
+                  {customerSearch && filteredCustomers.length > 0 && !selectedCustomerId && (
+                    <div className="max-h-32 overflow-y-auto border rounded-lg">
+                      {filteredCustomers.map(customer => (
+                        <button
+                          key={customer.id}
+                          onClick={() => {
+                            setSelectedCustomerId(customer.id);
+                            setCustomerSearch("");
+                          }}
+                          className="w-full p-2 text-left hover-elevate flex items-center gap-2"
+                          data-testid={`customer-option-${customer.id}`}
+                        >
+                          <User className="w-4 h-4 text-muted-foreground" />
+                          <div>
+                            <div className="font-medium text-sm">{customer.fullName}</div>
+                            <div className="text-xs text-muted-foreground">{customer.email}</div>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                  {selectedCustomer && (
+                    <div className="flex items-center justify-between p-2 bg-primary/10 rounded-lg border border-primary">
+                      <div className="flex items-center gap-2">
+                        <User className="w-4 h-4" />
+                        <div>
+                          <div className="font-medium text-sm">{selectedCustomer.fullName}</div>
+                          <div className="text-xs text-muted-foreground">{selectedCustomer.email}</div>
+                        </div>
+                      </div>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        onClick={() => setSelectedCustomerId("")}
+                        data-testid="button-remove-customer"
+                      >
+                        <X className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  )}
+                  {invoiceRequested && !selectedCustomerId && (
+                    <p className="text-xs text-amber-600">Seleziona un cliente per emettere la fattura</p>
+                  )}
+                </div>
+              )}
             </div>
 
             {selectedPayment === "cash" && (
