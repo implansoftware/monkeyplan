@@ -2623,6 +2623,55 @@ export class DatabaseStorage implements IStorage {
     return result.map(r => r.invoice);
   }
 
+  async getPosTransactionHistoryByRepairCenter(repairCenterId: string): Promise<{
+    id: string;
+    transactionNumber: string;
+    status: string;
+    paymentMethod: string;
+    total: number;
+    subtotal: number;
+    discount: number;
+    itemCount: number;
+    createdAt: Date;
+    hasInvoice: boolean;
+  }[]> {
+    const result = await db
+      .select({
+        id: posTransactions.id,
+        transactionNumber: posTransactions.transactionNumber,
+        status: posTransactions.status,
+        paymentMethod: posTransactions.paymentMethod,
+        total: posTransactions.total,
+        subtotal: posTransactions.subtotal,
+        discount: posTransactions.discount,
+        itemCount: posTransactions.itemCount,
+        createdAt: posTransactions.createdAt,
+      })
+      .from(posTransactions)
+      .where(eq(posTransactions.repairCenterId, repairCenterId))
+      .orderBy(desc(posTransactions.createdAt));
+    
+    const txIds = result.map(r => r.id);
+    const invoiceMap = new Map<string, boolean>();
+    
+    if (txIds.length > 0) {
+      const txInvoices = await db.select({ posTransactionId: invoices.posTransactionId })
+        .from(invoices)
+        .where(inArray(invoices.posTransactionId, txIds));
+      
+      for (const inv of txInvoices) {
+        if (inv.posTransactionId) {
+          invoiceMap.set(inv.posTransactionId, true);
+        }
+      }
+    }
+    
+    return result.map(r => ({
+      ...r,
+      hasInvoice: invoiceMap.has(r.id),
+    }));
+  }
+
   // Billing Data
   async getBillingDataByUserId(userId: string): Promise<BillingData | undefined> {
     const [data] = await db.select().from(billingData).where(eq(billingData.userId, userId));

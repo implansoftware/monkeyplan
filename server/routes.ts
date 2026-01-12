@@ -32024,6 +32024,17 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Storico vendite POS (tutte le transazioni)
+  app.get("/api/repair-center/pos/sales-history", requireRole("repair_center", "repair_center_staff"), async (req, res) => {
+    try {
+      const repairCenterId = req.user!.repairCenterId || req.user!.id;
+      const transactions = await storage.getPosTransactionHistoryByRepairCenter(repairCenterId);
+      res.json(transactions);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   // Rimborso transazione POS
   app.post("/api/repair-center/pos/transaction/:id/refund", requireRole("repair_center", "repair_center_staff"), async (req, res) => {
     try {
