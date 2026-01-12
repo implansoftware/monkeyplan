@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,8 +11,78 @@ import {
   CreditCard, Banknote, QrCode, Trash2, Plus, Minus, 
   ShoppingCart, Receipt, X, Check, DollarSign, 
   RotateCcw, Clock, ChevronRight, Loader2, Search,
-  Calculator, LayoutGrid, History, AlertCircle, Wallet
+  Calculator, LayoutGrid, History, AlertCircle, Wallet,
+  Package, Smartphone
 } from "lucide-react";
+import bwipjs from "bwip-js";
+
+function BarcodeDisplay({ code, width = 80, height = 30 }: { code: string; width?: number; height?: number }) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  
+  useEffect(() => {
+    if (canvasRef.current && code) {
+      try {
+        bwipjs.toCanvas(canvasRef.current, {
+          bcid: "code128",
+          text: code,
+          scale: 1,
+          height: 8,
+          includetext: false,
+          textxalign: "center",
+        });
+      } catch (e) {
+        console.error("Barcode generation error:", e);
+      }
+    }
+  }, [code]);
+
+  if (!code) return null;
+  
+  return (
+    <div className="flex flex-col items-center">
+      <canvas ref={canvasRef} className="max-w-full" style={{ width, height }} />
+      <span className="text-[10px] text-muted-foreground font-mono mt-0.5">{code}</span>
+    </div>
+  );
+}
+
+function ProductImage({ category, size = "md" }: { category?: string | null; size?: "sm" | "md" | "lg" }) {
+  const sizeClasses = {
+    sm: "w-8 h-8",
+    md: "w-12 h-12",
+    lg: "w-16 h-16"
+  };
+  
+  const iconSize = {
+    sm: "w-4 h-4",
+    md: "w-6 h-6",
+    lg: "w-8 h-8"
+  };
+  
+  const bgColor = useMemo(() => {
+    if (!category) return "bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-800";
+    const colors = [
+      "bg-gradient-to-br from-blue-100 to-blue-200 dark:from-blue-800 dark:to-blue-900",
+      "bg-gradient-to-br from-green-100 to-green-200 dark:from-green-800 dark:to-green-900",
+      "bg-gradient-to-br from-purple-100 to-purple-200 dark:from-purple-800 dark:to-purple-900",
+      "bg-gradient-to-br from-orange-100 to-orange-200 dark:from-orange-800 dark:to-orange-900",
+      "bg-gradient-to-br from-pink-100 to-pink-200 dark:from-pink-800 dark:to-pink-900",
+    ];
+    return colors[category.length % colors.length];
+  }, [category]);
+  
+  const isPhone = category?.toLowerCase().includes("phone") || category?.toLowerCase().includes("iphone");
+  
+  return (
+    <div className={`${sizeClasses[size]} ${bgColor} rounded-lg flex items-center justify-center flex-shrink-0`}>
+      {isPhone ? (
+        <Smartphone className={`${iconSize[size]} text-muted-foreground`} />
+      ) : (
+        <Package className={`${iconSize[size]} text-muted-foreground`} />
+      )}
+    </div>
+  );
+}
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -480,18 +550,28 @@ export default function PosPage() {
                             key={product.id}
                             onClick={() => !isOutOfStock && addToCart(product)}
                             disabled={isOutOfStock}
-                            className={`p-3 rounded-lg border bg-card text-left transition-colors min-h-[100px] ${
+                            className={`p-3 rounded-lg border bg-card text-left transition-colors min-h-[120px] ${
                               isOutOfStock 
                                 ? "opacity-50 cursor-not-allowed" 
                                 : "hover-elevate active-elevate-2"
                             }`}
                             data-testid={`button-product-${product.id}`}
                           >
-                            <div className="font-medium text-sm line-clamp-2">{product.name}</div>
-                            {product.sku && (
-                              <div className="text-xs text-muted-foreground mt-1">{product.sku}</div>
+                            <div className="flex gap-2 mb-2">
+                              <ProductImage category={product.category} size="md" />
+                              <div className="flex-1 min-w-0">
+                                <div className="font-medium text-sm line-clamp-2">{product.name}</div>
+                                {product.sku && (
+                                  <div className="text-xs text-muted-foreground mt-0.5">{product.sku}</div>
+                                )}
+                              </div>
+                            </div>
+                            {product.barcode && (
+                              <div className="mb-2">
+                                <BarcodeDisplay code={product.barcode} width={100} height={25} />
+                              </div>
                             )}
-                            <div className="flex items-center justify-between mt-2">
+                            <div className="flex items-center justify-between">
                               <div className="font-semibold text-primary">
                                 {formatCurrency(price)}
                               </div>
