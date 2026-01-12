@@ -9906,6 +9906,65 @@ export class DatabaseStorage implements IStorage {
       .where(eq(posTransactionItems.transactionId, transactionId));
   }
 
+  async getPosTransactionDetail(transactionId: string): Promise<{
+    transaction: PosTransaction;
+    items: (PosTransactionItem & { 
+      productName?: string; 
+      productSku?: string; 
+      productBarcode?: string;
+      productCategory?: string;
+    })[];
+    operator?: { id: string; fullName: string };
+    session?: { id: string; openedAt: Date; status: string };
+  } | null> {
+    const transaction = await this.getPosTransaction(transactionId);
+    if (!transaction) return null;
+
+    const rawItems = await this.getPosTransactionItems(transactionId);
+    
+    const itemsWithProducts = await Promise.all(
+      rawItems.map(async (item) => {
+        if (item.productId) {
+          const product = await this.getProduct(item.productId);
+          return {
+            ...item,
+            productName: product?.name || item.productName,
+            productSku: product?.sku,
+            productBarcode: product?.barcode,
+            productCategory: product?.category,
+          };
+        }
+        return {
+          ...item,
+          productName: item.productName,
+        };
+      })
+    );
+
+    let operator;
+    if (transaction.operatorId) {
+      const user = await this.getUser(transaction.operatorId);
+      if (user) {
+        operator = { id: user.id, fullName: user.fullName };
+      }
+    }
+
+    let session;
+    if (transaction.sessionId) {
+      const sess = await this.getPosSession(transaction.sessionId);
+      if (sess) {
+        session = { id: sess.id, openedAt: sess.openedAt, status: sess.status };
+      }
+    }
+
+    return {
+      transaction,
+      items: itemsWithProducts,
+      operator,
+      session,
+    };
+  }
+
   async markPosItemsInventoryDeducted(transactionId: string): Promise<void> {
     await db.update(posTransactionItems)
       .set({ inventoryDeducted: true })
