@@ -2643,8 +2643,7 @@ export class DatabaseStorage implements IStorage {
         paymentMethod: posTransactions.paymentMethod,
         total: posTransactions.total,
         subtotal: posTransactions.subtotal,
-        discount: posTransactions.discount,
-        itemCount: posTransactions.itemCount,
+        discount: posTransactions.discountAmount,
         createdAt: posTransactions.createdAt,
       })
       .from(posTransactions)
@@ -2653,6 +2652,7 @@ export class DatabaseStorage implements IStorage {
     
     const txIds = result.map(r => r.id);
     const invoiceMap = new Map<string, boolean>();
+    const itemCountMap = new Map<string, number>();
     
     if (txIds.length > 0) {
       const txInvoices = await db.select({ posTransactionId: invoices.posTransactionId })
@@ -2664,10 +2664,23 @@ export class DatabaseStorage implements IStorage {
           invoiceMap.set(inv.posTransactionId, true);
         }
       }
+
+      const items = await db.select({
+        transactionId: posTransactionItems.transactionId,
+        quantity: posTransactionItems.quantity,
+      })
+      .from(posTransactionItems)
+      .where(inArray(posTransactionItems.transactionId, txIds));
+      
+      for (const item of items) {
+        const current = itemCountMap.get(item.transactionId) || 0;
+        itemCountMap.set(item.transactionId, current + item.quantity);
+      }
     }
     
     return result.map(r => ({
       ...r,
+      itemCount: itemCountMap.get(r.id) || 0,
       hasInvoice: invoiceMap.has(r.id),
     }));
   }
