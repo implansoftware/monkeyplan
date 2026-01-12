@@ -1,0 +1,300 @@
+## Durata del percorso
+
+•⁠  ⁠Rimuovere, nella sezione *“Crea studente”, i campi *data inizio – data fine.
+•⁠  ⁠Inserire una *tendina con durata preimpostata*, selezionabile:
+
+  * 1 mese
+  * 2 mesi
+  * 3 mesi
+  * …
+  * fino a 12 mesi
+
+La tendina con durata preimpostata (1–12 mesi) deve:
+•⁠  ⁠calcolare automaticamente la data di inizio (data di creazione dell’account)
+•⁠  ⁠calcolare automaticamente la data di fine, con giorno preciso di scadenza
+•⁠  ⁠All’interno dell’account studente deve essere visibile, in alto, un messaggio del tipo: “Il tuo pacchetto scade tra X giorni, ti mancano X lezioni su Y” (come già visibile nella demo attuale)
+
+---
+
+## Comunicazioni automatiche (Email)
+
+•⁠  ⁠Ogni azione intrapresa dalla *Responsabile* nei confronti dello studente deve generare una *mail automatica* allo studente contenente:
+
+  * riepilogo del pacchetto acquistato
+  * durata del percorso
+  * tipo di pacchetto
+  * numero di lezioni incluse
+  * frequenza settimanale
+
+---
+
+## Attestato di partecipazione
+
+•⁠  ⁠Al raggiungimento del *100% di avanzamento del percorso*, il sistema deve:
+
+  * inviare automaticamente via email l’*attestato di formazione nominativo*
+  * rendere l’attestato *scaricabile anche dall’app*
+
+L’attestato deve contenere:
+
+•⁠  ⁠nome e cognome dello studente
+•⁠  ⁠durata del percorso
+•⁠  ⁠numero di lezioni svolte
+•⁠  ⁠livello di ingresso (es. B1)
+•⁠  ⁠livello di uscita (es. C1)
+
+---
+
+## Gestione profili – Ruoli
+
+•⁠  ⁠Rimuovere alla *Coach* la possibilità di creare profili studente.
+•⁠  ⁠Introdurre, nella tendina profilo/account, il ruolo *“Responsabile”*, che può:
+
+  * creare profili di accesso per gli studenti
+  * visualizzare *tutti i contenuti dell’app sbloccati*, da utilizzare come leva durante le call di vendita, mostrando l’applicazione completa
+
+---
+
+## Responsabile – Creazione studente
+
+Nel pannello *“Crea studente”*, la Responsabile deve poter:
+
+•⁠  ⁠impostare la *frequenza settimanale massima*, fino a 7 lezioni a settimana
+•⁠  ⁠selezionare il *livello iniziale di inglese* (stimato durante la call di vendita)
+•⁠  ⁠assegnare una coach tra quelle disponibili, favorendo:
+
+  * coach con meno studenti attivi
+  * coach con maggiore disponibilità in calendario
+
+La Responsabile deve poter visualizzare:
+
+•⁠  ⁠numero di studenti attivi per ciascuna coach
+•⁠  ⁠disponibilità del calendario di ogni coach
+
+---
+
+## Calendario e prenotazioni
+
+### Lezioni
+
+•⁠  ⁠Durata unica: *30 minuti*
+•⁠  ⁠Slot disponibili ogni 30 minuti
+  (es. 10:00–10:30, 10:30–11:00)
+
+### Prenotazioni
+
+•⁠  ⁠Eliminare il limite fisso di *1 lezione a settimana*, poiché il numero di lezioni prenotabili dipende dal pacchetto acquistato.
+•⁠  ⁠Lo studente vede nel proprio account:
+
+  * numero di lezioni settimanali disponibili
+  * aggiornamento automatico dopo ogni prenotazione
+
+*Esempio:*
+
+•⁠  ⁠Pacchetto con 1 lezione settimanale → prenotabile 1 sola lezione a settimana
+•⁠  ⁠Pacchetto con 3 lezioni settimanali → prenotabili fino a 3 lezioni a settimana
+
+---
+
+## Politica di cancellazione
+
+•⁠  ⁠Se lo studente annulla:
+
+  * *entro 6 ore* dalla lezione → la lezione è persa e non recuperabile
+  * *prima delle 6 ore* → la lezione è recuperabile e rischedulabile
+
+*Esempio:*
+
+•⁠  ⁠Lezione alle ore 19:00
+•⁠  ⁠Cancellazione alle 17:00 → lezione persa
+
+---
+
+## Rinnovo corso
+
+•⁠  ⁠Rimuovere l’opzione *“Contatta la tua coach”*
+•⁠  ⁠Inserire il pulsante *“Rinnova corso”*
+
+*Funzionamento:*
+
+•⁠  ⁠Al click:
+
+  * parte una mail automatica all’amministrazione
+  * parte una notifica push all’Admin
+•⁠  ⁠Nel profilo Admin:
+
+  * icona dedicata alle richieste di rinnovo
+  * icona lampeggiante finché la richiesta non viene aperta
+  * visualizzazione di:
+
+    * nome studente
+    * storico delle richieste
+    * stato della richiesta
+
+La Responsabile, su richiesta dell’amministrazione, contatterà telefonicamente lo studente per discutere il rinnovo.
+
+---
+
+## Supporto
+
+•⁠  ⁠Sezione *Supporto* con pulsante:
+
+  * *“Invia email all’amministrazione”*
+
+---
+
+## Chat e AI interattiva
+
+•⁠  ⁠Chat testuale e vocale con:
+
+  * avatar maschile/femminile a mezzo busto
+  * interazione simile a una conversazione reale
+•⁠  ⁠Capacità di:
+
+  * fare domande
+  * ascoltare risposte
+  * correggere pronuncia ed errori
+  * fornire feedback pertinenti
+•⁠  ⁠Sempre focalizzata sull’apprendimento dell’inglese
+
+---
+
+## Calendario coach
+
+•⁠  ⁠La coach può modificare le proprie disponibilità.
+•⁠  ⁠Ogni modifica deve:
+
+  * inviare una notifica all’amministratore (email + app)
+•⁠  ⁠L’amministratore decide se approvare o rifiutare la modifica.
+•⁠  ⁠Fino all’approvazione, il calendario della coach *rimane invariato*.
+
+---
+
+## Prenotazione lezioni – Notifiche
+
+Quando uno studente prenota una lezione:
+
+•⁠  ⁠email automatica a:
+
+  * studente
+  * coach
+•⁠  ⁠inserimento automatico nel *Google Calendar* dello studente e della coach
+
+---
+
+## Pannello Amministratore (Admin)
+
+L’Admin può:
+
+•⁠  ⁠visualizzare tutti i calendari delle coach
+•⁠  ⁠monitorare:
+
+  * lezioni svolte
+  * disdette
+  * disdette entro / oltre le 6 ore
+•⁠  ⁠accedere a:
+
+  * account delle coach
+  * chat coach ↔️ studenti (non possono essere cancellati i messaggi già inviati)
+  * registrazioni delle call di tutti gli studenti visibili nell’apposita sezione
+
+---
+
+## Gestione utenti (Admin)
+
+L’Admin può:
+
+•⁠  ⁠creare e rimuovere:
+
+  * coach
+  * studenti
+  * venditrici
+  * altri amministratori
+•⁠  ⁠assegnare permessi:
+
+  * completi o parziali agli altri Admin
+•⁠  ⁠L’Admin principale ha *accesso totale* a tutte le funzionalità.
+
+---
+
+## Livelli di inglese
+
+### Livelli gestiti
+
+•⁠  ⁠A1 – Beginner
+•⁠  ⁠A2 – Elementary
+•⁠  ⁠B1 – Intermediate
+•⁠  ⁠B2 – Upper Intermediate
+•⁠  ⁠C1 – Advanced
+•⁠  ⁠C2 – Proficiency
+
+### Gestione livelli
+
+•⁠  ⁠La Responsabile assegna il livello iniziale alla creazione del profilo.
+•⁠  ⁠La Coach può:
+
+  * confermare il livello
+  * modificarlo
+  * aggiornarlo in base ai progressi dello studente
+•⁠  ⁠Tutti i progressi restano tracciati durante l’intero periodo di iscrizione.
+•⁠  ⁠Al cambio livello:
+
+  * i quiz si aggiornano automaticamente in base alla nuova difficoltà.
+
+---
+
+## Quiz e metodo didattico
+
+•⁠  ⁠Quiz strutturati secondo i livelli *A1–C2*
+•⁠  ⁠Focus comunicativo, poco grammaticale
+•⁠  ⁠I quiz vengono generati automaticamente tramite IA, che valuta il livello dello studente e crea quiz personalizzati in base al profilo individuale, alle difficoltà e ai blocchi riscontrati dal singolo studente
+•⁠  ⁠Quiz da fornire con il rilascio dell’app
+•⁠  ⁠Ampia varietà di quiz per ogni categoria
+•⁠  ⁠L’app deve essere consegnata *completa e funzionante*
+•⁠  ⁠L’Admin può aggiungere o rimuovere quiz, giochi e listening in qualsiasi momento
+*La coach può inoltre creare quiz aggiuntivi basati sugli esercizi assegnati a fine lezione.
+
+---
+
+## Listening e Audio
+
+•⁠  ⁠Listening con diversi livelli di difficoltà
+•⁠  ⁠Riproduzione possibile anche con telefono bloccato
+•⁠  ⁠Stesso comportamento per i quiz audio
+•⁠  ⁠Audio già inseriti alla consegna dell’app
+•⁠  ⁠L’Admin può gestire completamente il frontend dei contenuti
+
+---
+
+## Giochi
+*Creare giochi interattivi per far esercitare lo studente e per fargli apprendere “giocando” 
+*Gia pronti e completi al momento del rilascio dell’app
+
+## Video call in app
+
+•⁠  ⁠Video call direttamente in app con la coach
+•⁠  ⁠Qualità HD
+•⁠  ⁠Registrazione automatica della lezione
+•⁠  ⁠Registrazioni visibili:
+
+  * nel profilo studente (sezione “Lezioni”)
+  * nel profilo coach
+  * nel profilo Admin
+
+---
+
+## Organizzazione dati studente
+
+Coach e Admin possono visualizzare:
+
+•⁠  ⁠progressi
+•⁠  ⁠quiz
+•⁠  ⁠video lezioni
+•⁠  ⁠storico completo
+•⁠  ⁠avanzamento in percentuale
+---
+
+•⁠  ⁠*Limite di utilizzo app* → consentire l’accesso a *un solo dispositivo alla volta*, sia su app che su sito web.
+
+•⁠  ⁠*Compiti assegnati dalla Coach* → al termine di ogni lezione la coach assegna dei compiti allo studente.
+  Lo studente li visualizza in una sezione dedicata del proprio account *“Compiti assegnati”* e può caricare file *PDF o Word* con i compiti svolti, in modo che la coach possa visualizzarli prima della lezione successiva e correggerli insieme allo studente.

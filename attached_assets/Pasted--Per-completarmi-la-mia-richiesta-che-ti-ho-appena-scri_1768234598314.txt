@@ -1,0 +1,36 @@
+
+Per completarmi la mia richiesta che ti ho appena scritto analizza la struttura esistente che viene COINVOLTA dalla mia richiesta come database, API esistenti, Fetch esistenti, Endpoints esistenti, Query esistenti, un elenco di tutte le Route e Pagine Coinvolte, un controllo sul Backend e Frontend e dopo mi scrivi come lo implementeresti step by step
+
+—
+REGOLE OBBLIGATORIE (prima analisi, poi codice)
+1) VERIFICA ESISTENTE (non inventare):
+- Cerca nel progetto se la feature esiste già o è parzialmente implementata.
+- Dimmi ESATTAMENTE dove hai cercato (path/cartelle/file e parole chiave usate).
+- Se trovi qualcosa, indicami i file e riassumi cosa fa e cosa manca.
+
+2) ANALISI IMPATTO (solo ciò che è coinvolto):
+- Database: tabelle/colonne coinvolte (o assenza di schema), migrazioni necessarie.
+- Backend: routes, controllers, services, middlewares, validation, auth/roles.
+- API: endpoints esistenti e nuovi, request/response schema, status codes.
+- Frontend: pagine/route coinvolte, componenti, fetch/axios client, state management, form/validation.
+- Elenca un “elenco puntuale” dei file da modificare/creare.
+
+3) PIANO STEP-BY-STEP:
+- Scrivi i passaggi in ordine (1..N) con obiettivo per step.
+- Per ogni step indica: file -> modifica -> motivazione -> come verifico (test manuale o test automatico).
+- Evidenzia edge case e retrocompatibilità (breaking changes).
+
+Dopo l'analisi, chiedimi ulteriore conferma prima di passare ad IMPLEMENTAZIONE
+
+4) IMPLEMENTAZIONE:
+- Procedi a implementare seguendo il piano.
+- Fornisci codice completo SOLO dei file toccati (o patch/diff se più comodo).
+- Mantieni coerenza con lo stile del progetto (pattern già usati, naming, struttura cartelle).
+- Non duplicare logica: riusa funzioni/servizi esistenti se presenti.
+
+5) CHECK FINALE:
+- Checklist di verifica (backend + frontend).
+- Esempi di chiamate API (curl) e casi di test.
+- Se manca info nel progetto, fermati e chiedimi SOLO ciò che è indispensabile, spiegando cosa non hai trovato e dove.
+
+—
