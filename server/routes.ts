@@ -32124,7 +32124,7 @@ export function registerRoutes(app: Express): Server {
     try {
       const { resellerId } = getEffectiveContext(req);
       const period = (req.query.period as string) || "today";
-      const stats = await storage.getResellerPosOverviewStats(resellerId, period);
+      const stats = await storage.getResellerPosOverviewStats(resellerId, period, req.query.repairCenterId as string | undefined);
       res.json(stats);
     } catch (error: any) {
       res.status(500).json({ error: error.message });

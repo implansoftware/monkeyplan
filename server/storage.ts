@@ -10216,7 +10216,7 @@ export class DatabaseStorage implements IStorage {
     };
   }
 
-  async getResellerPosOverviewStats(resellerId: string, period: string): Promise<{
+  async getResellerPosOverviewStats(resellerId: string, period: string, repairCenterId?: string): Promise<{
     totalSessions: number;
     activeSessions: number;
     todayTransactions: number;
@@ -10241,8 +10241,12 @@ export class DatabaseStorage implements IStorage {
       .where(and(eq(users.parentResellerId, resellerId), eq(users.role, "reseller")));
     const allResellerIds = [resellerId, ...subResellers.map(s => s.id)];
     const centers = await this.getRepairCentersByResellerIds(allResellerIds);
-    const centerIds = centers.map(c => c.id);
+    let centerIds = centers.map(c => c.id);
     
+    // Se è specificato un centro riparazione, filtra solo quello (se appartiene al reseller)
+    if (repairCenterId && centerIds.includes(repairCenterId)) {
+      centerIds = [repairCenterId];
+    }
 
     if (centerIds.length === 0) {
       return {
