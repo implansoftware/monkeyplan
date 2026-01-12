@@ -45,6 +45,11 @@ export default function PosSessionsPage() {
 
   const { data: sessions, isLoading } = useQuery<PosSession[]>({
     queryKey: ["/api/repair-center/pos/sessions"],
+    queryFn: async () => {
+      const res = await fetch("/api/repair-center/pos/sessions");
+      if (!res.ok) throw new Error("Failed to fetch sessions");
+      return res.json();
+    },
   });
 
   const formatCurrency = (cents: number | null) => {
@@ -74,9 +79,11 @@ export default function PosSessionsPage() {
   const stats = {
     totalSessions: filteredSessions.length,
     openSessions: filteredSessions.filter(s => s.status === "open").length,
-    totalRevenue: filteredSessions.reduce((sum, s) => sum + (s.totalSales || 0), 0),
-    totalTransactions: filteredSessions.reduce((sum, s) => sum + (s.totalTransactions || 0), 0),
+    totalRevenue: filteredSessions.reduce((sum, s) => sum + (s.totalSales ?? 0), 0),
+    totalTransactions: filteredSessions.reduce((sum, s) => sum + (s.totalTransactions ?? 0), 0),
   };
+
+  const avgPerSession = stats.totalSessions > 0 ? Math.round(stats.totalRevenue / stats.totalSessions) : 0;
 
   if (isLoading) {
     return (
@@ -167,9 +174,7 @@ export default function PosSessionsPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {stats.totalSessions > 0 
-                ? formatCurrency(stats.totalRevenue / stats.totalSessions) 
-                : "€ 0,00"}
+              {formatCurrency(avgPerSession)}
             </div>
           </CardContent>
         </Card>
