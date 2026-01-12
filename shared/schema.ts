@@ -3295,6 +3295,7 @@ export const invoices = pgTable("invoices", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   invoiceNumber: text("invoice_number").notNull().unique(),
   repairOrderId: varchar("repair_order_id"),
+  posTransactionId: varchar("pos_transaction_id"),
   customerId: varchar("customer_id").notNull(),
   amount: integer("amount").notNull(), // in cents
   tax: integer("tax").notNull().default(0), // in cents
@@ -6274,6 +6275,10 @@ export const posTransactions = pgTable("pos_transactions", {
   // Note
   notes: text("notes"),
   customerNotes: text("customer_notes"),
+  
+  // Fatturazione
+  invoiceRequested: boolean("invoice_requested").notNull().default(false),
+  invoiceId: varchar("invoice_id"),
   
   // Meta
   createdAt: timestamp("created_at").notNull().defaultNow(),
