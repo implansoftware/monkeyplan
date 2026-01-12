@@ -8451,8 +8451,8 @@ export function registerRoutes(app: Express): Server {
           city: request.customerCity || repairCenter?.city || undefined,
           postalCode: request.customerCap || repairCenter?.cap || undefined,
           province: request.customerProvince || repairCenter?.provincia || undefined,
-          phone: repairCenter?.phone || undefined,
-          email: repairCenter?.email || undefined,
+          phone: repairCenterData?.phone || undefined,
+          email: repairCenterData?.email || undefined,
         },
         items: [{
           description: `${request.brand} ${request.model}`,
@@ -30976,7 +30976,7 @@ export function registerRoutes(app: Express): Server {
       if (!repairCenterId) return res.status(400).json({ error: "Repair Center ID non trovato" });
       
       const staff = await storage.listRepairCenterStaff(repairCenterId);
-      const repairCenter = await storage.getUser(repairCenterId);
+      const repairCenterData = await storage.getRepairCenter(repairCenterId);
       
       const team = [
         ...(repairCenter ? [{
@@ -31933,7 +31933,7 @@ export function registerRoutes(app: Express): Server {
       if (transaction.repairCenterId !== repairCenterId) return res.status(403).json({ error: "Non autorizzato" });
       
       const items = await storage.getPosTransactionItems(transactionId);
-      const repairCenter = await storage.getUser(repairCenterId);
+      const repairCenterData = await storage.getRepairCenter(repairCenterId);
       const operator = transaction.operatorId ? await storage.getUser(transaction.operatorId) : undefined;
       let customer = null;
       let billingData = null;
@@ -31965,14 +31965,14 @@ export function registerRoutes(app: Express): Server {
           totalPrice: item.totalPrice,
         })),
         repairCenter: {
-          name: repairCenter?.ragioneSociale || repairCenter?.fullName || repairCenter?.username || "Centro Riparazioni",
-          address: repairCenter?.indirizzo,
-          city: repairCenter?.citta,
-          postalCode: repairCenter?.cap,
-          province: repairCenter?.provincia,
-          phone: repairCenter?.phone,
-          email: repairCenter?.email,
-          partitaIva: repairCenter?.partitaIva,
+          name: repairCenterData?.ragioneSociale || repairCenterData?.name || "Centro Riparazioni",
+          address: repairCenterData?.address,
+          city: repairCenterData?.city,
+          postalCode: repairCenterData?.cap,
+          province: repairCenterData?.provincia,
+          phone: repairCenterData?.phone,
+          email: repairCenterData?.email,
+          partitaIva: repairCenterData?.partitaIva,
         },
         operator: operator ? { fullName: operator.fullName || operator.username } : undefined,
         customer: customer ? { fullName: customer.fullName, email: customer.email } : null,
