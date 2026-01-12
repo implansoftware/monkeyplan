@@ -22,8 +22,16 @@ function requireRole(...roles: string[]) {
 
 const RESELLER_ROLES = ["reseller", "reseller_staff"];
 
-function getEffectiveResellerId(user: Express.User): string {
-  return user.role === 'reseller_staff' ? user.resellerId! : user.id;
+function getEffectiveResellerId(req: Request): string {
+  const actingAs = (req.session as any)?.actingAs;
+  const baseResellerId = req.user!.role === 'reseller_staff' 
+    ? req.user!.resellerId! 
+    : req.user!.id;
+  
+  if (actingAs && actingAs.type === 'reseller') {
+    return actingAs.id;
+  }
+  return baseResellerId;
 }
 
 export function registerExternalOrdersRoutes(app: Express) {
@@ -32,7 +40,7 @@ export function registerExternalOrdersRoutes(app: Express) {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
-      const effectiveResellerId = getEffectiveResellerId(req.user);
+      const effectiveResellerId = getEffectiveResellerId(req);
       const { id } = req.params;
       const { items, targetWarehouseId } = req.body;
       
@@ -146,7 +154,7 @@ export function registerExternalOrdersRoutes(app: Express) {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
-      const effectiveResellerId = getEffectiveResellerId(req.user);
+      const effectiveResellerId = getEffectiveResellerId(req);
       const { id } = req.params;
       const { items, targetWarehouseId } = req.body;
       
@@ -250,7 +258,7 @@ export function registerExternalOrdersRoutes(app: Express) {
   app.get("/api/external-product-mappings", requireAuth, requireRole(...RESELLER_ROLES), async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
-      const effectiveResellerId = getEffectiveResellerId(req.user);
+      const effectiveResellerId = getEffectiveResellerId(req);
       const source = req.query.source as string | undefined;
       const mappings = await storage.listExternalProductMappings(effectiveResellerId, source);
       res.json(mappings);
@@ -263,7 +271,7 @@ export function registerExternalOrdersRoutes(app: Express) {
   app.post("/api/external-product-mappings", requireAuth, requireRole(...RESELLER_ROLES), async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
-      const effectiveResellerId = getEffectiveResellerId(req.user);
+      const effectiveResellerId = getEffectiveResellerId(req);
       const mapping = await storage.createExternalProductMapping({
         ...req.body,
         resellerId: effectiveResellerId,
@@ -278,7 +286,7 @@ export function registerExternalOrdersRoutes(app: Express) {
   app.delete("/api/external-product-mappings/:id", requireAuth, requireRole(...RESELLER_ROLES), async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
-      const effectiveResellerId = getEffectiveResellerId(req.user);
+      const effectiveResellerId = getEffectiveResellerId(req);
       const mapping = await storage.getExternalProductMapping(req.params.id);
       if (!mapping || mapping.resellerId !== effectiveResellerId) {
         return res.status(404).json({ error: "Mappatura non trovata" });
@@ -297,7 +305,7 @@ export function registerExternalOrdersRoutes(app: Express) {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
-      const effectiveResellerId = getEffectiveResellerId(req.user);
+      const effectiveResellerId = getEffectiveResellerId(req);
       const orders: any[] = [];
       
       // MobileSentrix orders
