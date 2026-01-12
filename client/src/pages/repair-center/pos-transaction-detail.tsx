@@ -1,6 +1,8 @@
 import { useParams, useLocation } from "wouter";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
+import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -151,9 +153,34 @@ export default function PosTransactionDetailPage() {
   const { id } = useParams<{ id: string }>();
   const [, navigate] = useLocation();
 
+  const { toast } = useToast();
+  
   const { data, isLoading, error } = useQuery<TransactionDetail>({
     queryKey: ["/api/repair-center/pos/transaction", id],
     enabled: !!id,
+  });
+
+  const generateInvoiceMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest("POST", `/api/repair-center/pos/transaction/${id}/generate-invoice`, {
+        customerId: data?.transaction.customerId,
+      });
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/repair-center/pos/transaction", id] });
+      toast({
+        title: "Fattura generata",
+        description: "La fattura di vendita è stata creata con successo",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Errore",
+        description: error.message || "Impossibile generare la fattura",
+        variant: "destructive",
+      });
+    },
   });
 
   if (isLoading) {
@@ -282,11 +309,19 @@ export default function PosTransactionDetailPage() {
                 <span className="font-medium">Fattura emessa</span>
               </div>
             ) : (
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between flex-wrap gap-3">
                 <div className="flex items-center gap-2 text-amber-600">
                   <Clock className="w-5 h-5" />
                   <span className="font-medium">Fattura richiesta - In attesa di emissione</span>
                 </div>
+                <Button
+                  size="sm"
+                  onClick={() => generateInvoiceMutation.mutate()}
+                  disabled={generateInvoiceMutation.isPending || !transaction.customerId}
+                  data-testid="button-generate-invoice"
+                >
+                  {generateInvoiceMutation.isPending ? "Generazione..." : "Genera Fattura"}
+                </Button>
               </div>
             )}
           </CardContent>
