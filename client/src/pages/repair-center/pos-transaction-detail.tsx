@@ -9,7 +9,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { 
   ArrowLeft, Receipt, CreditCard, Banknote, Clock, User, 
   Package, Smartphone, Printer, CheckCircle, XCircle, RotateCcw,
-  Wallet, Calculator
+  Wallet, Calculator, FileText
 } from "lucide-react";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
@@ -37,6 +37,8 @@ type TransactionDetail = {
     refundedAmount: number | null;
     refundReason: string | null;
     notes: string | null;
+    invoiceRequested: boolean;
+    invoiceId: string | null;
     createdAt: string;
   };
   items: {
@@ -264,6 +266,32 @@ export default function PosTransactionDetailPage() {
           </CardContent>
         </Card>
       </div>
+
+      {transaction.invoiceRequested && (
+        <Card className={transaction.invoiceId ? "border-primary" : "border-amber-500"}>
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center gap-2">
+              <FileText className="w-5 h-5" />
+              Fattura
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {transaction.invoiceId ? (
+              <div className="flex items-center gap-2 text-primary">
+                <CheckCircle className="w-5 h-5" />
+                <span className="font-medium">Fattura emessa</span>
+              </div>
+            ) : (
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-amber-600">
+                  <Clock className="w-5 h-5" />
+                  <span className="font-medium">Fattura richiesta - In attesa di emissione</span>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       <Card>
         <CardHeader>

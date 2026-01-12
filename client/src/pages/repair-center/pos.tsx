@@ -133,6 +133,8 @@ type PosTransaction = {
   changeGiven: number | null;
   status: "completed" | "refunded" | "partial_refund" | "voided";
   refundedAmount: number | null;
+  invoiceRequested: boolean;
+  invoiceId: string | null;
   createdAt: string;
 };
 
@@ -661,11 +663,19 @@ export default function PosPage() {
                               {format(new Date(tx.createdAt), "HH:mm", { locale: it })} - {paymentMethodLabels[tx.paymentMethod]?.label}
                             </div>
                           </div>
-                          <div className="text-right">
+                          <div className="text-right flex flex-col items-end gap-1">
                             <div className="font-semibold">{formatCurrency(tx.total)}</div>
-                            {tx.status === "refunded" && (
-                              <Badge variant="destructive" className="text-xs">Rimborsato</Badge>
-                            )}
+                            <div className="flex gap-1">
+                              {tx.invoiceRequested && (
+                                <Badge variant={tx.invoiceId ? "default" : "secondary"} className="text-xs">
+                                  <FileText className="w-3 h-3 mr-1" />
+                                  {tx.invoiceId ? "Fattura" : "Da fatturare"}
+                                </Badge>
+                              )}
+                              {tx.status === "refunded" && (
+                                <Badge variant="destructive" className="text-xs">Rimborsato</Badge>
+                              )}
+                            </div>
                           </div>
                           <ChevronRight className="w-4 h-4 text-muted-foreground" />
                         </button>
