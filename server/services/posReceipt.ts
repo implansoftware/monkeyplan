@@ -69,7 +69,18 @@ const paymentMethodLabels: Record<string, string> = {
 
 export async function generatePosReceiptPdf(data: PosReceiptData): Promise<Buffer> {
   return new Promise((resolve, reject) => {
-    const doc = new PDFDocument({ size: "A4", margin: 40 });
+    const receiptWidth = 226;
+    const margin = 10;
+    const contentWidth = receiptWidth - margin * 2;
+    
+    const estimatedHeight = 300 + (data.items.length * 45) + 
+      (data.isInvoice && data.billingData ? 80 : 0);
+    
+    const doc = new PDFDocument({ 
+      size: [receiptWidth, Math.max(estimatedHeight, 400)],
+      margin: margin,
+      bufferPages: true
+    });
     const chunks: Buffer[] = [];
 
     doc.on("data", (chunk: Buffer) => chunks.push(chunk));
@@ -77,135 +88,186 @@ export async function generatePosReceiptPdf(data: PosReceiptData): Promise<Buffe
     doc.on("error", reject);
 
     const { transaction, items, repairCenter, operator, customer, billingData, isInvoice } = data;
+    
+    const centerX = receiptWidth / 2;
+    let y = margin;
 
-    doc.fontSize(18).font("Helvetica-Bold").text(
-      isInvoice ? "FATTURA DI VENDITA" : "SCONTRINO DI VENDITA",
-      { align: "center" }
-    );
-    doc.moveDown(0.5);
-    doc.fontSize(12).font("Helvetica").text(
-      `N. ${transaction.transactionNumber}`,
-      { align: "center" }
-    );
-    doc.fontSize(10).text(
-      format(new Date(transaction.createdAt), "dd MMMM yyyy, HH:mm", { locale: it }),
-      { align: "center" }
-    );
-    doc.moveDown(1);
+    const drawDashedLine = () => {
+      doc.fontSize(6).font("Courier");
+      doc.text("-".repeat(34), margin, y, { width: contentWidth, align: "center" });
+      y += 8;
+    };
 
-    doc.fontSize(11).font("Helvetica-Bold").text("VENDITORE:");
-    doc.fontSize(9).font("Helvetica");
-    doc.text(repairCenter.name);
-    if (repairCenter.address) doc.text(repairCenter.address);
+    doc.fontSize(10).font("Helvetica-Bold");
+    doc.text(repairCenter.name.toUpperCase(), margin, y, { 
+      width: contentWidth, 
+      align: "center" 
+    });
+    y += 14;
+
+    doc.fontSize(7).font("Helvetica");
+    if (repairCenter.address) {
+      doc.text(repairCenter.address, margin, y, { width: contentWidth, align: "center" });
+      y += 9;
+    }
     if (repairCenter.city) {
-      let cityLine = repairCenter.city;
-      if (repairCenter.postalCode) cityLine = `${repairCenter.postalCode} ${cityLine}`;
+      let cityLine = "";
+      if (repairCenter.postalCode) cityLine = `${repairCenter.postalCode} `;
+      cityLine += repairCenter.city;
       if (repairCenter.province) cityLine += ` (${repairCenter.province})`;
-      doc.text(cityLine);
+      doc.text(cityLine, margin, y, { width: contentWidth, align: "center" });
+      y += 9;
     }
-    if (repairCenter.phone) doc.text(`Tel: ${repairCenter.phone}`);
-    if (repairCenter.email) doc.text(`Email: ${repairCenter.email}`);
-    if (repairCenter.partitaIva) doc.text(`P.IVA: ${repairCenter.partitaIva}`);
-    doc.moveDown(1);
-
-    if (isInvoice && billingData) {
-      doc.fontSize(11).font("Helvetica-Bold").text("CLIENTE:");
-      doc.fontSize(9).font("Helvetica");
-      if (billingData.companyName) doc.text(billingData.companyName);
-      if (customer?.fullName && !billingData.companyName) doc.text(customer.fullName);
-      if (billingData.fiscalCode) doc.text(`C.F.: ${billingData.fiscalCode}`);
-      if (billingData.vatNumber) doc.text(`P.IVA: ${billingData.vatNumber}`);
-      if (billingData.address) doc.text(billingData.address);
-      if (billingData.city) {
-        let cityLine = billingData.city;
-        if (billingData.postalCode) cityLine = `${billingData.postalCode} ${cityLine}`;
-        if (billingData.province) cityLine += ` (${billingData.province})`;
-        doc.text(cityLine);
-      }
-      doc.moveDown(1);
+    if (repairCenter.phone) {
+      doc.text(`Tel: ${repairCenter.phone}`, margin, y, { width: contentWidth, align: "center" });
+      y += 9;
     }
-
-    doc.fontSize(11).font("Helvetica-Bold").text("PRODOTTI:");
-    doc.moveDown(0.3);
-
-    const tableTop = doc.y;
-    const col1 = 40;
-    const col2 = 280;
-    const col3 = 340;
-    const col4 = 400;
-    const col5 = 470;
-
-    doc.fontSize(8).font("Helvetica-Bold");
-    doc.text("Descrizione", col1, tableTop);
-    doc.text("Q.tà", col2, tableTop);
-    doc.text("Prezzo", col3, tableTop);
-    doc.text("Sconto", col4, tableTop);
-    doc.text("Totale", col5, tableTop);
-
-    doc.moveTo(col1, tableTop + 12).lineTo(555, tableTop + 12).stroke();
-
-    let y = tableTop + 18;
-    doc.font("Helvetica");
-    for (const item of items) {
-      doc.text(item.productName.substring(0, 40), col1, y, { width: 230 });
-      doc.text(String(item.quantity), col2, y);
-      doc.text(formatCurrency(item.unitPrice), col3, y);
-      doc.text(item.discount > 0 ? formatCurrency(item.discount) : "-", col4, y);
-      doc.text(formatCurrency(item.totalPrice), col5, y);
-      y += 15;
-      if (y > 700) {
-        doc.addPage();
-        y = 40;
-      }
+    if (repairCenter.partitaIva) {
+      doc.text(`P.IVA: ${repairCenter.partitaIva}`, margin, y, { width: contentWidth, align: "center" });
+      y += 9;
     }
+    
+    y += 5;
+    drawDashedLine();
 
-    doc.moveTo(col1, y + 5).lineTo(555, y + 5).stroke();
-    y += 15;
-
-    doc.fontSize(9).font("Helvetica");
-    doc.text("Subtotale:", 380, y);
-    doc.text(formatCurrency(transaction.subtotal), col5, y);
-    y += 14;
-
-    if (transaction.discountAmount > 0) {
-      doc.text("Sconto:", 380, y);
-      doc.text(`-${formatCurrency(transaction.discountAmount)}`, col5, y);
-      y += 14;
-    }
-
-    doc.text(`IVA (${transaction.taxRate}%):`, 380, y);
-    doc.text(formatCurrency(transaction.taxAmount), col5, y);
-    y += 14;
-
-    doc.fontSize(11).font("Helvetica-Bold");
-    doc.text("TOTALE:", 380, y);
-    doc.text(formatCurrency(transaction.total), col5, y);
-    y += 25;
-
-    doc.fontSize(9).font("Helvetica");
-    doc.text(`Pagamento: ${paymentMethodLabels[transaction.paymentMethod] || transaction.paymentMethod}`, col1, y);
+    doc.fontSize(9).font("Helvetica-Bold");
+    doc.text(isInvoice ? "FATTURA" : "SCONTRINO", margin, y, { 
+      width: contentWidth, 
+      align: "center" 
+    });
     y += 12;
 
+    doc.fontSize(8).font("Helvetica");
+    doc.text(`N. ${transaction.transactionNumber}`, margin, y, { 
+      width: contentWidth, 
+      align: "center" 
+    });
+    y += 10;
+    
+    doc.fontSize(7);
+    doc.text(
+      format(new Date(transaction.createdAt), "dd/MM/yyyy HH:mm", { locale: it }),
+      margin, y, 
+      { width: contentWidth, align: "center" }
+    );
+    y += 10;
+
+    if (isInvoice && billingData) {
+      drawDashedLine();
+      doc.fontSize(7).font("Helvetica-Bold");
+      doc.text("CLIENTE:", margin, y);
+      y += 9;
+      doc.font("Helvetica");
+      if (billingData.companyName) {
+        doc.text(billingData.companyName, margin, y);
+        y += 9;
+      } else if (customer?.fullName) {
+        doc.text(customer.fullName, margin, y);
+        y += 9;
+      }
+      if (billingData.fiscalCode) {
+        doc.text(`C.F.: ${billingData.fiscalCode}`, margin, y);
+        y += 9;
+      }
+      if (billingData.vatNumber) {
+        doc.text(`P.IVA: ${billingData.vatNumber}`, margin, y);
+        y += 9;
+      }
+    }
+
+    drawDashedLine();
+
+    for (const item of items) {
+      doc.fontSize(7).font("Helvetica");
+      
+      const productName = item.productName.length > 28 
+        ? item.productName.substring(0, 28) + "..."
+        : item.productName;
+      doc.text(productName, margin, y);
+      y += 9;
+
+      const qtyPrice = `${item.quantity} x ${formatCurrency(item.unitPrice)}`;
+      const totalStr = formatCurrency(item.totalPrice);
+      
+      doc.text(qtyPrice, margin, y);
+      doc.text(totalStr, margin, y, { width: contentWidth, align: "right" });
+      y += 10;
+      
+      if (item.discount > 0) {
+        doc.fontSize(6).text(`  Sconto: -${formatCurrency(item.discount)}`, margin, y);
+        y += 8;
+      }
+    }
+
+    drawDashedLine();
+
+    doc.fontSize(7).font("Helvetica");
+    doc.text("Subtotale:", margin, y);
+    doc.text(formatCurrency(transaction.subtotal), margin, y, { 
+      width: contentWidth, 
+      align: "right" 
+    });
+    y += 10;
+
+    if (transaction.discountAmount > 0) {
+      doc.text("Sconto:", margin, y);
+      doc.text(`-${formatCurrency(transaction.discountAmount)}`, margin, y, { 
+        width: contentWidth, 
+        align: "right" 
+      });
+      y += 10;
+    }
+
+    doc.text(`IVA (${transaction.taxRate}%):`, margin, y);
+    doc.text(formatCurrency(transaction.taxAmount), margin, y, { 
+      width: contentWidth, 
+      align: "right" 
+    });
+    y += 12;
+
+    doc.fontSize(9).font("Helvetica-Bold");
+    doc.text("TOTALE:", margin, y);
+    doc.text(formatCurrency(transaction.total), margin, y, { 
+      width: contentWidth, 
+      align: "right" 
+    });
+    y += 14;
+
+    drawDashedLine();
+
+    doc.fontSize(7).font("Helvetica");
+    doc.text(`Pagamento: ${paymentMethodLabels[transaction.paymentMethod] || transaction.paymentMethod}`, margin, y);
+    y += 10;
+
     if (transaction.paymentMethod === "cash" && transaction.cashReceived) {
-      doc.text(`Ricevuto: ${formatCurrency(transaction.cashReceived)}`, col1, y);
-      y += 12;
+      doc.text(`Ricevuto: ${formatCurrency(transaction.cashReceived)}`, margin, y);
+      y += 9;
       if (transaction.changeGiven) {
-        doc.text(`Resto: ${formatCurrency(transaction.changeGiven)}`, col1, y);
-        y += 12;
+        doc.text(`Resto: ${formatCurrency(transaction.changeGiven)}`, margin, y);
+        y += 9;
       }
     }
 
     if (operator) {
-      y += 10;
-      doc.text(`Operatore: ${operator.fullName}`, col1, y);
+      y += 5;
+      doc.fontSize(6).text(`Op: ${operator.fullName}`, margin, y);
+      y += 8;
     }
 
-    y += 30;
-    doc.fontSize(8).font("Helvetica").text(
-      "Grazie per il vostro acquisto!",
-      col1, y,
-      { align: "center", width: 515 }
-    );
+    y += 10;
+    drawDashedLine();
+    
+    doc.fontSize(7).font("Helvetica");
+    doc.text("Grazie per l'acquisto!", margin, y, { 
+      width: contentWidth, 
+      align: "center" 
+    });
+    y += 10;
+    
+    doc.text("Arrivederci", margin, y, { 
+      width: contentWidth, 
+      align: "center" 
+    });
 
     doc.end();
   });
