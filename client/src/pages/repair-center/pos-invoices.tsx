@@ -43,6 +43,8 @@ export default function SalesHistoryPage() {
     switch (status) {
       case "completed": return <Badge>Completata</Badge>;
       case "refunded": return <Badge variant="destructive">Rimborsata</Badge>;
+      case "partial_refund": return <Badge variant="secondary">Rimborso parziale</Badge>;
+      case "voided": return <Badge variant="destructive">Annullata</Badge>;
       case "pending": return <Badge variant="secondary">In sospeso</Badge>;
       case "cancelled": return <Badge variant="outline">Annullata</Badge>;
       default: return <Badge variant="outline">{status}</Badge>;

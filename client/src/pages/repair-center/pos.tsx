@@ -844,6 +844,12 @@ export default function PosPage() {
                               {tx.status === "refunded" && (
                                 <Badge variant="destructive" className="text-xs">Rimborsato</Badge>
                               )}
+                              {tx.status === "partial_refund" && (
+                                <Badge variant="secondary" className="text-xs">Rimborso parziale</Badge>
+                              )}
+                              {tx.status === "voided" && (
+                                <Badge variant="destructive" className="text-xs">Annullata</Badge>
+                              )}
                             </div>
                           </div>
                           <ChevronRight className="w-4 h-4 text-muted-foreground" />
