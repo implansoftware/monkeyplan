@@ -10054,6 +10054,7 @@ export class DatabaseStorage implements IStorage {
     })[];
     operator?: { id: string; fullName: string };
     session?: { id: string; openedAt: Date; status: string };
+    customer?: { id: string; fullName: string; email: string; phone: string | null };
   } | null> {
     const transaction = await this.getPosTransaction(transactionId);
     if (!transaction) return null;
@@ -10095,11 +10096,20 @@ export class DatabaseStorage implements IStorage {
       }
     }
 
+    let customer;
+    if (transaction.customerId) {
+      const cust = await this.getUser(transaction.customerId);
+      if (cust) {
+        customer = { id: cust.id, fullName: cust.fullName, email: cust.email, phone: cust.phone };
+      }
+    }
+
     return {
       transaction,
       items: itemsWithProducts,
       operator,
       session,
+      customer,
     };
   }
 

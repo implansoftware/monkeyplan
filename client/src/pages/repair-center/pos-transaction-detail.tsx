@@ -57,6 +57,7 @@ type TransactionDetail = {
   }[];
   operator?: { id: string; fullName: string };
   session?: { id: string; openedAt: string; status: string };
+  customer?: { id: string; fullName: string; email: string; phone: string | null };
 };
 
 const formatCurrency = (cents: number) => {
@@ -213,7 +214,7 @@ export default function PosTransactionDetailPage() {
     );
   }
 
-  const { transaction, items, operator, session } = data;
+  const { transaction, items, operator, session, customer } = data;
   const PaymentIcon = paymentMethodLabels[transaction.paymentMethod]?.icon || CreditCard;
   const statusInfo = statusLabels[transaction.status] || statusLabels.completed;
 
@@ -250,7 +251,7 @@ export default function PosTransactionDetailPage() {
         </div>
       </div>
 
-      <div className="grid md:grid-cols-3 gap-4">
+      <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">Totale</CardTitle>
@@ -296,6 +297,28 @@ export default function PosTransactionDetailPage() {
               <div className="text-sm text-muted-foreground mt-1">
                 Sessione: {format(new Date(session.openedAt), "HH:mm", { locale: it })}
               </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Cliente</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {customer ? (
+              <>
+                <div className="flex items-center gap-2 text-lg font-semibold">
+                  <User className="w-5 h-5" />
+                  {customer.fullName}
+                </div>
+                <div className="text-sm text-muted-foreground mt-1">
+                  {customer.email}
+                  {customer.phone && ` • ${customer.phone}`}
+                </div>
+              </>
+            ) : (
+              <div className="text-muted-foreground">Ospite</div>
             )}
           </CardContent>
         </Card>
