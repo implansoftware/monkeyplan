@@ -33132,6 +33132,106 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Export transazioni POS per reseller
+  app.get("/api/reseller/pos/transactions/export", requireRole("reseller", "reseller_staff", "sub_reseller"), async (req, res) => {
+    try {
+      const { resellerId } = getEffectiveContext(req);
+      const { format, repairCenterId, status } = req.query;
+      
+      const centers = await storage.getRepairCentersByReseller(resellerId);
+      if (repairCenterId) {
+        const validCenter = centers.find(c => c.id === repairCenterId);
+        if (!validCenter) {
+          return res.status(403).json({ error: "Non autorizzato" });
+        }
+      }
+      
+      const targetCenters = repairCenterId ? [centers.find(c => c.id === repairCenterId)!] : centers;
+      let allTransactions: any[] = [];
+      const centerMap = new Map(centers.map(c => [c.id, c.name]));
+      
+      for (const center of targetCenters) {
+        const txs = await storage.getPosTransactionsByRepairCenter(center.id, { limit: 1000, status: status as string | undefined });
+        allTransactions.push(...txs.map(t => ({ ...t, repairCenterName: center.name })));
+      }
+      
+      // Get register names
+      const registerMap = new Map<string, string>();
+      for (const center of targetCenters) {
+        const registers = await storage.getPosRegistersByRepairCenter(center.id);
+        registers.forEach(r => registerMap.set(r.id, r.name));
+      }
+      
+      // Get operator names
+      const operatorIds = [...new Set(allTransactions.map(t => t.operatorId).filter(Boolean))];
+      const userMap = new Map<string, string>();
+      for (const opId of operatorIds) {
+        const user = await storage.getUser(opId);
+        if (user) userMap.set(opId, user.fullName);
+      }
+      
+      const formatCurrency = (cents: number) => `€ ${((cents || 0) / 100).toFixed(2)}`;
+      const formatDate = (date: Date) => new Date(date).toLocaleString('it-IT');
+      
+      const statusLabels: Record<string, string> = { completed: 'Completata', voided: 'Annullata', refunded: 'Rimborsata', pending: 'In attesa' };
+      const paymentLabels: Record<string, string> = { cash: 'Contanti', card: 'Carta', pos_terminal: 'POS', satispay: 'Satispay', mixed: 'Misto' };
+      
+      const exportData = allTransactions.map(t => ({
+        'Numero': t.transactionNumber,
+        'Centro': (t as any).repairCenterName || centerMap.get(t.repairCenterId) || 'N/D',
+        'Cassa': t.registerId ? registerMap.get(t.registerId) || 'N/D' : 'Cassa Principale',
+        'Operatore': t.operatorId ? userMap.get(t.operatorId) || 'N/D' : 'N/D',
+        'Data': formatDate(t.createdAt),
+        'Stato': statusLabels[t.status] || t.status,
+        'Metodo Pagamento': paymentLabels[t.paymentMethod] || t.paymentMethod,
+        'Subtotale': formatCurrency(t.subtotal),
+        'Sconto': formatCurrency(t.discountAmount || 0),
+        'Totale': formatCurrency(t.total),
+        'Contanti': formatCurrency(t.cashReceived || 0),
+        'Resto': formatCurrency(t.changeGiven || 0),
+      }));
+      
+      const stableHeaders = ['Numero', 'Centro', 'Cassa', 'Operatore', 'Data', 'Stato', 'Metodo Pagamento', 'Subtotale', 'Sconto', 'Totale', 'Contanti', 'Resto'];
+      
+      if (format === 'csv') {
+        const csvRows = [
+          stableHeaders.join(';'),
+          ...exportData.map(row => stableHeaders.map(h => `"${String((row as any)[h] ?? '').replace(/"/g, '""')}"`).join(';'))
+        ];
+        const csv = csvRows.join('\n');
+        res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+        res.setHeader('Content-Disposition', `attachment; filename="vendite_rete_${new Date().toISOString().split('T')[0]}.csv"`);
+        res.send('\ufeff' + csv);
+      } else if (format === 'xlsx') {
+        const workbook = new ExcelJS.Workbook();
+        workbook.creator = 'MonkeyPlan POS';
+        const worksheet = workbook.addWorksheet('Vendite Rete');
+        worksheet.addRow(stableHeaders);
+        worksheet.getRow(1).font = { bold: true };
+        worksheet.getRow(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF4A90A4' } };
+        worksheet.getRow(1).font = { bold: true, color: { argb: 'FFFFFFFF' } };
+        exportData.forEach(row => worksheet.addRow(stableHeaders.map(h => (row as any)[h] ?? '')));
+        worksheet.columns.forEach(col => {
+          let maxLen = 10;
+          col.eachCell?.({ includeEmpty: true }, cell => {
+            const len = cell.value ? String(cell.value).length : 10;
+            if (len > maxLen) maxLen = Math.min(len, 50);
+          });
+          col.width = maxLen + 2;
+        });
+        const buffer = await workbook.xlsx.writeBuffer();
+        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        res.setHeader('Content-Disposition', `attachment; filename="vendite_rete_${new Date().toISOString().split('T')[0]}.xlsx"`);
+        res.send(Buffer.from(buffer));
+      } else {
+        res.status(400).json({ error: "Formato non supportato. Usa csv o xlsx" });
+      }
+    } catch (error: any) {
+      console.error("Error exporting transactions:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
     // Genera immagine barcode PNG
   app.get("/api/barcode/:code", async (req, res) => {
     try {
