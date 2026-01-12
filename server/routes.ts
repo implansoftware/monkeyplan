@@ -32163,7 +32163,7 @@ export function registerRoutes(app: Express): Server {
       const startDate = req.query.startDate ? new Date(req.query.startDate as string) : undefined;
       const endDate = req.query.endDate ? new Date(req.query.endDate as string) : undefined;
       const limit = parseInt(req.query.limit as string) || 100;
-      const sessions = await storage.getPosSessionsForReseller(effectiveId, { startDate, endDate, limit });
+      const sessions = await storage.getPosSessionsForReseller(resellerId, { startDate, endDate, limit });
       res.json(sessions);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
