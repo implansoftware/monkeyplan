@@ -31799,7 +31799,7 @@ export function registerRoutes(app: Express): Server {
         const product = await storage.getProduct(item.productId);
         if (!product) return res.status(400).json({ error: `Prodotto ${item.productId} non trovato` });
         
-        const unitPrice = item.unitPrice || (product.sellingPrice || 0);
+        const unitPrice = item.unitPrice || (product.unitPrice || 0);
         const itemDiscount = item.discount || 0;
         const totalPrice = (unitPrice * item.quantity) - itemDiscount;
         
