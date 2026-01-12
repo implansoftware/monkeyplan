@@ -32264,6 +32264,7 @@ export function registerRoutes(app: Express): Server {
       if (detail.transaction.repairCenterId !== repairCenterId) return res.status(403).json({ error: "Non autorizzato" });
       res.json(detail);
     } catch (error: any) {
+      console.error("Transaction detail error:", error);
       res.status(500).json({ error: error.message });
     }
   });
