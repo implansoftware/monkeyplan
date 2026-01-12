@@ -6,7 +6,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
-  Wrench, 
   Store, 
   CheckCircle, 
   Lock,
@@ -20,14 +19,111 @@ import {
   Shield,
   BarChart3,
   Smartphone,
-  Sparkles,
-  CircuitBoard,
-  Cpu,
-  Settings2
+  Tablet,
+  Headphones
 } from "lucide-react";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import monkeyLogo from "@assets/Screenshot_2026-01-12_alle_10.42.47_1768210969259.png";
+
+function AnimatedMonkey() {
+  return (
+    <div className="relative w-64 h-64">
+      <svg viewBox="0 0 200 200" className="w-full h-full">
+        <defs>
+          <linearGradient id="furGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#2d2d2d" />
+            <stop offset="100%" stopColor="#1a1a1a" />
+          </linearGradient>
+          <linearGradient id="faceGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#d4a574" />
+            <stop offset="100%" stopColor="#c4956a" />
+          </linearGradient>
+        </defs>
+        
+        <g className="animate-[bounce_3s_ease-in-out_infinite]">
+          <ellipse cx="100" cy="100" rx="55" ry="50" fill="url(#furGradient)" />
+          
+          <ellipse cx="40" cy="85" rx="18" ry="20" fill="url(#furGradient)" />
+          <ellipse cx="40" cy="85" rx="12" ry="14" fill="url(#faceGradient)" />
+          <ellipse cx="160" cy="85" rx="18" ry="20" fill="url(#furGradient)" />
+          <ellipse cx="160" cy="85" rx="12" ry="14" fill="url(#faceGradient)" />
+          
+          <ellipse cx="100" cy="105" rx="35" ry="30" fill="url(#faceGradient)" />
+          
+          <g className="animate-[blink_4s_ease-in-out_infinite]">
+            <ellipse cx="75" cy="85" rx="12" ry="10" fill="white" />
+            <ellipse cx="125" cy="85" rx="12" ry="10" fill="white" />
+            <circle cx="78" cy="85" r="5" fill="#1a1a1a" className="animate-[lookAround_5s_ease-in-out_infinite]" />
+            <circle cx="128" cy="85" r="5" fill="#1a1a1a" className="animate-[lookAround_5s_ease-in-out_infinite]" />
+            <circle cx="80" cy="83" r="2" fill="white" />
+            <circle cx="130" cy="83" r="2" fill="white" />
+          </g>
+          
+          <ellipse cx="85" cy="70" rx="8" ry="3" fill="#1a1a1a" className="origin-center" />
+          <ellipse cx="115" cy="70" rx="8" ry="3" fill="#1a1a1a" className="origin-center" />
+          
+          <ellipse cx="100" cy="100" rx="8" ry="6" fill="#8B4513" />
+          <circle cx="96" cy="98" r="2" fill="#1a1a1a" />
+          <circle cx="104" cy="98" r="2" fill="#1a1a1a" />
+          
+          <path d="M 85 115 Q 100 130 115 115" stroke="#1a1a1a" strokeWidth="3" fill="none" className="animate-[smile_3s_ease-in-out_infinite]" />
+        </g>
+        
+        <g className="animate-[wave_2s_ease-in-out_infinite]" style={{ transformOrigin: '60px 150px' }}>
+          <ellipse cx="55" cy="160" rx="15" ry="12" fill="url(#furGradient)" />
+          <ellipse cx="40" cy="175" rx="12" ry="8" fill="url(#faceGradient)" />
+        </g>
+        
+        <g>
+          <rect x="130" y="140" width="35" height="50" rx="5" fill="#64B5F6" className="animate-[float_2s_ease-in-out_infinite]" />
+          <rect x="135" y="145" width="25" height="35" rx="2" fill="white" />
+          <circle cx="147" cy="185" r="3" fill="white" />
+        </g>
+        
+        <g className="animate-[headphonePulse_1.5s_ease-in-out_infinite]">
+          <path d="M 55 70 Q 55 40 100 35 Q 145 40 145 70" stroke="#1a1a1a" strokeWidth="6" fill="none" />
+          <ellipse cx="50" cy="75" rx="10" ry="12" fill="#1a1a1a" />
+          <ellipse cx="150" cy="75" rx="10" ry="12" fill="#1a1a1a" />
+          <ellipse cx="50" cy="75" rx="6" ry="8" fill="#64B5F6" />
+          <ellipse cx="150" cy="75" rx="6" ry="8" fill="#64B5F6" />
+          <path d="M 50 87 Q 50 100 60 110" stroke="#1a1a1a" strokeWidth="3" fill="none" />
+          <circle cx="62" cy="112" r="5" fill="#1a1a1a" />
+        </g>
+      </svg>
+      
+      <style>{`
+        @keyframes blink {
+          0%, 90%, 100% { transform: scaleY(1); }
+          95% { transform: scaleY(0.1); }
+        }
+        @keyframes lookAround {
+          0%, 100% { transform: translateX(0); }
+          25% { transform: translateX(3px); }
+          75% { transform: translateX(-3px); }
+        }
+        @keyframes smile {
+          0%, 100% { d: path('M 85 115 Q 100 130 115 115'); }
+          50% { d: path('M 85 115 Q 100 135 115 115'); }
+        }
+        @keyframes wave {
+          0%, 100% { transform: rotate(0deg); }
+          25% { transform: rotate(-15deg); }
+          75% { transform: rotate(15deg); }
+        }
+        @keyframes float {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(-5px); }
+        }
+        @keyframes headphonePulse {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.9; }
+        }
+      `}</style>
+    </div>
+  );
+}
 
 export default function AuthPage() {
   const { user, loginMutation, registerMutation } = useAuth();
@@ -102,138 +198,116 @@ export default function AuthPage() {
 
   return (
     <div className="min-h-screen flex bg-white dark:bg-slate-950">
-      {/* Left Panel - Branding & Features */}
       <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden">
-        {/* Gradient Background */}
-        <div className="absolute inset-0 bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800" />
+        <div className="absolute inset-0 bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500" />
         
-        {/* Animated Gradient Orbs */}
-        <div className="absolute top-20 -left-20 w-96 h-96 bg-blue-400/30 rounded-full blur-3xl animate-pulse" />
-        <div className="absolute bottom-20 right-10 w-80 h-80 bg-indigo-500/20 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
-        <div className="absolute top-1/2 left-1/3 w-64 h-64 bg-cyan-400/20 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '2s' }} />
+        <div className="absolute -top-20 -left-20 w-80 h-80 rounded-full bg-orange-400/30 blur-3xl animate-pulse" />
+        <div className="absolute bottom-10 right-10 w-96 h-96 rounded-full bg-yellow-400/25 blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
+        <div className="absolute top-1/3 left-1/4 w-64 h-64 rounded-full bg-emerald-300/30 blur-3xl animate-pulse" style={{ animationDelay: '2s' }} />
         
-        {/* Grid Pattern Overlay */}
-        <div className="absolute inset-0 opacity-10" style={{
-          backgroundImage: `linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)`,
-          backgroundSize: '50px 50px'
-        }} />
+        <svg className="absolute inset-0 w-full h-full opacity-10" viewBox="0 0 100 100" preserveAspectRatio="none">
+          <path d="M0 0 L25 0 L0 25 Z" fill="currentColor" className="text-orange-500" />
+          <path d="M75 0 L100 0 L100 25 Z" fill="currentColor" className="text-yellow-400" />
+          <path d="M0 75 L0 100 L25 100 Z" fill="currentColor" className="text-emerald-400" />
+          <path d="M75 100 L100 100 L100 75 Z" fill="currentColor" className="text-cyan-400" />
+        </svg>
+
+        <div 
+          className="absolute inset-0 opacity-5"
+          style={{
+            backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M30 5 L35 15 L45 15 L37 22 L40 32 L30 26 L20 32 L23 22 L15 15 L25 15 Z' fill='white'/%3E%3C/svg%3E")`,
+            backgroundSize: '60px 60px'
+          }}
+        />
         
-        {/* Content */}
         <div className="relative z-10 flex flex-col justify-between p-12 text-white w-full">
-          {/* Logo */}
-          <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/20 backdrop-blur-sm border border-white/30">
-              <Wrench className="h-6 w-6 text-white" />
+          <div className="flex items-center gap-4">
+            <div className="w-16 h-16 rounded-2xl bg-white/20 backdrop-blur-sm border border-white/30 p-2 overflow-hidden">
+              <img src={monkeyLogo} alt="MonkeyPlan" className="w-full h-full object-contain" />
             </div>
             <div>
-              <span className="font-bold text-2xl tracking-tight">MonkeyPlan</span>
-              <span className="text-xs ml-2 px-2 py-0.5 rounded-full bg-white/20 backdrop-blur-sm">Beta</span>
+              <span className="font-bold text-3xl tracking-tight">MonkeyPlan</span>
+              <span className="ml-3 px-3 py-1 text-xs rounded-full bg-yellow-400/30 backdrop-blur-sm text-yellow-100 border border-yellow-300/30">
+                Beta v.23
+              </span>
             </div>
           </div>
           
-          {/* Main Hero Text */}
-          <div className="space-y-8">
-            <div className="space-y-4">
-              <h1 className="text-5xl font-bold leading-tight">
-                La piattaforma
-                <br />
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 to-blue-200">
-                  riparazioni
-                </span>
-                <br />
-                del futuro
+          <div className="flex flex-col items-center space-y-8">
+            <AnimatedMonkey />
+            
+            <div className="text-center space-y-4 max-w-md">
+              <h1 className="text-4xl font-bold leading-tight">
+                Gestione 
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 via-orange-300 to-yellow-200"> riparazioni </span>
+                intelligente
               </h1>
-              <p className="text-lg text-blue-100/80 max-w-md leading-relaxed">
-                Gestisci riparazioni, magazzino, clienti e fatturazione in un'unica soluzione enterprise progettata per il 2025.
+              <p className="text-lg text-white/80 leading-relaxed">
+                La piattaforma enterprise per gestire riparazioni, magazzino, clienti e fatturazione in un'unica soluzione.
               </p>
             </div>
+          </div>
+          
+          <div className="grid grid-cols-2 gap-4">
+            <div className="p-4 rounded-2xl bg-white/10 backdrop-blur-sm border border-white/20">
+              <div className="flex items-center gap-3 mb-2">
+                <div className="p-2 rounded-xl bg-yellow-400/30">
+                  <Zap className="h-5 w-5 text-yellow-200" />
+                </div>
+                <span className="font-semibold">Real-time</span>
+              </div>
+              <p className="text-sm text-white/70">Aggiornamenti istantanei</p>
+            </div>
             
-            {/* Feature Cards */}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="group p-4 rounded-2xl bg-white/10 backdrop-blur-sm border border-white/20 hover:bg-white/15 transition-all duration-300">
-                <div className="flex items-center gap-3 mb-2">
-                  <div className="p-2 rounded-xl bg-cyan-400/20">
-                    <Zap className="h-5 w-5 text-cyan-300" />
-                  </div>
-                  <span className="font-semibold">Real-time</span>
+            <div className="p-4 rounded-2xl bg-white/10 backdrop-blur-sm border border-white/20">
+              <div className="flex items-center gap-3 mb-2">
+                <div className="p-2 rounded-xl bg-emerald-400/30">
+                  <Shield className="h-5 w-5 text-emerald-200" />
                 </div>
-                <p className="text-sm text-blue-100/70">Aggiornamenti istantanei su ogni riparazione</p>
+                <span className="font-semibold">Sicuro</span>
               </div>
-              
-              <div className="group p-4 rounded-2xl bg-white/10 backdrop-blur-sm border border-white/20 hover:bg-white/15 transition-all duration-300">
-                <div className="flex items-center gap-3 mb-2">
-                  <div className="p-2 rounded-xl bg-emerald-400/20">
-                    <Shield className="h-5 w-5 text-emerald-300" />
-                  </div>
-                  <span className="font-semibold">Sicuro</span>
+              <p className="text-sm text-white/70">Dati sempre protetti</p>
+            </div>
+            
+            <div className="p-4 rounded-2xl bg-white/10 backdrop-blur-sm border border-white/20">
+              <div className="flex items-center gap-3 mb-2">
+                <div className="p-2 rounded-xl bg-orange-400/30">
+                  <BarChart3 className="h-5 w-5 text-orange-200" />
                 </div>
-                <p className="text-sm text-blue-100/70">Dati protetti con crittografia avanzata</p>
+                <span className="font-semibold">Analytics</span>
               </div>
-              
-              <div className="group p-4 rounded-2xl bg-white/10 backdrop-blur-sm border border-white/20 hover:bg-white/15 transition-all duration-300">
-                <div className="flex items-center gap-3 mb-2">
-                  <div className="p-2 rounded-xl bg-violet-400/20">
-                    <BarChart3 className="h-5 w-5 text-violet-300" />
-                  </div>
-                  <span className="font-semibold">Analytics</span>
+              <p className="text-sm text-white/70">Dashboard avanzata</p>
+            </div>
+            
+            <div className="p-4 rounded-2xl bg-white/10 backdrop-blur-sm border border-white/20">
+              <div className="flex items-center gap-3 mb-2">
+                <div className="p-2 rounded-xl bg-cyan-400/30">
+                  <Smartphone className="h-5 w-5 text-cyan-200" />
                 </div>
-                <p className="text-sm text-blue-100/70">Dashboard avanzata con insights</p>
+                <span className="font-semibold">Mobile</span>
               </div>
-              
-              <div className="group p-4 rounded-2xl bg-white/10 backdrop-blur-sm border border-white/20 hover:bg-white/15 transition-all duration-300">
-                <div className="flex items-center gap-3 mb-2">
-                  <div className="p-2 rounded-xl bg-amber-400/20">
-                    <Smartphone className="h-5 w-5 text-amber-300" />
-                  </div>
-                  <span className="font-semibold">Mobile</span>
-                </div>
-                <p className="text-sm text-blue-100/70">Accesso da qualsiasi dispositivo</p>
-              </div>
+              <p className="text-sm text-white/70">Accesso ovunque</p>
             </div>
           </div>
           
-          {/* Bottom Stats */}
-          <div className="flex items-center gap-8">
-            <div>
-              <div className="text-3xl font-bold">10K+</div>
-              <div className="text-sm text-blue-100/70">Riparazioni gestite</div>
-            </div>
-            <div className="w-px h-12 bg-white/20" />
-            <div>
-              <div className="text-3xl font-bold">500+</div>
-              <div className="text-sm text-blue-100/70">Centri attivi</div>
-            </div>
-            <div className="w-px h-12 bg-white/20" />
-            <div>
-              <div className="text-3xl font-bold">99.9%</div>
-              <div className="text-sm text-blue-100/70">Uptime garantito</div>
-            </div>
+          <div className="absolute top-24 right-12 p-3 rounded-2xl bg-orange-400/20 backdrop-blur-sm border border-orange-300/30 animate-bounce" style={{ animationDuration: '3s' }}>
+            <Tablet className="h-6 w-6 text-orange-200" />
           </div>
-        </div>
-        
-        {/* Floating Icons */}
-        <div className="absolute top-32 right-16 p-3 rounded-2xl bg-white/10 backdrop-blur-sm border border-white/20 animate-bounce" style={{ animationDuration: '3s' }}>
-          <CircuitBoard className="h-6 w-6 text-cyan-300" />
-        </div>
-        <div className="absolute bottom-40 left-20 p-3 rounded-2xl bg-white/10 backdrop-blur-sm border border-white/20 animate-bounce" style={{ animationDuration: '4s', animationDelay: '1s' }}>
-          <Cpu className="h-6 w-6 text-violet-300" />
-        </div>
-        <div className="absolute top-1/2 right-24 p-3 rounded-2xl bg-white/10 backdrop-blur-sm border border-white/20 animate-bounce" style={{ animationDuration: '3.5s', animationDelay: '0.5s' }}>
-          <Settings2 className="h-6 w-6 text-emerald-300" />
+          <div className="absolute bottom-32 left-8 p-3 rounded-2xl bg-yellow-400/20 backdrop-blur-sm border border-yellow-300/30 animate-bounce" style={{ animationDuration: '4s', animationDelay: '1s' }}>
+            <Headphones className="h-6 w-6 text-yellow-200" />
+          </div>
         </div>
       </div>
       
-      {/* Right Panel - Auth Forms */}
       <div className="w-full lg:w-1/2 flex items-center justify-center p-6 lg:p-12">
         <div className="w-full max-w-md">
-          {/* Mobile Logo */}
           <div className="lg:hidden flex items-center justify-center gap-3 mb-8">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-700">
-              <Wrench className="h-6 w-6 text-white" />
+            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-500 p-2 overflow-hidden">
+              <img src={monkeyLogo} alt="MonkeyPlan" className="w-full h-full object-contain" />
             </div>
             <div>
               <span className="font-bold text-2xl text-slate-900 dark:text-white">MonkeyPlan</span>
-              <span className="text-xs ml-2 px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300">Beta</span>
+              <span className="text-xs ml-2 px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-900 text-emerald-700 dark:text-emerald-300">Beta</span>
             </div>
           </div>
           
@@ -262,12 +336,11 @@ export default function AuthPage() {
               </TabsTrigger>
             </TabsList>
 
-            {/* LOGIN TAB */}
             <TabsContent value="login" className="mt-0">
               <div className="space-y-6">
                 <div className="text-center space-y-2">
-                  <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 mb-2">
-                    <Sparkles className="h-8 w-8 text-white" />
+                  <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-500 mb-2 overflow-hidden p-2">
+                    <img src={monkeyLogo} alt="" className="w-full h-full object-contain" />
                   </div>
                   <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Bentornato</h1>
                   <p className="text-sm text-slate-500 dark:text-slate-400">
@@ -286,7 +359,7 @@ export default function AuthPage() {
                         placeholder="nome@azienda.it"
                         value={loginData.username}
                         onChange={(e) => setLoginData({ ...loginData, username: e.target.value })}
-                        className="pl-12 h-12 rounded-xl border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 focus:bg-white dark:focus:bg-slate-800 transition-colors"
+                        className="pl-12 h-12 rounded-xl border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 focus:bg-white dark:focus:bg-slate-800 focus:border-emerald-500 transition-colors"
                         required
                       />
                     </div>
@@ -302,14 +375,14 @@ export default function AuthPage() {
                         placeholder="La tua password"
                         value={loginData.password}
                         onChange={(e) => setLoginData({ ...loginData, password: e.target.value })}
-                        className="pl-12 h-12 rounded-xl border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 focus:bg-white dark:focus:bg-slate-800 transition-colors"
+                        className="pl-12 h-12 rounded-xl border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 focus:bg-white dark:focus:bg-slate-800 focus:border-emerald-500 transition-colors"
                         required
                       />
                     </div>
                   </div>
                   <Button
                     type="submit"
-                    className="w-full h-12 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold shadow-lg shadow-blue-500/25 transition-all duration-300"
+                    className="w-full h-12 rounded-xl bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 hover:from-emerald-600 hover:via-teal-600 hover:to-cyan-600 text-white font-semibold shadow-lg shadow-emerald-500/25 transition-all duration-300"
                     disabled={loginMutation.isPending}
                     data-testid="button-login"
                   >
@@ -333,18 +406,17 @@ export default function AuthPage() {
                     Connessione sicura
                   </span>
                   <span className="flex items-center gap-2">
-                    <Zap className="h-4 w-4 text-amber-500" />
+                    <Zap className="h-4 w-4 text-orange-500" />
                     Supporto 24/7
                   </span>
                 </div>
               </div>
             </TabsContent>
 
-            {/* CUSTOMER TAB */}
             <TabsContent value="customer" className="mt-0">
               <div className="space-y-6">
                 <div className="text-center space-y-2">
-                  <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-cyan-500 to-blue-600 mb-2">
+                  <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-cyan-500 to-teal-500 mb-2">
                     <User className="h-8 w-8 text-white" />
                   </div>
                   <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Crea Account</h1>
@@ -364,7 +436,7 @@ export default function AuthPage() {
                         placeholder="Mario Rossi"
                         value={customerData.fullName}
                         onChange={(e) => setCustomerData({ ...customerData, fullName: e.target.value })}
-                        className="pl-12 h-12 rounded-xl border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 focus:bg-white dark:focus:bg-slate-800 transition-colors"
+                        className="pl-12 h-12 rounded-xl border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 focus:bg-white dark:focus:bg-slate-800 focus:border-teal-500 transition-colors"
                         required
                       />
                     </div>
@@ -380,7 +452,7 @@ export default function AuthPage() {
                         placeholder="mario@esempio.it"
                         value={customerData.email}
                         onChange={(e) => setCustomerData({ ...customerData, email: e.target.value })}
-                        className="pl-12 h-12 rounded-xl border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 focus:bg-white dark:focus:bg-slate-800 transition-colors"
+                        className="pl-12 h-12 rounded-xl border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 focus:bg-white dark:focus:bg-slate-800 focus:border-teal-500 transition-colors"
                         required
                       />
                     </div>
@@ -394,7 +466,7 @@ export default function AuthPage() {
                         placeholder="mariorossi"
                         value={customerData.username}
                         onChange={(e) => setCustomerData({ ...customerData, username: e.target.value })}
-                        className="h-12 rounded-xl border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 focus:bg-white dark:focus:bg-slate-800 transition-colors"
+                        className="h-12 rounded-xl border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 focus:bg-white dark:focus:bg-slate-800 focus:border-teal-500 transition-colors"
                         required
                       />
                     </div>
@@ -407,14 +479,14 @@ export default function AuthPage() {
                         placeholder="Min. 6 caratteri"
                         value={customerData.password}
                         onChange={(e) => setCustomerData({ ...customerData, password: e.target.value })}
-                        className="h-12 rounded-xl border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 focus:bg-white dark:focus:bg-slate-800 transition-colors"
+                        className="h-12 rounded-xl border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 focus:bg-white dark:focus:bg-slate-800 focus:border-teal-500 transition-colors"
                         required
                       />
                     </div>
                   </div>
                   <Button
                     type="submit"
-                    className="w-full h-12 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 text-white font-semibold shadow-lg shadow-cyan-500/25 transition-all duration-300"
+                    className="w-full h-12 rounded-xl bg-gradient-to-r from-cyan-500 to-teal-500 hover:from-cyan-600 hover:to-teal-600 text-white font-semibold shadow-lg shadow-cyan-500/25 transition-all duration-300"
                     disabled={registerMutation.isPending}
                     data-testid="button-customer-register"
                   >
@@ -434,7 +506,6 @@ export default function AuthPage() {
               </div>
             </TabsContent>
 
-            {/* BUSINESS/RESELLER TAB */}
             <TabsContent value="reseller" className="mt-0">
               <div className="space-y-5">
                 {resellerPending ? (
@@ -460,7 +531,7 @@ export default function AuthPage() {
                 ) : (
                   <>
                     <div className="text-center space-y-2">
-                      <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-violet-500 to-purple-600 mb-2">
+                      <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-orange-500 to-amber-500 mb-2">
                         <Store className="h-8 w-8 text-white" />
                       </div>
                       <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Account Business</h1>
@@ -490,7 +561,7 @@ export default function AuthPage() {
                               placeholder="Nome Cognome"
                               value={resellerData.fullName}
                               onChange={(e) => setResellerData({ ...resellerData, fullName: e.target.value })}
-                              className="pl-10 h-11 rounded-xl border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 text-sm"
+                              className="pl-10 h-11 rounded-xl border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 text-sm focus:border-orange-500"
                               required
                             />
                           </div>
@@ -505,7 +576,7 @@ export default function AuthPage() {
                               placeholder="+39 333..."
                               value={resellerData.phone}
                               onChange={(e) => setResellerData({ ...resellerData, phone: e.target.value })}
-                              className="pl-10 h-11 rounded-xl border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 text-sm"
+                              className="pl-10 h-11 rounded-xl border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 text-sm focus:border-orange-500"
                             />
                           </div>
                         </div>
@@ -521,7 +592,7 @@ export default function AuthPage() {
                             placeholder="Nome Azienda S.r.l."
                             value={resellerData.ragioneSociale}
                             onChange={(e) => setResellerData({ ...resellerData, ragioneSociale: e.target.value })}
-                            className="pl-10 h-11 rounded-xl border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 text-sm"
+                            className="pl-10 h-11 rounded-xl border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 text-sm focus:border-orange-500"
                           />
                         </div>
                       </div>
@@ -537,7 +608,7 @@ export default function AuthPage() {
                               placeholder="IT12345678901"
                               value={resellerData.partitaIva}
                               onChange={(e) => setResellerData({ ...resellerData, partitaIva: e.target.value })}
-                              className="pl-10 h-11 rounded-xl border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 text-sm"
+                              className="pl-10 h-11 rounded-xl border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 text-sm focus:border-orange-500"
                             />
                           </div>
                         </div>
@@ -552,7 +623,7 @@ export default function AuthPage() {
                               placeholder="info@azienda.it"
                               value={resellerData.email}
                               onChange={(e) => setResellerData({ ...resellerData, email: e.target.value })}
-                              className="pl-10 h-11 rounded-xl border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 text-sm"
+                              className="pl-10 h-11 rounded-xl border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 text-sm focus:border-orange-500"
                               required
                             />
                           </div>
@@ -568,7 +639,7 @@ export default function AuthPage() {
                             placeholder="username"
                             value={resellerData.username}
                             onChange={(e) => setResellerData({ ...resellerData, username: e.target.value })}
-                            className="h-11 rounded-xl border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 text-sm"
+                            className="h-11 rounded-xl border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 text-sm focus:border-orange-500"
                             required
                           />
                         </div>
@@ -581,7 +652,7 @@ export default function AuthPage() {
                             placeholder="Min. 6 caratteri"
                             value={resellerData.password}
                             onChange={(e) => setResellerData({ ...resellerData, password: e.target.value })}
-                            className="h-11 rounded-xl border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 text-sm"
+                            className="h-11 rounded-xl border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 text-sm focus:border-orange-500"
                             required
                           />
                         </div>
@@ -589,7 +660,7 @@ export default function AuthPage() {
                       
                       <Button
                         type="submit"
-                        className="w-full h-12 rounded-xl bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700 text-white font-semibold shadow-lg shadow-violet-500/25 transition-all duration-300"
+                        className="w-full h-12 rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-semibold shadow-lg shadow-orange-500/25 transition-all duration-300"
                         disabled={resellerRegisterMutation.isPending}
                         data-testid="button-reseller-register"
                       >
@@ -612,7 +683,6 @@ export default function AuthPage() {
             </TabsContent>
           </Tabs>
           
-          {/* Footer */}
           <div className="mt-8 text-center">
             <p className="text-xs text-slate-400 dark:text-slate-500">
               2025 MonkeyPlan - Gestione Riparazioni Elettroniche
