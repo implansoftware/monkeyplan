@@ -1,11 +1,17 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { useRoute, Link } from "wouter";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { 
   Receipt, 
   ArrowLeft,
@@ -17,10 +23,13 @@ import {
   Building2,
   User,
   Calendar,
-  Package
+  Package,
+  Printer,
+  Ban
 } from "lucide-react";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
+import { useState } from "react";
 
 interface TransactionDetail {
   transaction: {
@@ -63,6 +72,13 @@ interface TransactionDetail {
 export default function ResellerPosTransactionDetail() {
   const [, params] = useRoute("/reseller/pos/transaction/:id");
   const transactionId = params?.id;
+  const { toast } = useToast();
+  
+  const [voidDialogOpen, setVoidDialogOpen] = useState(false);
+  const [refundDialogOpen, setRefundDialogOpen] = useState(false);
+  const [voidReason, setVoidReason] = useState("");
+  const [refundReason, setRefundReason] = useState("");
+  const [refundAmount, setRefundAmount] = useState("");
 
   const { data: detail, isLoading } = useQuery<TransactionDetail>({
     queryKey: ["/api/reseller/pos/transaction", transactionId],
@@ -73,6 +89,72 @@ export default function ResellerPosTransactionDetail() {
     },
     enabled: !!transactionId,
   });
+
+  const voidMutation = useMutation({
+    mutationFn: async (reason: string) => {
+      const res = await apiRequest("POST", `/api/reseller/pos/transaction/${transactionId}/void`, { reason });
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/reseller/pos/transaction", transactionId] });
+      queryClient.invalidateQueries({ queryKey: ["/api/reseller/pos/transactions"] });
+      setVoidDialogOpen(false);
+      setVoidReason("");
+      toast({
+        title: "Vendita annullata",
+        description: "La transazione è stata annullata con successo",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Errore",
+        description: error.message || "Impossibile annullare la transazione",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const refundMutation = useMutation({
+    mutationFn: async ({ amount, reason }: { amount: number; reason: string }) => {
+      const res = await apiRequest("POST", `/api/reseller/pos/transaction/${transactionId}/refund`, { amount, reason });
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/reseller/pos/transaction", transactionId] });
+      queryClient.invalidateQueries({ queryKey: ["/api/reseller/pos/transactions"] });
+      setRefundDialogOpen(false);
+      setRefundReason("");
+      setRefundAmount("");
+      toast({
+        title: "Rimborso effettuato",
+        description: "Il rimborso è stato registrato con successo",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Errore",
+        description: error.message || "Impossibile effettuare il rimborso",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handlePrintReceipt = async () => {
+    try {
+      const res = await fetch(`/api/reseller/pos/transaction/${transactionId}/receipt`, { credentials: "include" });
+      if (!res.ok) throw new Error("Errore generazione scontrino");
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const win = window.open(url, "_blank");
+      if (win) win.print();
+    } catch (error) {
+      toast({
+        title: "Errore",
+        description: "Impossibile stampare lo scontrino",
+        variant: "destructive",
+      });
+    }
+  };
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("it-IT", {
@@ -141,7 +223,7 @@ export default function ResellerPosTransactionDetail() {
 
   return (
     <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-4">
         <div className="flex items-center gap-4">
           <Link href="/reseller/pos/sales-history">
             <Button variant="ghost" size="sm" data-testid="button-back">
@@ -157,7 +239,44 @@ export default function ResellerPosTransactionDetail() {
             <p className="text-muted-foreground">Dettaglio transazione POS</p>
           </div>
         </div>
-        {getStatusBadge(transaction.status)}
+        <div className="flex items-center gap-2 flex-wrap">
+          {getStatusBadge(transaction.status)}
+          {transaction.status === "completed" && (
+            <>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={handlePrintReceipt}
+                data-testid="button-print-receipt"
+              >
+                <Printer className="w-4 h-4 mr-2" />
+                Stampa
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                data-testid="button-refund"
+                onClick={() => {
+                  setRefundAmount((transaction.total / 100).toFixed(2));
+                  setRefundDialogOpen(true);
+                }}
+              >
+                <RotateCcw className="w-4 h-4 mr-2" />
+                Reso
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                data-testid="button-void"
+                className="text-destructive border-destructive hover:bg-destructive/10"
+                onClick={() => setVoidDialogOpen(true)}
+              >
+                <Ban className="w-4 h-4 mr-2" />
+                Annulla
+              </Button>
+            </>
+          )}
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -331,6 +450,93 @@ export default function ResellerPosTransactionDetail() {
           )}
         </div>
       </div>
+
+      <Dialog open={voidDialogOpen} onOpenChange={setVoidDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Annulla Transazione</DialogTitle>
+            <DialogDescription>
+              Stai per annullare la transazione {transaction.transactionNumber}. Questa azione ripristinerà lo stock dei prodotti.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="void-reason">Motivo dell'annullamento *</Label>
+              <Textarea
+                id="void-reason"
+                placeholder="Inserisci il motivo dell'annullamento..."
+                value={voidReason}
+                onChange={(e) => setVoidReason(e.target.value)}
+                data-testid="input-void-reason"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setVoidDialogOpen(false)} data-testid="button-cancel-void">
+              Annulla
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => voidMutation.mutate(voidReason)}
+              disabled={!voidReason.trim() || voidMutation.isPending}
+              data-testid="button-confirm-void"
+            >
+              {voidMutation.isPending ? "Annullamento..." : "Conferma Annullamento"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={refundDialogOpen} onOpenChange={setRefundDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Rimborso Transazione</DialogTitle>
+            <DialogDescription>
+              Inserisci l'importo da rimborsare. Per un rimborso totale, lascia l'importo completo ({formatCurrency(transaction.total)}).
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="refund-amount">Importo (EUR)</Label>
+              <Input
+                id="refund-amount"
+                type="number"
+                step="0.01"
+                min="0.01"
+                max={(transaction.total / 100).toFixed(2)}
+                value={refundAmount}
+                onChange={(e) => setRefundAmount(e.target.value)}
+                data-testid="input-refund-amount"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="refund-reason">Motivo del rimborso</Label>
+              <Textarea
+                id="refund-reason"
+                placeholder="Inserisci il motivo del rimborso..."
+                value={refundReason}
+                onChange={(e) => setRefundReason(e.target.value)}
+                data-testid="input-refund-reason"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setRefundDialogOpen(false)} data-testid="button-cancel-refund">
+              Annulla
+            </Button>
+            <Button
+              onClick={() => refundMutation.mutate({ 
+                amount: Math.round(parseFloat(refundAmount) * 100), 
+                reason: refundReason 
+              })}
+              disabled={!refundAmount || isNaN(parseFloat(refundAmount)) || parseFloat(refundAmount) <= 0 || refundMutation.isPending}
+              data-testid="button-confirm-refund"
+            >
+              {refundMutation.isPending ? "Rimborso..." : "Conferma Rimborso"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
