@@ -206,6 +206,7 @@ import RepairCenterSupplierOrders from "@/pages/repair-center/supplier-orders";
 import RepairCenterPos from "@/pages/repair-center/pos";
 import PosTransactionDetail from "@/pages/repair-center/pos-transaction-detail";
 import SalesHistory from "@/pages/repair-center/pos-invoices";
+import PosSessions from "@/pages/repair-center/pos-sessions";
 
 // Repair Center HR pages
 import RepairCenterHrDashboard from "@/pages/repair-center/hr/index";
@@ -470,6 +471,7 @@ function Router() {
       <ProtectedRoute path="/repair-center/quotes" component={QuotesList} />
       <ProtectedRoute path="/repair-center/pos" component={RepairCenterPos} />
       <ProtectedRoute path="/repair-center/pos/sales-history" component={SalesHistory} />
+      <ProtectedRoute path="/repair-center/pos/sessions" component={PosSessions} />
       <ProtectedRoute path="/repair-center/pos/transaction/:id" component={PosTransactionDetail} />
       
       {/* Customer routes */}

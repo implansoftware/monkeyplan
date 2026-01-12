@@ -1,0 +1,302 @@
+import { useQuery } from "@tanstack/react-query";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
+import { 
+  Clock, 
+  PlayCircle, 
+  StopCircle,
+  User,
+  Banknote,
+  TrendingUp,
+  ArrowLeft,
+  Receipt,
+  AlertTriangle,
+  CheckCircle
+} from "lucide-react";
+import { useState } from "react";
+import { format, isToday, isThisWeek, isThisMonth, startOfDay, startOfWeek, startOfMonth } from "date-fns";
+import { it } from "date-fns/locale";
+import { Link } from "wouter";
+
+interface PosSession {
+  id: string;
+  repairCenterId: string;
+  operatorId: string;
+  status: string;
+  openedAt: string;
+  closedAt: string | null;
+  openingCash: number;
+  closingCash: number | null;
+  expectedCash: number | null;
+  cashDifference: number | null;
+  totalSales: number | null;
+  totalTransactions: number | null;
+  totalCashSales: number | null;
+  totalCardSales: number | null;
+  totalRefunds: number | null;
+  closingNotes: string | null;
+}
+
+export default function PosSessionsPage() {
+  const [period, setPeriod] = useState("all");
+
+  const { data: sessions, isLoading } = useQuery<PosSession[]>({
+    queryKey: ["/api/repair-center/pos/sessions"],
+  });
+
+  const formatCurrency = (cents: number | null) => {
+    if (cents === null || cents === undefined) return "€ 0,00";
+    return new Intl.NumberFormat("it-IT", {
+      style: "currency",
+      currency: "EUR",
+    }).format(cents / 100);
+  };
+
+  const filterByPeriod = (session: PosSession) => {
+    const date = new Date(session.openedAt);
+    switch (period) {
+      case "today":
+        return isToday(date);
+      case "week":
+        return isThisWeek(date, { locale: it });
+      case "month":
+        return isThisMonth(date);
+      default:
+        return true;
+    }
+  };
+
+  const filteredSessions = sessions?.filter(filterByPeriod) || [];
+
+  const stats = {
+    totalSessions: filteredSessions.length,
+    openSessions: filteredSessions.filter(s => s.status === "open").length,
+    totalRevenue: filteredSessions.reduce((sum, s) => sum + (s.totalSales || 0), 0),
+    totalTransactions: filteredSessions.reduce((sum, s) => sum + (s.totalTransactions || 0), 0),
+  };
+
+  if (isLoading) {
+    return (
+      <div className="p-6 space-y-6">
+        <div className="flex items-center gap-4">
+          <Skeleton className="h-10 w-10" />
+          <Skeleton className="h-8 w-64" />
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          {[1, 2, 3, 4].map((i) => (
+            <Skeleton key={i} className="h-24" />
+          ))}
+        </div>
+        <Skeleton className="h-96" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="p-6 space-y-6">
+      <div className="flex items-center justify-between flex-wrap gap-4">
+        <div className="flex items-center gap-4">
+          <Link href="/repair-center/pos">
+            <Button variant="ghost" size="icon" data-testid="button-back">
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
+          </Link>
+          <div>
+            <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-500 to-cyan-500 bg-clip-text text-transparent">
+              Storico Sessioni Cassa
+            </h1>
+            <p className="text-muted-foreground">
+              Cronologia aperture e chiusure cassa
+            </p>
+          </div>
+        </div>
+        <Select value={period} onValueChange={setPeriod}>
+          <SelectTrigger className="w-40" data-testid="select-period">
+            <SelectValue placeholder="Periodo" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Tutte</SelectItem>
+            <SelectItem value="today">Oggi</SelectItem>
+            <SelectItem value="week">Settimana</SelectItem>
+            <SelectItem value="month">Mese</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <Card className="border-blue-500/20 bg-gradient-to-br from-blue-500/5 to-cyan-500/5">
+          <CardHeader className="flex flex-row items-center justify-between gap-2 pb-2">
+            <CardTitle className="text-sm font-medium">Sessioni Totali</CardTitle>
+            <Clock className="h-4 w-4 text-blue-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.totalSessions}</div>
+            {stats.openSessions > 0 && (
+              <p className="text-xs text-green-600">{stats.openSessions} attiva</p>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card className="border-green-500/20 bg-gradient-to-br from-green-500/5 to-emerald-500/5">
+          <CardHeader className="flex flex-row items-center justify-between gap-2 pb-2">
+            <CardTitle className="text-sm font-medium">Incasso Totale</CardTitle>
+            <TrendingUp className="h-4 w-4 text-green-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{formatCurrency(stats.totalRevenue)}</div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-purple-500/20 bg-gradient-to-br from-purple-500/5 to-pink-500/5">
+          <CardHeader className="flex flex-row items-center justify-between gap-2 pb-2">
+            <CardTitle className="text-sm font-medium">Transazioni</CardTitle>
+            <Receipt className="h-4 w-4 text-purple-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.totalTransactions}</div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-orange-500/20 bg-gradient-to-br from-orange-500/5 to-amber-500/5">
+          <CardHeader className="flex flex-row items-center justify-between gap-2 pb-2">
+            <CardTitle className="text-sm font-medium">Media per Sessione</CardTitle>
+            <Banknote className="h-4 w-4 text-orange-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {stats.totalSessions > 0 
+                ? formatCurrency(stats.totalRevenue / stats.totalSessions) 
+                : "€ 0,00"}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Clock className="h-5 w-5 text-cyan-500" />
+            Timeline Sessioni
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {filteredSessions.map((session) => (
+              <div 
+                key={session.id} 
+                className="p-4 rounded-lg border bg-muted/30"
+                data-testid={`row-session-${session.id}`}
+              >
+                <div className="flex items-start justify-between gap-4 flex-wrap">
+                  <div className="flex items-start gap-3">
+                    {session.status === "open" ? (
+                      <div className="mt-1">
+                        <PlayCircle className="h-6 w-6 text-green-500" />
+                      </div>
+                    ) : (
+                      <div className="mt-1">
+                        <StopCircle className="h-6 w-6 text-muted-foreground" />
+                      </div>
+                    )}
+                    <div>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        {session.status === "open" ? (
+                          <Badge variant="default" className="bg-green-500">Aperta</Badge>
+                        ) : (
+                          <Badge variant="secondary">Chiusa</Badge>
+                        )}
+                        <span className="text-sm font-medium">
+                          {format(new Date(session.openedAt), "EEEE dd MMMM yyyy", { locale: it })}
+                        </span>
+                      </div>
+                      <div className="text-sm text-muted-foreground mt-1">
+                        <span className="font-medium">Apertura:</span> {format(new Date(session.openedAt), "HH:mm", { locale: it })}
+                        {session.closedAt && (
+                          <>
+                            <span className="mx-2">→</span>
+                            <span className="font-medium">Chiusura:</span> {format(new Date(session.closedAt), "HH:mm", { locale: it })}
+                          </>
+                        )}
+                      </div>
+                      <div className="text-sm text-muted-foreground mt-1 flex items-center gap-1">
+                        <Banknote className="h-3 w-3" />
+                        Fondo cassa iniziale: {formatCurrency(session.openingCash)}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="text-right min-w-[180px]">
+                    {session.status === "closed" && (
+                      <>
+                        <div className="text-lg font-bold text-green-600">
+                          {formatCurrency(session.totalSales)}
+                        </div>
+                        <div className="text-sm text-muted-foreground">
+                          {session.totalTransactions || 0} transazioni
+                        </div>
+                        {session.cashDifference !== null && session.cashDifference !== 0 && (
+                          <div className={`text-sm flex items-center justify-end gap-1 mt-1 ${
+                            session.cashDifference > 0 ? "text-green-600" : "text-destructive"
+                          }`}>
+                            {session.cashDifference > 0 ? (
+                              <CheckCircle className="h-3 w-3" />
+                            ) : (
+                              <AlertTriangle className="h-3 w-3" />
+                            )}
+                            Differenza: {formatCurrency(session.cashDifference)}
+                          </div>
+                        )}
+                      </>
+                    )}
+                    {session.status === "open" && (
+                      <div className="text-sm text-green-600 font-medium">
+                        In corso...
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {session.status === "closed" && (session.totalCashSales || session.totalCardSales || session.totalRefunds) && (
+                  <div className="mt-3 pt-3 border-t flex items-center gap-4 flex-wrap text-sm">
+                    {session.totalCashSales !== null && session.totalCashSales > 0 && (
+                      <div className="flex items-center gap-1">
+                        <Banknote className="h-4 w-4 text-green-600" />
+                        <span>Contanti: {formatCurrency(session.totalCashSales)}</span>
+                      </div>
+                    )}
+                    {session.totalCardSales !== null && session.totalCardSales > 0 && (
+                      <div className="flex items-center gap-1">
+                        <Receipt className="h-4 w-4 text-blue-600" />
+                        <span>Carta: {formatCurrency(session.totalCardSales)}</span>
+                      </div>
+                    )}
+                    {session.totalRefunds !== null && session.totalRefunds > 0 && (
+                      <div className="flex items-center gap-1 text-destructive">
+                        <AlertTriangle className="h-4 w-4" />
+                        <span>Rimborsi: {formatCurrency(session.totalRefunds)}</span>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {session.closingNotes && (
+                  <div className="mt-3 pt-3 border-t text-sm text-muted-foreground">
+                    <span className="font-medium">Note:</span> {session.closingNotes}
+                  </div>
+                )}
+              </div>
+            ))}
+            {filteredSessions.length === 0 && (
+              <p className="text-center text-muted-foreground py-8">
+                Nessuna sessione trovata per il periodo selezionato
+              </p>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}

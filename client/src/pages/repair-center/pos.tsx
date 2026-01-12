@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useMemo } from "react";
-import { useLocation } from "wouter";
+import { useLocation, Link } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -543,6 +543,12 @@ export default function PosPage() {
             </span>
           </div>
           <div className="flex-1" />
+          <Link href="/repair-center/pos/sessions">
+            <Button variant="outline" size="sm" data-testid="button-session-history">
+              <History className="w-4 h-4 mr-1" />
+              Storico Sessioni
+            </Button>
+          </Link>
           <Button
             variant="outline"
             size="sm"
