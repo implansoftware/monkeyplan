@@ -33012,6 +33012,126 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Export sessioni POS per reseller
+  app.get("/api/reseller/pos/sessions/export", requireRole("reseller", "reseller_staff", "sub_reseller"), async (req, res) => {
+    try {
+      const { resellerId } = getEffectiveContext(req);
+      const { format, repairCenterId, period, status } = req.query;
+      
+      // Get accessible centers
+      const centers = await storage.getRepairCentersByReseller(resellerId);
+      if (repairCenterId) {
+        const validCenter = centers.find(c => c.id === repairCenterId);
+        if (!validCenter) {
+          return res.status(403).json({ error: "Non autorizzato" });
+        }
+      }
+      
+      // Fetch sessions from all centers or specific center
+      const targetCenters = repairCenterId ? [centers.find(c => c.id === repairCenterId)!] : centers;
+      let allSessions: any[] = [];
+      const centerMap = new Map(centers.map(c => [c.id, c.name]));
+      
+      for (const center of targetCenters) {
+        const sessions = await storage.getPosSessionsByRepairCenter(center.id, { limit: 500 });
+        allSessions.push(...sessions.map(s => ({ ...s, repairCenterName: center.name })));
+      }
+      
+      // Apply period filter
+      const now = new Date();
+      const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const startOfWeekDate = new Date(startOfToday);
+      const dayOfWeek = startOfWeekDate.getDay();
+      const diff = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+      startOfWeekDate.setDate(startOfWeekDate.getDate() - diff);
+      const startOfMonthDate = new Date(now.getFullYear(), now.getMonth(), 1);
+      
+      let sessions = allSessions.filter(session => {
+        const sessionDate = new Date(session.openedAt);
+        if (period === 'today' && sessionDate < startOfToday) return false;
+        if (period === 'week' && sessionDate < startOfWeekDate) return false;
+        if (period === 'month' && sessionDate < startOfMonthDate) return false;
+        if (status && session.status !== status) return false;
+        return true;
+      });
+      
+      // Get register names for all centers
+      const registerMap = new Map<string, string>();
+      for (const center of targetCenters) {
+        const registers = await storage.getPosRegistersByRepairCenter(center.id);
+        registers.forEach(r => registerMap.set(r.id, r.name));
+      }
+      
+      // Get operator names
+      const operatorIds = [...new Set(sessions.map(s => s.operatorId).filter(Boolean))];
+      const userMap = new Map<string, string>();
+      for (const opId of operatorIds) {
+        const user = await storage.getUser(opId);
+        if (user) userMap.set(opId, user.fullName);
+      }
+      
+      const formatCurrency = (cents: number) => `€ ${((cents || 0) / 100).toFixed(2)}`;
+      const formatDate = (date: Date) => new Date(date).toLocaleString('it-IT');
+      
+      const exportData = sessions.map(s => ({
+        'ID': s.id.substring(0, 8),
+        'Centro': (s as any).repairCenterName || centerMap.get(s.repairCenterId) || 'N/D',
+        'Cassa': s.registerId ? registerMap.get(s.registerId) || 'N/D' : 'Cassa Principale',
+        'Operatore': s.operatorId ? userMap.get(s.operatorId) || 'N/D' : 'N/D',
+        'Stato': s.status === 'open' ? 'Aperta' : 'Chiusa',
+        'Data Apertura': formatDate(s.openedAt),
+        'Data Chiusura': s.closedAt ? formatDate(s.closedAt) : '-',
+        'Fondo Cassa Iniziale': formatCurrency(s.openingCash),
+        'Fondo Cassa Finale': s.closingCash !== null ? formatCurrency(s.closingCash) : '-',
+        'Totale Vendite': formatCurrency(s.totalSales),
+        'Vendite Contanti': formatCurrency(s.totalCashSales),
+        'Vendite Carta': formatCurrency(s.totalCardSales),
+        'Transazioni': s.totalTransactions || 0,
+        'Rimborsi': formatCurrency(s.totalRefunds),
+        'Differenza Cassa': s.cashDifference !== null ? formatCurrency(s.cashDifference) : '-',
+      }));
+      
+      const stableHeaders = ['ID', 'Centro', 'Cassa', 'Operatore', 'Stato', 'Data Apertura', 'Data Chiusura', 'Fondo Cassa Iniziale', 'Fondo Cassa Finale', 'Totale Vendite', 'Vendite Contanti', 'Vendite Carta', 'Transazioni', 'Rimborsi', 'Differenza Cassa'];
+      
+      if (format === 'csv') {
+        const csvRows = [
+          stableHeaders.join(';'),
+          ...exportData.map(row => stableHeaders.map(h => `"${String((row as any)[h] ?? '').replace(/"/g, '""')}"`).join(';'))
+        ];
+        const csv = csvRows.join('\n');
+        res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+        res.setHeader('Content-Disposition', `attachment; filename="sessioni_rete_${new Date().toISOString().split('T')[0]}.csv"`);
+        res.send('\ufeff' + csv);
+      } else if (format === 'xlsx') {
+        const workbook = new ExcelJS.Workbook();
+        workbook.creator = 'MonkeyPlan POS';
+        const worksheet = workbook.addWorksheet('Sessioni Rete');
+        worksheet.addRow(stableHeaders);
+        worksheet.getRow(1).font = { bold: true };
+        worksheet.getRow(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF4A90A4' } };
+        worksheet.getRow(1).font = { bold: true, color: { argb: 'FFFFFFFF' } };
+        exportData.forEach(row => worksheet.addRow(stableHeaders.map(h => (row as any)[h] ?? '')));
+        worksheet.columns.forEach(col => {
+          let maxLen = 10;
+          col.eachCell?.({ includeEmpty: true }, cell => {
+            const len = cell.value ? String(cell.value).length : 10;
+            if (len > maxLen) maxLen = Math.min(len, 50);
+          });
+          col.width = maxLen + 2;
+        });
+        const buffer = await workbook.xlsx.writeBuffer();
+        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        res.setHeader('Content-Disposition', `attachment; filename="sessioni_rete_${new Date().toISOString().split('T')[0]}.xlsx"`);
+        res.send(Buffer.from(buffer));
+      } else {
+        res.status(400).json({ error: "Formato non supportato. Usa csv o xlsx" });
+      }
+    } catch (error: any) {
+      console.error("Error exporting sessions:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
     // Genera immagine barcode PNG
   app.get("/api/barcode/:code", async (req, res) => {
     try {

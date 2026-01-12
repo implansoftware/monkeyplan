@@ -7,6 +7,13 @@ import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { useToast } from "@/hooks/use-toast";
 import { 
   Clock, 
   Search,
@@ -14,7 +21,10 @@ import {
   PlayCircle,
   StopCircle,
   Building2,
-  Receipt
+  Receipt,
+  Download,
+  FileSpreadsheet,
+  FileText
 } from "lucide-react";
 import { useState } from "react";
 import { format } from "date-fns";
@@ -57,6 +67,8 @@ export default function ResellerPosSessions() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null);
+  const [isExporting, setIsExporting] = useState(false);
+  const { toast } = useToast();
 
   const { data: repairCenters } = useQuery<RepairCenter[]>({
     queryKey: ["/api/reseller/repair-centers"],
@@ -108,9 +120,46 @@ export default function ResellerPosSessions() {
            (s.registerName?.toLowerCase().includes(q));
   });
 
+  const handleExport = async (format: 'csv' | 'xlsx') => {
+    try {
+      setIsExporting(true);
+      const params = new URLSearchParams({ format });
+      if (repairCenterFilter !== "all") {
+        params.set("repairCenterId", repairCenterFilter);
+      }
+      if (statusFilter !== "all") {
+        params.set("status", statusFilter);
+      }
+      
+      const response = await fetch(`/api/reseller/pos/sessions/export?${params.toString()}`, {
+        credentials: "include"
+      });
+      
+      if (!response.ok) {
+        throw new Error("Errore nell'esportazione");
+      }
+      
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `sessioni_rete_${new Date().toISOString().split('T')[0]}.${format}`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+      
+      toast({ title: "Export completato", description: `File ${format.toUpperCase()} scaricato con successo` });
+    } catch (error) {
+      toast({ title: "Errore", description: "Impossibile esportare le sessioni", variant: "destructive" });
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   return (
     <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
           <h1 className="text-2xl font-bold flex items-center gap-2">
             <Clock className="w-6 h-6" />
@@ -118,6 +167,24 @@ export default function ResellerPosSessions() {
           </h1>
           <p className="text-muted-foreground">Visualizza tutte le sessioni cassa dei tuoi centri riparazione</p>
         </div>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" disabled={isExporting} data-testid="button-export-sessions">
+              <Download className="h-4 w-4 mr-2" />
+              {isExporting ? "Esportazione..." : "Esporta"}
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={() => handleExport('csv')} data-testid="menu-export-csv">
+              <FileText className="h-4 w-4 mr-2" />
+              Esporta CSV
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => handleExport('xlsx')} data-testid="menu-export-xlsx">
+              <FileSpreadsheet className="h-4 w-4 mr-2" />
+              Esporta Excel
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       <Card>
