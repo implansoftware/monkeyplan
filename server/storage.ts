@@ -10239,7 +10239,7 @@ export class DatabaseStorage implements IStorage {
     };
   }
 
-  async getPosDailySummary(repairCenterId: string, date: Date): Promise<{
+  async getPosDailySummary(repairCenterId: string, date: Date, registerId?: string): Promise<{
     date: Date;
     totalSales: number;
     transactionCount: number;
@@ -10254,6 +10254,7 @@ export class DatabaseStorage implements IStorage {
     endOfDay.setHours(23, 59, 59, 999);
 
     const transactions = await this.getPosTransactionsByRepairCenter(repairCenterId, {
+      registerId,
       startDate: startOfDay,
       endDate: endOfDay,
     });

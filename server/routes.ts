@@ -32237,7 +32237,8 @@ export function registerRoutes(app: Express): Server {
     try {
       const repairCenterId = req.user!.repairCenterId || req.user!.id;
       const date = req.query.date ? new Date(req.query.date as string) : new Date();
-      const stats = await storage.getPosDailySummary(repairCenterId, date);
+      const registerId = req.query.registerId as string | undefined;
+      const stats = await storage.getPosDailySummary(repairCenterId, date, registerId);
       res.json(stats);
     } catch (error: any) {
       res.status(500).json({ error: error.message });

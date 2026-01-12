@@ -276,7 +276,16 @@ export default function PosPage() {
   });
 
   const { data: dailyStats } = useQuery<DailyStats>({
-    queryKey: ["/api/repair-center/pos/stats/daily"],
+    queryKey: ["/api/repair-center/pos/stats/daily", selectedRegisterId],
+    queryFn: async () => {
+      const url = selectedRegisterId
+        ? `/api/repair-center/pos/stats/daily?registerId=${selectedRegisterId}`
+        : "/api/repair-center/pos/stats/daily";
+      const res = await fetch(url, { credentials: "include" });
+      if (!res.ok) throw new Error("Failed to fetch daily stats");
+      return res.json();
+    },
+    enabled: !!selectedRegisterId,
   });
 
   const { data: lastClosedSession } = useQuery<PosSession | null>({
@@ -389,7 +398,7 @@ export default function PosPage() {
       queryClient.invalidateQueries({ queryKey: ["/api/repair-center/pos/transactions", selectedRegisterId] });
       queryClient.invalidateQueries({ queryKey: ["/api/repair-center/pos/session/current", selectedRegisterId] });
       queryClient.invalidateQueries({ queryKey: ["/api/repair-center/pos/registers/sessions"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/repair-center/pos/stats/daily"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/repair-center/pos/stats/daily", selectedRegisterId] });
       setCart([]);
       setCashReceived("");
       setDiscountAmount("");
