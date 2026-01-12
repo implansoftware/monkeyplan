@@ -14,7 +14,8 @@ import {
   ArrowLeft,
   Receipt,
   AlertTriangle,
-  CheckCircle
+  CheckCircle,
+  Store
 } from "lucide-react";
 import { useState } from "react";
 import { format, isToday, isThisWeek, isThisMonth, startOfDay, startOfWeek, startOfMonth } from "date-fns";
@@ -25,6 +26,7 @@ interface PosSession {
   id: string;
   repairCenterId: string;
   operatorId: string;
+  registerId: string | null;
   status: string;
   openedAt: string;
   closedAt: string | null;
@@ -40,13 +42,28 @@ interface PosSession {
   closingNotes: string | null;
 }
 
+interface PosRegister {
+  id: string;
+  name: string;
+  isActive: boolean;
+  isDefault: boolean;
+}
+
 export default function PosSessionsPage() {
   const [period, setPeriod] = useState("all");
+  const [selectedRegisterId, setSelectedRegisterId] = useState<string>("");
+
+  const { data: registers = [] } = useQuery<PosRegister[]>({
+    queryKey: ["/api/repair-center/pos/registers"],
+  });
 
   const { data: sessions, isLoading } = useQuery<PosSession[]>({
-    queryKey: ["/api/repair-center/pos/sessions"],
+    queryKey: ["/api/repair-center/pos/sessions", selectedRegisterId],
     queryFn: async () => {
-      const res = await fetch("/api/repair-center/pos/sessions");
+      const url = selectedRegisterId 
+        ? `/api/repair-center/pos/sessions?registerId=${selectedRegisterId}`
+        : "/api/repair-center/pos/sessions";
+      const res = await fetch(url);
       if (!res.ok) throw new Error("Failed to fetch sessions");
       return res.json();
     },
@@ -120,17 +137,35 @@ export default function PosSessionsPage() {
             </p>
           </div>
         </div>
-        <Select value={period} onValueChange={setPeriod}>
-          <SelectTrigger className="w-40" data-testid="select-period">
-            <SelectValue placeholder="Periodo" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Tutte</SelectItem>
-            <SelectItem value="today">Oggi</SelectItem>
-            <SelectItem value="week">Settimana</SelectItem>
-            <SelectItem value="month">Mese</SelectItem>
-          </SelectContent>
-        </Select>
+        <div className="flex items-center gap-2">
+          {registers.length > 1 && (
+            <Select value={selectedRegisterId} onValueChange={setSelectedRegisterId}>
+              <SelectTrigger className="w-48" data-testid="select-register-filter">
+                <Store className="w-4 h-4 mr-1" />
+                <SelectValue placeholder="Tutte le casse" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">Tutte le casse</SelectItem>
+                {registers.map(reg => (
+                  <SelectItem key={reg.id} value={reg.id}>
+                    {reg.name} {reg.isDefault && "(Default)"}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+          <Select value={period} onValueChange={setPeriod}>
+            <SelectTrigger className="w-40" data-testid="select-period">
+              <SelectValue placeholder="Periodo" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Tutte</SelectItem>
+              <SelectItem value="today">Oggi</SelectItem>
+              <SelectItem value="week">Settimana</SelectItem>
+              <SelectItem value="month">Mese</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">

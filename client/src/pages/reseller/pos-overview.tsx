@@ -85,6 +85,7 @@ interface RepairCenter {
 interface PosSession {
   id: string;
   repairCenterName: string;
+  registerName: string | null;
   operatorName: string;
   status: string;
   openedAt: string;
@@ -405,7 +406,10 @@ export default function ResellerPosOverview() {
                     <StopCircle className="h-5 w-5 text-muted-foreground" />
                   )}
                   <div>
-                    <div className="font-medium">{session.repairCenterName}</div>
+                    <div className="font-medium">
+                      {session.repairCenterName}
+                      {session.registerName && <span className="text-muted-foreground font-normal"> · {session.registerName}</span>}
+                    </div>
                     <div className="text-xs text-muted-foreground">
                       Operatore: {session.operatorName}
                     </div>

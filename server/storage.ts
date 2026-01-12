@@ -122,7 +122,8 @@ import {
   hrAuditLogs, HrAuditLog, InsertHrAuditLog,
   posSessions, PosSession, InsertPosSession,
   posTransactions, PosTransaction, InsertPosTransaction, PosTransactionStatus,
-  posTransactionItems, PosTransactionItem, InsertPosTransactionItem
+  posTransactionItems, PosTransactionItem, InsertPosTransactionItem,
+  posRegisters, PosRegister, InsertPosRegister
 } from "@shared/schema";
 import { db, pool } from "./db";
 import { eq, and, or, desc, lt, gt, gte, lte, sql, not, inArray, isNull, ilike, SQL } from "drizzle-orm";
@@ -9870,6 +9871,58 @@ export class DatabaseStorage implements IStorage {
   // POS (Point of Sale) - Cassa Digitale
   // ==========================================
 
+  // POS Registers
+  async createPosRegister(data: InsertPosRegister): Promise<PosRegister> {
+    if (data.isDefault) {
+      await db.update(posRegisters)
+        .set({ isDefault: false, updatedAt: new Date() })
+        .where(eq(posRegisters.repairCenterId, data.repairCenterId));
+    }
+    const [register] = await db.insert(posRegisters).values(data).returning();
+    return register;
+  }
+
+  async getPosRegister(id: string): Promise<PosRegister | undefined> {
+    const [register] = await db.select().from(posRegisters).where(eq(posRegisters.id, id));
+    return register;
+  }
+
+  async getPosRegistersByRepairCenter(repairCenterId: string): Promise<PosRegister[]> {
+    return db.select().from(posRegisters)
+      .where(eq(posRegisters.repairCenterId, repairCenterId))
+      .orderBy(desc(posRegisters.isDefault), posRegisters.name);
+  }
+
+  async getDefaultPosRegister(repairCenterId: string): Promise<PosRegister | undefined> {
+    const [register] = await db.select().from(posRegisters)
+      .where(and(
+        eq(posRegisters.repairCenterId, repairCenterId),
+        eq(posRegisters.isDefault, true)
+      ))
+      .limit(1);
+    return register;
+  }
+
+  async updatePosRegister(id: string, updates: Partial<Pick<PosRegister, 'name' | 'description' | 'isActive' | 'isDefault'>>): Promise<PosRegister | undefined> {
+    if (updates.isDefault) {
+      const current = await this.getPosRegister(id);
+      if (current) {
+        await db.update(posRegisters)
+          .set({ isDefault: false, updatedAt: new Date() })
+          .where(eq(posRegisters.repairCenterId, current.repairCenterId));
+      }
+    }
+    const [register] = await db.update(posRegisters)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(posRegisters.id, id))
+      .returning();
+    return register;
+  }
+
+  async deletePosRegister(id: string): Promise<void> {
+    await db.delete(posRegisters).where(eq(posRegisters.id, id));
+  }
+
   // POS Sessions
   async createPosSession(data: InsertPosSession): Promise<PosSession> {
     const [session] = await db.insert(posSessions).values(data).returning();
@@ -9881,32 +9934,44 @@ export class DatabaseStorage implements IStorage {
     return session;
   }
 
-  async getOpenPosSession(repairCenterId: string): Promise<PosSession | undefined> {
+  async getOpenPosSession(repairCenterId: string, registerId?: string): Promise<PosSession | undefined> {
+    const conditions = [
+      eq(posSessions.repairCenterId, repairCenterId),
+      eq(posSessions.status, 'open')
+    ];
+    if (registerId) {
+      conditions.push(eq(posSessions.registerId, registerId));
+    }
     const [session] = await db.select().from(posSessions)
-      .where(and(
-        eq(posSessions.repairCenterId, repairCenterId),
-        eq(posSessions.status, 'open')
-      ))
+      .where(and(...conditions))
       .limit(1);
     return session;
   }
 
-  async getLastClosedPosSession(repairCenterId: string): Promise<PosSession | undefined> {
+  async getLastClosedPosSession(repairCenterId: string, registerId?: string): Promise<PosSession | undefined> {
+    const conditions = [
+      eq(posSessions.repairCenterId, repairCenterId),
+      eq(posSessions.status, 'closed')
+    ];
+    if (registerId) {
+      conditions.push(eq(posSessions.registerId, registerId));
+    }
     const [session] = await db.select().from(posSessions)
-      .where(and(
-        eq(posSessions.repairCenterId, repairCenterId),
-        eq(posSessions.status, 'closed')
-      ))
+      .where(and(...conditions))
       .orderBy(desc(posSessions.closedAt))
       .limit(1);
     return session;
   }
 
-  async getPosSessionsByRepairCenter(repairCenterId: string, limit = 50): Promise<PosSession[]> {
+  async getPosSessionsByRepairCenter(repairCenterId: string, options?: { limit?: number; registerId?: string }): Promise<PosSession[]> {
+    const conditions = [eq(posSessions.repairCenterId, repairCenterId)];
+    if (options?.registerId) {
+      conditions.push(eq(posSessions.registerId, options.registerId));
+    }
     return db.select().from(posSessions)
-      .where(eq(posSessions.repairCenterId, repairCenterId))
+      .where(and(...conditions))
       .orderBy(desc(posSessions.openedAt))
-      .limit(limit);
+      .limit(options?.limit || 50);
   }
 
   async closePosSession(id: string, closingData: {
@@ -9973,6 +10038,7 @@ export class DatabaseStorage implements IStorage {
     status?: PosTransactionStatus;
     limit?: number;
     offset?: number;
+    registerId?: string;
   }): Promise<PosTransaction[]> {
     const conditions = [eq(posTransactions.repairCenterId, repairCenterId)];
     
@@ -9984,6 +10050,9 @@ export class DatabaseStorage implements IStorage {
     }
     if (options?.status) {
       conditions.push(eq(posTransactions.status, options.status));
+    }
+    if (options?.registerId) {
+      conditions.push(eq(posTransactions.registerId, options.registerId));
     }
 
     return db.select().from(posTransactions)
@@ -10476,7 +10545,7 @@ export class DatabaseStorage implements IStorage {
     paymentBreakdown: { cash: number; card: number; pos_terminal: number; satispay: number; mixed: number };
     topRepairCenters: { id: number; name: string; transactionCount: number; revenue: number }[];
     recentTransactions: { id: string; transactionNumber: string; type: string; paymentMethod: string; totalAmount: number; createdAt: string; repairCenterName: string }[];
-    recentSessions: { id: string; repairCenterName: string; operatorName: string; status: string; openedAt: string; closedAt: string | null; totalSales: number; totalTransactions: number }[];
+    recentSessions: { id: string; repairCenterName: string; registerName: string | null; operatorName: string; status: string; openedAt: string; closedAt: string | null; totalSales: number; totalTransactions: number }[];
   }> {
     const now = new Date();
     let startDate: Date;
@@ -10506,10 +10575,12 @@ export class DatabaseStorage implements IStorage {
     const allSessions = await db.select({
       session: posSessions,
       repairCenterName: repairCenters.name,
+      registerName: posRegisters.name,
       operatorName: users.fullName,
     })
     .from(posSessions)
     .innerJoin(repairCenters, eq(posSessions.repairCenterId, repairCenters.id))
+    .leftJoin(posRegisters, eq(posSessions.registerId, posRegisters.id))
     .leftJoin(users, eq(posSessions.operatorId, users.id))
     .where(sessionConditions.length > 0 ? and(...sessionConditions) : undefined)
     .orderBy(desc(posSessions.openedAt))
@@ -10582,6 +10653,7 @@ export class DatabaseStorage implements IStorage {
     const recentSessions = allSessions.slice(0, 20).map(s => ({
       id: s.session.id,
       repairCenterName: s.repairCenterName,
+      registerName: s.registerName || null,
       operatorName: s.operatorName || "N/D",
       status: s.session.status,
       openedAt: s.session.openedAt?.toISOString() || "",
@@ -10599,7 +10671,7 @@ export class DatabaseStorage implements IStorage {
   async getResellerPosSessionsFeed(resellerId: string, options?: {
     limit?: number;
     repairCenterId?: string;
-  }): Promise<{ id: string; repairCenterName: string; operatorName: string; status: string; openedAt: string; closedAt: string | null; totalSales: number; totalTransactions: number }[]> {
+  }): Promise<{ id: string; repairCenterName: string; registerName: string | null; operatorName: string; status: string; openedAt: string; closedAt: string | null; totalSales: number; totalTransactions: number }[]> {
     const subResellers = await db.select({ id: users.id })
       .from(users)
       .where(and(eq(users.parentResellerId, resellerId), eq(users.role, "reseller")));
@@ -10616,10 +10688,12 @@ export class DatabaseStorage implements IStorage {
     const sessions = await db.select({
       session: posSessions,
       repairCenterName: repairCenters.name,
+      registerName: posRegisters.name,
       operatorName: users.fullName,
     })
     .from(posSessions)
     .innerJoin(repairCenters, eq(posSessions.repairCenterId, repairCenters.id))
+    .leftJoin(posRegisters, eq(posSessions.registerId, posRegisters.id))
     .leftJoin(users, eq(posSessions.operatorId, users.id))
     .where(inArray(posSessions.repairCenterId, centerIds))
     .orderBy(desc(posSessions.openedAt))
@@ -10628,6 +10702,7 @@ export class DatabaseStorage implements IStorage {
     return sessions.map(s => ({
       id: s.session.id,
       repairCenterName: s.repairCenterName,
+      registerName: s.registerName || null,
       operatorName: s.operatorName || "N/D",
       status: s.session.status,
       openedAt: s.session.openedAt?.toISOString() || "",

@@ -31687,6 +31687,89 @@ export function registerRoutes(app: Express): Server {
   // ==========================================
 
   // ==== REPAIR CENTER POS API ====
+  // ==== POS REGISTERS (Casse) ====
+  
+  // Lista registri di cassa per il centro riparazioni
+  app.get("/api/repair-center/pos/registers", requireRole("repair_center", "repair_center_staff"), async (req, res) => {
+    try {
+      const repairCenterId = req.user!.repairCenterId || req.user!.id;
+      const registers = await storage.getPosRegistersByRepairCenter(repairCenterId);
+      res.json(registers);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Crea nuovo registro di cassa
+  app.post("/api/repair-center/pos/registers", requireRole("repair_center", "repair_center_staff"), async (req, res) => {
+    try {
+      const repairCenterId = req.user!.repairCenterId || req.user!.id;
+      const { name, description, isDefault } = req.body;
+      
+      if (!name?.trim()) {
+        return res.status(400).json({ error: "Nome cassa obbligatorio" });
+      }
+      
+      const register = await storage.createPosRegister({
+        repairCenterId,
+        name: name.trim(),
+        description: description?.trim() || null,
+        isDefault: isDefault || false,
+      });
+      
+      res.json(register);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Aggiorna registro di cassa
+  app.patch("/api/repair-center/pos/registers/:registerId", requireRole("repair_center", "repair_center_staff"), async (req, res) => {
+    try {
+      const repairCenterId = req.user!.repairCenterId || req.user!.id;
+      const { registerId } = req.params;
+      const { name, description, isActive, isDefault } = req.body;
+      
+      const register = await storage.getPosRegister(registerId);
+      if (!register) return res.status(404).json({ error: "Cassa non trovata" });
+      if (register.repairCenterId !== repairCenterId) return res.status(403).json({ error: "Non autorizzato" });
+      
+      const updated = await storage.updatePosRegister(registerId, {
+        name: name?.trim(),
+        description: description?.trim(),
+        isActive,
+        isDefault,
+      });
+      
+      res.json(updated);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Elimina registro di cassa
+  app.delete("/api/repair-center/pos/registers/:registerId", requireRole("repair_center", "repair_center_staff"), async (req, res) => {
+    try {
+      const repairCenterId = req.user!.repairCenterId || req.user!.id;
+      const { registerId } = req.params;
+      
+      const register = await storage.getPosRegister(registerId);
+      if (!register) return res.status(404).json({ error: "Cassa non trovata" });
+      if (register.repairCenterId !== repairCenterId) return res.status(403).json({ error: "Non autorizzato" });
+      
+      // Verifica che non ci siano sessioni aperte su questa cassa
+      const openSession = await storage.getOpenPosSession(repairCenterId, registerId);
+      if (openSession) {
+        return res.status(400).json({ error: "Impossibile eliminare una cassa con sessione aperta. Chiudi prima la sessione." });
+      }
+      
+      await storage.deletePosRegister(registerId);
+      res.json({ success: true });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
 
   // Ricerca clienti per POS
   app.get("/api/repair-center/pos/customers", requireRole("repair_center", "repair_center_staff"), async (req, res) => {
@@ -31731,7 +31814,8 @@ export function registerRoutes(app: Express): Server {
   app.get("/api/repair-center/pos/session/current", requireRole("repair_center", "repair_center_staff"), async (req, res) => {
     try {
       const repairCenterId = req.user!.repairCenterId || req.user!.id;
-      const session = await storage.getOpenPosSession(repairCenterId);
+      const registerId = req.query.registerId as string | undefined;
+      const session = await storage.getOpenPosSession(repairCenterId, registerId);
       res.json(session || null);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
@@ -31742,7 +31826,8 @@ export function registerRoutes(app: Express): Server {
   app.get("/api/repair-center/pos/session/last-closed", requireRole("repair_center", "repair_center_staff"), async (req, res) => {
     try {
       const repairCenterId = req.user!.repairCenterId || req.user!.id;
-      const lastSession = await storage.getLastClosedPosSession(repairCenterId);
+      const registerId = req.query.registerId as string | undefined;
+      const lastSession = await storage.getLastClosedPosSession(repairCenterId, registerId);
       res.json(lastSession || null);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
@@ -31753,24 +31838,31 @@ export function registerRoutes(app: Express): Server {
     try {
       const repairCenterId = req.user!.repairCenterId || req.user!.id;
       const operatorId = req.user!.id;
+      const { openingCash, openingNotes, registerId } = req.body;
       
-      const existingSession = await storage.getOpenPosSession(repairCenterId);
+      // Se registerId non fornito, usa la cassa di default
+      let effectiveRegisterId = registerId;
+      if (!effectiveRegisterId) {
+        const defaultRegister = await storage.getDefaultPosRegister(repairCenterId);
+        effectiveRegisterId = defaultRegister?.id;
+      }
+      
+      const existingSession = await storage.getOpenPosSession(repairCenterId, effectiveRegisterId);
       if (existingSession) {
-        return res.status(400).json({ error: "Esiste già una sessione cassa aperta. Chiudila prima di aprirne una nuova." });
+        return res.status(400).json({ error: "Esiste già una sessione cassa aperta per questa cassa. Chiudila prima di aprirne una nuova." });
       }
 
-      const { openingCash, openingNotes } = req.body;
-      
-      // Se openingCash non fornito, usa il closingCash dell'ultima sessione
+      // Se openingCash non fornito, usa il closingCash dell'ultima sessione di questa cassa
       let finalOpeningCash = openingCash;
       if (finalOpeningCash === undefined || finalOpeningCash === null) {
-        const lastSession = await storage.getLastClosedPosSession(repairCenterId);
+        const lastSession = await storage.getLastClosedPosSession(repairCenterId, effectiveRegisterId);
         finalOpeningCash = lastSession?.closingCash || 0;
       }
       
       const session = await storage.createPosSession({
         repairCenterId,
         operatorId,
+        registerId: effectiveRegisterId || null,
         openingCash: finalOpeningCash,
         openingNotes: openingNotes || null,
       });
@@ -31828,7 +31920,8 @@ export function registerRoutes(app: Express): Server {
     try {
       const repairCenterId = req.user!.repairCenterId || req.user!.id;
       const limit = parseInt(req.query.limit as string) || 50;
-      const sessions = await storage.getPosSessionsByRepairCenter(repairCenterId, limit);
+      const registerId = req.query.registerId as string | undefined;
+      const sessions = await storage.getPosSessionsByRepairCenter(repairCenterId, { limit, registerId });
       res.json(sessions);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
@@ -31840,9 +31933,10 @@ export function registerRoutes(app: Express): Server {
     try {
       const repairCenterId = req.user!.repairCenterId || req.user!.id;
       const operatorId = req.user!.id;
+      const { registerId } = req.body;
       
-      const session = await storage.getOpenPosSession(repairCenterId);
-      if (!session) return res.status(400).json({ error: "Nessuna sessione cassa aperta." });
+      const session = await storage.getOpenPosSession(repairCenterId, registerId);
+      if (!session) return res.status(400).json({ error: "Nessuna sessione cassa aperta per questa cassa." });
 
       const { items, paymentMethod, customerId, discountAmount, discountPercent, cashReceived, notes, customerNotes, invoiceRequested } = req.body;
       
@@ -31889,6 +31983,7 @@ export function registerRoutes(app: Express): Server {
         transactionNumber,
         repairCenterId,
         sessionId: session.id,
+        registerId: session.registerId || null,
         customerId: customerId || null,
         operatorId,
         subtotal,
@@ -32060,7 +32155,8 @@ export function registerRoutes(app: Express): Server {
   app.get("/api/repair-center/pos/transactions", requireRole("repair_center", "repair_center_staff"), async (req, res) => {
     try {
       const repairCenterId = req.user!.repairCenterId || req.user!.id;
-      const session = await storage.getOpenPosSession(repairCenterId);
+      const registerId = req.query.registerId as string | undefined;
+      const session = await storage.getOpenPosSession(repairCenterId, registerId);
       if (!session) return res.json([]);
       const transactions = await storage.getPosTransactionsBySession(session.id);
       res.json(transactions);

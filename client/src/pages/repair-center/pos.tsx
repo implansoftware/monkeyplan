@@ -85,10 +85,11 @@ function ProductImage({ category, size = "md" }: { category?: string | null; siz
   );
 }
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import { FileText, User, UserPlus } from "lucide-react";
+import { FileText, User, UserPlus, Store } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
@@ -171,6 +172,17 @@ type DailyStats = {
   topProducts: { productId: string; productName: string; quantity: number; total: number }[];
 };
 
+type PosRegister = {
+  id: string;
+  repairCenterId: string;
+  name: string;
+  description: string | null;
+  isActive: boolean;
+  isDefault: boolean;
+  createdAt: string;
+  updatedAt: string;
+};
+
 type Customer = {
   id: string;
   fullName: string;
@@ -217,16 +229,44 @@ export default function PosPage() {
   const [newCustomerEmail, setNewCustomerEmail] = useState("");
   const [newCustomerPhone, setNewCustomerPhone] = useState("");
   const [customerSearch, setCustomerSearch] = useState("");
+  const [selectedRegisterId, setSelectedRegisterId] = useState<string>("");
   
   const barcodeInputRef = useRef<HTMLInputElement>(null);
   
+  // POS Registers
+  const { data: registers = [], isLoading: registersLoading } = useQuery<PosRegister[]>({
+    queryKey: ["/api/repair-center/pos/registers"],
+  });
+
+  // Set default register when loaded
+  useEffect(() => {
+    if (registers.length > 0 && !selectedRegisterId) {
+      const defaultReg = registers.find(r => r.isDefault) || registers[0];
+      if (defaultReg) setSelectedRegisterId(defaultReg.id);
+    }
+  }, [registers, selectedRegisterId]);
+
+  const selectedRegister = registers.find(r => r.id === selectedRegisterId);
+  
   const { data: currentSession, isLoading: sessionLoading } = useQuery<PosSession | null>({
-    queryKey: ["/api/repair-center/pos/session/current"],
+    queryKey: ["/api/repair-center/pos/session/current", selectedRegisterId],
+    queryFn: async () => {
+      if (!selectedRegisterId) return null;
+      const res = await fetch(`/api/repair-center/pos/session/current?registerId=${selectedRegisterId}`, { credentials: "include" });
+      if (!res.ok) return null;
+      return res.json();
+    },
+    enabled: !!selectedRegisterId,
   });
 
   const { data: transactions = [], isLoading: transactionsLoading } = useQuery<PosTransaction[]>({
-    queryKey: ["/api/repair-center/pos/transactions"],
-    enabled: !!currentSession,
+    queryKey: ["/api/repair-center/pos/transactions", selectedRegisterId],
+    queryFn: async () => {
+      const res = await fetch(`/api/repair-center/pos/transactions?registerId=${selectedRegisterId}`, { credentials: "include" });
+      if (!res.ok) return [];
+      return res.json();
+    },
+    enabled: !!currentSession && !!selectedRegisterId,
   });
 
   const { data: dailyStats } = useQuery<DailyStats>({
@@ -234,13 +274,14 @@ export default function PosPage() {
   });
 
   const { data: lastClosedSession } = useQuery<PosSession | null>({
-    queryKey: ["/api/repair-center/pos/session/last-closed"],
+    queryKey: ["/api/repair-center/pos/session/last-closed", selectedRegisterId],
     queryFn: async () => {
-      const res = await fetch("/api/repair-center/pos/session/last-closed", { credentials: "include" });
+      if (!selectedRegisterId) return null;
+      const res = await fetch(`/api/repair-center/pos/session/last-closed?registerId=${selectedRegisterId}`, { credentials: "include" });
       if (!res.ok) return null;
       return res.json();
     },
-    enabled: !currentSession,
+    enabled: !currentSession && !!selectedRegisterId,
   });
 
   useEffect(() => {
@@ -280,11 +321,11 @@ export default function PosPage() {
   ).slice(0, 20);
 
   const openSessionMutation = useMutation({
-    mutationFn: async (data: { openingCash: number; openingNotes?: string }) => {
-      return apiRequest("POST", "/api/repair-center/pos/session/open", data);
+    mutationFn: async (data: { openingCash: number; openingNotes?: string; registerId?: string }) => {
+      return apiRequest("POST", "/api/repair-center/pos/session/open", { ...data, registerId: selectedRegisterId });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/repair-center/pos/session/current"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/repair-center/pos/session/current", selectedRegisterId] });
       setOpenSessionDialog(false);
       setOpeningCash("");
       setSessionNotes("");
@@ -300,9 +341,9 @@ export default function PosPage() {
       return apiRequest("POST", `/api/repair-center/pos/session/${currentSession?.id}/close`, data);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/repair-center/pos/session/current"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/repair-center/pos/transactions"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/repair-center/pos/session/last-closed"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/repair-center/pos/session/current", selectedRegisterId] });
+      queryClient.invalidateQueries({ queryKey: ["/api/repair-center/pos/transactions", selectedRegisterId] });
+      queryClient.invalidateQueries({ queryKey: ["/api/repair-center/pos/session/last-closed", selectedRegisterId] });
       setCloseSessionDialog(false);
       setClosingCash("");
       setSessionNotes("");
@@ -334,11 +375,11 @@ export default function PosPage() {
 
   const createTransactionMutation = useMutation({
     mutationFn: async (data: any) => {
-      return apiRequest("POST", "/api/repair-center/pos/transaction", data);
+      return apiRequest("POST", "/api/repair-center/pos/transaction", { ...data, registerId: selectedRegisterId });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/repair-center/pos/transactions"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/repair-center/pos/session/current"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/repair-center/pos/transactions", selectedRegisterId] });
+      queryClient.invalidateQueries({ queryKey: ["/api/repair-center/pos/session/current", selectedRegisterId] });
       queryClient.invalidateQueries({ queryKey: ["/api/repair-center/pos/stats/daily"] });
       setCart([]);
       setCashReceived("");
@@ -557,9 +598,24 @@ export default function PosPage() {
       <div className="flex-1 flex flex-col min-w-0 gap-4">
         <div className="flex items-center gap-3 flex-wrap">
           <div className="flex items-center gap-2">
+            {registers.length > 1 && (
+              <Select value={selectedRegisterId} onValueChange={setSelectedRegisterId} disabled={!!currentSession}>
+                <SelectTrigger className="w-[180px] h-8" data-testid="select-register">
+                  <Store className="w-4 h-4 mr-1" />
+                  <SelectValue placeholder="Seleziona cassa" />
+                </SelectTrigger>
+                <SelectContent>
+                  {registers.filter(r => r.isActive).map(reg => (
+                    <SelectItem key={reg.id} value={reg.id} data-testid={`select-register-${reg.id}`}>
+                      {reg.name} {reg.isDefault && "(Default)"}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
             <Badge variant="outline" className="bg-green-500/10 text-green-600 border-green-500/30">
               <div className="w-2 h-2 rounded-full bg-green-500 mr-1 animate-pulse" />
-              Cassa Aperta
+              {selectedRegister?.name || "Cassa"} Aperta
             </Badge>
             <span className="text-sm text-muted-foreground">
               dalle {format(new Date(currentSession.openedAt), "HH:mm", { locale: it })}
