@@ -166,6 +166,7 @@ const menuItems = {
     { title: "Panoramica POS", url: "/reseller/pos", icon: Receipt, group: "POS" },
     { title: "Storico Vendite", url: "/reseller/pos/sales-history", icon: ShoppingCart, group: "POS" },
     { title: "Storico Sessioni", url: "/reseller/pos/sessions", icon: Clock, group: "POS" },
+    { title: "Gestione Casse", url: "/reseller/pos/registers", icon: Store, group: "POS" },
     { title: "Dashboard HR", url: "/reseller/hr", icon: Briefcase, group: "Gestione HR" },
     { title: "Team", url: "/reseller/team", icon: UsersRound, group: "Gestione HR" },
     { title: "Presenze", url: "/reseller/hr/attendance", icon: Clock, group: "Gestione HR" },
