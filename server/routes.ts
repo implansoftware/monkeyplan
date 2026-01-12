@@ -32238,7 +32238,14 @@ export function registerRoutes(app: Express): Server {
       const transactionItems = await storage.createPosTransactionItems(
         processedItems.map(item => ({ transactionId: transaction.id, ...item, inventoryDeducted: false }))
       );
-
+      // Deduce inventario dal magazzino per ogni item con warehouseId e marca singolarmente
+      for (const item of transactionItems) {
+        if (item.warehouseId && item.quantity > 0) {
+          await storage.updateWarehouseStockQuantity(item.warehouseId, item.productId, -item.quantity);
+          // Marca questo specifico item come inventoryDeducted
+          await storage.markPosItemInventoryDeducted(item.id);
+        }
+      }
       const sessionTxs = await storage.getPosTransactionsBySession(session.id);
       const completedTxs = sessionTxs.filter(t => t.status === "completed");
       await storage.updatePosSessionTotals(session.id, {
@@ -32446,6 +32453,16 @@ export function registerRoutes(app: Express): Server {
         const sessionTxs = await storage.getPosTransactionsBySession(transaction.sessionId);
         const refundedTxs = sessionTxs.filter(t => t.status === "refunded" || t.status === "partial_refund");
         await storage.updatePosSessionTotals(transaction.sessionId, { totalRefunds: refundedTxs.reduce((sum, t) => sum + (t.refundedAmount || 0), 0) });
+      }
+
+      // Per rimborso totale, ripristina stock magazzino
+      if (isFullRefund) {
+        const items = await storage.getPosTransactionItems(transaction.id);
+        for (const item of items) {
+          if (item.inventoryDeducted && item.warehouseId) {
+            await storage.updateWarehouseStockQuantity(item.warehouseId, item.productId, item.quantity);
+          }
+        }
       }
 
       res.json(updated);

@@ -10235,6 +10235,12 @@ export class DatabaseStorage implements IStorage {
       .where(eq(posTransactionItems.transactionId, transactionId));
   }
 
+  async markPosItemInventoryDeducted(itemId: string): Promise<void> {
+    await db.update(posTransactionItems)
+      .set({ inventoryDeducted: true })
+      .where(eq(posTransactionItems.id, itemId));
+  }
+
   // POS Statistics
   async getPosSessionStats(repairCenterId: string, startDate: Date, endDate: Date): Promise<{
     totalSessions: number;
