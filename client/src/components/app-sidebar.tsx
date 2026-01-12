@@ -164,6 +164,8 @@ const menuItems = {
   reseller: [
     { title: "Dashboard", url: "/reseller", icon: LayoutDashboard, group: "Dashboard" },
     { title: "Panoramica POS", url: "/reseller/pos", icon: Receipt, group: "Dashboard" },
+    { title: "Storico Vendite", url: "/reseller/pos/sales-history", icon: ShoppingCart, group: "Dashboard" },
+    { title: "Storico Sessioni", url: "/reseller/pos/sessions", icon: Clock, group: "Dashboard" },
     { title: "Dashboard HR", url: "/reseller/hr", icon: Briefcase, group: "Gestione HR" },
     { title: "Team", url: "/reseller/team", icon: UsersRound, group: "Gestione HR" },
     { title: "Presenze", url: "/reseller/hr/attendance", icon: Clock, group: "Gestione HR" },
