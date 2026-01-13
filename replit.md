@@ -42,3 +42,18 @@ The backend is an `Express.js` application with TypeScript, featuring a RESTful 
     *   `exceljs`
     *   `recharts`
 *   **Development Dependencies**: `tsx`, `esbuild`, `drizzle-kit`.
+## Recent Changes (January 2026)
+
+### Automatic Invoice Generation for Reseller Sales
+- Modified `/api/sales-orders/:id/status` endpoint to auto-generate invoices when orders are marked as "delivered" or "completed"
+- Added new storage function `createInvoiceForRepairCenterB2BOrder` for repair center B2B orders
+- Modified `/api/reseller/rc-b2b-orders/:id/ship` endpoint to auto-generate invoices when resellers ship B2B orders to repair centers
+- Invoice generation is limited to main resellers only (excludes sub_resellers with parentResellerId)
+- Response includes optional `generatedInvoice` field for backward compatibility
+- Idempotency checks prevent duplicate invoice creation
+
+### Invoice Automation Rules
+- **E-commerce Sales Orders**: Invoice created when status becomes "delivered" or "completed"
+- **Repair Center B2B Orders**: Invoice created when reseller ships the order
+- **Exclusions**: Sub-resellers and repair center POS transactions do not get auto-invoices
+- **Invoice Number Format**: `FT-R-{year}-{sequential}` (e.g., FT-R-2026-00001)

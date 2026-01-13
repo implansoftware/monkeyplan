@@ -25256,7 +25256,25 @@ export function registerRoutes(app: Express): Server {
       
       const { status, reason } = req.body;
       const updated = await storage.updateSalesOrderStatus(req.params.id, status, req.user.id, reason);
-      res.json(updated);
+      
+      // Auto-create invoice for resellers when order is delivered/completed
+      let invoice = null;
+      if ((status === 'delivered' || status === 'completed') && order.resellerId) {
+        // Check if reseller is a main reseller (not sub_reseller)
+        const reseller = await storage.getUser(order.resellerId);
+        if (reseller && reseller.role === 'reseller' && !reseller.parentResellerId) {
+          invoice = await storage.createInvoiceForSalesOrder({
+            id: order.id,
+            orderNumber: order.orderNumber,
+            customerId: order.customerId,
+            resellerId: order.resellerId,
+            total: order.total,
+            taxAmount: order.taxAmount || 0,
+          });
+        }
+      }
+      
+      res.json({ ...updated, generatedInvoice: invoice });
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }
@@ -28950,7 +28968,20 @@ export function registerRoutes(app: Express): Server {
         carrier,
       });
       
-      res.json(updated);
+      // Auto-create invoice for reseller when shipping RC B2B order
+      let invoice = null;
+      if (!req.user.parentResellerId) {
+        // Only main resellers get auto-invoices
+        invoice = await storage.createInvoiceForRepairCenterB2BOrder({
+          id: order.id,
+          orderNumber: order.orderNumber,
+          repairCenterId: order.repairCenterId,
+          resellerId: order.resellerId,
+          total: order.total,
+        });
+      }
+      
+      res.json({ ...updated, generatedInvoice: invoice });
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }

@@ -265,6 +265,10 @@ export interface IStorage {
   getInvoicesByRepairCenter(repairCenterId: string, filters?: { source?: string; paymentStatus?: string }): Promise<Invoice[]>;
   getInvoicesByReseller(resellerId: string, filters?: { repairCenterId?: string; source?: string; paymentStatus?: string }): Promise<Invoice[]>;
   generateInvoiceNumber(repairCenterId: string): Promise<string>;
+  generateResellerInvoiceNumber(resellerId: string): Promise<string>;
+  createInvoiceForSalesOrder(order: { id: string; orderNumber: string; customerId: string; resellerId: string; total: number; taxAmount: number }): Promise<Invoice | null>;
+  createInvoiceForB2BOrder(order: { id: string; orderNumber: string; resellerId: string; buyerId: string; total: number }): Promise<Invoice | null>;
+  createInvoiceForRepairCenterB2BOrder(order: { id: string; orderNumber: string; repairCenterId: string; resellerId: string; total: number }): Promise<Invoice | null>;
   
   // Billing Data
   getBillingDataByUserId(userId: string): Promise<BillingData | undefined>;
@@ -2740,6 +2744,154 @@ export class DatabaseStorage implements IStorage {
       .orderBy(desc(invoices.createdAt));
     
     return result.map(r => r.invoice);
+  }
+
+  async generateResellerInvoiceNumber(resellerId: string): Promise<string> {
+    const now = new Date();
+    const year = now.getFullYear();
+    
+    // Count invoices for this reseller in the current year
+    const startOfYear = new Date(year, 0, 1);
+    const endOfYear = new Date(year, 11, 31, 23, 59, 59);
+    
+    const [result] = await db.select({ count: sql<number>`count(*)` })
+      .from(invoices)
+      .where(and(
+        eq(invoices.resellerId, resellerId),
+        gte(invoices.createdAt, startOfYear),
+        lte(invoices.createdAt, endOfYear)
+      ));
+    
+    const nextNumber = (result?.count || 0) + 1;
+    return `FT-R-${year}-${nextNumber.toString().padStart(5, '0')}`;
+  }
+
+  async createInvoiceForSalesOrder(order: {
+    id: string;
+    orderNumber: string;
+    customerId: string;
+    resellerId: string;
+    total: number;
+    taxAmount: number;
+  }): Promise<Invoice | null> {
+    // Check if invoice already exists for this order
+    const existingInvoices = await db.select().from(invoices).where(
+      and(
+        eq(invoices.source, 'marketplace'),
+        sql`${invoices.notes} LIKE ${'%' + order.orderNumber + '%'}`
+      )
+    );
+    if (existingInvoices.length > 0) {
+      return existingInvoices[0]; // Already exists
+    }
+
+    // Generate invoice number for reseller
+    const invoiceNumber = await this.generateResellerInvoiceNumber(order.resellerId);
+    
+    // Calculate amounts (total is in real units, convert to cents)
+    const totalCents = Math.round(order.total * 100);
+    const taxCents = Math.round(order.taxAmount * 100);
+    const amountCents = totalCents - taxCents;
+    
+    const [invoice] = await db.insert(invoices).values({
+      invoiceNumber,
+      customerId: order.customerId,
+      resellerId: order.resellerId,
+      source: 'marketplace',
+      amount: amountCents,
+      tax: taxCents,
+      total: totalCents,
+      paymentStatus: 'pending',
+      paymentMethod: 'bank_transfer',
+      dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days
+      notes: `Fattura per ordine ${order.orderNumber}`,
+    }).returning();
+    
+    return invoice;
+  }
+
+  async createInvoiceForB2BOrder(order: {
+    id: string;
+    orderNumber: string;
+    resellerId: string;
+    buyerId: string;
+    total: number;
+  }): Promise<Invoice | null> {
+    // Check if invoice already exists
+    const existingInvoices = await db.select().from(invoices).where(
+      and(
+        eq(invoices.source, 'b2b'),
+        sql`${invoices.notes} LIKE ${'%' + order.orderNumber + '%'}`
+      )
+    );
+    if (existingInvoices.length > 0) {
+      return existingInvoices[0];
+    }
+
+    const invoiceNumber = await this.generateResellerInvoiceNumber(order.resellerId);
+    
+    // B2B orders are in cents
+    const totalCents = order.total;
+    const taxCents = Math.round(totalCents * 0.22 / 1.22); // IVA 22% inclusa
+    const amountCents = totalCents - taxCents;
+    
+    const [invoice] = await db.insert(invoices).values({
+      invoiceNumber,
+      customerId: order.buyerId,
+      resellerId: order.resellerId,
+      source: 'b2b',
+      amount: amountCents,
+      tax: taxCents,
+      total: totalCents,
+      paymentStatus: 'pending',
+      paymentMethod: 'bank_transfer',
+      dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+      notes: `Fattura B2B per ordine ${order.orderNumber}`,
+    }).returning();
+    
+    return invoice;
+  }
+
+  async createInvoiceForRepairCenterB2BOrder(order: {
+    id: string;
+    orderNumber: string;
+    repairCenterId: string;
+    resellerId: string;
+    total: number;
+  }): Promise<Invoice | null> {
+    // Check if invoice already exists
+    const existingInvoices = await db.select().from(invoices).where(
+      and(
+        eq(invoices.source, 'b2b'),
+        sql`${invoices.notes} LIKE ${'%' + order.orderNumber + '%'}`
+      )
+    );
+    if (existingInvoices.length > 0) {
+      return existingInvoices[0];
+    }
+
+    const invoiceNumber = await this.generateResellerInvoiceNumber(order.resellerId);
+    
+    // B2B orders are in cents
+    const totalCents = order.total;
+    const taxCents = Math.round(totalCents * 0.22 / 1.22); // IVA 22% inclusa
+    const amountCents = totalCents - taxCents;
+    
+    const [invoice] = await db.insert(invoices).values({
+      invoiceNumber,
+      repairCenterId: order.repairCenterId,
+      resellerId: order.resellerId,
+      source: 'b2b',
+      amount: amountCents,
+      tax: taxCents,
+      total: totalCents,
+      paymentStatus: 'pending',
+      paymentMethod: 'bank_transfer',
+      dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+      notes: `Fattura B2B per ordine RC ${order.orderNumber}`,
+    }).returning();
+    
+    return invoice;
   }
 
   async getPosTransactionHistoryByRepairCenter(repairCenterId: string): Promise<{
