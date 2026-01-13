@@ -5231,11 +5231,11 @@ export function registerRoutes(app: Express): Server {
       const repairOrders = allRepairOrders.filter(r => r.customerId === customerId);
       
       // Get sales orders (POS transactions)
-      const allSalesOrders = await storage.listPosTransactions();
-      const salesOrders = allSalesOrders.filter(s => s.customerId === customerId);
+      const allSalesOrders = await storage.listSalesOrders({ customerId });
+      const salesOrders = allSalesOrders;
       
       // Get billing data
-      const billingData = await storage.getCustomerBillingData(customerId);
+      const billingData = await storage.getBillingDataByUserId(customerId);
       
       // Get utility practices
       const allPractices = await storage.listUtilityPractices();
