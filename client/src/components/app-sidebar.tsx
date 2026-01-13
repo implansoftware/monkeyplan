@@ -487,8 +487,8 @@ export function AppSidebar() {
       );
     }
     
-    if (isReseller && hasSubResellers) {
-      // Add Sub-Reseller item after Dashboard in "Dashboard" group
+    if (isReseller && isFranchisingOrGdo) {
+      // Add Sub-Reseller item after Dashboard in "Dashboard" group for franchising/gdo resellers
       const dashboardIndex = baseItems.findIndex(item => item.url === "/reseller");
       if (dashboardIndex !== -1) {
         const subResellerItem = { 
@@ -506,7 +506,7 @@ export function AppSidebar() {
     }
     
     return baseItems;
-  }, [user, isReseller, isResellerStaff, hasSubResellers, hasFullAccess, canAccessModule]);
+  }, [user, isReseller, isResellerStaff, isFranchisingOrGdo, hasFullAccess, canAccessModule]);
   
   const groupedItems = items.reduce((acc, item) => {
     if (!acc[item.group]) {
