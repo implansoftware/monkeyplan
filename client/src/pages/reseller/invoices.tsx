@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { Search, FileText, Download, CalendarIcon, Euro } from "lucide-react";
+import { Search, FileText, Download, CalendarIcon, Euro, Wrench, ShoppingCart, Store } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { format } from "date-fns";
@@ -19,12 +19,23 @@ import type { DateRange } from "react-day-picker";
 export default function ResellerInvoices() {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [sourceFilter, setSourceFilter] = useState<string>("all");
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
   const [isExporting, setIsExporting] = useState(false);
   const { toast } = useToast();
 
   const { data: invoices = [], isLoading } = useQuery<Invoice[]>({
-    queryKey: ["/api/invoices"],
+    queryKey: ["/api/reseller/invoices", statusFilter, sourceFilter],
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      if (statusFilter !== "all") params.append("status", statusFilter);
+      if (sourceFilter !== "all") params.append("source", sourceFilter);
+      const response = await fetch(`/api/reseller/invoices?${params.toString()}`, {
+        credentials: "include",
+      });
+      if (!response.ok) throw new Error("Failed to fetch invoices");
+      return response.json();
+    },
   });
 
   const filteredInvoices = invoices.filter((invoice) => {
@@ -48,6 +59,16 @@ export default function ResellerInvoices() {
       case "overdue": return <Badge variant="destructive">Scaduta</Badge>;
       case "cancelled": return <Badge variant="outline">Annullata</Badge>;
       default: return <Badge variant="outline">{status}</Badge>;
+    }
+  };
+
+  const getSourceBadge = (source: string | null) => {
+    switch (source) {
+      case "repair": return <Badge variant="outline" className="gap-1"><Wrench className="h-3 w-3" />Riparazione</Badge>;
+      case "pos": return <Badge variant="outline" className="gap-1"><ShoppingCart className="h-3 w-3" />POS</Badge>;
+      case "marketplace": return <Badge variant="outline" className="gap-1"><Store className="h-3 w-3" />Marketplace</Badge>;
+      case "b2b": return <Badge variant="outline" className="gap-1">B2B</Badge>;
+      default: return <Badge variant="outline">Altro</Badge>;
     }
   };
 
@@ -180,8 +201,20 @@ export default function ResellerInvoices() {
                   data-testid="input-search-invoices"
                 />
               </div>
+              <Select value={sourceFilter} onValueChange={setSourceFilter}>
+                <SelectTrigger className="w-full sm:w-40" data-testid="select-filter-source">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tutte le fonti</SelectItem>
+                  <SelectItem value="repair">Riparazioni</SelectItem>
+                  <SelectItem value="pos">POS</SelectItem>
+                  <SelectItem value="marketplace">Marketplace</SelectItem>
+                  <SelectItem value="b2b">B2B</SelectItem>
+                </SelectContent>
+              </Select>
               <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-full sm:w-48" data-testid="select-filter-status">
+                <SelectTrigger className="w-full sm:w-40" data-testid="select-filter-status">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -247,6 +280,7 @@ export default function ResellerInvoices() {
                 <TableRow>
                   <TableHead>Numero</TableHead>
                   <TableHead>Data</TableHead>
+                  <TableHead>Fonte</TableHead>
                   <TableHead>Importo</TableHead>
                   <TableHead>Metodo</TableHead>
                   <TableHead>Scadenza</TableHead>
@@ -260,6 +294,7 @@ export default function ResellerInvoices() {
                     <TableCell>
                       {format(new Date(invoice.createdAt), "dd MMM yyyy", { locale: it })}
                     </TableCell>
+                    <TableCell>{getSourceBadge(invoice.source)}</TableCell>
                     <TableCell className="font-semibold">
                       {formatCurrency(invoice.total)}
                     </TableCell>
