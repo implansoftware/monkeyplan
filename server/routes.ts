@@ -4571,7 +4571,7 @@ export function registerRoutes(app: Express): Server {
           
           // Get sales orders
           const orders = await storage.listSalesOrders({ resellerId: reseller.id });
-          const totalRevenue = orders.reduce((sum, o) => sum + (o.totalAmountCents || 0), 0);
+          const totalRevenue = orders.reduce((sum, o) => sum + (o.total || 0), 0);
           const pendingOrders = orders.filter(o => o.status === 'pending' || o.status === 'processing').length;
           const lastOrder = orders.sort((a, b) => 
             new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
