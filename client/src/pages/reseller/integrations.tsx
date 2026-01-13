@@ -17,11 +17,14 @@ import {
   RefreshCcw,
   Loader2,
   Clock,
-  Smartphone,
-  Receipt,
-  Store,
   Package
 } from "lucide-react";
+
+import sifarLogo from "@/assets/logos/sifar.png";
+import fonedayLogo from "@/assets/logos/foneday.png";
+import mobilesentrixLogo from "@/assets/logos/mobilesentrix.png";
+import trovausatiLogo from "@/assets/logos/trovausati.png";
+import sibillLogo from "@/assets/logos/sibill.png";
 
 interface IntegrationSummary {
   code: string;
@@ -45,28 +48,28 @@ interface IntegrationSummary {
 
 const INTEGRATION_LOGOS: Record<string, React.ReactNode> = {
   sifar: (
-    <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-blue-600 to-blue-800 flex items-center justify-center text-white font-bold text-lg shadow-sm">
-      SF
+    <div className="h-12 w-24 flex items-center justify-center">
+      <img src={sifarLogo} alt="SIFAR" className="max-h-10 max-w-full object-contain" />
     </div>
   ),
   foneday: (
-    <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-green-500 to-emerald-700 flex items-center justify-center text-white font-bold text-lg shadow-sm">
-      FD
+    <div className="h-12 w-24 flex items-center justify-center">
+      <img src={fonedayLogo} alt="Foneday" className="max-h-10 max-w-full object-contain" />
     </div>
   ),
   mobilesentrix: (
-    <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-purple-600 to-indigo-800 flex items-center justify-center text-white font-bold text-xs shadow-sm">
-      <Smartphone className="h-5 w-5" />
+    <div className="h-12 w-24 flex items-center justify-center">
+      <img src={mobilesentrixLogo} alt="MobileSentrix" className="max-h-10 max-w-full object-contain" />
     </div>
   ),
   trovausati: (
-    <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-orange-500 to-red-600 flex items-center justify-center text-white font-bold text-lg shadow-sm">
-      <Store className="h-5 w-5" />
+    <div className="h-12 w-24 flex items-center justify-center">
+      <img src={trovausatiLogo} alt="TrovaUsati" className="max-h-10 max-w-full object-contain" />
     </div>
   ),
   sibill: (
-    <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-cyan-500 to-teal-700 flex items-center justify-center text-white font-bold text-lg shadow-sm">
-      <Receipt className="h-5 w-5" />
+    <div className="h-12 w-24 flex items-center justify-center bg-white dark:bg-gray-100 rounded-lg p-1">
+      <img src={sibillLogo} alt="Sibill" className="max-h-8 max-w-full object-contain" />
     </div>
   ),
 };
