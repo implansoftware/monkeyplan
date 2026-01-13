@@ -11,6 +11,18 @@ import { Link } from "wouter";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { ExternalIntegration } from "@shared/schema";
 
+import sifarLogo from "@/assets/logos/sifar.png";
+import fonedayLogo from "@/assets/logos/foneday.png";
+import mobilesentrixLogo from "@/assets/logos/mobilesentrix.png";
+import trovausatiLogo from "@/assets/logos/trovausati.png";
+
+const INTEGRATION_LOGOS: Record<string, string> = {
+  sifar: sifarLogo,
+  foneday: fonedayLogo,
+  mobilesentrix: mobilesentrixLogo,
+  trovausati: trovausatiLogo,
+};
+
 type Supplier = {
   id: string;
   code: string;
@@ -203,12 +215,20 @@ export default function RepairCenterSuppliers() {
                   )}
                   <CardHeader className="pb-3">
                     <div className="flex items-start gap-4">
-                      <div className={`flex-shrink-0 p-3 rounded-xl ${
+                      <div className={`flex-shrink-0 p-2 rounded-xl ${
                         isConfigured 
                           ? 'bg-green-100 dark:bg-green-900/30' 
                           : 'bg-muted'
                       }`}>
-                        {integration.logoUrl ? (
+                        {INTEGRATION_LOGOS[integration.code] ? (
+                          <div className="h-10 w-16 flex items-center justify-center">
+                            <img 
+                              src={INTEGRATION_LOGOS[integration.code]} 
+                              alt={integration.name}
+                              className="max-h-8 max-w-full object-contain"
+                            />
+                          </div>
+                        ) : integration.logoUrl ? (
                           <img 
                             src={integration.logoUrl} 
                             alt={integration.name}
