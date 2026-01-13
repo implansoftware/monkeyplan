@@ -59,7 +59,7 @@ async function hashPassword(password: string) {
   const salt = randomBytes(16).toString("hex");
   const buf = (await scryptAsync(password, salt, 64)) as Buffer;
   return `${buf.toString("hex")}.${salt}`;
-
+}
 
 // In-memory Foneday cart cache per reseller (Foneday API doesn't persist cart state)
 interface FonedayCartItem {
@@ -69,7 +69,6 @@ interface FonedayCartItem {
   price: string;
   note: string | null;
 }
-
 const fonedayCartCache = new Map<string, FonedayCartItem[]>();
 
 // In-memory Foneday search cache (API is very slow ~10s per request)
@@ -77,13 +76,12 @@ interface FonedayCacheEntry {
   data: any;
   timestamp: number;
 }
-
 const fonedaySearchCache = new Map<string, FonedayCacheEntry>();
 const FONEDAY_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
 function getFonedayCacheKey(resellerId: string, search: string, page: number, perPage: number): string {
   return `${resellerId}:${search}:${page}:${perPage}`;
-
+}
 
 function getFonedayFromCache(key: string): any | null {
   const entry = fonedaySearchCache.get(key);
@@ -94,11 +92,11 @@ function getFonedayFromCache(key: string): any | null {
     fonedaySearchCache.delete(key);
   }
   return null;
-
+}
 
 function setFonedayCache(key: string, data: any): void {
   fonedaySearchCache.set(key, { data, timestamp: Date.now() });
-
+}
 
 // Configure multer for file uploads (memory storage)
 const upload = multer({
@@ -136,7 +134,7 @@ function requireAuth(req: Request, res: Response, next: Function) {
     return res.status(401).send("Unauthorized");
   }
   next();
-
+}
 
 // Middleware to check if user has specific role
 function requireRole(...roles: string[]) {
@@ -149,7 +147,7 @@ function requireRole(...roles: string[]) {
     }
     next();
   };
-
+}
 
 // Middleware to check module-level permissions for reseller_staff users
 
@@ -160,7 +158,6 @@ interface EntityScopeResult {
   entityType: 'reseller' | 'repair-center';
   isExternalEntity: boolean;
 }
-
 
 async function resolveResellerEntityScope(opts: {
   storage: typeof storage;
@@ -215,7 +212,7 @@ async function resolveResellerEntityScope(opts: {
   }
   
   throw new Error('INVALID_ENTITY_TYPE');
-
+}
 
 // Admin-specific scope resolution - Admin can see ALL entities in the system
 interface AdminEntityScopeResult {
@@ -225,7 +222,6 @@ interface AdminEntityScopeResult {
   isGlobalAdminScope: boolean;
   isExternalEntity: boolean;
 }
-
 
 async function resolveAdminEntityScope(opts: {
   storage: typeof storage;
@@ -314,7 +310,7 @@ async function resolveAdminEntityScope(opts: {
   }
   
   throw new Error('INVALID_ENTITY_TYPE');
-
+}
 
 // For reseller/admin/repair_center users, always allows access (full permissions)
 // For reseller_staff users, checks granular permissions in the database
@@ -343,7 +339,7 @@ function requireModulePermission(module: string, action: 'read' | 'create' | 'up
     // Other roles don't have access to reseller routes
     return res.status(403).send("Accesso negato");
   };
-
+}
 
 // Helper to check if a reseller can manage a repair order
 // Returns true if the reseller owns the order directly OR owns the customer
@@ -360,14 +356,14 @@ async function canResellerManageOrder(resellerId: string, order: any): Promise<b
     }
   }
   return false;
-
+}
 
 // Helper to set entity metadata for activity logging
 // Call this in handlers after creating/updating/deleting entities
 // Example: setActivityEntity(res, { type: 'users', id: user.id });
 function setActivityEntity(res: Response, entity: { type?: string; id?: string }) {
   res.locals.activityEntity = entity;
-
+}
 
 // Middleware for automatic activity logging
 async function logActivity(
@@ -391,7 +387,7 @@ async function logActivity(
   } catch (error) {
     console.error('Failed to log activity:', error);
   }
-
+}
 
 // Route metadata for accurate entity/action logging
 // Maps path patterns to entity types for proper logging of nested resources
@@ -540,7 +536,7 @@ function autoLogMiddleware(req: Request, res: Response, next: Function) {
   });
 
   next();
-
+}
 
 
 // Helper function to auto-sync work profile from repair center opening hours
@@ -612,7 +608,7 @@ async function autoSyncWorkProfileFromRepairCenter(repairCenterId: string, openi
   } catch (error) {
     console.error('Auto-sync work profile failed:', error);
   }
-
+}
 
 export function registerRoutes(app: Express): Server {
   // Setup authentication routes
@@ -20711,7 +20707,27 @@ export function registerRoutes(app: Express): Server {
           lastOrderDate: trovausatiOrders[0]?.createdAt?.toISOString(),
         },
         settingsUrl: "/reseller/trovausati/settings",
-        catalogUrl: "/reseller/trovausati/marketplace",
+        ordersUrl: null,
+      });
+      
+      // Sibill Integration
+      const sibillCred = await storage.getSibillCredentialByReseller(resellerId);
+      const sibillDocuments = sibillCred ? await storage.listSibillDocuments(sibillCred.id) : [];
+      integrations.push({
+        code: "sibill",
+        name: "Sibill",
+        description: "Gestione fatture e riconciliazione bancaria",
+        isConfigured: !!sibillCred,
+        isActive: sibillCred?.isActive ?? false,
+        lastTestAt: sibillCred?.lastTestAt?.toISOString() ?? null,
+        lastTestStatus: sibillCred?.lastTestResult ?? null,
+        lastSyncAt: sibillCred?.lastSyncAt?.toISOString() ?? null,
+        stats: {
+          documentsCount: sibillDocuments.length,
+          lastDocumentDate: sibillDocuments[0]?.createdAt?.toISOString(),
+        },
+        settingsUrl: "/reseller/sibill/settings",
+        catalogUrl: null,
         cartUrl: null,
         ordersUrl: null,
       });
@@ -33795,344 +33811,480 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  return httpServer;
-
-  // ==========================================
+  // ============================================================
   // SIBILL INTEGRATION ROUTES
-  // ==========================================
+  // ============================================================
 
-  // GET /api/sibill/credentials - Get reseller's Sibill credentials
-  app.get("/api/sibill/credentials", requireAuth, requireRole("reseller"), async (req, res) => {
+  // Check Sibill service availability
+  app.get("/api/sibill/check-service", requireAuth, requireRole("admin", "reseller"), async (req, res) => {
     try {
-      const credential = await storage.getSibillCredentialByReseller(req.user!.id);
-      res.json(credential || null);
+      res.json({ available: true, message: "Sibill integration is available" });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Get Sibill credentials for reseller
+  app.get("/api/sibill/credentials", requireAuth, requireRole("reseller", "reseller_staff"), async (req, res) => {
+    try {
+      const resellerId = getEffectiveResellerId(req);
+      if (!resellerId) {
+        return res.status(400).json({ error: "Reseller ID non trovato" });
+      }
+      const credential = await storage.getSibillCredentialByReseller(resellerId);
+      if (!credential) {
+        return res.status(404).json({ error: "Credenziali Sibill non configurate" });
+      }
+      // Don't return the actual API key for security
+      res.json({
+        id: credential.id,
+        resellerId: credential.resellerId,
+        environment: credential.environment,
+        companyId: credential.companyId,
+        isActive: credential.isActive,
+        lastTestAt: credential.lastTestAt,
+        lastTestResult: credential.lastTestResult,
+        lastSyncAt: credential.lastSyncAt,
+        createdAt: credential.createdAt,
+        updatedAt: credential.updatedAt,
+      });
     } catch (error: any) {
       console.error("Error fetching Sibill credentials:", error);
-      res.status(500).json({ error: error.message || "Errore nel recupero delle credenziali" });
+      res.status(500).json({ error: error.message });
     }
   });
 
-  // POST /api/sibill/credentials - Create/update Sibill credentials
+  // Create or update Sibill credentials
   app.post("/api/sibill/credentials", requireAuth, requireRole("reseller"), async (req, res) => {
     try {
-      const { apiToken, environment, selectedCompanyId, selectedCompanyName } = req.body;
-      
+      const resellerId = getEffectiveResellerId(req);
+      if (!resellerId) {
+        return res.status(400).json({ error: "Reseller ID non trovato" });
+      }
+      const { apiToken, environment, companyId } = req.body;
       if (!apiToken) {
-        return res.status(400).json({ error: "API Token richiesto" });
+        return res.status(400).json({ error: "API Key obbligatoria" });
       }
       
-      const existing = await storage.getSibillCredentialByReseller(req.user!.id);
-      
+      const existing = await storage.getSibillCredentialByReseller(resellerId);
       if (existing) {
+        // Update existing
         const updated = await storage.updateSibillCredential(existing.id, {
           apiToken,
-          environment: environment || "development",
-          selectedCompanyId,
-          selectedCompanyName,
+          environment: environment || "production",
+          companyId,
+          updatedAt: new Date(),
         });
-        return res.json(updated);
+        res.json(updated);
+      } else {
+        // Create new
+        const created = await storage.createSibillCredential({
+          resellerId,
+          apiToken,
+          environment: environment || "production",
+          companyId,
+          isActive: true,
+        });
+        res.json(created);
       }
-      
-      const created = await storage.createSibillCredential({
-        resellerId: req.user!.id,
-        apiToken,
-        environment: environment || "development",
-        selectedCompanyId,
-        selectedCompanyName,
-        isActive: true,
-      });
-      res.status(201).json(created);
     } catch (error: any) {
       console.error("Error saving Sibill credentials:", error);
-      res.status(500).json({ error: error.message || "Errore nel salvataggio delle credenziali" });
+      res.status(500).json({ error: error.message });
     }
   });
 
-  // DELETE /api/sibill/credentials - Delete Sibill credentials
-  app.delete("/api/sibill/credentials", requireAuth, requireRole("reseller"), async (req, res) => {
+  // Test Sibill connection
+  app.post("/api/sibill/test-connection", requireAuth, requireRole("reseller", "reseller_staff"), async (req, res) => {
     try {
-      const credential = await storage.getSibillCredentialByReseller(req.user!.id);
+      const resellerId = getEffectiveResellerId(req);
+      if (!resellerId) {
+        return res.status(400).json({ error: "Reseller ID non trovato" });
+      }
+      const credential = await storage.getSibillCredentialByReseller(resellerId);
       if (!credential) {
-        return res.status(404).json({ error: "Credenziali non trovate" });
+        return res.status(404).json({ error: "Credenziali Sibill non configurate" });
       }
       
-      // Delete related data
-      await storage.deleteSibillDocuments(credential.id);
-      await storage.deleteSibillAccounts(credential.id);
-      await storage.deleteSibillTransactions(credential.id);
-      await storage.deleteSibillCategories(credential.id);
-      await storage.deleteSibillCompanies(credential.id);
-      await storage.deleteSibillCredential(credential.id);
-      
-      res.json({ success: true });
-    } catch (error: any) {
-      console.error("Error deleting Sibill credentials:", error);
-      res.status(500).json({ error: error.message || "Errore nell'eliminazione delle credenziali" });
-    }
-  });
-
-  // POST /api/sibill/test-connection - Test Sibill API connection
-  app.post("/api/sibill/test-connection", requireAuth, requireRole("reseller"), async (req, res) => {
-    try {
-      const { apiToken, environment } = req.body;
-      
-      if (!apiToken) {
-        return res.status(400).json({ error: "API Token richiesto" });
-      }
-      
+      // Import and use the Sibill service
       const { SibillService } = await import("./services/sibill");
-      const service = new SibillService({ apiToken, environment: environment || "development" });
-      const result = await service.testConnection();
+      const sibillService = new SibillService({ apiToken: credential.apiToken, environment: credential.environment as "development" | "production" });
+      const result = await sibillService.testConnection();
       
-      // Update test status if credential exists
-      const credential = await storage.getSibillCredentialByReseller(req.user!.id);
-      if (credential) {
-        await storage.updateSibillCredential(credential.id, {
-          lastTestAt: new Date(),
-          testStatus: result.success ? "success" : "error",
-          testMessage: result.message,
-        } as any);
-      }
+      // Update credential test status
+      await storage.updateSibillCredential(credential.id, {
+        lastTestAt: new Date(),
+        lastTestResult: result.success ? "success" : "failed",
+        updatedAt: new Date(),
+      });
       
       res.json(result);
     } catch (error: any) {
       console.error("Error testing Sibill connection:", error);
-      res.status(500).json({ success: false, message: error.message || "Errore di connessione" });
+      res.status(500).json({ error: error.message, success: false });
     }
   });
 
-  // GET /api/sibill/companies - Get available companies
-  app.get("/api/sibill/companies", requireAuth, requireRole("reseller"), async (req, res) => {
+  // Get Sibill companies
+  app.get("/api/sibill/companies", requireAuth, requireRole("reseller", "reseller_staff"), async (req, res) => {
     try {
-      const credential = await storage.getSibillCredentialByReseller(req.user!.id);
+      const resellerId = getEffectiveResellerId(req);
+      if (!resellerId) {
+        return res.status(400).json({ error: "Reseller ID non trovato" });
+      }
+      const credential = await storage.getSibillCredentialByReseller(resellerId);
       if (!credential) {
         return res.status(404).json({ error: "Credenziali Sibill non configurate" });
       }
-      
-      const { SibillService } = await import("./services/sibill");
-      const service = new SibillService({ 
-        apiToken: credential.apiToken, 
-        environment: credential.environment as any 
-      });
-      
-      const companies = await service.listCompanies("subscriptions");
+      const companies = await storage.listSibillCompanies(credential.id);
       res.json(companies);
     } catch (error: any) {
       console.error("Error fetching Sibill companies:", error);
-      res.status(500).json({ error: error.message || "Errore nel recupero delle aziende" });
+      res.status(500).json({ error: error.message });
     }
   });
-
-  // POST /api/sibill/companies/sync - Sync companies from Sibill
   app.post("/api/sibill/companies/sync", requireAuth, requireRole("reseller"), async (req, res) => {
     try {
-      const credential = await storage.getSibillCredentialByReseller(req.user!.id);
+      const resellerId = getEffectiveResellerId(req);
+      if (!resellerId) {
+        return res.status(400).json({ error: "Reseller ID non trovato" });
+      }
+      const credential = await storage.getSibillCredentialByReseller(resellerId);
       if (!credential) {
         return res.status(404).json({ error: "Credenziali Sibill non configurate" });
       }
       
       const { SibillService } = await import("./services/sibill");
-      const service = new SibillService({ 
-        apiToken: credential.apiToken, 
-        environment: credential.environment as any 
-      });
+      const sibillService = new SibillService({ apiToken: credential.apiToken, environment: credential.environment as "development" | "production" });
+      const companiesData = await sibillService.getCompanies();
       
-      const companies = await service.listCompanies("subscriptions");
-      
-      // Upsert companies to local cache
-      for (const company of companies) {
-        await storage.upsertSibillCompany({
-          credentialId: credential.id,
-          sibillCompanyId: company.id,
-          name: company.name,
-          vatNumber: company.vat_number || null,
-          country: company.country || null,
-          fiscalRegime: company.fiscal_regime || null,
-          subscriptionStatus: company.subscriptions?.[0]?.status || null,
-        });
+      // Sync companies to database
+      let synced = 0;
+      for (const company of companiesData.companies || []) {
+        const existing = await storage.getSibillCompanyByExternalId(credential.id, company.id);
+        if (existing) {
+          await storage.updateSibillCompany(existing.id, {
+            name: company.name,
+            vatNumber: company.vat_number,
+            fiscalCode: company.fiscal_code,
+            rawData: company,
+            updatedAt: new Date(),
+          });
+        } else {
+          await storage.createSibillCompany({
+            credentialId: credential.id,
+            resellerId,
+            externalId: company.id,
+            name: company.name,
+            vatNumber: company.vat_number,
+            fiscalCode: company.fiscal_code,
+            rawData: company,
+          });
+        }
+        synced++;
       }
       
-      // Update last sync
+      // Update sync timestamp
       await storage.updateSibillCredential(credential.id, {
         lastSyncAt: new Date(),
-      } as any);
+        updatedAt: new Date(),
+      });
       
-      res.json({ success: true, count: companies.length });
+      res.json({ success: true, syncedCount: synced });
     } catch (error: any) {
       console.error("Error syncing Sibill companies:", error);
-      res.status(500).json({ error: error.message || "Errore nella sincronizzazione" });
+      res.status(500).json({ error: error.message });
     }
   });
 
-  // GET /api/sibill/documents - Get documents for selected company
-  app.get("/api/sibill/documents", requireAuth, requireRole("reseller"), async (req, res) => {
+  // Get Sibill documents
+  app.get("/api/sibill/documents", requireAuth, requireRole("reseller", "reseller_staff"), async (req, res) => {
     try {
-      const credential = await storage.getSibillCredentialByReseller(req.user!.id);
-      if (!credential || !credential.selectedCompanyId) {
-        return res.status(404).json({ error: "Azienda Sibill non selezionata" });
+      const resellerId = getEffectiveResellerId(req);
+      if (!resellerId) {
+        return res.status(400).json({ error: "Reseller ID non trovato" });
+      }
+      const credential = await storage.getSibillCredentialByReseller(resellerId);
+      if (!credential) {
+        return res.status(404).json({ error: "Credenziali Sibill non configurate" });
       }
       
-      const { SibillService } = await import("./services/sibill");
-      const service = new SibillService({ 
-        apiToken: credential.apiToken, 
-        environment: credential.environment as any 
-      });
-      
-      const direction = req.query.direction as string | undefined;
-      const result = await service.listDocuments(credential.selectedCompanyId, {
-        pageSize: 50,
-        direction: direction as any,
-      });
-      
-      res.json(result.data);
+      const documents = await storage.listSibillDocuments(credential.id);
+      res.json(documents);
     } catch (error: any) {
       console.error("Error fetching Sibill documents:", error);
-      res.status(500).json({ error: error.message || "Errore nel recupero dei documenti" });
+      res.status(500).json({ error: error.message });
     }
   });
 
-  // POST /api/sibill/documents/sync - Sync documents from Sibill
+  // Sync Sibill documents from API
   app.post("/api/sibill/documents/sync", requireAuth, requireRole("reseller"), async (req, res) => {
     try {
-      const credential = await storage.getSibillCredentialByReseller(req.user!.id);
-      if (!credential || !credential.selectedCompanyId) {
-        return res.status(404).json({ error: "Azienda Sibill non selezionata" });
+      const resellerId = getEffectiveResellerId(req);
+      if (!resellerId) {
+        return res.status(400).json({ error: "Reseller ID non trovato" });
+      }
+      const credential = await storage.getSibillCredentialByReseller(resellerId);
+      if (!credential) {
+        return res.status(404).json({ error: "Credenziali Sibill non configurate" });
+      }
+      if (!credential.companyId) {
+        return res.status(400).json({ error: "Company ID non configurato" });
       }
       
       const { SibillService } = await import("./services/sibill");
-      const service = new SibillService({ 
-        apiToken: credential.apiToken, 
-        environment: credential.environment as any 
-      });
+      const sibillService = new SibillService({ apiToken: credential.apiToken, environment: credential.environment as "development" | "production" });
+      const documentsData = await sibillService.getDocuments(credential.companyId);
       
-      const result = await service.listDocuments(credential.selectedCompanyId, { pageSize: 100 });
-      
-      for (const doc of result.data) {
-        await storage.upsertSibillDocument({
-          credentialId: credential.id,
-          companyId: credential.selectedCompanyId,
-          sibillDocumentId: doc.id,
-          documentType: doc.type || null,
-          direction: doc.direction || null,
-          number: doc.number || null,
-          grossAmount: SibillService.amountToCents(doc.gross_amount),
-          vatAmount: SibillService.amountToCents(doc.vat_amount),
-          currency: doc.gross_amount?.currency || "EUR",
-          status: doc.status || null,
-          isEInvoice: doc.is_e_invoice || false,
-          format: doc.format || null,
-          counterpartId: doc.counterpart?.id || null,
-          counterpartName: doc.counterpart?.company_name || null,
-          counterpartVatNumber: doc.counterpart?.vat_number || null,
-          creationDate: doc.creation_date || null,
-          deliveryDate: doc.delivery_date || null,
-          deliveryStatus: doc.delivery_status || null,
-          paymentStatus: doc.flows?.[0]?.payment_status || null,
-          paymentMethod: doc.flows?.[0]?.payment_method || null,
-          expectedPaymentDate: doc.flows?.[0]?.expected_payment_date || null,
-          paymentDate: doc.flows?.[0]?.payment_date || null,
-          notes: doc.notes || null,
-          sibillCreatedAt: doc.created_at ? new Date(doc.created_at) : null,
-          sibillUpdatedAt: doc.updated_at ? new Date(doc.updated_at) : null,
-        });
+      let synced = 0;
+      for (const doc of documentsData.documents || []) {
+        const existing = await storage.getSibillDocumentByExternalId(credential.id, doc.id);
+        if (existing) {
+          await storage.updateSibillDocument(existing.id, {
+            documentNumber: doc.number,
+            documentType: doc.type,
+            status: doc.status,
+            issueDate: doc.issue_date ? new Date(doc.issue_date) : null,
+            dueDate: doc.due_date ? new Date(doc.due_date) : null,
+            totalAmount: doc.total_amount ? Math.round(doc.total_amount * 100) : null,
+            currency: doc.currency || "EUR",
+            counterpartyName: doc.counterparty_name,
+            counterpartyVat: doc.counterparty_vat,
+            rawData: doc,
+            updatedAt: new Date(),
+          });
+        } else {
+          await storage.createSibillDocument({
+            credentialId: credential.id,
+            resellerId,
+            externalId: doc.id,
+            documentNumber: doc.number,
+            documentType: doc.type,
+            status: doc.status,
+            issueDate: doc.issue_date ? new Date(doc.issue_date) : null,
+            dueDate: doc.due_date ? new Date(doc.due_date) : null,
+            totalAmount: doc.total_amount ? Math.round(doc.total_amount * 100) : null,
+            currency: doc.currency || "EUR",
+            counterpartyName: doc.counterparty_name,
+            counterpartyVat: doc.counterparty_vat,
+            rawData: doc,
+          });
+        }
+        synced++;
       }
       
-      res.json({ success: true, count: result.data.length });
+      await storage.updateSibillCredential(credential.id, {
+        lastSyncAt: new Date(),
+        updatedAt: new Date(),
+      });
+      
+      res.json({ success: true, syncedCount: synced });
     } catch (error: any) {
       console.error("Error syncing Sibill documents:", error);
-      res.status(500).json({ error: error.message || "Errore nella sincronizzazione" });
+      res.status(500).json({ error: error.message });
     }
   });
 
-  // GET /api/sibill/accounts - Get accounts for selected company
-  app.get("/api/sibill/accounts", requireAuth, requireRole("reseller"), async (req, res) => {
+  // Get Sibill bank accounts
+  app.get("/api/sibill/accounts", requireAuth, requireRole("reseller", "reseller_staff"), async (req, res) => {
     try {
-      const credential = await storage.getSibillCredentialByReseller(req.user!.id);
-      if (!credential || !credential.selectedCompanyId) {
-        return res.status(404).json({ error: "Azienda Sibill non selezionata" });
+      const resellerId = getEffectiveResellerId(req);
+      if (!resellerId) {
+        return res.status(400).json({ error: "Reseller ID non trovato" });
       }
-      
-      const { SibillService } = await import("./services/sibill");
-      const service = new SibillService({ 
-        apiToken: credential.apiToken, 
-        environment: credential.environment as any 
-      });
-      
-      const result = await service.listAccounts(credential.selectedCompanyId);
-      res.json(result.data);
+      const credential = await storage.getSibillCredentialByReseller(resellerId);
+      if (!credential) {
+        return res.status(404).json({ error: "Credenziali Sibill non configurate" });
+      }
+      const accounts = await storage.listSibillAccounts(credential.id);
+      res.json(accounts);
     } catch (error: any) {
       console.error("Error fetching Sibill accounts:", error);
-      res.status(500).json({ error: error.message || "Errore nel recupero dei conti" });
+      res.status(500).json({ error: error.message });
     }
   });
 
-  // GET /api/sibill/transactions - Get transactions for selected company
-  app.get("/api/sibill/transactions", requireAuth, requireRole("reseller"), async (req, res) => {
+  // Sync Sibill bank accounts from API
+  app.post("/api/sibill/accounts/sync", requireAuth, requireRole("reseller"), async (req, res) => {
     try {
-      const credential = await storage.getSibillCredentialByReseller(req.user!.id);
-      if (!credential || !credential.selectedCompanyId) {
-        return res.status(404).json({ error: "Azienda Sibill non selezionata" });
+      const resellerId = getEffectiveResellerId(req);
+      if (!resellerId) {
+        return res.status(400).json({ error: "Reseller ID non trovato" });
+      }
+      const credential = await storage.getSibillCredentialByReseller(resellerId);
+      if (!credential) {
+        return res.status(404).json({ error: "Credenziali Sibill non configurate" });
+      }
+      if (!credential.companyId) {
+        return res.status(400).json({ error: "Company ID non configurato" });
       }
       
       const { SibillService } = await import("./services/sibill");
-      const service = new SibillService({ 
-        apiToken: credential.apiToken, 
-        environment: credential.environment as any 
+      const sibillService = new SibillService({ apiToken: credential.apiToken, environment: credential.environment as "development" | "production" });
+      const accountsData = await sibillService.getAccounts(credential.companyId);
+      
+      let synced = 0;
+      for (const account of accountsData.accounts || []) {
+        const existing = await storage.getSibillAccountByExternalId(credential.id, account.id);
+        if (existing) {
+          await storage.updateSibillAccount(existing.id, {
+            name: account.name,
+            iban: account.iban,
+            bankName: account.bank_name,
+            accountType: account.type,
+            balance: account.balance ? Math.round(account.balance * 100) : null,
+            currency: account.currency || "EUR",
+            rawData: account,
+            updatedAt: new Date(),
+          });
+        } else {
+          await storage.createSibillAccount({
+            credentialId: credential.id,
+            resellerId,
+            externalId: account.id,
+            name: account.name,
+            iban: account.iban,
+            bankName: account.bank_name,
+            accountType: account.type,
+            balance: account.balance ? Math.round(account.balance * 100) : null,
+            currency: account.currency || "EUR",
+            rawData: account,
+          });
+        }
+        synced++;
+      }
+      
+      await storage.updateSibillCredential(credential.id, {
+        lastSyncAt: new Date(),
+        updatedAt: new Date(),
       });
       
-      const result = await service.listTransactions(credential.selectedCompanyId);
-      res.json(result.data);
+      res.json({ success: true, syncedCount: synced });
+    } catch (error: any) {
+      console.error("Error syncing Sibill accounts:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Get Sibill transactions
+  app.get("/api/sibill/transactions", requireAuth, requireRole("reseller", "reseller_staff"), async (req, res) => {
+    try {
+      const resellerId = getEffectiveResellerId(req);
+      if (!resellerId) {
+        return res.status(400).json({ error: "Reseller ID non trovato" });
+      }
+      const credential = await storage.getSibillCredentialByReseller(resellerId);
+      if (!credential) {
+        return res.status(404).json({ error: "Credenziali Sibill non configurate" });
+      }
+      
+      const { limit, offset, accountId, status } = req.query;
+      const transactions = await storage.listSibillTransactions(credential.id, {
+        limit: limit ? parseInt(limit as string) : 50,
+        offset: offset ? parseInt(offset as string) : 0,
+        accountId: accountId as string,
+        status: status as string,
+      });
+      res.json(transactions);
     } catch (error: any) {
       console.error("Error fetching Sibill transactions:", error);
-      res.status(500).json({ error: error.message || "Errore nel recupero delle transazioni" });
+      res.status(500).json({ error: error.message });
     }
   });
 
-  // GET /api/sibill/categories - Get categories for selected company
-  app.get("/api/sibill/categories", requireAuth, requireRole("reseller"), async (req, res) => {
+  // Sync Sibill transactions from API
+  app.post("/api/sibill/transactions/sync", requireAuth, requireRole("reseller"), async (req, res) => {
     try {
-      const credential = await storage.getSibillCredentialByReseller(req.user!.id);
-      if (!credential || !credential.selectedCompanyId) {
-        return res.status(404).json({ error: "Azienda Sibill non selezionata" });
+      const resellerId = getEffectiveResellerId(req);
+      if (!resellerId) {
+        return res.status(400).json({ error: "Reseller ID non trovato" });
+      }
+      const credential = await storage.getSibillCredentialByReseller(resellerId);
+      if (!credential) {
+        return res.status(404).json({ error: "Credenziali Sibill non configurate" });
+      }
+      
+      // Get all accounts and sync transactions for each
+      const accounts = await storage.listSibillAccounts(credential.id);
+      if (accounts.length === 0) {
+        return res.status(400).json({ error: "Nessun conto configurato. Sincronizza prima i conti." });
       }
       
       const { SibillService } = await import("./services/sibill");
-      const service = new SibillService({ 
-        apiToken: credential.apiToken, 
-        environment: credential.environment as any 
-      });
+      const sibillService = new SibillService({ apiToken: credential.apiToken, environment: credential.environment as "development" | "production" });
       
-      const result = await service.listCategories(credential.selectedCompanyId);
-      res.json(result.data);
-    } catch (error: any) {
-      console.error("Error fetching Sibill categories:", error);
-      res.status(500).json({ error: error.message || "Errore nel recupero delle categorie" });
-    }
-  });
-
-  // GET /api/sibill/counterparts - Get counterparts for selected company
-  app.get("/api/sibill/counterparts", requireAuth, requireRole("reseller"), async (req, res) => {
-    try {
-      const credential = await storage.getSibillCredentialByReseller(req.user!.id);
-      if (!credential || !credential.selectedCompanyId) {
-        return res.status(404).json({ error: "Azienda Sibill non selezionata" });
+      let totalSynced = 0;
+      for (const account of accounts) {
+        const transactionsData = await sibillService.getTransactions(account.externalId);
+        
+        for (const tx of transactionsData.transactions || []) {
+          const existing = await storage.getSibillTransactionByExternalId(credential.id, tx.id);
+          if (existing) {
+            await storage.updateSibillTransaction(existing.id, {
+              amount: tx.amount ? Math.round(tx.amount * 100) : 0,
+              currency: tx.currency || "EUR",
+              transactionDate: tx.date ? new Date(tx.date) : new Date(),
+              valueDate: tx.value_date ? new Date(tx.value_date) : null,
+              description: tx.description,
+              counterpartyName: tx.counterparty_name,
+              counterpartyIban: tx.counterparty_iban,
+              status: tx.status || "pending",
+              rawData: tx,
+              updatedAt: new Date(),
+            });
+          } else {
+            await storage.createSibillTransaction({
+              credentialId: credential.id,
+              resellerId,
+              accountId: account.id,
+              externalId: tx.id,
+              amount: tx.amount ? Math.round(tx.amount * 100) : 0,
+              currency: tx.currency || "EUR",
+              transactionDate: tx.date ? new Date(tx.date) : new Date(),
+              valueDate: tx.value_date ? new Date(tx.value_date) : null,
+              description: tx.description,
+              counterpartyName: tx.counterparty_name,
+              counterpartyIban: tx.counterparty_iban,
+              status: tx.status || "pending",
+              rawData: tx,
+            });
+          }
+          totalSynced++;
+        }
       }
       
-      const { SibillService } = await import("./services/sibill");
-      const service = new SibillService({ 
-        apiToken: credential.apiToken, 
-        environment: credential.environment as any 
+      await storage.updateSibillCredential(credential.id, {
+        lastSyncAt: new Date(),
+        updatedAt: new Date(),
       });
       
-      const result = await service.listCounterparts(credential.selectedCompanyId);
-      res.json(result.data);
+      res.json({ success: true, syncedCount: totalSynced });
     } catch (error: any) {
-      console.error("Error fetching Sibill counterparts:", error);
-      res.status(500).json({ error: error.message || "Errore nel recupero delle controparti" });
+      console.error("Error syncing Sibill transactions:", error);
+      res.status(500).json({ error: error.message });
     }
   });
 
+  // Delete Sibill credentials
+  app.delete("/api/sibill/credentials", requireAuth, requireRole("reseller"), async (req, res) => {
+    try {
+      const resellerId = getEffectiveResellerId(req);
+      if (!resellerId) {
+        return res.status(400).json({ error: "Reseller ID non trovato" });
+      }
+      const credential = await storage.getSibillCredentialByReseller(resellerId);
+      if (!credential) {
+        return res.status(404).json({ error: "Credenziali Sibill non trovate" });
+      }
+      
+      await storage.deleteSibillCredential(credential.id);
+      res.json({ success: true, message: "Credenziali Sibill eliminate" });
+    } catch (error: any) {
+      console.error("Error deleting Sibill credentials:", error);
+      res.status(500).json({ error: error.message });
+    }
 
+  return httpServer;
+  });
 
   return httpServer;
 }

@@ -44,6 +44,16 @@ The backend is an `Express.js` application with TypeScript, featuring a RESTful 
 *   **Development Dependencies**: `tsx`, `esbuild`, `drizzle-kit`.
 ## Recent Changes (January 2026)
 
+### Sibill Integration
+- Added Sibill integration for invoice management and bank reconciliation
+- Created database tables: `sibill_credentials`, `sibill_companies`, `sibill_documents`, `sibill_accounts`, `sibill_transactions`, `sibill_categories`
+- Implemented Sibill API service (`server/services/sibill.ts`) with Bearer token authentication
+- Added comprehensive API routes for credentials CRUD, test connection, and sync operations
+- Sibill appears in integrations dashboard alongside SIFAR, Foneday, MobileSentrix, TrovaUsati
+- Supports dual environments (development/production)
+- Stores amounts in cents for precision, currency defaults to EUR
+
+
 ### Automatic Invoice Generation for Reseller Sales
 - Modified `/api/sales-orders/:id/status` endpoint to auto-generate invoices when orders are marked as "delivered" or "completed"
 - Added new storage function `createInvoiceForRepairCenterB2BOrder` for repair center B2B orders
