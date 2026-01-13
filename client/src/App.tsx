@@ -108,6 +108,7 @@ import ResellerCustomerDetail from "@/pages/reseller/customer-detail";
 import ResellerTickets from "@/pages/reseller/tickets";
 import ResellerTicketDetail from "@/pages/reseller/ticket-detail";
 import ResellerInvoices from "@/pages/reseller/invoices";
+import ResellerSales from "@/pages/reseller/sales";
 import ResellerReports from "@/pages/reseller/reports";
 
 // Reseller Utility pages
@@ -390,6 +391,7 @@ function Router() {
       <ProtectedRoute path="/reseller/utility/commissions" component={ResellerUtilityCommissions} allowedRoles={["reseller", "reseller_staff"]} />
       <ProtectedRoute path="/reseller/utility/reports" component={ResellerUtilityReports} allowedRoles={["reseller", "reseller_staff"]} />
       <ProtectedRoute path="/reseller/invoices" component={ResellerInvoices} allowedRoles={["reseller", "reseller_staff"]} />
+      <ProtectedRoute path="/reseller/sales" component={ResellerSales} allowedRoles={["reseller", "reseller_staff"]} />
       <ProtectedRoute path="/reseller/reports" component={ResellerReports} allowedRoles={["reseller", "reseller_staff"]} />
       <ProtectedRoute path="/reseller/sifar/settings" component={ResellerSifarSettings} allowedRoles={["reseller", "reseller_staff"]} />
       <ProtectedRoute path="/reseller/sifar/catalog" component={ResellerSifarCatalog} allowedRoles={["reseller", "reseller_staff"]} />

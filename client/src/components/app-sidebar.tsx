@@ -199,6 +199,7 @@ const menuItems = {
     { title: "Anagrafica Fornitori", url: "/reseller/suppliers", icon: Truck, group: "Fornitori" },
     { title: "Ordini a Fornitori", url: "/reseller/supplier-orders", icon: ShoppingCart, group: "Fornitori" },
     { title: "Resi a Fornitori", url: "/reseller/supplier-returns", icon: RotateCcw, group: "Fornitori" },
+    { title: "Panoramica Vendite", url: "/reseller/sales", icon: TrendingUp, group: "Fatturazione" },
     { title: "Fatture", url: "/reseller/invoices", icon: FileText, group: "Fatturazione" },
     { title: "Report", url: "/reseller/reports", icon: BarChart3, group: "Fatturazione" },
     // E-commerce - Catalogo
