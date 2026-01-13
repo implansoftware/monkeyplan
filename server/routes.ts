@@ -32414,6 +32414,21 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Lista tutte le fatture del repair center (riparazioni, POS, marketplace)
+  app.get("/api/repair-center/invoices", requireRole("repair_center", "repair_center_staff"), async (req, res) => {
+    try {
+      const repairCenterId = req.user!.repairCenterId || req.user!.id;
+      const { source, status } = req.query;
+      const invoices = await storage.getInvoicesByRepairCenter(repairCenterId, {
+        source: source as string | undefined,
+        paymentStatus: status as string | undefined,
+      });
+      res.json(invoices);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   // Lista fatture vendita POS
   app.get("/api/repair-center/pos/invoices", requireRole("repair_center", "repair_center_staff"), async (req, res) => {
     try {
@@ -32584,6 +32599,22 @@ export function registerRoutes(app: Express): Server {
       const products = await storage.getProducts({ barcode: req.params.barcode });
       if (products.length === 0) return res.status(404).json({ error: "Prodotto non trovato" });
       res.json(products[0]);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Lista tutte le fatture del reseller e dei suoi centri
+  app.get("/api/reseller/invoices", requireRole("reseller", "reseller_staff", "sub_reseller"), async (req, res) => {
+    try {
+      const { resellerId } = getEffectiveContext(req);
+      const { source, status, repairCenterId } = req.query;
+      const invoices = await storage.getInvoicesByReseller(resellerId, {
+        repairCenterId: repairCenterId as string | undefined,
+        source: source as string | undefined,
+        paymentStatus: status as string | undefined,
+      });
+      res.json(invoices);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }
