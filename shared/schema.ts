@@ -3302,7 +3302,7 @@ export const invoices = pgTable("invoices", {
   repairOrderId: varchar("repair_order_id"),
   posTransactionId: varchar("pos_transaction_id"),
   marketplaceOrderId: varchar("marketplace_order_id"),
-  customerId: varchar("customer_id").notNull(),
+  customerId: varchar("customer_id"), // Optional for B2B invoices
   repairCenterId: varchar("repair_center_id"),
   resellerId: varchar("reseller_id"),
   source: invoiceSourceEnum("source").default("other"),
