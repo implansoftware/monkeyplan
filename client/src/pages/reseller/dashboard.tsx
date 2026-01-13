@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useQuery } from "@tanstack/react-query";
-import { ShoppingCart, Users, TrendingUp, FileText, Package, AlertCircle, Zap, ArrowRightLeft, Network, ChevronRight, ExternalLink, LayoutDashboard } from "lucide-react";
+import { ShoppingCart, Users, TrendingUp, FileText, Package, AlertCircle, Zap, ArrowRightLeft, Network, ChevronRight, ExternalLink, LayoutDashboard, Store, Briefcase, Euro } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -96,6 +96,17 @@ export default function ResellerDashboard() {
 
   const { data: invoices = [] } = useQuery<Invoice[]>({
     queryKey: ["/api/invoices"],
+  });
+
+  const { data: salesData } = useQuery<{
+    summary: {
+      totalSales: number;
+      totalAmount: number;
+      bySource: { ecommerce: number; pos: number; utility: number; b2b: number };
+      countBySource: { ecommerce: number; pos: number; utility: number; b2b: number };
+    };
+  }>({
+    queryKey: ["/api/reseller/sales"],
   });
 
   const formatCurrency = (cents: number) => {
@@ -418,6 +429,87 @@ export default function ResellerDashboard() {
           </Card>
         </Link>
       </div>
+
+      {/* Sales Overview */}
+      <Card className="overflow-hidden" data-testid="card-sales-overview">
+        <CardHeader className="pb-3 border-b bg-gradient-to-r from-emerald-50 to-blue-50 dark:from-emerald-950/30 dark:to-blue-950/30">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="h-9 w-9 rounded-lg bg-gradient-to-br from-emerald-500 to-blue-500 text-white flex items-center justify-center">
+                <TrendingUp className="h-4 w-4" />
+              </div>
+              <div>
+                <CardTitle className="text-base font-semibold">Panoramica Vendite</CardTitle>
+                <p className="text-xs text-muted-foreground">Aggregato da tutte le fonti</p>
+              </div>
+            </div>
+            <Link href="/reseller/sales">
+              <Button variant="outline" size="sm" data-testid="button-view-sales">
+                Dettagli
+                <ChevronRight className="h-4 w-4 ml-1" />
+              </Button>
+            </Link>
+          </div>
+        </CardHeader>
+        <CardContent className="pt-4">
+          <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+            <div className="col-span-2 lg:col-span-1 p-4 rounded-xl bg-gradient-to-br from-primary/5 to-primary/10 border border-primary/20">
+              <div className="flex items-center gap-2 mb-2">
+                <Euro className="h-4 w-4 text-primary" />
+                <span className="text-xs font-medium text-muted-foreground">Totale</span>
+              </div>
+              <p className="text-2xl font-bold" data-testid="text-sales-total">
+                {formatCurrency(salesData?.summary?.totalAmount || 0)}
+              </p>
+              <p className="text-xs text-muted-foreground mt-1">{salesData?.summary?.totalSales || 0} transazioni</p>
+            </div>
+            
+            <div className="p-3 rounded-lg bg-blue-50 dark:bg-blue-950/30 border border-blue-200/50 dark:border-blue-800/50">
+              <div className="flex items-center gap-2 mb-1">
+                <ShoppingCart className="h-3 w-3 text-blue-600" />
+                <span className="text-xs text-muted-foreground">E-commerce</span>
+              </div>
+              <p className="text-lg font-bold text-blue-600" data-testid="text-sales-ecommerce">
+                {formatCurrency(salesData?.summary?.bySource?.ecommerce || 0)}
+              </p>
+              <p className="text-xs text-muted-foreground">{salesData?.summary?.countBySource?.ecommerce || 0} ordini</p>
+            </div>
+            
+            <div className="p-3 rounded-lg bg-green-50 dark:bg-green-950/30 border border-green-200/50 dark:border-green-800/50">
+              <div className="flex items-center gap-2 mb-1">
+                <Store className="h-3 w-3 text-green-600" />
+                <span className="text-xs text-muted-foreground">POS</span>
+              </div>
+              <p className="text-lg font-bold text-green-600" data-testid="text-sales-pos">
+                {formatCurrency(salesData?.summary?.bySource?.pos || 0)}
+              </p>
+              <p className="text-xs text-muted-foreground">{salesData?.summary?.countBySource?.pos || 0} vendite</p>
+            </div>
+            
+            <div className="p-3 rounded-lg bg-yellow-50 dark:bg-yellow-950/30 border border-yellow-200/50 dark:border-yellow-800/50">
+              <div className="flex items-center gap-2 mb-1">
+                <Zap className="h-3 w-3 text-yellow-600" />
+                <span className="text-xs text-muted-foreground">Utility</span>
+              </div>
+              <p className="text-lg font-bold text-yellow-600" data-testid="text-sales-utility">
+                {formatCurrency(salesData?.summary?.bySource?.utility || 0)}
+              </p>
+              <p className="text-xs text-muted-foreground">{salesData?.summary?.countBySource?.utility || 0} pratiche</p>
+            </div>
+            
+            <div className="p-3 rounded-lg bg-purple-50 dark:bg-purple-950/30 border border-purple-200/50 dark:border-purple-800/50">
+              <div className="flex items-center gap-2 mb-1">
+                <Briefcase className="h-3 w-3 text-purple-600" />
+                <span className="text-xs text-muted-foreground">B2B</span>
+              </div>
+              <p className="text-lg font-bold text-purple-600" data-testid="text-sales-b2b">
+                {formatCurrency(salesData?.summary?.bySource?.b2b || 0)}
+              </p>
+              <p className="text-xs text-muted-foreground">{salesData?.summary?.countBySource?.b2b || 0} ordini</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Quick Actions */}
       <Card className="overflow-hidden">
