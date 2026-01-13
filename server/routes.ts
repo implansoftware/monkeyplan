@@ -4257,6 +4257,52 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Get sub-resellers e-commerce data (for franchising/GDO resellers)
+  app.get("/api/reseller/sub-resellers/ecommerce", requireRole("reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      // Only franchising/gdo resellers can see sub-resellers e-commerce
+      if (req.user.resellerCategory !== 'franchising' && req.user.resellerCategory !== 'gdo') {
+        return res.json([]);
+      }
+      
+      const childResellers = await storage.getChildResellers(req.user.id);
+      
+      // Get e-commerce data for each sub-reseller
+      const ecommerceData = await Promise.all(
+        childResellers.map(async (reseller) => {
+          // Get product assignments
+          const assignments = await storage.listResellerProducts({ resellerId: reseller.id });
+          const publishedCount = assignments.filter(a => a.isPublished).length;
+          
+          // Get sales orders
+          const orders = await storage.listSalesOrders({ resellerId: reseller.id });
+          const totalRevenue = orders.reduce((sum, o) => sum + (o.total || 0), 0);
+          const pendingOrders = orders.filter(o => o.status === 'pending' || o.status === 'processing').length;
+          const lastOrder = orders.sort((a, b) => 
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+          )[0];
+          
+          return {
+            resellerId: reseller.id,
+            resellerName: reseller.fullName,
+            totalOrders: orders.length,
+            totalRevenue,
+            productsAssigned: assignments.length,
+            productsPublished: publishedCount,
+            pendingOrders,
+            lastOrderDate: lastOrder?.createdAt || null,
+          };
+        })
+      );
+      
+      res.json(ecommerceData);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
   // Get single sub-reseller detail (for franchising/GDO parent resellers)
   app.get("/api/reseller/sub-resellers/:id", requireRole("reseller"), async (req, res) => {
     try {
@@ -4550,52 +4596,6 @@ export function registerRoutes(app: Express): Server {
       res.status(500).send(error.message);
     }
   });
-  // Get sub-resellers e-commerce data (for franchising/GDO resellers)
-  app.get("/api/reseller/sub-resellers/ecommerce", requireRole("reseller"), async (req, res) => {
-    try {
-      if (!req.user) return res.status(401).send("Unauthorized");
-      
-      // Only franchising/gdo resellers can see sub-resellers e-commerce
-      if (req.user.resellerCategory !== 'franchising' && req.user.resellerCategory !== 'gdo') {
-        return res.json([]);
-      }
-      
-      const childResellers = await storage.getChildResellers(req.user.id);
-      
-      // Get e-commerce data for each sub-reseller
-      const ecommerceData = await Promise.all(
-        childResellers.map(async (reseller) => {
-          // Get product assignments
-          const assignments = await storage.listResellerProducts({ resellerId: reseller.id });
-          const publishedCount = assignments.filter(a => a.isPublished).length;
-          
-          // Get sales orders
-          const orders = await storage.listSalesOrders({ resellerId: reseller.id });
-          const totalRevenue = orders.reduce((sum, o) => sum + (o.total || 0), 0);
-          const pendingOrders = orders.filter(o => o.status === 'pending' || o.status === 'processing').length;
-          const lastOrder = orders.sort((a, b) => 
-            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-          )[0];
-          
-          return {
-            resellerId: reseller.id,
-            resellerName: reseller.fullName,
-            totalOrders: orders.length,
-            totalRevenue,
-            productsAssigned: assignments.length,
-            productsPublished: publishedCount,
-            pendingOrders,
-            lastOrderDate: lastOrder?.createdAt || null,
-          };
-        })
-      );
-      
-      res.json(ecommerceData);
-    } catch (error: any) {
-      res.status(500).send(error.message);
-    }
-  });
-
   // Assign products to sub-resellers (for franchising/GDO resellers)
   app.post("/api/reseller/sub-resellers/:subResellerId/assign-products", requireRole("reseller"), async (req, res) => {
     try {
