@@ -5,7 +5,6 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
@@ -116,7 +115,6 @@ function formatPrice(cents: number): string {
 
 export default function SubResellers() {
   const [searchQuery, setSearchQuery] = useState("");
-  const [activeTab, setActiveTab] = useState("anagrafica");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [editingReseller, setEditingReseller] = useState<SubReseller | null>(null);
@@ -177,11 +175,6 @@ export default function SubResellers() {
 
   const { data: subResellers = [], isLoading } = useQuery<SubReseller[]>({
     queryKey: ["/api/reseller/sub-resellers"],
-  });
-
-  const { data: ecommerceData = [], isLoading: isLoadingEcommerce } = useQuery<SubResellerEcommerce[]>({
-    queryKey: ["/api/reseller/sub-resellers/ecommerce"],
-    enabled: activeTab === "ecommerce",
   });
 
   useEffect(() => {
@@ -355,9 +348,6 @@ export default function SubResellers() {
   const totalCenters = subResellers.reduce((acc, r) => acc + r.repairCentersCount, 0);
   const activeResellers = subResellers.filter((r) => r.isActive).length;
 
-  const totalEcommerceRevenue = ecommerceData.reduce((acc, r) => acc + r.totalRevenue, 0);
-  const totalEcommerceOrders = ecommerceData.reduce((acc, r) => acc + r.totalOrders, 0);
-
   const isPending = createMutation.isPending || updateMutation.isPending;
 
   return (
@@ -450,21 +440,13 @@ export default function SubResellers() {
           <CardContent className="p-5">
             <div className="flex items-center gap-4">
               <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-violet-500/10">
-                {activeTab === "ecommerce" ? (
-                  <DollarSign className="h-6 w-6 text-violet-600" />
-                ) : (
-                  <Network className="h-6 w-6 text-violet-600" />
-                )}
+                <Network className="h-6 w-6 text-violet-600" />
               </div>
               <div className="flex-1">
-                <p className="text-sm font-medium text-muted-foreground">
-                  {activeTab === "ecommerce" ? "Fatturato Rete" : "Attivi"}
-                </p>
+                <p className="text-sm font-medium text-muted-foreground">Attivi</p>
                 <div className="text-2xl font-bold" data-testid="text-active-resellers">
                   {isLoading ? (
                     <Skeleton className="h-8 w-16" />
-                  ) : activeTab === "ecommerce" ? (
-                    formatPrice(totalEcommerceRevenue)
                   ) : (
                     `${activeResellers}/${subResellers.length}`
                   )}
@@ -472,27 +454,13 @@ export default function SubResellers() {
               </div>
             </div>
             <p className="text-xs text-muted-foreground mt-2 pl-16">
-              {activeTab === "ecommerce" 
-                ? `${totalEcommerceOrders} ordini totali`
-                : "sub-reseller attivi"}
+              sub-reseller attivi
             </p>
           </CardContent>
         </Card>
       </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="bg-muted/50 p-1">
-          <TabsTrigger value="anagrafica" className="data-[state=active]:bg-background data-[state=active]:shadow-sm">
-            <Users className="h-4 w-4 mr-2" />
-            Anagrafica
-          </TabsTrigger>
-          <TabsTrigger value="ecommerce" className="data-[state=active]:bg-background data-[state=active]:shadow-sm">
-            <ShoppingCart className="h-4 w-4 mr-2" />
-            E-commerce
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="anagrafica" className="mt-4">
+      <div className="mt-4">
           <Card className="shadow-sm">
             <CardHeader className="pb-4">
               <div className="flex items-center justify-between gap-4 flex-wrap">
@@ -641,110 +609,7 @@ export default function SubResellers() {
               )}
             </CardContent>
           </Card>
-        </TabsContent>
-
-        <TabsContent value="ecommerce" className="mt-4">
-          <Card className="shadow-sm">
-            <CardHeader className="pb-4">
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <TrendingUp className="h-5 w-5 text-primary" />
-                Performance E-commerce Sub-Reseller
-              </CardTitle>
-              <CardDescription>
-                Monitora le vendite e il catalogo dei tuoi sub-reseller
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="pt-0">
-              {isLoadingEcommerce ? (
-                <div className="space-y-3">
-                  {Array.from({ length: 5 }).map((_, i) => (
-                    <Skeleton key={i} className="h-14 w-full rounded-lg" />
-                  ))}
-                </div>
-              ) : ecommerceData.length === 0 ? (
-                <div className="text-center py-16">
-                  <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-muted/50 mx-auto mb-4">
-                    <ShoppingCart className="h-8 w-8 text-muted-foreground" />
-                  </div>
-                  <p className="text-lg font-semibold">Nessun dato e-commerce</p>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    I tuoi sub-reseller non hanno ancora attività e-commerce
-                  </p>
-                </div>
-              ) : (
-                <div className="rounded-lg border overflow-hidden">
-                  <Table>
-                    <TableHeader>
-                      <TableRow className="bg-muted/30 hover:bg-muted/30">
-                        <TableHead className="font-semibold">Sub-Reseller</TableHead>
-                        <TableHead className="text-center font-semibold">Prodotti Assegnati</TableHead>
-                        <TableHead className="text-center font-semibold">Prodotti Pubblicati</TableHead>
-                        <TableHead className="text-center font-semibold">Ordini Totali</TableHead>
-                        <TableHead className="text-center font-semibold">Ordini Pendenti</TableHead>
-                        <TableHead className="text-right font-semibold">Fatturato</TableHead>
-                        <TableHead className="font-semibold">Ultimo Ordine</TableHead>
-                        <TableHead className="text-right font-semibold">Azioni</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {ecommerceData.map((data) => (
-                        <TableRow key={data.resellerId} data-testid={`row-ecommerce-${data.resellerId}`}>
-                          <TableCell className="font-medium">
-                            {data.resellerName}
-                          </TableCell>
-                          <TableCell className="text-center">
-                            <Badge variant="outline">
-                              <Package className="h-3 w-3 mr-1" />
-                              {data.productsAssigned}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="text-center">
-                            <Badge variant={data.productsPublished > 0 ? "default" : "secondary"}>
-                              <Store className="h-3 w-3 mr-1" />
-                              {data.productsPublished}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="text-center">
-                            <Badge variant="secondary">
-                              <ShoppingCart className="h-3 w-3 mr-1" />
-                              {data.totalOrders}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="text-center">
-                            {data.pendingOrders > 0 ? (
-                              <Badge variant="default">
-                                {data.pendingOrders}
-                              </Badge>
-                            ) : (
-                              <span className="text-muted-foreground">-</span>
-                            )}
-                          </TableCell>
-                          <TableCell className="text-right font-semibold">
-                            {formatPrice(data.totalRevenue)}
-                          </TableCell>
-                          <TableCell className="text-muted-foreground">
-                            {data.lastOrderDate 
-                              ? format(new Date(data.lastOrderDate), "dd MMM yyyy", { locale: it })
-                              : "-"}
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <Link href={`/shop/${data.resellerId}`}>
-                              <Button size="sm" variant="outline" data-testid={`button-view-shop-${data.resellerId}`}>
-                                <Eye className="h-4 w-4 mr-1" />
-                                Shop
-                              </Button>
-                            </Link>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+      </div>
 
       <Dialog open={dialogOpen} onOpenChange={(open) => {
         setDialogOpen(open);
@@ -1096,6 +961,13 @@ const SubResellerDetailDialog = ({ open, onOpenChange, reseller }: SubResellerDe
     enabled: open && !!reseller?.id,
   });
 
+  const { data: ecommerceData } = useQuery<SubResellerEcommerce[]>({
+    queryKey: ['/api/reseller/sub-resellers/ecommerce'],
+    enabled: open && !!reseller?.id,
+  });
+
+  const ecommerce = ecommerceData?.find(e => e.resellerId === reseller?.id);
+
   if (!open) return null;
 
   const data = details || reseller;
@@ -1249,6 +1121,70 @@ const SubResellerDetailDialog = ({ open, onOpenChange, reseller }: SubResellerDe
                   </div>
                 </div>
               </div>
+            </div>
+
+            <div className="rounded-lg border p-4">
+              <div className="flex items-center justify-between mb-3">
+                <h4 className="font-semibold flex items-center gap-2 text-sm">
+                  <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10">
+                    <ShoppingCart className="h-4 w-4 text-primary" />
+                  </div>
+                  Performance E-commerce
+                </h4>
+                {ecommerce && (
+                  <Link href={`/shop/${reseller?.id}`}>
+                    <Button size="sm" variant="outline" data-testid="button-view-shop">
+                      <Eye className="h-4 w-4 mr-1" />
+                      Vedi Shop
+                    </Button>
+                  </Link>
+                )}
+              </div>
+              {ecommerce ? (
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="p-3 rounded-lg bg-violet-500/5 border border-violet-500/10">
+                    <div className="flex items-center gap-2 mb-1">
+                      <Package className="h-4 w-4 text-violet-600" />
+                      <span className="text-xs text-muted-foreground">Prodotti</span>
+                    </div>
+                    <p className="text-lg font-bold">{ecommerce.productsPublished}/{ecommerce.productsAssigned}</p>
+                    <p className="text-xs text-muted-foreground">pubblicati/assegnati</p>
+                  </div>
+                  <div className="p-3 rounded-lg bg-blue-500/5 border border-blue-500/10">
+                    <div className="flex items-center gap-2 mb-1">
+                      <ShoppingCart className="h-4 w-4 text-blue-600" />
+                      <span className="text-xs text-muted-foreground">Ordini</span>
+                    </div>
+                    <p className="text-lg font-bold">{ecommerce.totalOrders}</p>
+                    {ecommerce.pendingOrders > 0 && (
+                      <p className="text-xs text-amber-600">{ecommerce.pendingOrders} in attesa</p>
+                    )}
+                  </div>
+                  <div className="p-3 rounded-lg bg-emerald-500/5 border border-emerald-500/10">
+                    <div className="flex items-center gap-2 mb-1">
+                      <DollarSign className="h-4 w-4 text-emerald-600" />
+                      <span className="text-xs text-muted-foreground">Fatturato</span>
+                    </div>
+                    <p className="text-lg font-bold">{formatPrice(ecommerce.totalRevenue)}</p>
+                  </div>
+                  <div className="p-3 rounded-lg bg-muted/50 border">
+                    <div className="flex items-center gap-2 mb-1">
+                      <TrendingUp className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-xs text-muted-foreground">Ultimo Ordine</span>
+                    </div>
+                    <p className="text-sm font-medium">
+                      {ecommerce.lastOrderDate 
+                        ? format(new Date(ecommerce.lastOrderDate), "dd MMM yyyy", { locale: it })
+                        : "Nessun ordine"}
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-6 text-muted-foreground">
+                  <ShoppingCart className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                  <p className="text-sm">Nessuna attività e-commerce</p>
+                </div>
+              )}
             </div>
           </div>
         ) : (
