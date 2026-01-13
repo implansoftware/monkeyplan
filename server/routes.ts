@@ -32485,6 +32485,32 @@ export function registerRoutes(app: Express): Server {
       const processedItems = [];
       
       for (const item of items) {
+        // Gestisce prodotti temporanei (non registrati nel catalogo)
+        if (item.isTemporary) {
+          if (!item.productName || typeof item.unitPrice !== 'number') {
+            return res.status(400).json({ error: "Prodotto temporaneo richiede nome e prezzo" });
+          }
+          const itemDiscount = item.discount || 0;
+          const totalPrice = (item.unitPrice * item.quantity) - itemDiscount;
+          
+          processedItems.push({
+            productId: null,
+            productName: item.productName,
+            productSku: null,
+            productBarcode: null,
+            isTemporary: true,
+            quantity: item.quantity,
+            unitPrice: item.unitPrice,
+            discount: itemDiscount,
+            totalPrice,
+            warehouseId: null,
+          });
+          
+          subtotal += totalPrice;
+          continue;
+        }
+        
+        // Prodotto standard dal catalogo
         const product = await storage.getProduct(item.productId);
         if (!product) return res.status(400).json({ error: `Prodotto ${item.productId} non trovato` });
         
@@ -32497,6 +32523,7 @@ export function registerRoutes(app: Express): Server {
           productName: product.name,
           productSku: product.sku || null,
           productBarcode: product.barcode || null,
+          isTemporary: false,
           quantity: item.quantity,
           unitPrice,
           discount: itemDiscount,
@@ -32542,11 +32569,10 @@ export function registerRoutes(app: Express): Server {
       const transactionItems = await storage.createPosTransactionItems(
         processedItems.map(item => ({ transactionId: transaction.id, ...item, inventoryDeducted: false }))
       );
-      // Deduce inventario dal magazzino per ogni item con warehouseId e marca singolarmente
+      // Deduce inventario dal magazzino per ogni item con warehouseId e productId (non temporanei)
       for (const item of transactionItems) {
-        if (item.warehouseId && item.quantity > 0) {
+        if (item.warehouseId && item.productId && item.quantity > 0 && !item.isTemporary) {
           await storage.updateWarehouseStockQuantity(item.warehouseId, item.productId, -item.quantity);
-          // Marca questo specifico item come inventoryDeducted
           await storage.markPosItemInventoryDeducted(item.id);
         }
       }
