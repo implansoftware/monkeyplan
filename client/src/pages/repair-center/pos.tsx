@@ -151,7 +151,7 @@ type Product = {
 };
 
 type CartItem = {
-  productId: string;
+  productId: string | null;
   name: string;
   sku: string | null;
   barcode: string | null;
@@ -160,6 +160,7 @@ type CartItem = {
   unitPrice: number;
   discount: number;
   totalPrice: number;
+  isTemporary?: boolean;
 };
 
 type DailyStats = {
@@ -230,6 +231,11 @@ export default function PosPage() {
   const [newCustomerPhone, setNewCustomerPhone] = useState("");
   const [customerSearch, setCustomerSearch] = useState("");
   const [selectedRegisterId, setSelectedRegisterId] = useState<string>("");
+  
+  // Stato per prodotto temporaneo
+  const [tempProductDialog, setTempProductDialog] = useState(false);
+  const [tempProductName, setTempProductName] = useState("");
+  const [tempProductPrice, setTempProductPrice] = useState("");
   
   const barcodeInputRef = useRef<HTMLInputElement>(null);
   
@@ -474,6 +480,20 @@ export default function PosPage() {
     setCart(cart.filter(item => item.productId !== productId));
   };
 
+  const updateTempQuantity = (index: number, delta: number) => {
+    setCart(cart.map((item, idx) => {
+      if (idx === index && item.isTemporary) {
+        const newQty = Math.max(0, item.quantity + delta);
+        return { ...item, quantity: newQty, totalPrice: newQty * item.unitPrice };
+      }
+      return item;
+    }).filter(item => item.quantity > 0));
+  };
+
+  const removeTempFromCart = (index: number) => {
+    setCart(cart.filter((_, idx) => idx !== index));
+  };
+
   const handleBarcodeSearch = async () => {
     if (!barcodeInput.trim()) return;
     
@@ -487,6 +507,39 @@ export default function PosPage() {
     barcodeInputRef.current?.focus();
   };
 
+  const addTemporaryProduct = () => {
+    const name = tempProductName.trim();
+    const parsed = parseFloat(tempProductPrice || "");
+    const price = Number.isFinite(parsed) ? Math.round(parsed * 100) : NaN;
+    
+    if (!name) {
+      toast({ title: "Errore", description: "Inserisci un nome per il prodotto", variant: "destructive" });
+      return;
+    }
+    if (!Number.isFinite(price) || price <= 0) {
+      toast({ title: "Errore", description: "Inserisci un prezzo valido", variant: "destructive" });
+      return;
+    }
+    
+    setCart([...cart, {
+      productId: null,
+      name,
+      sku: null,
+      barcode: null,
+      category: "Temporaneo",
+      quantity: 1,
+      unitPrice: price,
+      discount: 0,
+      totalPrice: price,
+      isTemporary: true,
+    }]);
+    
+    setTempProductName("");
+    setTempProductPrice("");
+    setTempProductDialog(false);
+    toast({ title: "Aggiunto", description: `Prodotto temporaneo "${name}" aggiunto al carrello` });
+  };
+
   const handlePayment = () => {
     if (cart.length === 0) return;
     if (invoiceRequested && (customerType === "guest" || !selectedCustomerId)) {
@@ -497,9 +550,11 @@ export default function PosPage() {
     createTransactionMutation.mutate({
       items: cart.map(item => ({
         productId: item.productId,
+        productName: item.isTemporary ? item.name : undefined,
         quantity: item.quantity,
         unitPrice: item.unitPrice,
         discount: item.discount,
+        isTemporary: item.isTemporary || false,
       })),
       paymentMethod: selectedPayment,
       discountAmount: discount,
@@ -723,6 +778,17 @@ export default function PosPage() {
               >
                 <Search className="w-5 h-5" />
               </Button>
+              <Button
+                size="lg"
+                variant="outline"
+                onClick={() => setTempProductDialog(true)}
+                className="h-12 px-4"
+                data-testid="button-add-temp-product"
+                title="Aggiungi prodotto temporaneo"
+              >
+                <Plus className="w-5 h-5 mr-1" />
+                Altro
+              </Button>
             </div>
           </CardHeader>
           <CardContent className="flex-1 overflow-hidden">
@@ -893,16 +959,25 @@ export default function PosPage() {
               </div>
             ) : (
               <div className="space-y-3">
-                {cart.map((item) => (
+                {cart.map((item, idx) => {
+                  const itemKey = item.productId || `temp-${idx}`;
+                  return (
                   <div
-                    key={item.productId}
-                    className="p-3 rounded border bg-muted/30"
-                    data-testid={`cart-item-${item.productId}`}
+                    key={itemKey}
+                    className={`p-3 rounded border ${item.isTemporary ? 'bg-amber-500/10 border-amber-500/30' : 'bg-muted/30'}`}
+                    data-testid={`cart-item-${itemKey}`}
                   >
                     <div className="flex items-start gap-2 mb-2">
                       <ProductImage category={item.category} size="sm" />
                       <div className="flex-1 min-w-0">
-                        <div className="font-medium text-sm line-clamp-1">{item.name}</div>
+                        <div className="flex items-center gap-2">
+                          <div className="font-medium text-sm line-clamp-1">{item.name}</div>
+                          {item.isTemporary && (
+                            <Badge variant="outline" className="text-[10px] px-1 py-0 h-4 border-amber-500 text-amber-600 dark:text-amber-400">
+                              Temp
+                            </Badge>
+                          )}
+                        </div>
                         <div className="text-xs text-muted-foreground">
                           {formatCurrency(item.unitPrice)} x {item.quantity}
                         </div>
@@ -922,8 +997,8 @@ export default function PosPage() {
                           variant="ghost"
                           size="icon"
                           className="h-7 w-7"
-                          onClick={() => updateQuantity(item.productId, -1)}
-                          data-testid={`button-decrease-${item.productId}`}
+                          onClick={() => item.isTemporary ? updateTempQuantity(idx, -1) : updateQuantity(item.productId!, -1)}
+                          data-testid={`button-decrease-${itemKey}`}
                         >
                           <Minus className="w-3 h-3" />
                         </Button>
@@ -932,8 +1007,8 @@ export default function PosPage() {
                           variant="ghost"
                           size="icon"
                           className="h-7 w-7"
-                          onClick={() => updateQuantity(item.productId, 1)}
-                          data-testid={`button-increase-${item.productId}`}
+                          onClick={() => item.isTemporary ? updateTempQuantity(idx, 1) : updateQuantity(item.productId!, 1)}
+                          data-testid={`button-increase-${itemKey}`}
                         >
                           <Plus className="w-3 h-3" />
                         </Button>
@@ -942,14 +1017,14 @@ export default function PosPage() {
                         variant="ghost"
                         size="icon"
                         className="h-7 w-7 text-destructive hover:text-destructive"
-                        onClick={() => removeFromCart(item.productId)}
-                        data-testid={`button-remove-${item.productId}`}
+                        onClick={() => item.isTemporary ? removeTempFromCart(idx) : removeFromCart(item.productId!)}
+                        data-testid={`button-remove-${itemKey}`}
                       >
                         <Trash2 className="w-4 h-4" />
                       </Button>
                     </div>
                   </div>
-                ))}
+                )})}
               </div>
             )}
           </ScrollArea>
@@ -1289,6 +1364,56 @@ export default function PosPage() {
             >
               {closeSessionMutation.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
               Chiudi Cassa
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog per prodotto temporaneo */}
+      <Dialog open={tempProductDialog} onOpenChange={setTempProductDialog}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Package className="w-5 h-5" />
+              Aggiungi Prodotto Temporaneo
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="temp-name">Nome Prodotto</Label>
+              <Input
+                id="temp-name"
+                placeholder="Es: Riparazione vetro, Servizio..."
+                value={tempProductName}
+                onChange={(e) => setTempProductName(e.target.value)}
+                data-testid="input-temp-product-name"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="temp-price">Prezzo (EUR)</Label>
+              <Input
+                id="temp-price"
+                type="number"
+                step="0.01"
+                min="0"
+                placeholder="0.00"
+                value={tempProductPrice}
+                onChange={(e) => setTempProductPrice(e.target.value)}
+                data-testid="input-temp-product-price"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => {
+              setTempProductName("");
+              setTempProductPrice("");
+              setTempProductDialog(false);
+            }}>
+              Annulla
+            </Button>
+            <Button onClick={addTemporaryProduct} data-testid="button-confirm-temp-product">
+              <Plus className="w-4 h-4 mr-2" />
+              Aggiungi al Carrello
             </Button>
           </DialogFooter>
         </DialogContent>
