@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, integer, real, timestamp, boolean, pgEnum, jsonb, unique } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, integer, real, timestamp, boolean, pgEnum, jsonb, unique, date, decimal } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
@@ -6393,3 +6393,222 @@ export type InsertPosTransactionItem = z.infer<typeof insertPosTransactionItemSc
 export type PosSessionStatus = "open" | "closed";
 export type PosTransactionStatus = "completed" | "refunded" | "partial_refund" | "voided";
 export type PosPaymentMethod = "cash" | "card" | "pos_terminal" | "satispay" | "mixed";
+
+// ==========================================
+// SIBILL INTEGRATION
+// ==========================================
+
+// Enum per ambiente Sibill
+export const sibillEnvironmentEnum = pgEnum("sibill_environment", ["development", "production"]);
+
+// Credenziali Sibill
+export const sibillCredentials = pgTable("sibill_credentials", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  resellerId: varchar("reseller_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  
+  // API Token (Bearer)
+  apiToken: text("api_token").notNull(),
+  
+  // Ambiente: development | production
+  environment: sibillEnvironmentEnum("environment").notNull().default("development"),
+  
+  // Company selezionata (dopo la prima sincronizzazione)
+  selectedCompanyId: text("selected_company_id"),
+  selectedCompanyName: text("selected_company_name"),
+  
+  // Stato
+  isActive: boolean("is_active").notNull().default(true),
+  lastSyncAt: timestamp("last_sync_at"),
+  lastTestAt: timestamp("last_test_at"),
+  testStatus: text("test_status"), // "success" | "error"
+  testMessage: text("test_message"),
+  
+  // Meta
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+// Companies Sibill (cache sincronizzata)
+export const sibillCompanies = pgTable("sibill_companies", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  credentialId: varchar("credential_id").notNull().references(() => sibillCredentials.id, { onDelete: "cascade" }),
+  
+  // Dati da Sibill API
+  sibillCompanyId: text("sibill_company_id").notNull(),
+  name: text("name").notNull(),
+  vatNumber: text("vat_number"),
+  country: text("country"),
+  fiscalRegime: text("fiscal_regime"),
+  
+  // Subscription status
+  subscriptionStatus: text("subscription_status"),
+  
+  // Sync
+  syncedAt: timestamp("synced_at").notNull().defaultNow(),
+});
+
+// Documenti/Fatture Sibill (cache sincronizzata)
+export const sibillDocuments = pgTable("sibill_documents", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  credentialId: varchar("credential_id").notNull().references(() => sibillCredentials.id, { onDelete: "cascade" }),
+  companyId: text("company_id").notNull(),
+  
+  // Dati da Sibill API
+  sibillDocumentId: text("sibill_document_id").notNull(),
+  documentType: text("document_type"), // BILL, INVOICE, CREDIT_NOTE, etc.
+  direction: text("direction"), // ISSUED, RECEIVED
+  number: text("number"),
+  
+  // Importi (in centesimi per precisione)
+  grossAmount: integer("gross_amount"),
+  vatAmount: integer("vat_amount"),
+  currency: text("currency").default("EUR"),
+  
+  // Stato documento
+  status: text("status"), // DRAFT, PENDING, SENT, DELIVERED, etc.
+  isEInvoice: boolean("is_e_invoice").default(false),
+  format: text("format"), // FPA12, etc.
+  
+  // Controparte
+  counterpartId: text("counterpart_id"),
+  counterpartName: text("counterpart_name"),
+  counterpartVatNumber: text("counterpart_vat_number"),
+  
+  // Date
+  creationDate: date("creation_date"),
+  deliveryDate: date("delivery_date"),
+  deliveryStatus: text("delivery_status"),
+  
+  // Pagamenti
+  paymentStatus: text("payment_status"),
+  paymentMethod: text("payment_method"),
+  expectedPaymentDate: date("expected_payment_date"),
+  paymentDate: date("payment_date"),
+  
+  // Note
+  notes: text("notes"),
+  
+  // Meta
+  sibillCreatedAt: timestamp("sibill_created_at"),
+  sibillUpdatedAt: timestamp("sibill_updated_at"),
+  syncedAt: timestamp("synced_at").notNull().defaultNow(),
+});
+
+// Conti bancari Sibill (cache)
+export const sibillAccounts = pgTable("sibill_accounts", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  credentialId: varchar("credential_id").notNull().references(() => sibillCredentials.id, { onDelete: "cascade" }),
+  companyId: text("company_id").notNull(),
+  
+  // Dati da Sibill API
+  sibillAccountId: text("sibill_account_id").notNull(),
+  nickname: text("nickname"),
+  currency: text("currency").default("EUR"),
+  
+  // Saldi (in centesimi)
+  currentBalance: integer("current_balance"),
+  availableBalance: integer("available_balance"),
+  creditLimit: integer("credit_limit"),
+  balanceDate: timestamp("balance_date"),
+  
+  // Meta
+  sibillCreatedAt: timestamp("sibill_created_at"),
+  syncedAt: timestamp("synced_at").notNull().defaultNow(),
+});
+
+// Transazioni Sibill (cache)
+export const sibillTransactions = pgTable("sibill_transactions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  credentialId: varchar("credential_id").notNull().references(() => sibillCredentials.id, { onDelete: "cascade" }),
+  companyId: text("company_id").notNull(),
+  accountId: text("account_id"),
+  
+  // Dati da Sibill API
+  sibillTransactionId: text("sibill_transaction_id").notNull(),
+  
+  // Importo (in centesimi)
+  amount: integer("amount"),
+  currency: text("currency").default("EUR"),
+  
+  // Dettagli
+  description: text("description"),
+  counterpartName: text("counterpart_name"),
+  transactionDate: date("transaction_date"),
+  valueDate: date("value_date"),
+  
+  // Riconciliazione
+  isReconciled: boolean("is_reconciled").default(false),
+  reconciliationId: text("reconciliation_id"),
+  
+  // Meta
+  syncedAt: timestamp("synced_at").notNull().defaultNow(),
+});
+
+// Categorie Sibill (cache)
+export const sibillCategories = pgTable("sibill_categories", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  credentialId: varchar("credential_id").notNull().references(() => sibillCredentials.id, { onDelete: "cascade" }),
+  companyId: text("company_id").notNull(),
+  
+  sibillCategoryId: text("sibill_category_id").notNull(),
+  name: text("name").notNull(),
+  
+  syncedAt: timestamp("synced_at").notNull().defaultNow(),
+});
+
+// Insert Schemas Sibill
+export const insertSibillCredentialSchema = createInsertSchema(sibillCredentials).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  lastSyncAt: true,
+  lastTestAt: true,
+  testStatus: true,
+  testMessage: true,
+});
+
+export const insertSibillCompanySchema = createInsertSchema(sibillCompanies).omit({
+  id: true,
+  syncedAt: true,
+});
+
+export const insertSibillDocumentSchema = createInsertSchema(sibillDocuments).omit({
+  id: true,
+  syncedAt: true,
+});
+
+export const insertSibillAccountSchema = createInsertSchema(sibillAccounts).omit({
+  id: true,
+  syncedAt: true,
+});
+
+export const insertSibillTransactionSchema = createInsertSchema(sibillTransactions).omit({
+  id: true,
+  syncedAt: true,
+});
+
+export const insertSibillCategorySchema = createInsertSchema(sibillCategories).omit({
+  id: true,
+  syncedAt: true,
+});
+
+// Types Sibill
+export type SibillCredential = typeof sibillCredentials.$inferSelect;
+export type InsertSibillCredential = z.infer<typeof insertSibillCredentialSchema>;
+
+export type SibillCompany = typeof sibillCompanies.$inferSelect;
+export type InsertSibillCompany = z.infer<typeof insertSibillCompanySchema>;
+
+export type SibillDocument = typeof sibillDocuments.$inferSelect;
+export type InsertSibillDocument = z.infer<typeof insertSibillDocumentSchema>;
+
+export type SibillAccount = typeof sibillAccounts.$inferSelect;
+export type InsertSibillAccount = z.infer<typeof insertSibillAccountSchema>;
+
+export type SibillTransaction = typeof sibillTransactions.$inferSelect;
+export type InsertSibillTransaction = z.infer<typeof insertSibillTransactionSchema>;
+
+export type SibillCategory = typeof sibillCategories.$inferSelect;
+export type InsertSibillCategory = z.infer<typeof insertSibillCategorySchema>;
+
+export type SibillEnvironment = "development" | "production";

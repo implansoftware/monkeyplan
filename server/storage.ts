@@ -123,7 +123,13 @@ import {
   posSessions, PosSession, InsertPosSession,
   posTransactions, PosTransaction, InsertPosTransaction, PosTransactionStatus,
   posTransactionItems, PosTransactionItem, InsertPosTransactionItem,
-  posRegisters, PosRegister, InsertPosRegister
+  posRegisters, PosRegister, InsertPosRegister,
+  sibillCredentials, SibillCredential, InsertSibillCredential,
+  sibillCompanies, SibillCompany, InsertSibillCompany,
+  sibillDocuments, SibillDocument, InsertSibillDocument,
+  sibillAccounts, SibillAccount, InsertSibillAccount,
+  sibillTransactions, SibillTransaction, InsertSibillTransaction,
+  sibillCategories, SibillCategory, InsertSibillCategory
 } from "@shared/schema";
 import { db, pool } from "./db";
 import { eq, and, or, desc, lt, gt, gte, lte, sql, not, inArray, isNull, ilike, SQL } from "drizzle-orm";
@@ -720,6 +726,41 @@ export interface IStorage {
   // MobileSentrix Order Items
   getMobilesentrixOrderItems(orderId: string): Promise<MobilesentrixOrderItem[]>;
   createMobilesentrixOrderItem(item: InsertMobilesentrixOrderItem): Promise<MobilesentrixOrderItem>;
+  
+  // Sibill Integration
+  getSibillCredentialByReseller(resellerId: string): Promise<SibillCredential | undefined>;
+  getSibillCredential(id: string): Promise<SibillCredential | undefined>;
+  createSibillCredential(credential: InsertSibillCredential): Promise<SibillCredential>;
+  updateSibillCredential(id: string, updates: Partial<InsertSibillCredential>): Promise<SibillCredential>;
+  deleteSibillCredential(id: string): Promise<void>;
+  
+  // Sibill Companies
+  listSibillCompanies(credentialId: string): Promise<SibillCompany[]>;
+  getSibillCompany(id: string): Promise<SibillCompany | undefined>;
+  upsertSibillCompany(company: InsertSibillCompany): Promise<SibillCompany>;
+  deleteSibillCompanies(credentialId: string): Promise<void>;
+  
+  // Sibill Documents
+  listSibillDocuments(credentialId: string, companyId?: string): Promise<SibillDocument[]>;
+  getSibillDocument(id: string): Promise<SibillDocument | undefined>;
+  upsertSibillDocument(doc: InsertSibillDocument): Promise<SibillDocument>;
+  deleteSibillDocuments(credentialId: string): Promise<void>;
+  
+  // Sibill Accounts
+  listSibillAccounts(credentialId: string, companyId?: string): Promise<SibillAccount[]>;
+  getSibillAccount(id: string): Promise<SibillAccount | undefined>;
+  upsertSibillAccount(account: InsertSibillAccount): Promise<SibillAccount>;
+  deleteSibillAccounts(credentialId: string): Promise<void>;
+  
+  // Sibill Transactions
+  listSibillTransactions(credentialId: string, companyId?: string): Promise<SibillTransaction[]>;
+  upsertSibillTransaction(tx: InsertSibillTransaction): Promise<SibillTransaction>;
+  deleteSibillTransactions(credentialId: string): Promise<void>;
+  
+  // Sibill Categories
+  listSibillCategories(credentialId: string, companyId?: string): Promise<SibillCategory[]>;
+  upsertSibillCategory(cat: InsertSibillCategory): Promise<SibillCategory>;
+  deleteSibillCategories(credentialId: string): Promise<void>;
   
   // Service Catalog (Catalogo Interventi)
   listServiceItems(): Promise<ServiceItem[]>;
@@ -6712,6 +6753,262 @@ export class DatabaseStorage implements IStorage {
     return created;
   }
 
+  // ==========================================
+  // SIBILL INTEGRATION
+  // ==========================================
+
+  async getSibillCredentialByReseller(resellerId: string): Promise<SibillCredential | undefined> {
+    const [credential] = await db.select()
+      .from(sibillCredentials)
+      .where(eq(sibillCredentials.resellerId, resellerId))
+      .limit(1);
+    return credential;
+  }
+
+  async getSibillCredential(id: string): Promise<SibillCredential | undefined> {
+    const [credential] = await db.select()
+      .from(sibillCredentials)
+      .where(eq(sibillCredentials.id, id))
+      .limit(1);
+    return credential;
+  }
+
+  async createSibillCredential(credential: InsertSibillCredential): Promise<SibillCredential> {
+    const [created] = await db.insert(sibillCredentials)
+      .values(credential)
+      .returning();
+    return created;
+  }
+
+  async updateSibillCredential(id: string, updates: Partial<InsertSibillCredential>): Promise<SibillCredential> {
+    const [updated] = await db.update(sibillCredentials)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(sibillCredentials.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteSibillCredential(id: string): Promise<void> {
+    await db.delete(sibillCredentials).where(eq(sibillCredentials.id, id));
+  }
+
+  // Sibill Companies
+  async listSibillCompanies(credentialId: string): Promise<SibillCompany[]> {
+    return await db.select()
+      .from(sibillCompanies)
+      .where(eq(sibillCompanies.credentialId, credentialId));
+  }
+
+  async getSibillCompany(id: string): Promise<SibillCompany | undefined> {
+    const [company] = await db.select()
+      .from(sibillCompanies)
+      .where(eq(sibillCompanies.id, id))
+      .limit(1);
+    return company;
+  }
+
+  async upsertSibillCompany(company: InsertSibillCompany): Promise<SibillCompany> {
+    const existing = await db.select()
+      .from(sibillCompanies)
+      .where(and(
+        eq(sibillCompanies.credentialId, company.credentialId),
+        eq(sibillCompanies.sibillCompanyId, company.sibillCompanyId)
+      ))
+      .limit(1);
+    
+    if (existing.length > 0) {
+      const [updated] = await db.update(sibillCompanies)
+        .set({ ...company, syncedAt: new Date() })
+        .where(eq(sibillCompanies.id, existing[0].id))
+        .returning();
+      return updated;
+    }
+    
+    const [created] = await db.insert(sibillCompanies).values(company).returning();
+    return created;
+  }
+
+  async deleteSibillCompanies(credentialId: string): Promise<void> {
+    await db.delete(sibillCompanies).where(eq(sibillCompanies.credentialId, credentialId));
+  }
+
+  // Sibill Documents
+  async listSibillDocuments(credentialId: string, companyId?: string): Promise<SibillDocument[]> {
+    if (companyId) {
+      return await db.select()
+        .from(sibillDocuments)
+        .where(and(
+          eq(sibillDocuments.credentialId, credentialId),
+          eq(sibillDocuments.companyId, companyId)
+        ))
+        .orderBy(desc(sibillDocuments.syncedAt));
+    }
+    return await db.select()
+      .from(sibillDocuments)
+      .where(eq(sibillDocuments.credentialId, credentialId))
+      .orderBy(desc(sibillDocuments.syncedAt));
+  }
+
+  async getSibillDocument(id: string): Promise<SibillDocument | undefined> {
+    const [doc] = await db.select()
+      .from(sibillDocuments)
+      .where(eq(sibillDocuments.id, id))
+      .limit(1);
+    return doc;
+  }
+
+  async upsertSibillDocument(doc: InsertSibillDocument): Promise<SibillDocument> {
+    const existing = await db.select()
+      .from(sibillDocuments)
+      .where(and(
+        eq(sibillDocuments.credentialId, doc.credentialId),
+        eq(sibillDocuments.sibillDocumentId, doc.sibillDocumentId)
+      ))
+      .limit(1);
+    
+    if (existing.length > 0) {
+      const [updated] = await db.update(sibillDocuments)
+        .set({ ...doc, syncedAt: new Date() })
+        .where(eq(sibillDocuments.id, existing[0].id))
+        .returning();
+      return updated;
+    }
+    
+    const [created] = await db.insert(sibillDocuments).values(doc).returning();
+    return created;
+  }
+
+  async deleteSibillDocuments(credentialId: string): Promise<void> {
+    await db.delete(sibillDocuments).where(eq(sibillDocuments.credentialId, credentialId));
+  }
+
+  // Sibill Accounts
+  async listSibillAccounts(credentialId: string, companyId?: string): Promise<SibillAccount[]> {
+    if (companyId) {
+      return await db.select()
+        .from(sibillAccounts)
+        .where(and(
+          eq(sibillAccounts.credentialId, credentialId),
+          eq(sibillAccounts.companyId, companyId)
+        ));
+    }
+    return await db.select()
+      .from(sibillAccounts)
+      .where(eq(sibillAccounts.credentialId, credentialId));
+  }
+
+  async getSibillAccount(id: string): Promise<SibillAccount | undefined> {
+    const [account] = await db.select()
+      .from(sibillAccounts)
+      .where(eq(sibillAccounts.id, id))
+      .limit(1);
+    return account;
+  }
+
+  async upsertSibillAccount(account: InsertSibillAccount): Promise<SibillAccount> {
+    const existing = await db.select()
+      .from(sibillAccounts)
+      .where(and(
+        eq(sibillAccounts.credentialId, account.credentialId),
+        eq(sibillAccounts.sibillAccountId, account.sibillAccountId)
+      ))
+      .limit(1);
+    
+    if (existing.length > 0) {
+      const [updated] = await db.update(sibillAccounts)
+        .set({ ...account, syncedAt: new Date() })
+        .where(eq(sibillAccounts.id, existing[0].id))
+        .returning();
+      return updated;
+    }
+    
+    const [created] = await db.insert(sibillAccounts).values(account).returning();
+    return created;
+  }
+
+  async deleteSibillAccounts(credentialId: string): Promise<void> {
+    await db.delete(sibillAccounts).where(eq(sibillAccounts.credentialId, credentialId));
+  }
+
+  // Sibill Transactions
+  async listSibillTransactions(credentialId: string, companyId?: string): Promise<SibillTransaction[]> {
+    if (companyId) {
+      return await db.select()
+        .from(sibillTransactions)
+        .where(and(
+          eq(sibillTransactions.credentialId, credentialId),
+          eq(sibillTransactions.companyId, companyId)
+        ));
+    }
+    return await db.select()
+      .from(sibillTransactions)
+      .where(eq(sibillTransactions.credentialId, credentialId));
+  }
+
+  async upsertSibillTransaction(tx: InsertSibillTransaction): Promise<SibillTransaction> {
+    const existing = await db.select()
+      .from(sibillTransactions)
+      .where(and(
+        eq(sibillTransactions.credentialId, tx.credentialId),
+        eq(sibillTransactions.sibillTransactionId, tx.sibillTransactionId)
+      ))
+      .limit(1);
+    
+    if (existing.length > 0) {
+      const [updated] = await db.update(sibillTransactions)
+        .set({ ...tx, syncedAt: new Date() })
+        .where(eq(sibillTransactions.id, existing[0].id))
+        .returning();
+      return updated;
+    }
+    
+    const [created] = await db.insert(sibillTransactions).values(tx).returning();
+    return created;
+  }
+
+  async deleteSibillTransactions(credentialId: string): Promise<void> {
+    await db.delete(sibillTransactions).where(eq(sibillTransactions.credentialId, credentialId));
+  }
+
+  // Sibill Categories
+  async listSibillCategories(credentialId: string, companyId?: string): Promise<SibillCategory[]> {
+    if (companyId) {
+      return await db.select()
+        .from(sibillCategories)
+        .where(and(
+          eq(sibillCategories.credentialId, credentialId),
+          eq(sibillCategories.companyId, companyId)
+        ));
+    }
+    return await db.select()
+      .from(sibillCategories)
+      .where(eq(sibillCategories.credentialId, credentialId));
+  }
+
+  async upsertSibillCategory(cat: InsertSibillCategory): Promise<SibillCategory> {
+    const existing = await db.select()
+      .from(sibillCategories)
+      .where(and(
+        eq(sibillCategories.credentialId, cat.credentialId),
+        eq(sibillCategories.sibillCategoryId, cat.sibillCategoryId)
+      ))
+      .limit(1);
+    
+    if (existing.length > 0) {
+      const [updated] = await db.update(sibillCategories)
+        .set({ ...cat, syncedAt: new Date() })
+        .where(eq(sibillCategories.id, existing[0].id))
+        .returning();
+      return updated;
+    }
+    
+    const [created] = await db.insert(sibillCategories).values(cat).returning();
+    return created;
+  }
+
+  async deleteSibillCategories(credentialId: string): Promise<void> {
+    await db.delete(sibillCategories).where(eq(sibillCategories.credentialId, credentialId));
+  }
 
   // ==========================================
   // SERVICE CATALOG (CATALOGO INTERVENTI)
