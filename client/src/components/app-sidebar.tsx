@@ -196,7 +196,6 @@ const menuItems = {
     { title: "Panoramica", url: "/reseller/transfer-requests", icon: ArrowRightLeft, group: "Interscambio" },
     { title: "Richieste Ricevute", url: "/reseller/incoming-transfer-requests", icon: Inbox, group: "Interscambio" },
     { title: "Richieste Inviate", url: "/reseller/sub-transfer-requests", icon: Send, group: "Interscambio" },
-    { title: "Integrazioni", url: "/reseller/integrations", icon: Plug, group: "Fornitori" },
     { title: "Anagrafica Fornitori", url: "/reseller/suppliers", icon: Truck, group: "Fornitori" },
     { title: "Ordini a Fornitori", url: "/reseller/supplier-orders", icon: ShoppingCart, group: "Fornitori" },
     { title: "Resi a Fornitori", url: "/reseller/supplier-returns", icon: RotateCcw, group: "Fornitori" },
@@ -222,6 +221,7 @@ const menuItems = {
     { title: "Ticket", url: "/reseller/tickets", icon: Ticket, group: "Assistenza" },
     { title: "Guide", url: "/reseller/guide", icon: FileText, group: "Assistenza" },
     { title: "Richieste Remote", url: "/reseller/remote-requests", icon: Send, group: "Centri & Riparazioni" },
+    { title: "Integrazioni", url: "/reseller/integrations", icon: Plug, group: "Account" },
     { title: "Profilo", url: "/profile", icon: UserCircle, group: "Account" },
   ],
   repair_center: [
