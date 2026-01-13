@@ -3290,13 +3290,20 @@ export const ticketMessages = pgTable("ticket_messages", {
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
+// Invoice source enum
+export const invoiceSourceEnum = pgEnum("invoice_source", ["repair", "pos", "marketplace", "b2b", "other"]);
+
 // Invoices (Fatture)
 export const invoices = pgTable("invoices", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   invoiceNumber: text("invoice_number").notNull().unique(),
   repairOrderId: varchar("repair_order_id"),
   posTransactionId: varchar("pos_transaction_id"),
+  marketplaceOrderId: varchar("marketplace_order_id"),
   customerId: varchar("customer_id").notNull(),
+  repairCenterId: varchar("repair_center_id"),
+  resellerId: varchar("reseller_id"),
+  source: invoiceSourceEnum("source").default("other"),
   amount: integer("amount").notNull(), // in cents
   tax: integer("tax").notNull().default(0), // in cents
   total: integer("total").notNull(), // in cents
