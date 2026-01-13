@@ -5207,6 +5207,64 @@ export function registerRoutes(app: Express): Server {
   });
 
   // Update an existing customer
+
+  // Get single customer detail
+  app.get("/api/reseller/customers/:id", requireRole("reseller", "reseller_staff"), requireModulePermission("customers", "read"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      const effectiveResellerId = req.user.role === 'reseller_staff' ? req.user.resellerId : req.user.id;
+      
+      const customerId = req.params.id;
+      
+      // Get customer
+      const customer = await storage.getUser(customerId);
+      if (!customer || customer.role !== "customer" || customer.resellerId !== effectiveResellerId) {
+        return res.status(404).send("Cliente non trovato");
+      }
+      
+      // Get related data
+      const reseller = await storage.getUser(effectiveResellerId);
+      const subReseller = customer.subResellerId ? await storage.getUser(customer.subResellerId) : null;
+      
+      // Get repair orders for this customer
+      const allRepairOrders = await storage.listRepairOrders();
+      const repairOrders = allRepairOrders.filter(r => r.customerId === customerId);
+      
+      // Get sales orders (POS transactions)
+      const allSalesOrders = await storage.listPosTransactions();
+      const salesOrders = allSalesOrders.filter(s => s.customerId === customerId);
+      
+      // Get billing data
+      const billingData = await storage.getCustomerBillingData(customerId);
+      
+      // Get utility practices
+      const allPractices = await storage.listUtilityPractices();
+      const practices = allPractices.filter(p => p.customerId === customerId);
+      const utilityPractices = await Promise.all(practices.map(async (p) => {
+        const supplier = p.supplierId ? await storage.getUtilitySupplier(p.supplierId) : null;
+        const service = p.serviceId ? await storage.getUtilityService(p.serviceId) : null;
+        return {
+          ...p,
+          supplierName: supplier?.name || null,
+          serviceName: service?.name || null,
+        };
+      }));
+      
+      const { password: _, ...safeCustomer } = customer;
+      res.json({
+        customer: safeCustomer,
+        reseller: reseller ? { id: reseller.id, fullName: reseller.fullName } : null,
+        subReseller: subReseller ? { id: subReseller.id, fullName: subReseller.fullName } : null,
+        repairOrders,
+        salesOrders,
+        billingData,
+        utilityPractices,
+      });
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
   app.patch("/api/reseller/customers/:id", requireRole("reseller", "reseller_staff"), requireModulePermission("customers", "update"), async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
