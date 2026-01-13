@@ -2649,9 +2649,12 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createInvoice(insertInvoice: InsertInvoice): Promise<Invoice> {
-    // Generate invoice number
-    const count = await db.select().from(invoices);
-    const invoiceNumber = `INV-${Date.now()}-${count.length + 1}`;
+    // Use provided invoiceNumber or generate a default one
+    let invoiceNumber = (insertInvoice as any).invoiceNumber;
+    if (!invoiceNumber) {
+      const count = await db.select().from(invoices);
+      invoiceNumber = `INV-${Date.now()}-${count.length + 1}`;
+    }
     
     const [invoice] = await db.insert(invoices).values({
       ...insertInvoice,

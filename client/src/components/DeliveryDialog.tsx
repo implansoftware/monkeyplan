@@ -176,7 +176,7 @@ export function DeliveryDialog({
 
   const deliverMutation = useMutation({
     mutationFn: async (data: DeliveryFormData) => {
-      return await apiRequest("POST", `/api/repair-orders/${repairOrderId}/deliver`, {
+      const res = await apiRequest("POST", `/api/repair-orders/${repairOrderId}/deliver`, {
         deliveredTo: data.deliveredTo,
         deliveryMethod: data.deliveryMethod,
         idDocumentType: data.idDocumentType || null,
@@ -187,14 +187,19 @@ export function DeliveryDialog({
         technicianSignature: technicianSignature.signature,
         technicianSignerName: technicianSignature.signerName,
       });
+      return await res.json();
     },
-    onSuccess: () => {
+    onSuccess: (data: { delivery: any; invoice: any | null }) => {
+      const invoiceMsg = data.invoice 
+        ? ` - Fattura ${data.invoice.invoiceNumber} generata` 
+        : "";
       toast({
         title: "Consegna completata",
-        description: "Il dispositivo è stato consegnato con successo",
+        description: `Il dispositivo è stato consegnato con successo${invoiceMsg}`,
       });
       queryClient.invalidateQueries({ queryKey: ["/api/repair-orders", repairOrderId, "delivery"] });
       queryClient.invalidateQueries({ queryKey: ["/api/repair-orders"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/invoices"] });
       form.reset();
       onOpenChange(false);
       onSuccess?.();

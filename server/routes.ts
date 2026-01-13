@@ -13959,7 +13959,30 @@ export function registerRoutes(app: Express): Server {
         technicianId: req.user.id,
       });
       
-      res.json(delivery);
+      // Generazione fattura automatica alla consegna
+      let invoice = null;
+      if (repairOrder.customerId && repairOrder.finalCost && repairOrder.finalCost > 0) {
+        const repairCenterId = repairOrder.repairCenterId;
+        if (repairCenterId) {
+          const invoiceNumber = await storage.generateInvoiceNumber(repairCenterId);
+          invoice = await storage.createInvoice({
+            invoiceNumber,
+            customerId: repairOrder.customerId,
+            repairOrderId: req.params.id,
+            repairCenterId,
+            source: 'repair',
+            amount: repairOrder.finalCost,
+            tax: Math.round(repairOrder.finalCost * 22 / 122),
+            total: repairOrder.finalCost,
+            paymentStatus: 'paid',
+            paymentMethod: req.body.paymentMethod || 'cash',
+            paidDate: new Date(),
+            notes: `Fattura automatica per riparazione #${repairOrder.ticketNumber || req.params.id}`,
+          });
+        }
+      }
+      
+      res.json({ delivery, invoice });
     } catch (error: any) {
       res.status(400).send(error.message);
     }
@@ -22241,7 +22264,44 @@ export function registerRoutes(app: Express): Server {
         }
       }
       
-      res.json(updated);
+      // Generazione fattura automatica quando pratica completata
+      let invoice = null;
+      if (status === 'completata' && practice.status !== 'completata' && practice.customerId) {
+        const service = practice.serviceId ? await storage.getUtilityService(practice.serviceId) : null;
+        let invoiceAmount = practice.monthlyPriceCents || 0;
+        if (service?.activationCost) {
+          invoiceAmount += service.activationCost;
+        }
+        if (invoiceAmount > 0) {
+          const repairCenterId = practice.repairCenterId || '';
+          const invoiceNumber = repairCenterId 
+            ? await storage.generateInvoiceNumber(repairCenterId)
+            : `UTL-${new Date().getFullYear()}-${Date.now()}`;
+          invoice = await storage.createInvoice({
+            invoiceNumber,
+            customerId: practice.customerId,
+            repairCenterId: repairCenterId || undefined,
+            resellerId: practice.resellerId || undefined,
+            source: 'other',
+            amount: invoiceAmount,
+            tax: Math.round(invoiceAmount * 22 / 122),
+            total: invoiceAmount,
+            paymentStatus: 'pending',
+            paymentMethod: 'bank_transfer',
+            notes: `Fattura per attivazione pratica utility ${practice.practiceNumber}`,
+          });
+          await storage.createUtilityPracticeTimelineEvent({
+            practiceId: req.params.id,
+            eventType: 'invoice_created',
+            title: `Fattura generata: €${(invoiceAmount / 100).toFixed(2)}`,
+            description: `Fattura ${invoiceNumber} creata automaticamente`,
+            payload: { invoiceId: invoice.id, amountCents: invoiceAmount },
+            createdBy: req.user.id,
+          });
+        }
+      }
+      
+      res.json({ practice: updated, invoice });
     } catch (error: any) {
       res.status(400).send(error.message);
     }
@@ -32262,7 +32322,28 @@ export function registerRoutes(app: Express): Server {
         totalCardSales: completedTxs.filter(t => t.paymentMethod !== "cash").reduce((sum, t) => sum + t.total, 0),
       });
 
-      res.json({ transaction, items: transactionItems });
+      // Generazione fattura automatica se richiesta
+      let invoice = null;
+      if (invoiceRequested && customerId) {
+        const invoiceNumber = await storage.generateInvoiceNumber(repairCenterId);
+        invoice = await storage.createInvoice({
+          invoiceNumber,
+          customerId,
+          posTransactionId: transaction.id,
+          repairCenterId,
+          source: 'pos',
+          amount: subtotal - discount,
+          tax: taxAmount,
+          total,
+          paymentStatus: 'paid',
+          paymentMethod,
+          paidDate: new Date(),
+          notes: `Fattura automatica da vendita POS ${transactionNumber}`,
+        });
+        await storage.updatePosTransactionInvoice(transaction.id, invoice.id);
+      }
+
+      res.json({ transaction, items: transactionItems, invoice });
     } catch (error: any) {
       console.error("POS transaction error:", error);
       res.status(500).json({ error: error.message });

@@ -269,13 +269,17 @@ export default function AdminUtilityPracticeDetail() {
       const res = await apiRequest("PATCH", `/api/utility/practices/${params.id}/status`, data);
       return await res.json();
     },
-    onSuccess: () => {
+    onSuccess: (data: { practice: any; invoice: any | null }) => {
       queryClient.invalidateQueries({ queryKey: ["/api/utility/practices", params.id] });
       queryClient.invalidateQueries({ queryKey: ["/api/utility/practices", params.id, "timeline"] });
       queryClient.invalidateQueries({ queryKey: ["/api/utility/practices", params.id, "state-history"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/invoices"] });
       setStatusDialogOpen(false);
       setStatusReason("");
-      toast({ title: "Stato aggiornato" });
+      const invoiceMsg = data.invoice 
+        ? ` - Fattura ${data.invoice.invoiceNumber} generata`
+        : "";
+      toast({ title: `Stato aggiornato${invoiceMsg}` });
     },
   });
 

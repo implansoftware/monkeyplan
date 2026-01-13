@@ -392,13 +392,15 @@ export default function PosPage() {
 
   const createTransactionMutation = useMutation({
     mutationFn: async (data: any) => {
-      return apiRequest("POST", "/api/repair-center/pos/transaction", { ...data, registerId: selectedRegisterId });
+      const res = await apiRequest("POST", "/api/repair-center/pos/transaction", { ...data, registerId: selectedRegisterId });
+      return res.json();
     },
-    onSuccess: () => {
+    onSuccess: (data: { transaction: any; items: any[]; invoice?: any }) => {
       queryClient.invalidateQueries({ queryKey: ["/api/repair-center/pos/transactions", selectedRegisterId] });
       queryClient.invalidateQueries({ queryKey: ["/api/repair-center/pos/session/current", selectedRegisterId] });
       queryClient.invalidateQueries({ queryKey: ["/api/repair-center/pos/registers/sessions"] });
       queryClient.invalidateQueries({ queryKey: ["/api/repair-center/pos/stats/daily", selectedRegisterId] });
+      queryClient.invalidateQueries({ queryKey: ["/api/repair-center/invoices"] });
       setCart([]);
       setCashReceived("");
       setDiscountAmount("");
@@ -411,7 +413,15 @@ export default function PosPage() {
       setNewCustomerEmail("");
       setNewCustomerPhone("");
       setPaymentDialog(false);
-      toast({ title: "Vendita registrata", description: "Transazione completata" });
+      
+      if (data.invoice) {
+        toast({ 
+          title: "Vendita con fattura", 
+          description: `Transazione e fattura ${data.invoice.invoiceNumber} create con successo` 
+        });
+      } else {
+        toast({ title: "Vendita registrata", description: "Transazione completata" });
+      }
     },
     onError: (error: any) => {
       toast({ title: "Errore", description: error.message, variant: "destructive" });
