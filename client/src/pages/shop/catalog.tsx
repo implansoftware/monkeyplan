@@ -228,7 +228,7 @@ export default function ShopCatalog() {
         </div>
       )}
       
-      {data?.total && (
+      {data?.total && data.total > 0 && (
         <p className="text-center text-muted-foreground">
           {data.products.length} di {data.total} prodotti
         </p>
