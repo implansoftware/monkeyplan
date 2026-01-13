@@ -516,6 +516,7 @@ export const users = pgTable("users", {
   iban: text("iban"),
   codiceUnivoco: text("codice_univoco"), // Codice SDI per fatturazione elettronica
   pec: text("pec"),
+  hasAutonomousInvoicing: boolean("has_autonomous_invoicing").notNull().default(false), // Per sub-reseller: se true, emette fatture proprie
   logoUrl: text("logo_url"), // URL del logo per reseller
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
@@ -585,6 +586,7 @@ export const repairCenters = pgTable("repair_centers", {
   iban: text("iban"),
   codiceUnivoco: text("codice_univoco"),
   pec: text("pec"),
+  hasAutonomousInvoicing: boolean("has_autonomous_invoicing").notNull().default(false), // Per sub-reseller: se true, emette fatture proprie
   // Tariffa manodopera specifica per questo centro (in centesimi EUR)
   hourlyRateCents: integer("hourly_rate_cents"),
   // Impostazioni profilo pubblico
@@ -3324,6 +3326,7 @@ export const billingData = pgTable("billing_data", {
   vatNumber: text("vat_number"),
   fiscalCode: text("fiscal_code"),
   pec: text("pec"),
+  hasAutonomousInvoicing: boolean("has_autonomous_invoicing").notNull().default(false), // Per sub-reseller: se true, emette fatture proprie
   codiceUnivoco: text("codice_univoco"),
   iban: text("iban"),
   address: text("address").notNull(),
