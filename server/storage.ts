@@ -40,7 +40,7 @@ import {
   UtilityPracticeNote, InsertUtilityPracticeNote,
   UtilityPracticeTimelineEvent, InsertUtilityPracticeTimelineEvent,
   UtilityPracticeStateHistoryEntry, InsertUtilityPracticeStateHistoryEntry,
-  SifarCredential, InsertSifarCredential, SifarStore, InsertSifarStore,
+  SifarCredential, InsertSifarCredential, SifarStore, InsertSifarStore, SifarOrder, InsertSifarOrder,
   TrovausatiCredential, InsertTrovausatiCredential, TrovausatiShop, InsertTrovausatiShop,
   TrovausatiOrder, InsertTrovausatiOrder, trovausatiCredentials, trovausatiShops, trovausatiOrders,
   FonedayCredential, InsertFonedayCredential, FonedayOrder, InsertFonedayOrder, FonedayProductsCache, InsertFonedayProductsCache,
@@ -62,7 +62,7 @@ import {
   utilityCategories, utilitySuppliers, utilityServices, utilityPractices, utilityPracticeProducts, utilityCommissions,
   utilityPracticeDocuments, utilityPracticeTasks, utilityPracticeNotes,
   utilityPracticeTimeline, utilityPracticeStateHistory,
-  sifarCredentials, sifarStores,
+  sifarCredentials, sifarStores, sifarOrders,
   fonedayCredentials, fonedayOrders, fonedayProductsCache,
   mobilesentrixCredentials, mobilesentrixOrders, mobilesentrixCartItems, mobilesentrixOrderItems,
   serviceItems, serviceItemPrices, productPrices,
@@ -658,6 +658,7 @@ export interface IStorage {
   createSifarStore(store: InsertSifarStore): Promise<SifarStore>;
   updateSifarStore(id: string, updates: Partial<InsertSifarStore>): Promise<SifarStore>;
   deleteSifarStore(id: string): Promise<void>;
+  listSifarOrders(credentialId: string): Promise<SifarOrder[]>;
   
   // TrovaUsati Integration
   getTrovausatiCredentialByReseller(resellerId: string): Promise<TrovausatiCredential | undefined>;
@@ -6370,6 +6371,12 @@ export class DatabaseStorage implements IStorage {
   async deleteSifarStore(id: string): Promise<void> {
     await db.delete(sifarStores)
       .where(eq(sifarStores.id, id));
+  }
+
+  async listSifarOrders(credentialId: string): Promise<SifarOrder[]> {
+    return await db.select().from(sifarOrders)
+      .where(eq(sifarOrders.credentialId, credentialId))
+      .orderBy(desc(sifarOrders.createdAt));
   }
 
   // ==========================================

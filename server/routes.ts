@@ -20594,6 +20594,131 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // GET /api/reseller/integrations/summary - Get detailed summary of all integrations for reseller
+  app.get("/api/reseller/integrations/summary", requireAuth, requireRole("reseller", "reseller_staff"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const resellerId = req.user.role === 'reseller' ? req.user.id : req.user.resellerId;
+      if (!resellerId) return res.status(400).send("Reseller ID non trovato");
+      
+      const integrations: Array<{
+        code: string;
+        name: string;
+        description: string;
+        isConfigured: boolean;
+        isActive: boolean;
+        lastTestAt: string | null;
+        lastTestStatus: string | null;
+        lastSyncAt: string | null;
+        stats: {
+          ordersCount?: number;
+          cartItemsCount?: number;
+          lastOrderDate?: string;
+        };
+        settingsUrl: string;
+        catalogUrl: string | null;
+        cartUrl: string | null;
+        ordersUrl: string | null;
+      }> = [];
+      
+      // SIFAR Integration
+      const sifarCred = await storage.getSifarCredentialByReseller(resellerId);
+      const sifarOrdersData = sifarCred ? await storage.listSifarOrders(sifarCred.id) : [];
+      integrations.push({
+        code: "sifar",
+        name: "SIFAR",
+        description: "Fornitore italiano ricambi telefonia",
+        isConfigured: !!sifarCred,
+        isActive: sifarCred?.isActive ?? false,
+        lastTestAt: sifarCred?.lastTestAt?.toISOString() ?? null,
+        lastTestStatus: sifarCred?.lastTestResult ?? null,
+        lastSyncAt: sifarCred?.lastSyncAt?.toISOString() ?? null,
+        stats: {
+          ordersCount: sifarOrdersData.length,
+          lastOrderDate: sifarOrdersData[0]?.createdAt?.toISOString(),
+        },
+        settingsUrl: "/reseller/sifar/settings",
+        catalogUrl: "/reseller/sifar/catalog",
+        cartUrl: "/reseller/sifar/cart",
+        ordersUrl: null,
+      });
+      
+      // Foneday Integration
+      const fonedayCred = await storage.getFonedayCredentialByReseller(resellerId);
+      const fonedayOrders = fonedayCred ? await storage.listFonedayOrders(fonedayCred.id) : [];
+      integrations.push({
+        code: "foneday",
+        name: "Foneday",
+        description: "Fornitore europeo ricambi con ampio catalogo",
+        isConfigured: !!fonedayCred,
+        isActive: fonedayCred?.isActive ?? false,
+        lastTestAt: fonedayCred?.lastTestAt?.toISOString() ?? null,
+        lastTestStatus: fonedayCred?.testStatus ?? null,
+        lastSyncAt: fonedayCred?.lastSyncAt?.toISOString() ?? null,
+        stats: {
+          ordersCount: fonedayOrders.length,
+          lastOrderDate: fonedayOrders[0]?.createdAt?.toISOString(),
+        },
+        settingsUrl: "/reseller/foneday/settings",
+        catalogUrl: "/reseller/foneday/catalog",
+        cartUrl: "/reseller/foneday/cart",
+        ordersUrl: null,
+      });
+      
+      // MobileSentrix Integration
+      const mobilesentrixCred = await storage.getMobilesentrixCredentialByReseller(resellerId);
+      const mobilesentrixOrders = mobilesentrixCred ? await storage.listMobilesentrixOrders(mobilesentrixCred.id) : [];
+      const mobilesentrixCartItems = mobilesentrixCred ? await storage.getMobilesentrixCartItems(mobilesentrixCred.id) : [];
+      integrations.push({
+        code: "mobilesentrix",
+        name: "MobileSentrix",
+        description: "Fornitore con prezzi in EUR e OAuth 1.0a",
+        isConfigured: !!mobilesentrixCred,
+        isActive: mobilesentrixCred?.isActive ?? false,
+        lastTestAt: mobilesentrixCred?.lastTestAt?.toISOString() ?? null,
+        lastTestStatus: mobilesentrixCred?.testStatus ?? null,
+        lastSyncAt: mobilesentrixCred?.lastSyncAt?.toISOString() ?? null,
+        stats: {
+          ordersCount: mobilesentrixOrders.length,
+          cartItemsCount: mobilesentrixCartItems.length,
+          lastOrderDate: mobilesentrixOrders[0]?.createdAt?.toISOString(),
+        },
+        settingsUrl: "/reseller/mobilesentrix/settings",
+        catalogUrl: "/reseller/mobilesentrix/catalog",
+        cartUrl: "/reseller/mobilesentrix/cart",
+        ordersUrl: "/reseller/mobilesentrix/orders",
+      });
+      
+      // TrovaUsati Integration
+      const trovausatiCred = await storage.getTrovausatiCredentialByReseller(resellerId);
+      const trovausatiOrders = trovausatiCred ? await storage.listTrovausatiOrders(trovausatiCred.id) : [];
+      integrations.push({
+        code: "trovausati",
+        name: "TrovaUsati",
+        description: "Marketplace B2B e valutatore usato",
+        isConfigured: !!trovausatiCred,
+        isActive: trovausatiCred?.isActive ?? false,
+        lastTestAt: trovausatiCred?.lastTestAt?.toISOString() ?? null,
+        lastTestStatus: trovausatiCred?.lastTestResult ?? null,
+        lastSyncAt: trovausatiCred?.valutatoreSyncAt?.toISOString() ?? null,
+        stats: {
+          ordersCount: trovausatiOrders.length,
+          lastOrderDate: trovausatiOrders[0]?.createdAt?.toISOString(),
+        },
+        settingsUrl: "/reseller/trovausati/settings",
+        catalogUrl: "/reseller/trovausati/marketplace",
+        cartUrl: null,
+        ordersUrl: null,
+      });
+      
+      res.json(integrations);
+    } catch (error: any) {
+      console.error("Error fetching integrations summary:", error);
+      res.status(500).send(error.message);
+    }
+  });
+
   // GET /api/external-integrations - List all integrations (admins get all, resellers get active only)
   app.get("/api/external-integrations", requireAuth, requireRole("admin", "reseller", "reseller_staff", "repair_center"), async (req, res) => {
     try {
