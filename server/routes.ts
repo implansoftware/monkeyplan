@@ -165,7 +165,7 @@ async function resolveResellerEntityScope(opts: {
   entityType?: string;
   entityId?: string;
 }): Promise<EntityScopeResult> {
-  const { hasAutonomousInvoicing, storage: st, requesterResellerId, entityType, entityId } = opts;
+  const { storage: st, requesterResellerId, entityType, entityId } = opts;
   
   // Default: no entity filter, return all accessible reseller IDs
   if (!entityType || !entityId) {
@@ -228,7 +228,7 @@ async function resolveAdminEntityScope(opts: {
   entityType?: string;
   entityId?: string;
 }): Promise<AdminEntityScopeResult> {
-  const { hasAutonomousInvoicing, storage: st, entityType, entityId } = opts;
+  const { storage: st, entityType, entityId } = opts;
   
   // Default: no entity filter, return ALL entities in the system
   if (!entityType || !entityId || entityType === 'all') {
@@ -627,7 +627,7 @@ export function registerRoutes(app: Express): Server {
       
       const privateObjectDir = objectStorage.getPrivateObjectDir();
       const fullPath = `${privateObjectDir}/${objectPath}`;
-      const { hasAutonomousInvoicing, bucketName, objectName } = parseObjectPath(fullPath);
+      const { bucketName, objectName } = parseObjectPath(fullPath);
       const bucket = objectStorageClient.bucket(bucketName);
       const file = bucket.file(objectName);
       
@@ -671,7 +671,7 @@ export function registerRoutes(app: Express): Server {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
-      const { hasAutonomousInvoicing, hourlyRateCents, description } = req.body;
+      const { hourlyRateCents, description } = req.body;
       
       if (typeof hourlyRateCents !== "number" || hourlyRateCents < 0) {
         return res.status(400).send("La tariffa oraria deve essere un numero positivo");
@@ -862,7 +862,7 @@ export function registerRoutes(app: Express): Server {
   // Public tracking page - returns limited repair info by order number
   app.get("/api/public/track/:orderNumber", async (req, res) => {
     try {
-      const { hasAutonomousInvoicing, orderNumber } = req.params;
+      const { orderNumber } = req.params;
       
       // Find repair order by order number
       const allOrders = await storage.listRepairOrders();
@@ -1034,7 +1034,7 @@ export function registerRoutes(app: Express): Server {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
-      const { hasAutonomousInvoicing, serviceItemId, priceCents, laborMinutes, repairCenterId } = req.body;
+      const { serviceItemId, priceCents, laborMinutes, repairCenterId } = req.body;
       
       // If repairCenterId is provided, verify it belongs to this reseller
       if (repairCenterId) {
@@ -1148,7 +1148,7 @@ export function registerRoutes(app: Express): Server {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
-      const { hasAutonomousInvoicing, code, name, description, category, deviceTypeId, defaultPriceCents, defaultLaborMinutes } = req.body;
+      const { code, name, description, category, deviceTypeId, defaultPriceCents, defaultLaborMinutes } = req.body;
       
       if (!code || !name || !category || defaultPriceCents === undefined) {
         return res.status(400).send("Code, name, category, and defaultPriceCents are required");
@@ -1190,7 +1190,7 @@ export function registerRoutes(app: Express): Server {
         return res.status(403).send("Non puoi modificare questo intervento");
       }
       
-      const { hasAutonomousInvoicing, code, name, description, category, deviceTypeId, defaultPriceCents, defaultLaborMinutes, isActive } = req.body;
+      const { code, name, description, category, deviceTypeId, defaultPriceCents, defaultLaborMinutes, isActive } = req.body;
       
       const updated = await storage.updateServiceItem(req.params.id, {
         ...(code !== undefined && { code }),
@@ -1262,7 +1262,7 @@ export function registerRoutes(app: Express): Server {
   // SLA Helper - Calculate severity based on time in state
   app.get("/api/sla/severity", requireAuth, async (req, res) => {
     try {
-      const { hasAutonomousInvoicing, status, enteredAt } = req.query;
+      const { status, enteredAt } = req.query;
       
       if (!status || !enteredAt) {
         return res.status(400).send("status and enteredAt are required");
@@ -1460,7 +1460,7 @@ export function registerRoutes(app: Express): Server {
   // Activity Logs
   app.get("/api/admin/activity-logs", requireRole("admin"), async (req, res) => {
     try {
-      const { hasAutonomousInvoicing, userId, action, entityType, startDate, endDate, limit } = req.query;
+      const { userId, action, entityType, startDate, endDate, limit } = req.query;
       const logs = await storage.listActivityLogs({
         userId: userId as string | undefined,
         action: action as string | undefined,
@@ -1525,7 +1525,7 @@ export function registerRoutes(app: Express): Server {
       
       // Aggregate customer, staff and repair center counts per reseller, omit password
       const resellersWithCounts = resellers.map(reseller => {
-        const { hasAutonomousInvoicing, password, ...safeReseller } = reseller;
+        const { password, ...safeReseller } = reseller;
         return {
           ...safeReseller,
           customerCount: customers.filter(c => c.resellerId === reseller.id).length,
@@ -1661,7 +1661,7 @@ export function registerRoutes(app: Express): Server {
       if (!req.user) return res.status(401).send("Non autorizzato");
       
       const resellerId = req.params.id;
-      const { hasAutonomousInvoicing, repairCenterIds } = req.body;
+      const { repairCenterIds } = req.body;
       
       if (!Array.isArray(repairCenterIds)) {
         return res.status(400).send("repairCenterIds deve essere un array");
@@ -1729,7 +1729,7 @@ export function registerRoutes(app: Express): Server {
     try {
       if (!req.user) return res.status(401).send("Non autorizzato");
       
-      const { hasAutonomousInvoicing, resellerId } = req.params;
+      const { resellerId } = req.params;
       
       // Verify reseller exists
       const reseller = await storage.getUser(resellerId);
@@ -1764,8 +1764,8 @@ export function registerRoutes(app: Express): Server {
     try {
       if (!req.user) return res.status(401).send("Non autorizzato");
       
-      const { hasAutonomousInvoicing, resellerId } = req.params;
-      const { hasAutonomousInvoicing, user: userData, permissions, repairCenterIds } = req.body;
+      const { resellerId } = req.params;
+      const { user: userData, permissions, repairCenterIds } = req.body;
       
       // Verify reseller exists
       const reseller = await storage.getUser(resellerId);
@@ -1824,8 +1824,8 @@ export function registerRoutes(app: Express): Server {
     try {
       if (!req.user) return res.status(401).send("Non autorizzato");
       
-      const { hasAutonomousInvoicing, resellerId, staffId } = req.params;
-      const { hasAutonomousInvoicing, user: userData, permissions, repairCenterIds } = req.body;
+      const { resellerId, staffId } = req.params;
+      const { user: userData, permissions, repairCenterIds } = req.body;
       
       // Verify reseller exists
       const reseller = await storage.getUser(resellerId);
@@ -1885,7 +1885,7 @@ export function registerRoutes(app: Express): Server {
     try {
       if (!req.user) return res.status(401).send("Non autorizzato");
       
-      const { hasAutonomousInvoicing, resellerId, staffId } = req.params;
+      const { resellerId, staffId } = req.params;
       
       // Verify reseller exists
       const reseller = await storage.getUser(resellerId);
@@ -1916,7 +1916,7 @@ export function registerRoutes(app: Express): Server {
   // Get repair centers for a specific reseller (for admin team management)
   app.get("/api/admin/resellers/:resellerId/repair-centers", requireRole("admin"), async (req, res) => {
     try {
-      const { hasAutonomousInvoicing, resellerId } = req.params;
+      const { resellerId } = req.params;
       
       // Verify reseller exists
       const reseller = await storage.getUser(resellerId);
@@ -1934,7 +1934,7 @@ export function registerRoutes(app: Express): Server {
   // Get sub-resellers for a specific reseller (for admin customer creation)
   app.get("/api/admin/resellers/:resellerId/sub-resellers", requireRole("admin"), async (req, res) => {
     try {
-      const { hasAutonomousInvoicing, resellerId } = req.params;
+      const { resellerId } = req.params;
       
       // Verify reseller exists
       const reseller = await storage.getUser(resellerId);
@@ -1957,7 +1957,7 @@ export function registerRoutes(app: Express): Server {
   // Get reseller overview with all related entities (for admin detail view)
   app.get("/api/admin/resellers/:id/overview", requireRole("admin"), async (req, res) => {
     try {
-      const { hasAutonomousInvoicing, id } = req.params;
+      const { id } = req.params;
       
       // Get reseller
       const reseller = await storage.getUser(id);
@@ -1965,7 +1965,7 @@ export function registerRoutes(app: Express): Server {
         return res.status(404).send("Rivenditore non trovato");
       }
       
-      const { hasAutonomousInvoicing, password, ...safeReseller } = reseller;
+      const { password, ...safeReseller } = reseller;
       
       // Get all related data
       const allUsers = await storage.listUsers();
@@ -2053,7 +2053,7 @@ export function registerRoutes(app: Express): Server {
       }
       
       setActivityEntity(res, { type: 'users', id: user.id });
-      const { hasAutonomousInvoicing, password: _, ...safeUser } = user;
+      const { password: _, ...safeUser } = user;
       res.status(201).json({ customer: safeUser, tempPassword: password });
     } catch (error: any) {
       res.status(400).send(error.message);
@@ -2108,7 +2108,7 @@ export function registerRoutes(app: Express): Server {
       if (!req.user) return res.status(401).send("Non autorizzato");
       
       const userId = req.params.id;
-      const { hasAutonomousInvoicing, newPassword } = req.body;
+      const { newPassword } = req.body;
       
       if (!newPassword || newPassword.length < 4) {
         return res.status(400).send("La password deve contenere almeno 4 caratteri");
@@ -2142,7 +2142,7 @@ export function registerRoutes(app: Express): Server {
       if (!req.user) return res.status(401).send("Non autorizzato");
       
       const centerId = req.params.id;
-      const { hasAutonomousInvoicing, newPassword } = req.body;
+      const { newPassword } = req.body;
       
       if (!newPassword || newPassword.length < 4) {
         return res.status(400).send("La password deve contenere almeno 4 caratteri");
@@ -2228,7 +2228,7 @@ export function registerRoutes(app: Express): Server {
         return res.status(400).send(parsed.error.errors[0]?.message || "Dati non validi");
       }
 
-      const { hasAutonomousInvoicing, user: userData, permissions } = parsed.data;
+      const { user: userData, permissions } = parsed.data;
 
       // Hash password
       const hashedPassword = await hashPassword(userData.password);
@@ -2289,7 +2289,7 @@ export function registerRoutes(app: Express): Server {
         return res.status(400).send(parsed.error.errors[0]?.message || "Dati non validi");
       }
 
-      const { hasAutonomousInvoicing, user: userData, permissions } = parsed.data;
+      const { user: userData, permissions } = parsed.data;
       
       // Verify the staff member is admin_staff
       const staffMember = await storage.getUser(staffId);
@@ -2395,7 +2395,7 @@ export function registerRoutes(app: Express): Server {
         return res.status(400).send(parsed.error.errors[0]?.message || "Permessi non validi");
       }
 
-      const { hasAutonomousInvoicing, permissions } = parsed.data;
+      const { permissions } = parsed.data;
 
       // Verify the staff member is admin_staff
       const staffMember = await storage.getUser(staffId);
@@ -2589,7 +2589,7 @@ export function registerRoutes(app: Express): Server {
 
   app.patch("/api/admin/repair-centers/:id", requireRole("admin"), async (req, res) => {
     try {
-      const { hasAutonomousInvoicing, 
+      const { 
         name, address, city, phone, email, resellerId, subResellerId, isActive,
         hourlyRateCents, cap, provincia, ragioneSociale, partitaIva,
         codiceFiscale, iban, codiceUnivoco, pec
@@ -2772,7 +2772,7 @@ export function registerRoutes(app: Express): Server {
   // Get repair center overview with all related entities (for admin detail view)
   app.get("/api/admin/repair-centers/:id/overview", requireRole("admin"), async (req, res) => {
     try {
-      const { hasAutonomousInvoicing, id } = req.params;
+      const { id } = req.params;
       
       // Get repair center
       const center = await storage.getRepairCenter(id);
@@ -2820,7 +2820,7 @@ export function registerRoutes(app: Express): Server {
       if (center.resellerId) {
         const resellerData = await storage.getUser(center.resellerId);
         if (resellerData) {
-          const { hasAutonomousInvoicing, password, ...safeReseller } = resellerData;
+          const { password, ...safeReseller } = resellerData;
           reseller = safeReseller;
         }
       }
@@ -2830,7 +2830,7 @@ export function registerRoutes(app: Express): Server {
       if (center.subResellerId) {
         const subResellerData = await storage.getUser(center.subResellerId);
         if (subResellerData) {
-          const { hasAutonomousInvoicing, password, ...safeSubReseller } = subResellerData;
+          const { password, ...safeSubReseller } = subResellerData;
           subReseller = safeSubReseller;
         }
       }
@@ -2952,7 +2952,7 @@ export function registerRoutes(app: Express): Server {
   // Admin Products - Toggle shop visibility
   app.patch("/api/admin/products/:id/visibility", requireRole("admin"), async (req, res) => {
     try {
-      const { hasAutonomousInvoicing, isVisibleInShop } = req.body;
+      const { isVisibleInShop } = req.body;
       if (typeof isVisibleInShop !== 'boolean') {
         return res.status(400).send("isVisibleInShop deve essere un valore booleano");
       }
@@ -2991,7 +2991,7 @@ export function registerRoutes(app: Express): Server {
       
       const privateObjectDir = objectStorage.getPrivateObjectDir();
       const fullPath = `${privateObjectDir}/${objectPath}`;
-      const { hasAutonomousInvoicing, bucketName, objectName } = parseObjectPath(fullPath);
+      const { bucketName, objectName } = parseObjectPath(fullPath);
       const bucket = objectStorageClient.bucket(bucketName);
       const file = bucket.file(objectName);
       
@@ -3176,7 +3176,7 @@ export function registerRoutes(app: Express): Server {
         return res.status(404).send("Prodotto non trovato");
       }
 
-      const { hasAutonomousInvoicing, compatibilities } = req.body;
+      const { compatibilities } = req.body;
       if (!Array.isArray(compatibilities)) {
         return res.status(400).send("compatibilities deve essere un array");
       }
@@ -3230,7 +3230,7 @@ export function registerRoutes(app: Express): Server {
   // Product Prices (prezzi personalizzati per reseller - gestiti da admin)
   app.get("/api/admin/product-prices", requireRole("admin"), async (req, res) => {
     try {
-      const { hasAutonomousInvoicing, productId, resellerId } = req.query;
+      const { productId, resellerId } = req.query;
       const filters: { productId?: string; resellerId?: string } = {};
       if (productId) filters.productId = productId as string;
       if (resellerId) filters.resellerId = resellerId as string;
@@ -3272,7 +3272,7 @@ export function registerRoutes(app: Express): Server {
 
   app.post("/api/admin/product-prices", requireRole("admin"), async (req, res) => {
     try {
-      const { hasAutonomousInvoicing, productId, resellerId, priceCents, costPriceCents } = req.body;
+      const { productId, resellerId, priceCents, costPriceCents } = req.body;
       
       if (!productId || !resellerId || priceCents === undefined) {
         return res.status(400).send("productId, resellerId e priceCents sono obbligatori");
@@ -3318,7 +3318,7 @@ export function registerRoutes(app: Express): Server {
 
   app.patch("/api/admin/product-prices/:id", requireRole("admin"), async (req, res) => {
     try {
-      const { hasAutonomousInvoicing, priceCents, costPriceCents, isActive } = req.body;
+      const { priceCents, costPriceCents, isActive } = req.body;
       
       const existingPrice = await storage.getProductPrice(req.params.id);
       if (!existingPrice) {
@@ -3424,7 +3424,7 @@ export function registerRoutes(app: Express): Server {
 
   app.post("/api/admin/products/:productId/assign", requireRole("admin"), async (req, res) => {
     try {
-      const { hasAutonomousInvoicing, resellerIds } = z.object({
+      const { resellerIds } = z.object({
         resellerIds: z.array(z.string()).min(1),
       }).parse(req.body);
       
@@ -3537,13 +3537,13 @@ export function registerRoutes(app: Express): Server {
       allRepairCenters.forEach(rc => repairCentersMap.set(rc.id, rc.name));
       
       // Compute SLA for each order
-      const { hasAutonomousInvoicing, loadSLAConfig, computeSLASeverity } = await import("./sla-utils");
+      const { loadSLAConfig, computeSLASeverity } = await import("./sla-utils");
       const slaConfig = await loadSLAConfig();
       
       const enrichedData = await Promise.all(result.data.map(async (repair) => {
         const currentState = await storage.getCurrentRepairOrderState(repair.id);
         const stateEnteredAt = currentState?.enteredAt || repair.createdAt;
-        const { hasAutonomousInvoicing, severity, minutesInState, phase } = computeSLASeverity(repair.status, stateEnteredAt, slaConfig);
+        const { severity, minutesInState, phase } = computeSLASeverity(repair.status, stateEnteredAt, slaConfig);
         
         const customer = repair.customerId ? customersMap.get(repair.customerId) : null;
         const customerName = customer?.ragioneSociale || customer?.fullName || null;
@@ -3599,7 +3599,7 @@ export function registerRoutes(app: Express): Server {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
-      const { hasAutonomousInvoicing, reason } = z.object({ reason: z.string().optional() }).parse(req.body);
+      const { reason } = z.object({ reason: z.string().optional() }).parse(req.body);
       
       const repair = await storage.getRepairOrder(req.params.id);
       if (!repair) return res.status(404).send("Ordine di riparazione non trovato");
@@ -3766,8 +3766,8 @@ export function registerRoutes(app: Express): Server {
   // Export Data (Admin)
   app.get("/api/admin/export/:type", requireRole("admin"), async (req, res) => {
     try {
-      const { hasAutonomousInvoicing, type } = req.params;
-      const { hasAutonomousInvoicing, startDate, endDate, status, centerId } = req.query;
+      const { type } = req.params;
+      const { startDate, endDate, status, centerId } = req.query;
 
       // Create workbook
       const workbook = new ExcelJS.Workbook();
@@ -3950,7 +3950,7 @@ export function registerRoutes(app: Express): Server {
   // Analytics (Admin)
   app.get("/api/admin/analytics/overview", requireRole("admin"), async (req, res) => {
     try {
-      const { hasAutonomousInvoicing, startDate, endDate } = req.query;
+      const { startDate, endDate } = req.query;
       
       const cacheKey = `overview_${startDate || 'all'}_${endDate || 'all'}`;
       const cached = await storage.getCachedAnalytics(cacheKey);
@@ -3978,7 +3978,7 @@ export function registerRoutes(app: Express): Server {
 
   app.get("/api/admin/analytics/revenue", requireRole("admin"), async (req, res) => {
     try {
-      const { hasAutonomousInvoicing, startDate, endDate, groupBy = 'month' } = req.query;
+      const { startDate, endDate, groupBy = 'month' } = req.query;
       
       if (!startDate || !endDate) {
         return res.status(400).send("startDate and endDate are required");
@@ -4009,7 +4009,7 @@ export function registerRoutes(app: Express): Server {
 
   app.get("/api/admin/analytics/repair-centers/performance", requireRole("admin"), async (req, res) => {
     try {
-      const { hasAutonomousInvoicing, centerId, startDate, endDate } = req.query;
+      const { centerId, startDate, endDate } = req.query;
       
       const cacheKey = `centers_${centerId || 'all'}_${startDate || 'all'}_${endDate || 'all'}`;
       const cached = await storage.getCachedAnalytics(cacheKey);
@@ -4040,7 +4040,7 @@ export function registerRoutes(app: Express): Server {
 
   app.get("/api/admin/analytics/products/top", requireRole("admin"), async (req, res) => {
     try {
-      const { hasAutonomousInvoicing, limit = '10', startDate, endDate } = req.query;
+      const { limit = '10', startDate, endDate } = req.query;
       
       const cacheKey = `products_${limit}_${startDate || 'all'}_${endDate || 'all'}`;
       const cached = await storage.getCachedAnalytics(cacheKey);
@@ -4104,7 +4104,7 @@ export function registerRoutes(app: Express): Server {
       
       const privateObjectDir = objectStorage.getPrivateObjectDir();
       const fullPath = `${privateObjectDir}/${objectPath}`;
-      const { hasAutonomousInvoicing, bucketName, objectName } = parseObjectPath(fullPath);
+      const { bucketName, objectName } = parseObjectPath(fullPath);
       const bucket = objectStorageClient.bucket(bucketName);
       const file = bucket.file(objectName);
       
@@ -4143,7 +4143,7 @@ export function registerRoutes(app: Express): Server {
           const objectPath = reseller.logoUrl.replace('/objects/', '');
           const privateObjectDir = objectStorage.getPrivateObjectDir();
           const fullPath = `${privateObjectDir}/${objectPath}`;
-          const { hasAutonomousInvoicing, bucketName, objectName } = parseObjectPath(fullPath);
+          const { bucketName, objectName } = parseObjectPath(fullPath);
           const bucket = objectStorageClient.bucket(bucketName);
           const file = bucket.file(objectName);
           await file.delete().catch(() => {}); // Ignore errors if file doesn't exist
@@ -4246,6 +4246,7 @@ export function registerRoutes(app: Express): Server {
             provincia: reseller.provincia,
             pec: reseller.pec,
             codiceUnivoco: reseller.codiceUnivoco,
+            hasAutonomousInvoicing: reseller.hasAutonomousInvoicing,
           };
         })
       );
@@ -4266,7 +4267,7 @@ export function registerRoutes(app: Express): Server {
         return res.status(403).send("Solo i rivenditori franchising/GDO possono visualizzare sub-rivenditori");
       }
       
-      const { hasAutonomousInvoicing, id } = req.params;
+      const { id } = req.params;
       
       // Verify sub-reseller belongs to this parent
       const subReseller = await storage.getSubResellerDetail(req.user.id, id);
@@ -4279,7 +4280,7 @@ export function registerRoutes(app: Express): Server {
       const repairCenters = await storage.getRepairCentersForReseller(subReseller.id);
       
       // Return full details without password
-      const { hasAutonomousInvoicing, password: _, ...safeUser } = subReseller;
+      const { password: _, ...safeUser } = subReseller;
       
       res.json({
         ...safeUser,
@@ -4333,6 +4334,7 @@ export function registerRoutes(app: Express): Server {
         role: 'reseller',
         resellerCategory: validatedData.resellerCategory || 'standard',
         parentResellerId: req.user.id,
+        hasAutonomousInvoicing: validatedData.hasAutonomousInvoicing ?? false,
       });
       
       // Create automatic warehouse for new sub-reseller
@@ -4358,7 +4360,7 @@ export function registerRoutes(app: Express): Server {
         return res.status(403).send("Solo i rivenditori franchising/GDO possono modificare sub-rivenditori");
       }
       
-      const { hasAutonomousInvoicing, id } = req.params;
+      const { id } = req.params;
       
       // Verify sub-reseller belongs to this parent
       const childResellers = await storage.getChildResellers(req.user.id);
@@ -4368,7 +4370,7 @@ export function registerRoutes(app: Express): Server {
       }
       
       // Only allow specific safe fields to be updated - explicitly destructure and ignore dangerous fields
-      const { hasAutonomousInvoicing, 
+      const { 
         fullName, email, phone, isActive, resellerCategory, password, hasAutonomousInvoicing,
         partitaIva, ragioneSociale, codiceFiscale, indirizzo, citta, cap, provincia, pec, codiceUnivoco
       } = req.body;
@@ -4419,7 +4421,7 @@ export function registerRoutes(app: Express): Server {
       setActivityEntity(res, { type: 'users', id: updated.id });
       
       // Return user without password
-      const { hasAutonomousInvoicing, password: _, ...safeUser } = updated;
+      const { password: _, ...safeUser } = updated;
       res.json(safeUser);
     } catch (error: any) {
       res.status(400).send(error.message);
@@ -4436,7 +4438,7 @@ export function registerRoutes(app: Express): Server {
         return res.status(403).send("Solo i rivenditori franchising/GDO possono eliminare sub-rivenditori");
       }
       
-      const { hasAutonomousInvoicing, id } = req.params;
+      const { id } = req.params;
       
       // Verify sub-reseller belongs to this parent
       const childResellers = await storage.getChildResellers(req.user.id);
@@ -4489,7 +4491,7 @@ export function registerRoutes(app: Express): Server {
         return res.status(403).send("Solo i rivenditori franchising/GDO possono visualizzare i team dei sub-rivenditori");
       }
       
-      const { hasAutonomousInvoicing, id } = req.params;
+      const { id } = req.params;
       
       // Verify sub-reseller exists and belongs to this parent
       const subReseller = await storage.getUser(id);
@@ -4502,7 +4504,7 @@ export function registerRoutes(app: Express): Server {
       
       // Return without password
       const safeStaff = staff.map((s: any) => {
-        const { hasAutonomousInvoicing, password: _, ...safe } = s;
+        const { password: _, ...safe } = s;
         return safe;
       });
       
@@ -4520,7 +4522,7 @@ export function registerRoutes(app: Express): Server {
       const resellerId = req.user.role === 'reseller' ? req.user.id : req.user.resellerId;
       if (!resellerId) return res.status(400).send("Reseller ID non trovato");
       
-      const { hasAutonomousInvoicing, id } = req.params;
+      const { id } = req.params;
       
       // Get the repair center to verify ownership
       const repairCenter = await storage.getRepairCenter(id);
@@ -4539,7 +4541,7 @@ export function registerRoutes(app: Express): Server {
       
       // Return without password
       const safeStaff = staff.map((s: any) => {
-        const { hasAutonomousInvoicing, password: _, ...safe } = s;
+        const { password: _, ...safe } = s;
         return safe;
       });
       
@@ -4611,7 +4613,7 @@ export function registerRoutes(app: Express): Server {
         return res.status(404).send("Sub-rivenditore non trovato");
       }
       
-      const { hasAutonomousInvoicing, productIds } = z.object({
+      const { productIds } = z.object({
         productIds: z.array(z.string()).min(1),
       }).parse(req.body);
       
@@ -4655,7 +4657,7 @@ export function registerRoutes(app: Express): Server {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
-      const { hasAutonomousInvoicing, type, id } = req.body;
+      const { type, id } = req.body;
       
       if (!type || !id) {
         return res.status(400).send("type e id sono obbligatori");
@@ -4837,13 +4839,13 @@ export function registerRoutes(app: Express): Server {
       allRepairCenters.forEach(rc => repairCentersMap.set(rc.id, rc.name));
       
       // Compute SLA for each order
-      const { hasAutonomousInvoicing, loadSLAConfig, computeSLASeverity } = await import("./sla-utils");
+      const { loadSLAConfig, computeSLASeverity } = await import("./sla-utils");
       const slaConfig = await loadSLAConfig();
       
       const enrichedData = await Promise.all(result.data.map(async (repair) => {
         const currentState = await storage.getCurrentRepairOrderState(repair.id);
         const stateEnteredAt = currentState?.enteredAt || repair.createdAt;
-        const { hasAutonomousInvoicing, severity, minutesInState, phase } = computeSLASeverity(repair.status, stateEnteredAt, slaConfig);
+        const { severity, minutesInState, phase } = computeSLASeverity(repair.status, stateEnteredAt, slaConfig);
         
         const customer = repair.customerId ? customersMap.get(repair.customerId) : null;
         const customerName = customer?.ragioneSociale || customer?.fullName || null;
@@ -4954,7 +4956,7 @@ export function registerRoutes(app: Express): Server {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
-      const { hasAutonomousInvoicing, startDate, endDate, status } = req.query;
+      const { startDate, endDate, status } = req.query;
       const context = getEffectiveContext(req);
       
       // Get all repair orders for this reseller
@@ -5044,7 +5046,7 @@ export function registerRoutes(app: Express): Server {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
-      const { hasAutonomousInvoicing, reason } = z.object({ reason: z.string().optional() }).parse(req.body);
+      const { reason } = z.object({ reason: z.string().optional() }).parse(req.body);
       
       const repair = await storage.getRepairOrder(req.params.id);
       if (!repair) return res.status(404).send("Ordine di riparazione non trovato");
@@ -5200,7 +5202,7 @@ export function registerRoutes(app: Express): Server {
       }
       
       setActivityEntity(res, { type: 'users', id: user.id });
-      const { hasAutonomousInvoicing, password: _, ...safeUser } = user;
+      const { password: _, ...safeUser } = user;
       res.status(201).json({ customer: safeUser, tempPassword: password });
     } catch (error: any) {
       res.status(400).send(error.message);
@@ -5251,7 +5253,7 @@ export function registerRoutes(app: Express): Server {
         };
       }));
       
-      const { hasAutonomousInvoicing, password: _, ...safeCustomer } = customer;
+      const { password: _, ...safeCustomer } = customer;
       res.json({
         customer: safeCustomer,
         reseller: reseller ? { id: reseller.id, fullName: reseller.fullName } : null,
@@ -5415,7 +5417,7 @@ export function registerRoutes(app: Express): Server {
     try {
       if (!req.user) return res.status(401).send("Non autorizzato");
       
-      const { hasAutonomousInvoicing, user: userData, permissions, repairCenterIds, subResellerIds } = req.body;
+      const { user: userData, permissions, repairCenterIds, subResellerIds } = req.body;
       
       if (!userData || !userData.username || !userData.email || !userData.password || !userData.fullName) {
         return res.status(400).send("Dati utente incompleti");
@@ -5476,7 +5478,7 @@ export function registerRoutes(app: Express): Server {
       if (!req.user) return res.status(401).send("Non autorizzato");
       
       const staffId = req.params.id;
-      const { hasAutonomousInvoicing, user: userData, permissions, repairCenterIds, subResellerIds } = req.body;
+      const { user: userData, permissions, repairCenterIds, subResellerIds } = req.body;
       
       // Verify the staff member belongs to this reseller
       const staffMember = await storage.getUser(staffId);
@@ -5538,7 +5540,7 @@ export function registerRoutes(app: Express): Server {
       if (!req.user) return res.status(401).send("Non autorizzato");
       
       const staffId = req.params.id;
-      const { hasAutonomousInvoicing, newPassword } = req.body;
+      const { newPassword } = req.body;
       
       if (!newPassword || newPassword.length < 4) {
         return res.status(400).send("La password deve contenere almeno 4 caratteri");
@@ -5615,7 +5617,7 @@ export function registerRoutes(app: Express): Server {
       if (!req.user) return res.status(401).send("Non autorizzato");
       
       const staffId = req.params.id;
-      const { hasAutonomousInvoicing, permissions } = req.body;
+      const { permissions } = req.body;
       
       if (!permissions || !Array.isArray(permissions)) {
         return res.status(400).send("Permessi non validi");
@@ -5723,7 +5725,7 @@ export function registerRoutes(app: Express): Server {
       const resellerId = req.user.role === 'reseller' ? req.user.id : req.user.resellerId;
       if (!resellerId) return res.status(400).send("Rivenditore non trovato");
       
-      const { hasAutonomousInvoicing, name, logoUrl } = req.body;
+      const { name, logoUrl } = req.body;
       if (!name) return res.status(400).send("Nome brand obbligatorio");
       
       const brand = await storage.createResellerDeviceBrand({
@@ -5755,7 +5757,7 @@ export function registerRoutes(app: Express): Server {
         return res.status(404).send("Brand non trovato");
       }
       
-      const { hasAutonomousInvoicing, name, logoUrl, isActive } = req.body;
+      const { name, logoUrl, isActive } = req.body;
       const updated = await storage.updateResellerDeviceBrand(brandId, {
         ...(name !== undefined && { name }),
         ...(logoUrl !== undefined && { logoUrl }),
@@ -5859,7 +5861,7 @@ export function registerRoutes(app: Express): Server {
       const resellerId = req.user.role === 'reseller' ? req.user.id : req.user.resellerId;
       if (!resellerId) return res.status(400).send("Rivenditore non trovato");
       
-      const { hasAutonomousInvoicing, modelName, brandId, typeId, photoUrl } = req.body;
+      const { modelName, brandId, typeId, photoUrl } = req.body;
       if (!modelName) return res.status(400).send("Nome modello obbligatorio");
       
       // Inserisce direttamente in device_models con resellerId per compatibilità FK
@@ -5894,7 +5896,7 @@ export function registerRoutes(app: Express): Server {
         return res.status(404).send("Modello non trovato");
       }
       
-      const { hasAutonomousInvoicing, modelName, brandId, resellerBrandId, brandName, typeId, photoUrl, isActive } = req.body;
+      const { modelName, brandId, resellerBrandId, brandName, typeId, photoUrl, isActive } = req.body;
       const updated = await storage.updateResellerDeviceModel(modelId, {
         ...(modelName !== undefined && { modelName }),
         ...(brandId !== undefined && { brandId }),
@@ -6003,7 +6005,7 @@ export function registerRoutes(app: Express): Server {
       const context = getEffectiveContext(req);
       if (!context.resellerId) return res.status(400).send("Rivenditore non trovato");
       
-      const { hasAutonomousInvoicing, deviceType, productType } = req.query;
+      const { deviceType, productType } = req.query;
       
       // Ottieni tutti i prodotti (globali admin + propri del reseller)
       const allProducts = await storage.listProducts();
@@ -6072,7 +6074,7 @@ export function registerRoutes(app: Express): Server {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
-      const { hasAutonomousInvoicing, initialStock, ...productData } = req.body;
+      const { initialStock, ...productData } = req.body;
       
       // Pulisci i valori null convertendoli in undefined per compatibilità con Zod
       const cleanedProductData = Object.fromEntries(
@@ -6153,7 +6155,7 @@ export function registerRoutes(app: Express): Server {
         return res.status(403).send("Non puoi modificare prodotti che non hai creato");
       }
       
-      const { hasAutonomousInvoicing, name, description, category, productType, brand, compatibleModels, color, 
+      const { name, description, category, productType, brand, compatibleModels, color, 
               costPrice, unitPrice, condition, warrantyMonths, supplier, supplierCode, 
               minStock, location, isActive } = req.body;
       
@@ -6213,7 +6215,7 @@ export function registerRoutes(app: Express): Server {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
-      const { hasAutonomousInvoicing, isPublished } = z.object({
+      const { isPublished } = z.object({
         isPublished: z.boolean(),
       }).parse(req.body);
       
@@ -6419,7 +6421,7 @@ export function registerRoutes(app: Express): Server {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
-      const { hasAutonomousInvoicing, priceCents } = z.object({
+      const { priceCents } = z.object({
         priceCents: z.number().int().positive().nullable(),
       }).parse(req.body);
       
@@ -6502,7 +6504,7 @@ export function registerRoutes(app: Express): Server {
       
       const privateObjectDir = objectStorage.getPrivateObjectDir();
       const fullPath = `${privateObjectDir}/${objectPath}`;
-      const { hasAutonomousInvoicing, bucketName, objectName } = parseObjectPath(fullPath);
+      const { bucketName, objectName } = parseObjectPath(fullPath);
       const bucket = objectStorageClient.bucket(bucketName);
       const file = bucket.file(objectName);
       
@@ -6644,7 +6646,7 @@ export function registerRoutes(app: Express): Server {
         return res.status(403).send("Non puoi modificare lo stock di prodotti che non hai creato");
       }
       
-      const { hasAutonomousInvoicing, warehouseId, repairCenterId, quantity, notes } = req.body;
+      const { warehouseId, repairCenterId, quantity, notes } = req.body;
       const targetWarehouseId = warehouseId || repairCenterId;
       
       if (!targetWarehouseId) {
@@ -6750,7 +6752,7 @@ export function registerRoutes(app: Express): Server {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
-      const { hasAutonomousInvoicing, productId, repairCenterId, movementType, quantity, notes } = req.body;
+      const { productId, repairCenterId, movementType, quantity, notes } = req.body;
       
       if (!productId || !repairCenterId || !movementType || typeof quantity !== 'number') {
         return res.status(400).send("productId, repairCenterId, movementType e quantity sono richiesti");
@@ -7087,7 +7089,7 @@ export function registerRoutes(app: Express): Server {
       if (!req.user) return res.status(401).send("Non autorizzato");
       
       const centerId = req.params.id;
-      const { hasAutonomousInvoicing, newPassword } = req.body;
+      const { newPassword } = req.body;
       
       if (!newPassword || newPassword.length < 6) {
         return res.status(400).send("La password deve contenere almeno 6 caratteri");
@@ -7529,7 +7531,7 @@ export function registerRoutes(app: Express): Server {
         return res.status(400).send(parsed.error.message);
       }
       
-      const { hasAutonomousInvoicing, repairCenterId, repairOrderId, customerId, date, startTime, endTime, notes } = parsed.data;
+      const { repairCenterId, repairOrderId, customerId, date, startTime, endTime, notes } = parsed.data;
       
       // Verify the repairCenterId belongs to this reseller
       if (!resellerCenterIds.includes(repairCenterId)) {
@@ -7640,7 +7642,7 @@ export function registerRoutes(app: Express): Server {
       // Use effective context (may be viewing as sub-reseller or repair center)
       const context = getEffectiveContext(req);
       
-      const { hasAutonomousInvoicing, repairCenterId, date } = req.query as { repairCenterId: string; date: string };
+      const { repairCenterId, date } = req.query as { repairCenterId: string; date: string };
       
       if (!repairCenterId || !date) {
         return res.status(400).send("repairCenterId and date are required");
@@ -7762,7 +7764,7 @@ export function registerRoutes(app: Express): Server {
       }
       
       // Validate incoming data
-      const { hasAutonomousInvoicing, updateRepairCenterSettingsSchema } = await import("@shared/schema");
+      const { updateRepairCenterSettingsSchema } = await import("@shared/schema");
       const validatedData = updateRepairCenterSettingsSchema.parse(req.body);
       
       // Update repair center with validated data
@@ -7867,7 +7869,7 @@ export function registerRoutes(app: Express): Server {
         return res.status(400).send("Repair center not found");
       }
       
-      const { hasAutonomousInvoicing, code, name, description, category, defaultPriceCents, defaultLaborMinutes } = req.body;
+      const { code, name, description, category, defaultPriceCents, defaultLaborMinutes } = req.body;
       
       if (!code || !name || !category || defaultPriceCents === undefined) {
         return res.status(400).json({ error: "Missing required fields" });
@@ -7904,7 +7906,7 @@ export function registerRoutes(app: Express): Server {
         return res.status(400).send("Repair center not found");
       }
       
-      const { hasAutonomousInvoicing, id } = req.params;
+      const { id } = req.params;
       
       // Verify ownership
       const existingItem = await storage.getServiceItem(id);
@@ -7915,7 +7917,7 @@ export function registerRoutes(app: Express): Server {
         return res.status(403).send("Non autorizzato a modificare questo intervento");
       }
       
-      const { hasAutonomousInvoicing, name, description, category, defaultPriceCents, defaultLaborMinutes, isActive } = req.body;
+      const { name, description, category, defaultPriceCents, defaultLaborMinutes, isActive } = req.body;
       
       const updated = await storage.updateServiceItem(id, {
         ...(name !== undefined && { name }),
@@ -7942,7 +7944,7 @@ export function registerRoutes(app: Express): Server {
         return res.status(400).send("Repair center not found");
       }
       
-      const { hasAutonomousInvoicing, id } = req.params;
+      const { id } = req.params;
       
       // Verify ownership
       const existingItem = await storage.getServiceItem(id);
@@ -8022,13 +8024,13 @@ export function registerRoutes(app: Express): Server {
       });
       
       // Compute SLA for each order
-      const { hasAutonomousInvoicing, loadSLAConfig, computeSLASeverity } = await import("./sla-utils");
+      const { loadSLAConfig, computeSLASeverity } = await import("./sla-utils");
       const slaConfig = await loadSLAConfig();
       
       const enrichedData = await Promise.all(result.data.map(async (repair) => {
         const currentState = await storage.getCurrentRepairOrderState(repair.id);
         const stateEnteredAt = currentState?.enteredAt || repair.createdAt;
-        const { hasAutonomousInvoicing, severity, minutesInState, phase } = computeSLASeverity(repair.status, stateEnteredAt, slaConfig);
+        const { severity, minutesInState, phase } = computeSLASeverity(repair.status, stateEnteredAt, slaConfig);
         
         const customer = repair.customerId ? customersMap.get(repair.customerId) : null;
         const customerName = customer?.ragioneSociale || customer?.fullName || null;
@@ -8105,7 +8107,7 @@ export function registerRoutes(app: Express): Server {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
-      const { hasAutonomousInvoicing, reason } = skipDiagnosisSchema.parse(req.body);
+      const { reason } = skipDiagnosisSchema.parse(req.body);
       
       const repair = await storage.getRepairOrder(req.params.id);
       if (!repair) return res.status(404).send("Ordine di riparazione non trovato");
@@ -8288,7 +8290,7 @@ export function registerRoutes(app: Express): Server {
       if (!user) return res.status(404).send("User not found");
       
       // Return safe profile data (no password)
-      const { hasAutonomousInvoicing, password: _, ...safeUser } = user;
+      const { password: _, ...safeUser } = user;
       res.json(safeUser);
     } catch (error: any) {
       res.status(500).send(error.message);
@@ -8299,7 +8301,7 @@ export function registerRoutes(app: Express): Server {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
-      const { hasAutonomousInvoicing, customerProfileUpdateSchema } = await import("@shared/schema");
+      const { customerProfileUpdateSchema } = await import("@shared/schema");
       const validatedData = customerProfileUpdateSchema.parse(req.body);
       
       // Build update object only with provided fields
@@ -8326,7 +8328,7 @@ export function registerRoutes(app: Express): Server {
       setActivityEntity(res, { type: 'users', id: updatedUser.id });
       
       // Return safe profile data (no password)
-      const { hasAutonomousInvoicing, password: _, ...safeUser } = updatedUser;
+      const { password: _, ...safeUser } = updatedUser;
       res.json(safeUser);
     } catch (error: any) {
       if (error.name === 'ZodError') {
@@ -8398,7 +8400,7 @@ export function registerRoutes(app: Express): Server {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
-      const { hasAutonomousInvoicing, insertRemoteRepairRequestSchema } = await import("@shared/schema");
+      const { insertRemoteRepairRequestSchema } = await import("@shared/schema");
       const validatedData = insertRemoteRepairRequestSchema.parse({
         ...req.body,
         customerId: req.user.id,
@@ -8451,7 +8453,7 @@ export function registerRoutes(app: Express): Server {
         return res.status(400).send("Impossibile aggiornare la spedizione in questo stato");
       }
       
-      const { hasAutonomousInvoicing, courierName, trackingNumber } = req.body;
+      const { courierName, trackingNumber } = req.body;
       
       const updated = await storage.updateRemoteRepairRequest(req.params.id, {
         courierName,
@@ -8561,7 +8563,7 @@ export function registerRoutes(app: Express): Server {
         
         const privateObjectDir = objectStorage.getPrivateObjectDir();
         const fullPath = `${privateObjectDir}/${objectPath}`;
-        const { hasAutonomousInvoicing, bucketName, objectName } = parseObjectPath(fullPath);
+        const { bucketName, objectName } = parseObjectPath(fullPath);
         const bucket = objectStorageClient.bucket(bucketName);
         const gcsFile = bucket.file(objectName);
         
@@ -8699,7 +8701,7 @@ export function registerRoutes(app: Express): Server {
         return res.status(400).send("Impossibile rifiutare la richiesta in questo stato");
       }
       
-      const { hasAutonomousInvoicing, rejectionReason } = req.body;
+      const { rejectionReason } = req.body;
       
       const updated = await storage.updateRemoteRepairRequest(req.params.id, {
         status: 'rejected',
@@ -8728,7 +8730,7 @@ export function registerRoutes(app: Express): Server {
         return res.status(400).send("La richiesta deve essere accettata prima di richiedere la spedizione");
       }
       
-      const { hasAutonomousInvoicing, centerNotes, customerAddress, customerCity, customerCap, customerProvince } = req.body;
+      const { centerNotes, customerAddress, customerCity, customerCap, customerProvince } = req.body;
       
       const updated = await storage.updateRemoteRepairRequest(req.params.id, {
         status: 'awaiting_shipment',
@@ -8768,7 +8770,7 @@ export function registerRoutes(app: Express): Server {
       });
       
       // Poi crea automaticamente la lavorazione
-      const { hasAutonomousInvoicing, repairOrder, remoteRequest } = await storage.createRepairFromRemoteRequest(req.params.id);
+      const { repairOrder, remoteRequest } = await storage.createRepairFromRemoteRequest(req.params.id);
       
       setActivityEntity(res, { type: 'remote_repair_requests', id: remoteRequest.id });
       res.json({ 
@@ -8798,7 +8800,7 @@ export function registerRoutes(app: Express): Server {
         return res.status(400).send("Questa azione è disponibile solo quando la richiesta è in attesa di spedizione");
       }
       
-      const { hasAutonomousInvoicing, centerNotes } = req.body;
+      const { centerNotes } = req.body;
       
       // First update status to received
       await storage.updateRemoteRepairRequest(req.params.id, {
@@ -8808,7 +8810,7 @@ export function registerRoutes(app: Express): Server {
       });
       
       // Then create the repair order automatically
-      const { hasAutonomousInvoicing, repairOrder, remoteRequest } = await storage.createRepairFromRemoteRequest(req.params.id);
+      const { repairOrder, remoteRequest } = await storage.createRepairFromRemoteRequest(req.params.id);
       
       setActivityEntity(res, { type: 'remote_repair_requests', id: remoteRequest.id });
       res.json({ 
@@ -8838,7 +8840,7 @@ export function registerRoutes(app: Express): Server {
         return res.status(400).send("Questa azione è disponibile solo quando la richiesta è in attesa di spedizione");
       }
       
-      const { hasAutonomousInvoicing, cancellationReason } = req.body;
+      const { cancellationReason } = req.body;
       
       const updated = await storage.updateRemoteRepairRequest(req.params.id, {
         status: 'cancelled',
@@ -8917,7 +8919,7 @@ export function registerRoutes(app: Express): Server {
         return res.status(400).send("La richiesta è già stata gestita");
       }
       
-      const { hasAutonomousInvoicing, assignedCenterId } = req.body;
+      const { assignedCenterId } = req.body;
 
       // The frontend sends repair_center table ID, but we need the user ID
       // Find the user with role 'repair_center' that has this repairCenterId
@@ -9087,7 +9089,7 @@ export function registerRoutes(app: Express): Server {
         return res.status(400).send("Nessun rivenditore associato");
       }
       
-      const { hasAutonomousInvoicing, serviceItemId, deviceType, deviceModelId, brand, model, imei, serial, issueDescription, customerNotes, paymentMethod } = req.body;
+      const { serviceItemId, deviceType, deviceModelId, brand, model, imei, serial, issueDescription, customerNotes, paymentMethod } = req.body;
       
       if (!serviceItemId) {
         return res.status(400).send("Servizio richiesto");
@@ -9170,7 +9172,7 @@ export function registerRoutes(app: Express): Server {
         return res.status(400).send("Il metodo di consegna può essere impostato solo per ordini accettati");
       }
       
-      const { hasAutonomousInvoicing, deliveryMethod, shippingAddress, shippingCity, shippingCap, shippingProvince, courierName, trackingNumber } = req.body;
+      const { deliveryMethod, shippingAddress, shippingCity, shippingCap, shippingProvince, courierName, trackingNumber } = req.body;
       
       if (!deliveryMethod || !['in_person', 'shipping'].includes(deliveryMethod)) {
         return res.status(400).send("Metodo di consegna non valido");
@@ -9231,7 +9233,7 @@ export function registerRoutes(app: Express): Server {
           const fileName = `ddt-service-${order.orderNumber}-${Date.now()}.pdf`;
           
           // Store DDT in object storage
-          const { hasAutonomousInvoicing, Storage } = await import("@google-cloud/storage");
+          const { Storage } = await import("@google-cloud/storage");
           const gcs = new Storage();
           const bucketId = process.env.DEFAULT_OBJECT_STORAGE_BUCKET_ID;
           if (bucketId) {
@@ -9265,7 +9267,7 @@ export function registerRoutes(app: Express): Server {
         return res.status(400).send("Tracking disponibile solo per spedizioni");
       }
       
-      const { hasAutonomousInvoicing, courierName, trackingNumber } = req.body;
+      const { courierName, trackingNumber } = req.body;
       
       const updated = await storage.updateServiceOrder(req.params.id, {
         courierName: courierName || order.courierName,
@@ -9408,7 +9410,7 @@ export function registerRoutes(app: Express): Server {
         return res.status(400).send("L'ordine non può essere accettato in questo stato");
       }
       
-      const { hasAutonomousInvoicing, scheduledAt, repairCenterId, internalNotes } = req.body;
+      const { scheduledAt, repairCenterId, internalNotes } = req.body;
       
       const updated = await storage.updateServiceOrder(req.params.id, {
         status: scheduledAt ? 'scheduled' : 'accepted',
@@ -9472,7 +9474,7 @@ export function registerRoutes(app: Express): Server {
         return res.status(400).send("L'ordine non può essere completato in questo stato");
       }
       
-      const { hasAutonomousInvoicing, internalNotes } = req.body;
+      const { internalNotes } = req.body;
       
       const updated = await storage.updateServiceOrder(req.params.id, {
         status: 'completed',
@@ -9505,7 +9507,7 @@ export function registerRoutes(app: Express): Server {
         return res.status(400).send("L'ordine non può essere annullato in questo stato");
       }
       
-      const { hasAutonomousInvoicing, internalNotes } = req.body;
+      const { internalNotes } = req.body;
       
       const updated = await storage.updateServiceOrder(req.params.id, {
         status: 'cancelled',
@@ -9542,7 +9544,7 @@ export function registerRoutes(app: Express): Server {
         return res.status(400).send("La programmazione appuntamento è solo per consegne di persona");
       }
       
-      const { hasAutonomousInvoicing, scheduledAt } = req.body;
+      const { scheduledAt } = req.body;
       if (!scheduledAt) {
         return res.status(400).send("Data appuntamento richiesta");
       }
@@ -9597,7 +9599,7 @@ export function registerRoutes(app: Express): Server {
       if (order.issueDescription) declaredDefects.push(order.issueDescription);
       
       // Create repair order WITH acceptance record
-      const { hasAutonomousInvoicing, order: repairOrder, acceptance } = await storage.createRepairWithAcceptance(
+      const { order: repairOrder, acceptance } = await storage.createRepairWithAcceptance(
         {
           customerId: order.customerId,
           resellerId: order.resellerId,
@@ -9893,7 +9895,7 @@ export function registerRoutes(app: Express): Server {
       const objectKey = `${privateDir}/repair-attachments/${repairOrderId}/${objectId}`;
       
       // Parse bucket and object name
-      const { hasAutonomousInvoicing, bucketName, objectName } = parseObjectPath(objectKey);
+      const { bucketName, objectName } = parseObjectPath(objectKey);
       
       // Upload to Google Cloud Storage
       const bucket = objectStorageClient.bucket(bucketName);
@@ -10022,7 +10024,7 @@ export function registerRoutes(app: Express): Server {
       if (!canDelete) return res.status(403).send("Forbidden");
       
       // Delete from Google Cloud Storage
-      const { hasAutonomousInvoicing, bucketName, objectName } = parseObjectPath(attachment.objectKey);
+      const { bucketName, objectName } = parseObjectPath(attachment.objectKey);
       const bucket = objectStorageClient.bucket(bucketName);
       const file = bucket.file(objectName);
       
@@ -10062,7 +10064,7 @@ export function registerRoutes(app: Express): Server {
       if (!hasAccess) return res.status(403).send("Forbidden");
       
       // Get file from storage
-      const { hasAutonomousInvoicing, bucketName, objectName } = parseObjectPath(attachment.objectKey);
+      const { bucketName, objectName } = parseObjectPath(attachment.objectKey);
       const bucket = objectStorageClient.bucket(bucketName);
       const file = bucket.file(objectName);
       
@@ -10111,7 +10113,7 @@ export function registerRoutes(app: Express): Server {
       const objectKey = `${privateDir}/delivery-documents/${repairOrderId}/${objectId}`;
       
       // Parse bucket and object name
-      const { hasAutonomousInvoicing, bucketName, objectName } = parseObjectPath(objectKey);
+      const { bucketName, objectName } = parseObjectPath(objectKey);
       
       // Upload to Google Cloud Storage
       const bucket = objectStorageClient.bucket(bucketName);
@@ -10340,7 +10342,7 @@ export function registerRoutes(app: Express): Server {
         return res.status(403).send("Solo rivenditori, centri riparazione e admin possono creare ticket interni");
       }
       
-      const { hasAutonomousInvoicing, subject, description, priority, targetType, targetId } = req.body;
+      const { subject, description, priority, targetType, targetId } = req.body;
       
       // Validate required fields
       if (!subject || !description) {
@@ -10422,7 +10424,7 @@ export function registerRoutes(app: Express): Server {
       const ticket = await storage.getTicket(req.params.id);
       if (!ticket) return res.status(404).send("Ticket not found");
       
-      const { hasAutonomousInvoicing, status } = req.body;
+      const { status } = req.body;
       if (!status || !['open', 'in_progress', 'closed'].includes(status)) {
         return res.status(400).send("Invalid status");
       }
@@ -10490,7 +10492,7 @@ export function registerRoutes(app: Express): Server {
       const ticket = await storage.getTicket(req.params.id);
       if (!ticket) return res.status(404).send("Ticket not found");
       
-      const { hasAutonomousInvoicing, assignedTo } = req.body;
+      const { assignedTo } = req.body;
       
       // Validate assignedTo user exists if provided
       if (assignedTo) {
@@ -10547,7 +10549,7 @@ export function registerRoutes(app: Express): Server {
       const ticket = await storage.getTicket(req.params.id);
       if (!ticket) return res.status(404).send("Ticket not found");
       
-      const { hasAutonomousInvoicing, priority } = req.body;
+      const { priority } = req.body;
       if (!priority || !['low', 'medium', 'high'].includes(priority)) {
         return res.status(400).send("Invalid priority");
       }
@@ -10657,7 +10659,7 @@ export function registerRoutes(app: Express): Server {
       const objectKey = `${privateDir}/ticket-attachments/${req.params.id}/${objectId}`;
       
       // Parse bucket and object name
-      const { hasAutonomousInvoicing, bucketName, objectName } = parseObjectPath(objectKey);
+      const { bucketName, objectName } = parseObjectPath(objectKey);
       
       // Upload to Google Cloud Storage
       const bucket = objectStorageClient.bucket(bucketName);
@@ -10725,7 +10727,7 @@ export function registerRoutes(app: Express): Server {
         return res.status(400).send("Cannot reply to closed ticket");
       }
       
-      const { hasAutonomousInvoicing, message, isInternal, attachments } = req.body;
+      const { message, isInternal, attachments } = req.body;
       if (!message || typeof message !== 'string' || message.trim().length === 0) {
         return res.status(400).send("Message is required");
       }
@@ -10821,7 +10823,7 @@ export function registerRoutes(app: Express): Server {
       const orders = await storage.listRepairOrders(filters);
       
       // Compute SLA for each order
-      const { hasAutonomousInvoicing, loadSLAConfig, computeSLASeverity } = await import("./sla-utils");
+      const { loadSLAConfig, computeSLASeverity } = await import("./sla-utils");
       const slaConfig = await loadSLAConfig();
       const slaSeverityFilter = req.query.slaSeverity as string | undefined;
       
@@ -10875,7 +10877,7 @@ export function registerRoutes(app: Express): Server {
       const ordersWithSLA = await Promise.all(orders.map(async (order) => {
         const currentState = await storage.getCurrentRepairOrderState(order.id);
         const stateEnteredAt = currentState?.enteredAt || order.createdAt;
-        const { hasAutonomousInvoicing, severity, minutesInState, phase } = computeSLASeverity(order.status, stateEnteredAt, slaConfig);
+        const { severity, minutesInState, phase } = computeSLASeverity(order.status, stateEnteredAt, slaConfig);
         
         const customer = order.customerId ? customersMap.get(order.customerId) : null;
         const customerName = customer?.ragioneSociale || customer?.fullName || null;
@@ -11073,7 +11075,7 @@ export function registerRoutes(app: Express): Server {
           acceptedBy: req.user.id,
         };
         
-        const { hasAutonomousInvoicing, order, acceptance } = await storage.createRepairWithAcceptance(orderData, acceptanceData);
+        const { order, acceptance } = await storage.createRepairWithAcceptance(orderData, acceptanceData);
         
         
         // Auto-associate customer with repair center
@@ -11264,7 +11266,7 @@ export function registerRoutes(app: Express): Server {
       }
       
       // Extract initial stock assignments and supplier info from request body
-      const { hasAutonomousInvoicing, initialStock, supplierId, supplierCode: supplierCodeParam, ...productData } = req.body;
+      const { initialStock, supplierId, supplierCode: supplierCodeParam, ...productData } = req.body;
       
       // Save costPrice before validation for use in supplier linking
       const productCostPrice = productData.costPrice;
@@ -11436,7 +11438,7 @@ export function registerRoutes(app: Express): Server {
       const product = await storage.getProduct(req.params.id);
       if (!product) return res.status(404).send("Product not found");
       
-      const { hasAutonomousInvoicing, repairCenterId, quantity, notes } = req.body;
+      const { repairCenterId, quantity, notes } = req.body;
       
       if (!repairCenterId) {
         return res.status(400).send("repairCenterId is required");
@@ -11535,7 +11537,7 @@ export function registerRoutes(app: Express): Server {
       const product = await storage.getProduct(req.params.id);
       if (!product) return res.status(404).send("Product not found");
       
-      const { hasAutonomousInvoicing, warehouseId, quantity, notes, location } = req.body;
+      const { warehouseId, quantity, notes, location } = req.body;
       
       if (!warehouseId) {
         return res.status(400).send("warehouseId is required");
@@ -11780,7 +11782,7 @@ export function registerRoutes(app: Express): Server {
         
         const privateObjectDir = objectStorage.getPrivateObjectDir();
         const fullPath = `${privateObjectDir}/${objectPath}`;
-        const { hasAutonomousInvoicing, bucketName, objectName } = parseObjectPath(fullPath);
+        const { bucketName, objectName } = parseObjectPath(fullPath);
         const bucket = objectStorageClient.bucket(bucketName);
         const file = bucket.file(objectName);
         
@@ -11819,7 +11821,7 @@ export function registerRoutes(app: Express): Server {
         }
       }
       
-      const { hasAutonomousInvoicing, product: productData, specs: specsData } = req.body;
+      const { product: productData, specs: specsData } = req.body;
       
       // Update product if provided
       if (productData) {
@@ -11914,7 +11916,7 @@ export function registerRoutes(app: Express): Server {
         return res.status(403).send("Puoi modificare solo i prodotti che hai creato.");
       }
       
-      const { hasAutonomousInvoicing, enabled, priceCents, minQuantity } = req.body;
+      const { enabled, priceCents, minQuantity } = req.body;
       
       const updatedProduct = await storage.updateProduct(req.params.productId, {
         isMarketplaceEnabled: enabled ?? false,
@@ -12122,7 +12124,7 @@ export function registerRoutes(app: Express): Server {
         
         const privateObjectDir = objectStorage.getPrivateObjectDir();
         const fullPath = `${privateObjectDir}/${objectPath}`;
-        const { hasAutonomousInvoicing, bucketName, objectName } = parseObjectPath(fullPath);
+        const { bucketName, objectName } = parseObjectPath(fullPath);
         const bucket = objectStorageClient.bucket(bucketName);
         const file = bucket.file(objectName);
         
@@ -12162,7 +12164,7 @@ export function registerRoutes(app: Express): Server {
         }
       }
       
-      const { hasAutonomousInvoicing, product, specs } = req.body;
+      const { product, specs } = req.body;
       
       // Update product fields if provided
       if (product) {
@@ -12247,7 +12249,7 @@ export function registerRoutes(app: Express): Server {
         return res.status(403).send("Puoi modificare solo i prodotti che hai creato.");
       }
       
-      const { hasAutonomousInvoicing, enabled, priceCents, minQuantity } = req.body;
+      const { enabled, priceCents, minQuantity } = req.body;
       
       const updatedProduct = await storage.updateProduct(req.params.productId, {
         isMarketplaceEnabled: enabled ?? false,
@@ -12266,7 +12268,7 @@ export function registerRoutes(app: Express): Server {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
-      const { hasAutonomousInvoicing, resellerId } = req.body;
+      const { resellerId } = req.body;
       const product = await storage.getProduct(req.params.productId);
       
       if (!product) return res.status(404).send("Accessory not found");
@@ -13205,7 +13207,7 @@ export function registerRoutes(app: Express): Server {
       }
       
       // Validate bypass reason
-      const { hasAutonomousInvoicing, reason } = req.body;
+      const { reason } = req.body;
       if (!reason || !['garanzia', 'omaggio'].includes(reason)) {
         return res.status(400).send("Motivo non valido. Deve essere 'garanzia' o 'omaggio'");
       }
@@ -13515,7 +13517,7 @@ export function registerRoutes(app: Express): Server {
         return res.status(403).send("Only admins, repair centers and resellers can create purchase orders");
       }
       
-      const { hasAutonomousInvoicing, destinationType, supplierName, supplierId, sourceWarehouseId, items, notes, expectedArrival } = req.body;
+      const { destinationType, supplierName, supplierId, sourceWarehouseId, items, notes, expectedArrival } = req.body;
       
       if (!items || !Array.isArray(items) || items.length === 0) {
         return res.status(400).send("At least one item is required");
@@ -14134,7 +14136,7 @@ export function registerRoutes(app: Express): Server {
         return res.status(403).send("Only admins, repair centers and resellers can manage availability");
       }
       
-      const { hasAutonomousInvoicing, availability } = req.body;
+      const { availability } = req.body;
       if (!Array.isArray(availability)) {
         return res.status(400).send("Availability must be an array");
       }
@@ -14188,7 +14190,7 @@ export function registerRoutes(app: Express): Server {
         return res.status(403).send("Access denied");
       }
       
-      const { hasAutonomousInvoicing, from, to } = req.query;
+      const { from, to } = req.query;
       const blackouts = await storage.listRepairCenterBlackouts(
         req.params.id,
         from as string | undefined,
@@ -14274,7 +14276,7 @@ export function registerRoutes(app: Express): Server {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
-      const { hasAutonomousInvoicing, date } = req.query;
+      const { date } = req.query;
       if (!date) {
         return res.status(400).send("Date is required");
       }
@@ -14377,7 +14379,7 @@ export function registerRoutes(app: Express): Server {
         return res.status(403).send("Only admins, repair centers and resellers can view appointments");
       }
       
-      const { hasAutonomousInvoicing, from, to, status } = req.query;
+      const { from, to, status } = req.query;
       
       let filters: any = { repairCenterId: req.params.id };
       if (status) filters.status = status;
@@ -14528,7 +14530,7 @@ export function registerRoutes(app: Express): Server {
         return res.status(400).send(validationResult.error.message);
       }
       
-      const { hasAutonomousInvoicing, date, startTime, endTime } = validationResult.data;
+      const { date, startTime, endTime } = validationResult.data;
       
       // Check for conflicts
       const hasConflict = await storage.checkAppointmentConflict(
@@ -14594,7 +14596,7 @@ export function registerRoutes(app: Express): Server {
         return res.status(403).send("Access denied");
       }
       
-      const { hasAutonomousInvoicing, date, startTime, endTime, status, notes, cancelReason } = req.body;
+      const { date, startTime, endTime, status, notes, cancelReason } = req.body;
       
       // Customers can only cancel, not reschedule, confirm, or modify notes
       if (isCustomer) {
@@ -16496,7 +16498,7 @@ export function registerRoutes(app: Express): Server {
       }
       
       // Remove password from response
-      const { hasAutonomousInvoicing, password: _, ...customerWithoutPassword } = customer;
+      const { password: _, ...customerWithoutPassword } = customer;
       
       setActivityEntity(res, { type: 'users', id: customer.id });
       res.status(201).json(customerWithoutPassword);
@@ -16664,7 +16666,7 @@ export function registerRoutes(app: Express): Server {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
-      const { hasAutonomousInvoicing, customerId } = req.params;
+      const { customerId } = req.params;
       
       // Check access: admin can see all, reseller/repair_center can see their customers, customer can see own
       if (req.user.role === 'customer' && req.user.id !== customerId) {
@@ -16718,7 +16720,7 @@ export function registerRoutes(app: Express): Server {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
-      const { hasAutonomousInvoicing, customerId } = req.params;
+      const { customerId } = req.params;
       
       // Only admin, reseller (for their customers), repair_center (for their customers) can create branches
       if (!['admin', 'reseller', 'repair_center'].includes(req.user.role)) {
@@ -18648,7 +18650,7 @@ export function registerRoutes(app: Express): Server {
 
       // Use Foneday-specific service if type is foneday
       if (supplier.apiType === 'foneday') {
-        const { hasAutonomousInvoicing, fonedayApi } = await import('./services/foneday');
+        const { fonedayApi } = await import('./services/foneday');
         const result = await fonedayApi.testConnection();
         
         if (result.success) {
@@ -18772,7 +18774,7 @@ export function registerRoutes(app: Express): Server {
       try {
         // Use Foneday-specific service
         if (supplier.apiType === 'foneday') {
-          const { hasAutonomousInvoicing, fonedayApi } = await import('./services/foneday');
+          const { fonedayApi } = await import('./services/foneday');
           const result = await fonedayApi.getProducts();
           products = result.products || [];
 
@@ -18969,7 +18971,7 @@ export function registerRoutes(app: Express): Server {
   // GET /api/foneday/orders - Get Foneday orders
   app.get("/api/foneday/orders", requireAuth, requireRole("admin"), async (req, res) => {
     try {
-      const { hasAutonomousInvoicing, fonedayApi } = await import('./services/foneday');
+      const { fonedayApi } = await import('./services/foneday');
       const result = await fonedayApi.getOrders();
       res.json(result);
     } catch (error: any) {
@@ -18985,7 +18987,7 @@ export function registerRoutes(app: Express): Server {
   // GET /api/foneday/invoices - Get Foneday invoices
   app.get("/api/foneday/invoices", requireAuth, requireRole("admin"), async (req, res) => {
     try {
-      const { hasAutonomousInvoicing, fonedayApi } = await import('./services/foneday');
+      const { fonedayApi } = await import('./services/foneday');
       const result = await fonedayApi.getInvoices();
       res.json(result);
     } catch (error: any) {
@@ -19005,7 +19007,7 @@ export function registerRoutes(app: Express): Server {
         return res.status(400).send("Numero fattura non valido");
       }
 
-      const { hasAutonomousInvoicing, fonedayApi } = await import('./services/foneday');
+      const { fonedayApi } = await import('./services/foneday');
       const result = await fonedayApi.getInvoicePdf(invoiceNumber);
       res.json(result);
     } catch (error: any) {
@@ -19025,7 +19027,7 @@ export function registerRoutes(app: Express): Server {
         return res.status(400).send("Numero fattura non valido");
       }
 
-      const { hasAutonomousInvoicing, fonedayApi } = await import('./services/foneday');
+      const { fonedayApi } = await import('./services/foneday');
       const xml = await fonedayApi.getInvoiceXml(invoiceNumber);
       res.type('application/xml').send(xml);
     } catch (error: any) {
@@ -19040,7 +19042,7 @@ export function registerRoutes(app: Express): Server {
   // GET /api/foneday/product/:sku - Get single Foneday product
   app.get("/api/foneday/product/:sku", requireAuth, requireRole("admin", "repair_center"), async (req, res) => {
     try {
-      const { hasAutonomousInvoicing, fonedayApi } = await import('./services/foneday');
+      const { fonedayApi } = await import('./services/foneday');
       const result = await fonedayApi.getProduct(req.params.sku);
       res.json(result);
     } catch (error: any) {
@@ -19169,7 +19171,7 @@ export function registerRoutes(app: Express): Server {
         return res.status(400).json({ success: false, message: "Credenziali Valutatore disattivate" });
       }
       
-      const { hasAutonomousInvoicing, createTrovausatiService } = await import('./trovausatiService');
+      const { createTrovausatiService } = await import('./trovausatiService');
       const service = createTrovausatiService(credential, undefined, apiType);
       const result = await service.testConnection();
       
@@ -19205,7 +19207,7 @@ export function registerRoutes(app: Express): Server {
         return res.status(404).send("Credenziali TrovaUsati non configurate");
       }
       
-      const { hasAutonomousInvoicing, createTrovausatiService } = await import('./trovausatiService');
+      const { createTrovausatiService } = await import('./trovausatiService');
       const service = createTrovausatiService(credential);
       const models = await service.getModels({
         brand: req.query.brand as string,
@@ -19238,7 +19240,7 @@ export function registerRoutes(app: Express): Server {
         return res.status(400).send("ID modello non valido");
       }
       
-      const { hasAutonomousInvoicing, createTrovausatiService } = await import('./trovausatiService');
+      const { createTrovausatiService } = await import('./trovausatiService');
       const service = createTrovausatiService(credential);
       const model = await service.getModelValuation(modelId, req.query.ean as string);
       
@@ -19261,7 +19263,7 @@ export function registerRoutes(app: Express): Server {
         return res.status(404).send("Credenziali TrovaUsati non configurate");
       }
       
-      const { hasAutonomousInvoicing, createTrovausatiService } = await import('./trovausatiService');
+      const { createTrovausatiService } = await import('./trovausatiService');
       const service = createTrovausatiService(credential);
       const products = await service.getMarketplaceProducts(
         parseInt(req.query.page as string) || 0,
@@ -19287,7 +19289,7 @@ export function registerRoutes(app: Express): Server {
         return res.status(404).send("Credenziali TrovaUsati non configurate");
       }
       
-      const { hasAutonomousInvoicing, createTrovausatiService } = await import('./trovausatiService');
+      const { createTrovausatiService } = await import('./trovausatiService');
       const service = createTrovausatiService(credential);
       const order = await service.orderProducts(req.body.productIds, req.body.reference);
       
@@ -19322,7 +19324,7 @@ export function registerRoutes(app: Express): Server {
         return res.status(404).send("Credenziali TrovaUsati non configurate");
       }
       
-      const { hasAutonomousInvoicing, createTrovausatiService } = await import('./trovausatiService');
+      const { createTrovausatiService } = await import('./trovausatiService');
       const service = createTrovausatiService(credential);
       const orders = await service.getOrders(parseInt(req.query.page as string) || 0);
       
@@ -19346,7 +19348,7 @@ export function registerRoutes(app: Express): Server {
         return res.status(404).send("Credenziali TrovaUsati non configurate");
       }
       
-      const { hasAutonomousInvoicing, createTrovausatiService } = await import('./trovausatiService');
+      const { createTrovausatiService } = await import('./trovausatiService');
       const service = createTrovausatiService(credential);
       const order = await service.orderProducts(req.body.productIds, req.body.reference);
       
@@ -19381,7 +19383,7 @@ export function registerRoutes(app: Express): Server {
         return res.status(404).send("Credenziali TrovaUsati non configurate");
       }
       
-      const { hasAutonomousInvoicing, createTrovausatiService } = await import('./trovausatiService');
+      const { createTrovausatiService } = await import('./trovausatiService');
       const service = createTrovausatiService(credential, undefined, "stores");
       const valuation = await service.getModelValuation(
         parseInt(req.params.id),
@@ -19408,7 +19410,7 @@ export function registerRoutes(app: Express): Server {
         return res.status(404).send("Credenziali TrovaUsati non configurate");
       }
       
-      const { hasAutonomousInvoicing, modelId, condition, imeiOrSn, shopId, value } = req.body;
+      const { modelId, condition, imeiOrSn, shopId, value } = req.body;
       if (!modelId || !imeiOrSn || !shopId) {
         return res.status(400).send("Campi obbligatori mancanti: modelId, imeiOrSn, shopId");
       }
@@ -19560,7 +19562,7 @@ export function registerRoutes(app: Express): Server {
       }
       
       const shopId = req.query.shopId as string;
-      const { hasAutonomousInvoicing, createTrovausatiService } = await import('./trovausatiService');
+      const { createTrovausatiService } = await import('./trovausatiService');
       const service = createTrovausatiService(credential, shopId);
       
       const result = await service.getCoupons({
@@ -19591,7 +19593,7 @@ export function registerRoutes(app: Express): Server {
         return res.status(404).send("Credenziali TrovaUsati non configurate");
       }
       
-      const { hasAutonomousInvoicing, createTrovausatiService } = await import('./trovausatiService');
+      const { createTrovausatiService } = await import('./trovausatiService');
       const service = createTrovausatiService(credential);
       const coupon = await service.getCoupon(req.params.code);
       
@@ -19619,7 +19621,7 @@ export function registerRoutes(app: Express): Server {
         return res.status(400).send("Shop ID required");
       }
       
-      const { hasAutonomousInvoicing, createTrovausatiService } = await import('./trovausatiService');
+      const { createTrovausatiService } = await import('./trovausatiService');
       const service = createTrovausatiService(credential, req.body.shopId);
       const coupon = await service.consumeCoupon(req.params.code);
       
@@ -19648,7 +19650,7 @@ export function registerRoutes(app: Express): Server {
         return res.status(400).send("Shop ID required");
       }
       
-      const { hasAutonomousInvoicing, createTrovausatiService } = await import('./trovausatiService');
+      const { createTrovausatiService } = await import('./trovausatiService');
       const service = createTrovausatiService(credential, shopId);
       const token = await service.getAccessToken();
       
@@ -20042,7 +20044,7 @@ export function registerRoutes(app: Express): Server {
         }
       }
       
-      const { hasAutonomousInvoicing, status } = req.body;
+      const { status } = req.body;
       if (!status) {
         return res.status(400).send("Stato richiesto");
       }
@@ -20205,7 +20207,7 @@ export function registerRoutes(app: Express): Server {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
-      const { hasAutonomousInvoicing, quantityReceived } = req.body;
+      const { quantityReceived } = req.body;
       if (typeof quantityReceived !== 'number' || quantityReceived < 0) {
         return res.status(400).send("Quantità non valida");
       }
@@ -20448,7 +20450,7 @@ export function registerRoutes(app: Express): Server {
         return res.status(403).send("Accesso negato");
       }
       
-      const { hasAutonomousInvoicing, status } = req.body;
+      const { status } = req.body;
       if (!status) {
         return res.status(400).send("Stato richiesto");
       }
@@ -21133,7 +21135,7 @@ export function registerRoutes(app: Express): Server {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
-      const { hasAutonomousInvoicing, products: productsArray, ...practiceData } = req.body;
+      const { products: productsArray, ...practiceData } = req.body;
       
       // If admin, validate optional resellerId and repairCenterId (mutual exclusivity enforced)
       if (req.user.role === 'admin') {
@@ -21244,7 +21246,7 @@ export function registerRoutes(app: Express): Server {
         return res.status(403).send("Accesso negato");
       }
       
-      const { hasAutonomousInvoicing, products: productsArray, ...practiceData } = req.body;
+      const { products: productsArray, ...practiceData } = req.body;
       
       // If admin, validate resellerId and repairCenterId assignments (mutual exclusivity enforced)
       if (req.user.role === 'admin') {
@@ -21555,7 +21557,7 @@ export function registerRoutes(app: Express): Server {
       }
       
       // Require reason for rejection
-      const { hasAutonomousInvoicing, reason } = req.body;
+      const { reason } = req.body;
       if (!reason || reason.trim() === '') {
         return res.status(400).send("È necessario fornire una motivazione per il rifiuto");
       }
@@ -21656,7 +21658,7 @@ export function registerRoutes(app: Express): Server {
       const objectKey = `${privateDir}/utility-documents/${req.params.id}/${objectId}`;
       
       // Parse bucket and object name
-      const { hasAutonomousInvoicing, bucketName, objectName } = parseObjectPath(objectKey);
+      const { bucketName, objectName } = parseObjectPath(objectKey);
       
       // Upload to Google Cloud Storage
       const bucket = objectStorageClient.bucket(bucketName);
@@ -21720,7 +21722,7 @@ export function registerRoutes(app: Express): Server {
       }
       
       // Parse object key and get file from storage
-      const { hasAutonomousInvoicing, bucketName, objectName } = parseObjectPath(document.objectKey);
+      const { bucketName, objectName } = parseObjectPath(document.objectKey);
       const bucket = objectStorageClient.bucket(bucketName);
       const file = bucket.file(objectName);
       
@@ -22236,7 +22238,7 @@ export function registerRoutes(app: Express): Server {
         }
       }
       
-      const { hasAutonomousInvoicing, status, reason } = req.body;
+      const { status, reason } = req.body;
       
       // Create state history entry
       await storage.createUtilityPracticeStateHistory({
@@ -22480,7 +22482,7 @@ export function registerRoutes(app: Express): Server {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
-      const { hasAutonomousInvoicing, clientKey, environment } = req.body;
+      const { clientKey, environment } = req.body;
       
       if (!clientKey || !environment) {
         return res.status(400).send("Client key e ambiente sono obbligatori");
@@ -22519,7 +22521,7 @@ export function registerRoutes(app: Express): Server {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
-      const { hasAutonomousInvoicing, storeCode } = req.body;
+      const { storeCode } = req.body;
       if (!storeCode) {
         return res.status(400).send("Codice punto vendita obbligatorio");
       }
@@ -22529,7 +22531,7 @@ export function registerRoutes(app: Express): Server {
         return res.status(404).send("Credenziali SIFAR non configurate");
       }
       
-      const { hasAutonomousInvoicing, createSifarService } = await import("./sifarService");
+      const { createSifarService } = await import("./sifarService");
       const sifarService = createSifarService(credential);
       
       const result = await sifarService.testConnection(storeCode);
@@ -22566,7 +22568,7 @@ export function registerRoutes(app: Express): Server {
         return res.status(404).send("Credenziali SIFAR non configurate");
       }
       
-      const { hasAutonomousInvoicing, storeCode, storeName, isDefault } = req.body;
+      const { storeCode, storeName, isDefault } = req.body;
       
       if (!storeCode) {
         return res.status(400).send("Codice punto vendita obbligatorio");
@@ -22632,7 +22634,7 @@ export function registerRoutes(app: Express): Server {
         return res.status(404).send("Credenziali SIFAR non configurate");
       }
       
-      const { hasAutonomousInvoicing, createSifarService } = await import("./sifarService");
+      const { createSifarService } = await import("./sifarService");
       const sifarService = createSifarService(credential);
       
       const brands = await sifarService.getBrands(storeCode);
@@ -22659,7 +22661,7 @@ export function registerRoutes(app: Express): Server {
         return res.status(404).send("Credenziali SIFAR non configurate");
       }
       
-      const { hasAutonomousInvoicing, createSifarService } = await import("./sifarService");
+      const { createSifarService } = await import("./sifarService");
       const sifarService = createSifarService(credential);
       
       const models = await sifarService.getModelsByBrand(storeCode, brandCode);
@@ -22684,7 +22686,7 @@ export function registerRoutes(app: Express): Server {
         return res.status(404).send("Credenziali SIFAR non configurate");
       }
       
-      const { hasAutonomousInvoicing, createSifarService } = await import("./sifarService");
+      const { createSifarService } = await import("./sifarService");
       const sifarService = createSifarService(credential);
       
       const categories = await sifarService.getCategories(storeCode);
@@ -22709,7 +22711,7 @@ export function registerRoutes(app: Express): Server {
         return res.status(404).send("Credenziali SIFAR non configurate");
       }
       
-      const { hasAutonomousInvoicing, createSifarService } = await import("./sifarService");
+      const { createSifarService } = await import("./sifarService");
       const sifarService = createSifarService(credential);
       
       const groups = await sifarService.getGroups(storeCode);
@@ -22738,7 +22740,7 @@ export function registerRoutes(app: Express): Server {
         return res.status(404).send("Credenziali SIFAR non configurate");
       }
       
-      const { hasAutonomousInvoicing, createSifarService } = await import("./sifarService");
+      const { createSifarService } = await import("./sifarService");
       const sifarService = createSifarService(credential);
       
       const articles = await sifarService.getArticlesByModel(storeCode, modelCode, categoryCode, groupCode);
@@ -22763,7 +22765,7 @@ export function registerRoutes(app: Express): Server {
         return res.status(404).send("Credenziali SIFAR non configurate");
       }
       
-      const { hasAutonomousInvoicing, createSifarService } = await import("./sifarService");
+      const { createSifarService } = await import("./sifarService");
       const sifarService = createSifarService(credential);
       
       const article = await sifarService.getArticleDetail(storeCode, req.params.code);
@@ -22788,7 +22790,7 @@ export function registerRoutes(app: Express): Server {
         return res.status(404).send("Credenziali SIFAR non configurate");
       }
       
-      const { hasAutonomousInvoicing, createSifarService } = await import("./sifarService");
+      const { createSifarService } = await import("./sifarService");
       const sifarService = createSifarService(credential);
       
       const cart = await sifarService.getCartDetail(storeCode);
@@ -22803,7 +22805,7 @@ export function registerRoutes(app: Express): Server {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
-      const { hasAutonomousInvoicing, storeCode, articleCode, quantity } = req.body;
+      const { storeCode, articleCode, quantity } = req.body;
       
       if (!storeCode || !articleCode || !quantity) {
         return res.status(400).send("Dati incompleti");
@@ -22814,7 +22816,7 @@ export function registerRoutes(app: Express): Server {
         return res.status(404).send("Credenziali SIFAR non configurate");
       }
       
-      const { hasAutonomousInvoicing, createSifarService } = await import("./sifarService");
+      const { createSifarService } = await import("./sifarService");
       const sifarService = createSifarService(credential);
       
       await sifarService.addToCart(storeCode, articleCode, quantity);
@@ -22829,7 +22831,7 @@ export function registerRoutes(app: Express): Server {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
-      const { hasAutonomousInvoicing, storeCode, articleCode, quantity } = req.body;
+      const { storeCode, articleCode, quantity } = req.body;
       
       if (!storeCode || !articleCode || quantity === undefined) {
         return res.status(400).send("Dati incompleti");
@@ -22840,7 +22842,7 @@ export function registerRoutes(app: Express): Server {
         return res.status(404).send("Credenziali SIFAR non configurate");
       }
       
-      const { hasAutonomousInvoicing, createSifarService } = await import("./sifarService");
+      const { createSifarService } = await import("./sifarService");
       const sifarService = createSifarService(credential);
       
       await sifarService.updateCartItem(storeCode, articleCode, quantity);
@@ -22867,7 +22869,7 @@ export function registerRoutes(app: Express): Server {
         return res.status(404).send("Credenziali SIFAR non configurate");
       }
       
-      const { hasAutonomousInvoicing, createSifarService } = await import("./sifarService");
+      const { createSifarService } = await import("./sifarService");
       const sifarService = createSifarService(credential);
       
       await sifarService.removeFromCart(storeCode, articleCode);
@@ -22892,7 +22894,7 @@ export function registerRoutes(app: Express): Server {
         return res.status(404).send("Credenziali SIFAR non configurate");
       }
       
-      const { hasAutonomousInvoicing, createSifarService } = await import("./sifarService");
+      const { createSifarService } = await import("./sifarService");
       const sifarService = createSifarService(credential);
       
       await sifarService.clearCart(storeCode);
@@ -22917,7 +22919,7 @@ export function registerRoutes(app: Express): Server {
         return res.status(404).send("Credenziali SIFAR non configurate");
       }
       
-      const { hasAutonomousInvoicing, createSifarService } = await import("./sifarService");
+      const { createSifarService } = await import("./sifarService");
       const sifarService = createSifarService(credential);
       
       const couriers = await sifarService.getCouriers(storeCode);
@@ -22932,7 +22934,7 @@ export function registerRoutes(app: Express): Server {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
-      const { hasAutonomousInvoicing, storeCode, courierId } = req.body;
+      const { storeCode, courierId } = req.body;
       
       if (!storeCode || !courierId) {
         return res.status(400).send("Dati incompleti");
@@ -22943,7 +22945,7 @@ export function registerRoutes(app: Express): Server {
         return res.status(404).send("Credenziali SIFAR non configurate");
       }
       
-      const { hasAutonomousInvoicing, createSifarService } = await import("./sifarService");
+      const { createSifarService } = await import("./sifarService");
       const sifarService = createSifarService(credential);
       
       const order = await sifarService.submitOrder(storeCode, courierId);
@@ -22968,7 +22970,7 @@ export function registerRoutes(app: Express): Server {
         return res.status(404).send("Credenziali SIFAR non configurate");
       }
       
-      const { hasAutonomousInvoicing, createSifarService } = await import("./sifarService");
+      const { createSifarService } = await import("./sifarService");
       const sifarService = createSifarService(credential);
       
       const orders = await sifarService.getOrders(storeCode);
@@ -22993,7 +22995,7 @@ export function registerRoutes(app: Express): Server {
         return res.status(404).send("Credenziali SIFAR non configurate");
       }
       
-      const { hasAutonomousInvoicing, createSifarService } = await import("./sifarService");
+      const { createSifarService } = await import("./sifarService");
       const sifarService = createSifarService(credential);
       
       const order = await sifarService.getOrderDetail(storeCode, req.params.id);
@@ -23024,7 +23026,7 @@ export function registerRoutes(app: Express): Server {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
-      const { hasAutonomousInvoicing, apiToken } = req.body;
+      const { apiToken } = req.body;
       if (!apiToken) {
         return res.status(400).send("API Token obbligatorio");
       }
@@ -23077,7 +23079,7 @@ export function registerRoutes(app: Express): Server {
         return res.status(404).send("Credenziali Foneday non configurate");
       }
       
-      const { hasAutonomousInvoicing, createFonedayService } = await import("./fonedayService");
+      const { createFonedayService } = await import("./fonedayService");
       const fonedayService = createFonedayService(credential);
       
       const result = await fonedayService.testConnection();
@@ -23104,7 +23106,7 @@ export function registerRoutes(app: Express): Server {
         return res.status(404).send("Credenziali Foneday non configurate");
       }
       
-      const { hasAutonomousInvoicing, createFonedayService } = await import("./fonedayService");
+      const { createFonedayService } = await import("./fonedayService");
       const fonedayService = createFonedayService(credential);
       
       const categories = await fonedayService.getCategories();
@@ -23124,7 +23126,7 @@ export function registerRoutes(app: Express): Server {
         return res.status(404).send("Credenziali Foneday non configurate");
       }
       
-      const { hasAutonomousInvoicing, createFonedayService } = await import("./fonedayService");
+      const { createFonedayService } = await import("./fonedayService");
       const fonedayService = createFonedayService(credential);
       
       const brands = await fonedayService.getBrands();
@@ -23220,7 +23222,7 @@ export function registerRoutes(app: Express): Server {
         return res.json({ ...cachedData, cached: false });
       }
       
-      const { hasAutonomousInvoicing, createFonedayService } = await import("./fonedayService");
+      const { createFonedayService } = await import("./fonedayService");
       const fonedayService = createFonedayService(credential);
       
       const products = await fonedayService.searchProducts({
@@ -23310,7 +23312,7 @@ export function registerRoutes(app: Express): Server {
       const startTime = Date.now();
       
       try {
-        const { hasAutonomousInvoicing, createFonedayService } = await import("./fonedayService");
+        const { createFonedayService } = await import("./fonedayService");
         const fonedayService = createFonedayService(credential);
         
         // Fetch ALL products (no pagination, get everything)
@@ -23383,7 +23385,7 @@ export function registerRoutes(app: Express): Server {
         return res.status(404).send("Credenziali Foneday non configurate");
       }
       
-      const { hasAutonomousInvoicing, createFonedayService } = await import("./fonedayService");
+      const { createFonedayService } = await import("./fonedayService");
       const fonedayService = createFonedayService(credential);
       
       const product = await fonedayService.getProduct(req.params.sku);
@@ -23416,7 +23418,7 @@ export function registerRoutes(app: Express): Server {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
-      const { hasAutonomousInvoicing, sku, quantity, note, productName, productPrice } = req.body;
+      const { sku, quantity, note, productName, productPrice } = req.body;
       if (!sku || !quantity) {
         return res.status(400).send("SKU prodotto e quantità obbligatori");
       }
@@ -23447,7 +23449,7 @@ export function registerRoutes(app: Express): Server {
       
       // Also sync with Foneday API (fire and forget - cart state is local)
       try {
-        const { hasAutonomousInvoicing, createFonedayService } = await import("./fonedayService");
+        const { createFonedayService } = await import("./fonedayService");
         const fonedayService = createFonedayService(credential);
         await fonedayService.addToCart([{ sku, quantity: Number(quantity), note: note || null }]);
       } catch (apiError) {
@@ -23465,7 +23467,7 @@ export function registerRoutes(app: Express): Server {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
-      const { hasAutonomousInvoicing, sku, quantity } = req.body;
+      const { sku, quantity } = req.body;
       if (!sku || !quantity) {
         return res.status(400).send("SKU prodotto e quantità obbligatori");
       }
@@ -23491,7 +23493,7 @@ export function registerRoutes(app: Express): Server {
       
       // Also sync with Foneday API (fire and forget)
       try {
-        const { hasAutonomousInvoicing, createFonedayService } = await import("./fonedayService");
+        const { createFonedayService } = await import("./fonedayService");
         const fonedayService = createFonedayService(credential);
         await fonedayService.removeFromCart([{ sku, quantity: Number(quantity) }]);
       } catch (apiError) {
@@ -23526,7 +23528,7 @@ export function registerRoutes(app: Express): Server {
         return res.status(404).send("Credenziali Foneday non configurate");
       }
       
-      const { hasAutonomousInvoicing, createFonedayService } = await import("./fonedayService");
+      const { createFonedayService } = await import("./fonedayService");
       const fonedayService = createFonedayService(credential);
       
       const methods = await fonedayService.getShippingMethods();
@@ -23541,7 +23543,7 @@ export function registerRoutes(app: Express): Server {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
-      const { hasAutonomousInvoicing, shippingMethodId, shippingAddress, notes } = req.body;
+      const { shippingMethodId, shippingAddress, notes } = req.body;
       if (!shippingMethodId || !shippingAddress) {
         return res.status(400).send("Metodo spedizione e indirizzo obbligatori");
       }
@@ -23551,7 +23553,7 @@ export function registerRoutes(app: Express): Server {
         return res.status(404).send("Credenziali Foneday non configurate");
       }
       
-      const { hasAutonomousInvoicing, createFonedayService } = await import("./fonedayService");
+      const { createFonedayService } = await import("./fonedayService");
       const fonedayService = createFonedayService(credential);
       
       const order = await fonedayService.submitOrder(shippingMethodId, shippingAddress, notes);
@@ -23581,7 +23583,7 @@ export function registerRoutes(app: Express): Server {
         return res.status(404).send("Credenziali Foneday non configurate");
       }
       
-      const { hasAutonomousInvoicing, createFonedayService } = await import("./fonedayService");
+      const { createFonedayService } = await import("./fonedayService");
       const fonedayService = createFonedayService(credential);
       
       const page = req.query.page ? Number(req.query.page) : 1;
@@ -23604,7 +23606,7 @@ export function registerRoutes(app: Express): Server {
         return res.status(404).send("Credenziali Foneday non configurate");
       }
       
-      const { hasAutonomousInvoicing, createFonedayService } = await import("./fonedayService");
+      const { createFonedayService } = await import("./fonedayService");
       const fonedayService = createFonedayService(credential);
       
       const order = await fonedayService.getOrder(req.params.id);
@@ -23624,7 +23626,7 @@ export function registerRoutes(app: Express): Server {
         return res.status(404).send("Credenziali Foneday non configurate");
       }
       
-      const { hasAutonomousInvoicing, createFonedayService } = await import("./fonedayService");
+      const { createFonedayService } = await import("./fonedayService");
       const fonedayService = createFonedayService(credential);
       
       const page = req.query.page ? Number(req.query.page) : 1;
@@ -23647,7 +23649,7 @@ export function registerRoutes(app: Express): Server {
         return res.status(404).send("Credenziali Foneday non configurate");
       }
       
-      const { hasAutonomousInvoicing, createFonedayService } = await import("./fonedayService");
+      const { createFonedayService } = await import("./fonedayService");
       const fonedayService = createFonedayService(credential);
       
       const invoice = await fonedayService.getInvoice(req.params.id);
@@ -23667,7 +23669,7 @@ export function registerRoutes(app: Express): Server {
         return res.status(404).send("Credenziali Foneday non configurate");
       }
       
-      const { hasAutonomousInvoicing, createFonedayService } = await import("./fonedayService");
+      const { createFonedayService } = await import("./fonedayService");
       const fonedayService = createFonedayService(credential);
       
       const result = await fonedayService.downloadInvoicePdf(req.params.id);
@@ -23697,7 +23699,7 @@ export function registerRoutes(app: Express): Server {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
-      const { hasAutonomousInvoicing, consumerName, consumerKey, consumerSecret, environment } = req.body;
+      const { consumerName, consumerKey, consumerSecret, environment } = req.body;
       if (!consumerName || !consumerKey || !consumerSecret) {
         return res.status(400).send("Consumer Name, Consumer Key e Consumer Secret sono obbligatori");
       }
@@ -23775,7 +23777,7 @@ export function registerRoutes(app: Express): Server {
   // GET /api/mobilesentrix/oauth/callback - OAuth callback endpoint (server-side exchange)
   app.get("/api/mobilesentrix/oauth/callback", async (req, res) => {
     try {
-      const { hasAutonomousInvoicing, oauth_token, oauth_verifier } = req.query;
+      const { oauth_token, oauth_verifier } = req.query;
       
       if (!oauth_token || !oauth_verifier) {
         return res.status(400).send(`
@@ -23937,7 +23939,7 @@ export function registerRoutes(app: Express): Server {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
-      const { hasAutonomousInvoicing, oauth_token, oauth_verifier } = req.body;
+      const { oauth_token, oauth_verifier } = req.body;
       if (!oauth_token || !oauth_verifier) {
         return res.status(400).send("oauth_token e oauth_verifier sono obbligatori");
       }
@@ -24019,7 +24021,7 @@ export function registerRoutes(app: Express): Server {
         return res.status(404).send("Credenziali MobileSentrix non configurate");
       }
 
-      const { hasAutonomousInvoicing, getMobilesentrixService } = await import("./mobilesentrixService");
+      const { getMobilesentrixService } = await import("./mobilesentrixService");
       const mobilesentrixService = getMobilesentrixService(credential);
       
       const result = await mobilesentrixService.testConnection();
@@ -24089,7 +24091,7 @@ export function registerRoutes(app: Express): Server {
         return res.status(404).send("Credenziali MobileSentrix non configurate");
       }
       
-      const { hasAutonomousInvoicing, productId, sku, name, brand, model, price, quantity = 1, imageUrl } = req.body;
+      const { productId, sku, name, brand, model, price, quantity = 1, imageUrl } = req.body;
       
       if (!productId || !sku || !name || price === undefined) {
         return res.status(400).send("productId, sku, name e price sono obbligatori");
@@ -24131,8 +24133,8 @@ export function registerRoutes(app: Express): Server {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
-      const { hasAutonomousInvoicing, id } = req.params;
-      const { hasAutonomousInvoicing, quantity } = req.body;
+      const { id } = req.params;
+      const { quantity } = req.body;
       
       if (!quantity || quantity < 1) {
         return res.status(400).send("Quantità non valida");
@@ -24161,7 +24163,7 @@ export function registerRoutes(app: Express): Server {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
-      const { hasAutonomousInvoicing, id } = req.params;
+      const { id } = req.params;
       
       const item = await storage.getMobilesentrixCartItem(id);
       if (!item) {
@@ -24216,7 +24218,7 @@ export function registerRoutes(app: Express): Server {
       const totalAmount = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
       
       // Create order via MobileSentrix API
-      const { hasAutonomousInvoicing, getMobilesentrixService } = await import("./mobilesentrixService");
+      const { getMobilesentrixService } = await import("./mobilesentrixService");
       const mobilesentrixService = getMobilesentrixService(credential);
       
       try {
@@ -24283,7 +24285,7 @@ export function registerRoutes(app: Express): Server {
       }
       
       // Get orders from MobileSentrix API
-      const { hasAutonomousInvoicing, getMobilesentrixService } = await import("./mobilesentrixService");
+      const { getMobilesentrixService } = await import("./mobilesentrixService");
       const service = getMobilesentrixService(credential);
       try {
         console.log("MobileSentrix - Fetching orders from API...");
@@ -24327,7 +24329,7 @@ export function registerRoutes(app: Express): Server {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
-      const { hasAutonomousInvoicing, id } = req.params;
+      const { id } = req.params;
       
       const order = await storage.getMobilesentrixOrder(id);
       if (!order) {
@@ -24351,14 +24353,14 @@ export function registerRoutes(app: Express): Server {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
-      const { hasAutonomousInvoicing, id } = req.params;
+      const { id } = req.params;
       
       const credential = await storage.getMobilesentrixCredentialByReseller(req.user.id);
       if (!credential) {
         return res.status(400).json({ success: false, message: "Credenziali MobileSentrix non configurate" });
       }
       
-      const { hasAutonomousInvoicing, getMobilesentrixService } = await import("./mobilesentrixService");
+      const { getMobilesentrixService } = await import("./mobilesentrixService");
       const service = getMobilesentrixService(credential);
       const orderDetails = await service.getOrderDetails(id);
       
@@ -24382,7 +24384,7 @@ export function registerRoutes(app: Express): Server {
         return res.status(404).send("Credenziali MobileSentrix non configurate");
       }
 
-      const { hasAutonomousInvoicing, getMobilesentrixService } = await import("./mobilesentrixService");
+      const { getMobilesentrixService } = await import("./mobilesentrixService");
       const mobilesentrixService = getMobilesentrixService(credential);
       const addresses = await mobilesentrixService.getCustomerAddresses();
       res.json(addresses);
@@ -24401,7 +24403,7 @@ export function registerRoutes(app: Express): Server {
         return res.status(404).send("Credenziali MobileSentrix non configurate");
       }
 
-      const { hasAutonomousInvoicing, getMobilesentrixService } = await import("./mobilesentrixService");
+      const { getMobilesentrixService } = await import("./mobilesentrixService");
       const mobilesentrixService = getMobilesentrixService(credential);
       const categories = await mobilesentrixService.getCategories();
       res.json(categories);
@@ -24420,7 +24422,7 @@ export function registerRoutes(app: Express): Server {
         return res.status(404).send("Credenziali MobileSentrix non configurate");
       }
 
-      const { hasAutonomousInvoicing, getMobilesentrixService } = await import("./mobilesentrixService");
+      const { getMobilesentrixService } = await import("./mobilesentrixService");
       const mobilesentrixService = getMobilesentrixService(credential);
       const brands = await mobilesentrixService.getBrands();
       res.json(brands);
@@ -24439,7 +24441,7 @@ export function registerRoutes(app: Express): Server {
         return res.status(404).send("Credenziali MobileSentrix non configurate");
       }
 
-      const { hasAutonomousInvoicing, getMobilesentrixService } = await import("./mobilesentrixService");
+      const { getMobilesentrixService } = await import("./mobilesentrixService");
       const mobilesentrixService = getMobilesentrixService(credential);
       
       const params: any = {};
@@ -24466,7 +24468,7 @@ export function registerRoutes(app: Express): Server {
         return res.status(404).send("Credenziali MobileSentrix non configurate");
       }
 
-      const { hasAutonomousInvoicing, getMobilesentrixService } = await import("./mobilesentrixService");
+      const { getMobilesentrixService } = await import("./mobilesentrixService");
       const mobilesentrixService = getMobilesentrixService(credential);
       const product = await mobilesentrixService.getProduct(req.params.id);
       res.json(product);
@@ -24485,7 +24487,7 @@ export function registerRoutes(app: Express): Server {
         return res.status(404).send("Credenziali MobileSentrix non configurate");
       }
 
-      const { hasAutonomousInvoicing, getMobilesentrixService, getShippingMethodsForCountry, getDefaultShippingMethod } = await import("./mobilesentrixService");
+      const { getMobilesentrixService, getShippingMethodsForCountry, getDefaultShippingMethod } = await import("./mobilesentrixService");
       const mobilesentrixService = getMobilesentrixService(credential);
       
       // Get customer addresses to determine country
@@ -24517,7 +24519,7 @@ export function registerRoutes(app: Express): Server {
         return res.status(404).send("Credenziali MobileSentrix non configurate");
       }
 
-      const { hasAutonomousInvoicing, getMobilesentrixService } = await import("./mobilesentrixService");
+      const { getMobilesentrixService } = await import("./mobilesentrixService");
       const mobilesentrixService = getMobilesentrixService(credential);
       const accountInfo = await mobilesentrixService.getAccountInfo();
       res.json(accountInfo);
@@ -24616,7 +24618,7 @@ export function registerRoutes(app: Express): Server {
   // GET /api/geocode/retrieve/:mapboxId - Get full details for a selected suggestion
   app.get("/api/geocode/retrieve/:mapboxId", requireAuth, async (req, res) => {
     try {
-      const { hasAutonomousInvoicing, mapboxId } = req.params;
+      const { mapboxId } = req.params;
       const sessionToken = req.query.session_token as string || crypto.randomUUID();
       
       const mapboxToken = process.env.MAPBOX_ACCESS_TOKEN;
@@ -24752,8 +24754,8 @@ export function registerRoutes(app: Express): Server {
   // sellerId può essere 'admin' per lo shop dell'admin o un resellerId
   app.get("/api/shop/:sellerId/products", async (req, res) => {
     try {
-      const { hasAutonomousInvoicing, sellerId } = req.params;
-      const { hasAutonomousInvoicing, type, brand, category, search, limit, offset } = req.query;
+      const { sellerId } = req.params;
+      const { type, brand, category, search, limit, offset } = req.query;
       
       // Usa la nuova logica che include prodotti propri + assegnati pubblicati
       let shopProducts = await storage.getShopProductsForSeller(sellerId);
@@ -24839,7 +24841,7 @@ export function registerRoutes(app: Express): Server {
   // Marketplace - tutti i prodotti di tutti i venditori
   app.get("/api/marketplace/products", async (req, res) => {
     try {
-      const { hasAutonomousInvoicing, type, brand, category, search, limit, offset } = req.query;
+      const { type, brand, category, search, limit, offset } = req.query;
       
       let marketplaceProducts = await storage.getMarketplaceProducts();
       
@@ -24869,7 +24871,7 @@ export function registerRoutes(app: Express): Server {
   // Marketplace - dettaglio singolo prodotto con tutti i venditori
   app.get("/api/marketplace/products/:productId", async (req, res) => {
     try {
-      const { hasAutonomousInvoicing, productId } = req.params;
+      const { productId } = req.params;
       
       const product = await storage.getProduct(productId);
       if (!product) {
@@ -24960,7 +24962,7 @@ export function registerRoutes(app: Express): Server {
 
   app.get("/api/shop/:resellerId/cart", async (req, res) => {
     try {
-      const { hasAutonomousInvoicing, resellerId } = req.params;
+      const { resellerId } = req.params;
       const customerId = req.user?.id || null;
       const sessionId = req.session?.id || null;
       
@@ -24989,8 +24991,8 @@ export function registerRoutes(app: Express): Server {
 
   app.post("/api/shop/:resellerId/cart/items", async (req, res) => {
     try {
-      const { hasAutonomousInvoicing, resellerId } = req.params;
-      const { hasAutonomousInvoicing, productId, quantity = 1 } = req.body;
+      const { resellerId } = req.params;
+      const { productId, quantity = 1 } = req.body;
       
       const customerId = req.user?.id || null;
       const sessionId = req.session?.id || null;
@@ -25034,7 +25036,7 @@ export function registerRoutes(app: Express): Server {
 
   app.put("/api/cart/items/:itemId", async (req, res) => {
     try {
-      const { hasAutonomousInvoicing, quantity } = req.body;
+      const { quantity } = req.body;
       if (quantity < 1) {
         await storage.removeCartItem(req.params.itemId);
         return res.json({ success: true, removed: true });
@@ -25072,7 +25074,7 @@ export function registerRoutes(app: Express): Server {
     try {
       if (!req.user) return res.status(401).json({ error: "Non autenticato" });
       
-      const { hasAutonomousInvoicing, resellerId } = req.params;
+      const { resellerId } = req.params;
       const {
         shippingAddressId,
         billingAddressId,
@@ -25255,15 +25257,15 @@ export function registerRoutes(app: Express): Server {
         return res.status(403).json({ error: "Accesso negato" });
       }
       
-      const { hasAutonomousInvoicing, status, reason } = req.body;
+      const { status, reason } = req.body;
       const updated = await storage.updateSalesOrderStatus(req.params.id, status, req.user.id, reason);
       
       // Auto-create invoice for resellers when order is delivered/completed
       let invoice = null;
       if ((status === 'delivered' || status === 'completed') && order.resellerId) {
-        // Check if reseller is a main reseller (not sub_reseller)
+        // Check if reseller is main or has autonomous invoicing
         const reseller = await storage.getUser(order.resellerId);
-        if (reseller && reseller.role === 'reseller' && !reseller.parentResellerId) {
+        if (reseller && reseller.role === 'reseller' && (!reseller.parentResellerId || reseller.hasAutonomousInvoicing)) {
           invoice = await storage.createInvoiceForSalesOrder({
             id: order.id,
             orderNumber: order.orderNumber,
@@ -25292,7 +25294,7 @@ export function registerRoutes(app: Express): Server {
         return res.status(403).json({ error: "Accesso negato" });
       }
       
-      const { hasAutonomousInvoicing, status, method, orderType } = req.query;
+      const { status, method, orderType } = req.query;
       const payments = await storage.listAllPayments({
         status: status as string | undefined,
         method: method as string | undefined,
@@ -25479,7 +25481,7 @@ export function registerRoutes(app: Express): Server {
     try {
       if (!req.user) return res.status(401).json({ error: "Non autenticato" });
       
-      const { hasAutonomousInvoicing, orderId, reason, notes, items } = req.body;
+      const { orderId, reason, notes, items } = req.body;
       
       // Get the order to verify ownership and extract details
       const order = await storage.getSalesOrder(orderId);
@@ -25605,7 +25607,7 @@ export function registerRoutes(app: Express): Server {
         return res.status(403).json({ error: "Accesso negato" });
       }
       
-      const { hasAutonomousInvoicing, ownerType, isActive } = req.query;
+      const { ownerType, isActive } = req.query;
       let filters: { ownerType?: string; isActive?: boolean } = {};
       if (ownerType) filters.ownerType = ownerType as string;
       if (isActive !== undefined) filters.isActive = isActive === 'true';
@@ -25793,7 +25795,7 @@ export function registerRoutes(app: Express): Server {
     try {
       if (!req.user) return res.status(401).json({ error: "Non autenticato" });
       
-      const { hasAutonomousInvoicing, sourceWarehouseId, destinationWarehouseId, productId, quantity, notes } = req.body;
+      const { sourceWarehouseId, destinationWarehouseId, productId, quantity, notes } = req.body;
       
       if (!sourceWarehouseId || !destinationWarehouseId || !productId || !quantity) {
         return res.status(400).json({ error: "Parametri mancanti: sourceWarehouseId, destinationWarehouseId, productId, quantity" });
@@ -26002,7 +26004,7 @@ export function registerRoutes(app: Express): Server {
   app.post("/api/warehouses/:warehouseId/stock", requireAuth, async (req, res) => {
     try {
       if (!req.user) return res.status(401).json({ error: "Non autenticato" });
-      const { hasAutonomousInvoicing, productId, quantity, location, minStock, movementType, notes } = req.body;
+      const { productId, quantity, location, minStock, movementType, notes } = req.body;
       
       const stock = await storage.upsertWarehouseStock({
         warehouseId: req.params.warehouseId,
@@ -26060,7 +26062,7 @@ export function registerRoutes(app: Express): Server {
   app.post("/api/warehouses/:warehouseId/movements", requireAuth, async (req, res) => {
     try {
       if (!req.user) return res.status(401).json({ error: "Non autenticato" });
-      const { hasAutonomousInvoicing, productId, movementType, quantity, notes, referenceType, referenceId } = req.body;
+      const { productId, movementType, quantity, notes, referenceType, referenceId } = req.body;
       
       const movement = await storage.createWarehouseMovement({
         warehouseId: req.params.warehouseId,
@@ -26084,7 +26086,7 @@ export function registerRoutes(app: Express): Server {
   app.patch("/api/warehouse-stock/:stockId", requireAuth, async (req, res) => {
     try {
       if (!req.user) return res.status(401).json({ error: "Non autenticato" });
-      const { hasAutonomousInvoicing, minStock, location } = req.body;
+      const { minStock, location } = req.body;
       const updated = await storage.updateWarehouseStock(req.params.stockId, { minStock, location });
       res.json(updated);
     } catch (error: any) {
@@ -26142,7 +26144,7 @@ export function registerRoutes(app: Express): Server {
   app.post("/api/warehouse-transfers", requireAuth, async (req, res) => {
     try {
       if (!req.user) return res.status(401).json({ error: "Non autenticato" });
-      const { hasAutonomousInvoicing, sourceWarehouseId, destinationWarehouseId, notes, items } = req.body;
+      const { sourceWarehouseId, destinationWarehouseId, notes, items } = req.body;
       
       const transfer = await storage.createWarehouseTransfer({
         sourceWarehouseId,
@@ -26173,7 +26175,7 @@ export function registerRoutes(app: Express): Server {
       const transfer = await storage.getWarehouseTransfer(req.params.id);
       if (!transfer) return res.status(404).json({ error: "Trasferimento non trovato" });
       
-      const { hasAutonomousInvoicing, status, items } = req.body;
+      const { status, items } = req.body;
       const updates: any = { ...req.body };
       
       if (status === 'approved') {
@@ -26234,7 +26236,7 @@ export function registerRoutes(app: Express): Server {
       const resellerWarehouse = await storage.getWarehouseByOwner('reseller', repairCenter.resellerId);
       if (!resellerWarehouse) return res.status(404).json({ error: "Magazzino rivenditore non trovato" });
       
-      const { hasAutonomousInvoicing, query, productType } = req.query;
+      const { query, productType } = req.query;
       
       console.log("searchProductsWithStock params:", { warehouseId: resellerWarehouse.id, query, productType });
       
@@ -26366,7 +26368,7 @@ export function registerRoutes(app: Express): Server {
       if (!requesterWarehouse) return res.status(404).json({ error: "Magazzino richiedente non trovato" });
       
       // Get source warehouse from request body or fallback to reseller's warehouse
-      const { hasAutonomousInvoicing, notes, items, sourceWarehouseId } = req.body;
+      const { notes, items, sourceWarehouseId } = req.body;
       
       let finalSourceWarehouseId = sourceWarehouseId;
       if (!finalSourceWarehouseId) {
@@ -26432,7 +26434,7 @@ export function registerRoutes(app: Express): Server {
       if (request.requesterId !== req.user.id) return res.status(403).json({ error: "Accesso negato" });
       if (request.status !== 'shipped') return res.status(400).json({ error: "Solo le richieste spedite possono essere confermate" });
       
-      const { hasAutonomousInvoicing, items } = req.body;
+      const { items } = req.body;
       
       // Update received quantities and add stock to requester warehouse
       if (items && Array.isArray(items)) {
@@ -26471,7 +26473,7 @@ export function registerRoutes(app: Express): Server {
       const parentWarehouse = await storage.getWarehouseByOwner('reseller', user.parentResellerId);
       if (!parentWarehouse) return res.status(404).json({ error: "Magazzino rivenditore padre non trovato" });
       
-      const { hasAutonomousInvoicing, query, productType } = req.query;
+      const { query, productType } = req.query;
       
       const results = await storage.searchProductsWithStock({
         query: query as string | undefined,
@@ -26527,7 +26529,7 @@ export function registerRoutes(app: Express): Server {
       if (!requesterWarehouse) return res.status(404).json({ error: "Magazzino richiedente non trovato" });
       
       // Get source warehouse from request body or fallback to parent reseller's warehouse
-      const { hasAutonomousInvoicing, notes, items, sourceWarehouseId } = req.body;
+      const { notes, items, sourceWarehouseId } = req.body;
       
       let finalSourceWarehouseId = sourceWarehouseId;
       if (!finalSourceWarehouseId) {
@@ -26585,7 +26587,7 @@ export function registerRoutes(app: Express): Server {
         return res.status(400).json({ error: "Solo le richieste spedite possono essere confermate" });
       }
       
-      const { hasAutonomousInvoicing, items } = req.body;
+      const { items } = req.body;
       
       // Get all request items for lookup
       const requestItems = await storage.listTransferRequestItems(request.id);
@@ -26771,7 +26773,7 @@ export function registerRoutes(app: Express): Server {
       if (request.targetResellerId !== req.user.id) return res.status(403).json({ error: "Accesso negato" });
       if (request.status !== 'pending') return res.status(400).json({ error: "Solo le richieste in attesa possono essere elaborate" });
       
-      const { hasAutonomousInvoicing, decision, rejectionReason, items } = req.body;
+      const { decision, rejectionReason, items } = req.body;
       
       if (decision === 'approve') {
         // Update approved quantities
@@ -26811,7 +26813,7 @@ export function registerRoutes(app: Express): Server {
       if (request.targetResellerId !== req.user.id) return res.status(403).json({ error: "Accesso negato" });
       if (request.status !== 'approved') return res.status(400).json({ error: "Solo le richieste approvate possono essere spedite" });
       
-      const { hasAutonomousInvoicing, items, trackingNumber, trackingCarrier } = req.body;
+      const { items, trackingNumber, trackingCarrier } = req.body;
       
       // Validate required shipping fields (DDT is auto-generated)
       if (!trackingCarrier || !trackingNumber) {
@@ -27087,7 +27089,7 @@ export function registerRoutes(app: Express): Server {
       if (!request) return res.status(404).json({ error: "Richiesta non trovata" });
       if (request.status !== 'pending') return res.status(400).json({ error: "Solo le richieste in attesa possono essere gestite" });
       
-      const { hasAutonomousInvoicing, decision, rejectionReason, items } = req.body;
+      const { decision, rejectionReason, items } = req.body;
       
       if (decision === 'approve') {
         if (items && Array.isArray(items)) {
@@ -27125,7 +27127,7 @@ export function registerRoutes(app: Express): Server {
       if (!request) return res.status(404).json({ error: "Richiesta non trovata" });
       if (request.status !== 'approved') return res.status(400).json({ error: "Solo le richieste approvate possono essere spedite" });
       
-      const { hasAutonomousInvoicing, items } = req.body;
+      const { items } = req.body;
       
       if (items && Array.isArray(items)) {
         for (const item of items) {
@@ -27222,7 +27224,7 @@ export function registerRoutes(app: Express): Server {
   app.post("/api/reseller/b2b-orders", requireRole("reseller"), async (req, res) => {
     try {
       if (!req.user) return res.status(401).json({ error: "Non autenticato" });
-      const { hasAutonomousInvoicing, items, paymentMethod, notes, shippingAddress } = req.body;
+      const { items, paymentMethod, notes, shippingAddress } = req.body;
       
       if (!items || !Array.isArray(items) || items.length === 0) {
         return res.status(400).json({ error: "L'ordine deve contenere almeno un prodotto" });
@@ -27496,7 +27498,7 @@ export function registerRoutes(app: Express): Server {
       if (!parseResult.success) {
         return res.status(400).json({ error: "Dati non validi", details: parseResult.error.errors });
       }
-      const { hasAutonomousInvoicing, transactionReference, notes } = parseResult.data;
+      const { transactionReference, notes } = parseResult.data;
       
       const order = await storage.getResellerPurchaseOrder(req.params.id);
       if (!order) return res.status(404).json({ error: "Ordine non trovato" });
@@ -27554,7 +27556,7 @@ export function registerRoutes(app: Express): Server {
         return res.status(400).json({ error: `Impossibile rifiutare un ordine con stato ${order.status}` });
       }
       
-      const { hasAutonomousInvoicing, reason } = req.body;
+      const { reason } = req.body;
       
       const updated = await storage.updateResellerPurchaseOrder(order.id, {
         status: 'cancelled',
@@ -27576,7 +27578,7 @@ export function registerRoutes(app: Express): Server {
         return res.status(400).json({ error: `Impossibile spedire un ordine con stato ${order.status}` });
       }
       
-      const { hasAutonomousInvoicing, trackingNumber, carrier } = req.body;
+      const { trackingNumber, carrier } = req.body;
       
       const updated = await storage.updateResellerPurchaseOrder(order.id, {
         status: 'shipped',
@@ -27649,7 +27651,7 @@ export function registerRoutes(app: Express): Server {
     try {
       if (!req.user) return res.status(401).json({ error: "Non autenticato" });
       
-      const { hasAutonomousInvoicing, orderId, reason, reasonDetails, resellerNotes, items } = req.body;
+      const { orderId, reason, reasonDetails, resellerNotes, items } = req.body;
       
       // Validate order exists and belongs to reseller
       const order = await storage.getResellerPurchaseOrder(orderId);
@@ -27714,7 +27716,7 @@ export function registerRoutes(app: Express): Server {
         return res.status(400).json({ error: `Impossibile spedire un reso con stato ${returnDoc.status}` });
       }
       
-      const { hasAutonomousInvoicing, trackingNumber, carrier } = req.body;
+      const { trackingNumber, carrier } = req.body;
       
       const updated = await storage.updateB2bReturn(returnDoc.id, {
         status: 'shipped',
@@ -27732,7 +27734,7 @@ export function registerRoutes(app: Express): Server {
   // Admin: List all B2B returns
   app.get("/api/admin/b2b-returns", requireRole("admin"), async (req, res) => {
     try {
-      const { hasAutonomousInvoicing, status, resellerId } = req.query;
+      const { status, resellerId } = req.query;
       const returns = await storage.listB2bReturns({
         status: status as string | undefined,
         resellerId: resellerId as string | undefined,
@@ -27782,7 +27784,7 @@ export function registerRoutes(app: Express): Server {
         return res.status(400).json({ error: `Impossibile approvare un reso con stato ${returnDoc.status}` });
       }
       
-      const { hasAutonomousInvoicing, adminNotes } = req.body;
+      const { adminNotes } = req.body;
       
       // Get reseller and items for document generation
       const reseller = await storage.getUser(returnDoc.resellerId);
@@ -27845,7 +27847,7 @@ export function registerRoutes(app: Express): Server {
         return res.status(400).json({ error: `Impossibile rifiutare un reso con stato ${returnDoc.status}` });
       }
       
-      const { hasAutonomousInvoicing, rejectionReason, adminNotes } = req.body;
+      const { rejectionReason, adminNotes } = req.body;
       
       const updated = await storage.updateB2bReturn(returnDoc.id, {
         status: 'rejected',
@@ -27869,7 +27871,7 @@ export function registerRoutes(app: Express): Server {
         return res.status(400).json({ error: `Impossibile confermare ricezione per un reso con stato ${returnDoc.status}` });
       }
       
-      const { hasAutonomousInvoicing, inspectionNotes, creditAmount } = req.body;
+      const { inspectionNotes, creditAmount } = req.body;
       
       // Get return items
       const items = await storage.listB2bReturnItems(returnDoc.id);
@@ -27943,7 +27945,7 @@ export function registerRoutes(app: Express): Server {
         return res.status(404).json({ error: "Etichetta non ancora generata" });
       }
       
-      const { hasAutonomousInvoicing, bucketName, objectName } = parseObjectPath(returnDoc.shippingLabelPath);
+      const { bucketName, objectName } = parseObjectPath(returnDoc.shippingLabelPath);
       const file = objectStorageClient.bucket(bucketName).file(objectName);
       
       res.setHeader("Content-Type", "application/pdf");
@@ -27969,7 +27971,7 @@ export function registerRoutes(app: Express): Server {
         return res.status(404).json({ error: "DDT non ancora generato" });
       }
       
-      const { hasAutonomousInvoicing, bucketName, objectName } = parseObjectPath(returnDoc.ddtPath);
+      const { bucketName, objectName } = parseObjectPath(returnDoc.ddtPath);
       const file = objectStorageClient.bucket(bucketName).file(objectName);
       
       res.setHeader("Content-Type", "application/pdf");
@@ -27991,7 +27993,7 @@ export function registerRoutes(app: Express): Server {
         return res.status(404).json({ error: "Etichetta non ancora generata" });
       }
       
-      const { hasAutonomousInvoicing, bucketName, objectName } = parseObjectPath(returnDoc.shippingLabelPath);
+      const { bucketName, objectName } = parseObjectPath(returnDoc.shippingLabelPath);
       const file = objectStorageClient.bucket(bucketName).file(objectName);
       
       res.setHeader("Content-Type", "application/pdf");
@@ -28013,7 +28015,7 @@ export function registerRoutes(app: Express): Server {
         return res.status(404).json({ error: "DDT non ancora generato" });
       }
       
-      const { hasAutonomousInvoicing, bucketName, objectName } = parseObjectPath(returnDoc.ddtPath);
+      const { bucketName, objectName } = parseObjectPath(returnDoc.ddtPath);
       const file = objectStorageClient.bucket(bucketName).file(objectName);
       
       res.setHeader("Content-Type", "application/pdf");
@@ -28164,7 +28166,7 @@ export function registerRoutes(app: Express): Server {
     try {
       if (!req.user) return res.status(401).json({ error: "Non autenticato" });
       
-      const { hasAutonomousInvoicing, sellerResellerId, items, buyerNotes, paymentMethod } = req.body;
+      const { sellerResellerId, items, buyerNotes, paymentMethod } = req.body;
       
       if (!sellerResellerId || !items || items.length === 0) {
         return res.status(400).json({ error: "Dati ordine incompleti" });
@@ -28270,7 +28272,7 @@ export function registerRoutes(app: Express): Server {
         return res.status(400).json({ error: `Impossibile approvare un ordine con stato ${order.status}` });
       }
       
-      const { hasAutonomousInvoicing, sellerNotes } = req.body;
+      const { sellerNotes } = req.body;
       
       // Get warehouses
       const sellerWarehouse = await storage.getWarehouseByOwner('reseller', order.sellerResellerId);
@@ -28367,7 +28369,7 @@ export function registerRoutes(app: Express): Server {
         return res.status(400).json({ error: `Impossibile rifiutare un ordine con stato ${order.status}` });
       }
       
-      const { hasAutonomousInvoicing, rejectionReason, sellerNotes } = req.body;
+      const { rejectionReason, sellerNotes } = req.body;
       
       const updated = await storage.updateMarketplaceOrder(order.id, {
         status: 'rejected',
@@ -28397,7 +28399,7 @@ export function registerRoutes(app: Express): Server {
         return res.status(400).json({ error: `Impossibile spedire un ordine con stato ${order.status}` });
       }
       
-      const { hasAutonomousInvoicing, trackingNumber, trackingCarrier } = req.body;
+      const { trackingNumber, trackingCarrier } = req.body;
       
       const updated = await storage.updateMarketplaceOrder(order.id, {
         status: 'shipped',
@@ -28449,7 +28451,7 @@ export function registerRoutes(app: Express): Server {
         return res.status(403).json({ error: "Puoi modificare solo i tuoi prodotti" });
       }
       
-      const { hasAutonomousInvoicing, isMarketplaceEnabled, marketplacePriceCents, marketplaceMinQuantity } = req.body;
+      const { isMarketplaceEnabled, marketplacePriceCents, marketplaceMinQuantity } = req.body;
       
       const updated = await storage.updateProduct(product.id, {
         isMarketplaceEnabled: isMarketplaceEnabled ?? product.isMarketplaceEnabled,
@@ -28505,7 +28507,7 @@ export function registerRoutes(app: Express): Server {
         return res.status(401).json({ error: "Non autenticato" });
       }
       
-      const { hasAutonomousInvoicing, sellerResellerId, items, paymentMethod, buyerNotes } = req.body;
+      const { sellerResellerId, items, paymentMethod, buyerNotes } = req.body;
       
       if (!sellerResellerId || !items || !Array.isArray(items) || items.length === 0) {
         return res.status(400).json({ error: "Dati ordine non validi" });
@@ -28709,7 +28711,7 @@ export function registerRoutes(app: Express): Server {
         return res.status(401).json({ error: "Non autenticato" });
       }
       
-      const { hasAutonomousInvoicing, items, paymentMethod, notes } = req.body;
+      const { items, paymentMethod, notes } = req.body;
       
       if (!items || !Array.isArray(items) || items.length === 0) {
         return res.status(400).json({ error: "L'ordine deve contenere almeno un prodotto" });
@@ -28933,7 +28935,7 @@ export function registerRoutes(app: Express): Server {
         return res.status(400).json({ error: "Solo ordini in attesa possono essere rifiutati" });
       }
       
-      const { hasAutonomousInvoicing, reason } = req.body;
+      const { reason } = req.body;
       
       const updated = await storage.updateRepairCenterPurchaseOrder(order.id, {
         status: 'rejected',
@@ -28960,7 +28962,7 @@ export function registerRoutes(app: Express): Server {
         return res.status(400).json({ error: "Ordine non in stato idoneo per spedizione" });
       }
       
-      const { hasAutonomousInvoicing, trackingNumber, carrier } = req.body;
+      const { trackingNumber, carrier } = req.body;
       
       const updated = await storage.updateRepairCenterPurchaseOrder(order.id, {
         status: 'shipped',
@@ -28971,8 +28973,8 @@ export function registerRoutes(app: Express): Server {
       
       // Auto-create invoice for reseller when shipping RC B2B order
       let invoice = null;
-      if (!req.user.parentResellerId) {
-        // Only main resellers get auto-invoices
+      if (!req.user.parentResellerId || req.user.hasAutonomousInvoicing) {
+        // Main resellers and autonomous sub-resellers get auto-invoices
         invoice = await storage.createInvoiceForRepairCenterB2BOrder({
           id: order.id,
           orderNumber: order.orderNumber,
@@ -29032,7 +29034,7 @@ export function registerRoutes(app: Express): Server {
         return res.status(401).json({ error: "Non autenticato" });
       }
       
-      const { hasAutonomousInvoicing, orderId, reason, reasonDetails, repairCenterNotes, items } = req.body;
+      const { orderId, reason, reasonDetails, repairCenterNotes, items } = req.body;
       
       // Validate request body
       if (!orderId || !reason || !Array.isArray(items) || items.length === 0) {
@@ -29147,7 +29149,7 @@ export function registerRoutes(app: Express): Server {
         return res.status(400).json({ error: `Impossibile spedire un reso con stato ${returnDoc.status}` });
       }
       
-      const { hasAutonomousInvoicing, trackingNumber, carrier } = req.body;
+      const { trackingNumber, carrier } = req.body;
       
       const updated = await storage.updateRcB2bReturn(returnDoc.id, {
         status: 'shipped',
@@ -29211,7 +29213,7 @@ export function registerRoutes(app: Express): Server {
         return res.status(400).json({ error: `Impossibile rifiutare un reso con stato ${returnDoc.status}` });
       }
       
-      const { hasAutonomousInvoicing, rejectionReason } = req.body;
+      const { rejectionReason } = req.body;
       
       const updated = await storage.updateRcB2bReturn(returnDoc.id, {
         status: 'rejected',
@@ -29239,7 +29241,7 @@ export function registerRoutes(app: Express): Server {
         return res.status(400).json({ error: `Impossibile ricevere un reso con stato ${returnDoc.status}` });
       }
       
-      const { hasAutonomousInvoicing, inspectionNotes, creditAmount } = req.body;
+      const { inspectionNotes, creditAmount } = req.body;
       
       const updated = await storage.updateRcB2bReturn(returnDoc.id, {
         status: 'completed',
@@ -29753,7 +29755,7 @@ export function registerRoutes(app: Express): Server {
       const resellerId = req.user.role === 'reseller' ? req.user.id : req.user.resellerId;
       if (!resellerId) return res.status(400).json({ error: "Reseller ID non trovato" });
       
-      const { hasAutonomousInvoicing, entityType, entityId, profileName } = req.body;
+      const { entityType, entityId, profileName } = req.body;
       if (!entityType || !entityId) {
         return res.status(400).json({ error: "entityType e entityId sono richiesti" });
       }
@@ -29956,7 +29958,7 @@ export function registerRoutes(app: Express): Server {
       if (!req.user) return res.status(401).json({ error: "Non autenticato" });
       const resellerId = req.user.role === 'reseller' ? req.user.id : req.user.resellerId;
       if (!resellerId) return res.status(400).json({ error: "Reseller ID non trovato" });
-      const { hasAutonomousInvoicing, startDate, endDate, userId, entityType, entityId } = req.query;
+      const { startDate, endDate, userId, entityType, entityId } = req.query;
       
       let scope: EntityScopeResult;
       try {
@@ -29999,7 +30001,7 @@ export function registerRoutes(app: Express): Server {
       const resellerId = req.user.role === 'reseller' ? req.user.id : req.user.resellerId;
       if (!resellerId) return res.status(400).json({ error: "Reseller ID non trovato" });
       
-      const { hasAutonomousInvoicing, eventType, latitude, longitude, notes } = req.body;
+      const { eventType, latitude, longitude, notes } = req.body;
       const userId = req.body.userId || req.user.id;
       
       // Validate GPS if policy requires it
@@ -30038,7 +30040,7 @@ export function registerRoutes(app: Express): Server {
         return res.status(403).json({ error: "Non autorizzato a modificare questa timbratura" });
       }
       
-      const { hasAutonomousInvoicing, eventType, eventTime, notes } = req.body;
+      const { eventType, eventTime, notes } = req.body;
       const updateData: any = {};
       if (eventType !== undefined) updateData.eventType = eventType;
       if (eventTime !== undefined) updateData.eventTime = new Date(eventTime);
@@ -30057,7 +30059,7 @@ export function registerRoutes(app: Express): Server {
       if (!req.user) return res.status(401).json({ error: "Non autenticato" });
       const resellerId = req.user.role === 'reseller' ? req.user.id : req.user.resellerId;
       if (!resellerId) return res.status(400).json({ error: "Reseller ID non trovato" });
-      const { hasAutonomousInvoicing, status, userId, entityType, entityId } = req.query;
+      const { status, userId, entityType, entityId } = req.query;
       
       let scope: EntityScopeResult;
       try {
@@ -30178,7 +30180,7 @@ export function registerRoutes(app: Express): Server {
       if (!req.user) return res.status(401).json({ error: "Non autenticato" });
       const resellerId = req.user.role === 'reseller' ? req.user.id : req.user.resellerId;
       if (!resellerId) return res.status(400).json({ error: "Reseller ID non trovato" });
-      const { hasAutonomousInvoicing, userId, status, entityType, entityId } = req.query;
+      const { userId, status, entityType, entityId } = req.query;
       
       let scope: EntityScopeResult;
       try {
@@ -30281,7 +30283,7 @@ export function registerRoutes(app: Express): Server {
 
       const privateObjectDir = objectStorage.getPrivateObjectDir();
       const fullPath = `${privateObjectDir}/${objectPath}`;
-      const { hasAutonomousInvoicing, bucketName, objectName } = parseObjectPath(fullPath);
+      const { bucketName, objectName } = parseObjectPath(fullPath);
       const bucket = objectStorageClient.bucket(bucketName);
       const file = bucket.file(objectName);
 
@@ -30356,7 +30358,7 @@ export function registerRoutes(app: Express): Server {
       if (!req.user) return res.status(401).json({ error: "Non autenticato" });
       const resellerId = req.user.role === 'reseller' ? req.user.id : req.user.resellerId;
       if (!resellerId) return res.status(400).json({ error: "Reseller ID non trovato" });
-      const { hasAutonomousInvoicing, userId, status, entityType, entityId } = req.query;
+      const { userId, status, entityType, entityId } = req.query;
       
       let scope: EntityScopeResult;
       try {
@@ -30504,7 +30506,7 @@ export function registerRoutes(app: Express): Server {
       if (!req.user) return res.status(401).json({ error: "Non autenticato" });
       const resellerId = req.user.role === 'reseller' ? req.user.id : req.user.resellerId;
       if (!resellerId) return res.status(400).json({ error: "Reseller ID non trovato" });
-      const { hasAutonomousInvoicing, userId, status } = req.query;
+      const { userId, status } = req.query;
       const accessibleResellerIds = await storage.getAccessibleResellerIds(resellerId);
       const absences = await storage.listHrAbsences({
         resellerIds: accessibleResellerIds,
@@ -30591,7 +30593,7 @@ export function registerRoutes(app: Express): Server {
       const resellerId = req.user.role === 'reseller' ? req.user.id : req.user.resellerId;
       if (!resellerId) return res.status(400).json({ error: "Reseller ID non trovato" });
       
-      const { hasAutonomousInvoicing, startDate, endDate, entityType, entityId } = req.query;
+      const { startDate, endDate, entityType, entityId } = req.query;
       if (!startDate || !endDate) {
         return res.status(400).json({ error: "Parametri startDate e endDate richiesti" });
       }
@@ -30679,7 +30681,7 @@ export function registerRoutes(app: Express): Server {
   // Admin HR - Leave Requests (global visibility)
   app.get("/api/admin/hr/leave-requests", requireRole("admin", "admin_staff"), async (req, res) => {
     try {
-      const { hasAutonomousInvoicing, entityType, entityId, status } = req.query;
+      const { entityType, entityId, status } = req.query;
       
       let scope: AdminEntityScopeResult;
       try {
@@ -30706,7 +30708,7 @@ export function registerRoutes(app: Express): Server {
   // Admin HR - Sick Leaves (global visibility)
   app.get("/api/admin/hr/sick-leaves", requireRole("admin", "admin_staff"), async (req, res) => {
     try {
-      const { hasAutonomousInvoicing, entityType, entityId, status } = req.query;
+      const { entityType, entityId, status } = req.query;
       
       let scope: AdminEntityScopeResult;
       try {
@@ -30733,7 +30735,7 @@ export function registerRoutes(app: Express): Server {
   // Admin HR - Expense Reports (global visibility)
   app.get("/api/admin/hr/expense-reports", requireRole("admin", "admin_staff"), async (req, res) => {
     try {
-      const { hasAutonomousInvoicing, entityType, entityId, status } = req.query;
+      const { entityType, entityId, status } = req.query;
       
       let scope: AdminEntityScopeResult;
       try {
@@ -30760,7 +30762,7 @@ export function registerRoutes(app: Express): Server {
   // Admin HR - Clock Events (global visibility)
   app.get("/api/admin/hr/clock-events", requireRole("admin", "admin_staff"), async (req, res) => {
     try {
-      const { hasAutonomousInvoicing, entityType, entityId, startDate, endDate } = req.query;
+      const { entityType, entityId, startDate, endDate } = req.query;
       
       let scope: AdminEntityScopeResult;
       try {
@@ -30788,7 +30790,7 @@ export function registerRoutes(app: Express): Server {
   // Admin HR - Calendar Events (global visibility)
   app.get("/api/admin/hr/calendar", requireRole("admin", "admin_staff"), async (req, res) => {
     try {
-      const { hasAutonomousInvoicing, entityType, entityId, startDate, endDate } = req.query;
+      const { entityType, entityId, startDate, endDate } = req.query;
       
       let scope: AdminEntityScopeResult;
       try {
@@ -30822,7 +30824,7 @@ export function registerRoutes(app: Express): Server {
   // Admin HR - Work Profiles (global visibility)
   app.get("/api/admin/hr/work-profiles", requireRole("admin", "admin_staff"), async (req, res) => {
     try {
-      const { hasAutonomousInvoicing, entityType, entityId } = req.query;
+      const { entityType, entityId } = req.query;
       
       let scope: AdminEntityScopeResult;
       try {
@@ -30856,7 +30858,7 @@ export function registerRoutes(app: Express): Server {
       if (!existing) return res.status(404).json({ error: "Richiesta ferie non trovata" });
       
       const editableStatuses = ["pending", "draft"];
-      const { hasAutonomousInvoicing, status, leaveType, startDate, endDate, totalHours, totalDays, isFullDay, notes } = req.body;
+      const { status, leaveType, startDate, endDate, totalHours, totalDays, isFullDay, notes } = req.body;
       
       if ((leaveType !== undefined || startDate !== undefined || endDate !== undefined || notes !== undefined) && !editableStatuses.includes(existing.status)) {
         return res.status(400).json({ error: "Solo le richieste in attesa possono essere modificate" });
@@ -30886,7 +30888,7 @@ export function registerRoutes(app: Express): Server {
       if (!existing) return res.status(404).json({ error: "Malattia non trovata" });
       
       const editableStatuses = ["pending", "draft"];
-      const { hasAutonomousInvoicing, status, startDate, endDate, protocolNumber, protocolDate, notes } = req.body;
+      const { status, startDate, endDate, protocolNumber, protocolDate, notes } = req.body;
       
       if ((startDate !== undefined || endDate !== undefined || protocolNumber !== undefined || notes !== undefined) && !editableStatuses.includes(existing.status)) {
         return res.status(400).json({ error: "Solo le malattie in attesa possono essere modificate" });
@@ -30914,7 +30916,7 @@ export function registerRoutes(app: Express): Server {
       if (!existing) return res.status(404).json({ error: "Nota spese non trovata" });
       
       const editableStatuses = ["draft", "pending"];
-      const { hasAutonomousInvoicing, status, title, description, totalAmount } = req.body;
+      const { status, title, description, totalAmount } = req.body;
       
       if ((title !== undefined || description !== undefined || totalAmount !== undefined) && !editableStatuses.includes(existing.status)) {
         return res.status(400).json({ error: "Solo le note spese in bozza o attesa possono essere modificate" });
@@ -30939,7 +30941,7 @@ export function registerRoutes(app: Express): Server {
       const existing = await storage.getHrClockEvent(req.params.id);
       if (!existing) return res.status(404).json({ error: "Timbratura non trovata" });
       
-      const { hasAutonomousInvoicing, eventType, eventTime, notes } = req.body;
+      const { eventType, eventTime, notes } = req.body;
       const updateData: any = {};
       if (eventType !== undefined) updateData.eventType = eventType;
       if (eventTime !== undefined) updateData.eventTime = new Date(eventTime);
@@ -30959,7 +30961,7 @@ export function registerRoutes(app: Express): Server {
       const resellerId = req.user.role === 'reseller' ? req.user.id : req.user.resellerId;
       if (!resellerId) return res.status(400).json({ error: "Reseller ID non trovato" });
       
-      const { hasAutonomousInvoicing, unreadOnly } = req.query;
+      const { unreadOnly } = req.query;
       const notifications = await storage.listHrNotifications({
         resellerId,
         recipientId: req.user.id,
@@ -31003,7 +31005,7 @@ export function registerRoutes(app: Express): Server {
     try {
       if (!req.user) return res.status(401).json({ error: "Non autenticato" });
       const resellerId = req.user.id;
-      const { hasAutonomousInvoicing, userId, entityType, limit } = req.query;
+      const { userId, entityType, limit } = req.query;
       
       const logs = await storage.listHrAuditLogs({
         resellerId,
@@ -31162,7 +31164,7 @@ export function registerRoutes(app: Express): Server {
     try {
       if (!req.user) return res.status(401).json({ error: "Non autenticato" });
       const repairCenterId = req.user.id;
-      const { hasAutonomousInvoicing, username, password, email, fullName, phone } = req.body;
+      const { username, password, email, fullName, phone } = req.body;
       
       if (!username || !password || !email || !fullName) {
         return res.status(400).json({ error: "Campi obbligatori mancanti" });
@@ -31220,7 +31222,7 @@ export function registerRoutes(app: Express): Server {
       if (!req.user) return res.status(401).json({ error: "Non autenticato" });
       const repairCenterId = req.user.id;
       const userId = req.params.id;
-      const { hasAutonomousInvoicing, newPassword } = req.body;
+      const { newPassword } = req.body;
       
       if (!newPassword || newPassword.length < 6) {
         return res.status(400).json({ error: "Password deve essere almeno 6 caratteri" });
@@ -31297,7 +31299,7 @@ export function registerRoutes(app: Express): Server {
       const parentResellerId = await getParentResellerForRepairCenter(repairCenterId);
       if (!parentResellerId) return res.status(400).json({ error: "Reseller parent non trovato" });
       
-      const { hasAutonomousInvoicing, startDate, endDate, userId } = req.query;
+      const { startDate, endDate, userId } = req.query;
       
       const rcStaff = await storage.listRepairCenterStaff(repairCenterId);
       const rcStaffIds = new Set(rcStaff.map((s: any) => s.id));
@@ -31358,7 +31360,7 @@ export function registerRoutes(app: Express): Server {
         return res.status(403).json({ error: "Non autorizzato a modificare questa timbratura" });
       }
       
-      const { hasAutonomousInvoicing, eventType, eventTime, notes } = req.body;
+      const { eventType, eventTime, notes } = req.body;
       const updateData: any = {};
       if (eventType !== undefined) updateData.eventType = eventType;
       if (eventTime !== undefined) updateData.eventTime = new Date(eventTime);
@@ -31572,7 +31574,7 @@ export function registerRoutes(app: Express): Server {
       if (!req.user) return res.status(401).json({ error: "Non autenticato" });
       if (!req.file) return res.status(400).json({ error: "Nessun file caricato" });
       
-      const { hasAutonomousInvoicing, id } = req.params;
+      const { id } = req.params;
       const repairCenterId = getRepairCenterIdFromUser(req.user);
       if (!repairCenterId) return res.status(400).json({ error: "Repair Center ID non trovato" });
       
@@ -31599,7 +31601,7 @@ export function registerRoutes(app: Express): Server {
       
       const privateObjectDir = objectStorage.getPrivateObjectDir();
       const fullPath = `${privateObjectDir}/${objectPath}`;
-      const { hasAutonomousInvoicing, bucketName, objectName } = parseObjectPath(fullPath);
+      const { bucketName, objectName } = parseObjectPath(fullPath);
       const bucket = objectStorageClient.bucket(bucketName);
       const file = bucket.file(objectName);
       
@@ -31685,7 +31687,7 @@ export function registerRoutes(app: Express): Server {
       
       // Solo note in stato draft o pending possono essere modificate nei campi
       const editableStatuses = ['draft', 'pending'];
-      const { hasAutonomousInvoicing, status, title, description, totalAmount } = req.body;
+      const { status, title, description, totalAmount } = req.body;
       
       // Se ci sono campi diversi da status, verifica che sia modificabile
       if ((title !== undefined || description !== undefined || totalAmount !== undefined) && !editableStatuses.includes(existing.status)) {
@@ -31867,7 +31869,7 @@ export function registerRoutes(app: Express): Server {
   app.post("/api/repair-center/pos/registers", requireRole("repair_center", "repair_center_staff"), async (req, res) => {
     try {
       const repairCenterId = req.user!.repairCenterId || req.user!.id;
-      const { hasAutonomousInvoicing, name, description, isDefault } = req.body;
+      const { name, description, isDefault } = req.body;
       
       if (!name?.trim()) {
         return res.status(400).json({ error: "Nome cassa obbligatorio" });
@@ -31890,8 +31892,8 @@ export function registerRoutes(app: Express): Server {
   app.patch("/api/repair-center/pos/registers/:registerId", requireRole("repair_center", "repair_center_staff"), async (req, res) => {
     try {
       const repairCenterId = req.user!.repairCenterId || req.user!.id;
-      const { hasAutonomousInvoicing, registerId } = req.params;
-      const { hasAutonomousInvoicing, name, description, isActive, isDefault } = req.body;
+      const { registerId } = req.params;
+      const { name, description, isActive, isDefault } = req.body;
       
       const register = await storage.getPosRegister(registerId);
       if (!register) return res.status(404).json({ error: "Cassa non trovata" });
@@ -31914,7 +31916,7 @@ export function registerRoutes(app: Express): Server {
   app.delete("/api/repair-center/pos/registers/:registerId", requireRole("repair_center", "repair_center_staff"), async (req, res) => {
     try {
       const repairCenterId = req.user!.repairCenterId || req.user!.id;
-      const { hasAutonomousInvoicing, registerId } = req.params;
+      const { registerId } = req.params;
       
       const register = await storage.getPosRegister(registerId);
       if (!register) return res.status(404).json({ error: "Cassa non trovata" });
@@ -31950,7 +31952,7 @@ export function registerRoutes(app: Express): Server {
   app.post("/api/repair-center/pos/customers", requireRole("repair_center", "repair_center_staff"), async (req, res) => {
     try {
       const repairCenterId = req.user!.repairCenterId || req.user!.id;
-      const { hasAutonomousInvoicing, fullName, email, phone } = req.body;
+      const { fullName, email, phone } = req.body;
       
       if (!fullName || !fullName.trim()) {
         return res.status(400).json({ error: "Nome cliente obbligatorio" });
@@ -32001,7 +32003,7 @@ export function registerRoutes(app: Express): Server {
     try {
       const repairCenterId = req.user!.repairCenterId || req.user!.id;
       const operatorId = req.user!.id;
-      const { hasAutonomousInvoicing, openingCash, openingNotes, registerId } = req.body;
+      const { openingCash, openingNotes, registerId } = req.body;
       
       // Se registerId non fornito, usa la cassa di default
       let effectiveRegisterId = registerId;
@@ -32039,7 +32041,7 @@ export function registerRoutes(app: Express): Server {
   // Chiudi sessione POS
   app.post("/api/repair-center/pos/session/:sessionId/close", requireRole("repair_center", "repair_center_staff"), async (req, res) => {
     try {
-      const { hasAutonomousInvoicing, sessionId } = req.params;
+      const { sessionId } = req.params;
       const repairCenterId = req.user!.repairCenterId || req.user!.id;
       
       const session = await storage.getPosSession(sessionId);
@@ -32056,7 +32058,7 @@ export function registerRoutes(app: Express): Server {
       const totalCardSales = completed.filter(t => t.paymentMethod !== "cash").reduce((sum, t) => sum + t.total, 0);
       const totalRefunds = refunded.reduce((sum, t) => sum + (t.refundedAmount || 0), 0);
       
-      const { hasAutonomousInvoicing, closingCash, closingNotes } = req.body;
+      const { closingCash, closingNotes } = req.body;
       const expectedCash = session.openingCash + totalCashSales - totalRefunds;
       const cashDifference = (closingCash || 0) - expectedCash;
 
@@ -32095,7 +32097,7 @@ export function registerRoutes(app: Express): Server {
   app.get("/api/repair-center/pos/sessions/export", requireRole("repair_center", "repair_center_staff"), async (req, res) => {
     try {
       const repairCenterId = req.user!.repairCenterId || req.user!.id;
-      const { hasAutonomousInvoicing, format, registerId, startDate, endDate, status, period } = req.query;
+      const { format, registerId, startDate, endDate, status, period } = req.query;
       
       // Fetch sessions
       const allSessions = await storage.getPosSessionsByRepairCenter(repairCenterId, { limit: 1000, registerId: registerId as string | undefined });
@@ -32317,12 +32319,12 @@ export function registerRoutes(app: Express): Server {
     try {
       const repairCenterId = req.user!.repairCenterId || req.user!.id;
       const operatorId = req.user!.id;
-      const { hasAutonomousInvoicing, registerId } = req.body;
+      const { registerId } = req.body;
       
       const session = await storage.getOpenPosSession(repairCenterId, registerId);
       if (!session) return res.status(400).json({ error: "Nessuna sessione cassa aperta per questa cassa." });
 
-      const { hasAutonomousInvoicing, items, paymentMethod, customerId, discountAmount, discountPercent, cashReceived, notes, customerNotes, invoiceRequested } = req.body;
+      const { items, paymentMethod, customerId, discountAmount, discountPercent, cashReceived, notes, customerNotes, invoiceRequested } = req.body;
       
       if (!items || items.length === 0) return res.status(400).json({ error: "Nessun articolo" });
       if (!paymentMethod) return res.status(400).json({ error: "Metodo pagamento richiesto" });
@@ -32466,7 +32468,7 @@ export function registerRoutes(app: Express): Server {
       if (transaction.repairCenterId !== repairCenterId) return res.status(403).json({ error: "Non autorizzato" });
       if (transaction.invoiceId) return res.status(400).json({ error: "Fattura già generata per questa transazione" });
       
-      const { hasAutonomousInvoicing, customerId } = req.body;
+      const { customerId } = req.body;
       if (!customerId) return res.status(400).json({ error: "Cliente richiesto per la fattura" });
       
       const billingData = await storage.getBillingDataByUserId(customerId);
@@ -32589,7 +32591,7 @@ export function registerRoutes(app: Express): Server {
   app.get("/api/repair-center/invoices", requireRole("repair_center", "repair_center_staff"), async (req, res) => {
     try {
       const repairCenterId = req.user!.repairCenterId || req.user!.id;
-      const { hasAutonomousInvoicing, source, status } = req.query;
+      const { source, status } = req.query;
       const invoices = await storage.getInvoicesByRepairCenter(repairCenterId, {
         source: source as string | undefined,
         paymentStatus: status as string | undefined,
@@ -32632,7 +32634,7 @@ export function registerRoutes(app: Express): Server {
       if (transaction.repairCenterId !== repairCenterId) return res.status(403).json({ error: "Non autorizzato" });
       if (transaction.status === "refunded") return res.status(400).json({ error: "Transazione già rimborsata" });
 
-      const { hasAutonomousInvoicing, amount, reason } = req.body;
+      const { amount, reason } = req.body;
       const refundAmount = amount || transaction.total;
       const isFullRefund = refundAmount >= transaction.total;
 
@@ -32676,7 +32678,7 @@ export function registerRoutes(app: Express): Server {
       if (transaction.status === "voided") return res.status(400).json({ error: "Transazione già annullata" });
       if (transaction.status === "refunded") return res.status(400).json({ error: "Transazione già rimborsata, impossibile annullare" });
 
-      const { hasAutonomousInvoicing, reason } = req.body;
+      const { reason } = req.body;
       if (!reason || reason.trim() === "") {
         return res.status(400).json({ error: "Il motivo dell'annullamento è obbligatorio" });
       }
@@ -32778,8 +32780,8 @@ export function registerRoutes(app: Express): Server {
   // Lista tutte le fatture del reseller e dei suoi centri
   app.get("/api/reseller/invoices", requireRole("reseller", "reseller_staff", "sub_reseller"), async (req, res) => {
     try {
-      const { hasAutonomousInvoicing, resellerId } = getEffectiveContext(req);
-      const { hasAutonomousInvoicing, source, status, repairCenterId } = req.query;
+      const { resellerId } = getEffectiveContext(req);
+      const { source, status, repairCenterId } = req.query;
       const invoices = await storage.getInvoicesByReseller(resellerId, {
         repairCenterId: repairCenterId as string | undefined,
         source: source as string | undefined,
@@ -32994,7 +32996,7 @@ export function registerRoutes(app: Express): Server {
 
   app.get("/api/reseller/pos/sessions", requireRole("reseller", "reseller_staff", "sub_reseller"), async (req, res) => {
     try {
-      const { hasAutonomousInvoicing, resellerId } = getEffectiveContext(req);
+      const { resellerId } = getEffectiveContext(req);
       const startDate = req.query.startDate ? new Date(req.query.startDate as string) : undefined;
       const endDate = req.query.endDate ? new Date(req.query.endDate as string) : undefined;
       const limit = parseInt(req.query.limit as string) || 100;
@@ -33007,7 +33009,7 @@ export function registerRoutes(app: Express): Server {
 
   app.get("/api/reseller/pos/stats", requireRole("reseller", "reseller_staff", "sub_reseller"), async (req, res) => {
     try {
-      const { hasAutonomousInvoicing, resellerId } = getEffectiveContext(req);
+      const { resellerId } = getEffectiveContext(req);
       const period = (req.query.period as string) || "today";
       const stats = await storage.getResellerPosOverviewStats(resellerId, period, req.query.repairCenterId as string | undefined);
       res.json(stats);
@@ -33018,7 +33020,7 @@ export function registerRoutes(app: Express): Server {
 
   app.get("/api/reseller/pos/session/:sessionId", requireRole("reseller", "reseller_staff", "sub_reseller"), async (req, res) => {
     try {
-      const { hasAutonomousInvoicing, resellerId } = getEffectiveContext(req);
+      const { resellerId } = getEffectiveContext(req);
       const session = await storage.getPosSession(req.params.sessionId);
       if (!session) return res.status(404).json({ error: "Sessione non trovata" });
       const center = await storage.getRepairCenter(session.repairCenterId);
@@ -33042,7 +33044,7 @@ export function registerRoutes(app: Express): Server {
 
   app.get("/api/reseller/pos/transaction/:transactionId", requireRole("reseller", "reseller_staff", "sub_reseller"), async (req, res) => {
     try {
-      const { hasAutonomousInvoicing, resellerId } = getEffectiveContext(req);
+      const { resellerId } = getEffectiveContext(req);
       const detail = await storage.getPosTransactionDetail(req.params.transactionId);
       if (!detail) return res.status(404).json({ error: "Transazione non trovata" });
       const session = await storage.getPosSession(detail.transaction.sessionId);
@@ -33096,7 +33098,7 @@ export function registerRoutes(app: Express): Server {
 
   app.get("/api/reseller/pos/transactions", requireRole("reseller", "reseller_staff", "sub_reseller"), async (req, res) => {
     try {
-      const { hasAutonomousInvoicing, resellerId } = getEffectiveContext(req);
+      const { resellerId } = getEffectiveContext(req);
       const startDate = req.query.startDate ? new Date(req.query.startDate as string) : undefined;
       const endDate = req.query.endDate ? new Date(req.query.endDate as string) : undefined;
       const status = req.query.status as any;
@@ -33111,7 +33113,7 @@ export function registerRoutes(app: Express): Server {
   });
   app.get("/api/reseller/pos/sessions/feed", requireRole("reseller", "reseller_staff", "sub_reseller"), async (req, res) => {
     try {
-      const { hasAutonomousInvoicing, resellerId } = getEffectiveContext(req);
+      const { resellerId } = getEffectiveContext(req);
       const limit = parseInt(req.query.limit as string) || 20;
       const repairCenterId = req.query.repairCenterId as string | undefined;
       const sessions = await storage.getResellerPosSessionsFeed(resellerId, { limit, repairCenterId });
@@ -33124,7 +33126,7 @@ export function registerRoutes(app: Express): Server {
   // Reseller POS - Void transaction
   app.post("/api/reseller/pos/transaction/:id/void", requireRole("reseller", "reseller_staff", "sub_reseller"), async (req, res) => {
     try {
-      const { hasAutonomousInvoicing, resellerId } = getEffectiveContext(req);
+      const { resellerId } = getEffectiveContext(req);
       const operatorId = req.user!.id;
       const transaction = await storage.getPosTransaction(req.params.id);
       
@@ -33136,7 +33138,7 @@ export function registerRoutes(app: Express): Server {
       if (transaction.status === "voided") return res.status(400).json({ error: "Transazione già annullata" });
       if (transaction.status === "refunded") return res.status(400).json({ error: "Transazione già rimborsata, impossibile annullare" });
 
-      const { hasAutonomousInvoicing, reason } = req.body;
+      const { reason } = req.body;
       if (!reason || reason.trim() === "") {
         return res.status(400).json({ error: "Il motivo dell'annullamento è obbligatorio" });
       }
@@ -33183,7 +33185,7 @@ export function registerRoutes(app: Express): Server {
   // Reseller POS - Refund transaction
   app.post("/api/reseller/pos/transaction/:id/refund", requireRole("reseller", "reseller_staff", "sub_reseller"), async (req, res) => {
     try {
-      const { hasAutonomousInvoicing, resellerId } = getEffectiveContext(req);
+      const { resellerId } = getEffectiveContext(req);
       const operatorId = req.user!.id;
       const transaction = await storage.getPosTransaction(req.params.id);
       
@@ -33195,7 +33197,7 @@ export function registerRoutes(app: Express): Server {
       if (transaction.status === "refunded") return res.status(400).json({ error: "Transazione già rimborsata" });
       if (transaction.status === "voided") return res.status(400).json({ error: "Transazione annullata, impossibile rimborsare" });
 
-      const { hasAutonomousInvoicing, amount, reason } = req.body;
+      const { amount, reason } = req.body;
       const refundAmount = amount || transaction.total;
       const isFullRefund = refundAmount >= transaction.total;
 
@@ -33229,7 +33231,7 @@ export function registerRoutes(app: Express): Server {
   // Reseller POS - Get receipt PDF
   app.get("/api/reseller/pos/transaction/:id/receipt", requireRole("reseller", "reseller_staff", "sub_reseller"), async (req, res) => {
     try {
-      const { hasAutonomousInvoicing, resellerId } = getEffectiveContext(req);
+      const { resellerId } = getEffectiveContext(req);
       const transactionId = req.params.id;
       
       const transaction = await storage.getPosTransaction(transactionId);
@@ -33302,7 +33304,7 @@ export function registerRoutes(app: Express): Server {
   // Lista casse per reseller (con filtro centro riparazione)
   app.get("/api/reseller/pos/registers", requireRole("reseller", "reseller_staff", "sub_reseller"), async (req, res) => {
     try {
-      const { hasAutonomousInvoicing, resellerId } = getEffectiveContext(req);
+      const { resellerId } = getEffectiveContext(req);
       const repairCenterId = req.query.repairCenterId as string | undefined;
       
       if (repairCenterId) {
@@ -33330,8 +33332,8 @@ export function registerRoutes(app: Express): Server {
   // Crea nuova cassa per centro riparazione
   app.post("/api/reseller/pos/registers", requireRole("reseller", "reseller_staff", "sub_reseller"), async (req, res) => {
     try {
-      const { hasAutonomousInvoicing, resellerId } = getEffectiveContext(req);
-      const { hasAutonomousInvoicing, repairCenterId, name, description, isDefault } = req.body;
+      const { resellerId } = getEffectiveContext(req);
+      const { repairCenterId, name, description, isDefault } = req.body;
       
       if (!repairCenterId) {
         return res.status(400).json({ error: "Centro riparazione obbligatorio" });
@@ -33362,9 +33364,9 @@ export function registerRoutes(app: Express): Server {
   // Modifica cassa
   app.patch("/api/reseller/pos/registers/:registerId", requireRole("reseller", "reseller_staff", "sub_reseller"), async (req, res) => {
     try {
-      const { hasAutonomousInvoicing, resellerId } = getEffectiveContext(req);
-      const { hasAutonomousInvoicing, registerId } = req.params;
-      const { hasAutonomousInvoicing, name, description, isActive, isDefault } = req.body;
+      const { resellerId } = getEffectiveContext(req);
+      const { registerId } = req.params;
+      const { name, description, isActive, isDefault } = req.body;
       
       const register = await storage.getPosRegister(registerId);
       if (!register) return res.status(404).json({ error: "Cassa non trovata" });
@@ -33390,8 +33392,8 @@ export function registerRoutes(app: Express): Server {
   // Elimina cassa
   app.delete("/api/reseller/pos/registers/:registerId", requireRole("reseller", "reseller_staff", "sub_reseller"), async (req, res) => {
     try {
-      const { hasAutonomousInvoicing, resellerId } = getEffectiveContext(req);
-      const { hasAutonomousInvoicing, registerId } = req.params;
+      const { resellerId } = getEffectiveContext(req);
+      const { registerId } = req.params;
       
       const register = await storage.getPosRegister(registerId);
       if (!register) return res.status(404).json({ error: "Cassa non trovata" });
@@ -33416,8 +33418,8 @@ export function registerRoutes(app: Express): Server {
   // Export sessioni POS per reseller
   app.get("/api/reseller/pos/sessions/export", requireRole("reseller", "reseller_staff", "sub_reseller"), async (req, res) => {
     try {
-      const { hasAutonomousInvoicing, resellerId } = getEffectiveContext(req);
-      const { hasAutonomousInvoicing, format, repairCenterId, period, status } = req.query;
+      const { resellerId } = getEffectiveContext(req);
+      const { format, repairCenterId, period, status } = req.query;
       
       // Get accessible centers
       const centers = await storage.getRepairCentersByReseller(resellerId);
@@ -33536,8 +33538,8 @@ export function registerRoutes(app: Express): Server {
   // Export transazioni POS per reseller
   app.get("/api/reseller/pos/transactions/export", requireRole("reseller", "reseller_staff", "sub_reseller"), async (req, res) => {
     try {
-      const { hasAutonomousInvoicing, resellerId } = getEffectiveContext(req);
-      const { hasAutonomousInvoicing, format, repairCenterId, status } = req.query;
+      const { resellerId } = getEffectiveContext(req);
+      const { format, repairCenterId, status } = req.query;
       
       const centers = await storage.getRepairCentersByReseller(resellerId);
       if (repairCenterId) {
@@ -33638,7 +33640,7 @@ export function registerRoutes(app: Express): Server {
     try {
       const bwipjsModule = await import("bwip-js");
       const bwipjs = bwipjsModule.default || bwipjsModule;
-      const { hasAutonomousInvoicing, code } = req.params;
+      const { code } = req.params;
       
       if (!code || code.length < 1) {
         return res.status(400).send("Codice barcode mancante");

@@ -55,5 +55,14 @@ The backend is an `Express.js` application with TypeScript, featuring a RESTful 
 ### Invoice Automation Rules
 - **E-commerce Sales Orders**: Invoice created when status becomes "delivered" or "completed"
 - **Repair Center B2B Orders**: Invoice created when reseller ships the order
-- **Exclusions**: Sub-resellers and repair center POS transactions do not get auto-invoices
+- **Main Resellers**: Always get auto-generated invoices
+- **Sub-Resellers**: Only get auto-invoices if `hasAutonomousInvoicing=true` (fiscal autonomy)
+- **Dependent Sub-Resellers**: `hasAutonomousInvoicing=false` means parent reseller handles invoicing
 - **Invoice Number Format**: `FT-R-{year}-{sequential}` (e.g., FT-R-2026-00001)
+
+### Sub-Reseller Autonomous Invoicing
+- Added `hasAutonomousInvoicing` boolean field to users table (default: false)
+- Parent resellers control this flag when creating/editing sub-resellers
+- UI toggle labeled "Fatturazione Autonoma" in sub-reseller management form
+- Sub-resellers with own fiscal data can have autonomous invoicing enabled
+- Sub-resellers sharing parent's fiscal data should have this disabled

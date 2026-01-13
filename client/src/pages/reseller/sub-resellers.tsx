@@ -50,6 +50,7 @@ interface SubReseller {
   provincia?: string | null;
   pec?: string | null;
   codiceUnivoco?: string | null;
+  hasAutonomousInvoicing?: boolean;
 }
 
 interface SubResellerEcommerce {
@@ -80,6 +81,7 @@ interface SubResellerFormData {
   provincia: string;
   pec: string;
   codiceUnivoco: string;
+  hasAutonomousInvoicing: boolean;
 }
 
 const categoryLabels: Record<string, string> = {
@@ -105,6 +107,7 @@ const initialFormData: SubResellerFormData = {
   provincia: "",
   pec: "",
   codiceUnivoco: "",
+  hasAutonomousInvoicing: false,
 };
 
 function formatPrice(cents: number): string {
@@ -207,6 +210,7 @@ export default function SubResellers() {
         provincia: "",
         pec: "",
         codiceUnivoco: "",
+  hasAutonomousInvoicing: false,
       }));
     }
   }, [useParentData, currentUser, editingReseller]);
@@ -284,6 +288,7 @@ export default function SubResellers() {
       provincia: reseller.provincia || "",
       pec: reseller.pec || "",
       codiceUnivoco: reseller.codiceUnivoco || "",
+      hasAutonomousInvoicing: reseller.hasAutonomousInvoicing || false,
     });
     setDialogOpen(true);
   };
@@ -317,6 +322,7 @@ export default function SubResellers() {
         provincia: formData.provincia,
         pec: formData.pec,
         codiceUnivoco: formData.codiceUnivoco,
+        hasAutonomousInvoicing: formData.hasAutonomousInvoicing,
       };
       if (formData.password) {
         updateData.password = formData.password;
@@ -868,6 +874,20 @@ export default function SubResellers() {
                       checked={formData.isActive}
                       onCheckedChange={(checked) => setFormData(prev => ({ ...prev, isActive: checked }))}
                       data-testid="switch-active"
+                    />
+                  </div>
+                  <div className="flex items-center justify-between pt-2">
+                    <div className="flex flex-col gap-1">
+                      <Label htmlFor="hasAutonomousInvoicing">Fatturazione Autonoma</Label>
+                      <span className="text-xs text-muted-foreground">
+                        Se attivo, il sub-reseller emette fatture proprie
+                      </span>
+                    </div>
+                    <Switch
+                      id="hasAutonomousInvoicing"
+                      checked={formData.hasAutonomousInvoicing}
+                      onCheckedChange={(checked) => setFormData(prev => ({ ...prev, hasAutonomousInvoicing: checked }))}
+                      data-testid="switch-autonomous-invoicing"
                     />
                   </div>
                   {editingReseller && (
