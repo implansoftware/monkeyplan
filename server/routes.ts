@@ -32761,6 +32761,205 @@ export function registerRoutes(app: Express): Server {
 
   // ==== RESELLER POS API ====
 
+
+  // ============================================================================
+  // Reseller Sales Overview - Aggregated sales from all sources
+  // ============================================================================
+
+  app.get("/api/reseller/sales", requireRole("reseller", "reseller_staff", "sub_reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const effectiveResellerId = req.user.role === 'reseller_staff' 
+        ? req.user.resellerId 
+        : req.user.role === 'sub_reseller'
+        ? req.user.resellerId
+        : req.user.id;
+      
+      if (!effectiveResellerId) return res.status(403).send("No reseller context");
+      
+      // Parse filters
+      const dateFrom = req.query.dateFrom ? new Date(req.query.dateFrom as string) : null;
+      const dateTo = req.query.dateTo ? new Date(req.query.dateTo as string) : null;
+      const sourceFilter = req.query.source as string | undefined;
+      const repairCenterFilter = req.query.repairCenterId as string | undefined;
+      const subResellerFilter = req.query.subResellerId as string | undefined;
+      
+      // Get accessible repair centers and sub-resellers
+      const repairCenters = await storage.listRepairCenters({ resellerId: effectiveResellerId });
+      const repairCenterIds = repairCenters.map(rc => rc.id);
+      const subResellers = await storage.listSubResellers(effectiveResellerId);
+      const subResellerIds = subResellers.map(sr => sr.id);
+      
+      // Build reseller name map
+      const resellerUser = await storage.getUser(effectiveResellerId);
+      const entityNameMap: Record<string, { name: string; type: string }> = {};
+      entityNameMap[effectiveResellerId] = { name: resellerUser?.fullName || 'Reseller', type: 'reseller' };
+      for (const rc of repairCenters) {
+        entityNameMap[rc.id] = { name: rc.name, type: 'repair_center' };
+      }
+      for (const sr of subResellers) {
+        entityNameMap[sr.id] = { name: sr.fullName, type: 'sub_reseller' };
+      }
+      
+      const unifiedSales: Array<{
+        id: string;
+        source: string;
+        sourceLabel: string;
+        amount: number;
+        date: Date;
+        entityType: string;
+        entityId: string;
+        entityName: string;
+        status: string;
+        statusLabel: string;
+        customerName: string | null;
+        invoiceId: string | null;
+        reference: string | null;
+      }> = [];
+      
+      // Helper to check date filter
+      const isInDateRange = (date: Date | null) => {
+        if (!date) return false;
+        if (dateFrom && date < dateFrom) return false;
+        if (dateTo && date > dateTo) return false;
+        return true;
+      };
+      
+      // 1. E-commerce Sales Orders
+      if (!sourceFilter || sourceFilter === 'ecommerce') {
+        const salesOrders = await storage.listSalesOrders({ resellerId: effectiveResellerId });
+        for (const order of salesOrders) {
+          if (!isInDateRange(order.createdAt)) continue;
+          const customer = order.customerId ? await storage.getUser(order.customerId) : null;
+          unifiedSales.push({
+            id: order.id,
+            source: 'ecommerce',
+            sourceLabel: 'E-commerce',
+            amount: order.totalAmount || 0,
+            date: order.createdAt!,
+            entityType: 'reseller',
+            entityId: effectiveResellerId,
+            entityName: entityNameMap[effectiveResellerId]?.name || 'Reseller',
+            status: order.status,
+            statusLabel: order.status === 'completed' ? 'Completato' : order.status === 'pending' ? 'In attesa' : order.status,
+            customerName: customer?.fullName || null,
+            invoiceId: null,
+            reference: order.orderNumber,
+          });
+        }
+      }
+      
+      // 2. POS Transactions from repair centers
+      if (!sourceFilter || sourceFilter === 'pos') {
+        for (const rcId of repairCenterIds) {
+          if (repairCenterFilter && rcId !== repairCenterFilter) continue;
+          const posHistory = await storage.getPosTransactionHistoryByRepairCenter(rcId);
+          for (const tx of posHistory) {
+            if (!isInDateRange(tx.createdAt)) continue;
+            if (tx.status === 'voided') continue; // Skip voided
+            unifiedSales.push({
+              id: tx.id,
+              source: 'pos',
+              sourceLabel: 'POS',
+              amount: tx.total || 0,
+              date: tx.createdAt,
+              entityType: 'repair_center',
+              entityId: rcId,
+              entityName: entityNameMap[rcId]?.name || 'Centro Riparazione',
+              status: tx.status,
+              statusLabel: tx.status === 'completed' ? 'Completato' : tx.status === 'refunded' ? 'Rimborsato' : tx.status,
+              customerName: null,
+              invoiceId: tx.hasInvoice ? tx.id : null,
+              reference: tx.transactionNumber,
+            });
+          }
+        }
+      }
+      
+      // 3. Utility Practices (completed = sale)
+      if (!sourceFilter || sourceFilter === 'utility') {
+        const practices = await storage.listUtilityPractices({ resellerId: effectiveResellerId });
+        for (const practice of practices) {
+          if (practice.status !== 'completata' && practice.status !== 'attiva') continue;
+          if (!isInDateRange(practice.createdAt)) continue;
+          if (repairCenterFilter && practice.repairCenterId !== repairCenterFilter) continue;
+          if (subResellerFilter && practice.subResellerId !== subResellerFilter) continue;
+          
+          const customer = practice.customerId ? await storage.getUser(practice.customerId) : null;
+          const amount = (practice.monthlyPriceCents || 0);
+          const entityId = practice.repairCenterId || practice.subResellerId || effectiveResellerId;
+          
+          unifiedSales.push({
+            id: practice.id,
+            source: 'utility',
+            sourceLabel: 'Utility',
+            amount,
+            date: practice.createdAt!,
+            entityType: practice.repairCenterId ? 'repair_center' : practice.subResellerId ? 'sub_reseller' : 'reseller',
+            entityId,
+            entityName: entityNameMap[entityId]?.name || 'Entità',
+            status: practice.status,
+            statusLabel: practice.status === 'completata' ? 'Completata' : practice.status === 'attiva' ? 'Attiva' : practice.status,
+            customerName: customer?.fullName || null,
+            invoiceId: null,
+            reference: practice.practiceNumber,
+          });
+        }
+      }
+      
+      // 4. B2B Purchase Orders (where reseller is seller)
+      if (!sourceFilter || sourceFilter === 'b2b') {
+        const b2bOrders = await storage.listResellerPurchaseOrders({ resellerId: effectiveResellerId });
+        for (const order of b2bOrders) {
+          if (!isInDateRange(order.createdAt)) continue;
+          const buyer = order.buyerId ? await storage.getUser(order.buyerId) : null;
+          unifiedSales.push({
+            id: order.id,
+            source: 'b2b',
+            sourceLabel: 'B2B',
+            amount: order.totalAmount || 0,
+            date: order.createdAt!,
+            entityType: 'reseller',
+            entityId: effectiveResellerId,
+            entityName: entityNameMap[effectiveResellerId]?.name || 'Reseller',
+            status: order.status,
+            statusLabel: order.status === 'delivered' ? 'Consegnato' : order.status === 'approved' ? 'Approvato' : order.status,
+            customerName: buyer?.fullName || null,
+            invoiceId: null,
+            reference: order.orderNumber || order.id.slice(0, 8),
+          });
+        }
+      }
+      
+      // Sort by date descending
+      unifiedSales.sort((a, b) => b.date.getTime() - a.date.getTime());
+      
+      // Calculate summary stats
+      const summary = {
+        totalSales: unifiedSales.length,
+        totalAmount: unifiedSales.reduce((sum, s) => sum + s.amount, 0),
+        bySource: {
+          ecommerce: unifiedSales.filter(s => s.source === 'ecommerce').reduce((sum, s) => sum + s.amount, 0),
+          pos: unifiedSales.filter(s => s.source === 'pos').reduce((sum, s) => sum + s.amount, 0),
+          utility: unifiedSales.filter(s => s.source === 'utility').reduce((sum, s) => sum + s.amount, 0),
+          b2b: unifiedSales.filter(s => s.source === 'b2b').reduce((sum, s) => sum + s.amount, 0),
+        },
+        countBySource: {
+          ecommerce: unifiedSales.filter(s => s.source === 'ecommerce').length,
+          pos: unifiedSales.filter(s => s.source === 'pos').length,
+          utility: unifiedSales.filter(s => s.source === 'utility').length,
+          b2b: unifiedSales.filter(s => s.source === 'b2b').length,
+        },
+      };
+      
+      res.json({ sales: unifiedSales, summary, repairCenters, subResellers });
+    } catch (error: any) {
+      console.error("Error fetching reseller sales:", error);
+      res.status(500).send(error.message);
+    }
+  });
+
   app.get("/api/reseller/pos/sessions", requireRole("reseller", "reseller_staff", "sub_reseller"), async (req, res) => {
     try {
       const { resellerId } = getEffectiveContext(req);
