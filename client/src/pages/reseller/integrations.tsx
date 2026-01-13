@@ -12,16 +12,16 @@ import {
   CheckCircle, 
   XCircle, 
   AlertTriangle,
-  Package,
   ShoppingCart,
   TestTube,
-  ExternalLink,
   RefreshCcw,
   Loader2,
   Clock,
-  TrendingUp
+  Smartphone,
+  Receipt,
+  Store,
+  Package
 } from "lucide-react";
-import { SiSamsung } from "react-icons/si";
 
 interface IntegrationSummary {
   code: string;
@@ -43,11 +43,32 @@ interface IntegrationSummary {
   ordersUrl: string | null;
 }
 
-const INTEGRATION_ICONS: Record<string, React.ReactNode> = {
-  sifar: <Package className="h-8 w-8" />,
-  foneday: <ShoppingCart className="h-8 w-8" />,
-  mobilesentrix: <SiSamsung className="h-8 w-8" />,
-  trovausati: <TrendingUp className="h-8 w-8" />,
+const INTEGRATION_LOGOS: Record<string, React.ReactNode> = {
+  sifar: (
+    <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-blue-600 to-blue-800 flex items-center justify-center text-white font-bold text-lg shadow-sm">
+      SF
+    </div>
+  ),
+  foneday: (
+    <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-green-500 to-emerald-700 flex items-center justify-center text-white font-bold text-lg shadow-sm">
+      FD
+    </div>
+  ),
+  mobilesentrix: (
+    <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-purple-600 to-indigo-800 flex items-center justify-center text-white font-bold text-xs shadow-sm">
+      <Smartphone className="h-5 w-5" />
+    </div>
+  ),
+  trovausati: (
+    <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-orange-500 to-red-600 flex items-center justify-center text-white font-bold text-lg shadow-sm">
+      <Store className="h-5 w-5" />
+    </div>
+  ),
+  sibill: (
+    <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-cyan-500 to-teal-700 flex items-center justify-center text-white font-bold text-lg shadow-sm">
+      <Receipt className="h-5 w-5" />
+    </div>
+  ),
 };
 
 const INTEGRATION_COLORS: Record<string, string> = {
@@ -55,6 +76,7 @@ const INTEGRATION_COLORS: Record<string, string> = {
   foneday: "bg-green-500/10 text-green-600 dark:text-green-400",
   mobilesentrix: "bg-purple-500/10 text-purple-600 dark:text-purple-400",
   trovausati: "bg-orange-500/10 text-orange-600 dark:text-orange-400",
+  sibill: "bg-cyan-500/10 text-cyan-600 dark:text-cyan-400",
 };
 
 function IntegrationCard({ integration }: { integration: IntegrationSummary }) {
@@ -121,9 +143,11 @@ function IntegrationCard({ integration }: { integration: IntegrationSummary }) {
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className={`p-2 rounded-lg ${INTEGRATION_COLORS[integration.code] || "bg-muted"}`}>
-              {INTEGRATION_ICONS[integration.code] || <Plug className="h-8 w-8" />}
-            </div>
+            {INTEGRATION_LOGOS[integration.code] || (
+              <div className="h-10 w-10 rounded-lg bg-muted flex items-center justify-center">
+                <Plug className="h-5 w-5 text-muted-foreground" />
+              </div>
+            )}
             <div>
               <CardTitle className="text-lg">{integration.name}</CardTitle>
               <CardDescription className="text-sm">{integration.description}</CardDescription>
