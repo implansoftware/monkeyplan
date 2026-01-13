@@ -263,6 +263,7 @@ const menuItems = {
     { title: "Carrello", url: "/repair-center/cart", icon: ShoppingCart, group: "Cataloghi" },
     // Gestione
     { title: "Clienti", url: "/repair-center/customers", icon: Users, group: "Gestione" },
+    { title: "Fatture", url: "/repair-center/invoices", icon: FileText, group: "Gestione" },
     { title: "Impostazioni", url: "/repair-center/settings", icon: Settings, group: "Gestione" },
     // Acquisti B2B
     { title: "Catalogo B2B", url: "/repair-center/b2b-catalog", icon: ShoppingCart, group: "Acquisti B2B" },

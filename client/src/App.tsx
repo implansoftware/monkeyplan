@@ -212,6 +212,7 @@ import PosTransactionDetail from "@/pages/repair-center/pos-transaction-detail";
 import SalesHistory from "@/pages/repair-center/pos-invoices";
 import PosSessions from "@/pages/repair-center/pos-sessions";
 import PosRegisters from "@/pages/repair-center/pos-registers";
+import RepairCenterInvoices from "@/pages/repair-center/invoices";
 
 // Repair Center HR pages
 import RepairCenterHrDashboard from "@/pages/repair-center/hr/index";
@@ -452,6 +453,7 @@ function Router() {
       <ProtectedRoute path="/repair-center/customers" component={RepairCenterCustomers} />
       <ProtectedRoute path="/repair-center/service-catalog" component={RepairCenterServiceCatalog} />
       <ProtectedRoute path="/repair-center/settings" component={RepairCenterSettings} />
+      <ProtectedRoute path="/repair-center/invoices" component={RepairCenterInvoices} />
       <ProtectedRoute path="/repair-center/b2b-returns" component={RepairCenterB2BReturns} />
       <ProtectedRoute path="/repair-center/marketplace" component={RepairCenterMarketplace} />
       <ProtectedRoute path="/repair-center/suppliers" component={RepairCenterSuppliers} />
