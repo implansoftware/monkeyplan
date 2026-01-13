@@ -258,10 +258,12 @@ export interface IStorage {
   createTicketMessage(message: InsertTicketMessage): Promise<TicketMessage>;
   
   // Invoices
-  listInvoices(filters?: { customerId?: string; paymentStatus?: string; resellerId?: string }): Promise<Invoice[]>;
+  listInvoices(filters?: { customerId?: string; paymentStatus?: string; resellerId?: string; source?: string }): Promise<Invoice[]>;
   getInvoice(id: string): Promise<Invoice | undefined>;
   createInvoice(invoice: InsertInvoice): Promise<Invoice>;
   updateInvoice(id: string, updates: Partial<Pick<Invoice, 'paymentStatus' | 'paidDate' | 'notes' | 'paymentMethod'>>): Promise<Invoice>;
+  getInvoicesByRepairCenter(repairCenterId: string, filters?: { source?: string; paymentStatus?: string }): Promise<Invoice[]>;
+  getInvoicesByReseller(resellerId: string, filters?: { repairCenterId?: string; source?: string; paymentStatus?: string }): Promise<Invoice[]>;
   
   // Billing Data
   getBillingDataByUserId(userId: string): Promise<BillingData | undefined>;
@@ -2668,6 +2670,41 @@ export class DatabaseStorage implements IStorage {
     }
     
     return invoice;
+  }
+
+  async getInvoicesByRepairCenter(repairCenterId: string, filters?: { source?: string; paymentStatus?: string }): Promise<Invoice[]> {
+    const conditions: SQL[] = [eq(invoices.repairCenterId, repairCenterId)];
+    
+    if (filters?.source) {
+      conditions.push(eq(invoices.source, filters.source as any));
+    }
+    if (filters?.paymentStatus) {
+      conditions.push(eq(invoices.paymentStatus, filters.paymentStatus as any));
+    }
+    
+    return await db.select()
+      .from(invoices)
+      .where(and(...conditions))
+      .orderBy(desc(invoices.createdAt));
+  }
+
+  async getInvoicesByReseller(resellerId: string, filters?: { repairCenterId?: string; source?: string; paymentStatus?: string }): Promise<Invoice[]> {
+    const conditions: SQL[] = [eq(invoices.resellerId, resellerId)];
+    
+    if (filters?.repairCenterId) {
+      conditions.push(eq(invoices.repairCenterId, filters.repairCenterId));
+    }
+    if (filters?.source) {
+      conditions.push(eq(invoices.source, filters.source as any));
+    }
+    if (filters?.paymentStatus) {
+      conditions.push(eq(invoices.paymentStatus, filters.paymentStatus as any));
+    }
+    
+    return await db.select()
+      .from(invoices)
+      .where(and(...conditions))
+      .orderBy(desc(invoices.createdAt));
   }
 
   async getPosInvoicesByRepairCenter(repairCenterId: string): Promise<Invoice[]> {
