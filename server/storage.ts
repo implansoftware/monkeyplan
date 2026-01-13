@@ -264,6 +264,7 @@ export interface IStorage {
   updateInvoice(id: string, updates: Partial<Pick<Invoice, 'paymentStatus' | 'paidDate' | 'notes' | 'paymentMethod'>>): Promise<Invoice>;
   getInvoicesByRepairCenter(repairCenterId: string, filters?: { source?: string; paymentStatus?: string }): Promise<Invoice[]>;
   getInvoicesByReseller(resellerId: string, filters?: { repairCenterId?: string; source?: string; paymentStatus?: string }): Promise<Invoice[]>;
+  generateInvoiceNumber(repairCenterId: string): Promise<string>;
   
   // Billing Data
   getBillingDataByUserId(userId: string): Promise<BillingData | undefined>;
@@ -2705,6 +2706,26 @@ export class DatabaseStorage implements IStorage {
       .from(invoices)
       .where(and(...conditions))
       .orderBy(desc(invoices.createdAt));
+  }
+
+  async generateInvoiceNumber(repairCenterId: string): Promise<string> {
+    const now = new Date();
+    const year = now.getFullYear();
+    
+    // Count invoices for this repair center in the current year
+    const startOfYear = new Date(year, 0, 1);
+    const endOfYear = new Date(year, 11, 31, 23, 59, 59);
+    
+    const [result] = await db.select({ count: sql<number>`count(*)` })
+      .from(invoices)
+      .where(and(
+        eq(invoices.repairCenterId, repairCenterId),
+        gte(invoices.createdAt, startOfYear),
+        lte(invoices.createdAt, endOfYear)
+      ));
+    
+    const nextNumber = (result?.count || 0) + 1;
+    return `FT-${year}-${nextNumber.toString().padStart(5, '0')}`;
   }
 
   async getPosInvoicesByRepairCenter(repairCenterId: string): Promise<Invoice[]> {
