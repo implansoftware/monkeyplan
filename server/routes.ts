@@ -32788,7 +32788,7 @@ export function registerRoutes(app: Express): Server {
       // Get accessible repair centers and sub-resellers
       const repairCenters = await storage.listRepairCenters({ resellerId: effectiveResellerId });
       const repairCenterIds = repairCenters.map(rc => rc.id);
-      const subResellers = await storage.listSubResellers(effectiveResellerId);
+      const subResellers = await storage.getChildResellers(effectiveResellerId);
       const subResellerIds = subResellers.map(sr => sr.id);
       
       // Build reseller name map
