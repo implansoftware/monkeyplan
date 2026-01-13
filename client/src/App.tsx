@@ -142,6 +142,9 @@ import ResellerTrovausatiMarketplace from "@/pages/reseller/trovausati/marketpla
 import ResellerTrovausatiValutatore from "@/pages/reseller/trovausati/valutatore";
 import ResellerIntegrations from "@/pages/reseller/integrations";
 
+// Reseller Sibill pages
+import ResellerSibillSettings from "@/pages/reseller/sibill/settings";
+
 // Reseller Repairs & Inventory
 import ResellerRepairs from "@/pages/reseller/repairs";
 import ResellerProducts from "@/pages/reseller/products";
@@ -407,6 +410,7 @@ function Router() {
       <ProtectedRoute path="/reseller/trovausati/settings" component={ResellerTrovausatiSettings} allowedRoles={["reseller", "reseller_staff"]} />
       <ProtectedRoute path="/reseller/trovausati/marketplace" component={ResellerTrovausatiMarketplace} allowedRoles={["reseller", "reseller_staff"]} />
       <ProtectedRoute path="/reseller/trovausati/valutatore" component={ResellerTrovausatiValutatore} allowedRoles={["reseller", "reseller_staff"]} />
+      <ProtectedRoute path="/reseller/sibill/settings" component={ResellerSibillSettings} allowedRoles={["reseller", "reseller_staff"]} />
       <ProtectedRoute path="/reseller/integrations" component={ResellerIntegrations} allowedRoles={["reseller", "reseller_staff"]} />
       <ProtectedRoute path="/reseller/team" component={ResellerTeam} allowedRoles={["reseller"]} />
       <ProtectedRoute path="/reseller/sub-resellers" component={ResellerSubResellers} allowedRoles={["reseller"]} />
