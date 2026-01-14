@@ -80,6 +80,7 @@ export default function HrExpenses() {
     userId: "",
     amountEuro: ""
   });
+  const [newReportFile, setNewReportFile] = useState<File | null>(null);
   const [editForm, setEditForm] = useState({
     title: "",
     description: "",
@@ -106,18 +107,30 @@ export default function HrExpenses() {
   const createMutation = useMutation({
     mutationFn: async (data: any) => {
       const amountCents = Math.round(parseFloat(data.amountEuro || "0") * 100);
-      return apiRequest("POST", "/api/reseller/hr/expense-reports", {
+      const res = await apiRequest("POST", "/api/reseller/hr/expense-reports", {
         title: data.title,
         description: data.description,
         userId: data.userId,
         status: 'draft',
         totalAmount: amountCents
       });
+      const report = await res.json();
+      if (data.file && report.id) {
+        const formData = new FormData();
+        formData.append('file', data.file);
+        await fetch(`/api/reseller/hr/expense-reports/${report.id}/receipt`, {
+          method: 'POST',
+          body: formData,
+          credentials: 'include'
+        });
+      }
+      return report;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/reseller/hr/expense-reports", entityType, selectedEntityId] });
       setDialogOpen(false);
       setNewReport({ title: "", description: "", userId: "", amountEuro: "" });
+      setNewReportFile(null);
       toast({ title: "Nota spese creata", description: "La nota spese è stata creata con successo." });
     },
     onError: (error: any) => {
@@ -568,11 +581,38 @@ export default function HrExpenses() {
                 data-testid="input-description"
               />
             </div>
+            <div className="space-y-2">
+              <Label>Allegato (opzionale)</Label>
+              <div className="flex items-center gap-2">
+                <Input
+                  type="file"
+                  accept="image/*,.pdf,.doc,.docx"
+                  onChange={(e) => setNewReportFile(e.target.files?.[0] || null)}
+                  data-testid="input-receipt-file"
+                  className="flex-1"
+                />
+                {newReportFile && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setNewReportFile(null)}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                )}
+              </div>
+              {newReportFile && (
+                <p className="text-xs text-muted-foreground">
+                  File selezionato: {newReportFile.name}
+                </p>
+              )}
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)}>Annulla</Button>
             <Button 
-              onClick={() => createMutation.mutate(newReport)}
+              onClick={() => createMutation.mutate({ ...newReport, file: newReportFile })}
               disabled={!newReport.title || !newReport.userId || !newReport.amountEuro || parseFloat(newReport.amountEuro) <= 0 || createMutation.isPending}
               data-testid="button-create-expense"
             >

@@ -8,7 +8,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogD
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Link } from "wouter";
-import { Receipt, Plus, ArrowLeft, Check, X, Eye, Pencil, Upload, Download, Loader2 } from "lucide-react";
+import { Receipt, Plus, ArrowLeft, Check, X, Eye, Pencil, Upload, Download, Loader2, Euro } from "lucide-react";
+import { Label } from "@/components/ui/label";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
@@ -48,6 +49,7 @@ export default function RepairCenterHrExpenses() {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editingReport, setEditingReport] = useState<ExpenseReport | null>(null);
   const [newReport, setNewReport] = useState({ title: "", description: "", totalAmount: "", userId: "" });
+  const [newReportFile, setNewReportFile] = useState<File | null>(null);
   const [editForm, setEditForm] = useState({ title: "", description: "", totalAmount: "" });
   const { toast } = useToast();
 
@@ -61,12 +63,30 @@ export default function RepairCenterHrExpenses() {
 
   const createMutation = useMutation({
     mutationFn: async (data: any) => {
-      return apiRequest("POST", "/api/repair-center/hr/expense-reports", data);
+      const res = await apiRequest("POST", "/api/repair-center/hr/expense-reports", {
+        title: data.title,
+        description: data.description,
+        userId: data.userId,
+        status: 'draft',
+        totalAmount: parseInt(data.totalAmount) || 0
+      });
+      const report = await res.json();
+      if (data.file && report.id) {
+        const formData = new FormData();
+        formData.append('file', data.file);
+        await fetch(`/api/repair-center/hr/expense-reports/${report.id}/receipt`, {
+          method: 'POST',
+          body: formData,
+          credentials: 'include'
+        });
+      }
+      return report;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/repair-center/hr/expense-reports"] });
       setDialogOpen(false);
       setNewReport({ title: "", description: "", totalAmount: "", userId: "" });
+      setNewReportFile(null);
       toast({ title: "Nota spese creata", description: "La nota spese è stata creata con successo." });
     },
     onError: (error: any) => {
@@ -367,11 +387,38 @@ export default function RepairCenterHrExpenses() {
               <label className="text-sm font-medium">Descrizione (opzionale)</label>
               <Textarea value={newReport.description} onChange={(e) => setNewReport({ ...newReport, description: e.target.value })} placeholder="Dettagli della spesa..." />
             </div>
+            <div className="space-y-2">
+              <Label>Allegato (opzionale)</Label>
+              <div className="flex items-center gap-2">
+                <Input
+                  type="file"
+                  accept="image/*,.pdf,.doc,.docx"
+                  onChange={(e) => setNewReportFile(e.target.files?.[0] || null)}
+                  data-testid="input-receipt-file"
+                  className="flex-1"
+                />
+                {newReportFile && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setNewReportFile(null)}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                )}
+              </div>
+              {newReportFile && (
+                <p className="text-xs text-muted-foreground">
+                  File selezionato: {newReportFile.name}
+                </p>
+              )}
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)}>Annulla</Button>
-            <Button onClick={() => createMutation.mutate({ ...newReport, totalAmount: parseFloat(newReport.totalAmount) || 0 })} disabled={createMutation.isPending || !newReport.title || !newReport.userId}>
-              Crea Nota Spese
+            <Button onClick={() => createMutation.mutate({ ...newReport, totalAmount: parseFloat(newReport.totalAmount) || 0, file: newReportFile })} disabled={createMutation.isPending || !newReport.title || !newReport.userId}>
+              {createMutation.isPending ? "Creazione..." : "Crea Nota Spese"}
             </Button>
           </DialogFooter>
         </DialogContent>
