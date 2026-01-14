@@ -6095,6 +6095,9 @@ export const hrExpenseReports = pgTable("hr_expense_reports", {
   approvedAt: timestamp("approved_at"),
   rejectionReason: text("rejection_reason"),
   paidAt: timestamp("paid_at"),
+  receiptUrl: text("receipt_url"),
+  receiptFileName: varchar("receipt_file_name", { length: 255 }),
+  repairCenterId: varchar("repair_center_id").references(() => repairCenters.id, { onDelete: "cascade" }),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });

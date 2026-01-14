@@ -24,7 +24,11 @@ import {
   Send,
   Trash2,
   Eye,
-  Pencil
+  Pencil,
+  Upload,
+  Download,
+  Paperclip,
+  Loader2
 } from "lucide-react";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -44,6 +48,8 @@ interface ExpenseReport {
   reviewedBy?: string;
   reviewedAt?: string;
   user?: { fullName: string };
+  receiptUrl?: string | null;
+  receiptFileName?: string | null;
 }
 
 interface TeamMember {
@@ -169,6 +175,71 @@ export default function HrExpenses() {
       toast({ title: "Errore", description: error.message, variant: "destructive" });
     }
   });
+
+  const [uploadingReportId, setUploadingReportId] = useState<string | null>(null);
+
+  const uploadReceiptMutation = useMutation({
+    mutationFn: async ({ reportId, file }: { reportId: string; file: File }) => {
+      const formData = new FormData();
+      formData.append('file', file);
+      const res = await fetch(`/api/reseller/hr/expense-reports/${reportId}/receipt`, {
+        method: 'POST',
+        body: formData,
+        credentials: 'include'
+      });
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || 'Errore upload');
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/reseller/hr/expense-reports", entityType, selectedEntityId] });
+      setUploadingReportId(null);
+      toast({ title: "Allegato caricato", description: "Il giustificativo è stato caricato con successo." });
+    },
+    onError: (error: any) => {
+      setUploadingReportId(null);
+      toast({ title: "Errore", description: error.message, variant: "destructive" });
+    }
+  });
+
+  const downloadReceiptMutation = useMutation({
+    mutationFn: async (reportId: string) => {
+      const res = await fetch(`/api/reseller/hr/expense-reports/${reportId}/receipt`, {
+        credentials: 'include'
+      });
+      if (!res.ok) throw new Error('Errore download');
+      return res.json();
+    },
+    onSuccess: (data) => {
+      window.open(data.signedUrl, '_blank');
+    },
+    onError: (error: any) => {
+      toast({ title: "Errore", description: error.message, variant: "destructive" });
+    }
+  });
+
+  const deleteReceiptMutation = useMutation({
+    mutationFn: async (reportId: string) => {
+      return apiRequest("DELETE", `/api/reseller/hr/expense-reports/${reportId}/receipt`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/reseller/hr/expense-reports", entityType, selectedEntityId] });
+      toast({ title: "Allegato rimosso", description: "Il giustificativo è stato rimosso." });
+    },
+    onError: (error: any) => {
+      toast({ title: "Errore", description: error.message, variant: "destructive" });
+    }
+  });
+
+  const handleFileUpload = (reportId: string, event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      setUploadingReportId(reportId);
+      uploadReceiptMutation.mutate({ reportId, file });
+    }
+  };
 
   const filteredReports = reports.filter(rep => {
     if (statusFilter !== "all" && rep.status !== statusFilter) return false;
@@ -376,6 +447,55 @@ export default function HrExpenses() {
                               </Button>
                             </>
                           )}
+                          {report.receiptUrl ? (
+                            <>
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                onClick={() => downloadReceiptMutation.mutate(report.id)}
+                                title={`Scarica: ${report.receiptFileName}`}
+                                data-testid={`button-download-receipt-${report.id}`}
+                              >
+                                <Download className="h-4 w-4 text-emerald-600" />
+                              </Button>
+                              {!readOnly && (report.status === 'draft' || report.status === 'pending') && (
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  onClick={() => deleteReceiptMutation.mutate(report.id)}
+                                  title="Rimuovi allegato"
+                                  data-testid={`button-delete-receipt-${report.id}`}
+                                >
+                                  <X className="h-4 w-4 text-orange-600" />
+                                </Button>
+                              )}
+                            </>
+                          ) : !readOnly && (report.status === 'draft' || report.status === 'pending') ? (
+                            <label className="cursor-pointer">
+                              <input
+                                type="file"
+                                accept="image/*,.pdf,.doc,.docx"
+                                className="hidden"
+                                onChange={(e) => handleFileUpload(report.id, e)}
+                                data-testid={`input-upload-receipt-${report.id}`}
+                              />
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                asChild
+                                disabled={uploadingReportId === report.id}
+                                title="Carica giustificativo"
+                              >
+                                <span>
+                                  {uploadingReportId === report.id ? (
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                  ) : (
+                                    <Upload className="h-4 w-4 text-blue-600" />
+                                  )}
+                                </span>
+                              </Button>
+                            </label>
+                          ) : null}
                         </div>
                       </TableCell>
                     </TableRow>
