@@ -4371,7 +4371,7 @@ export function registerRoutes(app: Express): Server {
       }
       
       // Hash password before storing
-      const hashedPassword = await hashPassword(password);
+      const hashedPassword = await hashPassword(validatedData.password);
       
       // Force role to reseller and set parent
       const user = await storage.createUser({
