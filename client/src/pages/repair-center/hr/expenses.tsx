@@ -254,6 +254,7 @@ export default function RepairCenterHrExpenses() {
                   <TableHead>Importo</TableHead>
                   <TableHead>Data</TableHead>
                   <TableHead>Stato</TableHead>
+                  <TableHead>Allegato</TableHead>
                   <TableHead>Azioni</TableHead>
                 </TableRow>
               </TableHeader>
@@ -268,6 +269,64 @@ export default function RepairCenterHrExpenses() {
                       <Badge variant={statusLabels[report.status]?.variant || "secondary"}>
                         {statusLabels[report.status]?.label || report.status}
                       </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-1">
+                        {report.receiptUrl ? (
+                          <>
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              onClick={() => downloadReceiptMutation.mutate(report.id)}
+                              title={`Scarica: ${report.receiptFileName}`}
+                              data-testid={`button-download-receipt-${report.id}`}
+                            >
+                              <Download className="h-4 w-4 text-emerald-600" />
+                            </Button>
+                            {(report.status === "draft" || report.status === "pending") && (
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                onClick={() => deleteReceiptMutation.mutate(report.id)}
+                                title="Rimuovi allegato"
+                                data-testid={`button-delete-receipt-${report.id}`}
+                              >
+                                <X className="h-4 w-4 text-orange-600" />
+                              </Button>
+                            )}
+                            <span className="text-xs text-muted-foreground max-w-[100px] truncate" title={report.receiptFileName || ''}>
+                              {report.receiptFileName}
+                            </span>
+                          </>
+                        ) : (report.status === "draft" || report.status === "pending") ? (
+                          <label className="cursor-pointer">
+                            <input
+                              type="file"
+                              accept="image/*,.pdf,.doc,.docx"
+                              className="hidden"
+                              onChange={(e) => handleFileUpload(report.id, e)}
+                              data-testid={`input-upload-receipt-${report.id}`}
+                            />
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              asChild
+                              disabled={uploadingReportId === report.id}
+                              title="Carica giustificativo"
+                            >
+                              <span>
+                                {uploadingReportId === report.id ? (
+                                  <Loader2 className="h-4 w-4 animate-spin" />
+                                ) : (
+                                  <Upload className="h-4 w-4 text-blue-600" />
+                                )}
+                              </span>
+                            </Button>
+                          </label>
+                        ) : (
+                          <span className="text-xs text-muted-foreground">-</span>
+                        )}
+                      </div>
                     </TableCell>
                     <TableCell>
                       <div className="flex gap-1">
@@ -296,55 +355,6 @@ export default function RepairCenterHrExpenses() {
                             Segna Pagata
                           </Button>
                         )}
-                        {report.receiptUrl ? (
-                          <>
-                            <Button
-                              size="icon"
-                              variant="ghost"
-                              onClick={() => downloadReceiptMutation.mutate(report.id)}
-                              title={`Scarica: ${report.receiptFileName}`}
-                              data-testid={`button-download-receipt-${report.id}`}
-                            >
-                              <Download className="h-4 w-4 text-emerald-600" />
-                            </Button>
-                            {(report.status === "draft" || report.status === "pending") && (
-                              <Button
-                                size="icon"
-                                variant="ghost"
-                                onClick={() => deleteReceiptMutation.mutate(report.id)}
-                                title="Rimuovi allegato"
-                                data-testid={`button-delete-receipt-${report.id}`}
-                              >
-                                <X className="h-4 w-4 text-orange-600" />
-                              </Button>
-                            )}
-                          </>
-                        ) : (report.status === "draft" || report.status === "pending") ? (
-                          <label className="cursor-pointer">
-                            <input
-                              type="file"
-                              accept="image/*,.pdf,.doc,.docx"
-                              className="hidden"
-                              onChange={(e) => handleFileUpload(report.id, e)}
-                              data-testid={`input-upload-receipt-${report.id}`}
-                            />
-                            <Button
-                              size="icon"
-                              variant="ghost"
-                              asChild
-                              disabled={uploadingReportId === report.id}
-                              title="Carica giustificativo"
-                            >
-                              <span>
-                                {uploadingReportId === report.id ? (
-                                  <Loader2 className="h-4 w-4 animate-spin" />
-                                ) : (
-                                  <Upload className="h-4 w-4 text-blue-600" />
-                                )}
-                              </span>
-                            </Button>
-                          </label>
-                        ) : null}
                       </div>
                     </TableCell>
                   </TableRow>

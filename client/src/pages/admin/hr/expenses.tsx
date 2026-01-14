@@ -257,6 +257,7 @@ export default function AdminExpensesPage() {
                   <TableHead>Data Creazione</TableHead>
                   <TableHead>Stato</TableHead>
                   <TableHead>Descrizione</TableHead>
+                  <TableHead>Allegato</TableHead>
                   <TableHead>Azioni</TableHead>
                 </TableRow>
               </TableHeader>
@@ -298,17 +299,7 @@ export default function AdminExpensesPage() {
                       </span>
                     </TableCell>
                     <TableCell>
-                      <div className="flex gap-1">
-                        {canEdit(rep.status) && (
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => openEditDialog(rep)}
-                            data-testid={`button-edit-expense-${rep.id}`}
-                          >
-                            <Pencil className="h-4 w-4" />
-                          </Button>
-                        )}
+                      <div className="flex items-center gap-1">
                         {rep.receiptUrl ? (
                           <>
                             <Button
@@ -331,6 +322,9 @@ export default function AdminExpensesPage() {
                                 <X className="h-4 w-4 text-orange-600" />
                               </Button>
                             )}
+                            <span className="text-xs text-muted-foreground max-w-[100px] truncate" title={rep.receiptFileName || ''}>
+                              {rep.receiptFileName}
+                            </span>
                           </>
                         ) : canEdit(rep.status) ? (
                           <label className="cursor-pointer">
@@ -357,7 +351,23 @@ export default function AdminExpensesPage() {
                               </span>
                             </Button>
                           </label>
-                        ) : null}
+                        ) : (
+                          <span className="text-xs text-muted-foreground">-</span>
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex gap-1">
+                        {canEdit(rep.status) && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => openEditDialog(rep)}
+                            data-testid={`button-edit-expense-${rep.id}`}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                        )}
                       </div>
                     </TableCell>
                   </TableRow>
