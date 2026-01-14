@@ -172,7 +172,7 @@ export interface IStorage {
   listAllStaffRepairCenters(): Promise<StaffRepairCenter[]>;
   
   // Repair Centers
-  listRepairCenters(): Promise<RepairCenter[]>;
+  listRepairCenters(filters?: { resellerId?: string; subResellerId?: string }): Promise<RepairCenter[]>;
   getRepairCenter(id: string): Promise<RepairCenter | undefined>;
   getResellerRepairCenterDetail(resellerId: string, centerId: string): Promise<{
     center: RepairCenter;
@@ -1451,7 +1451,17 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Repair Centers
-  async listRepairCenters(): Promise<RepairCenter[]> {
+  async listRepairCenters(filters?: { resellerId?: string; subResellerId?: string }): Promise<RepairCenter[]> {
+    if (filters?.resellerId) {
+      return await db.select().from(repairCenters)
+        .where(eq(repairCenters.resellerId, filters.resellerId))
+        .orderBy(desc(repairCenters.createdAt));
+    }
+    if (filters?.subResellerId) {
+      return await db.select().from(repairCenters)
+        .where(eq(repairCenters.subResellerId, filters.subResellerId))
+        .orderBy(desc(repairCenters.createdAt));
+    }
     return await db.select().from(repairCenters).orderBy(desc(repairCenters.createdAt));
   }
 
