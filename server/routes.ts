@@ -17113,7 +17113,7 @@ export function registerRoutes(app: Express): Server {
         const activeRepairs = ownOrders.filter(r => activeStatuses.includes(r.status)).length;
         
         // Count unique customers
-        const customers = await storage.listUsers({ role: 'customer', resellerId: resellerId });
+        const customers = await storage.listCustomers({ resellerId: resellerId });
         
         // Calculate revenue from completed orders
         const completedOrders = ownOrders.filter(o => o.status === 'consegnato');
