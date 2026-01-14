@@ -30645,6 +30645,111 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Upload receipt for expense item (reseller/sub-reseller)
+  app.post("/api/reseller/hr/expense-items/:id/receipt", requireRole("reseller", "reseller_staff"), upload.single('file'), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      if (!req.file) return res.status(400).json({ error: "Nessun file caricato" });
+
+      const itemId = req.params.id;
+      const item = await storage.getHrExpenseItem(itemId);
+      if (!item) return res.status(404).json({ error: "Voce spesa non trovata" });
+
+      const report = await storage.getHrExpenseReport(item.expenseReportId);
+      if (!report) return res.status(404).json({ error: "Report spesa non trovato" });
+
+      const resellerId = req.user.role === 'reseller' ? req.user.id : req.user.resellerId;
+      if (report.resellerId !== resellerId) {
+        return res.status(403).json({ error: "Non autorizzato" });
+      }
+
+      const objectId = randomUUID();
+      const privateDir = objectStorage.getPrivateObjectDir();
+      const objectKey = `${privateDir}/hr/expenses/${report.id}/${itemId}/${objectId}`;
+      const { bucketName, objectName } = parseObjectPath(objectKey);
+      const bucket = objectStorageClient.bucket(bucketName);
+      const file = bucket.file(objectName);
+
+      await file.save(req.file.buffer, {
+        contentType: req.file.mimetype,
+        metadata: {
+          metadata: {
+            originalName: req.file.originalname,
+            uploadedBy: req.user.id,
+          }
+        }
+      });
+
+      const updatedItem = await storage.updateHrExpenseItem(itemId, {
+        receiptUrl: objectKey,
+        receiptFileName: req.file.originalname
+      });
+
+      const signedUrl = await signObjectURL(objectKey, 3600);
+      res.json({ ...updatedItem, signedReceiptUrl: signedUrl });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Download receipt for expense item (reseller/sub-reseller)
+  app.get("/api/reseller/hr/expense-items/:id/receipt", requireRole("reseller", "reseller_staff"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+
+      const itemId = req.params.id;
+      const item = await storage.getHrExpenseItem(itemId);
+      if (!item) return res.status(404).json({ error: "Voce spesa non trovata" });
+      if (!item.receiptUrl) return res.status(404).json({ error: "Nessun allegato presente" });
+
+      const report = await storage.getHrExpenseReport(item.expenseReportId);
+      if (!report) return res.status(404).json({ error: "Report spesa non trovato" });
+
+      const resellerId = req.user.role === 'reseller' ? req.user.id : req.user.resellerId;
+      if (report.resellerId !== resellerId) {
+        return res.status(403).json({ error: "Non autorizzato" });
+      }
+
+      const signedUrl = await signObjectURL(item.receiptUrl, 3600);
+      res.json({ signedUrl, fileName: item.receiptFileName });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Delete receipt for expense item (reseller/sub-reseller)
+  app.delete("/api/reseller/hr/expense-items/:id/receipt", requireRole("reseller", "reseller_staff"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+
+      const itemId = req.params.id;
+      const item = await storage.getHrExpenseItem(itemId);
+      if (!item) return res.status(404).json({ error: "Voce spesa non trovata" });
+      if (!item.receiptUrl) return res.status(404).json({ error: "Nessun allegato presente" });
+
+      const report = await storage.getHrExpenseReport(item.expenseReportId);
+      if (!report) return res.status(404).json({ error: "Report spesa non trovato" });
+
+      const resellerId = req.user.role === 'reseller' ? req.user.id : req.user.resellerId;
+      if (report.resellerId !== resellerId) {
+        return res.status(403).json({ error: "Non autorizzato" });
+      }
+
+      const { bucketName, objectName } = parseObjectPath(item.receiptUrl);
+      const bucket = objectStorageClient.bucket(bucketName);
+      await bucket.file(objectName).delete().catch(() => {});
+
+      const updatedItem = await storage.updateHrExpenseItem(itemId, {
+        receiptUrl: null,
+        receiptFileName: null
+      });
+
+      res.json({ success: true, item: updatedItem });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   // HR Absences (Assenze)
   app.get("/api/reseller/hr/absences", requireRole("reseller", "reseller_staff"), async (req, res) => {
     try {
@@ -31075,6 +31180,123 @@ export function registerRoutes(app: Express): Server {
       
       const updated = await storage.updateHrExpenseReport(req.params.id, updateData);
       res.json(updated);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Admin: Get expense report items
+  app.get("/api/admin/hr/expense-reports/:reportId/items", requireRole("admin", "admin_staff"), async (req, res) => {
+    try {
+      const items = await storage.listHrExpenseItems(req.params.reportId);
+      res.json(items);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Admin: Add expense item
+  app.post("/api/admin/hr/expense-reports/:reportId/items", requireRole("admin", "admin_staff"), async (req, res) => {
+    try {
+      const item = await storage.createHrExpenseItem({
+        ...req.body,
+        expenseReportId: req.params.reportId
+      });
+      res.json(item);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Admin: Delete expense item
+  app.delete("/api/admin/hr/expense-items/:id", requireRole("admin", "admin_staff"), async (req, res) => {
+    try {
+      await storage.deleteHrExpenseItem(req.params.id);
+      res.json({ success: true });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Admin: Upload receipt for expense item
+  app.post("/api/admin/hr/expense-items/:id/receipt", requireRole("admin", "admin_staff"), upload.single('file'), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      if (!req.file) return res.status(400).json({ error: "Nessun file caricato" });
+
+      const itemId = req.params.id;
+      const item = await storage.getHrExpenseItem(itemId);
+      if (!item) return res.status(404).json({ error: "Voce spesa non trovata" });
+
+      const report = await storage.getHrExpenseReport(item.expenseReportId);
+      if (!report) return res.status(404).json({ error: "Report spesa non trovato" });
+
+      const objectId = randomUUID();
+      const privateDir = objectStorage.getPrivateObjectDir();
+      const objectKey = `${privateDir}/hr/expenses/${report.id}/${itemId}/${objectId}`;
+      const { bucketName, objectName } = parseObjectPath(objectKey);
+      const bucket = objectStorageClient.bucket(bucketName);
+      const file = bucket.file(objectName);
+
+      await file.save(req.file.buffer, {
+        contentType: req.file.mimetype,
+        metadata: {
+          metadata: {
+            originalName: req.file.originalname,
+            uploadedBy: req.user.id,
+          }
+        }
+      });
+
+      const updatedItem = await storage.updateHrExpenseItem(itemId, {
+        receiptUrl: objectKey,
+        receiptFileName: req.file.originalname
+      });
+
+      const signedUrl = await signObjectURL(objectKey, 3600);
+      res.json({ ...updatedItem, signedReceiptUrl: signedUrl });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Admin: Download receipt for expense item
+  app.get("/api/admin/hr/expense-items/:id/receipt", requireRole("admin", "admin_staff"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+
+      const itemId = req.params.id;
+      const item = await storage.getHrExpenseItem(itemId);
+      if (!item) return res.status(404).json({ error: "Voce spesa non trovata" });
+      if (!item.receiptUrl) return res.status(404).json({ error: "Nessun allegato presente" });
+
+      const signedUrl = await signObjectURL(item.receiptUrl, 3600);
+      res.json({ signedUrl, fileName: item.receiptFileName });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Admin: Delete receipt for expense item
+  app.delete("/api/admin/hr/expense-items/:id/receipt", requireRole("admin", "admin_staff"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+
+      const itemId = req.params.id;
+      const item = await storage.getHrExpenseItem(itemId);
+      if (!item) return res.status(404).json({ error: "Voce spesa non trovata" });
+      if (!item.receiptUrl) return res.status(404).json({ error: "Nessun allegato presente" });
+
+      const { bucketName, objectName } = parseObjectPath(item.receiptUrl);
+      const bucket = objectStorageClient.bucket(bucketName);
+      await bucket.file(objectName).delete().catch(() => {});
+
+      const updatedItem = await storage.updateHrExpenseItem(itemId, {
+        receiptUrl: null,
+        receiptFileName: null
+      });
+
+      res.json({ success: true, item: updatedItem });
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }
@@ -31852,6 +32074,144 @@ export function registerRoutes(app: Express): Server {
       
       const updated = await storage.updateHrExpenseReport(req.params.id, updateData);
       res.json(updated);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Repair Center: Get expense report items
+  app.get("/api/repair-center/hr/expense-reports/:reportId/items", requireRole("repair_center", "repair_center_staff"), async (req, res) => {
+    try {
+      const items = await storage.listHrExpenseItems(req.params.reportId);
+      res.json(items);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Repair Center: Add expense item
+  app.post("/api/repair-center/hr/expense-reports/:reportId/items", requireRole("repair_center", "repair_center_staff"), async (req, res) => {
+    try {
+      const item = await storage.createHrExpenseItem({
+        ...req.body,
+        expenseReportId: req.params.reportId
+      });
+      res.json(item);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Repair Center: Delete expense item
+  app.delete("/api/repair-center/hr/expense-items/:id", requireRole("repair_center", "repair_center_staff"), async (req, res) => {
+    try {
+      await storage.deleteHrExpenseItem(req.params.id);
+      res.json({ success: true });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Repair Center: Upload receipt for expense item
+  app.post("/api/repair-center/hr/expense-items/:id/receipt", requireRole("repair_center", "repair_center_staff"), upload.single('file'), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      if (!req.file) return res.status(400).json({ error: "Nessun file caricato" });
+
+      const itemId = req.params.id;
+      const item = await storage.getHrExpenseItem(itemId);
+      if (!item) return res.status(404).json({ error: "Voce spesa non trovata" });
+
+      const report = await storage.getHrExpenseReport(item.expenseReportId);
+      if (!report) return res.status(404).json({ error: "Report spesa non trovato" });
+
+      const repairCenterId = req.user.role === 'repair_center' ? req.user.repairCenterId : req.user.repairCenterId;
+      if (report.repairCenterId !== repairCenterId) {
+        return res.status(403).json({ error: "Non autorizzato" });
+      }
+
+      const objectId = randomUUID();
+      const privateDir = objectStorage.getPrivateObjectDir();
+      const objectKey = `${privateDir}/hr/expenses/${report.id}/${itemId}/${objectId}`;
+      const { bucketName, objectName } = parseObjectPath(objectKey);
+      const bucket = objectStorageClient.bucket(bucketName);
+      const file = bucket.file(objectName);
+
+      await file.save(req.file.buffer, {
+        contentType: req.file.mimetype,
+        metadata: {
+          metadata: {
+            originalName: req.file.originalname,
+            uploadedBy: req.user.id,
+          }
+        }
+      });
+
+      const updatedItem = await storage.updateHrExpenseItem(itemId, {
+        receiptUrl: objectKey,
+        receiptFileName: req.file.originalname
+      });
+
+      const signedUrl = await signObjectURL(objectKey, 3600);
+      res.json({ ...updatedItem, signedReceiptUrl: signedUrl });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Repair Center: Download receipt for expense item
+  app.get("/api/repair-center/hr/expense-items/:id/receipt", requireRole("repair_center", "repair_center_staff"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+
+      const itemId = req.params.id;
+      const item = await storage.getHrExpenseItem(itemId);
+      if (!item) return res.status(404).json({ error: "Voce spesa non trovata" });
+      if (!item.receiptUrl) return res.status(404).json({ error: "Nessun allegato presente" });
+
+      const report = await storage.getHrExpenseReport(item.expenseReportId);
+      if (!report) return res.status(404).json({ error: "Report spesa non trovato" });
+
+      const repairCenterId = req.user.role === 'repair_center' ? req.user.repairCenterId : req.user.repairCenterId;
+      if (report.repairCenterId !== repairCenterId) {
+        return res.status(403).json({ error: "Non autorizzato" });
+      }
+
+      const signedUrl = await signObjectURL(item.receiptUrl, 3600);
+      res.json({ signedUrl, fileName: item.receiptFileName });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Repair Center: Delete receipt for expense item
+  app.delete("/api/repair-center/hr/expense-items/:id/receipt", requireRole("repair_center", "repair_center_staff"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+
+      const itemId = req.params.id;
+      const item = await storage.getHrExpenseItem(itemId);
+      if (!item) return res.status(404).json({ error: "Voce spesa non trovata" });
+      if (!item.receiptUrl) return res.status(404).json({ error: "Nessun allegato presente" });
+
+      const report = await storage.getHrExpenseReport(item.expenseReportId);
+      if (!report) return res.status(404).json({ error: "Report spesa non trovato" });
+
+      const repairCenterId = req.user.role === 'repair_center' ? req.user.repairCenterId : req.user.repairCenterId;
+      if (report.repairCenterId !== repairCenterId) {
+        return res.status(403).json({ error: "Non autorizzato" });
+      }
+
+      const { bucketName, objectName } = parseObjectPath(item.receiptUrl);
+      const bucket = objectStorageClient.bucket(bucketName);
+      await bucket.file(objectName).delete().catch(() => {});
+
+      const updatedItem = await storage.updateHrExpenseItem(itemId, {
+        receiptUrl: null,
+        receiptFileName: null
+      });
+
+      res.json({ success: true, item: updatedItem });
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }
