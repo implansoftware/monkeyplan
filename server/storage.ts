@@ -10258,6 +10258,19 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
+  async getHrExpenseItem(id: string): Promise<HrExpenseItem | undefined> {
+    const [item] = await db.select().from(hrExpenseItems).where(eq(hrExpenseItems.id, id));
+    return item || undefined;
+  }
+
+  async updateHrExpenseItem(id: string, updates: Partial<Pick<HrExpenseItem, 'receiptUrl' | 'receiptFileName'>>): Promise<HrExpenseItem> {
+    const [item] = await db.update(hrExpenseItems)
+      .set(updates)
+      .where(eq(hrExpenseItems.id, id))
+      .returning();
+    return item;
+  }
+
   private async recalculateExpenseTotal(reportId: string): Promise<void> {
     const items = await this.listHrExpenseItems(reportId);
     const total = items.reduce((sum, item) => sum + item.amount, 0);
