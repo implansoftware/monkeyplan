@@ -198,6 +198,7 @@ export default function AdminExpensesPage() {
       setUploadingReportId(reportId);
       uploadReceiptMutation.mutate({ reportId, file });
     }
+    event.target.value = '';
   };
 
   return (

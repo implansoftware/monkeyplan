@@ -239,6 +239,7 @@ export default function HrExpenses() {
       setUploadingReportId(reportId);
       uploadReceiptMutation.mutate({ reportId, file });
     }
+    event.target.value = '';
   };
 
   const filteredReports = reports.filter(rep => {

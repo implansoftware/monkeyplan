@@ -179,6 +179,7 @@ export default function RepairCenterHrExpenses() {
       setUploadingReportId(reportId);
       uploadReceiptMutation.mutate({ reportId, file });
     }
+    event.target.value = '';
   };
 
   return (
