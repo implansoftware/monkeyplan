@@ -102,6 +102,9 @@ export default function AdminExternalIntegrations() {
       supportsCatalog: formData.get("supportsCatalog") === "on",
       supportsOrdering: formData.get("supportsOrdering") === "on",
       supportsCart: formData.get("supportsCart") === "on",
+      supportsInvoicing: formData.get("supportsInvoicing") === "on",
+      supportsReconciliation: formData.get("supportsReconciliation") === "on",
+      supportsAccounts: formData.get("supportsAccounts") === "on",
       isActive: formData.get("isActive") === "on",
       displayOrder: formData.get("displayOrder") ? parseInt(formData.get("displayOrder") as string) : 0,
     };
@@ -272,6 +275,33 @@ export default function AdminExternalIntegrations() {
                         />
                         <Label htmlFor="supportsCart">Carrello</Label>
                       </div>
+                      <div className="flex items-center gap-2">
+                        <Switch
+                          id="supportsInvoicing"
+                          name="supportsInvoicing"
+                          defaultChecked={editingIntegration?.supportsInvoicing ?? false}
+                          data-testid="switch-supports-invoicing"
+                        />
+                        <Label htmlFor="supportsInvoicing">Fatture</Label>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Switch
+                          id="supportsReconciliation"
+                          name="supportsReconciliation"
+                          defaultChecked={editingIntegration?.supportsReconciliation ?? false}
+                          data-testid="switch-supports-reconciliation"
+                        />
+                        <Label htmlFor="supportsReconciliation">Riconciliazione</Label>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Switch
+                          id="supportsAccounts"
+                          name="supportsAccounts"
+                          defaultChecked={editingIntegration?.supportsAccounts ?? false}
+                          data-testid="switch-supports-accounts"
+                        />
+                        <Label htmlFor="supportsAccounts">Conti</Label>
+                      </div>
                     </div>
                     <div className="flex items-center gap-2 pt-2 border-t">
                       <Switch
@@ -438,6 +468,15 @@ export default function AdminExternalIntegrations() {
                         )}
                         {integration.supportsCart && (
                           <Badge variant="outline" className="text-xs">Carrello</Badge>
+                        )}
+                        {integration.supportsInvoicing && (
+                          <Badge variant="outline" className="text-xs">Fatture</Badge>
+                        )}
+                        {integration.supportsReconciliation && (
+                          <Badge variant="outline" className="text-xs">Riconciliazione</Badge>
+                        )}
+                        {integration.supportsAccounts && (
+                          <Badge variant="outline" className="text-xs">Conti</Badge>
                         )}
                       </div>
                     </TableCell>

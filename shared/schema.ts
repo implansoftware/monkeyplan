@@ -2114,6 +2114,11 @@ export const externalIntegrations = pgTable("external_integrations", {
   supportsOrdering: boolean("supports_ordering").default(false),
   supportsCart: boolean("supports_cart").default(false),
   
+  // Sibill-specific features (invoicing/banking)
+  supportsInvoicing: boolean("supports_invoicing").default(false),
+  supportsReconciliation: boolean("supports_reconciliation").default(false),
+  supportsAccounts: boolean("supports_accounts").default(false),
+  
   // Documentation
   docsUrl: text("docs_url"), // Link documentazione API
   
