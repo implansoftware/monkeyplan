@@ -30685,7 +30685,8 @@ export function registerRoutes(app: Express): Server {
         receiptFileName: req.file.originalname
       });
 
-      const signedUrl = await signObjectURL(objectKey, 3600);
+      const { bucketName: bName, objectName: oName } = parseObjectPath(objectKey);
+      const signedUrl = await signObjectURL({ bucketName: bName, objectName: oName, method: "GET", ttlSec: 3600 });
       res.json({ ...updatedItem, signedReceiptUrl: signedUrl });
     } catch (error: any) {
       res.status(500).json({ error: error.message });
@@ -30710,7 +30711,8 @@ export function registerRoutes(app: Express): Server {
         return res.status(403).json({ error: "Non autorizzato" });
       }
 
-      const signedUrl = await signObjectURL(item.receiptUrl, 3600);
+      const { bucketName: bn, objectName: on } = parseObjectPath(item.receiptUrl);
+      const signedUrl = await signObjectURL({ bucketName: bn, objectName: on, method: "GET", ttlSec: 3600 });
       res.json({ signedUrl, fileName: item.receiptFileName });
     } catch (error: any) {
       res.status(500).json({ error: error.message });
@@ -30787,7 +30789,8 @@ export function registerRoutes(app: Express): Server {
         receiptFileName: req.file.originalname
       });
 
-      const signedUrl = await signObjectURL(objectKey, 3600);
+      const { bucketName: bName, objectName: oName } = parseObjectPath(objectKey);
+      const signedUrl = await signObjectURL({ bucketName: bName, objectName: oName, method: "GET", ttlSec: 3600 });
       res.json({ ...updatedReport, signedReceiptUrl: signedUrl });
     } catch (error: any) {
       res.status(500).json({ error: error.message });
@@ -30809,7 +30812,8 @@ export function registerRoutes(app: Express): Server {
         return res.status(403).json({ error: "Non autorizzato" });
       }
 
-      const signedUrl = await signObjectURL(report.receiptUrl, 3600);
+      const { bucketName, objectName } = parseObjectPath(report.receiptUrl);
+      const signedUrl = await signObjectURL({ bucketName, objectName, method: "GET", ttlSec: 3600 });
       res.json({ signedUrl, fileName: report.receiptFileName });
     } catch (error: any) {
       res.status(500).json({ error: error.message });
@@ -31349,7 +31353,8 @@ export function registerRoutes(app: Express): Server {
         receiptFileName: req.file.originalname
       });
 
-      const signedUrl = await signObjectURL(objectKey, 3600);
+      const { bucketName: bName, objectName: oName } = parseObjectPath(objectKey);
+      const signedUrl = await signObjectURL({ bucketName: bName, objectName: oName, method: "GET", ttlSec: 3600 });
       res.json({ ...updatedItem, signedReceiptUrl: signedUrl });
     } catch (error: any) {
       res.status(500).json({ error: error.message });
@@ -31366,7 +31371,8 @@ export function registerRoutes(app: Express): Server {
       if (!item) return res.status(404).json({ error: "Voce spesa non trovata" });
       if (!item.receiptUrl) return res.status(404).json({ error: "Nessun allegato presente" });
 
-      const signedUrl = await signObjectURL(item.receiptUrl, 3600);
+      const { bucketName: bn, objectName: on } = parseObjectPath(item.receiptUrl);
+      const signedUrl = await signObjectURL({ bucketName: bn, objectName: on, method: "GET", ttlSec: 3600 });
       res.json({ signedUrl, fileName: item.receiptFileName });
     } catch (error: any) {
       res.status(500).json({ error: error.message });
@@ -31430,7 +31436,8 @@ export function registerRoutes(app: Express): Server {
         receiptFileName: req.file.originalname
       });
 
-      const signedUrl = await signObjectURL(objectKey, 3600);
+      const { bucketName: bName, objectName: oName } = parseObjectPath(objectKey);
+      const signedUrl = await signObjectURL({ bucketName: bName, objectName: oName, method: "GET", ttlSec: 3600 });
       res.json({ ...updatedReport, signedReceiptUrl: signedUrl });
     } catch (error: any) {
       res.status(500).json({ error: error.message });
@@ -31447,7 +31454,8 @@ export function registerRoutes(app: Express): Server {
       if (!report) return res.status(404).json({ error: "Nota spese non trovata" });
       if (!report.receiptUrl) return res.status(404).json({ error: "Nessun allegato presente" });
 
-      const signedUrl = await signObjectURL(report.receiptUrl, 3600);
+      const { bucketName, objectName } = parseObjectPath(report.receiptUrl);
+      const signedUrl = await signObjectURL({ bucketName, objectName, method: "GET", ttlSec: 3600 });
       res.json({ signedUrl, fileName: report.receiptFileName });
     } catch (error: any) {
       res.status(500).json({ error: error.message });
@@ -32329,7 +32337,8 @@ export function registerRoutes(app: Express): Server {
         receiptFileName: req.file.originalname
       });
 
-      const signedUrl = await signObjectURL(objectKey, 3600);
+      const { bucketName: bName, objectName: oName } = parseObjectPath(objectKey);
+      const signedUrl = await signObjectURL({ bucketName: bName, objectName: oName, method: "GET", ttlSec: 3600 });
       res.json({ ...updatedItem, signedReceiptUrl: signedUrl });
     } catch (error: any) {
       res.status(500).json({ error: error.message });
@@ -32354,7 +32363,8 @@ export function registerRoutes(app: Express): Server {
         return res.status(403).json({ error: "Non autorizzato" });
       }
 
-      const signedUrl = await signObjectURL(item.receiptUrl, 3600);
+      const { bucketName: bn, objectName: on } = parseObjectPath(item.receiptUrl);
+      const signedUrl = await signObjectURL({ bucketName: bn, objectName: on, method: "GET", ttlSec: 3600 });
       res.json({ signedUrl, fileName: item.receiptFileName });
     } catch (error: any) {
       res.status(500).json({ error: error.message });
@@ -32431,7 +32441,8 @@ export function registerRoutes(app: Express): Server {
         receiptFileName: req.file.originalname
       });
 
-      const signedUrl = await signObjectURL(objectKey, 3600);
+      const { bucketName: bName, objectName: oName } = parseObjectPath(objectKey);
+      const signedUrl = await signObjectURL({ bucketName: bName, objectName: oName, method: "GET", ttlSec: 3600 });
       res.json({ ...updatedReport, signedReceiptUrl: signedUrl });
     } catch (error: any) {
       res.status(500).json({ error: error.message });
@@ -32453,7 +32464,8 @@ export function registerRoutes(app: Express): Server {
         return res.status(403).json({ error: "Non autorizzato" });
       }
 
-      const signedUrl = await signObjectURL(report.receiptUrl, 3600);
+      const { bucketName, objectName } = parseObjectPath(report.receiptUrl);
+      const signedUrl = await signObjectURL({ bucketName, objectName, method: "GET", ttlSec: 3600 });
       res.json({ signedUrl, fileName: report.receiptFileName });
     } catch (error: any) {
       res.status(500).json({ error: error.message });
