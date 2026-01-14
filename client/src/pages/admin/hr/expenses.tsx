@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Receipt, Clock, User, RefreshCw, Euro, Pencil } from "lucide-react";
+import { Receipt, Clock, User, RefreshCw, Euro, Pencil, Upload, Download, X, Loader2 } from "lucide-react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
@@ -36,6 +36,8 @@ interface ExpenseReport {
   user?: {
     fullName: string;
   };
+  receiptUrl?: string | null;
+  receiptFileName?: string | null;
 }
 
 const statusColors: Record<string, string> = {
@@ -132,6 +134,71 @@ export default function AdminExpensesPage() {
   };
 
   const canEdit = (status: string) => status === "draft" || status === "submitted";
+
+  const [uploadingReportId, setUploadingReportId] = useState<string | null>(null);
+
+  const uploadReceiptMutation = useMutation({
+    mutationFn: async ({ reportId, file }: { reportId: string; file: File }) => {
+      const formData = new FormData();
+      formData.append('file', file);
+      const res = await fetch(`/api/admin/hr/expense-reports/${reportId}/receipt`, {
+        method: 'POST',
+        body: formData,
+        credentials: 'include'
+      });
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || 'Errore upload');
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/hr/expense-reports", queryString] });
+      setUploadingReportId(null);
+      toast({ title: "Allegato caricato" });
+    },
+    onError: (error: any) => {
+      setUploadingReportId(null);
+      toast({ title: "Errore", description: error.message, variant: "destructive" });
+    }
+  });
+
+  const downloadReceiptMutation = useMutation({
+    mutationFn: async (reportId: string) => {
+      const res = await fetch(`/api/admin/hr/expense-reports/${reportId}/receipt`, {
+        credentials: 'include'
+      });
+      if (!res.ok) throw new Error('Errore download');
+      return res.json();
+    },
+    onSuccess: (data) => {
+      window.open(data.signedUrl, '_blank');
+    },
+    onError: (error: any) => {
+      toast({ title: "Errore", description: error.message, variant: "destructive" });
+    }
+  });
+
+  const deleteReceiptMutation = useMutation({
+    mutationFn: async (reportId: string) => {
+      return apiRequest("DELETE", `/api/admin/hr/expense-reports/${reportId}/receipt`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/hr/expense-reports", queryString] });
+      toast({ title: "Allegato rimosso" });
+    },
+    onError: (error: any) => {
+      toast({ title: "Errore", description: error.message, variant: "destructive" });
+    }
+  });
+
+  const handleFileUpload = (reportId: string, event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      setUploadingReportId(reportId);
+      uploadReceiptMutation.mutate({ reportId, file });
+    }
+  };
 
   return (
     <div className="p-6 space-y-6">
@@ -230,16 +297,67 @@ export default function AdminExpensesPage() {
                       </span>
                     </TableCell>
                     <TableCell>
-                      {canEdit(rep.status) && (
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => openEditDialog(rep)}
-                          data-testid={`button-edit-expense-${rep.id}`}
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                      )}
+                      <div className="flex gap-1">
+                        {canEdit(rep.status) && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => openEditDialog(rep)}
+                            data-testid={`button-edit-expense-${rep.id}`}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                        )}
+                        {rep.receiptUrl ? (
+                          <>
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              onClick={() => downloadReceiptMutation.mutate(rep.id)}
+                              title={`Scarica: ${rep.receiptFileName}`}
+                              data-testid={`button-download-receipt-${rep.id}`}
+                            >
+                              <Download className="h-4 w-4 text-emerald-600" />
+                            </Button>
+                            {canEdit(rep.status) && (
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                onClick={() => deleteReceiptMutation.mutate(rep.id)}
+                                title="Rimuovi allegato"
+                                data-testid={`button-delete-receipt-${rep.id}`}
+                              >
+                                <X className="h-4 w-4 text-orange-600" />
+                              </Button>
+                            )}
+                          </>
+                        ) : canEdit(rep.status) ? (
+                          <label className="cursor-pointer">
+                            <input
+                              type="file"
+                              accept="image/*,.pdf,.doc,.docx"
+                              className="hidden"
+                              onChange={(e) => handleFileUpload(rep.id, e)}
+                              data-testid={`input-upload-receipt-${rep.id}`}
+                            />
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              asChild
+                              disabled={uploadingReportId === rep.id}
+                              title="Carica giustificativo"
+                            >
+                              <span>
+                                {uploadingReportId === rep.id ? (
+                                  <Loader2 className="h-4 w-4 animate-spin" />
+                                ) : (
+                                  <Upload className="h-4 w-4 text-blue-600" />
+                                )}
+                              </span>
+                            </Button>
+                          </label>
+                        ) : null}
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}

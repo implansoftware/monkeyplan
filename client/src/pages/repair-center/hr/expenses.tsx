@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogD
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Link } from "wouter";
-import { Receipt, Plus, ArrowLeft, Check, X, Eye, Pencil } from "lucide-react";
+import { Receipt, Plus, ArrowLeft, Check, X, Eye, Pencil, Upload, Download, Loader2 } from "lucide-react";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
@@ -31,6 +31,8 @@ interface ExpenseReport {
   status: string;
   submittedAt?: string;
   user?: { fullName: string };
+  receiptUrl?: string | null;
+  receiptFileName?: string | null;
 }
 
 const statusLabels: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
@@ -112,6 +114,71 @@ export default function RepairCenterHrExpenses() {
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR" }).format(amount);
+  };
+
+  const [uploadingReportId, setUploadingReportId] = useState<string | null>(null);
+
+  const uploadReceiptMutation = useMutation({
+    mutationFn: async ({ reportId, file }: { reportId: string; file: File }) => {
+      const formData = new FormData();
+      formData.append('file', file);
+      const res = await fetch(`/api/repair-center/hr/expense-reports/${reportId}/receipt`, {
+        method: 'POST',
+        body: formData,
+        credentials: 'include'
+      });
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || 'Errore upload');
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/repair-center/hr/expense-reports"] });
+      setUploadingReportId(null);
+      toast({ title: "Allegato caricato" });
+    },
+    onError: (error: any) => {
+      setUploadingReportId(null);
+      toast({ title: "Errore", description: error.message, variant: "destructive" });
+    }
+  });
+
+  const downloadReceiptMutation = useMutation({
+    mutationFn: async (reportId: string) => {
+      const res = await fetch(`/api/repair-center/hr/expense-reports/${reportId}/receipt`, {
+        credentials: 'include'
+      });
+      if (!res.ok) throw new Error('Errore download');
+      return res.json();
+    },
+    onSuccess: (data) => {
+      window.open(data.signedUrl, '_blank');
+    },
+    onError: (error: any) => {
+      toast({ title: "Errore", description: error.message, variant: "destructive" });
+    }
+  });
+
+  const deleteReceiptMutation = useMutation({
+    mutationFn: async (reportId: string) => {
+      return apiRequest("DELETE", `/api/repair-center/hr/expense-reports/${reportId}/receipt`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/repair-center/hr/expense-reports"] });
+      toast({ title: "Allegato rimosso" });
+    },
+    onError: (error: any) => {
+      toast({ title: "Errore", description: error.message, variant: "destructive" });
+    }
+  });
+
+  const handleFileUpload = (reportId: string, event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      setUploadingReportId(reportId);
+      uploadReceiptMutation.mutate({ reportId, file });
+    }
   };
 
   return (
@@ -208,6 +275,55 @@ export default function RepairCenterHrExpenses() {
                             Segna Pagata
                           </Button>
                         )}
+                        {report.receiptUrl ? (
+                          <>
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              onClick={() => downloadReceiptMutation.mutate(report.id)}
+                              title={`Scarica: ${report.receiptFileName}`}
+                              data-testid={`button-download-receipt-${report.id}`}
+                            >
+                              <Download className="h-4 w-4 text-emerald-600" />
+                            </Button>
+                            {(report.status === "draft" || report.status === "pending") && (
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                onClick={() => deleteReceiptMutation.mutate(report.id)}
+                                title="Rimuovi allegato"
+                                data-testid={`button-delete-receipt-${report.id}`}
+                              >
+                                <X className="h-4 w-4 text-orange-600" />
+                              </Button>
+                            )}
+                          </>
+                        ) : (report.status === "draft" || report.status === "pending") ? (
+                          <label className="cursor-pointer">
+                            <input
+                              type="file"
+                              accept="image/*,.pdf,.doc,.docx"
+                              className="hidden"
+                              onChange={(e) => handleFileUpload(report.id, e)}
+                              data-testid={`input-upload-receipt-${report.id}`}
+                            />
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              asChild
+                              disabled={uploadingReportId === report.id}
+                              title="Carica giustificativo"
+                            >
+                              <span>
+                                {uploadingReportId === report.id ? (
+                                  <Loader2 className="h-4 w-4 animate-spin" />
+                                ) : (
+                                  <Upload className="h-4 w-4 text-blue-600" />
+                                )}
+                              </span>
+                            </Button>
+                          </label>
+                        ) : null}
                       </div>
                     </TableCell>
                   </TableRow>
