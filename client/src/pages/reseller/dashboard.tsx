@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useQuery } from "@tanstack/react-query";
 import { ShoppingCart, Users, TrendingUp, FileText, Package, AlertCircle, Zap, ArrowRightLeft, Network, ChevronRight, ExternalLink, LayoutDashboard, Store, Briefcase, Euro } from "lucide-react";
@@ -19,6 +19,8 @@ import { RepairIntakeWizard } from "@/components/RepairIntakeWizard";
 import { OperationalTaskList } from "@/components/OperationalTaskList";
 import { useAuth } from "@/hooks/use-auth";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { DashboardCustomizer } from "@/components/dashboard/DashboardCustomizer";
+import { useDashboardPreferences } from "@/components/dashboard/useDashboardPreferences";
 
 type ResellerStats = {
   overview: {
@@ -76,6 +78,14 @@ export default function ResellerDashboard() {
   const hasParentReseller = !!(user as any)?.parentResellerId;
   // Staff should see their reseller, sub-resellers should see parent reseller
   const shouldShowResellerBanner = isResellerStaff || hasParentReseller;
+
+  // Dashboard customization preferences
+  const { layout: dashboardLayout, saveLayout, isSaving: isSavingLayout } = useDashboardPreferences("reseller");
+
+  const isWidgetVisible = useCallback((widgetId: string) => {
+    const widget = dashboardLayout.widgets.find(w => w.id === widgetId);
+    return widget?.visible !== false;
+  }, [dashboardLayout.widgets]);
 
   const { data: parentReseller } = useQuery<{ id: string; fullName: string; logoUrl: string | null; ragioneSociale: string | null }>({
     queryKey: ["/api/my-parent-reseller"],
@@ -183,10 +193,18 @@ export default function ResellerDashboard() {
               </div>
             </div>
           </div>
-          <Button onClick={() => setAcceptanceDialogOpen(true)} className="shadow-lg shadow-primary/25" data-testid="button-new-repair">
+          <div className="flex items-center gap-2">
+            <DashboardCustomizer
+              role="reseller"
+              currentLayout={dashboardLayout}
+              onSave={saveLayout}
+              isSaving={isSavingLayout}
+            />
+            <Button onClick={() => setAcceptanceDialogOpen(true)} className="shadow-lg shadow-primary/25" data-testid="button-new-repair">
             <PackageOpen className="h-4 w-4 mr-2" />
             Nuova Lavorazione
           </Button>
+          </div>
         </div>
       </div>
 
