@@ -6692,6 +6692,8 @@ export const documentSourceTypeEnum = pgEnum("document_source_type", [
   "warehouse_transfer", // Trasferimento magazzino
   "customer",         // Cliente
   "supplier_order",   // Ordine fornitore
+  "data_recovery",    // Recupero dati
+  "service_order",    // Ordine servizio
   "other",            // Altro
 ]);
 

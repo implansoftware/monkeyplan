@@ -48,7 +48,16 @@ import {
 import { ObjectStorageService, objectStorageClient, parseObjectPath, signObjectURL } from "./objectStorage";
 import { canAccessObject, ObjectPermission } from "./objectAcl";
 import { generateAndStoreReturnDocuments, getSignedDownloadUrl, generateTransferDDT, TransferDdtData } from "./services/shippingDocuments";
-import { registerDocument, buildDocumentTitle, ensureRepairDocumentRegistered } from "./services/documentRegistry";
+import { 
+  registerDocument, 
+  buildDocumentTitle, 
+  ensureRepairDocumentRegistered,
+  ensurePosReceiptRegistered,
+  ensureTransferDDTRegistered,
+  ensureB2BReturnDocumentRegistered,
+  ensureServiceOrderDDTRegistered,
+  ensureDataRecoveryDocumentRegistered
+} from "./services/documentRegistry";
 import { generatePosReceiptPdf } from "./services/posReceipt";
 import { calculateRepairPriority } from "./helpers/priorityCalculation";
 import { db } from "./db";
@@ -8553,6 +8562,16 @@ export function registerRoutes(app: Express): Server {
         }],
       };
       
+      // Register document in archive
+      await ensureServiceOrderDDTRegistered({
+        orderId: request.id,
+        orderNumber: request.requestNumber,
+        isRemoteRequest: true,
+        ownerId: req.user!.id,
+        ownerRole: req.user!.role,
+        customerId: request.customerId,
+      });
+
       const pdfBuffer = await generateTransferDDT(ddtData);
       
       res.setHeader('Content-Type', 'application/pdf');
@@ -9271,6 +9290,16 @@ export function registerRoutes(app: Express): Server {
             await file.save(pdfBuffer, { contentType: 'application/pdf' });
             const ddtUrl = `.private/service-ddt/${fileName}`;
             updateData.ddtUrl = ddtUrl;
+            // Register DDT document in archive
+            await ensureServiceOrderDDTRegistered({
+              orderId: order.id,
+              orderNumber: order.orderNumber,
+              isRemoteRequest: false,
+              ownerId: req.user!.id,
+              ownerRole: req.user!.role,
+              resellerId: order.resellerId || undefined,
+              customerId: order.customerId,
+            });
           }
         }
       }
@@ -18486,6 +18515,18 @@ export function registerRoutes(app: Express): Server {
       const PDFDocument = (await import('pdfkit')).default;
       const doc = new PDFDocument({ margin: 50, size: 'A4' });
       
+      // Register document in archive
+      await ensureDataRecoveryDocumentRegistered({
+        documentType: "shipping",
+        dataRecoveryId: job.id,
+        reference: job.jobNumber,
+        ownerId: req.user!.id,
+        ownerRole: req.user!.role,
+        resellerId: repairOrder?.resellerId || undefined,
+        repairCenterId: repairOrder?.repairCenterId || undefined,
+        customerId: repairOrder?.customerId || undefined,
+      });
+
       res.setHeader('Content-Type', 'application/pdf');
       res.setHeader('Content-Disposition', `attachment; filename="invio-recupero-${job.jobNumber}.pdf"`);
       
@@ -18595,6 +18636,18 @@ export function registerRoutes(app: Express): Server {
         return res.status(400).send("External lab not found");
       }
       
+      // Register document in archive
+      await ensureDataRecoveryDocumentRegistered({
+        documentType: "label",
+        dataRecoveryId: job.id,
+        reference: job.jobNumber,
+        ownerId: req.user!.id,
+        ownerRole: req.user!.role,
+        resellerId: undefined,
+        repairCenterId: undefined,
+        customerId: undefined,
+      });
+
       // Generate PDF - A6 size for label
       const PDFDocument = (await import('pdfkit')).default;
       const doc = new PDFDocument({ 
@@ -27182,6 +27235,16 @@ export function registerRoutes(app: Express): Server {
         destinationWarehouse: destWarehouse?.name || "Magazzino destinazione",
       };
       
+      // Register document in archive
+      await ensureTransferDDTRegistered({
+        transferId: request.id,
+        ddtNumber: request.ddtNumber,
+        ownerId: req.user!.id,
+        ownerRole: req.user!.role,
+        resellerId: request.targetResellerId || undefined,
+        repairCenterId: request.requesterType === "repair_center" ? request.requesterId : undefined,
+      });
+
       const pdfBuffer = await generateTransferDDT(ddtData);
       
       res.setHeader("Content-Type", "application/pdf");
@@ -28182,6 +28245,16 @@ export function registerRoutes(app: Express): Server {
       const { bucketName, objectName } = parseObjectPath(returnDoc.shippingLabelPath);
       const file = objectStorageClient.bucket(bucketName).file(objectName);
       
+      // Register document in archive
+      await ensureB2BReturnDocumentRegistered({
+        documentType: "label",
+        returnId: returnDoc.id,
+        returnNumber: returnDoc.returnNumber,
+        ownerId: req.user!.id,
+        ownerRole: req.user!.role,
+        resellerId: returnDoc.resellerId,
+      });
+
       res.setHeader("Content-Type", "application/pdf");
       res.setHeader("Content-Disposition", `attachment; filename="etichetta_${returnDoc.returnNumber}.pdf"`);
       
@@ -28208,6 +28281,16 @@ export function registerRoutes(app: Express): Server {
       const { bucketName, objectName } = parseObjectPath(returnDoc.ddtPath);
       const file = objectStorageClient.bucket(bucketName).file(objectName);
       
+      // Register document in archive
+      await ensureB2BReturnDocumentRegistered({
+        documentType: "shipping",
+        returnId: returnDoc.id,
+        returnNumber: returnDoc.returnNumber,
+        ownerId: req.user!.id,
+        ownerRole: req.user!.role,
+        resellerId: returnDoc.resellerId,
+      });
+
       res.setHeader("Content-Type", "application/pdf");
       res.setHeader("Content-Disposition", `attachment; filename="ddt_${returnDoc.returnNumber}.pdf"`);
       
@@ -28230,6 +28313,16 @@ export function registerRoutes(app: Express): Server {
       const { bucketName, objectName } = parseObjectPath(returnDoc.shippingLabelPath);
       const file = objectStorageClient.bucket(bucketName).file(objectName);
       
+      // Register document in archive
+      await ensureB2BReturnDocumentRegistered({
+        documentType: "label",
+        returnId: returnDoc.id,
+        returnNumber: returnDoc.returnNumber,
+        ownerId: req.user!.id,
+        ownerRole: req.user!.role,
+        resellerId: returnDoc.resellerId,
+      });
+
       res.setHeader("Content-Type", "application/pdf");
       res.setHeader("Content-Disposition", `attachment; filename="etichetta_${returnDoc.returnNumber}.pdf"`);
       
@@ -28252,6 +28345,16 @@ export function registerRoutes(app: Express): Server {
       const { bucketName, objectName } = parseObjectPath(returnDoc.ddtPath);
       const file = objectStorageClient.bucket(bucketName).file(objectName);
       
+      // Register document in archive
+      await ensureB2BReturnDocumentRegistered({
+        documentType: "shipping",
+        returnId: returnDoc.id,
+        returnNumber: returnDoc.returnNumber,
+        ownerId: req.user!.id,
+        ownerRole: req.user!.role,
+        resellerId: returnDoc.resellerId,
+      });
+
       res.setHeader("Content-Type", "application/pdf");
       res.setHeader("Content-Disposition", `attachment; filename="ddt_${returnDoc.returnNumber}.pdf"`);
       
@@ -33452,6 +33555,17 @@ export function registerRoutes(app: Express): Server {
         billingData = await storage.getBillingDataByUserId(transaction.customerId);
       }
       
+      // Register document in archive
+      await ensurePosReceiptRegistered({
+        transactionId: transaction.id,
+        transactionNumber: transaction.transactionNumber,
+        isInvoice: transaction.generateInvoice || false,
+        ownerId: req.user!.id,
+        ownerRole: req.user!.role,
+        repairCenterId: repairCenterId,
+        customerId: transaction.customerId || undefined,
+      });
+
       const pdfBuffer = await generatePosReceiptPdf({
         transaction: {
           transactionNumber: transaction.transactionNumber,
@@ -34252,6 +34366,18 @@ export function registerRoutes(app: Express): Server {
         billingData = await storage.getBillingDataByUserId(transaction.customerId);
       }
       
+      // Register document in archive
+      await ensurePosReceiptRegistered({
+        transactionId: transaction.id,
+        transactionNumber: transaction.transactionNumber,
+        isInvoice: transaction.generateInvoice || false,
+        ownerId: req.user!.id,
+        ownerRole: req.user!.role,
+        resellerId: resellerId,
+        repairCenterId: transaction.repairCenterId,
+        customerId: transaction.customerId || undefined,
+      });
+
       const pdfBuffer = await generatePosReceiptPdf({
         transaction: {
           transactionNumber: transaction.transactionNumber,

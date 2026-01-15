@@ -113,3 +113,181 @@ export async function ensureRepairDocumentRegistered(params: {
     });
   }
 }
+
+// Helper per registrare documenti POS (scontrini/ricevute)
+export async function ensurePosReceiptRegistered(params: {
+  transactionId: string;
+  transactionNumber: string;
+  isInvoice: boolean;
+  ownerId: string;
+  ownerRole: string;
+  resellerId?: string;
+  repairCenterId?: string;
+  customerId?: string;
+}): Promise<void> {
+  const existingDocs = await storage.getDocumentsBySource("pos_transaction", params.transactionId);
+  const docType = params.isInvoice ? "invoice" : "receipt";
+  const alreadyExists = existingDocs.some(d => d.documentType === docType);
+  
+  if (!alreadyExists) {
+    await registerDocument({
+      title: buildDocumentTitle(docType, params.transactionNumber),
+      documentType: docType,
+      sourceType: "pos_transaction",
+      sourceId: params.transactionId,
+      sourceReference: params.transactionNumber,
+      ownerId: params.ownerId,
+      ownerRole: params.ownerRole,
+      resellerId: params.resellerId,
+      repairCenterId: params.repairCenterId,
+      customerId: params.customerId,
+      fileUrl: params.ownerRole === "repair_center" || params.ownerRole === "repair_center_staff"
+        ? `/api/repair-center/pos/transaction/${params.transactionId}/receipt`
+        : `/api/reseller/pos/transaction/${params.transactionId}/receipt`,
+      fileName: `${docType}-${params.transactionNumber}.pdf`,
+      mimeType: "application/pdf",
+    });
+  }
+}
+
+// Helper per registrare DDT trasferimenti warehouse
+export async function ensureTransferDDTRegistered(params: {
+  transferId: string;
+  ddtNumber: string;
+  ownerId: string;
+  ownerRole: string;
+  resellerId?: string;
+  repairCenterId?: string;
+}): Promise<void> {
+  const existingDocs = await storage.getDocumentsBySource("warehouse_transfer", params.transferId);
+  const alreadyExists = existingDocs.some(d => d.documentType === "shipping");
+  
+  if (!alreadyExists) {
+    await registerDocument({
+      title: buildDocumentTitle("shipping", params.ddtNumber),
+      documentType: "shipping",
+      sourceType: "warehouse_transfer",
+      sourceId: params.transferId,
+      sourceReference: params.ddtNumber,
+      ownerId: params.ownerId,
+      ownerRole: params.ownerRole,
+      resellerId: params.resellerId,
+      repairCenterId: params.repairCenterId,
+      fileUrl: `/api/transfer-requests/${params.transferId}/ddt`,
+      fileName: `DDT-${params.ddtNumber}.pdf`,
+      mimeType: "application/pdf",
+    });
+  }
+}
+
+// Helper per registrare documenti B2B returns (etichette e DDT)
+export async function ensureB2BReturnDocumentRegistered(params: {
+  documentType: "label" | "shipping";
+  returnId: string;
+  returnNumber: string;
+  ownerId: string;
+  ownerRole: string;
+  resellerId?: string;
+}): Promise<void> {
+  const existingDocs = await storage.getDocumentsBySource("b2b_return", params.returnId);
+  const alreadyExists = existingDocs.some(d => d.documentType === params.documentType);
+  
+  if (!alreadyExists) {
+    const endpoint = params.ownerRole === "admin" || params.ownerRole === "admin_staff"
+      ? `/api/admin/b2b-returns/${params.returnId}/${params.documentType === "label" ? "label" : "ddt"}`
+      : `/api/reseller/b2b-returns/${params.returnId}/${params.documentType === "label" ? "label" : "ddt"}`;
+    
+    await registerDocument({
+      title: buildDocumentTitle(params.documentType, params.returnNumber),
+      documentType: params.documentType,
+      sourceType: "b2b_return",
+      sourceId: params.returnId,
+      sourceReference: params.returnNumber,
+      ownerId: params.ownerId,
+      ownerRole: params.ownerRole,
+      resellerId: params.resellerId,
+      fileUrl: endpoint,
+      fileName: `${params.documentType === "label" ? "etichetta" : "ddt"}_${params.returnNumber}.pdf`,
+      mimeType: "application/pdf",
+    });
+  }
+}
+
+// Helper per registrare DDT ordini servizio
+export async function ensureServiceOrderDDTRegistered(params: {
+  orderId: string;
+  orderNumber: string;
+  isRemoteRequest: boolean;
+  ownerId: string;
+  ownerRole: string;
+  resellerId?: string;
+  repairCenterId?: string;
+  customerId?: string;
+}): Promise<void> {
+  const existingDocs = await storage.getDocumentsBySource("service_order", params.orderId);
+  const alreadyExists = existingDocs.some(d => d.documentType === "shipping");
+  
+  if (!alreadyExists) {
+    let fileUrl: string;
+    if (params.ownerRole === "customer") {
+      fileUrl = params.isRemoteRequest 
+        ? `/api/customer/remote-requests/${params.orderId}/ddt`
+        : `/api/customer/service-orders/${params.orderId}/ddt`;
+    } else {
+      fileUrl = `/api/reseller/service-orders/${params.orderId}/ddt`;
+    }
+    
+    await registerDocument({
+      title: buildDocumentTitle("shipping", params.orderNumber),
+      documentType: "shipping",
+      sourceType: "service_order",
+      sourceId: params.orderId,
+      sourceReference: params.orderNumber,
+      ownerId: params.ownerId,
+      ownerRole: params.ownerRole,
+      resellerId: params.resellerId,
+      repairCenterId: params.repairCenterId,
+      customerId: params.customerId,
+      fileUrl,
+      fileName: `DDT-${params.orderNumber}.pdf`,
+      mimeType: "application/pdf",
+    });
+  }
+}
+
+// Helper per registrare documenti data recovery
+export async function ensureDataRecoveryDocumentRegistered(params: {
+  documentType: "label" | "shipping";
+  dataRecoveryId: string;
+  reference: string;
+  ownerId: string;
+  ownerRole: string;
+  resellerId?: string;
+  repairCenterId?: string;
+  customerId?: string;
+}): Promise<void> {
+  const existingDocs = await storage.getDocumentsBySource("data_recovery", params.dataRecoveryId);
+  const alreadyExists = existingDocs.some(d => d.documentType === params.documentType);
+  
+  if (!alreadyExists) {
+    const endpoint = params.documentType === "label"
+      ? `/api/data-recovery/${params.dataRecoveryId}/label`
+      : `/api/data-recovery/${params.dataRecoveryId}/shipping-document`;
+    
+    await registerDocument({
+      title: buildDocumentTitle(params.documentType, params.reference),
+      documentType: params.documentType,
+      sourceType: "data_recovery",
+      sourceId: params.dataRecoveryId,
+      sourceReference: params.reference,
+      ownerId: params.ownerId,
+      ownerRole: params.ownerRole,
+      resellerId: params.resellerId,
+      repairCenterId: params.repairCenterId,
+      customerId: params.customerId,
+      fileUrl: endpoint,
+      fileName: `${params.documentType === "label" ? "etichetta" : "spedizione"}-${params.reference}.pdf`,
+      mimeType: "application/pdf",
+    });
+  }
+}
