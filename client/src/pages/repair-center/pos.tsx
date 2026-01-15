@@ -67,6 +67,9 @@ function ProductImage({ category, imageUrl, size = "md" }: { category?: string |
     if (imageUrl && !imgError) {
       if (imageUrl.startsWith('http')) {
         setSignedUrl(imageUrl);
+      } else if (imageUrl.startsWith('/objects/')) {
+        // Use the /objects/* endpoint directly (already handles auth and serving)
+        setSignedUrl(imageUrl);
       } else {
         fetch(`/api/object-storage/sign-url?path=${encodeURIComponent(imageUrl)}&method=GET`)
           .then(res => res.json())

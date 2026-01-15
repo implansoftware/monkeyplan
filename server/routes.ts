@@ -648,6 +648,34 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Sign object storage URL for frontend access
+  app.get("/api/object-storage/sign-url", requireAuth, async (req, res) => {
+    try {
+      const path = req.query.path as string;
+      const method = (req.query.method as string) || "GET";
+      
+      if (!path) {
+        return res.status(400).json({ error: "Missing path parameter" });
+      }
+      
+      // Parse the path to get bucket and object name
+      const { bucketName, objectName } = parseObjectPath(path);
+      
+      // Generate signed URL
+      const signedUrl = await signObjectURL({
+        bucketName,
+        objectName,
+        method: method as "GET" | "PUT" | "DELETE" | "HEAD",
+        ttlSec: 3600, // 1 hour
+      });
+      
+      res.json({ signedUrl });
+    } catch (error: any) {
+      console.error("Error signing object URL:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   // ============ ADMIN ROUTES ============
   
   // Admin Settings - Hourly Rate
