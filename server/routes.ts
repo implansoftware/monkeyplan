@@ -8602,6 +8602,19 @@ export function registerRoutes(app: Express): Server {
       });
       
       setActivityEntity(res, { type: 'remote_repair_requests', id: updated.id });
+
+      // Registrazione automatica DDT remote request nella sezione Documenti
+      if (request.requestNumber) {
+        await ensureServiceOrderDDTRegistered({
+          orderId: request.id,
+          orderNumber: request.requestNumber,
+          isRemoteRequest: true,
+          ownerId: req.user!.id,
+          ownerRole: req.user!.role,
+          repairCenterId: request.repairCenterId || undefined,
+          customerId: req.user!.id,
+        });
+      }
       res.json(updated);
     } catch (error: any) {
       res.status(500).send(error.message);
@@ -18535,6 +18548,21 @@ export function registerRoutes(app: Express): Server {
           description: updates.internalNotes || null,
           createdBy: user.id,
         });
+
+        // Registrazione automatica DDT data recovery se lo stato è shipped
+        if (updates.status === "shipped" && updatedJob.jobNumber) {
+          const repairOrder = await storage.getRepairOrder(existingJob.parentRepairOrderId);
+          await ensureDataRecoveryDocumentRegistered({
+            documentType: "shipping",
+            dataRecoveryId: jobId,
+            reference: updatedJob.jobNumber,
+            ownerId: user.id,
+            ownerRole: user.role,
+            repairCenterId: repairOrder?.repairCenterId || undefined,
+            resellerId: repairOrder?.resellerId || undefined,
+            customerId: repairOrder?.customerId || undefined,
+          });
+        }
       }
       
       // Log activity
@@ -18586,6 +18614,7 @@ export function registerRoutes(app: Express): Server {
         metadata: validatedBody.metadata ? JSON.stringify(validatedBody.metadata) : null,
         createdBy: user.id,
       });
+
       
       res.status(201).json(event);
     } catch (error: any) {
