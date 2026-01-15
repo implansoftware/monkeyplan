@@ -48,19 +48,6 @@ import {
 import { ObjectStorageService, objectStorageClient, parseObjectPath, signObjectURL } from "./objectStorage";
 import { canAccessObject, ObjectPermission } from "./objectAcl";
 import { generateAndStoreReturnDocuments, getSignedDownloadUrl, generateTransferDDT, TransferDdtData } from "./services/shippingDocuments";
-import { 
-  registerDocument, 
-  buildDocumentTitle, 
-  ensureRepairDocumentRegistered,
-  ensurePosReceiptRegistered,
-  ensureTransferDDTRegistered,
-  ensureB2BReturnDocumentRegistered,
-  ensureB2BOrderDocumentRegistered,
-  ensureSalesOrderDocumentRegistered,
-  ensureSupplierOrderDocumentRegistered,
-  ensureServiceOrderDDTRegistered,
-  ensureDataRecoveryDocumentRegistered
-} from "./services/documentRegistry";
 import { generatePosReceiptPdf } from "./services/posReceipt";
 import { calculateRepairPriority } from "./helpers/priorityCalculation";
 import { db } from "./db";
@@ -3621,49 +3608,10 @@ export function registerRoutes(app: Express): Server {
 
   app.patch("/api/admin/repairs/:id/status", requireRole("admin"), async (req, res) => {
     try {
-      if (!req.user) return res.status(401).send("Unauthorized");
-      
       // Validate with Zod schema
       const validatedData = updateRepairStatusSchema.parse(req.body);
       const repair = await storage.updateRepairOrderStatus(req.params.id, validatedData.status);
       setActivityEntity(res, { type: 'repairs', id: req.params.id });
-      
-      // Auto-register documents based on new status
-      const newStatus = validatedData.status;
-      if (newStatus === 'diagnosi_completata') {
-        await ensureRepairDocumentRegistered({
-          documentType: "diagnosis",
-          repairOrderId: repair.id,
-          orderNumber: repair.orderNumber,
-          ownerId: req.user.id,
-          ownerRole: req.user.role,
-          resellerId: repair.resellerId || undefined,
-          repairCenterId: repair.repairCenterId || undefined,
-          customerId: repair.customerId || undefined,
-        });
-      } else if (newStatus === 'preventivo_emesso' || newStatus === 'preventivo_inviato') {
-        await ensureRepairDocumentRegistered({
-          documentType: "quote",
-          repairOrderId: repair.id,
-          orderNumber: repair.orderNumber,
-          ownerId: req.user.id,
-          ownerRole: req.user.role,
-          resellerId: repair.resellerId || undefined,
-          repairCenterId: repair.repairCenterId || undefined,
-          customerId: repair.customerId || undefined,
-        });
-      } else if (newStatus === 'consegnato') {
-        await ensureRepairDocumentRegistered({
-          documentType: "delivery",
-          repairOrderId: repair.id,
-          orderNumber: repair.orderNumber,
-          ownerId: req.user.id,
-          ownerRole: req.user.role,
-          resellerId: repair.resellerId || undefined,
-          repairCenterId: repair.repairCenterId || undefined,
-          customerId: repair.customerId || undefined,
-        });
-      }
       
       await storage.invalidateCache('overview_%');
       await storage.invalidateCache('centers_%');
@@ -5016,28 +4964,6 @@ export function registerRoutes(app: Express): Server {
         notes: validatedData.notes,
       });
       setActivityEntity(res, { type: 'repairs', id: repair.id });
-      
-      // Auto-register intake and label documents
-      await ensureRepairDocumentRegistered({
-        documentType: "intake",
-        repairOrderId: repair.id,
-        orderNumber: repair.orderNumber,
-        ownerId: req.user.id,
-        ownerRole: req.user.role,
-        resellerId: repair.resellerId || undefined,
-        repairCenterId: repair.repairCenterId || undefined,
-        customerId: repair.customerId || undefined,
-      });
-      await ensureRepairDocumentRegistered({
-        documentType: "label",
-        repairOrderId: repair.id,
-        orderNumber: repair.orderNumber,
-        ownerId: req.user.id,
-        ownerRole: req.user.role,
-        resellerId: repair.resellerId || undefined,
-        repairCenterId: repair.repairCenterId || undefined,
-        customerId: repair.customerId || undefined,
-      });
       
       // Auto-associate customer with repair center
       if (validatedData.customerId && validatedData.repairCenterId) {
@@ -8191,43 +8117,6 @@ export function registerRoutes(app: Express): Server {
       const updated = await storage.updateRepairOrderStatus(req.params.id, validatedData.status);
       setActivityEntity(res, { type: 'repairs', id: req.params.id });
       
-      // Auto-register documents based on new status
-      const newStatus = validatedData.status;
-      if (newStatus === 'diagnosi_completata') {
-        await ensureRepairDocumentRegistered({
-          documentType: "diagnosis",
-          repairOrderId: updated.id,
-          orderNumber: updated.orderNumber,
-          ownerId: req.user.id,
-          ownerRole: req.user.role,
-          resellerId: updated.resellerId || undefined,
-          repairCenterId: updated.repairCenterId || undefined,
-          customerId: updated.customerId || undefined,
-        });
-      } else if (newStatus === 'preventivo_emesso' || newStatus === 'preventivo_inviato') {
-        await ensureRepairDocumentRegistered({
-          documentType: "quote",
-          repairOrderId: updated.id,
-          orderNumber: updated.orderNumber,
-          ownerId: req.user.id,
-          ownerRole: req.user.role,
-          resellerId: updated.resellerId || undefined,
-          repairCenterId: updated.repairCenterId || undefined,
-          customerId: updated.customerId || undefined,
-        });
-      } else if (newStatus === 'consegnato') {
-        await ensureRepairDocumentRegistered({
-          documentType: "delivery",
-          repairOrderId: updated.id,
-          orderNumber: updated.orderNumber,
-          ownerId: req.user.id,
-          ownerRole: req.user.role,
-          resellerId: updated.resellerId || undefined,
-          repairCenterId: updated.repairCenterId || undefined,
-          customerId: updated.customerId || undefined,
-        });
-      }
-      
       await storage.invalidateCache('overview_%');
       await storage.invalidateCache('centers_%');
       
@@ -8602,19 +8491,6 @@ export function registerRoutes(app: Express): Server {
       });
       
       setActivityEntity(res, { type: 'remote_repair_requests', id: updated.id });
-
-      // Registrazione automatica DDT remote request nella sezione Documenti
-      if (request.requestNumber) {
-        await ensureServiceOrderDDTRegistered({
-          orderId: request.id,
-          orderNumber: request.requestNumber,
-          isRemoteRequest: true,
-          ownerId: req.user!.id,
-          ownerRole: req.user!.role,
-          repairCenterId: request.repairCenterId || undefined,
-          customerId: req.user!.id,
-        });
-      }
       res.json(updated);
     } catch (error: any) {
       res.status(500).send(error.message);
@@ -8676,16 +8552,6 @@ export function registerRoutes(app: Express): Server {
         }],
       };
       
-      // Register document in archive
-      await ensureServiceOrderDDTRegistered({
-        orderId: request.id,
-        orderNumber: request.requestNumber,
-        isRemoteRequest: true,
-        ownerId: req.user!.id,
-        ownerRole: req.user!.role,
-        customerId: request.customerId,
-      });
-
       const pdfBuffer = await generateTransferDDT(ddtData);
       
       res.setHeader('Content-Type', 'application/pdf');
@@ -9290,19 +9156,6 @@ export function registerRoutes(app: Express): Server {
       });
       
       setActivityEntity(res, { type: 'service_orders', id: order.id });
-
-      // Registrazione automatica DDT ordine servizio nella sezione Documenti
-      if (order.orderNumber) {
-        await ensureServiceOrderDDTRegistered({
-          orderId: order.id,
-          orderNumber: order.orderNumber,
-          isRemoteRequest: false,
-          ownerId: req.user!.id,
-          ownerRole: req.user!.role,
-          resellerId: resellerId,
-          customerId: req.user!.id,
-        });
-      }
       res.status(201).json(order);
     } catch (error: any) {
       res.status(500).send(error.message);
@@ -9417,16 +9270,6 @@ export function registerRoutes(app: Express): Server {
             await file.save(pdfBuffer, { contentType: 'application/pdf' });
             const ddtUrl = `.private/service-ddt/${fileName}`;
             updateData.ddtUrl = ddtUrl;
-            // Register DDT document in archive
-            await ensureServiceOrderDDTRegistered({
-              orderId: order.id,
-              orderNumber: order.orderNumber,
-              isRemoteRequest: false,
-              ownerId: req.user!.id,
-              ownerRole: req.user!.role,
-              resellerId: order.resellerId || undefined,
-              customerId: order.customerId,
-            });
           }
         }
       }
@@ -11266,6 +11109,8 @@ export function registerRoutes(app: Express): Server {
         // Auto-associate customer with repair center
         if (orderData.customerId && orderData.repairCenterId) {
           await storage.ensureCustomerRepairCenterAssociation(orderData.customerId, orderData.repairCenterId);
+        }
+        setActivityEntity(res, { type: 'repair_order', id: order.id });
         res.json({ order, acceptance });
       } else {
         const order = await storage.createRepairOrder(orderData);
@@ -13197,18 +13042,6 @@ export function registerRoutes(app: Express): Server {
         status: 'preventivo_emesso' as any,
       });
       
-      // Auto-register quote document
-      await ensureRepairDocumentRegistered({
-        documentType: "quote",
-        repairOrderId: req.params.id,
-        orderNumber: repairOrder.orderNumber,
-        ownerId: req.user.id,
-        ownerRole: req.user.role,
-        resellerId: repairOrder.resellerId || undefined,
-        repairCenterId: repairOrder.repairCenterId || undefined,
-        customerId: repairOrder.customerId || undefined,
-      });
-      
       setActivityEntity(res, { type: 'repair_quote', id: quote.id });
       res.status(201).json(quote);
     } catch (error: any) {
@@ -14207,18 +14040,6 @@ export function registerRoutes(app: Express): Server {
         status: 'consegnato' as any,
       });
       
-      // Auto-register delivery document
-      await ensureRepairDocumentRegistered({
-        documentType: "delivery",
-        repairOrderId: req.params.id,
-        orderNumber: repairOrder.orderNumber,
-        ownerId: req.user.id,
-        ownerRole: req.user.role,
-        resellerId: repairOrder.resellerId || undefined,
-        repairCenterId: repairOrder.repairCenterId || undefined,
-        customerId: repairOrder.customerId || undefined,
-      });
-      
       // Create log
       await storage.createRepairLog({
         repairOrderId: req.params.id,
@@ -14986,18 +14807,6 @@ export function registerRoutes(app: Express): Server {
         }).format(cents / 100);
       };
       
-      // Register document in archive
-      await ensureRepairDocumentRegistered({
-        documentType: "delivery",
-        repairOrderId: repairOrder.id,
-        orderNumber: repairOrder.orderNumber,
-        ownerId: req.user!.id,
-        ownerRole: req.user!.role,
-        resellerId: repairOrder.resellerId || undefined,
-        repairCenterId: repairOrder.repairCenterId || undefined,
-        customerId: repairOrder.customerId || undefined,
-      });
-
       // Generate PDF
       const PDFDocument = (await import('pdfkit')).default;
       const doc = new PDFDocument({ margin: 50, size: 'A4' });
@@ -15209,18 +15018,6 @@ export function registerRoutes(app: Express): Server {
         if (deviceType) deviceTypeName = deviceType.name;
       }
       
-      // Register document in archive
-      await ensureRepairDocumentRegistered({
-        documentType: "intake",
-        repairOrderId: repairOrder.id,
-        orderNumber: repairOrder.orderNumber,
-        ownerId: req.user!.id,
-        ownerRole: req.user!.role,
-        resellerId: repairOrder.resellerId || undefined,
-        repairCenterId: repairOrder.repairCenterId || undefined,
-        customerId: repairOrder.customerId || undefined,
-      });
-
       // Generate PDF
       const PDFDocument = (await import('pdfkit')).default;
       const doc = new PDFDocument({ margin: 50, size: 'A4' });
@@ -15439,18 +15236,6 @@ export function registerRoutes(app: Express): Server {
         if (deviceType) deviceTypeName = deviceType.name;
       }
       
-      // Register document in archive
-      await ensureRepairDocumentRegistered({
-        documentType: "label",
-        repairOrderId: repairOrder.id,
-        orderNumber: repairOrder.orderNumber,
-        ownerId: req.user!.id,
-        ownerRole: req.user!.role,
-        resellerId: repairOrder.resellerId || undefined,
-        repairCenterId: repairOrder.repairCenterId || undefined,
-        customerId: repairOrder.customerId || undefined,
-      });
-
       // Generate PDF with 6 labels (2x3 grid) + 2 barcodes each
       const PDFDocument = (await import('pdfkit')).default;
       const bwipjs = await import('bwip-js');
@@ -15671,18 +15456,6 @@ export function registerRoutes(app: Express): Server {
         if (deviceType) deviceTypeName = deviceType.name;
       }
       
-      // Register document in archive
-      await ensureRepairDocumentRegistered({
-        documentType: "diagnosis",
-        repairOrderId: repairOrder.id,
-        orderNumber: repairOrder.orderNumber,
-        ownerId: req.user!.id,
-        ownerRole: req.user!.role,
-        resellerId: repairOrder.resellerId || undefined,
-        repairCenterId: repairOrder.repairCenterId || undefined,
-        customerId: repairOrder.customerId || undefined,
-      });
-
       // Generate PDF
       const PDFDocument = (await import('pdfkit')).default;
       const doc = new PDFDocument({ margin: 50, size: 'A4' });
@@ -15897,18 +15670,6 @@ export function registerRoutes(app: Express): Server {
         }).format(cents / 100);
       };
       
-      // Register document in archive
-      await ensureRepairDocumentRegistered({
-        documentType: "quote",
-        repairOrderId: repairOrder.id,
-        orderNumber: repairOrder.orderNumber,
-        ownerId: req.user!.id,
-        ownerRole: req.user!.role,
-        resellerId: repairOrder.resellerId || undefined,
-        repairCenterId: repairOrder.repairCenterId || undefined,
-        customerId: repairOrder.customerId || undefined,
-      });
-
       // Generate PDF
       const PDFDocument = (await import('pdfkit')).default;
       const doc = new PDFDocument({ margin: 50, size: 'A4' });
@@ -18476,20 +18237,6 @@ export function registerRoutes(app: Express): Server {
         })
       });
       
-
-      // Registrazione automatica etichetta data recovery nella sezione Documenti
-      if (job.jobNumber) {
-        await ensureDataRecoveryDocumentRegistered({
-          documentType: "label",
-          dataRecoveryId: job.id,
-          reference: job.jobNumber,
-          ownerId: user.id,
-          ownerRole: user.role,
-          repairCenterId: repairOrder.repairCenterId || undefined,
-          resellerId: repairOrder.resellerId || undefined,
-          customerId: repairOrder.customerId || undefined,
-        });
-      }
       res.status(201).json(job);
     } catch (error: any) {
       res.status(500).send(error.message);
@@ -18546,21 +18293,6 @@ export function registerRoutes(app: Express): Server {
           description: updates.internalNotes || null,
           createdBy: user.id,
         });
-
-        // Registrazione automatica DDT data recovery se lo stato è shipped
-        if (updates.status === "shipped" && updatedJob.jobNumber) {
-          const repairOrder = await storage.getRepairOrder(existingJob.parentRepairOrderId);
-          await ensureDataRecoveryDocumentRegistered({
-            documentType: "shipping",
-            dataRecoveryId: jobId,
-            reference: updatedJob.jobNumber,
-            ownerId: user.id,
-            ownerRole: user.role,
-            repairCenterId: repairOrder?.repairCenterId || undefined,
-            resellerId: repairOrder?.resellerId || undefined,
-            customerId: repairOrder?.customerId || undefined,
-          });
-        }
       }
       
       // Log activity
@@ -18612,7 +18344,6 @@ export function registerRoutes(app: Express): Server {
         metadata: validatedBody.metadata ? JSON.stringify(validatedBody.metadata) : null,
         createdBy: user.id,
       });
-
       
       res.status(201).json(event);
     } catch (error: any) {
@@ -18694,18 +18425,6 @@ export function registerRoutes(app: Express): Server {
       const PDFDocument = (await import('pdfkit')).default;
       const doc = new PDFDocument({ margin: 50, size: 'A4' });
       
-      // Register document in archive
-      await ensureDataRecoveryDocumentRegistered({
-        documentType: "shipping",
-        dataRecoveryId: job.id,
-        reference: job.jobNumber,
-        ownerId: req.user!.id,
-        ownerRole: req.user!.role,
-        resellerId: repairOrder?.resellerId || undefined,
-        repairCenterId: repairOrder?.repairCenterId || undefined,
-        customerId: repairOrder?.customerId || undefined,
-      });
-
       res.setHeader('Content-Type', 'application/pdf');
       res.setHeader('Content-Disposition', `attachment; filename="invio-recupero-${job.jobNumber}.pdf"`);
       
@@ -18815,18 +18534,6 @@ export function registerRoutes(app: Express): Server {
         return res.status(400).send("External lab not found");
       }
       
-      // Register document in archive
-      await ensureDataRecoveryDocumentRegistered({
-        documentType: "label",
-        dataRecoveryId: job.id,
-        reference: job.jobNumber,
-        ownerId: req.user!.id,
-        ownerRole: req.user!.role,
-        resellerId: undefined,
-        repairCenterId: undefined,
-        customerId: undefined,
-      });
-
       // Generate PDF - A6 size for label
       const PDFDocument = (await import('pdfkit')).default;
       const doc = new PDFDocument({ 
@@ -25743,32 +25450,6 @@ export function registerRoutes(app: Express): Server {
         }
       }
       
-
-      // Registrazione automatica documenti sales order nella sezione Documenti
-      if (order.orderNumber) {
-        if (status === "shipped") {
-          await ensureSalesOrderDocumentRegistered({
-            orderId: order.id,
-            orderNumber: order.orderNumber,
-            documentType: "shipping",
-            ownerId: req.user!.id,
-            ownerRole: req.user!.role,
-            resellerId: order.resellerId || undefined,
-            customerId: order.customerId || undefined,
-          });
-        }
-        if (status === "delivered" || status === "completed") {
-          await ensureSalesOrderDocumentRegistered({
-            orderId: order.id,
-            orderNumber: order.orderNumber,
-            documentType: "invoice",
-            ownerId: req.user!.id,
-            ownerRole: req.user!.role,
-            resellerId: order.resellerId || undefined,
-            customerId: order.customerId || undefined,
-          });
-        }
-      }
       res.json({ ...updated, generatedInvoice: invoice });
     } catch (error: any) {
       res.status(500).json({ error: error.message });
@@ -27440,16 +27121,6 @@ export function registerRoutes(app: Express): Server {
         destinationWarehouse: destWarehouse?.name || "Magazzino destinazione",
       };
       
-      // Register document in archive
-      await ensureTransferDDTRegistered({
-        transferId: request.id,
-        ddtNumber: request.ddtNumber,
-        ownerId: req.user!.id,
-        ownerRole: req.user!.role,
-        resellerId: request.targetResellerId || undefined,
-        repairCenterId: request.requesterType === "repair_center" ? request.requesterId : undefined,
-      });
-
       const pdfBuffer = await generateTransferDDT(ddtData);
       
       res.setHeader("Content-Type", "application/pdf");
@@ -27652,16 +27323,6 @@ export function registerRoutes(app: Express): Server {
         shippedAt: new Date(),
         shippedBy: req.user.id
       });
-
-      // Registrazione automatica DDT trasferimento nella sezione Documenti
-      if (request.ddtNumber || request.id) {
-        await ensureTransferDDTRegistered({
-          transferId: request.id,
-          ddtNumber: request.ddtNumber || request.id.slice(0,8),
-          ownerId: req.user!.id,
-          ownerRole: req.user!.role,
-        });
-      }
       res.json(updated);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
@@ -28099,18 +27760,6 @@ export function registerRoutes(app: Express): Server {
         carrier,
       });
       
-
-      // Registrazione automatica DDT nella sezione Documenti
-      if (order.orderNumber) {
-        await ensureB2BOrderDocumentRegistered({
-          orderId: order.id,
-          orderNumber: order.orderNumber,
-          documentType: "shipping",
-          ownerId: req.user!.id,
-          ownerRole: req.user!.role,
-          resellerId: order.resellerId,
-        });
-      }
       res.json(updated);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
@@ -28249,18 +27898,6 @@ export function registerRoutes(app: Express): Server {
         carrier,
       });
       
-
-      // Registrazione automatica DDT/etichetta reso nella sezione Documenti
-      if (returnDoc.returnNumber) {
-        await ensureB2BReturnDocumentRegistered({
-          documentType: "shipping",
-          returnId: returnDoc.id,
-          returnNumber: returnDoc.returnNumber,
-          ownerId: req.user!.id,
-          ownerRole: req.user!.role,
-          resellerId: returnDoc.resellerId,
-        });
-      }
       res.json(updated);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
@@ -28484,16 +28121,6 @@ export function registerRoutes(app: Express): Server {
       const { bucketName, objectName } = parseObjectPath(returnDoc.shippingLabelPath);
       const file = objectStorageClient.bucket(bucketName).file(objectName);
       
-      // Register document in archive
-      await ensureB2BReturnDocumentRegistered({
-        documentType: "label",
-        returnId: returnDoc.id,
-        returnNumber: returnDoc.returnNumber,
-        ownerId: req.user!.id,
-        ownerRole: req.user!.role,
-        resellerId: returnDoc.resellerId,
-      });
-
       res.setHeader("Content-Type", "application/pdf");
       res.setHeader("Content-Disposition", `attachment; filename="etichetta_${returnDoc.returnNumber}.pdf"`);
       
@@ -28520,16 +28147,6 @@ export function registerRoutes(app: Express): Server {
       const { bucketName, objectName } = parseObjectPath(returnDoc.ddtPath);
       const file = objectStorageClient.bucket(bucketName).file(objectName);
       
-      // Register document in archive
-      await ensureB2BReturnDocumentRegistered({
-        documentType: "shipping",
-        returnId: returnDoc.id,
-        returnNumber: returnDoc.returnNumber,
-        ownerId: req.user!.id,
-        ownerRole: req.user!.role,
-        resellerId: returnDoc.resellerId,
-      });
-
       res.setHeader("Content-Type", "application/pdf");
       res.setHeader("Content-Disposition", `attachment; filename="ddt_${returnDoc.returnNumber}.pdf"`);
       
@@ -28552,16 +28169,6 @@ export function registerRoutes(app: Express): Server {
       const { bucketName, objectName } = parseObjectPath(returnDoc.shippingLabelPath);
       const file = objectStorageClient.bucket(bucketName).file(objectName);
       
-      // Register document in archive
-      await ensureB2BReturnDocumentRegistered({
-        documentType: "label",
-        returnId: returnDoc.id,
-        returnNumber: returnDoc.returnNumber,
-        ownerId: req.user!.id,
-        ownerRole: req.user!.role,
-        resellerId: returnDoc.resellerId,
-      });
-
       res.setHeader("Content-Type", "application/pdf");
       res.setHeader("Content-Disposition", `attachment; filename="etichetta_${returnDoc.returnNumber}.pdf"`);
       
@@ -28584,16 +28191,6 @@ export function registerRoutes(app: Express): Server {
       const { bucketName, objectName } = parseObjectPath(returnDoc.ddtPath);
       const file = objectStorageClient.bucket(bucketName).file(objectName);
       
-      // Register document in archive
-      await ensureB2BReturnDocumentRegistered({
-        documentType: "shipping",
-        returnId: returnDoc.id,
-        returnNumber: returnDoc.returnNumber,
-        ownerId: req.user!.id,
-        ownerRole: req.user!.role,
-        resellerId: returnDoc.resellerId,
-      });
-
       res.setHeader("Content-Type", "application/pdf");
       res.setHeader("Content-Disposition", `attachment; filename="ddt_${returnDoc.returnNumber}.pdf"`);
       
@@ -33713,17 +33310,6 @@ export function registerRoutes(app: Express): Server {
         await storage.updatePosTransactionInvoice(transaction.id, invoice.id);
       }
 
-      // Registrazione automatica documento POS nella sezione Documenti
-      await ensurePosReceiptRegistered({
-        transactionId: transaction.id,
-        transactionNumber: transaction.transactionNumber,
-        isInvoice: invoiceRequested || false,
-        ownerId: req.user!.id,
-        ownerRole: req.user!.role,
-        repairCenterId,
-        customerId: customerId || undefined,
-      });
-
       res.json({ transaction, items: transactionItems, invoice });
     } catch (error: any) {
       console.error("POS transaction error:", error);
@@ -33805,17 +33391,6 @@ export function registerRoutes(app: Express): Server {
         billingData = await storage.getBillingDataByUserId(transaction.customerId);
       }
       
-      // Register document in archive
-      await ensurePosReceiptRegistered({
-        transactionId: transaction.id,
-        transactionNumber: transaction.transactionNumber,
-        isInvoice: transaction.generateInvoice || false,
-        ownerId: req.user!.id,
-        ownerRole: req.user!.role,
-        repairCenterId: repairCenterId,
-        customerId: transaction.customerId || undefined,
-      });
-
       const pdfBuffer = await generatePosReceiptPdf({
         transaction: {
           transactionNumber: transaction.transactionNumber,
@@ -34616,18 +34191,6 @@ export function registerRoutes(app: Express): Server {
         billingData = await storage.getBillingDataByUserId(transaction.customerId);
       }
       
-      // Register document in archive
-      await ensurePosReceiptRegistered({
-        transactionId: transaction.id,
-        transactionNumber: transaction.transactionNumber,
-        isInvoice: transaction.generateInvoice || false,
-        ownerId: req.user!.id,
-        ownerRole: req.user!.role,
-        resellerId: resellerId,
-        repairCenterId: transaction.repairCenterId,
-        customerId: transaction.customerId || undefined,
-      });
-
       const pdfBuffer = await generatePosReceiptPdf({
         transaction: {
           transactionNumber: transaction.transactionNumber,
@@ -35581,188 +35144,6 @@ export function registerRoutes(app: Express): Server {
       res.json(preferences);
     } catch (error: any) {
       console.error("Error saving dashboard preferences:", error);
-      res.status(500).json({ error: error.message });
-    }
-  });
-
-
-  // ============ DOCUMENTS (Centralized Document Registry) ============
-
-  // GET list documents for reseller (includes sub-resellers and their repair centers)
-  app.get("/api/reseller/documents", requireAuth, async (req, res) => {
-    try {
-      const user = req.user as any;
-      if (!user || (user.role !== "reseller" && user.role !== "sub_reseller")) {
-        return res.status(403).json({ error: "Accesso negato" });
-      }
-
-      const resellerId = user.role === "sub_reseller" ? user.parentResellerId : user.id;
-      if (!resellerId) {
-        return res.status(400).json({ error: "Reseller non valido" });
-      }
-
-      const { documentType, sourceType, search, startDate, endDate, limit, offset } = req.query;
-
-      const result = await storage.listDocumentsForReseller(resellerId, {
-        documentType: documentType as any,
-        sourceType: sourceType as any,
-        search: search as string,
-        startDate: startDate ? new Date(startDate as string) : undefined,
-        endDate: endDate ? new Date(endDate as string) : undefined,
-        limit: limit ? parseInt(limit as string) : 50,
-        offset: offset ? parseInt(offset as string) : 0,
-      });
-
-      res.json(result);
-    } catch (error: any) {
-      console.error("Error fetching reseller documents:", error);
-      res.status(500).json({ error: error.message });
-    }
-  });
-
-  // GET list documents for repair center
-  app.get("/api/repair-center/documents", requireAuth, async (req, res) => {
-    try {
-      const user = req.user as any;
-      if (!user || user.role !== "repair_center") {
-        return res.status(403).json({ error: "Accesso negato" });
-      }
-
-      const repairCenterId = user.repairCenterId;
-      if (!repairCenterId) {
-        return res.status(400).json({ error: "Centro riparazioni non associato" });
-      }
-
-      const { documentType, sourceType, search, startDate, endDate, limit, offset } = req.query;
-
-      const result = await storage.listDocumentsForRepairCenter(repairCenterId, {
-        documentType: documentType as any,
-        sourceType: sourceType as any,
-        search: search as string,
-        startDate: startDate ? new Date(startDate as string) : undefined,
-        endDate: endDate ? new Date(endDate as string) : undefined,
-        limit: limit ? parseInt(limit as string) : 50,
-        offset: offset ? parseInt(offset as string) : 0,
-      });
-
-      res.json(result);
-    } catch (error: any) {
-      console.error("Error fetching repair center documents:", error);
-      res.status(500).json({ error: error.message });
-    }
-  });
-
-  // GET single document
-  app.get("/api/documents/:id", requireAuth, async (req, res) => {
-    try {
-      const user = req.user as any;
-      if (!user) {
-        return res.status(401).json({ error: "Non autorizzato" });
-      }
-
-      const doc = await storage.getDocument(req.params.id);
-      if (!doc) {
-        return res.status(404).json({ error: "Documento non trovato" });
-      }
-
-      // Pre-fetch valid repair center IDs for reseller hierarchy
-      let validRepairCenterIds: string[] = [];
-      if (user.role === "reseller" || user.role === "sub_reseller") {
-        const resellerId = user.role === "sub_reseller" ? user.parentResellerId : user.id;
-        const centers = await storage.getRepairCentersByResellerIds([resellerId]);
-        validRepairCenterIds = centers.map(c => c.id);
-      }
-
-      // Access control check based on user role
-      let hasAccess = false;
-      if (user.role === "admin" || user.role === "admin_staff") {
-        hasAccess = true;
-      } else if (user.role === "reseller" || user.role === "sub_reseller") {
-        const resellerId = user.role === "sub_reseller" ? user.parentResellerId : user.id;
-        // Check if document belongs to reseller, user, or their repair centers
-        if (doc.resellerId === resellerId || doc.ownerId === user.id || 
-            (doc.repairCenterId && validRepairCenterIds.includes(doc.repairCenterId))) {
-          hasAccess = true;
-        }
-      } else if (user.role === "repair_center") {
-        if (doc.repairCenterId === user.repairCenterId || doc.ownerId === user.id) {
-          hasAccess = true;
-        }
-      }
-
-      if (!hasAccess) {
-        return res.status(403).json({ error: "Accesso negato a questo documento" });
-      }
-
-      res.json(doc);
-    } catch (error: any) {
-      console.error("Error fetching document:", error);
-      res.status(500).json({ error: error.message });
-    }
-  });
-  // GET documents by source (with access control)
-  app.get("/api/documents/by-source/:sourceType/:sourceId", requireAuth, async (req, res) => {
-    try {
-      const user = req.user as any;
-      if (!user) {
-        return res.status(401).json({ error: "Non autorizzato" });
-      }
-
-      const { sourceType, sourceId } = req.params;
-      const docs = await storage.getDocumentsBySource(sourceType as any, sourceId);
-
-      // Pre-fetch valid repair center IDs for reseller hierarchy
-      let validRepairCenterIds: string[] = [];
-      if (user.role === "reseller" || user.role === "sub_reseller") {
-        const resellerId = user.role === "sub_reseller" ? user.parentResellerId : user.id;
-        const centers = await storage.getRepairCentersByResellerIds([resellerId]);
-        validRepairCenterIds = centers.map(c => c.id);
-      }
-
-      // Filter documents based on user role and access rights
-      const filteredDocs = docs.filter((doc) => {
-        if (user.role === "admin" || user.role === "admin_staff") {
-          return true;
-        } else if (user.role === "reseller" || user.role === "sub_reseller") {
-          const resellerId = user.role === "sub_reseller" ? user.parentResellerId : user.id;
-          // Check if document belongs to reseller, user, or their repair centers
-          return doc.resellerId === resellerId || 
-                 doc.ownerId === user.id || 
-                 (doc.repairCenterId && validRepairCenterIds.includes(doc.repairCenterId));
-        } else if (user.role === "repair_center") {
-          return doc.repairCenterId === user.repairCenterId || doc.ownerId === user.id;
-        }
-        return false;
-      });
-
-      res.json(filteredDocs);
-    } catch (error: any) {
-      console.error("Error fetching documents by source:", error);
-      res.status(500).json({ error: error.message });
-    }
-  });
-  // DELETE document (soft delete or hard delete based on policy)
-  app.delete("/api/documents/:id", requireAuth, async (req, res) => {
-    try {
-      const user = req.user as any;
-      if (!user) {
-        return res.status(401).json({ error: "Non autorizzato" });
-      }
-
-      const doc = await storage.getDocument(req.params.id);
-      if (!doc) {
-        return res.status(404).json({ error: "Documento non trovato" });
-      }
-
-      // Only owner or admin can delete
-      if (doc.ownerId !== user.id && user.role !== "admin") {
-        return res.status(403).json({ error: "Non autorizzato a eliminare questo documento" });
-      }
-
-      await storage.deleteDocument(req.params.id);
-      res.json({ success: true });
-    } catch (error: any) {
-      console.error("Error deleting document:", error);
       res.status(500).json({ error: error.message });
     }
   });
