@@ -98,3 +98,17 @@ The backend is an `Express.js` application with TypeScript, featuring a RESTful 
 - Frontend pages: `/reseller/documents` and `/repair-center/documents` with search, type/source filtering, date range filtering
 - Helper service `server/services/documentRegistry.ts` for easy PDF registration integration
 - Sidebar links added under "Fatturazione" (reseller) and "Gestione" (repair center)
+
+### Automatic Repair Document Registration (January 2026)
+- Documents are now automatically registered in the centralized Documents section at key repair lifecycle events
+- **Repair Creation**: When a repair is created via `POST /api/reseller/repairs`, both "intake" and "label" documents are automatically registered
+- **Status Changes**: When status changes via admin or repair-center PATCH endpoints:
+  - `diagnosi_completata` → registers "diagnosis" document
+  - `preventivo_emesso` / `preventivo_inviato` → registers "quote" document
+  - `consegnato` → registers "delivery" document
+- **Quote Creation**: `POST /api/repair-orders/:id/quote` automatically registers "quote" document
+- **Delivery Completion**: `POST /api/repair-orders/:id/deliver` automatically registers "delivery" document
+- Uses `ensureRepairDocumentRegistered` helper which prevents duplicates via sourceType/sourceId check
+- All documents are accessible in `/reseller/documents` and `/repair-center/documents` pages
+- Documents link to on-demand PDF generation endpoints (e.g., `/api/repair-orders/:id/intake-document`)
+
