@@ -1,4 +1,4 @@
-# MonkeyPlan Beta v.22.5
+# MonkeyPlan Beta v.23
 
 ## Overview
 MonkeyPlan is an enterprise-level repair management platform designed to streamline device repair workflows, inventory, ticketing, and billing. It offers a full-stack TypeScript solution for administrators, resellers, repair centers, and customers, providing comprehensive repair order management, a real-time ticketing system, and robust inventory control across four distinct user roles. The platform's core purpose is to enhance efficiency and transparency in device repair processes with a business vision to dominate the repair management software market through its comprehensive features and user-friendly design.
@@ -99,16 +99,44 @@ The backend is an `Express.js` application with TypeScript, featuring a RESTful 
 - Helper service `server/services/documentRegistry.ts` for easy PDF registration integration
 - Sidebar links added under "Fatturazione" (reseller) and "Gestione" (repair center)
 
-### Automatic Repair Document Registration (January 2026)
-- Documents are now automatically registered in the centralized Documents section at key repair lifecycle events
-- **Repair Creation**: When a repair is created via `POST /api/reseller/repairs`, both "intake" and "label" documents are automatically registered
-- **Status Changes**: When status changes via admin or repair-center PATCH endpoints:
-  - `diagnosi_completata` → registers "diagnosis" document
-  - `preventivo_emesso` / `preventivo_inviato` → registers "quote" document
-  - `consegnato` → registers "delivery" document
-- **Quote Creation**: `POST /api/repair-orders/:id/quote` automatically registers "quote" document
-- **Delivery Completion**: `POST /api/repair-orders/:id/deliver` automatically registers "delivery" document
-- Uses `ensureRepairDocumentRegistered` helper which prevents duplicates via sourceType/sourceId check
-- All documents are accessible in `/reseller/documents` and `/repair-center/documents` pages
-- Documents link to on-demand PDF generation endpoints (e.g., `/api/repair-orders/:id/intake-document`)
+### Automatic Document Registration System (January 2026)
+Documents are now automatically registered in the centralized Documents section across ALL modules at key lifecycle events:
+
+**Repair Orders:**
+- **Repair Creation**: `POST /api/reseller/repairs` → registers "intake" and "label" documents
+- **Status Changes**: `diagnosi_completata` → "diagnosis", `preventivo_emesso/inviato` → "quote", `consegnato` → "delivery"
+- **Quote Creation**: `POST /api/repair-orders/:id/quote` → "quote" document
+- **Delivery Completion**: `POST /api/repair-orders/:id/deliver` → "delivery" document
+
+**POS Transactions (Repair Center):**
+- **Transaction Creation**: `POST /api/repair-center/pos/transactions` → registers "receipt" or "invoice"
+
+**B2B Orders (Admin):**
+- **Shipment**: `POST /api/b2b/orders/:orderId/ship` → registers DDT (shipping document)
+
+**B2B Returns (Reseller):**
+- **Shipment**: `POST /api/reseller/b2b-returns/:id/ship` → registers DDT
+
+**Warehouse Transfers:**
+- **Shipment**: `POST /api/warehouse-transfers/:id/ship` → registers DDT
+
+**Sales Orders:**
+- **Status → shipped**: registers "shipping" document
+- **Status → delivered/completed**: registers "invoice" document
+
+**Service Orders (Customer):**
+- **Creation**: `POST /api/customer/service-orders` → registers DDT
+
+**Remote Repair Requests:**
+- **Shipping Info Added**: `POST /api/customer/remote-requests/:id/shipping` → registers DDT
+
+**Data Recovery:**
+- **Job Creation**: `POST /api/data-recovery` → registers "label" document
+- **Status → shipped**: `PATCH /api/data-recovery/:id` → registers DDT
+
+**Implementation Notes:**
+- Uses dedicated helper functions: `ensureRepairDocumentRegistered`, `ensureB2BOrderDocumentRegistered`, `ensureSalesOrderDocumentRegistered`, `ensureDataRecoveryDocumentRegistered`, `ensureServiceOrderDDTRegistered`
+- All helpers prevent duplicates via sourceType/sourceId checks
+- Documents accessible via `/reseller/documents` and `/repair-center/documents` pages
+- Documents link to on-demand PDF generation endpoints
 
