@@ -11463,10 +11463,10 @@ export class DatabaseStorage implements IStorage {
     limit?: number;
     offset?: number;
   }): Promise<{ documents: Document[]; total: number }> {
-    // Get all sub-resellers (only users with role "sub_reseller" that have this reseller as parent)
+    // Get all sub-resellers (resellers with this reseller as parent)
     const subResellers = await db.select({ id: users.id })
       .from(users)
-      .where(and(eq(users.parentResellerId, resellerId), eq(users.role, "sub_reseller")));
+      .where(and(eq(users.parentResellerId, resellerId), eq(users.role, "reseller")));
     const allResellerIds = [resellerId, ...subResellers.map(s => s.id)];
 
     // Get all repair centers for these resellers
