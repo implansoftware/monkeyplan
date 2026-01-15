@@ -24,8 +24,8 @@ export function useDashboardPreferences(role: "reseller" | "repair_center") {
       const response = await apiRequest("PUT", "/api/dashboard-preferences", { layout: newLayout });
       return response.json();
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/dashboard-preferences"] });
+    onSuccess: (data: DashboardPreference) => {
+      queryClient.setQueryData(["/api/dashboard-preferences"], data);
     },
   });
 
