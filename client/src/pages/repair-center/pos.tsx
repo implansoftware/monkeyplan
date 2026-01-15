@@ -47,7 +47,10 @@ function BarcodeDisplay({ code, width = 80, height = 30 }: { code: string; width
   );
 }
 
-function ProductImage({ category, size = "md" }: { category?: string | null; size?: "sm" | "md" | "lg" }) {
+function ProductImage({ category, imageUrl, size = "md" }: { category?: string | null; imageUrl?: string | null; size?: "sm" | "md" | "lg" }) {
+  const [imgError, setImgError] = useState(false);
+  const [signedUrl, setSignedUrl] = useState<string | null>(null);
+  
   const sizeClasses = {
     sm: "w-8 h-8",
     md: "w-12 h-12",
@@ -59,6 +62,21 @@ function ProductImage({ category, size = "md" }: { category?: string | null; siz
     md: "w-6 h-6",
     lg: "w-8 h-8"
   };
+  
+  useEffect(() => {
+    if (imageUrl && !imgError) {
+      if (imageUrl.startsWith('http')) {
+        setSignedUrl(imageUrl);
+      } else {
+        fetch(`/api/object-storage/sign-url?path=${encodeURIComponent(imageUrl)}&method=GET`)
+          .then(res => res.json())
+          .then(data => {
+            if (data.signedUrl) setSignedUrl(data.signedUrl);
+          })
+          .catch(() => setImgError(true));
+      }
+    }
+  }, [imageUrl, imgError]);
   
   const bgColor = useMemo(() => {
     if (!category) return "bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-800";
@@ -73,6 +91,19 @@ function ProductImage({ category, size = "md" }: { category?: string | null; siz
   }, [category]);
   
   const isPhone = category?.toLowerCase().includes("phone") || category?.toLowerCase().includes("iphone");
+  
+  if (signedUrl && !imgError) {
+    return (
+      <div className={`${sizeClasses[size]} rounded-lg flex items-center justify-center flex-shrink-0 overflow-hidden bg-muted`}>
+        <img 
+          src={signedUrl} 
+          alt="Prodotto" 
+          className="w-full h-full object-cover"
+          onError={() => setImgError(true)}
+        />
+      </div>
+    );
+  }
   
   return (
     <div className={`${sizeClasses[size]} ${bgColor} rounded-lg flex items-center justify-center flex-shrink-0`}>
@@ -147,6 +178,7 @@ type Product = {
   sellingPrice: number | null;
   unitPrice: number | null;
   category: string | null;
+  imageUrl: string | null;
   availableQuantity?: number;
 };
 
@@ -157,6 +189,7 @@ type CartItem = {
   sku: string | null;
   barcode: string | null;
   category: string | null;
+  imageUrl: string | null;
   quantity: number;
   unitPrice: number;
   discount: number;
@@ -481,6 +514,7 @@ export default function PosPage() {
         sku: product.sku,
         barcode: product.barcode,
         category: product.category,
+        imageUrl: product.imageUrl || null,
         quantity: 1,
         unitPrice: price,
         discount: 0,
@@ -507,6 +541,7 @@ export default function PosPage() {
         sku: service.code,
         barcode: null,
         category: service.category,
+        imageUrl: null,
         quantity: 1,
         unitPrice: service.priceCents,
         discount: 0,
@@ -591,6 +626,7 @@ export default function PosPage() {
       sku: null,
       barcode: null,
       category: "Temporaneo",
+      imageUrl: null,
       quantity: 1,
       unitPrice: price,
       discount: 0,
@@ -913,7 +949,7 @@ export default function PosPage() {
                             data-testid={`button-product-${product.id}`}
                           >
                             <div className="flex gap-2 mb-2">
-                              <ProductImage category={product.category} size="md" />
+                              <ProductImage category={product.category} imageUrl={product.imageUrl} size="md" />
                               <div className="flex-1 min-w-0">
                                 <div className="font-medium text-sm line-clamp-2">{product.name}</div>
                                 {product.sku && (
@@ -1094,7 +1130,7 @@ export default function PosPage() {
                     data-testid={`cart-item-${itemKey}`}
                   >
                     <div className="flex items-start gap-2 mb-2">
-                      <ProductImage category={item.category} size="sm" />
+                      <ProductImage category={item.category} imageUrl={item.imageUrl} size="sm" />
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
                           <div className="font-medium text-sm line-clamp-1">{item.name}</div>
