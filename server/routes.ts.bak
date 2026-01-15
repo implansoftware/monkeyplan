@@ -35079,73 +35079,7 @@ export function registerRoutes(app: Express): Server {
       res.status(500).json({ error: error.message });
     }
 
-  });
-
-  // ============================================================================
-  // DASHBOARD PREFERENCES API
-  // ============================================================================
-
-  // GET dashboard preferences for current user
-  app.get("/api/dashboard-preferences", requireAuth, async (req, res) => {
-    try {
-      const user = req.user as any;
-      if (!user) {
-        return res.status(401).json({ error: "Non autorizzato" });
-      }
-
-      // Determine the effective role for dashboard preferences
-      // sub_reseller shares reseller dashboard, so we normalize it
-      let effectiveRole = user.role;
-      if (user.role === "sub_reseller") {
-        effectiveRole = "reseller";
-      }
-
-      const preferences = await storage.getDashboardPreference(user.id, effectiveRole);
-      
-      if (preferences) {
-        res.json(preferences);
-      } else {
-        // Return null - frontend will use defaults
-        res.json(null);
-      }
-    } catch (error: any) {
-      console.error("Error fetching dashboard preferences:", error);
-      res.status(500).json({ error: error.message });
-    }
-  });
-
-  // PUT/Save dashboard preferences for current user
-  app.put("/api/dashboard-preferences", requireAuth, async (req, res) => {
-    try {
-      const user = req.user as any;
-      if (!user) {
-        return res.status(401).json({ error: "Non autorizzato" });
-      }
-
-      const { layout } = req.body;
-      if (!layout || !Array.isArray(layout.widgets)) {
-        return res.status(400).json({ error: "Layout non valido" });
-      }
-
-      // Validate widget structure
-      for (const widget of layout.widgets) {
-        if (typeof widget.id !== "string" || typeof widget.visible !== "boolean" || typeof widget.order !== "number") {
-          return res.status(400).json({ error: "Struttura widget non valida" });
-        }
-      }
-
-      // Determine the effective role
-      let effectiveRole = user.role;
-      if (user.role === "sub_reseller") {
-        effectiveRole = "reseller";
-      }
-
-      const preferences = await storage.saveDashboardPreference(user.id, effectiveRole, layout);
-      res.json(preferences);
-    } catch (error: any) {
-      console.error("Error saving dashboard preferences:", error);
-      res.status(500).json({ error: error.message });
-    }
+  return httpServer;
   });
 
   return httpServer;
