@@ -129,7 +129,8 @@ import {
   sibillDocuments, SibillDocument, InsertSibillDocument,
   sibillAccounts, SibillAccount, InsertSibillAccount,
   sibillTransactions, SibillTransaction, InsertSibillTransaction,
-  sibillCategories, SibillCategory, InsertSibillCategory
+  sibillCategories, SibillCategory, InsertSibillCategory,
+  dashboardPreferences, DashboardPreference, InsertDashboardPreference, DashboardLayout
 } from "@shared/schema";
 import { db, pool } from "./db";
 import { eq, and, or, desc, lt, gt, gte, lte, sql, not, inArray, isNull, ilike, SQL } from "drizzle-orm";
@@ -1074,6 +1075,10 @@ export interface IStorage {
   generateServiceOrderNumber(): Promise<string>;
   
   sessionStore: session.Store;
+  // Dashboard Preferences
+  getDashboardPreference(userId: string, role: string): Promise<DashboardPreference | undefined>;
+  saveDashboardPreference(userId: string, role: string, layout: DashboardLayout): Promise<DashboardPreference>;
+
 }
 
 export class DatabaseStorage implements IStorage {
@@ -11346,6 +11351,36 @@ export class DatabaseStorage implements IStorage {
       totalTransactions: s.session.totalTransactions || 0,
     }));
   }
+
+  // ============ Dashboard Preferences ============
+
+  async getDashboardPreference(userId: string, role: string): Promise<DashboardPreference | undefined> {
+    const [pref] = await db.select().from(dashboardPreferences)
+      .where(and(
+        eq(dashboardPreferences.userId, userId),
+        eq(dashboardPreferences.role, role)
+      ))
+      .limit(1);
+    return pref;
+  }
+
+  async saveDashboardPreference(userId: string, role: string, layout: DashboardLayout): Promise<DashboardPreference> {
+    const existing = await this.getDashboardPreference(userId, role);
+    
+    if (existing) {
+      const [updated] = await db.update(dashboardPreferences)
+        .set({ layout, updatedAt: new Date() })
+        .where(eq(dashboardPreferences.id, existing.id))
+        .returning();
+      return updated;
+    } else {
+      const [created] = await db.insert(dashboardPreferences)
+        .values({ userId, role, layout })
+        .returning();
+      return created;
+    }
+  }
+
 }
 
 export const storage = new DatabaseStorage();

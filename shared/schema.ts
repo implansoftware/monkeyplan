@@ -6627,3 +6627,39 @@ export type SibillCategory = typeof sibillCategories.$inferSelect;
 export type InsertSibillCategory = z.infer<typeof insertSibillCategorySchema>;
 
 export type SibillEnvironment = "development" | "production";
+
+// ============ DASHBOARD PREFERENCES ============
+
+export const dashboardPreferences = pgTable("dashboard_preferences", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  role: text("role").notNull(), // reseller, sub_reseller, repair_center
+  layout: jsonb("layout").notNull().$type<{
+    widgets: Array<{
+      id: string;
+      visible: boolean;
+      order: number;
+    }>;
+  }>(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export const insertDashboardPreferenceSchema = createInsertSchema(dashboardPreferences).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type DashboardPreference = typeof dashboardPreferences.$inferSelect;
+export type InsertDashboardPreference = z.infer<typeof insertDashboardPreferenceSchema>;
+
+export type DashboardWidgetConfig = {
+  id: string;
+  visible: boolean;
+  order: number;
+};
+
+export type DashboardLayout = {
+  widgets: DashboardWidgetConfig[];
+};
