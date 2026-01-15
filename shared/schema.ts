@@ -6663,3 +6663,79 @@ export type DashboardWidgetConfig = {
 export type DashboardLayout = {
   widgets: DashboardWidgetConfig[];
 };
+
+// ============ DOCUMENTS (Centralized Document Registry) ============
+
+export const documentTypeEnum = pgEnum("document_type", [
+  "intake",           // Documento accettazione riparazione
+  "delivery",         // Documento consegna riparazione
+  "diagnosis",        // Documento diagnosi
+  "quote",            // Preventivo
+  "label",            // Etichetta
+  "invoice",          // Fattura
+  "receipt",          // Ricevuta/Scontrino
+  "shipping",         // Documento spedizione (DDT)
+  "attachment",       // Allegato generico
+  "contract",         // Contratto
+  "report",           // Report
+  "other",            // Altro
+]);
+
+export const documentSourceTypeEnum = pgEnum("document_source_type", [
+  "repair_order",     // Ordine riparazione
+  "invoice",          // Fattura
+  "b2b_order",        // Ordine B2B
+  "b2b_return",       // Reso B2B
+  "sales_order",      // Ordine e-commerce
+  "utility_practice", // Pratica utility
+  "pos_transaction",  // Transazione POS
+  "warehouse_transfer", // Trasferimento magazzino
+  "customer",         // Cliente
+  "supplier_order",   // Ordine fornitore
+  "other",            // Altro
+]);
+
+export const documents = pgTable("documents", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  
+  title: text("title").notNull(),
+  documentType: documentTypeEnum("document_type").notNull(),
+  
+  sourceType: documentSourceTypeEnum("source_type").notNull(),
+  sourceId: varchar("source_id"),
+  sourceReference: text("source_reference"),
+  
+  ownerId: varchar("owner_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  ownerRole: text("owner_role").notNull(),
+  
+  resellerId: varchar("reseller_id").references(() => users.id, { onDelete: "set null" }),
+  repairCenterId: varchar("repair_center_id").references(() => users.id, { onDelete: "set null" }),
+  customerId: varchar("customer_id"),
+  
+  filePath: text("file_path"),
+  fileUrl: text("file_url"),
+  fileName: text("file_name").notNull(),
+  fileSize: integer("file_size"),
+  mimeType: text("mime_type").notNull().default("application/pdf"),
+  
+  isExternal: boolean("is_external").notNull().default(false),
+  externalProvider: text("external_provider"),
+  
+  metadata: jsonb("metadata").$type<Record<string, any>>(),
+  tags: text("tags").array(),
+  
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export const insertDocumentSchema = createInsertSchema(documents).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type Document = typeof documents.$inferSelect;
+export type InsertDocument = z.infer<typeof insertDocumentSchema>;
+
+export type DocumentType = "intake" | "delivery" | "diagnosis" | "quote" | "label" | "invoice" | "receipt" | "shipping" | "attachment" | "contract" | "report" | "other";
+export type DocumentSourceType = "repair_order" | "invoice" | "b2b_order" | "b2b_return" | "sales_order" | "utility_practice" | "pos_transaction" | "warehouse_transfer" | "customer" | "supplier_order" | "other";
