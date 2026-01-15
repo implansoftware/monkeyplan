@@ -24,29 +24,37 @@ export interface RegisterDocumentParams {
 }
 
 export async function registerDocument(params: RegisterDocumentParams) {
-  const doc: InsertDocument = {
-    title: params.title,
-    documentType: params.documentType,
-    sourceType: params.sourceType,
-    sourceId: params.sourceId || null,
-    sourceReference: params.sourceReference || null,
-    ownerId: params.ownerId,
-    ownerRole: params.ownerRole,
-    resellerId: params.resellerId || null,
-    repairCenterId: params.repairCenterId || null,
-    customerId: params.customerId || null,
-    filePath: params.filePath || null,
-    fileUrl: params.fileUrl || null,
-    fileName: params.fileName,
-    fileSize: params.fileSize || null,
-    mimeType: params.mimeType || "application/pdf",
-    isExternal: params.isExternal || false,
-    externalProvider: params.externalProvider || null,
-    metadata: params.metadata || null,
-    tags: params.tags || null,
-  };
+  try {
+    const doc: InsertDocument = {
+      title: params.title,
+      documentType: params.documentType,
+      sourceType: params.sourceType,
+      sourceId: params.sourceId || null,
+      sourceReference: params.sourceReference || null,
+      ownerId: params.ownerId,
+      ownerRole: params.ownerRole,
+      resellerId: params.resellerId || null,
+      repairCenterId: params.repairCenterId || null,
+      customerId: params.customerId || null,
+      filePath: params.filePath || null,
+      fileUrl: params.fileUrl || null,
+      fileName: params.fileName,
+      fileSize: params.fileSize || null,
+      mimeType: params.mimeType || "application/pdf",
+      isExternal: params.isExternal || false,
+      externalProvider: params.externalProvider || null,
+      metadata: params.metadata || null,
+      tags: params.tags || null,
+    };
 
-  return storage.createDocument(doc);
+    console.log("[DocumentRegistry] Creating document:", { title: doc.title, type: doc.documentType, sourceType: doc.sourceType, sourceId: doc.sourceId });
+    const result = await storage.createDocument(doc);
+    console.log("[DocumentRegistry] Document created successfully:", result.id);
+    return result;
+  } catch (error) {
+    console.error("[DocumentRegistry] Error creating document:", error);
+    throw error;
+  }
 }
 
 export function buildDocumentTitle(
@@ -92,25 +100,43 @@ export async function ensureRepairDocumentRegistered(params: {
   repairCenterId?: string;
   customerId?: string;
 }): Promise<void> {
-  const existingDocs = await storage.getDocumentsBySource("repair_order", params.repairOrderId);
-  const alreadyExists = existingDocs.some(d => d.documentType === params.documentType);
-  
-  if (!alreadyExists) {
-    await registerDocument({
-      title: buildDocumentTitle(params.documentType, params.orderNumber),
-      documentType: params.documentType,
-      sourceType: "repair_order",
-      sourceId: params.repairOrderId,
-      sourceReference: params.orderNumber,
-      ownerId: params.ownerId,
-      ownerRole: params.ownerRole,
+  try {
+    console.log("[DocumentRegistry] ensureRepairDocumentRegistered called:", { 
+      documentType: params.documentType, 
+      repairOrderId: params.repairOrderId, 
+      orderNumber: params.orderNumber,
       resellerId: params.resellerId,
-      repairCenterId: params.repairCenterId,
-      customerId: params.customerId,
-      fileUrl: `/api/repair-orders/${params.repairOrderId}/${params.documentType === 'intake' ? 'intake-document' : params.documentType === 'delivery' ? 'delivery-document' : params.documentType === 'diagnosis' ? 'diagnosis-document' : params.documentType === 'quote' ? 'quote-document' : 'labels'}`,
-      fileName: `${params.documentType}-${params.orderNumber}.pdf`,
-      mimeType: "application/pdf",
+      repairCenterId: params.repairCenterId
     });
+    
+    const existingDocs = await storage.getDocumentsBySource("repair_order", params.repairOrderId);
+    const alreadyExists = existingDocs.some(d => d.documentType === params.documentType);
+    
+    console.log("[DocumentRegistry] Existing docs found:", existingDocs.length, "Already exists:", alreadyExists);
+    
+    if (!alreadyExists) {
+      await registerDocument({
+        title: buildDocumentTitle(params.documentType, params.orderNumber),
+        documentType: params.documentType,
+        sourceType: "repair_order",
+        sourceId: params.repairOrderId,
+        sourceReference: params.orderNumber,
+        ownerId: params.ownerId,
+        ownerRole: params.ownerRole,
+        resellerId: params.resellerId,
+        repairCenterId: params.repairCenterId,
+        customerId: params.customerId,
+        fileUrl: `/api/repair-orders/${params.repairOrderId}/${params.documentType === 'intake' ? 'intake-document' : params.documentType === 'delivery' ? 'delivery-document' : params.documentType === 'diagnosis' ? 'diagnosis-document' : params.documentType === 'quote' ? 'quote-document' : 'labels'}`,
+        fileName: `${params.documentType}-${params.orderNumber}.pdf`,
+        mimeType: "application/pdf",
+      });
+      console.log("[DocumentRegistry] Repair document registered successfully:", params.documentType);
+    } else {
+      console.log("[DocumentRegistry] Document already exists, skipping:", params.documentType);
+    }
+  } catch (error) {
+    console.error("[DocumentRegistry] Error in ensureRepairDocumentRegistered:", error);
+    throw error;
   }
 }
 
