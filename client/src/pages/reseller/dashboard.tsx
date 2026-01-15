@@ -442,7 +442,7 @@ export default function ResellerDashboard() {
           </Link>
         )}
 
-        {isWidgetVisible("stats-users") && (
+        {isWidgetVisible("stats-network") && (
           <Link href="/reseller/repair-centers" className="block group">
             <Card className="h-full transition-all hover:shadow-md hover:border-primary/50" data-testid="card-network-stats">
               <CardContent className="pt-4 pb-3">
