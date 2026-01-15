@@ -9277,6 +9277,19 @@ export function registerRoutes(app: Express): Server {
       });
       
       setActivityEntity(res, { type: 'service_orders', id: order.id });
+
+      // Registrazione automatica DDT ordine servizio nella sezione Documenti
+      if (order.orderNumber) {
+        await ensureServiceOrderDDTRegistered({
+          orderId: order.id,
+          orderNumber: order.orderNumber,
+          isRemoteRequest: false,
+          ownerId: req.user!.id,
+          ownerRole: req.user!.role,
+          resellerId: resellerId,
+          customerId: req.user!.id,
+        });
+      }
       res.status(201).json(order);
     } catch (error: any) {
       res.status(500).send(error.message);
@@ -18452,6 +18465,20 @@ export function registerRoutes(app: Express): Server {
         })
       });
       
+
+      // Registrazione automatica etichetta data recovery nella sezione Documenti
+      if (job.jobNumber) {
+        await ensureDataRecoveryDocumentRegistered({
+          documentType: "label",
+          dataRecoveryId: job.id,
+          reference: job.jobNumber,
+          ownerId: user.id,
+          ownerRole: user.role,
+          repairCenterId: repairOrder.repairCenterId || undefined,
+          resellerId: repairOrder.resellerId || undefined,
+          customerId: repairOrder.customerId || undefined,
+        });
+      }
       res.status(201).json(job);
     } catch (error: any) {
       res.status(500).send(error.message);
@@ -25689,6 +25716,32 @@ export function registerRoutes(app: Express): Server {
         }
       }
       
+
+      // Registrazione automatica documenti sales order nella sezione Documenti
+      if (order.orderNumber) {
+        if (status === "shipped") {
+          await ensureSalesOrderDocumentRegistered({
+            orderId: order.id,
+            orderNumber: order.orderNumber,
+            documentType: "shipping",
+            ownerId: req.user!.id,
+            ownerRole: req.user!.role,
+            resellerId: order.resellerId || undefined,
+            customerId: order.customerId || undefined,
+          });
+        }
+        if (status === "delivered" || status === "completed") {
+          await ensureSalesOrderDocumentRegistered({
+            orderId: order.id,
+            orderNumber: order.orderNumber,
+            documentType: "invoice",
+            ownerId: req.user!.id,
+            ownerRole: req.user!.role,
+            resellerId: order.resellerId || undefined,
+            customerId: order.customerId || undefined,
+          });
+        }
+      }
       res.json({ ...updated, generatedInvoice: invoice });
     } catch (error: any) {
       res.status(500).json({ error: error.message });
