@@ -6327,11 +6327,15 @@ export const posTransactionItems = pgTable("pos_transaction_items", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   transactionId: varchar("transaction_id").notNull().references(() => posTransactions.id, { onDelete: "cascade" }),
   
-  // Prodotto (nullable per prodotti temporanei)
+  // Prodotto (nullable per prodotti temporanei o servizi)
   productId: varchar("product_id").references(() => products.id),
   productName: text("product_name").notNull(),
   productSku: varchar("product_sku", { length: 100 }),
   productBarcode: varchar("product_barcode", { length: 100 }),
+  
+  // Servizio dal catalogo interventi (alternativo a productId)
+  serviceItemId: varchar("service_item_id").references(() => serviceItems.id),
+  isService: boolean("is_service").notNull().default(false),
   
   // Flag prodotto temporaneo (non registrato in catalogo)
   isTemporary: boolean("is_temporary").notNull().default(false),
