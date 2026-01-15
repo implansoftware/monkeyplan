@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useQuery } from "@tanstack/react-query";
 import { ShoppingCart, Users, TrendingUp, Package, AlertCircle, ChevronRight, LayoutDashboard, Warehouse } from "lucide-react";
@@ -18,6 +18,8 @@ import { CustomerWizardDialog } from "@/components/CustomerWizardDialog";
 import { RepairIntakeWizard } from "@/components/RepairIntakeWizard";
 import { OperationalTaskList } from "@/components/OperationalTaskList";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { DashboardCustomizer } from "@/components/dashboard/DashboardCustomizer";
+import { useDashboardPreferences } from "@/components/dashboard/useDashboardPreferences";
 
 type RepairCenterStats = {
   overview: {
@@ -62,6 +64,14 @@ const CHART_COLORS = ['hsl(var(--primary))', 'hsl(var(--muted-foreground))', 'hs
 export default function RepairCenterDashboard() {
   const [customerDialogOpen, setCustomerDialogOpen] = useState(false);
   const [acceptanceDialogOpen, setAcceptanceDialogOpen] = useState(false);
+
+  // Dashboard customization preferences
+  const { layout: dashboardLayout, saveLayout, isSaving: isSavingLayout } = useDashboardPreferences("repair_center");
+
+  const isWidgetVisible = useCallback((widgetId: string) => {
+    const widget = dashboardLayout.widgets.find(w => w.id === widgetId);
+    return widget?.visible !== false;
+  }, [dashboardLayout.widgets]);
 
   const { data: stats, isLoading } = useQuery<RepairCenterStats>({
     queryKey: ["/api/stats"],
@@ -153,10 +163,18 @@ export default function RepairCenterDashboard() {
               </div>
             </div>
           </div>
+          <div className="flex items-center gap-2">
+            <DashboardCustomizer
+              role="repair_center"
+              currentLayout={dashboardLayout}
+              onSave={saveLayout}
+              isSaving={isSavingLayout}
+            />
           <Button onClick={() => setAcceptanceDialogOpen(true)} className="shadow-lg shadow-primary/25" data-testid="button-new-repair">
             <PackageOpen className="h-4 w-4 mr-2" />
             Nuova Lavorazione
           </Button>
+          </div>
         </div>
       </div>
 
