@@ -474,6 +474,7 @@ export default function ResellerDashboard() {
       </div>
 
       {/* Sales Overview */}
+      {isWidgetVisible("activity-sales") && (
       <Card className="overflow-hidden" data-testid="card-sales-overview">
         <CardHeader className="pb-3 border-b bg-gradient-to-r from-emerald-50 to-blue-50 dark:from-emerald-950/30 dark:to-blue-950/30">
           <div className="flex items-center justify-between">
@@ -553,8 +554,10 @@ export default function ResellerDashboard() {
           </div>
         </CardContent>
       </Card>
+      )}
 
       {/* Quick Actions */}
+      {isWidgetVisible("management-quick-actions") && (
       <Card className="overflow-hidden">
         <CardHeader className="pb-3 border-b bg-muted/30">
           <CardTitle className="text-base font-semibold">Azioni Rapide</CardTitle>
@@ -637,9 +640,12 @@ export default function ResellerDashboard() {
           </div>
         </CardContent>
       </Card>
+      )}
 
       {/* Operational Tasks */}
-      <OperationalTaskList maxItems={6} />
+      {isWidgetVisible("activity-repairs") && (
+        <OperationalTaskList maxItems={6} />
+      )}
 
       {/* Charts & Recent Repairs */}
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
@@ -735,55 +741,57 @@ export default function ResellerDashboard() {
           </Card>
         </div>
 
-        <Card className="overflow-hidden">
-          <CardHeader className="flex flex-row items-center justify-between gap-1 pb-3 border-b bg-muted/30">
-            <CardTitle className="text-sm font-semibold">Ultime Riparazioni</CardTitle>
-            <Link href="/reseller/repairs">
-              <Button variant="ghost" size="sm" className="h-7 text-xs">
-                Tutte
-                <ChevronRight className="h-3 w-3 ml-1" />
-              </Button>
-            </Link>
-          </CardHeader>
-          <CardContent className="p-0">
-            {recentRepairs.length === 0 ? (
-              <div className="text-center py-12 text-muted-foreground">
-                <Package className="h-10 w-10 mx-auto mb-3 opacity-20" />
-                <p className="text-sm font-medium mb-1">Nessuna riparazione</p>
-                <p className="text-xs text-muted-foreground">Inizia creando una nuova lavorazione</p>
-              </div>
-            ) : (
-              <div className="divide-y">
-                {recentRepairs.map((repair, index) => (
-                  <Link href={`/reseller/repairs/${repair.id}`} key={repair.id}>
-                    <div 
-                      className={`flex items-center gap-3 px-4 py-3 hover:bg-muted/50 transition-colors cursor-pointer group ${index % 2 === 0 ? 'bg-background' : 'bg-muted/20'}`}
-                      data-testid={`recent-repair-${repair.id}`}
-                    >
-                      <div className={`w-1 h-10 rounded-full ${repair.status === 'consegnato' ? 'bg-slate-400' : 'bg-primary'}`} />
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <span className="font-mono text-xs text-muted-foreground">{repair.orderNumber || repair.id.substring(0, 8)}</span>
-                          {getStatusBadge(repair.status)}
+        {isWidgetVisible("activity-recent-repairs") && (
+          <Card className="overflow-hidden">
+            <CardHeader className="flex flex-row items-center justify-between gap-1 pb-3 border-b bg-muted/30">
+              <CardTitle className="text-sm font-semibold">Ultime Riparazioni</CardTitle>
+              <Link href="/reseller/repairs">
+                <Button variant="ghost" size="sm" className="h-7 text-xs">
+                  Tutte
+                  <ChevronRight className="h-3 w-3 ml-1" />
+                </Button>
+              </Link>
+            </CardHeader>
+            <CardContent className="p-0">
+              {recentRepairs.length === 0 ? (
+                <div className="text-center py-12 text-muted-foreground">
+                  <Package className="h-10 w-10 mx-auto mb-3 opacity-20" />
+                  <p className="text-sm font-medium mb-1">Nessuna riparazione</p>
+                  <p className="text-xs text-muted-foreground">Inizia creando una nuova lavorazione</p>
+                </div>
+              ) : (
+                <div className="divide-y">
+                  {recentRepairs.map((repair, index) => (
+                    <Link href={`/reseller/repairs/${repair.id}`} key={repair.id}>
+                      <div 
+                        className={`flex items-center gap-3 px-4 py-3 hover:bg-muted/50 transition-colors cursor-pointer group ${index % 2 === 0 ? 'bg-background' : 'bg-muted/20'}`}
+                        data-testid={`recent-repair-${repair.id}`}
+                      >
+                        <div className={`w-1 h-10 rounded-full ${repair.status === 'consegnato' ? 'bg-slate-400' : 'bg-primary'}`} />
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className="font-mono text-xs text-muted-foreground">{repair.orderNumber || repair.id.substring(0, 8)}</span>
+                            {getStatusBadge(repair.status)}
+                          </div>
+                          <p className="text-sm truncate mt-0.5">
+                            {repair.brand && <span className="font-medium">{repair.brand}</span>}
+                            {repair.deviceModel && <span className="text-muted-foreground"> {repair.deviceModel}</span>}
+                          </p>
                         </div>
-                        <p className="text-sm truncate mt-0.5">
-                          {repair.brand && <span className="font-medium">{repair.brand}</span>}
-                          {repair.deviceModel && <span className="text-muted-foreground"> {repair.deviceModel}</span>}
-                        </p>
+                        <div className="text-right shrink-0">
+                          <p className="text-xs text-muted-foreground">
+                            {format(new Date(repair.createdAt), "dd/MM", { locale: it })}
+                          </p>
+                          <ChevronRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity mt-1 ml-auto" />
+                        </div>
                       </div>
-                      <div className="text-right shrink-0">
-                        <p className="text-xs text-muted-foreground">
-                          {format(new Date(repair.createdAt), "dd/MM", { locale: it })}
-                        </p>
-                        <ChevronRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity mt-1 ml-auto" />
-                      </div>
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
       </div>
 
       {/* Dialogs */}
