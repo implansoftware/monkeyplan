@@ -84,7 +84,10 @@ export function DashboardCustomizer({
 
   const handleReset = () => {
     const defaults = getDefaultLayout(role);
-    setWidgets([...defaults.widgets].sort((a, b) => a.order - b.order));
+    const sortedDefaults = [...defaults.widgets].sort((a, b) => a.order - b.order);
+    setWidgets(sortedDefaults);
+    onSave({ widgets: sortedDefaults });
+    handleClose();
   };
 
   const handleSave = () => {
