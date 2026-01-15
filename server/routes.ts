@@ -55,6 +55,9 @@ import {
   ensurePosReceiptRegistered,
   ensureTransferDDTRegistered,
   ensureB2BReturnDocumentRegistered,
+  ensureB2BOrderDocumentRegistered,
+  ensureSalesOrderDocumentRegistered,
+  ensureSupplierOrderDocumentRegistered,
   ensureServiceOrderDDTRegistered,
   ensureDataRecoveryDocumentRegistered
 } from "./services/documentRegistry";
@@ -27569,6 +27572,16 @@ export function registerRoutes(app: Express): Server {
         shippedAt: new Date(),
         shippedBy: req.user.id
       });
+
+      // Registrazione automatica DDT trasferimento nella sezione Documenti
+      if (request.ddtNumber || request.id) {
+        await ensureTransferDDTRegistered({
+          transferId: request.id,
+          ddtNumber: request.ddtNumber || request.id.slice(0,8),
+          ownerId: req.user!.id,
+          ownerRole: req.user!.role,
+        });
+      }
       res.json(updated);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
@@ -28006,6 +28019,18 @@ export function registerRoutes(app: Express): Server {
         carrier,
       });
       
+
+      // Registrazione automatica DDT nella sezione Documenti
+      if (order.orderNumber) {
+        await ensureB2BOrderDocumentRegistered({
+          orderId: order.id,
+          orderNumber: order.orderNumber,
+          documentType: "shipping",
+          ownerId: req.user!.id,
+          ownerRole: req.user!.role,
+          resellerId: order.resellerId,
+        });
+      }
       res.json(updated);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
@@ -28144,6 +28169,18 @@ export function registerRoutes(app: Express): Server {
         carrier,
       });
       
+
+      // Registrazione automatica DDT/etichetta reso nella sezione Documenti
+      if (returnDoc.returnNumber) {
+        await ensureB2BReturnDocumentRegistered({
+          documentType: "shipping",
+          returnId: returnDoc.id,
+          returnNumber: returnDoc.returnNumber,
+          ownerId: req.user!.id,
+          ownerRole: req.user!.role,
+          resellerId: returnDoc.resellerId,
+        });
+      }
       res.json(updated);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
@@ -33595,6 +33632,17 @@ export function registerRoutes(app: Express): Server {
         });
         await storage.updatePosTransactionInvoice(transaction.id, invoice.id);
       }
+
+      // Registrazione automatica documento POS nella sezione Documenti
+      await ensurePosReceiptRegistered({
+        transactionId: transaction.id,
+        transactionNumber: transaction.transactionNumber,
+        isInvoice: invoiceRequested || false,
+        ownerId: req.user!.id,
+        ownerRole: req.user!.role,
+        repairCenterId,
+        customerId: customerId || undefined,
+      });
 
       res.json({ transaction, items: transactionItems, invoice });
     } catch (error: any) {

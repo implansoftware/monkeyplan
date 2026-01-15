@@ -291,3 +291,102 @@ export async function ensureDataRecoveryDocumentRegistered(params: {
     });
   }
 }
+
+// Helper per registrare documenti B2B orders (DDT spedizione, fatture)
+export async function ensureB2BOrderDocumentRegistered(params: {
+  orderId: string;
+  orderNumber: string;
+  documentType: "shipping" | "invoice" | "receipt";
+  ownerId: string;
+  ownerRole: string;
+  resellerId?: string;
+}): Promise<void> {
+  const existingDocs = await storage.getDocumentsBySource("b2b_order", params.orderId);
+  const alreadyExists = existingDocs.some(d => d.documentType === params.documentType);
+  
+  if (!alreadyExists) {
+    const endpoint = params.documentType === "shipping" 
+      ? `/api/admin/b2b-orders/${params.orderId}/ddt`
+      : `/api/admin/b2b-orders/${params.orderId}/${params.documentType}`;
+    
+    await registerDocument({
+      title: buildDocumentTitle(params.documentType, params.orderNumber),
+      documentType: params.documentType,
+      sourceType: "b2b_order",
+      sourceId: params.orderId,
+      sourceReference: params.orderNumber,
+      ownerId: params.ownerId,
+      ownerRole: params.ownerRole,
+      resellerId: params.resellerId,
+      fileUrl: endpoint,
+      fileName: `${params.documentType === "shipping" ? "ddt" : params.documentType}_${params.orderNumber}.pdf`,
+      mimeType: "application/pdf",
+    });
+  }
+}
+
+// Helper per registrare documenti Sales Orders (fatture, ricevute, DDT)
+export async function ensureSalesOrderDocumentRegistered(params: {
+  orderId: string;
+  orderNumber: string;
+  documentType: "shipping" | "invoice" | "receipt";
+  ownerId: string;
+  ownerRole: string;
+  resellerId?: string;
+  customerId?: string;
+}): Promise<void> {
+  const existingDocs = await storage.getDocumentsBySource("sales_order", params.orderId);
+  const alreadyExists = existingDocs.some(d => d.documentType === params.documentType);
+  
+  if (!alreadyExists) {
+    const endpoint = params.documentType === "shipping" 
+      ? `/api/sales-orders/${params.orderId}/shipping-document`
+      : `/api/sales-orders/${params.orderId}/${params.documentType}`;
+    
+    await registerDocument({
+      title: buildDocumentTitle(params.documentType, params.orderNumber),
+      documentType: params.documentType,
+      sourceType: "sales_order",
+      sourceId: params.orderId,
+      sourceReference: params.orderNumber,
+      ownerId: params.ownerId,
+      ownerRole: params.ownerRole,
+      resellerId: params.resellerId,
+      customerId: params.customerId,
+      fileUrl: endpoint,
+      fileName: `${params.documentType}_${params.orderNumber}.pdf`,
+      mimeType: "application/pdf",
+    });
+  }
+}
+
+// Helper per registrare documenti Supplier Orders (conferme, fatture)
+export async function ensureSupplierOrderDocumentRegistered(params: {
+  orderId: string;
+  orderNumber: string;
+  documentType: "invoice" | "receipt" | "other";
+  ownerId: string;
+  ownerRole: string;
+  resellerId?: string;
+  repairCenterId?: string;
+}): Promise<void> {
+  const existingDocs = await storage.getDocumentsBySource("supplier_order", params.orderId);
+  const alreadyExists = existingDocs.some(d => d.documentType === params.documentType);
+  
+  if (!alreadyExists) {
+    await registerDocument({
+      title: buildDocumentTitle(params.documentType, params.orderNumber),
+      documentType: params.documentType,
+      sourceType: "supplier_order",
+      sourceId: params.orderId,
+      sourceReference: params.orderNumber,
+      ownerId: params.ownerId,
+      ownerRole: params.ownerRole,
+      resellerId: params.resellerId,
+      repairCenterId: params.repairCenterId,
+      fileUrl: `/api/supplier-orders/${params.orderId}/document`,
+      fileName: `${params.documentType}_${params.orderNumber}.pdf`,
+      mimeType: "application/pdf",
+    });
+  }
+}

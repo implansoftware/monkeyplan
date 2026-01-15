@@ -6740,4 +6740,4 @@ export type Document = typeof documents.$inferSelect;
 export type InsertDocument = z.infer<typeof insertDocumentSchema>;
 
 export type DocumentType = "intake" | "delivery" | "diagnosis" | "quote" | "label" | "invoice" | "receipt" | "shipping" | "attachment" | "contract" | "report" | "other";
-export type DocumentSourceType = "repair_order" | "invoice" | "b2b_order" | "b2b_return" | "sales_order" | "utility_practice" | "pos_transaction" | "warehouse_transfer" | "customer" | "supplier_order" | "other";
+export type DocumentSourceType = "repair_order" | "invoice" | "b2b_order" | "b2b_return" | "sales_order" | "utility_practice" | "pos_transaction" | "warehouse_transfer" | "customer" | "supplier_order" | "data_recovery" | "service_order" | "other";
