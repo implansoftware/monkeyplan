@@ -122,6 +122,22 @@ export const RESELLER_WIDGETS: WidgetConfig[] = [
     defaultVisible: true,
     defaultOrder: 12,
   },
+  {
+    id: "chart-repairs-status",
+    name: "Riparazioni per Stato",
+    description: "Grafico a barre riparazioni per stato",
+    category: "stats",
+    defaultVisible: true,
+    defaultOrder: 13,
+  },
+  {
+    id: "chart-work-status",
+    name: "Stato Lavori",
+    description: "Grafico a torta stato lavori",
+    category: "stats",
+    defaultVisible: true,
+    defaultOrder: 14,
+  },
 ];
 
 export const REPAIR_CENTER_WIDGETS: WidgetConfig[] = [

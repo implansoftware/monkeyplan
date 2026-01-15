@@ -650,64 +650,20 @@ export default function ResellerDashboard() {
       {/* Charts & Recent Repairs */}
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
         <div className="xl:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
-          <Card className="overflow-hidden">
-            <CardHeader className="pb-2 border-b bg-muted/30">
-              <CardTitle className="text-sm font-semibold">Riparazioni per Stato</CardTitle>
-            </CardHeader>
-            <CardContent className="pt-4">
-              {isLoading ? (
-                <Skeleton className="h-48 w-full" />
-              ) : repairsChartData.length > 0 ? (
-                <ResponsiveContainer width="100%" height={180}>
-                  <BarChart data={repairsChartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
-                    <XAxis dataKey="name" tick={{ fontSize: 10 }} stroke="hsl(var(--muted-foreground))" />
-                    <YAxis tick={{ fontSize: 10 }} stroke="hsl(var(--muted-foreground))" />
-                    <Tooltip 
-                      contentStyle={{ 
-                        backgroundColor: 'hsl(var(--card))', 
-                        border: '1px solid hsl(var(--border))',
-                        borderRadius: '8px',
-                        fontSize: '12px',
-                        boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
-                      }} 
-                    />
-                    <Bar dataKey="value" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
-              ) : (
-                <div className="h-48 flex flex-col items-center justify-center text-muted-foreground">
-                  <Wrench className="h-8 w-8 mb-2 opacity-20" />
-                  <p className="text-sm">Nessun dato disponibile</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          <Card className="overflow-hidden">
-            <CardHeader className="pb-2 border-b bg-muted/30">
-              <CardTitle className="text-sm font-semibold">Stato Lavori</CardTitle>
-            </CardHeader>
-            <CardContent className="pt-4">
-              {isLoading ? (
-                <Skeleton className="h-48 w-full" />
-              ) : pieData.length > 0 ? (
-                <>
-                  <ResponsiveContainer width="100%" height={140}>
-                    <PieChart>
-                      <Pie
-                        data={pieData}
-                        cx="50%"
-                        cy="50%"
-                        innerRadius={40}
-                        outerRadius={65}
-                        paddingAngle={2}
-                        dataKey="value"
-                      >
-                        {pieData.map((_, index) => (
-                          <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
-                        ))}
-                      </Pie>
+          {isWidgetVisible("chart-repairs-status") && (
+            <Card className="overflow-hidden">
+              <CardHeader className="pb-2 border-b bg-muted/30">
+                <CardTitle className="text-sm font-semibold">Riparazioni per Stato</CardTitle>
+              </CardHeader>
+              <CardContent className="pt-4">
+                {isLoading ? (
+                  <Skeleton className="h-48 w-full" />
+                ) : repairsChartData.length > 0 ? (
+                  <ResponsiveContainer width="100%" height={180}>
+                    <BarChart data={repairsChartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
+                      <XAxis dataKey="name" tick={{ fontSize: 10 }} stroke="hsl(var(--muted-foreground))" />
+                      <YAxis tick={{ fontSize: 10 }} stroke="hsl(var(--muted-foreground))" />
                       <Tooltip 
                         contentStyle={{ 
                           backgroundColor: 'hsl(var(--card))', 
@@ -717,28 +673,76 @@ export default function ResellerDashboard() {
                           boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
                         }} 
                       />
-                    </PieChart>
+                      <Bar dataKey="value" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                    </BarChart>
                   </ResponsiveContainer>
-                  <div className="flex flex-wrap justify-center gap-x-4 gap-y-1 mt-2">
-                    {pieData.map((entry, index) => (
-                      <div key={entry.name} className="flex items-center gap-1.5 text-xs">
-                        <div 
-                          className="h-2.5 w-2.5 rounded-full" 
-                          style={{ backgroundColor: CHART_COLORS[index % CHART_COLORS.length] }}
-                        />
-                        <span className="text-muted-foreground">{entry.name}</span>
-                      </div>
-                    ))}
+                ) : (
+                  <div className="h-48 flex flex-col items-center justify-center text-muted-foreground">
+                    <Wrench className="h-8 w-8 mb-2 opacity-20" />
+                    <p className="text-sm">Nessun dato disponibile</p>
                   </div>
-                </>
-              ) : (
-                <div className="h-48 flex flex-col items-center justify-center text-muted-foreground">
-                  <Package className="h-8 w-8 mb-2 opacity-20" />
-                  <p className="text-sm">Nessun dato disponibile</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+                )}
+              </CardContent>
+            </Card>
+          )}
+
+          {isWidgetVisible("chart-work-status") && (
+            <Card className="overflow-hidden">
+              <CardHeader className="pb-2 border-b bg-muted/30">
+                <CardTitle className="text-sm font-semibold">Stato Lavori</CardTitle>
+              </CardHeader>
+              <CardContent className="pt-4">
+                {isLoading ? (
+                  <Skeleton className="h-48 w-full" />
+                ) : pieData.length > 0 ? (
+                  <>
+                    <ResponsiveContainer width="100%" height={140}>
+                      <PieChart>
+                        <Pie
+                          data={pieData}
+                          cx="50%"
+                          cy="50%"
+                          innerRadius={40}
+                          outerRadius={65}
+                          paddingAngle={2}
+                          dataKey="value"
+                        >
+                          {pieData.map((_, index) => (
+                            <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
+                          ))}
+                        </Pie>
+                        <Tooltip 
+                          contentStyle={{ 
+                            backgroundColor: 'hsl(var(--card))', 
+                            border: '1px solid hsl(var(--border))',
+                            borderRadius: '8px',
+                            fontSize: '12px',
+                            boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+                          }} 
+                        />
+                      </PieChart>
+                    </ResponsiveContainer>
+                    <div className="flex flex-wrap justify-center gap-x-4 gap-y-1 mt-2">
+                      {pieData.map((entry, index) => (
+                        <div key={entry.name} className="flex items-center gap-1.5 text-xs">
+                          <div 
+                            className="h-2.5 w-2.5 rounded-full" 
+                            style={{ backgroundColor: CHART_COLORS[index % CHART_COLORS.length] }}
+                          />
+                          <span className="text-muted-foreground">{entry.name}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                ) : (
+                  <div className="h-48 flex flex-col items-center justify-center text-muted-foreground">
+                    <Package className="h-8 w-8 mb-2 opacity-20" />
+                    <p className="text-sm">Nessun dato disponibile</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
         </div>
 
         {isWidgetVisible("activity-recent-repairs") && (
