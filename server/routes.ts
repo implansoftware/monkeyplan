@@ -3618,10 +3618,49 @@ export function registerRoutes(app: Express): Server {
 
   app.patch("/api/admin/repairs/:id/status", requireRole("admin"), async (req, res) => {
     try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
       // Validate with Zod schema
       const validatedData = updateRepairStatusSchema.parse(req.body);
       const repair = await storage.updateRepairOrderStatus(req.params.id, validatedData.status);
       setActivityEntity(res, { type: 'repairs', id: req.params.id });
+      
+      // Auto-register documents based on new status
+      const newStatus = validatedData.status;
+      if (newStatus === 'diagnosi_completata') {
+        await ensureRepairDocumentRegistered({
+          documentType: "diagnosis",
+          repairOrderId: repair.id,
+          orderNumber: repair.orderNumber,
+          ownerId: req.user.id,
+          ownerRole: req.user.role,
+          resellerId: repair.resellerId || undefined,
+          repairCenterId: repair.repairCenterId || undefined,
+          customerId: repair.customerId || undefined,
+        });
+      } else if (newStatus === 'preventivo_emesso' || newStatus === 'preventivo_inviato') {
+        await ensureRepairDocumentRegistered({
+          documentType: "quote",
+          repairOrderId: repair.id,
+          orderNumber: repair.orderNumber,
+          ownerId: req.user.id,
+          ownerRole: req.user.role,
+          resellerId: repair.resellerId || undefined,
+          repairCenterId: repair.repairCenterId || undefined,
+          customerId: repair.customerId || undefined,
+        });
+      } else if (newStatus === 'consegnato') {
+        await ensureRepairDocumentRegistered({
+          documentType: "delivery",
+          repairOrderId: repair.id,
+          orderNumber: repair.orderNumber,
+          ownerId: req.user.id,
+          ownerRole: req.user.role,
+          resellerId: repair.resellerId || undefined,
+          repairCenterId: repair.repairCenterId || undefined,
+          customerId: repair.customerId || undefined,
+        });
+      }
       
       await storage.invalidateCache('overview_%');
       await storage.invalidateCache('centers_%');
@@ -4974,6 +5013,28 @@ export function registerRoutes(app: Express): Server {
         notes: validatedData.notes,
       });
       setActivityEntity(res, { type: 'repairs', id: repair.id });
+      
+      // Auto-register intake and label documents
+      await ensureRepairDocumentRegistered({
+        documentType: "intake",
+        repairOrderId: repair.id,
+        orderNumber: repair.orderNumber,
+        ownerId: req.user.id,
+        ownerRole: req.user.role,
+        resellerId: repair.resellerId || undefined,
+        repairCenterId: repair.repairCenterId || undefined,
+        customerId: repair.customerId || undefined,
+      });
+      await ensureRepairDocumentRegistered({
+        documentType: "label",
+        repairOrderId: repair.id,
+        orderNumber: repair.orderNumber,
+        ownerId: req.user.id,
+        ownerRole: req.user.role,
+        resellerId: repair.resellerId || undefined,
+        repairCenterId: repair.repairCenterId || undefined,
+        customerId: repair.customerId || undefined,
+      });
       
       // Auto-associate customer with repair center
       if (validatedData.customerId && validatedData.repairCenterId) {
@@ -8126,6 +8187,43 @@ export function registerRoutes(app: Express): Server {
       
       const updated = await storage.updateRepairOrderStatus(req.params.id, validatedData.status);
       setActivityEntity(res, { type: 'repairs', id: req.params.id });
+      
+      // Auto-register documents based on new status
+      const newStatus = validatedData.status;
+      if (newStatus === 'diagnosi_completata') {
+        await ensureRepairDocumentRegistered({
+          documentType: "diagnosis",
+          repairOrderId: updated.id,
+          orderNumber: updated.orderNumber,
+          ownerId: req.user.id,
+          ownerRole: req.user.role,
+          resellerId: updated.resellerId || undefined,
+          repairCenterId: updated.repairCenterId || undefined,
+          customerId: updated.customerId || undefined,
+        });
+      } else if (newStatus === 'preventivo_emesso' || newStatus === 'preventivo_inviato') {
+        await ensureRepairDocumentRegistered({
+          documentType: "quote",
+          repairOrderId: updated.id,
+          orderNumber: updated.orderNumber,
+          ownerId: req.user.id,
+          ownerRole: req.user.role,
+          resellerId: updated.resellerId || undefined,
+          repairCenterId: updated.repairCenterId || undefined,
+          customerId: updated.customerId || undefined,
+        });
+      } else if (newStatus === 'consegnato') {
+        await ensureRepairDocumentRegistered({
+          documentType: "delivery",
+          repairOrderId: updated.id,
+          orderNumber: updated.orderNumber,
+          ownerId: req.user.id,
+          ownerRole: req.user.role,
+          resellerId: updated.resellerId || undefined,
+          repairCenterId: updated.repairCenterId || undefined,
+          customerId: updated.customerId || undefined,
+        });
+      }
       
       await storage.invalidateCache('overview_%');
       await storage.invalidateCache('centers_%');
@@ -13072,6 +13170,18 @@ export function registerRoutes(app: Express): Server {
         status: 'preventivo_emesso' as any,
       });
       
+      // Auto-register quote document
+      await ensureRepairDocumentRegistered({
+        documentType: "quote",
+        repairOrderId: req.params.id,
+        orderNumber: repairOrder.orderNumber,
+        ownerId: req.user.id,
+        ownerRole: req.user.role,
+        resellerId: repairOrder.resellerId || undefined,
+        repairCenterId: repairOrder.repairCenterId || undefined,
+        customerId: repairOrder.customerId || undefined,
+      });
+      
       setActivityEntity(res, { type: 'repair_quote', id: quote.id });
       res.status(201).json(quote);
     } catch (error: any) {
@@ -14068,6 +14178,18 @@ export function registerRoutes(app: Express): Server {
       // Update status to consegnato
       await storage.updateRepairOrder(req.params.id, {
         status: 'consegnato' as any,
+      });
+      
+      // Auto-register delivery document
+      await ensureRepairDocumentRegistered({
+        documentType: "delivery",
+        repairOrderId: req.params.id,
+        orderNumber: repairOrder.orderNumber,
+        ownerId: req.user.id,
+        ownerRole: req.user.role,
+        resellerId: repairOrder.resellerId || undefined,
+        repairCenterId: repairOrder.repairCenterId || undefined,
+        customerId: repairOrder.customerId || undefined,
       });
       
       // Create log
