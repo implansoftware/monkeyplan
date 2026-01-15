@@ -151,6 +151,7 @@ type Product = {
 };
 
 type CartItem = {
+  serviceItemId?: string | null;
   productId: string | null;
   name: string;
   sku: string | null;
@@ -161,6 +162,7 @@ type CartItem = {
   discount: number;
   totalPrice: number;
   isTemporary?: boolean;
+  isService?: boolean;
 };
 
 type DailyStats = {
@@ -191,6 +193,16 @@ type Customer = {
   phone: string | null;
 };
 
+type ServiceItem = {
+  id: string;
+  code: string;
+  name: string;
+  description: string | null;
+  category: string;
+  priceCents: number;
+  laborMinutes: number;
+};
+
 const formatCurrency = (cents: number) => {
   return new Intl.NumberFormat("it-IT", {
     style: "currency",
@@ -211,6 +223,7 @@ export default function PosPage() {
   const [, navigate] = useLocation();
   const [cart, setCart] = useState<CartItem[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
+  const [serviceSearchQuery, setServiceSearchQuery] = useState("");
   const [barcodeInput, setBarcodeInput] = useState("");
   const [selectedPayment, setSelectedPayment] = useState<"cash" | "card" | "pos_terminal" | "satispay" | "mixed">("cash");
   const [cashReceived, setCashReceived] = useState<string>("");
@@ -314,6 +327,16 @@ export default function PosPage() {
   const { data: products = [], isLoading: productsLoading } = useQuery<Product[]>({
     queryKey: ["/api/repair-center/pos/products"],
   });
+
+  const { data: services = [], isLoading: servicesLoading } = useQuery<ServiceItem[]>({
+    queryKey: ["/api/repair-center/pos/services"],
+  });
+
+  const filteredServices = services.filter(s => 
+    s.name.toLowerCase().includes(serviceSearchQuery.toLowerCase()) ||
+    s.code.toLowerCase().includes(serviceSearchQuery.toLowerCase()) ||
+    s.category.toLowerCase().includes(serviceSearchQuery.toLowerCase())
+  ).slice(0, 20);
 
   type PosCustomer = { id: string; fullName: string; email: string; phone: string | null };
 
@@ -466,6 +489,33 @@ export default function PosPage() {
     }
   };
 
+
+  const addServiceToCart = (service: ServiceItem) => {
+    const existing = cart.find(item => item.serviceItemId === service.id && item.isService);
+    
+    if (existing) {
+      setCart(cart.map(item => 
+        item.serviceItemId === service.id && item.isService
+          ? { ...item, quantity: item.quantity + 1, totalPrice: (item.quantity + 1) * item.unitPrice }
+          : item
+      ));
+    } else {
+      setCart([...cart, {
+        serviceItemId: service.id,
+        productId: null,
+        name: service.name,
+        sku: service.code,
+        barcode: null,
+        category: service.category,
+        quantity: 1,
+        unitPrice: service.priceCents,
+        discount: 0,
+        totalPrice: service.priceCents,
+        isService: true,
+      }]);
+    }
+  };
+
   const updateQuantity = (productId: string, delta: number) => {
     setCart(cart.map(item => {
       if (item.productId === productId) {
@@ -478,6 +528,20 @@ export default function PosPage() {
 
   const removeFromCart = (productId: string) => {
     setCart(cart.filter(item => item.productId !== productId));
+  };
+
+  const updateServiceQuantity = (serviceItemId: string, delta: number) => {
+    setCart(cart.map(item => {
+      if (item.serviceItemId === serviceItemId && item.isService) {
+        const newQty = Math.max(0, item.quantity + delta);
+        return { ...item, quantity: newQty, totalPrice: newQty * item.unitPrice };
+      }
+      return item;
+    }).filter(item => item.quantity > 0));
+  };
+
+  const removeServiceFromCart = (serviceItemId: string) => {
+    setCart(cart.filter(item => !(item.serviceItemId === serviceItemId && item.isService)));
   };
 
   const updateTempQuantity = (index: number, delta: number) => {
@@ -549,6 +613,8 @@ export default function PosPage() {
     
     createTransactionMutation.mutate({
       items: cart.map(item => ({
+        serviceItemId: item.serviceItemId,
+        isService: item.isService || false,
         productId: item.productId,
         productName: item.isTemporary ? item.name : undefined,
         quantity: item.quantity,
@@ -798,6 +864,10 @@ export default function PosPage() {
                   <LayoutGrid className="w-4 h-4 mr-1" />
                   Prodotti
                 </TabsTrigger>
+                <TabsTrigger value="services" data-testid="tab-services">
+                  <FileText className="w-4 h-4 mr-1" />
+                  Listino Interventi
+                </TabsTrigger>
                 <TabsTrigger value="history" data-testid="tab-history">
                   <History className="w-4 h-4 mr-1" />
                   Storico
@@ -872,6 +942,62 @@ export default function PosPage() {
                           </button>
                         );
                       })}
+                    </div>
+                  )}
+                </ScrollArea>
+              </TabsContent>
+
+
+              <TabsContent value="services" className="flex-1 overflow-hidden m-0">
+                <div className="mb-2">
+                  <Input
+                    placeholder="Cerca intervento..."
+                    value={serviceSearchQuery}
+                    onChange={(e) => setServiceSearchQuery(e.target.value)}
+                    className="h-10"
+                    data-testid="input-service-search"
+                  />
+                </div>
+                <ScrollArea className="h-[calc(100%-3rem)]">
+                  {servicesLoading ? (
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+                      {[1,2,3,4,5,6,7,8].map(i => <Skeleton key={i} className="h-24 w-full" />)}
+                    </div>
+                  ) : filteredServices.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center h-40 text-muted-foreground">
+                      <AlertCircle className="w-12 h-12 mb-2 opacity-50" />
+                      <span>Nessun intervento disponibile</span>
+                      <span className="text-sm">Configura il catalogo interventi</span>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+                      {filteredServices.map((service) => (
+                        <button
+                          key={service.id}
+                          onClick={() => addServiceToCart(service)}
+                          className="p-3 rounded-lg border bg-card text-left transition-colors min-h-[120px] hover-elevate active-elevate-2"
+                          data-testid={`button-service-${service.id}`}
+                        >
+                          <div className="flex gap-2 mb-2">
+                            <div className="w-12 h-12 bg-gradient-to-br from-indigo-100 to-indigo-200 dark:from-indigo-800 dark:to-indigo-900 rounded-lg flex items-center justify-center flex-shrink-0">
+                              <FileText className="w-6 h-6 text-indigo-600 dark:text-indigo-300" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="font-medium text-sm line-clamp-2">{service.name}</div>
+                              <div className="text-xs text-muted-foreground mt-0.5">{service.code}</div>
+                            </div>
+                          </div>
+                          <Badge variant="outline" className="mb-2 text-xs">{service.category}</Badge>
+                          <div className="flex items-center justify-between">
+                            <div className="font-semibold text-primary">
+                              {formatCurrency(service.priceCents)}
+                            </div>
+                            <div className="text-xs text-muted-foreground">
+                              {service.laborMinutes} min
+                            </div>
+                          </div>
+                        </button>
+                      ))}
                     </div>
                   )}
                 </ScrollArea>
@@ -960,7 +1086,7 @@ export default function PosPage() {
             ) : (
               <div className="space-y-3">
                 {cart.map((item, idx) => {
-                  const itemKey = item.productId || `temp-${idx}`;
+                  const itemKey = item.serviceItemId ? `service-${item.serviceItemId}` : (item.productId || `temp-${idx}`);
                   return (
                   <div
                     key={itemKey}
@@ -972,6 +1098,11 @@ export default function PosPage() {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
                           <div className="font-medium text-sm line-clamp-1">{item.name}</div>
+                          {item.isService && (
+                            <Badge variant="outline" className="text-[10px] px-1 py-0 h-4 border-indigo-500 text-indigo-600 dark:text-indigo-400">
+                              Servizio
+                            </Badge>
+                          )}
                           {item.isTemporary && (
                             <Badge variant="outline" className="text-[10px] px-1 py-0 h-4 border-amber-500 text-amber-600 dark:text-amber-400">
                               Temp
@@ -997,7 +1128,7 @@ export default function PosPage() {
                           variant="ghost"
                           size="icon"
                           className="h-7 w-7"
-                          onClick={() => item.isTemporary ? updateTempQuantity(idx, -1) : updateQuantity(item.productId!, -1)}
+                          onClick={() => item.isTemporary ? updateTempQuantity(idx, -1) : (item.isService ? updateServiceQuantity(item.serviceItemId!, -1) : updateQuantity(item.productId!, -1))}
                           data-testid={`button-decrease-${itemKey}`}
                         >
                           <Minus className="w-3 h-3" />
@@ -1007,7 +1138,7 @@ export default function PosPage() {
                           variant="ghost"
                           size="icon"
                           className="h-7 w-7"
-                          onClick={() => item.isTemporary ? updateTempQuantity(idx, 1) : updateQuantity(item.productId!, 1)}
+                          onClick={() => item.isTemporary ? updateTempQuantity(idx, 1) : (item.isService ? updateServiceQuantity(item.serviceItemId!, 1) : updateQuantity(item.productId!, 1))}
                           data-testid={`button-increase-${itemKey}`}
                         >
                           <Plus className="w-3 h-3" />
@@ -1017,7 +1148,7 @@ export default function PosPage() {
                         variant="ghost"
                         size="icon"
                         className="h-7 w-7 text-destructive hover:text-destructive"
-                        onClick={() => item.isTemporary ? removeTempFromCart(idx) : removeFromCart(item.productId!)}
+                        onClick={() => item.isTemporary ? removeTempFromCart(idx) : (item.isService ? removeServiceFromCart(item.serviceItemId!) : removeFromCart(item.productId!))}
                         data-testid={`button-remove-${itemKey}`}
                       >
                         <Trash2 className="w-4 h-4" />

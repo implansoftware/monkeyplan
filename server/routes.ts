@@ -33155,6 +33155,37 @@ export function registerRoutes(app: Express): Server {
           continue;
         }
         
+        
+        // Gestisce servizi dal catalogo interventi
+        if (item.isService) {
+          if (!item.serviceItemId) {
+            return res.status(400).json({ error: "Servizio richiede serviceItemId" });
+          }
+          const serviceItem = await storage.getServiceItem(item.serviceItemId);
+          if (!serviceItem) return res.status(400).json({ error: `Servizio ${item.serviceItemId} non trovato` });
+          
+          const unitPrice = item.unitPrice ?? serviceItem.defaultPriceCents;
+          const itemDiscount = item.discount || 0;
+          const totalPrice = (unitPrice * item.quantity) - itemDiscount;
+          
+          processedItems.push({
+            productId: null,
+            productName: serviceItem.name,
+            productSku: serviceItem.code,
+            productBarcode: null,
+            serviceItemId: item.serviceItemId,
+            isService: true,
+            isTemporary: false,
+            quantity: item.quantity,
+            unitPrice,
+            discount: itemDiscount,
+            totalPrice,
+            warehouseId: null,
+          });
+          
+          subtotal += totalPrice;
+          continue;
+        }
         // Prodotto standard dal catalogo
         const product = await storage.getProduct(item.productId);
         if (!product) return res.status(400).json({ error: `Prodotto ${item.productId} non trovato` });
@@ -33588,6 +33619,72 @@ export function registerRoutes(app: Express): Server {
       const products = await storage.getProducts({ barcode: req.params.barcode });
       if (products.length === 0) return res.status(404).json({ error: "Prodotto non trovato" });
       res.json(products[0]);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Lista servizi dal catalogo interventi per POS
+  app.get("/api/repair-center/pos/services", requireRole("repair_center", "repair_center_staff"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const repairCenterId = req.user.repairCenterId;
+      if (!repairCenterId) {
+        return res.status(400).send("Repair center not found");
+      }
+      
+      const search = req.query.search as string | undefined;
+      const category = req.query.category as string | undefined;
+      
+      const repairCenter = await storage.getRepairCenter(repairCenterId);
+      if (!repairCenter) {
+        return res.status(404).send("Repair center not found");
+      }
+      
+      const items = await storage.listServiceItems();
+      let activeItems = items.filter(item => 
+        item.isActive && (
+          !item.repairCenterId || 
+          item.repairCenterId === repairCenterId
+        )
+      );
+      
+      if (search) {
+        const searchLower = search.toLowerCase();
+        activeItems = activeItems.filter(item =>
+          item.name.toLowerCase().includes(searchLower) ||
+          item.code.toLowerCase().includes(searchLower) ||
+          item.category.toLowerCase().includes(searchLower)
+        );
+      }
+      
+      if (category) {
+        activeItems = activeItems.filter(item => item.category === category);
+      }
+      
+      const centerPrices = await storage.listServiceItemPricesByRepairCenter(repairCenterId);
+      const resellerPrices = repairCenter.resellerId 
+        ? await storage.listServiceItemPricesByReseller(repairCenter.resellerId)
+        : [];
+      
+      const servicesWithPrices = activeItems.map(item => {
+        const centerPrice = centerPrices.find(p => p.serviceItemId === item.id);
+        const resellerPrice = resellerPrices.find(p => p.serviceItemId === item.id);
+        const effectivePrice = centerPrice?.priceCents ?? resellerPrice?.priceCents ?? item.defaultPriceCents;
+        
+        return {
+          id: item.id,
+          code: item.code,
+          name: item.name,
+          description: item.description,
+          category: item.category,
+          priceCents: effectivePrice,
+          laborMinutes: centerPrice?.laborMinutes ?? resellerPrice?.laborMinutes ?? item.defaultLaborMinutes,
+        };
+      });
+      
+      res.json(servicesWithPrices);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }
