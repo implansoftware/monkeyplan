@@ -201,6 +201,7 @@ const menuItems = {
     { title: "Resi a Fornitori", url: "/reseller/supplier-returns", icon: RotateCcw, group: "Fornitori" },
     { title: "Panoramica Vendite", url: "/reseller/sales", icon: TrendingUp, group: "Fatturazione" },
     { title: "Fatture", url: "/reseller/invoices", icon: FileText, group: "Fatturazione" },
+    { title: "Documenti", url: "/reseller/documents", icon: FolderOpen, group: "Fatturazione" },
     { title: "Report", url: "/reseller/reports", icon: BarChart3, group: "Fatturazione" },
     // E-commerce - Catalogo
     { title: "Catalogo Shop", url: "/reseller/shop-catalog", icon: Store, group: "E-commerce" },
@@ -266,6 +267,7 @@ const menuItems = {
     // Gestione
     { title: "Clienti", url: "/repair-center/customers", icon: Users, group: "Gestione" },
     { title: "Fatture", url: "/repair-center/invoices", icon: FileText, group: "Gestione" },
+    { title: "Documenti", url: "/repair-center/documents", icon: FolderOpen, group: "Gestione" },
     { title: "Impostazioni", url: "/repair-center/settings", icon: Settings, group: "Gestione" },
     // Acquisti B2B
     { title: "Catalogo B2B", url: "/repair-center/b2b-catalog", icon: ShoppingCart, group: "Acquisti B2B" },

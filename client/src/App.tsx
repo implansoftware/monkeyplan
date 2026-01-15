@@ -108,6 +108,7 @@ import ResellerCustomerDetail from "@/pages/reseller/customer-detail";
 import ResellerTickets from "@/pages/reseller/tickets";
 import ResellerTicketDetail from "@/pages/reseller/ticket-detail";
 import ResellerInvoices from "@/pages/reseller/invoices";
+import ResellerDocuments from "@/pages/reseller/documents";
 import ResellerSales from "@/pages/reseller/sales";
 import ResellerReports from "@/pages/reseller/reports";
 
@@ -218,6 +219,7 @@ import SalesHistory from "@/pages/repair-center/pos-invoices";
 import PosSessions from "@/pages/repair-center/pos-sessions";
 import PosRegisters from "@/pages/repair-center/pos-registers";
 import RepairCenterInvoices from "@/pages/repair-center/invoices";
+import RepairCenterDocuments from "@/pages/repair-center/documents";
 
 // Repair Center HR pages
 import RepairCenterHrDashboard from "@/pages/repair-center/hr/index";
@@ -395,6 +397,7 @@ function Router() {
       <ProtectedRoute path="/reseller/utility/commissions" component={ResellerUtilityCommissions} allowedRoles={["reseller", "reseller_staff"]} />
       <ProtectedRoute path="/reseller/utility/reports" component={ResellerUtilityReports} allowedRoles={["reseller", "reseller_staff"]} />
       <ProtectedRoute path="/reseller/invoices" component={ResellerInvoices} allowedRoles={["reseller", "reseller_staff"]} />
+      <ProtectedRoute path="/reseller/documents" component={ResellerDocuments} allowedRoles={["reseller", "reseller_staff"]} />
       <ProtectedRoute path="/reseller/sales" component={ResellerSales} allowedRoles={["reseller", "reseller_staff"]} />
       <ProtectedRoute path="/reseller/reports" component={ResellerReports} allowedRoles={["reseller", "reseller_staff"]} />
       <ProtectedRoute path="/reseller/sifar/settings" component={ResellerSifarSettings} allowedRoles={["reseller", "reseller_staff"]} />
@@ -462,6 +465,7 @@ function Router() {
       <ProtectedRoute path="/repair-center/service-catalog" component={RepairCenterServiceCatalog} />
       <ProtectedRoute path="/repair-center/settings" component={RepairCenterSettings} />
       <ProtectedRoute path="/repair-center/invoices" component={RepairCenterInvoices} />
+      <ProtectedRoute path="/repair-center/documents" component={RepairCenterDocuments} />
       <ProtectedRoute path="/repair-center/b2b-returns" component={RepairCenterB2BReturns} />
       <ProtectedRoute path="/repair-center/marketplace" component={RepairCenterMarketplace} />
       <ProtectedRoute path="/repair-center/suppliers" component={RepairCenterSuppliers} />

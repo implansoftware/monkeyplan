@@ -35148,5 +35148,187 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+
+  // ============ DOCUMENTS (Centralized Document Registry) ============
+
+  // GET list documents for reseller (includes sub-resellers and their repair centers)
+  app.get("/api/reseller/documents", requireAuth, async (req, res) => {
+    try {
+      const user = req.user as any;
+      if (!user || (user.role !== "reseller" && user.role !== "sub_reseller")) {
+        return res.status(403).json({ error: "Accesso negato" });
+      }
+
+      const resellerId = user.role === "sub_reseller" ? user.parentResellerId : user.id;
+      if (!resellerId) {
+        return res.status(400).json({ error: "Reseller non valido" });
+      }
+
+      const { documentType, sourceType, search, startDate, endDate, limit, offset } = req.query;
+
+      const result = await storage.listDocumentsForReseller(resellerId, {
+        documentType: documentType as any,
+        sourceType: sourceType as any,
+        search: search as string,
+        startDate: startDate ? new Date(startDate as string) : undefined,
+        endDate: endDate ? new Date(endDate as string) : undefined,
+        limit: limit ? parseInt(limit as string) : 50,
+        offset: offset ? parseInt(offset as string) : 0,
+      });
+
+      res.json(result);
+    } catch (error: any) {
+      console.error("Error fetching reseller documents:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // GET list documents for repair center
+  app.get("/api/repair-center/documents", requireAuth, async (req, res) => {
+    try {
+      const user = req.user as any;
+      if (!user || user.role !== "repair_center") {
+        return res.status(403).json({ error: "Accesso negato" });
+      }
+
+      const repairCenterId = user.repairCenterId;
+      if (!repairCenterId) {
+        return res.status(400).json({ error: "Centro riparazioni non associato" });
+      }
+
+      const { documentType, sourceType, search, startDate, endDate, limit, offset } = req.query;
+
+      const result = await storage.listDocumentsForRepairCenter(repairCenterId, {
+        documentType: documentType as any,
+        sourceType: sourceType as any,
+        search: search as string,
+        startDate: startDate ? new Date(startDate as string) : undefined,
+        endDate: endDate ? new Date(endDate as string) : undefined,
+        limit: limit ? parseInt(limit as string) : 50,
+        offset: offset ? parseInt(offset as string) : 0,
+      });
+
+      res.json(result);
+    } catch (error: any) {
+      console.error("Error fetching repair center documents:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // GET single document
+  app.get("/api/documents/:id", requireAuth, async (req, res) => {
+    try {
+      const user = req.user as any;
+      if (!user) {
+        return res.status(401).json({ error: "Non autorizzato" });
+      }
+
+      const doc = await storage.getDocument(req.params.id);
+      if (!doc) {
+        return res.status(404).json({ error: "Documento non trovato" });
+      }
+
+      // Pre-fetch valid repair center IDs for reseller hierarchy
+      let validRepairCenterIds: string[] = [];
+      if (user.role === "reseller" || user.role === "sub_reseller") {
+        const resellerId = user.role === "sub_reseller" ? user.parentResellerId : user.id;
+        const centers = await storage.getRepairCentersByResellerIds([resellerId]);
+        validRepairCenterIds = centers.map(c => c.id);
+      }
+
+      // Access control check based on user role
+      let hasAccess = false;
+      if (user.role === "admin" || user.role === "admin_staff") {
+        hasAccess = true;
+      } else if (user.role === "reseller" || user.role === "sub_reseller") {
+        const resellerId = user.role === "sub_reseller" ? user.parentResellerId : user.id;
+        // Check if document belongs to reseller, user, or their repair centers
+        if (doc.resellerId === resellerId || doc.ownerId === user.id || 
+            (doc.repairCenterId && validRepairCenterIds.includes(doc.repairCenterId))) {
+          hasAccess = true;
+        }
+      } else if (user.role === "repair_center") {
+        if (doc.repairCenterId === user.repairCenterId || doc.ownerId === user.id) {
+          hasAccess = true;
+        }
+      }
+
+      if (!hasAccess) {
+        return res.status(403).json({ error: "Accesso negato a questo documento" });
+      }
+
+      res.json(doc);
+    } catch (error: any) {
+      console.error("Error fetching document:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+  // GET documents by source (with access control)
+  app.get("/api/documents/by-source/:sourceType/:sourceId", requireAuth, async (req, res) => {
+    try {
+      const user = req.user as any;
+      if (!user) {
+        return res.status(401).json({ error: "Non autorizzato" });
+      }
+
+      const { sourceType, sourceId } = req.params;
+      const docs = await storage.getDocumentsBySource(sourceType as any, sourceId);
+
+      // Pre-fetch valid repair center IDs for reseller hierarchy
+      let validRepairCenterIds: string[] = [];
+      if (user.role === "reseller" || user.role === "sub_reseller") {
+        const resellerId = user.role === "sub_reseller" ? user.parentResellerId : user.id;
+        const centers = await storage.getRepairCentersByResellerIds([resellerId]);
+        validRepairCenterIds = centers.map(c => c.id);
+      }
+
+      // Filter documents based on user role and access rights
+      const filteredDocs = docs.filter((doc) => {
+        if (user.role === "admin" || user.role === "admin_staff") {
+          return true;
+        } else if (user.role === "reseller" || user.role === "sub_reseller") {
+          const resellerId = user.role === "sub_reseller" ? user.parentResellerId : user.id;
+          // Check if document belongs to reseller, user, or their repair centers
+          return doc.resellerId === resellerId || 
+                 doc.ownerId === user.id || 
+                 (doc.repairCenterId && validRepairCenterIds.includes(doc.repairCenterId));
+        } else if (user.role === "repair_center") {
+          return doc.repairCenterId === user.repairCenterId || doc.ownerId === user.id;
+        }
+        return false;
+      });
+
+      res.json(filteredDocs);
+    } catch (error: any) {
+      console.error("Error fetching documents by source:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+  // DELETE document (soft delete or hard delete based on policy)
+  app.delete("/api/documents/:id", requireAuth, async (req, res) => {
+    try {
+      const user = req.user as any;
+      if (!user) {
+        return res.status(401).json({ error: "Non autorizzato" });
+      }
+
+      const doc = await storage.getDocument(req.params.id);
+      if (!doc) {
+        return res.status(404).json({ error: "Documento non trovato" });
+      }
+
+      // Only owner or admin can delete
+      if (doc.ownerId !== user.id && user.role !== "admin") {
+        return res.status(403).json({ error: "Non autorizzato a eliminare questo documento" });
+      }
+
+      await storage.deleteDocument(req.params.id);
+      res.json({ success: true });
+    } catch (error: any) {
+      console.error("Error deleting document:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   return httpServer;
 }
