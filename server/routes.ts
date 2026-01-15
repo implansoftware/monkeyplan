@@ -11266,8 +11266,6 @@ export function registerRoutes(app: Express): Server {
         // Auto-associate customer with repair center
         if (orderData.customerId && orderData.repairCenterId) {
           await storage.ensureCustomerRepairCenterAssociation(orderData.customerId, orderData.repairCenterId);
-        }
-        setActivityEntity(res, { type: 'repair_order', id: order.id });
         res.json({ order, acceptance });
       } else {
         const order = await storage.createRepairOrder(orderData);
