@@ -240,6 +240,7 @@ export default function RepairCenterDashboard() {
 
       {/* Main KPI Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {isWidgetVisible("stats-repairs") && (
         <Card className="relative overflow-hidden group hover:shadow-md transition-shadow" data-testid="card-kpi-repairs">
           <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent" />
           <CardContent className="relative pt-5 pb-4">
@@ -266,7 +267,9 @@ export default function RepairCenterDashboard() {
             </div>
           </CardContent>
         </Card>
+        )}
 
+        {isWidgetVisible("stats-customers") && (
         <Card className="relative overflow-hidden group hover:shadow-md transition-shadow" data-testid="card-kpi-customers">
           <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-transparent" />
           <CardContent className="relative pt-5 pb-4">
@@ -288,7 +291,9 @@ export default function RepairCenterDashboard() {
             </div>
           </CardContent>
         </Card>
+        )}
 
+        {isWidgetVisible("stats-revenue") && (
         <Card className="relative overflow-hidden group hover:shadow-md transition-shadow" data-testid="card-kpi-revenue">
           <div className="absolute inset-0 bg-gradient-to-br from-amber-500/5 to-transparent" />
           <CardContent className="relative pt-5 pb-4">
@@ -310,7 +315,9 @@ export default function RepairCenterDashboard() {
             </div>
           </CardContent>
         </Card>
+        )}
 
+        {isWidgetVisible("stats-stock") && (
         <Card className="relative overflow-hidden group hover:shadow-md transition-shadow" data-testid="card-kpi-stock">
           <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-transparent" />
           <CardContent className="relative pt-5 pb-4">
@@ -336,10 +343,12 @@ export default function RepairCenterDashboard() {
             </div>
           </CardContent>
         </Card>
+        )}
       </div>
 
       {/* Secondary Metrics */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {isWidgetVisible("stats-completed") && (
         <Link href="/repair-center/repairs" className="block group">
           <Card className="h-full transition-all hover:shadow-md hover:border-primary/50" data-testid="card-completed-repairs">
             <CardContent className="pt-4 pb-3">
@@ -358,7 +367,9 @@ export default function RepairCenterDashboard() {
             </CardContent>
           </Card>
         </Link>
+        )}
 
+        {isWidgetVisible("stats-b2b-orders") && (
         <Link href="/repair-center/b2b-orders" className="block group">
           <Card className="h-full transition-all hover:shadow-md hover:border-primary/50" data-testid="card-b2b">
             <CardContent className="pt-4 pb-3">
@@ -377,7 +388,9 @@ export default function RepairCenterDashboard() {
             </CardContent>
           </Card>
         </Link>
+        )}
 
+        {isWidgetVisible("stats-tickets") && (
         <Link href="/repair-center/tickets" className="block group">
           <Card className="h-full transition-all hover:shadow-md hover:border-primary/50" data-testid="card-tickets">
             <CardContent className="pt-4 pb-3">
@@ -396,7 +409,9 @@ export default function RepairCenterDashboard() {
             </CardContent>
           </Card>
         </Link>
+        )}
 
+        {isWidgetVisible("stats-customers-list") && (
         <Link href="/repair-center/customers" className="block group">
           <Card className="h-full transition-all hover:shadow-md hover:border-primary/50" data-testid="card-customers-link">
             <CardContent className="pt-4 pb-3">
@@ -415,9 +430,11 @@ export default function RepairCenterDashboard() {
             </CardContent>
           </Card>
         </Link>
+        )}
       </div>
 
       {/* Quick Actions */}
+      {isWidgetVisible("management-quick-actions") && (
       <Card className="overflow-hidden">
         <CardHeader className="pb-3 border-b bg-muted/30">
           <CardTitle className="text-base font-semibold">Azioni Rapide</CardTitle>
@@ -494,13 +511,17 @@ export default function RepairCenterDashboard() {
           </div>
         </CardContent>
       </Card>
+      )}
 
       {/* Operational Tasks */}
-      <OperationalTaskList maxItems={6} />
+      {isWidgetVisible("activity-repairs") && (
+        <OperationalTaskList maxItems={6} />
+      )}
 
       {/* Charts & Recent Repairs */}
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
         <div className="xl:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
+          {isWidgetVisible("chart-repairs-status") && (
           <Card className="overflow-hidden">
             <CardHeader className="pb-2 border-b bg-muted/30">
               <CardTitle className="text-sm font-semibold">Riparazioni per Stato</CardTitle>
@@ -534,7 +555,9 @@ export default function RepairCenterDashboard() {
               )}
             </CardContent>
           </Card>
+          )}
 
+          {isWidgetVisible("chart-work-status") && (
           <Card className="overflow-hidden">
             <CardHeader className="pb-2 border-b bg-muted/30">
               <CardTitle className="text-sm font-semibold">Stato Lavori</CardTitle>
@@ -590,8 +613,10 @@ export default function RepairCenterDashboard() {
               )}
             </CardContent>
           </Card>
+          )}
         </div>
 
+        {isWidgetVisible("activity-recent-repairs") && (
         <Card className="overflow-hidden">
           <CardHeader className="flex flex-row items-center justify-between gap-1 pb-3 border-b bg-muted/30">
             <CardTitle className="text-sm font-semibold">Ultime Riparazioni</CardTitle>
@@ -641,6 +666,7 @@ export default function RepairCenterDashboard() {
             )}
           </CardContent>
         </Card>
+        )}
       </div>
 
       {/* Dialogs */}
