@@ -48,6 +48,7 @@ import {
 import { ObjectStorageService, objectStorageClient, parseObjectPath, signObjectURL } from "./objectStorage";
 import { canAccessObject, ObjectPermission } from "./objectAcl";
 import { generateAndStoreReturnDocuments, getSignedDownloadUrl, generateTransferDDT, TransferDdtData } from "./services/shippingDocuments";
+import { registerDocument, buildDocumentTitle, ensureRepairDocumentRegistered } from "./services/documentRegistry";
 import { generatePosReceiptPdf } from "./services/posReceipt";
 import { calculateRepairPriority } from "./helpers/priorityCalculation";
 import { db } from "./db";
@@ -14807,6 +14808,18 @@ export function registerRoutes(app: Express): Server {
         }).format(cents / 100);
       };
       
+      // Register document in archive
+      await ensureRepairDocumentRegistered({
+        documentType: "delivery",
+        repairOrderId: repairOrder.id,
+        orderNumber: repairOrder.orderNumber,
+        ownerId: req.user!.id,
+        ownerRole: req.user!.role,
+        resellerId: repairOrder.resellerId || undefined,
+        repairCenterId: repairOrder.repairCenterId || undefined,
+        customerId: repairOrder.customerId || undefined,
+      });
+
       // Generate PDF
       const PDFDocument = (await import('pdfkit')).default;
       const doc = new PDFDocument({ margin: 50, size: 'A4' });
@@ -15018,6 +15031,18 @@ export function registerRoutes(app: Express): Server {
         if (deviceType) deviceTypeName = deviceType.name;
       }
       
+      // Register document in archive
+      await ensureRepairDocumentRegistered({
+        documentType: "intake",
+        repairOrderId: repairOrder.id,
+        orderNumber: repairOrder.orderNumber,
+        ownerId: req.user!.id,
+        ownerRole: req.user!.role,
+        resellerId: repairOrder.resellerId || undefined,
+        repairCenterId: repairOrder.repairCenterId || undefined,
+        customerId: repairOrder.customerId || undefined,
+      });
+
       // Generate PDF
       const PDFDocument = (await import('pdfkit')).default;
       const doc = new PDFDocument({ margin: 50, size: 'A4' });
@@ -15236,6 +15261,18 @@ export function registerRoutes(app: Express): Server {
         if (deviceType) deviceTypeName = deviceType.name;
       }
       
+      // Register document in archive
+      await ensureRepairDocumentRegistered({
+        documentType: "label",
+        repairOrderId: repairOrder.id,
+        orderNumber: repairOrder.orderNumber,
+        ownerId: req.user!.id,
+        ownerRole: req.user!.role,
+        resellerId: repairOrder.resellerId || undefined,
+        repairCenterId: repairOrder.repairCenterId || undefined,
+        customerId: repairOrder.customerId || undefined,
+      });
+
       // Generate PDF with 6 labels (2x3 grid) + 2 barcodes each
       const PDFDocument = (await import('pdfkit')).default;
       const bwipjs = await import('bwip-js');
@@ -15456,6 +15493,18 @@ export function registerRoutes(app: Express): Server {
         if (deviceType) deviceTypeName = deviceType.name;
       }
       
+      // Register document in archive
+      await ensureRepairDocumentRegistered({
+        documentType: "diagnosis",
+        repairOrderId: repairOrder.id,
+        orderNumber: repairOrder.orderNumber,
+        ownerId: req.user!.id,
+        ownerRole: req.user!.role,
+        resellerId: repairOrder.resellerId || undefined,
+        repairCenterId: repairOrder.repairCenterId || undefined,
+        customerId: repairOrder.customerId || undefined,
+      });
+
       // Generate PDF
       const PDFDocument = (await import('pdfkit')).default;
       const doc = new PDFDocument({ margin: 50, size: 'A4' });
@@ -15670,6 +15719,18 @@ export function registerRoutes(app: Express): Server {
         }).format(cents / 100);
       };
       
+      // Register document in archive
+      await ensureRepairDocumentRegistered({
+        documentType: "quote",
+        repairOrderId: repairOrder.id,
+        orderNumber: repairOrder.orderNumber,
+        ownerId: req.user!.id,
+        ownerRole: req.user!.role,
+        resellerId: repairOrder.resellerId || undefined,
+        repairCenterId: repairOrder.repairCenterId || undefined,
+        customerId: repairOrder.customerId || undefined,
+      });
+
       // Generate PDF
       const PDFDocument = (await import('pdfkit')).default;
       const doc = new PDFDocument({ margin: 50, size: 'A4' });

@@ -81,3 +81,35 @@ export function buildFileName(
   const timestamp = Date.now();
   return `${documentType}_${safeRef}_${timestamp}.${extension}`;
 }
+
+export async function ensureRepairDocumentRegistered(params: {
+  documentType: DocumentType;
+  repairOrderId: string;
+  orderNumber: string;
+  ownerId: string;
+  ownerRole: string;
+  resellerId?: string;
+  repairCenterId?: string;
+  customerId?: string;
+}): Promise<void> {
+  const existingDocs = await storage.getDocumentsBySource("repair_order", params.repairOrderId);
+  const alreadyExists = existingDocs.some(d => d.documentType === params.documentType);
+  
+  if (!alreadyExists) {
+    await registerDocument({
+      title: buildDocumentTitle(params.documentType, params.orderNumber),
+      documentType: params.documentType,
+      sourceType: "repair_order",
+      sourceId: params.repairOrderId,
+      sourceReference: params.orderNumber,
+      ownerId: params.ownerId,
+      ownerRole: params.ownerRole,
+      resellerId: params.resellerId,
+      repairCenterId: params.repairCenterId,
+      customerId: params.customerId,
+      fileUrl: `/api/repair-orders/${params.repairOrderId}/${params.documentType === 'intake' ? 'intake-document' : params.documentType === 'delivery' ? 'delivery-document' : params.documentType === 'diagnosis' ? 'diagnosis-document' : params.documentType === 'quote' ? 'quote-document' : 'labels'}`,
+      fileName: `${params.documentType}-${params.orderNumber}.pdf`,
+      mimeType: "application/pdf",
+    });
+  }
+}
