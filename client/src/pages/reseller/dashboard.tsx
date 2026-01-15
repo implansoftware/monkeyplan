@@ -271,181 +271,197 @@ export default function ResellerDashboard() {
 
       {/* Main KPI Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="relative overflow-hidden group hover:shadow-md transition-shadow" data-testid="card-kpi-repairs">
-          <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent" />
-          <CardContent className="relative pt-5 pb-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">Riparazioni Attive</p>
-                {isLoading ? (
-                  <Skeleton className="h-9 w-16" />
-                ) : (
-                  <p className="text-3xl font-bold tabular-nums" data-testid="text-active-repairs">
-                    {stats?.overview?.activeRepairs ?? 0}
-                  </p>
-                )}
-                <div className="flex items-center gap-1 mt-1">
-                  <TrendingUp className="h-3 w-3 text-emerald-500" />
-                  <span className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">
-                    {stats?.overview?.totalRepairs ?? 0} totali
-                  </span>
+        {isWidgetVisible("stats-repairs") && (
+          <Card className="relative overflow-hidden group hover:shadow-md transition-shadow" data-testid="card-kpi-repairs">
+            <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent" />
+            <CardContent className="relative pt-5 pb-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">Riparazioni Attive</p>
+                  {isLoading ? (
+                    <Skeleton className="h-9 w-16" />
+                  ) : (
+                    <p className="text-3xl font-bold tabular-nums" data-testid="text-active-repairs">
+                      {stats?.overview?.activeRepairs ?? 0}
+                    </p>
+                  )}
+                  <div className="flex items-center gap-1 mt-1">
+                    <TrendingUp className="h-3 w-3 text-emerald-500" />
+                    <span className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">
+                      {stats?.overview?.totalRepairs ?? 0} totali
+                    </span>
+                  </div>
+                </div>
+                <div className="h-12 w-12 rounded-xl bg-primary text-primary-foreground flex items-center justify-center shadow-lg shadow-primary/20">
+                  <Wrench className="h-6 w-6" />
                 </div>
               </div>
-              <div className="h-12 w-12 rounded-xl bg-primary text-primary-foreground flex items-center justify-center shadow-lg shadow-primary/20">
-                <Wrench className="h-6 w-6" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        )}
 
-        <Card className="relative overflow-hidden group hover:shadow-md transition-shadow" data-testid="card-kpi-customers">
-          <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-transparent" />
-          <CardContent className="relative pt-5 pb-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">Clienti</p>
-                {isLoading ? (
-                  <Skeleton className="h-9 w-16" />
-                ) : (
-                  <p className="text-3xl font-bold tabular-nums text-emerald-600 dark:text-emerald-400" data-testid="text-customers">
-                    {stats?.overview?.totalCustomers ?? 0}
-                  </p>
-                )}
-                <p className="text-xs text-muted-foreground mt-1">Gestiti attivamente</p>
+        {isWidgetVisible("stats-users") && (
+          <Card className="relative overflow-hidden group hover:shadow-md transition-shadow" data-testid="card-kpi-customers">
+            <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-transparent" />
+            <CardContent className="relative pt-5 pb-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">Clienti</p>
+                  {isLoading ? (
+                    <Skeleton className="h-9 w-16" />
+                  ) : (
+                    <p className="text-3xl font-bold tabular-nums text-emerald-600 dark:text-emerald-400" data-testid="text-customers">
+                      {stats?.overview?.totalCustomers ?? 0}
+                    </p>
+                  )}
+                  <p className="text-xs text-muted-foreground mt-1">Gestiti attivamente</p>
+                </div>
+                <div className="h-12 w-12 rounded-xl bg-emerald-500 text-white flex items-center justify-center shadow-lg shadow-emerald-500/20">
+                  <Users className="h-6 w-6" />
+                </div>
               </div>
-              <div className="h-12 w-12 rounded-xl bg-emerald-500 text-white flex items-center justify-center shadow-lg shadow-emerald-500/20">
-                <Users className="h-6 w-6" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        )}
 
-        <Card className="relative overflow-hidden group hover:shadow-md transition-shadow" data-testid="card-kpi-revenue">
-          <div className="absolute inset-0 bg-gradient-to-br from-amber-500/5 to-transparent" />
-          <CardContent className="relative pt-5 pb-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">Fatturato</p>
-                {isLoading ? (
-                  <Skeleton className="h-9 w-24" />
-                ) : (
-                  <p className="text-2xl font-bold tabular-nums text-amber-600 dark:text-amber-400" data-testid="text-revenue">
-                    {formatCurrency(stats?.overview?.totalRevenue ?? 0)}
-                  </p>
-                )}
-                <p className="text-xs text-muted-foreground mt-1">Da riparazioni</p>
+        {isWidgetVisible("stats-invoices") && (
+          <Card className="relative overflow-hidden group hover:shadow-md transition-shadow" data-testid="card-kpi-revenue">
+            <div className="absolute inset-0 bg-gradient-to-br from-amber-500/5 to-transparent" />
+            <CardContent className="relative pt-5 pb-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">Fatturato</p>
+                  {isLoading ? (
+                    <Skeleton className="h-9 w-24" />
+                  ) : (
+                    <p className="text-2xl font-bold tabular-nums text-amber-600 dark:text-amber-400" data-testid="text-revenue">
+                      {formatCurrency(stats?.overview?.totalRevenue ?? 0)}
+                    </p>
+                  )}
+                  <p className="text-xs text-muted-foreground mt-1">Da riparazioni</p>
+                </div>
+                <div className="h-12 w-12 rounded-xl bg-amber-500 text-white flex items-center justify-center shadow-lg shadow-amber-500/20">
+                  <TrendingUp className="h-6 w-6" />
+                </div>
               </div>
-              <div className="h-12 w-12 rounded-xl bg-amber-500 text-white flex items-center justify-center shadow-lg shadow-amber-500/20">
-                <TrendingUp className="h-6 w-6" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        )}
 
-        <Card className="relative overflow-hidden group hover:shadow-md transition-shadow" data-testid="card-kpi-stock">
-          <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-transparent" />
-          <CardContent className="relative pt-5 pb-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">Stock</p>
-                {isLoading ? (
-                  <Skeleton className="h-9 w-16" />
-                ) : (
-                  <p className="text-3xl font-bold tabular-nums text-blue-600 dark:text-blue-400" data-testid="text-stock">
-                    {stats?.warehouse?.totalStock ?? 0}
+        {isWidgetVisible("stats-inventory") && (
+          <Card className="relative overflow-hidden group hover:shadow-md transition-shadow" data-testid="card-kpi-stock">
+            <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-transparent" />
+            <CardContent className="relative pt-5 pb-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">Stock</p>
+                  {isLoading ? (
+                    <Skeleton className="h-9 w-16" />
+                  ) : (
+                    <p className="text-3xl font-bold tabular-nums text-blue-600 dark:text-blue-400" data-testid="text-stock">
+                      {stats?.warehouse?.totalStock ?? 0}
+                    </p>
+                  )}
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {stats?.warehouse?.lowStockItems ? (
+                      <span className="text-amber-600 dark:text-amber-400">{stats.warehouse.lowStockItems} sotto scorta</span>
+                    ) : "Articoli in magazzino"}
                   </p>
-                )}
-                <p className="text-xs text-muted-foreground mt-1">
-                  {stats?.warehouse?.lowStockItems ? (
-                    <span className="text-amber-600 dark:text-amber-400">{stats.warehouse.lowStockItems} sotto scorta</span>
-                  ) : "Articoli in magazzino"}
-                </p>
+                </div>
+                <div className="h-12 w-12 rounded-xl bg-blue-500 text-white flex items-center justify-center shadow-lg shadow-blue-500/20">
+                  <Warehouse className="h-6 w-6" />
+                </div>
               </div>
-              <div className="h-12 w-12 rounded-xl bg-blue-500 text-white flex items-center justify-center shadow-lg shadow-blue-500/20">
-                <Warehouse className="h-6 w-6" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        )}
       </div>
 
       {/* Secondary Metrics */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <Link href="/reseller/transfer-requests" className="block group">
-          <Card className="h-full transition-all hover:shadow-md hover:border-primary/50" data-testid="card-interscambio">
-            <CardContent className="pt-4 pb-3">
-              <div className="flex items-center gap-3">
-                <div className="h-9 w-9 rounded-lg bg-violet-500/10 flex items-center justify-center">
-                  <ArrowRightLeft className="h-4 w-4 text-violet-500" />
+        {isWidgetVisible("stats-tickets") && (
+          <Link href="/reseller/transfer-requests" className="block group">
+            <Card className="h-full transition-all hover:shadow-md hover:border-primary/50" data-testid="card-interscambio">
+              <CardContent className="pt-4 pb-3">
+                <div className="flex items-center gap-3">
+                  <div className="h-9 w-9 rounded-lg bg-violet-500/10 flex items-center justify-center">
+                    <ArrowRightLeft className="h-4 w-4 text-violet-500" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs text-muted-foreground">Interscambio</p>
+                    <p className="text-xl font-bold tabular-nums" data-testid="text-pending-transfers">
+                      {stats?.interscambio?.pendingRequests ?? 0}
+                    </p>
+                  </div>
+                  <ChevronRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
                 </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs text-muted-foreground">Interscambio</p>
-                  <p className="text-xl font-bold tabular-nums" data-testid="text-pending-transfers">
-                    {stats?.interscambio?.pendingRequests ?? 0}
-                  </p>
-                </div>
-                <ChevronRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
-              </div>
-            </CardContent>
-          </Card>
-        </Link>
+              </CardContent>
+            </Card>
+          </Link>
+        )}
 
-        <Link href="/reseller/b2b-orders" className="block group">
-          <Card className="h-full transition-all hover:shadow-md hover:border-primary/50" data-testid="card-b2b">
-            <CardContent className="pt-4 pb-3">
-              <div className="flex items-center gap-3">
-                <div className="h-9 w-9 rounded-lg bg-orange-500/10 flex items-center justify-center">
-                  <ShoppingCart className="h-4 w-4 text-orange-500" />
+        {isWidgetVisible("stats-b2b-orders") && (
+          <Link href="/reseller/b2b-orders" className="block group">
+            <Card className="h-full transition-all hover:shadow-md hover:border-primary/50" data-testid="card-b2b">
+              <CardContent className="pt-4 pb-3">
+                <div className="flex items-center gap-3">
+                  <div className="h-9 w-9 rounded-lg bg-orange-500/10 flex items-center justify-center">
+                    <ShoppingCart className="h-4 w-4 text-orange-500" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs text-muted-foreground">Ordini B2B</p>
+                    <p className="text-xl font-bold tabular-nums" data-testid="text-pending-b2b">
+                      {stats?.b2b?.pendingOrders ?? 0}
+                    </p>
+                  </div>
+                  <ChevronRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
                 </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs text-muted-foreground">Ordini B2B</p>
-                  <p className="text-xl font-bold tabular-nums" data-testid="text-pending-b2b">
-                    {stats?.b2b?.pendingOrders ?? 0}
-                  </p>
-                </div>
-                <ChevronRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
-              </div>
-            </CardContent>
-          </Card>
-        </Link>
+              </CardContent>
+            </Card>
+          </Link>
+        )}
 
-        <Link href="/reseller/utility/practices" className="block group">
-          <Card className="h-full transition-all hover:shadow-md hover:border-primary/50" data-testid="card-utility">
-            <CardContent className="pt-4 pb-3">
-              <div className="flex items-center gap-3">
-                <div className="h-9 w-9 rounded-lg bg-yellow-500/10 flex items-center justify-center">
-                  <Zap className="h-4 w-4 text-yellow-500" />
+        {isWidgetVisible("stats-pos") && (
+          <Link href="/reseller/utility/practices" className="block group">
+            <Card className="h-full transition-all hover:shadow-md hover:border-primary/50" data-testid="card-utility">
+              <CardContent className="pt-4 pb-3">
+                <div className="flex items-center gap-3">
+                  <div className="h-9 w-9 rounded-lg bg-yellow-500/10 flex items-center justify-center">
+                    <Zap className="h-4 w-4 text-yellow-500" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs text-muted-foreground">Pratiche Utility</p>
+                    <p className="text-xl font-bold tabular-nums" data-testid="text-active-practices">
+                      {stats?.utility?.activePractices ?? 0}
+                    </p>
+                  </div>
+                  <ChevronRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
                 </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs text-muted-foreground">Pratiche Utility</p>
-                  <p className="text-xl font-bold tabular-nums" data-testid="text-active-practices">
-                    {stats?.utility?.activePractices ?? 0}
-                  </p>
-                </div>
-                <ChevronRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
-              </div>
-            </CardContent>
-          </Card>
-        </Link>
+              </CardContent>
+            </Card>
+          </Link>
+        )}
 
-        <Link href="/reseller/repair-centers" className="block group">
-          <Card className="h-full transition-all hover:shadow-md hover:border-primary/50" data-testid="card-network-stats">
-            <CardContent className="pt-4 pb-3">
-              <div className="flex items-center gap-3">
-                <div className="h-9 w-9 rounded-lg bg-cyan-500/10 flex items-center justify-center">
-                  <Network className="h-4 w-4 text-cyan-500" />
+        {isWidgetVisible("stats-users") && (
+          <Link href="/reseller/repair-centers" className="block group">
+            <Card className="h-full transition-all hover:shadow-md hover:border-primary/50" data-testid="card-network-stats">
+              <CardContent className="pt-4 pb-3">
+                <div className="flex items-center gap-3">
+                  <div className="h-9 w-9 rounded-lg bg-cyan-500/10 flex items-center justify-center">
+                    <Network className="h-4 w-4 text-cyan-500" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs text-muted-foreground">Centri Riparazione</p>
+                    <p className="text-xl font-bold tabular-nums" data-testid="text-network-centers">
+                      {stats?.network?.repairCenters ?? 0}
+                    </p>
+                  </div>
+                  <ChevronRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
                 </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs text-muted-foreground">Centri Riparazione</p>
-                  <p className="text-xl font-bold tabular-nums" data-testid="text-network-centers">
-                    {stats?.network?.repairCenters ?? 0}
-                  </p>
-                </div>
-                <ChevronRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
-              </div>
-            </CardContent>
-          </Card>
-        </Link>
+              </CardContent>
+            </Card>
+          </Link>
+        )}
       </div>
 
       {/* Sales Overview */}
