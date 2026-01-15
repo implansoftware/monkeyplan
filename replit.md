@@ -44,6 +44,18 @@ The backend is an `Express.js` application with TypeScript, featuring a RESTful 
 *   **Development Dependencies**: `tsx`, `esbuild`, `drizzle-kit`.
 ## Recent Changes (January 2026)
 
+### Dashboard Customization (Phase 1 - MVP)
+- Added `dashboard_preferences` table to store user layout preferences
+- Created widget registry with 14 reseller widgets and 10 repair center widgets
+- Implemented DashboardCustomizer modal for toggling visibility and drag-reordering
+- Added `useDashboardPreferences` hook for React state management
+- Created DashboardGrid component for dynamic widget rendering
+- Integrated customization button in reseller and repair-center dashboards
+- API endpoints: GET/PUT `/api/dashboard-preferences`
+- Sub-resellers use reseller layout (role normalization in API)
+- **Phase 2 TODO**: Extract inline widgets into components and integrate DashboardGrid for reordering support
+
+
 ### Sibill Integration
 - Added Sibill integration for invoice management and bank reconciliation
 - Created database tables: `sibill_credentials`, `sibill_companies`, `sibill_documents`, `sibill_accounts`, `sibill_transactions`, `sibill_categories`
