@@ -18162,18 +18162,22 @@ export function registerRoutes(app: Express): Server {
       
       const updatedWarranty = await storage.acceptRepairWarranty(warranty.id);
       
-      // Auto-generate invoice for warranty purchase
+      // Auto-generate invoice for warranty purchase (best-effort, don't block acceptance)
       let generatedInvoice = null;
-      if (warranty.customerId && warranty.sellerId && warranty.priceSnapshot) {
-        generatedInvoice = await storage.createInvoiceForWarranty({
-          id: warranty.id,
-          customerId: warranty.customerId,
-          sellerId: warranty.sellerId,
-          sellerType: warranty.sellerType,
-          priceSnapshot: warranty.priceSnapshot,
-          productNameSnapshot: warranty.productNameSnapshot || "Garanzia Estesa",
-          repairOrderId,
-        });
+      if (warranty.customerId && warranty.sellerId && warranty.priceSnapshot && warranty.priceSnapshot > 0) {
+        try {
+          generatedInvoice = await storage.createInvoiceForWarranty({
+            id: warranty.id,
+            customerId: warranty.customerId,
+            sellerId: warranty.sellerId,
+            sellerType: warranty.sellerType,
+            priceSnapshot: warranty.priceSnapshot,
+            productNameSnapshot: warranty.productNameSnapshot || "Garanzia Estesa",
+            repairOrderId,
+          });
+        } catch (invoiceError) {
+          console.error("Failed to generate warranty invoice:", invoiceError);
+        }
       }
       
       res.json({ ...updatedWarranty, generatedInvoice });
