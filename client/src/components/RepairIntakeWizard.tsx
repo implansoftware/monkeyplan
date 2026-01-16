@@ -1730,7 +1730,7 @@ export function RepairIntakeWizard({
                               <SelectContent>
                                 {estimatedRepairTimes.map((time) => (
                                   <SelectItem key={time.id} value={time.id}>
-                                    {time.label}
+                                    {time.name}
                                   </SelectItem>
                                 ))}
                               </SelectContent>
