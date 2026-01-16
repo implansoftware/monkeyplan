@@ -2513,8 +2513,11 @@ export function AcceptanceWizardDialog({
                     onCheckedChange={(checked) => setDiagnosisSkipPhotos(checked === true)}
                     data-testid="checkbox-skip-photos"
                   />
-                  <Label htmlFor="diagnosisSkipPhotos">
-                    Salta foto diagnosi (non disponibili)
+                  <Label htmlFor="diagnosisSkipPhotos" className="flex flex-col">
+                    <span>Salta foto diagnosi</span>
+                    <span className="text-xs text-muted-foreground font-normal">
+                      Le foto potranno essere aggiunte dopo la creazione dell'ordine
+                    </span>
                   </Label>
                 </div>
               </div>
