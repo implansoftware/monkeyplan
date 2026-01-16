@@ -102,3 +102,21 @@ The backend is an `Express.js` application with TypeScript, featuring a RESTful 
   - Repair Center: Own sales stats only
 - **RBAC**: Sub-resellers see only their own stats (includeChildren=false), main resellers see network (includeChildren=true)
 - **Database Indexes**: Created 5 indexes on repair_warranties (customer_id, seller_id, status, created_at) and warranty_products (reseller_id)
+
+### Device-Based Service Filtering (January 2026)
+- **Service Catalog Enhancement**: Service items can now be linked to specific device types, brands, and models
+- **Database Schema**: Added `brandId` and `modelId` optional foreign keys to `serviceItems` table
+- **API Endpoint**: New GET `/api/service-items/by-device` with device filtering parameters:
+  - Accepts `deviceTypeId`, `brandId`, `modelId`, `search`, `limit` query params
+  - Auto-resolves brand/type from model when only modelId is provided
+  - DB-level filtering with strict matching (services shown only if their restrictions are satisfied by query)
+  - Staff permission check for reseller_staff/collaborator roles
+- **Filtering Logic**:
+  - Universal services (no restrictions) → always shown
+  - If no device filter in query → show all services
+  - If device filter present → services with restrictions shown only if all restrictions match
+- **Frontend Integration**:
+  - Reseller service catalog: Cascading dropdowns (Type → Brand → Model) for setting service compatibility
+  - SearchableServiceCombobox: Accepts deviceTypeId, brandId, modelId to filter available services
+  - QuoteFormDialog: Automatically passes device info from repair order to filter compatible services
+- **Backward Compatibility**: Existing services without device restrictions continue to work as universal services
