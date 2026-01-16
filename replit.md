@@ -131,9 +131,11 @@ The backend is an `Express.js` application with TypeScript, featuring a RESTful 
   - RepairIntakeWizard: New "Preventivo" step (Step 4/6) with same functionality
 - **Quote Step UI**:
   - Toggle to enable/disable quote creation
-  - Parts management (service selection, quantity, price)
+  - Warehouse selection dropdown (loads accessible warehouses)
+  - Three input methods: Manual entry, Service Catalog (SearchableServiceCombobox), Warehouse Parts (SearchableProductCombobox)
+  - Parts management (name, quantity, price) with add/remove controls
   - Labor cost input with automatic total calculation
   - Notes field for additional information
 - **Device Filtering Integration**: SearchableServiceCombobox in quote step filters services by device type/brand/model from repair order
-- **State Management**: Quote state properly reset on dialog close to prevent stale data
+- **State Management**: Quote state properly reset on dialog close to prevent stale data (includes warehouse selection)
 - **Backward Compatibility**: Existing diagnosis → quote workflow remains fully functional
