@@ -1,4 +1,4 @@
-# MonkeyPlan Beta v.22.5
+# MonkeyPlan Beta v.23
 
 ## Overview
 MonkeyPlan is an enterprise-level repair management platform designed to streamline device repair workflows, inventory, ticketing, and billing. It offers a full-stack TypeScript solution for administrators, resellers, repair centers, and customers, providing comprehensive repair order management, a real-time ticketing system, and robust inventory control across four distinct user roles. The platform's core purpose is to enhance efficiency and transparency in device repair processes with a business vision to dominate the repair management software market through its comprehensive features and user-friendly design.
@@ -88,3 +88,17 @@ The backend is an `Express.js` application with TypeScript, featuring a RESTful 
 - UI toggle labeled "Fatturazione Autonoma" in sub-reseller management form
 - Sub-resellers with own fiscal data can have autonomous invoicing enabled
 - Sub-resellers sharing parent's fiscal data should have this disabled
+
+### Warranty/Insurance Extension System (MVP)
+- **Multi-tenant Warranty Catalog**: Admin creates global products (resellerId=null), resellers create their own products
+- **Database Tables**: `warranty_products`, `repair_warranties` with proper RBAC
+- **Offering Flow**: During repair detail page, operators (admin, reseller, sub_reseller, repair_center) can offer warranty products to customers
+- **Snapshot Pattern**: Price, duration, coverage, productName captured at offer time for historical accuracy
+- **Automatic Invoice Generation**: Best-effort, non-blocking, VAT 22% IVA inclusa, source='other'
+- **Customer Warranty History**: Customers can view their warranties with repair details at `/customer/warranties`
+- **Analytics Dashboards**: 
+  - Admin: Full network stats with conversion rates, top products, monthly trends
+  - Reseller: Own stats + child network (sub-resellers inherit same view but see only own data)
+  - Repair Center: Own sales stats only
+- **RBAC**: Sub-resellers see only their own stats (includeChildren=false), main resellers see network (includeChildren=true)
+- **Database Indexes**: Created 5 indexes on repair_warranties (customer_id, seller_id, status, created_at) and warranty_products (reseller_id)
