@@ -11001,8 +11001,8 @@ export function registerRoutes(app: Express): Server {
       if (req.user.role === 'customer') {
         // Customer is creating order for themselves
         customerId = req.user.id;
-      } else if (req.user.role === 'reseller' || req.user.role === 'sub_reseller') {
-        // Reseller must provide customerId
+      } else if (req.user.role === 'reseller' || req.user.role === 'sub_reseller' || req.user.role === 'reseller_staff' || req.user.role === 'reseller_collaborator') {
+        // Reseller/staff must provide customerId
         if (!req.body.customerId) {
           return res.status(400).send("Customer ID is required for reseller orders");
         }
@@ -11067,6 +11067,9 @@ export function registerRoutes(app: Express): Server {
         // Sub-reseller: set parent as reseller, self as subReseller
         orderData.resellerId = req.user.parentResellerId;
         orderData.subResellerId = req.user.id;
+      } else if (req.user.role === 'reseller_staff' || req.user.role === 'reseller_collaborator') {
+        // Staff: use parent reseller's id
+        orderData.resellerId = req.user.parentResellerId;
       } else if (req.user.role === 'admin' && req.body.resellerId) {
         // Admin can optionally assign a reseller
         orderData.resellerId = req.body.resellerId;
