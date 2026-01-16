@@ -120,3 +120,20 @@ The backend is an `Express.js` application with TypeScript, featuring a RESTful 
   - SearchableServiceCombobox: Accepts deviceTypeId, brandId, modelId to filter available services
   - QuoteFormDialog: Automatically passes device info from repair order to filter compatible services
 - **Backward Compatibility**: Existing services without device restrictions continue to work as universal services
+
+### Optional Quote Creation During Repair Order Intake (January 2026)
+- **Feature**: Users can now optionally create a quote (preventivo) directly during the repair order creation process
+- **Backend Changes**: Modified `POST /api/repair-orders` to accept optional `quote` object with parts, labor, and notes
+- **Atomic Transaction**: When quote data is provided, both repair order and quote are created in a single transaction
+- **Status Update**: Orders created with a quote start with status `preventivo_emesso` instead of `ingressato`
+- **Wizard Updates**:
+  - AcceptanceWizardDialog: New "Preventivo" step (Step 3/4) between acceptance-checks and review
+  - RepairIntakeWizard: New "Preventivo" step (Step 4/6) with same functionality
+- **Quote Step UI**:
+  - Toggle to enable/disable quote creation
+  - Parts management (service selection, quantity, price)
+  - Labor cost input with automatic total calculation
+  - Notes field for additional information
+- **Device Filtering Integration**: SearchableServiceCombobox in quote step filters services by device type/brand/model from repair order
+- **State Management**: Quote state properly reset on dialog close to prevent stale data
+- **Backward Compatibility**: Existing diagnosis → quote workflow remains fully functional
