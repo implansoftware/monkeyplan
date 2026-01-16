@@ -773,6 +773,16 @@ export interface IStorage {
   createServiceItem(item: InsertServiceItem): Promise<ServiceItem>;
   updateServiceItem(id: string, updates: Partial<InsertServiceItem>): Promise<ServiceItem>;
   deleteServiceItem(id: string): Promise<void>;
+  getServiceItemsFiltered(params: {
+    resellerId?: string;
+    repairCenterId?: string;
+    isAdmin?: boolean;
+    deviceTypeId?: string;
+    brandId?: string;
+    modelId?: string;
+    search?: string;
+    limit?: number;
+  }): Promise<ServiceItem[]>;
   
   // Service Item Prices (Listini Prezzi)
   listServiceItemPrices(serviceItemId: string): Promise<ServiceItemPrice[]>;
@@ -7159,6 +7169,107 @@ export class DatabaseStorage implements IStorage {
   async deleteServiceItem(id: string): Promise<void> {
     await db.delete(serviceItems)
       .where(eq(serviceItems.id, id));
+  }
+
+  // Get service items with DB-level filtering for device compatibility
+  async getServiceItemsFiltered(params: {
+    resellerId?: string;
+    repairCenterId?: string;
+    isAdmin?: boolean;
+    deviceTypeId?: string;
+    brandId?: string;
+    modelId?: string;
+    search?: string;
+    limit?: number;
+  }): Promise<ServiceItem[]> {
+    const conditions: SQL[] = [];
+    const { resellerId, repairCenterId, isAdmin, deviceTypeId, brandId, modelId, search, limit: limitNum } = params;
+    
+    // Ownership filter: admin sees all, others see global items + their own
+    if (!isAdmin) {
+      // Build ownership OR condition
+      const ownershipConditions: SQL[] = [];
+      
+      // Global items (no owner)
+      ownershipConditions.push(sql`(${serviceItems.createdBy} IS NULL AND ${serviceItems.repairCenterId} IS NULL)`);
+      
+      if (resellerId) {
+        ownershipConditions.push(eq(serviceItems.createdBy, resellerId));
+      }
+      if (repairCenterId) {
+        ownershipConditions.push(eq(serviceItems.repairCenterId, repairCenterId));
+      }
+      
+      if (ownershipConditions.length > 0) {
+        conditions.push(sql`(${sql.join(ownershipConditions, sql` OR `)})`);
+      }
+    }
+    
+    // Device compatibility filter - strict matching
+    // Service matches if ALL its restrictions are satisfied by query
+    // If query has no device filters, show all services (universal + restricted)
+    // If query has any device filter, apply strict matching:
+    //   - Services with no restrictions → always shown
+    //   - Services with type restriction → shown only if query.type matches
+    //   - Services with brand restriction → shown only if query.brand matches
+    //   - Services with model restriction → shown only if query.model matches
+    const hasDeviceFilter = deviceTypeId || brandId || modelId;
+    
+    if (hasDeviceFilter) {
+      // Type filter: services with type restriction must match, others are OK
+      if (deviceTypeId) {
+        conditions.push(sql`(${serviceItems.deviceTypeId} IS NULL OR ${serviceItems.deviceTypeId} = ${deviceTypeId})`);
+      } else {
+        // No type in query → exclude services that require a specific type
+        conditions.push(sql`${serviceItems.deviceTypeId} IS NULL`);
+      }
+      
+      // Brand filter: services with brand restriction must match, others are OK  
+      if (brandId) {
+        conditions.push(sql`(${serviceItems.brandId} IS NULL OR ${serviceItems.brandId} = ${brandId})`);
+      } else {
+        // No brand in query → exclude services that require a specific brand
+        conditions.push(sql`${serviceItems.brandId} IS NULL`);
+      }
+      
+      // Model filter: services with model restriction must match, others are OK
+      if (modelId) {
+        conditions.push(sql`(${serviceItems.modelId} IS NULL OR ${serviceItems.modelId} = ${modelId})`);
+      } else {
+        // No model in query → exclude services that require a specific model
+        conditions.push(sql`${serviceItems.modelId} IS NULL`);
+      }
+    }
+    // If no device filter in query, don't add device conditions (show all)
+    
+    // Search filter
+    if (search && search.trim()) {
+      const searchTerm = `%${search.toLowerCase().trim()}%`;
+      conditions.push(sql`(
+        LOWER(${serviceItems.name}) LIKE ${searchTerm} OR
+        LOWER(${serviceItems.code}) LIKE ${searchTerm} OR
+        LOWER(COALESCE(${serviceItems.description}, '')) LIKE ${searchTerm}
+      )`);
+    }
+    
+    // Build query
+    let query = db.select().from(serviceItems);
+    
+    if (conditions.length > 0) {
+      query = query.where(sql`${sql.join(conditions, sql` AND `)}`) as any;
+    }
+    
+    // Order by name
+    query = query.orderBy(serviceItems.name) as any;
+    
+    // Apply limit
+    if (limitNum && limitNum > 0) {
+      query = query.limit(Math.min(limitNum, 100)) as any;
+    } else {
+      query = query.limit(100) as any;
+    }
+    
+    return await query;
   }
 
   // Service Item Prices

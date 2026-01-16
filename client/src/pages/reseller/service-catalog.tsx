@@ -117,6 +117,36 @@ export default function ResellerServiceCatalog() {
   const [itemCategory, setItemCategory] = useState("");
   const [itemPriceEuros, setItemPriceEuros] = useState("");
   const [itemLaborMinutes, setItemLaborMinutes] = useState("60");
+  const [itemDeviceTypeId, setItemDeviceTypeId] = useState<string>("");
+  const [itemBrandId, setItemBrandId] = useState<string>("");
+  const [itemModelId, setItemModelId] = useState<string>("");
+
+  // Queries for device catalog
+  const { data: deviceTypes = [] } = useQuery<Array<{ id: string; name: string }>>({
+    queryKey: ["/api/device-types"],
+  });
+
+  const { data: deviceBrands = [] } = useQuery<Array<{ id: string; name: string }>>({
+    queryKey: ["/api/device-brands"],
+  });
+
+  const { data: deviceModels = [] } = useQuery<Array<{ id: string; modelName: string; brandId: string; typeId: string }>>({
+    queryKey: ["/api/device-models"],
+  });
+
+  // Filter brands and models based on selection
+  // When type is selected, filter brands that have models for that type
+  // When no type is selected, show all brands
+  const filteredBrands = itemDeviceTypeId
+    ? deviceBrands.filter(b => deviceModels.some(m => m.brandId === b.id && m.typeId === itemDeviceTypeId))
+    : deviceBrands;
+
+  // When brand is selected, filter models by brand (and type if selected)
+  const filteredModels = itemBrandId
+    ? deviceModels.filter(m => m.brandId === itemBrandId && (!itemDeviceTypeId || m.typeId === itemDeviceTypeId))
+    : itemDeviceTypeId
+      ? deviceModels.filter(m => m.typeId === itemDeviceTypeId)
+      : [];
 
   const { data: catalogData, isLoading } = useQuery<ServiceCatalogResponse>({
     queryKey: ["/api/reseller/service-catalog"],
@@ -167,6 +197,9 @@ export default function ResellerServiceCatalog() {
       name: string;
       description?: string;
       category: string;
+      deviceTypeId?: string;
+      brandId?: string;
+      modelId?: string;
       defaultPriceCents: number;
       defaultLaborMinutes: number;
     }) => {
@@ -230,6 +263,9 @@ export default function ResellerServiceCatalog() {
     setItemCategory("");
     setItemPriceEuros("");
     setItemLaborMinutes("60");
+    setItemDeviceTypeId("");
+    setItemBrandId("");
+    setItemModelId("");
   };
 
   const openPriceDialog = (item: ServiceCatalogItem) => {
@@ -262,6 +298,9 @@ export default function ResellerServiceCatalog() {
       setItemCategory(item.category);
       setItemPriceEuros((item.defaultPriceCents / 100).toFixed(2));
       setItemLaborMinutes(item.defaultLaborMinutes?.toString() || "60");
+      setItemDeviceTypeId((item as any).deviceTypeId || "");
+      setItemBrandId((item as any).brandId || "");
+      setItemModelId((item as any).modelId || "");
     } else {
       resetItemForm();
     }
@@ -315,6 +354,9 @@ export default function ResellerServiceCatalog() {
           name: itemName,
           description: itemDescription || null,
           category: itemCategory,
+          deviceTypeId: itemDeviceTypeId || null,
+          brandId: itemBrandId || null,
+          modelId: itemModelId || null,
           defaultPriceCents: priceCents,
           defaultLaborMinutes: laborMins,
         },
@@ -325,6 +367,9 @@ export default function ResellerServiceCatalog() {
         name: itemName,
         description: itemDescription || undefined,
         category: itemCategory,
+        deviceTypeId: itemDeviceTypeId || undefined,
+        brandId: itemBrandId || undefined,
+        modelId: itemModelId || undefined,
         defaultPriceCents: priceCents,
         defaultLaborMinutes: laborMins,
       });
@@ -837,6 +882,74 @@ export default function ResellerServiceCatalog() {
                 rows={3}
                 data-testid="input-item-description"
               />
+            </div>
+
+            {/* Device compatibility filters */}
+            <div className="space-y-2">
+              <Label>Compatibilità Dispositivo (opzionale)</Label>
+              <p className="text-xs text-muted-foreground mb-2">
+                Seleziona per quale tipo/marca/modello di dispositivo è applicabile questo intervento
+              </p>
+              <div className="grid grid-cols-3 gap-3">
+                <Select 
+                  value={itemDeviceTypeId} 
+                  onValueChange={(v) => {
+                    setItemDeviceTypeId(v === "all" ? "" : v);
+                    setItemBrandId("");
+                    setItemModelId("");
+                  }}
+                >
+                  <SelectTrigger data-testid="select-item-device-type">
+                    <SelectValue placeholder="Tipo dispositivo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Tutti i tipi</SelectItem>
+                    {deviceTypes.map(type => (
+                      <SelectItem key={type.id} value={type.id}>
+                        {type.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                <Select 
+                  value={itemBrandId} 
+                  onValueChange={(v) => {
+                    setItemBrandId(v === "all" ? "" : v);
+                    setItemModelId("");
+                  }}
+                >
+                  <SelectTrigger data-testid="select-item-brand">
+                    <SelectValue placeholder="Marca" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Tutte le marche</SelectItem>
+                    {filteredBrands.map(brand => (
+                      <SelectItem key={brand.id} value={brand.id}>
+                        {brand.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                <Select 
+                  value={itemModelId} 
+                  onValueChange={(v) => setItemModelId(v === "all" ? "" : v)}
+                  disabled={!itemBrandId && !itemDeviceTypeId}
+                >
+                  <SelectTrigger data-testid="select-item-model">
+                    <SelectValue placeholder="Modello" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Tutti i modelli</SelectItem>
+                    {filteredModels.map(model => (
+                      <SelectItem key={model.id} value={model.id}>
+                        {model.modelName}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">

@@ -975,6 +975,77 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+
+  // Get service items filtered by device type, brand, and model (for repair wizard)
+  app.get("/api/service-items/by-device", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      // Check staff permission for services:read
+      if (req.user.role === 'reseller_staff' || req.user.role === 'reseller_collaborator') {
+        const hasPermission = await storage.checkStaffPermission(req.user.id, 'services', 'read');
+        if (!hasPermission) {
+          return res.status(403).send("Non hai il permesso di visualizzare i servizi");
+        }
+      }
+      
+      let { deviceTypeId, brandId, modelId, search, limit } = req.query;
+      const limitNum = Math.min(parseInt(limit as string) || 50, 100);
+      
+      // If modelId is provided, resolve brandId and typeId from the model
+      if (modelId && (!brandId || !deviceTypeId)) {
+        const model = await storage.getDeviceModel(modelId as string);
+        if (model) {
+          if (!brandId && model.brandId) {
+            brandId = model.brandId;
+          }
+          if (!deviceTypeId && model.typeId) {
+            deviceTypeId = model.typeId;
+          }
+        }
+      }
+      
+      // Determine user context
+      let resellerId: string | undefined;
+      let repairCenterId: string | undefined;
+      const isAdmin = req.user.role === 'admin';
+      
+      if (req.user.role === 'reseller' || req.user.role === 'sub_reseller') {
+        resellerId = req.user.id;
+      } else if (req.user.role === 'reseller_staff' || req.user.role === 'reseller_collaborator') {
+        resellerId = (req.user as any).resellerId;
+      } else if (req.user.role === 'repair_center') {
+        repairCenterId = req.user.repairCenterId;
+      }
+      
+      // Use DB-level filtering
+      const filteredItems = await storage.getServiceItemsFiltered({
+        resellerId,
+        repairCenterId,
+        isAdmin,
+        deviceTypeId: deviceTypeId as string | undefined,
+        brandId: brandId as string | undefined,
+        modelId: modelId as string | undefined,
+        search: search as string | undefined,
+        limit: limitNum,
+      });
+      
+      // Include prices for the user
+      const itemsWithPrices = await Promise.all(filteredItems.map(async (item) => {
+        const price = await storage.getEffectivePrice(item.id, resellerId, repairCenterId);
+        return {
+          ...item,
+          effectivePriceCents: price?.priceCents ?? item.defaultPriceCents,
+          effectiveLaborMinutes: price?.laborMinutes ?? item.defaultLaborMinutes,
+        };
+      }));
+      
+      res.json(itemsWithPrices);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
   // Get effective price for a specific service item (used in quote creation)
   app.get("/api/service-items/:id/price", requireAuth, async (req, res) => {
     try {
@@ -1176,7 +1247,7 @@ export function registerRoutes(app: Express): Server {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
-      const { code, name, description, category, deviceTypeId, defaultPriceCents, defaultLaborMinutes } = req.body;
+      const { code, name, description, category, deviceTypeId, brandId, modelId, defaultPriceCents, defaultLaborMinutes } = req.body;
       
       if (!code || !name || !category || defaultPriceCents === undefined) {
         return res.status(400).send("Code, name, category, and defaultPriceCents are required");
@@ -1188,6 +1259,8 @@ export function registerRoutes(app: Express): Server {
         description: description || null,
         category,
         deviceTypeId: deviceTypeId || null,
+        brandId: brandId || null,
+        modelId: modelId || null,
         defaultPriceCents,
         defaultLaborMinutes: defaultLaborMinutes || 60,
         createdBy: req.user.id,
@@ -1218,7 +1291,7 @@ export function registerRoutes(app: Express): Server {
         return res.status(403).send("Non puoi modificare questo intervento");
       }
       
-      const { code, name, description, category, deviceTypeId, defaultPriceCents, defaultLaborMinutes, isActive } = req.body;
+      const { code, name, description, category, deviceTypeId, brandId, modelId, defaultPriceCents, defaultLaborMinutes, isActive } = req.body;
       
       const updated = await storage.updateServiceItem(req.params.id, {
         ...(code !== undefined && { code }),
@@ -1226,6 +1299,8 @@ export function registerRoutes(app: Express): Server {
         ...(description !== undefined && { description }),
         ...(category !== undefined && { category }),
         ...(deviceTypeId !== undefined && { deviceTypeId }),
+        ...(brandId !== undefined && { brandId }),
+        ...(modelId !== undefined && { modelId }),
         ...(defaultPriceCents !== undefined && { defaultPriceCents }),
         ...(defaultLaborMinutes !== undefined && { defaultLaborMinutes }),
         ...(isActive !== undefined && { isActive }),
@@ -7897,7 +7972,7 @@ export function registerRoutes(app: Express): Server {
         return res.status(400).send("Repair center not found");
       }
       
-      const { code, name, description, category, defaultPriceCents, defaultLaborMinutes } = req.body;
+      const { code, name, description, category, deviceTypeId, brandId, modelId, defaultPriceCents, defaultLaborMinutes } = req.body;
       
       if (!code || !name || !category || defaultPriceCents === undefined) {
         return res.status(400).json({ error: "Missing required fields" });
@@ -7909,6 +7984,9 @@ export function registerRoutes(app: Express): Server {
         name,
         description: description || null,
         category,
+        deviceTypeId: deviceTypeId || null,
+        brandId: brandId || null,
+        modelId: modelId || null,
         defaultPriceCents,
         defaultLaborMinutes: defaultLaborMinutes || 60,
         repairCenterId,
@@ -7945,12 +8023,15 @@ export function registerRoutes(app: Express): Server {
         return res.status(403).send("Non autorizzato a modificare questo intervento");
       }
       
-      const { name, description, category, defaultPriceCents, defaultLaborMinutes, isActive } = req.body;
+      const { name, description, category, deviceTypeId, brandId, modelId, defaultPriceCents, defaultLaborMinutes, isActive } = req.body;
       
       const updated = await storage.updateServiceItem(id, {
         ...(name !== undefined && { name }),
         ...(description !== undefined && { description }),
         ...(category !== undefined && { category }),
+        ...(deviceTypeId !== undefined && { deviceTypeId }),
+        ...(brandId !== undefined && { brandId }),
+        ...(modelId !== undefined && { modelId }),
         ...(defaultPriceCents !== undefined && { defaultPriceCents }),
         ...(defaultLaborMinutes !== undefined && { defaultLaborMinutes }),
         ...(isActive !== undefined && { isActive }),

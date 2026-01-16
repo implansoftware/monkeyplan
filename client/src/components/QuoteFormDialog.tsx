@@ -338,6 +338,9 @@ export function QuoteFormDialog({
                     }}
                     repairCenterId={repairOrder?.repairCenterId || undefined}
                     resellerId={repairOrder?.resellerId || undefined}
+                    deviceTypeId={(repairOrder as any)?.deviceTypeId || undefined}
+                    brandId={(repairOrder as any)?.deviceBrandId || undefined}
+                    modelId={repairOrder?.deviceModelId || undefined}
                   />
                 </div>
               </CardHeader>
