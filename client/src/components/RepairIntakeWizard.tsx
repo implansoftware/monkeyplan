@@ -582,7 +582,7 @@ export function RepairIntakeWizard({
         </DialogHeader>
 
         {/* Step Indicator - show only first 4 steps (step 5 is success screen) */}
-        {currentStep < 5 && (
+        {currentStep < 6 && currentStep !== 6 && (
         <div className="flex items-center justify-between mb-6">
           {STEPS.slice(0, 4).map((step, index) => {
             const Icon = step.icon;
@@ -1837,7 +1837,7 @@ export function RepairIntakeWizard({
         </Form>
 
         {/* Navigation Buttons */}
-        {currentStep < 5 && (
+        {currentStep < 6 && currentStep !== 6 && (
           <div className="flex justify-between mt-6 pt-4 border-t">
             <Button
               variant="outline"
