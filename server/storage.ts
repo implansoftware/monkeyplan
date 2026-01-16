@@ -1100,6 +1100,30 @@ export interface IStorage {
   updateRepairWarranty(id: string, updates: UpdateRepairWarranty): Promise<RepairWarranty>;
   acceptRepairWarranty(id: string): Promise<RepairWarranty>;
   declineRepairWarranty(id: string): Promise<RepairWarranty>;
+  
+  // Customer Warranty History
+  listCustomerWarrantiesWithDetails(customerId: string): Promise<Array<{
+    warranty: RepairWarranty;
+    repairOrder: { id: string; orderNumber: string; deviceType: string | null; deviceBrand: string | null; deviceModel: string | null };
+    invoice: { id: string; invoiceNumber: string; totalAmount: number } | null;
+  }>>;
+
+  // Warranty Statistics
+  getWarrantyStats(filters: { 
+    sellerId?: string; 
+    sellerType?: string;
+    dateFrom?: Date; 
+    dateTo?: Date;
+    includeChildren?: boolean;
+  }): Promise<{
+    totalOffered: number;
+    totalAccepted: number;
+    totalDeclined: number;
+    totalRevenue: number;
+    conversionRate: number;
+    topProducts: Array<{ productName: string; count: number; revenue: number }>;
+    monthlyTrend: Array<{ month: string; offered: number; accepted: number; revenue: number }>;
+  }>;
 
 }
 
@@ -11608,6 +11632,138 @@ export class DatabaseStorage implements IStorage {
       .where(eq(repairWarranties.id, id))
       .returning();
     return updated;
+  }
+
+  // ============ Customer Warranty History ============
+
+  async listCustomerWarrantiesWithDetails(customerId: string): Promise<Array<{
+    warranty: RepairWarranty;
+    repairOrder: { id: string; orderNumber: string; deviceType: string; brand: string | null; deviceModel: string };
+    invoice: { id: string; invoiceNumber: string; total: number } | null;
+  }>> {
+    const warranties = await db.select().from(repairWarranties)
+      .where(eq(repairWarranties.customerId, customerId))
+      .orderBy(desc(repairWarranties.createdAt));
+    
+    const results = [];
+    for (const warranty of warranties) {
+      const [repairOrder] = await db.select({
+        id: repairOrders.id,
+        orderNumber: repairOrders.orderNumber,
+        deviceType: repairOrders.deviceType,
+        brand: repairOrders.brand,
+        deviceModel: repairOrders.deviceModel,
+      }).from(repairOrders).where(eq(repairOrders.id, warranty.repairOrderId)).limit(1);
+      
+      let invoice = null;
+      if (warranty.invoiceId) {
+        const [inv] = await db.select({
+          id: invoices.id,
+          invoiceNumber: invoices.invoiceNumber,
+          total: invoices.total,
+        }).from(invoices).where(eq(invoices.id, warranty.invoiceId)).limit(1);
+        if (inv) invoice = inv;
+      }
+      
+      results.push({
+        warranty,
+        repairOrder: repairOrder || { id: '', orderNumber: 'N/A', deviceType: '', brand: null, deviceModel: '' },
+        invoice,
+      });
+    }
+    return results;
+  }
+
+  // ============ Warranty Statistics ============
+
+  async getWarrantyStats(filters: { 
+    sellerId?: string; 
+    sellerType?: string;
+    dateFrom?: Date; 
+    dateTo?: Date;
+    includeChildren?: boolean;
+  }): Promise<{
+    totalOffered: number;
+    totalAccepted: number;
+    totalDeclined: number;
+    totalRevenue: number;
+    conversionRate: number;
+    topProducts: Array<{ productName: string; count: number; revenue: number }>;
+    monthlyTrend: Array<{ month: string; offered: number; accepted: number; revenue: number }>;
+  }> {
+    const conditions: SQL[] = [];
+    
+    if (filters.sellerId) {
+      if (filters.includeChildren) {
+        const childIds = await db.select({ id: users.id }).from(users)
+          .where(eq(users.parentResellerId, filters.sellerId));
+        const allSellerIds = [filters.sellerId, ...childIds.map(c => c.id)];
+        conditions.push(inArray(repairWarranties.sellerId, allSellerIds));
+      } else {
+        conditions.push(eq(repairWarranties.sellerId, filters.sellerId));
+      }
+    }
+    
+    if (filters.dateFrom) {
+      conditions.push(gte(repairWarranties.createdAt, filters.dateFrom));
+    }
+    if (filters.dateTo) {
+      conditions.push(lte(repairWarranties.createdAt, filters.dateTo));
+    }
+    
+    const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+    
+    const allWarranties = whereClause 
+      ? await db.select().from(repairWarranties).where(whereClause)
+      : await db.select().from(repairWarranties);
+    
+    const totalOffered = allWarranties.length;
+    const accepted = allWarranties.filter(w => w.status === 'accepted');
+    const totalAccepted = accepted.length;
+    const totalDeclined = allWarranties.filter(w => w.status === 'declined').length;
+    const totalRevenue = accepted.reduce((sum, w) => sum + (w.priceSnapshot || 0), 0);
+    const conversionRate = totalOffered > 0 ? (totalAccepted / totalOffered) * 100 : 0;
+    
+    const productStats = new Map<string, { count: number; revenue: number }>();
+    for (const w of accepted) {
+      const name = w.productNameSnapshot || 'Sconosciuto';
+      const existing = productStats.get(name) || { count: 0, revenue: 0 };
+      existing.count++;
+      existing.revenue += w.priceSnapshot || 0;
+      productStats.set(name, existing);
+    }
+    const topProducts = Array.from(productStats.entries())
+      .map(([productName, stats]) => ({ productName, ...stats }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 5);
+    
+    const monthlyData = new Map<string, { offered: number; accepted: number; revenue: number }>();
+    for (const w of allWarranties) {
+      const month = w.createdAt ? 
+        `${w.createdAt.getFullYear()}-${String(w.createdAt.getMonth() + 1).padStart(2, '0')}` : 
+        'unknown';
+      const existing = monthlyData.get(month) || { offered: 0, accepted: 0, revenue: 0 };
+      existing.offered++;
+      if (w.status === 'accepted') {
+        existing.accepted++;
+        existing.revenue += w.priceSnapshot || 0;
+      }
+      monthlyData.set(month, existing);
+    }
+    const monthlyTrend = Array.from(monthlyData.entries())
+      .map(([month, stats]) => ({ month, ...stats }))
+      .sort((a, b) => a.month.localeCompare(b.month))
+      .slice(-12);
+    
+    return {
+      totalOffered,
+      totalAccepted,
+      totalDeclined,
+      totalRevenue,
+      conversionRate: Math.round(conversionRate * 100) / 100,
+      topProducts,
+      monthlyTrend,
+    };
   }
 
 }

@@ -115,6 +115,7 @@ const menuItems = {
     { title: "Catalogo Dispositivi", url: "/admin/device-catalog", icon: Package, group: "Sistema" },
     { title: "Listino Prezzi", url: "/admin/service-catalog", icon: Receipt, group: "Sistema" },
     { title: "Prodotti Garanzia", url: "/admin/warranty-products", icon: Shield, group: "Sistema" },
+    { title: "Analytics Garanzie", url: "/admin/warranty-analytics", icon: BarChart3, group: "Sistema" },
     { title: "Categorie Utility", url: "/admin/utility-categories", icon: FolderOpen, group: "Sistema" },
     { title: "Integrazioni API", url: "/admin/external-integrations", icon: Plug, group: "Sistema" },
     { title: "Activity Logs", url: "/admin/activity-logs", icon: Shield, group: "Sistema" },
@@ -203,6 +204,7 @@ const menuItems = {
     { title: "Panoramica Vendite", url: "/reseller/sales", icon: TrendingUp, group: "Fatturazione" },
     { title: "Fatture", url: "/reseller/invoices", icon: FileText, group: "Fatturazione" },
     { title: "Prodotti Garanzia", url: "/reseller/warranty-products", icon: Shield, group: "Fatturazione" },
+    { title: "Analytics Garanzie", url: "/reseller/warranty-analytics", icon: BarChart3, group: "Fatturazione" },
     { title: "Report", url: "/reseller/reports", icon: BarChart3, group: "Fatturazione" },
     // E-commerce - Catalogo
     { title: "Catalogo Shop", url: "/reseller/shop-catalog", icon: Store, group: "E-commerce" },
@@ -286,6 +288,7 @@ const menuItems = {
     { title: "Dashboard", url: "/customer", icon: LayoutDashboard, group: "Principale" },
     { title: "Ticket", url: "/customer/tickets", icon: Ticket, group: "Assistenza" },
     { title: "Riparazioni", url: "/customer/repairs", icon: Wrench, group: "Le mie riparazioni" },
+    { title: "Le Mie Garanzie", url: "/customer/warranties", icon: Shield, group: "Le mie riparazioni" },
     { title: "Richieste Remote", url: "/customer/remote-requests", icon: Send, group: "Le mie riparazioni" },
     { title: "Catalogo Servizi", url: "/customer/service-catalog", icon: Wrench, group: "Le mie riparazioni" },
     { title: "Ordini", url: "/customer/orders", icon: ShoppingCart, group: "Acquisti" },

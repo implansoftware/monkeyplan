@@ -1816,7 +1816,7 @@ export function registerRoutes(app: Express): Server {
         fullName: userData.fullName,
         phone: userData.phone || null,
         role: "reseller_staff",
-        resellerId: resellerId,
+        resellerId,
         isActive: true
       });
 
@@ -18295,6 +18295,74 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // ============ CUSTOMER WARRANTY HISTORY ============
+  
+  // Get customer's own warranties
+  app.get("/api/customer/warranties", requireAuth, requireRole("customer"), async (req, res) => {
+    try {
+      const customerId = req.user!.id;
+      const warranties = await storage.listCustomerWarrantiesWithDetails(customerId);
+      res.json(warranties);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // ============ WARRANTY STATISTICS ============
+
+  // Admin warranty stats (global)
+  app.get("/api/admin/warranty-stats", requireAuth, requireRole("admin", "admin_staff"), async (req, res) => {
+    try {
+      const dateFrom = req.query.dateFrom ? new Date(req.query.dateFrom as string) : undefined;
+      const dateTo = req.query.dateTo ? new Date(req.query.dateTo as string) : undefined;
+      
+      const stats = await storage.getWarrantyStats({ dateFrom, dateTo });
+      res.json(stats);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // Reseller warranty stats (own + children)
+  app.get("/api/reseller/warranty-stats", requireAuth, requireRole("reseller", "sub_reseller"), async (req, res) => {
+    try {
+      const isSubReseller = req.user!.role === "sub_reseller";
+      const sellerId = req.user!.id;
+      const dateFrom = req.query.dateFrom ? new Date(req.query.dateFrom as string) : undefined;
+      const dateTo = req.query.dateTo ? new Date(req.query.dateTo as string) : undefined;
+      
+      const stats = await storage.getWarrantyStats({ 
+        sellerId, 
+        dateFrom, 
+        dateTo,
+        includeChildren: !isSubReseller 
+      });
+      res.json(stats);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // Repair center warranty stats (own only)
+  app.get("/api/repair-center/warranty-stats", requireAuth, requireRole("repair_center", "repair_center_staff"), async (req, res) => {
+    try {
+      const repairCenterId = req.user!.id;
+      const dateFrom = req.query.dateFrom ? new Date(req.query.dateFrom as string) : undefined;
+      const dateTo = req.query.dateTo ? new Date(req.query.dateTo as string) : undefined;
+      
+      const stats = await storage.getWarrantyStats({ 
+        sellerId: repairCenterId, 
+        dateFrom, 
+        dateTo,
+        includeChildren: false 
+      });
+      res.json(stats);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+
 
   // ============ UNREPAIRABLE REASONS (for "Irriparabile" diagnosis outcome) ============
 
@@ -30417,7 +30485,7 @@ export function registerRoutes(app: Express): Server {
       try {
         scope = await resolveResellerEntityScope({
           storage,
-          requesterResellerId: resellerId,
+          requesterResellerId,
           entityType: entityType as string | undefined,
           entityId: entityId as string | undefined
         });
@@ -30518,7 +30586,7 @@ export function registerRoutes(app: Express): Server {
       try {
         scope = await resolveResellerEntityScope({
           storage,
-          requesterResellerId: resellerId,
+          requesterResellerId,
           entityType: entityType as string | undefined,
           entityId: entityId as string | undefined
         });
@@ -30639,7 +30707,7 @@ export function registerRoutes(app: Express): Server {
       try {
         scope = await resolveResellerEntityScope({
           storage,
-          requesterResellerId: resellerId,
+          requesterResellerId,
           entityType: entityType as string | undefined,
           entityId: entityId as string | undefined
         });
@@ -30817,7 +30885,7 @@ export function registerRoutes(app: Express): Server {
       try {
         scope = await resolveResellerEntityScope({
           storage,
-          requesterResellerId: resellerId,
+          requesterResellerId,
           entityType: entityType as string | undefined,
           entityId: entityId as string | undefined
         });
@@ -31265,7 +31333,7 @@ export function registerRoutes(app: Express): Server {
       try {
         scope = await resolveResellerEntityScope({
           storage,
-          requesterResellerId: resellerId,
+          requesterResellerId,
           entityType: normalizedEntityType,
           entityId: entityId as string | undefined
         });
