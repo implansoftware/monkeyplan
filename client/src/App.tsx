@@ -290,6 +290,7 @@ import IncomingTransferRequests from "@/pages/reseller/incoming-transfer-request
 import TransferRequests from "@/pages/reseller/transfer-requests";
 import ResellerWarrantyProducts from "@/pages/reseller/warranty-products";
 import ResellerWarrantyAnalytics from "@/pages/reseller/warranty-analytics";
+import RepairCenterWarrantyAnalytics from "@/pages/repair-center/warranty-analytics";
 
 function Router() {
   return (
@@ -472,6 +473,7 @@ function Router() {
       <ProtectedRoute path="/repair-center/settings" component={RepairCenterSettings} />
       <ProtectedRoute path="/repair-center/invoices" component={RepairCenterInvoices} />
       <ProtectedRoute path="/repair-center/b2b-returns" component={RepairCenterB2BReturns} />
+      <ProtectedRoute path="/repair-center/warranty-analytics" component={RepairCenterWarrantyAnalytics} allowedRoles={["repair_center", "repair_center_staff"]} />
       <ProtectedRoute path="/repair-center/marketplace" component={RepairCenterMarketplace} />
       <ProtectedRoute path="/repair-center/suppliers" component={RepairCenterSuppliers} />
       <ProtectedRoute path="/repair-center/supplier-orders" component={RepairCenterSupplierOrders} />
