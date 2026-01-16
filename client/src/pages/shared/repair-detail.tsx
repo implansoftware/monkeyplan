@@ -882,7 +882,12 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
                 
                 <div className="grid grid-cols-3 sm:grid-cols-5 lg:grid-cols-9 gap-3">
                   {workflowSteps.map((step, index) => {
-                    const isCompleted = index <= currentStepIndex;
+                    // Check if step is truly completed - for diagnosis step, verify diagnosis exists or was skipped
+                    let isCompleted = index <= currentStepIndex;
+                    const isSkipped = step.key === 'in_diagnosi' && !diagnosis && !repair.skipDiagnosis && index < currentStepIndex;
+                    if (isSkipped) {
+                      isCompleted = false;
+                    }
                     const isCurrent = index === currentStepIndex + 1;
                     const Icon = step.icon;
                     
@@ -895,11 +900,15 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
                         <div className={`relative z-10 h-12 w-12 rounded-xl flex items-center justify-center transition-all duration-300 ${
                           isCurrent 
                             ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/30 scale-110 ring-4 ring-primary/20' 
-                            : isCompleted 
-                              ? 'bg-emerald-500 text-white shadow-md shadow-emerald-500/20' 
-                              : 'bg-muted text-muted-foreground'
+                            : isSkipped
+                              ? 'bg-amber-500 text-white shadow-md shadow-amber-500/20 ring-2 ring-amber-400/50'
+                              : isCompleted 
+                                ? 'bg-emerald-500 text-white shadow-md shadow-emerald-500/20' 
+                                : 'bg-muted text-muted-foreground'
                         }`}>
-                          {isCompleted ? (
+                          {isSkipped ? (
+                            <AlertTriangle className="h-5 w-5" />
+                          ) : isCompleted ? (
                             <CheckCircle2 className="h-5 w-5" />
                           ) : (
                             <Icon className="h-5 w-5" />
@@ -908,9 +917,11 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
                         <span className={`text-xs mt-2 text-center font-medium ${
                           isCurrent 
                             ? 'text-primary' 
-                            : isCompleted 
-                              ? 'text-emerald-600 dark:text-emerald-400' 
-                              : 'text-muted-foreground'
+                            : isSkipped
+                              ? 'text-amber-600 dark:text-amber-400'
+                              : isCompleted 
+                                ? 'text-emerald-600 dark:text-emerald-400' 
+                                : 'text-muted-foreground'
                         }`}>
                           {step.label}
                         </span>
