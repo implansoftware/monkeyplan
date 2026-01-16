@@ -39,7 +39,7 @@ import {
   ChevronRight, ChevronLeft, Loader2, Plus, Search,
   Monitor, Tablet, Laptop, Tv, Gamepad2, Watch, Headphones, Printer,
   AlertCircle, UserPlus, X, Mail, Phone, Building, Store, Download, Tag, PartyPopper, FileText, Calculator,
-  Warehouse, Package
+  Warehouse, Package, Cpu, Code, Wifi, MoreHorizontal
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { SearchableServiceCombobox } from "@/components/SearchableServiceCombobox";
@@ -514,6 +514,13 @@ export function RepairIntakeWizard({
     software: "Software", 
     connectivity: "Connettività",
     altro: "Altro",
+  };
+
+  const categoryIcons: Record<string, any> = {
+    hardware: Cpu,
+    software: Code,
+    connectivity: Wifi,
+    altro: MoreHorizontal,
   };
 
   // Filter customers by search
@@ -1617,9 +1624,14 @@ export function RepairIntakeWizard({
                               <AlertCircle className="h-4 w-4" />
                               Risultati Diagnosi
                             </Label>
-                            {Object.entries(findingsByCategory).map(([category, findings]) => (
+                            {Object.entries(findingsByCategory).map(([category, findings]) => {
+                              const CategoryIcon = categoryIcons[category] || AlertCircle;
+                              return (
                               <div key={category} className="space-y-2">
-                                <p className="text-sm font-medium text-muted-foreground">{categoryLabels[category] || category}</p>
+                                <p className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                                  <CategoryIcon className="h-4 w-4" />
+                                  {categoryLabels[category] || category}
+                                </p>
                                 <div className="grid grid-cols-2 gap-2">
                                   {findings.map((finding) => (
                                     <div key={finding.id} className="flex items-center space-x-2">
@@ -1640,7 +1652,8 @@ export function RepairIntakeWizard({
                                   ))}
                                 </div>
                               </div>
-                            ))}
+                              );
+                            })}
                           </div>
                         )}
 
