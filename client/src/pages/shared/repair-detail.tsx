@@ -1047,6 +1047,18 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
                           Accettato
                         </Button>
                       </div>
+                      <div className="pt-2 border-t">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="w-full text-muted-foreground"
+                          onClick={() => setDiagnosisDialogOpen(true)}
+                          data-testid="button-add-diagnosis-later"
+                        >
+                          <Stethoscope className="mr-2 h-4 w-4" />
+                          {diagnosis ? 'Modifica Diagnosi' : 'Aggiungi Diagnosi'}
+                        </Button>
+                      </div>
                     </div>
                   )}
 
@@ -1089,6 +1101,18 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
                             <Play className="mr-2 h-4 w-4" />
                           )}
                           Avvia Riparazione
+                        </Button>
+                      </div>
+                      <div className="pt-2 border-t">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="w-full text-muted-foreground"
+                          onClick={() => setDiagnosisDialogOpen(true)}
+                          data-testid="button-add-diagnosis-accepted"
+                        >
+                          <Stethoscope className="mr-2 h-4 w-4" />
+                          {diagnosis ? 'Modifica Diagnosi' : 'Aggiungi Diagnosi'}
                         </Button>
                       </div>
                     </div>
