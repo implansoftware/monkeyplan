@@ -11321,6 +11321,12 @@ export function registerRoutes(app: Express): Server {
                 diagnosedBy: req.user!.id,
                 customerDataImportant: req.body.diagnosis.customerDataImportant || false,
                 dataRecoveryRequested: req.body.diagnosis.dataRecoveryRequested || false,
+                findingIds: req.body.diagnosis.findingIds || [],
+                componentIds: req.body.diagnosis.componentIds || [],
+                estimatedRepairTimeId: req.body.diagnosis.estimatedRepairTimeId || null,
+                skipPhotos: req.body.diagnosis.skipPhotos || false,
+                unrepairableReasonId: req.body.diagnosis.unrepairableReasonId || null,
+                suggestedPromotionIds: req.body.diagnosis.suggestedPromotionIds || [],
               });
               if (!createdQuote) {
                 await storage.updateRepairOrder(order.id, { status: 'in_diagnosi' as any });
@@ -11400,6 +11406,12 @@ export function registerRoutes(app: Express): Server {
                 diagnosedBy: req.user!.id,
                 customerDataImportant: req.body.diagnosis.customerDataImportant || false,
                 dataRecoveryRequested: req.body.diagnosis.dataRecoveryRequested || false,
+                findingIds: req.body.diagnosis.findingIds || [],
+                componentIds: req.body.diagnosis.componentIds || [],
+                estimatedRepairTimeId: req.body.diagnosis.estimatedRepairTimeId || null,
+                skipPhotos: req.body.diagnosis.skipPhotos || false,
+                unrepairableReasonId: req.body.diagnosis.unrepairableReasonId || null,
+                suggestedPromotionIds: req.body.diagnosis.suggestedPromotionIds || [],
               });
               if (!createdQuote) {
                 await storage.updateRepairOrder(order.id, { status: 'in_diagnosi' as any });

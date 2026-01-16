@@ -44,7 +44,14 @@ import {
 import { cn } from "@/lib/utils";
 import { SearchableServiceCombobox } from "@/components/SearchableServiceCombobox";
 import { SearchableProductCombobox } from "@/components/SearchableProductCombobox";
-import type { Warehouse as WarehouseType } from "@shared/schema";
+import type { 
+  Warehouse as WarehouseType, 
+  DiagnosticFinding, 
+  DamagedComponentType, 
+  EstimatedRepairTime, 
+  UnrepairableReason, 
+  Promotion 
+} from "@shared/schema";
 
 interface WarehouseWithOwner extends WarehouseType {
   owner?: { id: string; username: string; fullName: string | null } | null;
@@ -145,6 +152,12 @@ export function RepairIntakeWizard({
   const [diagnosisRequiresExternalParts, setDiagnosisRequiresExternalParts] = useState(false);
   const [diagnosisCustomerDataImportant, setDiagnosisCustomerDataImportant] = useState(false);
   const [diagnosisDataRecoveryRequested, setDiagnosisDataRecoveryRequested] = useState(false);
+  const [diagnosisSelectedFindingIds, setDiagnosisSelectedFindingIds] = useState<string[]>([]);
+  const [diagnosisSelectedComponentIds, setDiagnosisSelectedComponentIds] = useState<string[]>([]);
+  const [diagnosisEstimatedTimeId, setDiagnosisEstimatedTimeId] = useState<string>("");
+  const [diagnosisSkipPhotos, setDiagnosisSkipPhotos] = useState(false);
+  const [diagnosisUnrepairableReasonId, setDiagnosisUnrepairableReasonId] = useState<string>("");
+  const [diagnosisSuggestedPromotionIds, setDiagnosisSuggestedPromotionIds] = useState<string[]>([]);
   const dialogContentRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -204,6 +217,12 @@ export function RepairIntakeWizard({
       setDiagnosisRequiresExternalParts(false);
       setDiagnosisCustomerDataImportant(false);
       setDiagnosisDataRecoveryRequested(false);
+      setDiagnosisSelectedFindingIds([]);
+      setDiagnosisSelectedComponentIds([]);
+      setDiagnosisEstimatedTimeId("");
+      setDiagnosisSkipPhotos(false);
+      setDiagnosisUnrepairableReasonId("");
+      setDiagnosisSuggestedPromotionIds([]);
       form.reset();
     }
   }, [open, form]);
@@ -427,6 +446,76 @@ export function RepairIntakeWizard({
     enabled: !!selectedTypeId,
   });
 
+  // Diagnosis lookup data queries
+  const { data: diagnosticFindings = [] } = useQuery<DiagnosticFinding[]>({
+    queryKey: ["/api/diagnostic-findings", { deviceTypeId: selectedTypeId }],
+    queryFn: async () => {
+      const params = selectedTypeId ? `?deviceTypeId=${selectedTypeId}` : "";
+      const res = await fetch(`/api/diagnostic-findings${params}`, { credentials: "include" });
+      if (!res.ok) throw new Error("Failed");
+      return res.json();
+    },
+    enabled: open && createDiagnosisNow,
+  });
+
+  const { data: damagedComponentTypes = [] } = useQuery<DamagedComponentType[]>({
+    queryKey: ["/api/damaged-component-types", { deviceTypeId: selectedTypeId }],
+    queryFn: async () => {
+      const params = selectedTypeId ? `?deviceTypeId=${selectedTypeId}` : "";
+      const res = await fetch(`/api/damaged-component-types${params}`, { credentials: "include" });
+      if (!res.ok) throw new Error("Failed");
+      return res.json();
+    },
+    enabled: open && createDiagnosisNow,
+  });
+
+  const { data: estimatedRepairTimes = [] } = useQuery<EstimatedRepairTime[]>({
+    queryKey: ["/api/estimated-repair-times", { deviceTypeId: selectedTypeId }],
+    queryFn: async () => {
+      const params = selectedTypeId ? `?deviceTypeId=${selectedTypeId}` : "";
+      const res = await fetch(`/api/estimated-repair-times${params}`, { credentials: "include" });
+      if (!res.ok) throw new Error("Failed");
+      return res.json();
+    },
+    enabled: open && createDiagnosisNow,
+  });
+
+  const { data: unrepairableReasons = [] } = useQuery<UnrepairableReason[]>({
+    queryKey: ["/api/unrepairable-reasons", { deviceTypeId: selectedTypeId }],
+    queryFn: async () => {
+      const params = selectedTypeId ? `?deviceTypeId=${selectedTypeId}` : "";
+      const res = await fetch(`/api/unrepairable-reasons${params}`, { credentials: "include" });
+      if (!res.ok) throw new Error("Failed");
+      return res.json();
+    },
+    enabled: open && createDiagnosisNow && diagnosisOutcome === "irriparabile",
+  });
+
+  const { data: promotions = [] } = useQuery<Promotion[]>({
+    queryKey: ["/api/promotions"],
+    queryFn: async () => {
+      const res = await fetch("/api/promotions", { credentials: "include" });
+      if (!res.ok) throw new Error("Failed");
+      return res.json();
+    },
+    enabled: open && createDiagnosisNow && diagnosisOutcome === "non_conveniente",
+  });
+
+  // Group findings by category
+  const findingsByCategory = diagnosticFindings.reduce((acc, finding) => {
+    const category = finding.category || "altro";
+    if (!acc[category]) acc[category] = [];
+    acc[category].push(finding);
+    return acc;
+  }, {} as Record<string, DiagnosticFinding[]>);
+
+  const categoryLabels: Record<string, string> = {
+    hardware: "Hardware",
+    software: "Software", 
+    connectivity: "Connettività",
+    altro: "Altro",
+  };
+
   // Filter customers by search
   const filteredCustomers = customers.filter(c => 
     c.fullName.toLowerCase().includes(customerSearch.toLowerCase()) ||
@@ -535,15 +624,23 @@ export function RepairIntakeWizard({
 
       // Include diagnosis data if user wants to create diagnosis during order creation
       if (createDiagnosisNow && diagnosisTechnical.trim()) {
+        const selectedTimeData = estimatedRepairTimes.find(t => t.id === diagnosisEstimatedTimeId);
+        const computedEstimatedTime = selectedTimeData?.hoursMax ?? diagnosisEstimatedTime ?? null;
         payload.diagnosis = {
           createDiagnosis: true,
           technicalDiagnosis: diagnosisTechnical.trim(),
           diagnosisOutcome: diagnosisOutcome,
-          estimatedRepairTime: diagnosisEstimatedTime,
+          estimatedRepairTime: computedEstimatedTime,
           diagnosisNotes: diagnosisNotes || null,
           requiresExternalParts: diagnosisRequiresExternalParts,
           customerDataImportant: diagnosisCustomerDataImportant,
           dataRecoveryRequested: diagnosisDataRecoveryRequested,
+          findingIds: diagnosisSelectedFindingIds.length > 0 ? diagnosisSelectedFindingIds : undefined,
+          componentIds: diagnosisSelectedComponentIds.length > 0 ? diagnosisSelectedComponentIds : undefined,
+          estimatedRepairTimeId: diagnosisEstimatedTimeId || undefined,
+          skipPhotos: diagnosisSkipPhotos,
+          unrepairableReasonId: diagnosisOutcome === "irriparabile" && diagnosisUnrepairableReasonId ? diagnosisUnrepairableReasonId : undefined,
+          suggestedPromotionIds: diagnosisOutcome === "non_conveniente" && diagnosisSuggestedPromotionIds.length > 0 ? diagnosisSuggestedPromotionIds : undefined,
         };
       }
 
@@ -1532,6 +1629,66 @@ export function RepairIntakeWizard({
 
                     {createDiagnosisNow && (
                       <div className="space-y-4 pt-4 border-t">
+                        {/* Risultati Diagnosi (Findings) */}
+                        {diagnosticFindings.length > 0 && (
+                          <div className="space-y-3">
+                            <Label className="flex items-center gap-2">
+                              <AlertCircle className="h-4 w-4" />
+                              Risultati Diagnosi
+                            </Label>
+                            {Object.entries(findingsByCategory).map(([category, findings]) => (
+                              <div key={category} className="space-y-2">
+                                <p className="text-sm font-medium text-muted-foreground">{categoryLabels[category] || category}</p>
+                                <div className="grid grid-cols-2 gap-2">
+                                  {findings.map((finding) => (
+                                    <div key={finding.id} className="flex items-center space-x-2">
+                                      <Checkbox
+                                        id={`finding-${finding.id}`}
+                                        checked={diagnosisSelectedFindingIds.includes(finding.id)}
+                                        onCheckedChange={(checked) => {
+                                          if (checked) {
+                                            setDiagnosisSelectedFindingIds([...diagnosisSelectedFindingIds, finding.id]);
+                                          } else {
+                                            setDiagnosisSelectedFindingIds(diagnosisSelectedFindingIds.filter(id => id !== finding.id));
+                                          }
+                                        }}
+                                        data-testid={`checkbox-finding-${finding.id}`}
+                                      />
+                                      <Label htmlFor={`finding-${finding.id}`} className="text-sm">{finding.name}</Label>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+
+                        {/* Componenti Danneggiati */}
+                        {damagedComponentTypes.length > 0 && (
+                          <div className="space-y-2">
+                            <Label>Componenti Danneggiati</Label>
+                            <div className="grid grid-cols-2 gap-2">
+                              {damagedComponentTypes.map((comp) => (
+                                <div key={comp.id} className="flex items-center space-x-2">
+                                  <Checkbox
+                                    id={`component-${comp.id}`}
+                                    checked={diagnosisSelectedComponentIds.includes(comp.id)}
+                                    onCheckedChange={(checked) => {
+                                      if (checked) {
+                                        setDiagnosisSelectedComponentIds([...diagnosisSelectedComponentIds, comp.id]);
+                                      } else {
+                                        setDiagnosisSelectedComponentIds(diagnosisSelectedComponentIds.filter(id => id !== comp.id));
+                                      }
+                                    }}
+                                    data-testid={`checkbox-component-${comp.id}`}
+                                  />
+                                  <Label htmlFor={`component-${comp.id}`} className="text-sm">{comp.name}</Label>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
                         <div className="space-y-2">
                           <Label className="flex items-center gap-2">
                             <AlertCircle className="h-4 w-4" />
@@ -1549,7 +1706,11 @@ export function RepairIntakeWizard({
                         <div className="grid grid-cols-2 gap-4">
                           <div className="space-y-2">
                             <Label>Esito Diagnosi</Label>
-                            <Select value={diagnosisOutcome} onValueChange={(v: any) => setDiagnosisOutcome(v)}>
+                            <Select value={diagnosisOutcome} onValueChange={(v: any) => {
+                              setDiagnosisOutcome(v);
+                              if (v !== "irriparabile") setDiagnosisUnrepairableReasonId("");
+                              if (v !== "non_conveniente") setDiagnosisSuggestedPromotionIds([]);
+                            }}>
                               <SelectTrigger data-testid="select-diagnosis-outcome">
                                 <SelectValue />
                               </SelectTrigger>
@@ -1561,18 +1722,66 @@ export function RepairIntakeWizard({
                             </Select>
                           </div>
                           <div className="space-y-2">
-                            <Label>Tempo Stimato (ore)</Label>
-                            <Input
-                              type="number"
-                              min="0"
-                              step="0.5"
-                              value={diagnosisEstimatedTime || ""}
-                              onChange={(e) => setDiagnosisEstimatedTime(e.target.value ? parseFloat(e.target.value) : null)}
-                              placeholder="Es: 1.5"
-                              data-testid="input-diagnosis-time"
-                            />
+                            <Label>Tempo Stimato</Label>
+                            <Select value={diagnosisEstimatedTimeId} onValueChange={setDiagnosisEstimatedTimeId}>
+                              <SelectTrigger data-testid="select-diagnosis-time">
+                                <SelectValue placeholder="Seleziona durata" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {estimatedRepairTimes.map((time) => (
+                                  <SelectItem key={time.id} value={time.id}>
+                                    {time.label}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
                           </div>
                         </div>
+
+                        {/* Motivo Irriparabilità (condizionale) */}
+                        {diagnosisOutcome === "irriparabile" && unrepairableReasons.length > 0 && (
+                          <div className="space-y-2">
+                            <Label>Motivo Irriparabilità</Label>
+                            <Select value={diagnosisUnrepairableReasonId} onValueChange={setDiagnosisUnrepairableReasonId}>
+                              <SelectTrigger data-testid="select-unrepairable-reason">
+                                <SelectValue placeholder="Seleziona motivo" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {unrepairableReasons.map((reason) => (
+                                  <SelectItem key={reason.id} value={reason.id}>
+                                    {reason.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        )}
+
+                        {/* Promozioni Suggerite (condizionale) */}
+                        {diagnosisOutcome === "non_conveniente" && promotions.length > 0 && (
+                          <div className="space-y-2">
+                            <Label>Promozioni Suggerite</Label>
+                            <div className="grid grid-cols-2 gap-2">
+                              {promotions.map((promo) => (
+                                <div key={promo.id} className="flex items-center space-x-2">
+                                  <Checkbox
+                                    id={`promo-${promo.id}`}
+                                    checked={diagnosisSuggestedPromotionIds.includes(promo.id)}
+                                    onCheckedChange={(checked) => {
+                                      if (checked) {
+                                        setDiagnosisSuggestedPromotionIds([...diagnosisSuggestedPromotionIds, promo.id]);
+                                      } else {
+                                        setDiagnosisSuggestedPromotionIds(diagnosisSuggestedPromotionIds.filter(id => id !== promo.id));
+                                      }
+                                    }}
+                                    data-testid={`checkbox-promo-${promo.id}`}
+                                  />
+                                  <Label htmlFor={`promo-${promo.id}`} className="text-sm">{promo.name}</Label>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
 
                         <div className="space-y-2">
                           <Label>Note Diagnosi</Label>
@@ -1624,6 +1833,18 @@ export function RepairIntakeWizard({
                               </Label>
                             </div>
                           )}
+
+                          <div className="flex items-center space-x-2">
+                            <Checkbox
+                              id="diagnosisSkipPhotos"
+                              checked={diagnosisSkipPhotos}
+                              onCheckedChange={(checked) => setDiagnosisSkipPhotos(checked === true)}
+                              data-testid="checkbox-skip-photos"
+                            />
+                            <Label htmlFor="diagnosisSkipPhotos">
+                              Salta foto diagnosi (non disponibili)
+                            </Label>
+                          </div>
                         </div>
                       </div>
                     )}
