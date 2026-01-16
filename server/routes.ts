@@ -11302,7 +11302,34 @@ export function registerRoutes(app: Express): Server {
           await storage.ensureCustomerRepairCenterAssociation(orderData.customerId, orderData.repairCenterId);
         }
         setActivityEntity(res, { type: 'repair_order', id: order.id });
-        res.json({ order, acceptance, quote: createdQuote });
+        
+        // Handle optional diagnosis creation during order creation
+        let createdDiagnosis = null;
+        if (req.body.diagnosis && req.body.diagnosis.createDiagnosis) {
+          try {
+            if (!req.body.diagnosis.technicalDiagnosis || !req.body.diagnosis.technicalDiagnosis.trim()) {
+              console.error('Diagnosis creation skipped: technicalDiagnosis is required');
+            } else {
+              createdDiagnosis = await storage.createRepairDiagnostics({
+                repairOrderId: order.id,
+                technicalDiagnosis: req.body.diagnosis.technicalDiagnosis.trim(),
+                diagnosisOutcome: req.body.diagnosis.diagnosisOutcome || 'riparabile',
+                estimatedRepairTime: req.body.diagnosis.estimatedRepairTime || null,
+                diagnosisNotes: req.body.diagnosis.diagnosisNotes || null,
+                requiresExternalParts: req.body.diagnosis.requiresExternalParts || false,
+                damagedComponents: req.body.diagnosis.damagedComponents || [],
+                diagnosedBy: req.user!.id,
+              });
+              if (!createdQuote) {
+                await storage.updateRepairOrder(order.id, { status: 'in_diagnosi' as any });
+                order.status = 'in_diagnosi';
+              }
+            }
+          } catch (diagError: any) {
+            console.error('Failed to create diagnosis during order creation:', diagError);
+          }
+        }
+        res.json({ order, acceptance, quote: createdQuote, diagnosis: createdDiagnosis });
       } else {
         const order = await storage.createRepairOrder(orderData);
         
@@ -11352,7 +11379,34 @@ export function registerRoutes(app: Express): Server {
           await storage.ensureCustomerRepairCenterAssociation(orderData.customerId, orderData.repairCenterId);
         }
         setActivityEntity(res, { type: 'repair_order', id: order.id });
-        res.json({ order, quote: createdQuote });
+        
+        // Handle optional diagnosis creation during simple order creation
+        let createdDiagnosis = null;
+        if (req.body.diagnosis && req.body.diagnosis.createDiagnosis) {
+          try {
+            if (!req.body.diagnosis.technicalDiagnosis || !req.body.diagnosis.technicalDiagnosis.trim()) {
+              console.error('Diagnosis creation skipped: technicalDiagnosis is required');
+            } else {
+              createdDiagnosis = await storage.createRepairDiagnostics({
+                repairOrderId: order.id,
+                technicalDiagnosis: req.body.diagnosis.technicalDiagnosis.trim(),
+                diagnosisOutcome: req.body.diagnosis.diagnosisOutcome || 'riparabile',
+                estimatedRepairTime: req.body.diagnosis.estimatedRepairTime || null,
+                diagnosisNotes: req.body.diagnosis.diagnosisNotes || null,
+                requiresExternalParts: req.body.diagnosis.requiresExternalParts || false,
+                damagedComponents: req.body.diagnosis.damagedComponents || [],
+                diagnosedBy: req.user!.id,
+              });
+              if (!createdQuote) {
+                await storage.updateRepairOrder(order.id, { status: 'in_diagnosi' as any });
+                order.status = 'in_diagnosi';
+              }
+            }
+          } catch (diagError: any) {
+            console.error('Failed to create diagnosis during simple order creation:', diagError);
+          }
+        }
+        res.json({ order, quote: createdQuote, diagnosis: createdDiagnosis });
       }
     } catch (error: any) {
       res.status(400).send(error.message);

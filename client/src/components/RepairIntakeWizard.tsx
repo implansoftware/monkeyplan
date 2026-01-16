@@ -90,7 +90,7 @@ const STEPS = [
   { id: 1, name: "Dispositivo", icon: Smartphone },
   { id: 2, name: "Cliente", icon: User },
   { id: 3, name: "Condizioni", icon: ClipboardCheck },
-  { id: 4, name: "Preventivo", icon: FileText },
+  { id: 4, name: "Diagnosi", icon: FileText },
   { id: 5, name: "Conferma", icon: CheckCircle2 },
   { id: 6, name: "Completato", icon: PartyPopper },
 ];
@@ -137,6 +137,11 @@ export function RepairIntakeWizard({
   const [quoteLaborCost, setQuoteLaborCost] = useState(0);
   const [quoteNotes, setQuoteNotes] = useState("");
   const [selectedQuoteWarehouseId, setSelectedQuoteWarehouseId] = useState<string>("");
+  const [createDiagnosisNow, setCreateDiagnosisNow] = useState(false);
+  const [diagnosisTechnical, setDiagnosisTechnical] = useState("");
+  const [diagnosisOutcome, setDiagnosisOutcome] = useState<"riparabile" | "non_conveniente" | "irriparabile">("riparabile");
+  const [diagnosisNotes, setDiagnosisNotes] = useState("");
+  const [diagnosisEstimatedTime, setDiagnosisEstimatedTime] = useState<number | null>(null);
   const dialogContentRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -188,6 +193,11 @@ export function RepairIntakeWizard({
       setQuoteLaborCost(0);
       setQuoteNotes("");
       setSelectedQuoteWarehouseId("");
+      setCreateDiagnosisNow(false);
+      setDiagnosisTechnical("");
+      setDiagnosisOutcome("riparabile");
+      setDiagnosisNotes("");
+      setDiagnosisEstimatedTime(null);
       form.reset();
     }
   }, [open, form]);
@@ -514,6 +524,17 @@ export function RepairIntakeWizard({
           parts: quoteParts.filter(p => p.name && p.unitPrice > 0),
           laborCost: Math.round(quoteLaborCost * 100),
           notes: quoteNotes || null,
+        };
+      }
+
+      // Include diagnosis data if user wants to create diagnosis during order creation
+      if (createDiagnosisNow && diagnosisTechnical.trim()) {
+        payload.diagnosis = {
+          createDiagnosis: true,
+          technicalDiagnosis: diagnosisTechnical.trim(),
+          diagnosisOutcome: diagnosisOutcome,
+          estimatedRepairTime: diagnosisEstimatedTime,
+          diagnosisNotes: diagnosisNotes || null,
         };
       }
 
@@ -1479,14 +1500,87 @@ export function RepairIntakeWizard({
               <div className="space-y-4">
                 <div className="text-center mb-4">
                   <FileText className="h-12 w-12 mx-auto text-primary mb-2" />
-                  <h3 className="text-lg font-semibold">Preventivo Riparazione</h3>
+                  <h3 className="text-lg font-semibold">Diagnosi e Preventivo</h3>
                   <p className="text-sm text-muted-foreground">
-                    Crea un preventivo ora oppure fallo successivamente
+                    Esegui diagnosi e/o crea preventivo (opzionale)
                   </p>
                 </div>
 
                 <Card>
                   <CardContent className="pt-4 space-y-4">
+                    {/* Diagnosis Toggle */}
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="createDiagnosisNow"
+                        checked={createDiagnosisNow}
+                        onCheckedChange={(checked) => setCreateDiagnosisNow(checked === true)}
+                        data-testid="checkbox-create-diagnosis"
+                      />
+                      <Label htmlFor="createDiagnosisNow" className="font-medium">
+                        Esegui diagnosi ora
+                      </Label>
+                    </div>
+
+                    {createDiagnosisNow && (
+                      <div className="space-y-4 pt-4 border-t">
+                        <div className="space-y-2">
+                          <Label className="flex items-center gap-2">
+                            <AlertCircle className="h-4 w-4" />
+                            Diagnosi Tecnica *
+                          </Label>
+                          <Textarea
+                            value={diagnosisTechnical}
+                            onChange={(e) => setDiagnosisTechnical(e.target.value)}
+                            placeholder="Descrivi la diagnosi tecnica del dispositivo..."
+                            rows={3}
+                            data-testid="textarea-diagnosis-technical"
+                          />
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label>Esito Diagnosi</Label>
+                            <Select value={diagnosisOutcome} onValueChange={(v: any) => setDiagnosisOutcome(v)}>
+                              <SelectTrigger data-testid="select-diagnosis-outcome">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="riparabile">Riparabile</SelectItem>
+                                <SelectItem value="non_conveniente">Non Conveniente</SelectItem>
+                                <SelectItem value="irriparabile">Irriparabile</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div className="space-y-2">
+                            <Label>Tempo Stimato (ore)</Label>
+                            <Input
+                              type="number"
+                              min="0"
+                              step="0.5"
+                              value={diagnosisEstimatedTime || ""}
+                              onChange={(e) => setDiagnosisEstimatedTime(e.target.value ? parseFloat(e.target.value) : null)}
+                              placeholder="Es: 1.5"
+                              data-testid="input-diagnosis-time"
+                            />
+                          </div>
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label>Note Diagnosi</Label>
+                          <Textarea
+                            value={diagnosisNotes}
+                            onChange={(e) => setDiagnosisNotes(e.target.value)}
+                            placeholder="Note aggiuntive sulla diagnosi..."
+                            rows={2}
+                            data-testid="textarea-diagnosis-notes"
+                          />
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="border-t pt-4 mt-4"></div>
+
+                    {/* Quote Toggle */}
                     <div className="flex items-center space-x-2">
                       <Checkbox
                         id="createQuoteNow"

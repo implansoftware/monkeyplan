@@ -139,3 +139,24 @@ The backend is an `Express.js` application with TypeScript, featuring a RESTful 
 - **Device Filtering Integration**: SearchableServiceCombobox in quote step filters services by device type/brand/model from repair order
 - **State Management**: Quote state properly reset on dialog close to prevent stale data (includes warehouse selection)
 - **Backward Compatibility**: Existing diagnosis → quote workflow remains fully functional
+
+### Optional Diagnosis Creation During Repair Order Intake (January 2026)
+- **Feature**: Users can now optionally create a diagnosis record directly during the repair order creation process
+- **Backend Changes**: Modified `POST /api/repair-orders` to accept optional `diagnosis` object with technicalDiagnosis, outcome, estimatedTime, notes
+- **Atomic Transaction**: When diagnosis data is provided, both repair order and diagnosis are created together
+- **Status Logic**:
+  - Diagnosis only (no quote) → status = `in_diagnosi`
+  - Quote only (no diagnosis) → status = `preventivo_emesso`
+  - Both diagnosis and quote → status = `preventivo_emesso` (quote takes precedence)
+  - Neither → status = `ingressato` (default)
+- **Wizard Updates**:
+  - AcceptanceWizardDialog: Step renamed to "Diagnosi e Preventivo" with combined diagnosis/quote interface
+  - RepairIntakeWizard: Same step 4 changes with unified "Diagnosi e Preventivo" interface
+- **Diagnosis Form UI**:
+  - Toggle to enable diagnosis creation
+  - Textarea for technical diagnosis (required when enabled)
+  - Dropdown for diagnosis outcome (riparabile, non_conveniente, irriparabile)
+  - Input for estimated repair time (hours)
+  - Textarea for additional notes
+- **State Management**: Diagnosis state properly reset on dialog close
+- **Database**: Uses existing `repair_diagnostics` table with 1:1 relationship to repair orders
