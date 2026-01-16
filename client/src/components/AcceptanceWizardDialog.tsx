@@ -46,6 +46,14 @@ import {
 } from "@/components/ui/select";
 import { AddressAutocomplete } from "@/components/address-autocomplete";
 import { PatternLock } from "@/components/PatternLock";
+import { SearchableServiceCombobox } from "@/components/SearchableServiceCombobox";
+import { SearchableProductCombobox } from "@/components/SearchableProductCombobox";
+import { Warehouse, Plus, Package, Wrench } from "lucide-react";
+import type { Warehouse as WarehouseType } from "@shared/schema";
+
+interface WarehouseWithOwner extends WarehouseType {
+  owner?: { id: string; username: string; fullName: string | null } | null;
+}
 
 interface AcceptanceWizardDialogProps {
   open: boolean;
@@ -200,6 +208,7 @@ export function AcceptanceWizardDialog({
   const [isUploadingPhotos, setIsUploadingPhotos] = useState(false);
   const [createQuoteNow, setCreateQuoteNow] = useState(false);
   const [quoteParts, setQuoteParts] = useState<Array<{ name: string; quantity: number; unitPrice: number }>>([]);
+  const [selectedQuoteWarehouseId, setSelectedQuoteWarehouseId] = useState<string>("");
   const [quoteLaborCost, setQuoteLaborCost] = useState(0);
   const [quoteNotes, setQuoteNotes] = useState("");
   const [newCustomerData, setNewCustomerData] = useState({
@@ -256,6 +265,11 @@ export function AcceptanceWizardDialog({
     name: string;
   }>>({
     queryKey: ["/api/device-types"],
+  });
+
+  const { data: accessibleWarehouses = [] } = useQuery<WarehouseWithOwner[]>({
+    queryKey: ["/api/warehouses/accessible"],
+    enabled: open,
   });
 
   const { data: issueTypes = [] } = useQuery<Array<{
@@ -773,6 +787,7 @@ export function AcceptanceWizardDialog({
     setQuoteParts([]);
     setQuoteLaborCost(0);
     setQuoteNotes("");
+    setSelectedQuoteWarehouseId("");
     // Cleanup photo previews
     acceptancePhotos.forEach(photo => URL.revokeObjectURL(photo.preview));
     setAcceptancePhotos([]);
@@ -2176,74 +2191,129 @@ export function AcceptanceWizardDialog({
               </div>
 
               {/* Parts Section */}
-              <div className="space-y-2">
+              <div className="space-y-3">
                 <Label className="flex items-center gap-2">
-                  Ricambi
+                  <Package className="h-4 w-4" />
+                  Ricambi e Servizi
                 </Label>
-                <div className="space-y-2">
-                  {quoteParts.map((part, index) => (
-                    <div key={index} className="flex gap-2 items-center">
-                      <Input
-                        placeholder="Nome ricambio"
-                        value={part.name}
-                        onChange={(e) => {
-                          const newParts = [...quoteParts];
-                          newParts[index].name = e.target.value;
-                          setQuoteParts(newParts);
-                        }}
-                        className="flex-1"
-                        data-testid={`input-part-name-${index}`}
-                      />
-                      <Input
-                        type="number"
-                        min="1"
-                        placeholder="Qty"
-                        value={part.quantity}
-                        onChange={(e) => {
-                          const newParts = [...quoteParts];
-                          newParts[index].quantity = parseInt(e.target.value) || 1;
-                          setQuoteParts(newParts);
-                        }}
-                        className="w-20"
-                        data-testid={`input-part-qty-${index}`}
-                      />
-                      <Input
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        placeholder="Prezzo €"
-                        value={part.unitPrice / 100}
-                        onChange={(e) => {
-                          const newParts = [...quoteParts];
-                          newParts[index].unitPrice = Math.round(parseFloat(e.target.value) * 100) || 0;
-                          setQuoteParts(newParts);
-                        }}
-                        className="w-28"
-                        data-testid={`input-part-price-${index}`}
-                      />
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => {
-                          const newParts = quoteParts.filter((_, i) => i !== index);
-                          setQuoteParts(newParts);
-                        }}
-                        data-testid={`button-remove-part-${index}`}
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  ))}
+                
+                {/* Warehouse selection */}
+                <div className="flex items-center gap-2">
+                  <Select value={selectedQuoteWarehouseId} onValueChange={setSelectedQuoteWarehouseId}>
+                    <SelectTrigger className="w-[200px]" data-testid="select-quote-warehouse">
+                      <Warehouse className="h-4 w-4 mr-2" />
+                      <SelectValue placeholder="Seleziona magazzino" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {accessibleWarehouses.map((wh) => (
+                        <SelectItem key={wh.id} value={wh.id}>
+                          {wh.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Action buttons */}
+                <div className="flex gap-2 flex-wrap">
                   <Button
                     type="button"
                     variant="outline"
                     size="sm"
                     onClick={() => setQuoteParts([...quoteParts, { name: '', quantity: 1, unitPrice: 0 }])}
-                    data-testid="button-add-part"
+                    data-testid="button-add-part-manual"
                   >
-                    + Aggiungi Ricambio
+                    <Plus className="h-4 w-4 mr-1" />
+                    Manuale
                   </Button>
+                  <SearchableServiceCombobox
+                    onSelect={(service) => {
+                      setQuoteParts([...quoteParts, {
+                        name: `[Servizio] ${service.name}`,
+                        quantity: 1,
+                        unitPrice: service.effectivePriceCents,
+                      }]);
+                    }}
+                    repairCenterId={form.watch("repairCenterId") || undefined}
+                    deviceTypeId={selectedTypeId || undefined}
+                    brandId={selectedBrandId || undefined}
+                    modelId={form.watch("deviceModelId") || undefined}
+                  />
+                  <SearchableProductCombobox
+                    onSelect={(product) => {
+                      setQuoteParts([...quoteParts, {
+                        name: product.name,
+                        quantity: 1,
+                        unitPrice: product.unitPrice || 0,
+                      }]);
+                    }}
+                    warehouseId={selectedQuoteWarehouseId || undefined}
+                    productType="ricambio"
+                  />
+                </div>
+
+                {/* Parts list */}
+                <div className="space-y-2">
+                  {quoteParts.length === 0 ? (
+                    <p className="text-sm text-muted-foreground text-center py-2">
+                      Nessun elemento aggiunto. Seleziona dal catalogo, magazzino o aggiungi manualmente.
+                    </p>
+                  ) : (
+                    quoteParts.map((part, index) => (
+                      <div key={index} className="flex gap-2 items-center">
+                        <Input
+                          placeholder="Nome ricambio/servizio"
+                          value={part.name}
+                          onChange={(e) => {
+                            const newParts = [...quoteParts];
+                            newParts[index].name = e.target.value;
+                            setQuoteParts(newParts);
+                          }}
+                          className="flex-1"
+                          data-testid={`input-part-name-${index}`}
+                        />
+                        <Input
+                          type="number"
+                          min="1"
+                          placeholder="Qty"
+                          value={part.quantity}
+                          onChange={(e) => {
+                            const newParts = [...quoteParts];
+                            newParts[index].quantity = parseInt(e.target.value) || 1;
+                            setQuoteParts(newParts);
+                          }}
+                          className="w-20"
+                          data-testid={`input-part-qty-${index}`}
+                        />
+                        <Input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          placeholder="Prezzo €"
+                          value={part.unitPrice / 100}
+                          onChange={(e) => {
+                            const newParts = [...quoteParts];
+                            newParts[index].unitPrice = Math.round(parseFloat(e.target.value) * 100) || 0;
+                            setQuoteParts(newParts);
+                          }}
+                          className="w-28"
+                          data-testid={`input-part-price-${index}`}
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => {
+                            const newParts = quoteParts.filter((_, i) => i !== index);
+                            setQuoteParts(newParts);
+                          }}
+                          data-testid={`button-remove-part-${index}`}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ))
+                  )}
                 </div>
               </div>
 

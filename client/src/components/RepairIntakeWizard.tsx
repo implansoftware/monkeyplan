@@ -38,9 +38,17 @@ import {
   User, Smartphone, ClipboardCheck, CheckCircle2, 
   ChevronRight, ChevronLeft, Loader2, Plus, Search,
   Monitor, Tablet, Laptop, Tv, Gamepad2, Watch, Headphones, Printer,
-  AlertCircle, UserPlus, X, Mail, Phone, Building, Store, Download, Tag, PartyPopper, FileText, Calculator
+  AlertCircle, UserPlus, X, Mail, Phone, Building, Store, Download, Tag, PartyPopper, FileText, Calculator,
+  Warehouse, Package
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { SearchableServiceCombobox } from "@/components/SearchableServiceCombobox";
+import { SearchableProductCombobox } from "@/components/SearchableProductCombobox";
+import type { Warehouse as WarehouseType } from "@shared/schema";
+
+interface WarehouseWithOwner extends WarehouseType {
+  owner?: { id: string; username: string; fullName: string | null } | null;
+}
 
 interface RepairIntakeWizardProps {
   open: boolean;
@@ -128,6 +136,7 @@ export function RepairIntakeWizard({
   const [quoteParts, setQuoteParts] = useState<Array<{ name: string; quantity: number; unitPrice: number }>>([]);
   const [quoteLaborCost, setQuoteLaborCost] = useState(0);
   const [quoteNotes, setQuoteNotes] = useState("");
+  const [selectedQuoteWarehouseId, setSelectedQuoteWarehouseId] = useState<string>("");
   const dialogContentRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -178,6 +187,7 @@ export function RepairIntakeWizard({
       setQuoteParts([]);
       setQuoteLaborCost(0);
       setQuoteNotes("");
+      setSelectedQuoteWarehouseId("");
       form.reset();
     }
   }, [open, form]);
@@ -297,6 +307,11 @@ export function RepairIntakeWizard({
 
   const { data: deviceTypes = [] } = useQuery<Array<{ id: string; name: string }>>({
     queryKey: ["/api/device-types"],
+  });
+
+  const { data: accessibleWarehouses = [] } = useQuery<WarehouseWithOwner[]>({
+    queryKey: ["/api/warehouses/accessible"],
+    enabled: open,
   });
 
   const isResellerOrStaff = ["reseller", "reseller_staff"].includes(user?.role || "");
@@ -1502,71 +1517,128 @@ export function RepairIntakeWizard({
                           />
                         </div>
 
-                        <div className="space-y-2">
-                          <Label>Ricambi</Label>
-                          <div className="space-y-2">
-                            {quoteParts.map((part, index) => (
-                              <div key={index} className="flex gap-2 items-center">
-                                <Input
-                                  placeholder="Nome ricambio"
-                                  value={part.name}
-                                  onChange={(e) => {
-                                    const newParts = [...quoteParts];
-                                    newParts[index].name = e.target.value;
-                                    setQuoteParts(newParts);
-                                  }}
-                                  className="flex-1"
-                                  data-testid={`input-part-name-${index}`}
-                                />
-                                <Input
-                                  type="number"
-                                  min="1"
-                                  placeholder="Qty"
-                                  value={part.quantity}
-                                  onChange={(e) => {
-                                    const newParts = [...quoteParts];
-                                    newParts[index].quantity = parseInt(e.target.value) || 1;
-                                    setQuoteParts(newParts);
-                                  }}
-                                  className="w-20"
-                                  data-testid={`input-part-qty-${index}`}
-                                />
-                                <Input
-                                  type="number"
-                                  min="0"
-                                  step="0.01"
-                                  placeholder="€"
-                                  value={part.unitPrice / 100}
-                                  onChange={(e) => {
-                                    const newParts = [...quoteParts];
-                                    newParts[index].unitPrice = Math.round(parseFloat(e.target.value) * 100) || 0;
-                                    setQuoteParts(newParts);
-                                  }}
-                                  className="w-24"
-                                  data-testid={`input-part-price-${index}`}
-                                />
-                                <Button
-                                  type="button"
-                                  variant="ghost"
-                                  size="icon"
-                                  onClick={() => {
-                                    setQuoteParts(quoteParts.filter((_, i) => i !== index));
-                                  }}
-                                  data-testid={`button-remove-part-${index}`}
-                                >
-                                  <X className="h-4 w-4" />
-                                </Button>
-                              </div>
-                            ))}
+                        <div className="space-y-3">
+                          <Label className="flex items-center gap-2">
+                            <Package className="h-4 w-4" />
+                            Ricambi e Servizi
+                          </Label>
+                          
+                          {/* Warehouse selection */}
+                          <div className="flex items-center gap-2">
+                            <Select value={selectedQuoteWarehouseId} onValueChange={setSelectedQuoteWarehouseId}>
+                              <SelectTrigger className="w-[200px]" data-testid="select-quote-warehouse">
+                                <Warehouse className="h-4 w-4 mr-2" />
+                                <SelectValue placeholder="Seleziona magazzino" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {accessibleWarehouses.map((wh) => (
+                                  <SelectItem key={wh.id} value={wh.id}>
+                                    {wh.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+
+                          {/* Action buttons */}
+                          <div className="flex gap-2 flex-wrap">
                             <Button
                               type="button"
                               variant="outline"
                               size="sm"
                               onClick={() => setQuoteParts([...quoteParts, { name: '', quantity: 1, unitPrice: 0 }])}
-                              data-testid="button-add-part"
+                              data-testid="button-add-part-manual"
                             >
-                              + Aggiungi Ricambio
+                              <Plus className="h-4 w-4 mr-1" />
+                              Manuale
                             </Button>
+                            <SearchableServiceCombobox
+                              onSelect={(service) => {
+                                setQuoteParts([...quoteParts, {
+                                  name: `[Servizio] ${service.name}`,
+                                  quantity: 1,
+                                  unitPrice: service.effectivePriceCents,
+                                }]);
+                              }}
+                              repairCenterId={form.watch("repairCenterId") || undefined}
+                              deviceTypeId={form.watch("deviceType") || undefined}
+                              brandId={form.watch("deviceBrandId") || undefined}
+                              modelId={form.watch("deviceModelId") || undefined}
+                            />
+                            <SearchableProductCombobox
+                              onSelect={(product) => {
+                                setQuoteParts([...quoteParts, {
+                                  name: product.name,
+                                  quantity: 1,
+                                  unitPrice: product.unitPrice || 0,
+                                }]);
+                              }}
+                              warehouseId={selectedQuoteWarehouseId || undefined}
+                              productType="ricambio"
+                            />
+                          </div>
+
+                          {/* Parts list */}
+                          <div className="space-y-2">
+                            {quoteParts.length === 0 ? (
+                              <p className="text-sm text-muted-foreground text-center py-2">
+                                Nessun elemento aggiunto. Seleziona dal catalogo, magazzino o aggiungi manualmente.
+                              </p>
+                            ) : (
+                              quoteParts.map((part, index) => (
+                                <div key={index} className="flex gap-2 items-center">
+                                  <Input
+                                    placeholder="Nome ricambio/servizio"
+                                    value={part.name}
+                                    onChange={(e) => {
+                                      const newParts = [...quoteParts];
+                                      newParts[index].name = e.target.value;
+                                      setQuoteParts(newParts);
+                                    }}
+                                    className="flex-1"
+                                    data-testid={`input-part-name-${index}`}
+                                  />
+                                  <Input
+                                    type="number"
+                                    min="1"
+                                    placeholder="Qty"
+                                    value={part.quantity}
+                                    onChange={(e) => {
+                                      const newParts = [...quoteParts];
+                                      newParts[index].quantity = parseInt(e.target.value) || 1;
+                                      setQuoteParts(newParts);
+                                    }}
+                                    className="w-20"
+                                    data-testid={`input-part-qty-${index}`}
+                                  />
+                                  <Input
+                                    type="number"
+                                    min="0"
+                                    step="0.01"
+                                    placeholder="€"
+                                    value={part.unitPrice / 100}
+                                    onChange={(e) => {
+                                      const newParts = [...quoteParts];
+                                      newParts[index].unitPrice = Math.round(parseFloat(e.target.value) * 100) || 0;
+                                      setQuoteParts(newParts);
+                                    }}
+                                    className="w-24"
+                                    data-testid={`input-part-price-${index}`}
+                                  />
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => {
+                                      setQuoteParts(quoteParts.filter((_, i) => i !== index));
+                                    }}
+                                    data-testid={`button-remove-part-${index}`}
+                                  >
+                                    <X className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              ))
+                            )}
                           </div>
                         </div>
 
