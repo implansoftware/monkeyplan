@@ -348,11 +348,14 @@ export default function AdminWarrantyProducts() {
                 <Label htmlFor="maxClaimAmount">Massimale Rimborso (EUR)</Label>
                 <Input
                   id="maxClaimAmount"
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value={formData.maxClaimAmount ? (formData.maxClaimAmount / 100).toFixed(2) : ""}
-                  onChange={(e) => setFormData({ ...formData, maxClaimAmount: e.target.value ? Math.round(parseFloat(e.target.value) * 100) : null })}
+                  type="text"
+                  inputMode="decimal"
+                  defaultValue={formData.maxClaimAmount ? (formData.maxClaimAmount / 100).toString() : ""}
+                  key={`maxClaim-${editingProduct?.id || 'new'}`}
+                  onBlur={(e) => {
+                    const val = e.target.value.replace(',', '.');
+                    setFormData({ ...formData, maxClaimAmount: val ? Math.round(parseFloat(val) * 100) : null });
+                  }}
                   placeholder="Illimitato"
                   data-testid="input-warranty-max-claim"
                 />
@@ -361,11 +364,14 @@ export default function AdminWarrantyProducts() {
                 <Label htmlFor="deductibleAmount">Franchigia (EUR)</Label>
                 <Input
                   id="deductibleAmount"
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value={(formData.deductibleAmount / 100).toFixed(2)}
-                  onChange={(e) => setFormData({ ...formData, deductibleAmount: Math.round(parseFloat(e.target.value) * 100) || 0 })}
+                  type="text"
+                  inputMode="decimal"
+                  defaultValue={(formData.deductibleAmount / 100).toString()}
+                  key={`deductible-${editingProduct?.id || 'new'}`}
+                  onBlur={(e) => {
+                    const val = e.target.value.replace(',', '.');
+                    setFormData({ ...formData, deductibleAmount: Math.round(parseFloat(val) * 100) || 0 });
+                  }}
                   data-testid="input-warranty-deductible"
                 />
               </div>
