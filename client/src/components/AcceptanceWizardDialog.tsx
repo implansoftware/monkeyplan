@@ -216,6 +216,9 @@ export function AcceptanceWizardDialog({
   const [diagnosisOutcome, setDiagnosisOutcome] = useState<"riparabile" | "non_conveniente" | "irriparabile">("riparabile");
   const [diagnosisNotes, setDiagnosisNotes] = useState("");
   const [diagnosisEstimatedTime, setDiagnosisEstimatedTime] = useState<number | null>(null);
+  const [diagnosisRequiresExternalParts, setDiagnosisRequiresExternalParts] = useState(false);
+  const [diagnosisCustomerDataImportant, setDiagnosisCustomerDataImportant] = useState(false);
+  const [diagnosisDataRecoveryRequested, setDiagnosisDataRecoveryRequested] = useState(false);
   const [newCustomerData, setNewCustomerData] = useState({
     customerType: "private" as "private" | "company",
     fullName: "",
@@ -493,6 +496,9 @@ export function AcceptanceWizardDialog({
           diagnosisOutcome: diagnosisOutcome,
           estimatedRepairTime: diagnosisEstimatedTime,
           diagnosisNotes: diagnosisNotes || null,
+          requiresExternalParts: diagnosisRequiresExternalParts,
+          customerDataImportant: diagnosisCustomerDataImportant,
+          dataRecoveryRequested: diagnosisDataRecoveryRequested,
         };
       }
       
@@ -808,6 +814,9 @@ export function AcceptanceWizardDialog({
     setDiagnosisOutcome("riparabile");
     setDiagnosisNotes("");
     setDiagnosisEstimatedTime(null);
+    setDiagnosisRequiresExternalParts(false);
+    setDiagnosisCustomerDataImportant(false);
+    setDiagnosisDataRecoveryRequested(false);
     setSelectedQuoteWarehouseId("");
     // Cleanup photo previews
     acceptancePhotos.forEach(photo => URL.revokeObjectURL(photo.preview));
@@ -2246,6 +2255,47 @@ export function AcceptanceWizardDialog({
                   rows={2}
                   data-testid="textarea-diagnosis-notes"
                 />
+              </div>
+
+              {/* Additional diagnosis options */}
+              <div className="space-y-3 pt-2">
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="diagnosisRequiresExternalParts"
+                    checked={diagnosisRequiresExternalParts}
+                    onCheckedChange={(checked) => setDiagnosisRequiresExternalParts(checked === true)}
+                    data-testid="checkbox-requires-external-parts"
+                  />
+                  <Label htmlFor="diagnosisRequiresExternalParts">
+                    Richiede ricambi esterni
+                  </Label>
+                </div>
+
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="diagnosisCustomerDataImportant"
+                    checked={diagnosisCustomerDataImportant}
+                    onCheckedChange={(checked) => setDiagnosisCustomerDataImportant(checked === true)}
+                    data-testid="checkbox-customer-data-important"
+                  />
+                  <Label htmlFor="diagnosisCustomerDataImportant">
+                    Dati cliente importanti (presenti sul dispositivo)
+                  </Label>
+                </div>
+
+                {diagnosisCustomerDataImportant && (
+                  <div className="flex items-center space-x-2 ml-6">
+                    <Checkbox
+                      id="diagnosisDataRecoveryRequested"
+                      checked={diagnosisDataRecoveryRequested}
+                      onCheckedChange={(checked) => setDiagnosisDataRecoveryRequested(checked === true)}
+                      data-testid="checkbox-data-recovery-requested"
+                    />
+                    <Label htmlFor="diagnosisDataRecoveryRequested">
+                      Recupero dati richiesto dal cliente
+                    </Label>
+                  </div>
+                )}
               </div>
             </div>
           )}

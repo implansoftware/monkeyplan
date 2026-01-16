@@ -11319,6 +11319,8 @@ export function registerRoutes(app: Express): Server {
                 requiresExternalParts: req.body.diagnosis.requiresExternalParts || false,
                 damagedComponents: req.body.diagnosis.damagedComponents || [],
                 diagnosedBy: req.user!.id,
+                customerDataImportant: req.body.diagnosis.customerDataImportant || false,
+                dataRecoveryRequested: req.body.diagnosis.dataRecoveryRequested || false,
               });
               if (!createdQuote) {
                 await storage.updateRepairOrder(order.id, { status: 'in_diagnosi' as any });
@@ -11396,6 +11398,8 @@ export function registerRoutes(app: Express): Server {
                 requiresExternalParts: req.body.diagnosis.requiresExternalParts || false,
                 damagedComponents: req.body.diagnosis.damagedComponents || [],
                 diagnosedBy: req.user!.id,
+                customerDataImportant: req.body.diagnosis.customerDataImportant || false,
+                dataRecoveryRequested: req.body.diagnosis.dataRecoveryRequested || false,
               });
               if (!createdQuote) {
                 await storage.updateRepairOrder(order.id, { status: 'in_diagnosi' as any });
