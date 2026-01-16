@@ -114,8 +114,8 @@ const menuItems = {
     { title: "Calendario HR", url: "/admin/hr/calendar", icon: Calendar, group: "Risorse Umane" },
     { title: "Catalogo Dispositivi", url: "/admin/device-catalog", icon: Package, group: "Sistema" },
     { title: "Listino Prezzi", url: "/admin/service-catalog", icon: Receipt, group: "Sistema" },
-    { title: "Prodotti Garanzia", url: "/admin/warranty-products", icon: Shield, group: "Sistema" },
-    { title: "Analytics Garanzie", url: "/admin/warranty-analytics", icon: BarChart3, group: "Sistema" },
+    { title: "Prodotti Garanzia", url: "/admin/warranty-products", icon: Shield, group: "Garanzie" },
+    { title: "Analytics Garanzie", url: "/admin/warranty-analytics", icon: BarChart3, group: "Garanzie" },
     { title: "Categorie Utility", url: "/admin/utility-categories", icon: FolderOpen, group: "Sistema" },
     { title: "Integrazioni API", url: "/admin/external-integrations", icon: Plug, group: "Sistema" },
     { title: "Activity Logs", url: "/admin/activity-logs", icon: Shield, group: "Sistema" },
@@ -203,8 +203,8 @@ const menuItems = {
     { title: "Resi a Fornitori", url: "/reseller/supplier-returns", icon: RotateCcw, group: "Fornitori" },
     { title: "Panoramica Vendite", url: "/reseller/sales", icon: TrendingUp, group: "Fatturazione" },
     { title: "Fatture", url: "/reseller/invoices", icon: FileText, group: "Fatturazione" },
-    { title: "Prodotti Garanzia", url: "/reseller/warranty-products", icon: Shield, group: "Fatturazione" },
-    { title: "Analytics Garanzie", url: "/reseller/warranty-analytics", icon: BarChart3, group: "Fatturazione" },
+    { title: "Prodotti Garanzia", url: "/reseller/warranty-products", icon: Shield, group: "Garanzie" },
+    { title: "Analytics Garanzie", url: "/reseller/warranty-analytics", icon: BarChart3, group: "Garanzie" },
     { title: "Report", url: "/reseller/reports", icon: BarChart3, group: "Fatturazione" },
     // E-commerce - Catalogo
     { title: "Catalogo Shop", url: "/reseller/shop-catalog", icon: Store, group: "E-commerce" },
@@ -271,6 +271,8 @@ const menuItems = {
     { title: "Clienti", url: "/repair-center/customers", icon: Users, group: "Gestione" },
     { title: "Fatture", url: "/repair-center/invoices", icon: FileText, group: "Gestione" },
     { title: "Impostazioni", url: "/repair-center/settings", icon: Settings, group: "Gestione" },
+    // Garanzie
+    { title: "Analytics Garanzie", url: "/repair-center/warranty-analytics", icon: BarChart3, group: "Garanzie" },
     // Acquisti B2B
     { title: "Catalogo B2B", url: "/repair-center/b2b-catalog", icon: ShoppingCart, group: "Acquisti B2B" },
     { title: "Ordini B2B", url: "/repair-center/b2b-orders", icon: FileText, group: "Acquisti B2B" },
@@ -351,6 +353,7 @@ const groupIcons: Record<string, typeof LayoutDashboard> = {
   "Sistema": Settings,
   "Utility": Zap,
   "Fatturazione": FileText,
+  "Garanzie": Shield,
   "E-commerce": ShoppingCart,
   "Acquisti B2B": Network,
   "Marketplace P2P": Store,
