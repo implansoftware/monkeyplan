@@ -38,7 +38,7 @@ import {
   User, Smartphone, ClipboardCheck, CheckCircle2, 
   ChevronRight, ChevronLeft, Loader2, Plus, Search,
   Monitor, Tablet, Laptop, Tv, Gamepad2, Watch, Headphones, Printer,
-  AlertCircle, UserPlus, X, Mail, Phone, Building, Store, Download, Tag, PartyPopper
+  AlertCircle, UserPlus, X, Mail, Phone, Building, Store, Download, Tag, PartyPopper, FileText, Calculator
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -82,8 +82,9 @@ const STEPS = [
   { id: 1, name: "Dispositivo", icon: Smartphone },
   { id: 2, name: "Cliente", icon: User },
   { id: 3, name: "Condizioni", icon: ClipboardCheck },
-  { id: 4, name: "Conferma", icon: CheckCircle2 },
-  { id: 5, name: "Completato", icon: PartyPopper },
+  { id: 4, name: "Preventivo", icon: FileText },
+  { id: 5, name: "Conferma", icon: CheckCircle2 },
+  { id: 6, name: "Completato", icon: PartyPopper },
 ];
 
 const DEVICE_TYPE_ICONS: Record<string, any> = {
@@ -123,6 +124,10 @@ export function RepairIntakeWizard({
   const [selectedResellerId, setSelectedResellerId] = useState("");
   const [selectedSubResellerId, setSelectedSubResellerId] = useState("");
   const [createdOrder, setCreatedOrder] = useState<{ id: string; orderNumber: string } | null>(null);
+  const [createQuoteNow, setCreateQuoteNow] = useState(false);
+  const [quoteParts, setQuoteParts] = useState<Array<{ name: string; quantity: number; unitPrice: number }>>([]);
+  const [quoteLaborCost, setQuoteLaborCost] = useState(0);
+  const [quoteNotes, setQuoteNotes] = useState("");
   const dialogContentRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -168,6 +173,11 @@ export function RepairIntakeWizard({
       setShowNewModelForm(false);
       setNewModelName("");
       setCreatedOrder(null);
+      // Reset quote state
+      setCreateQuoteNow(false);
+      setQuoteParts([]);
+      setQuoteLaborCost(0);
+      setQuoteNotes("");
       form.reset();
     }
   }, [open, form]);
@@ -482,6 +492,16 @@ export function RepairIntakeWizard({
       // Include acceptance in payload - this triggers acceptanceOrderSchema on backend
       payload.acceptance = acceptance;
 
+      // Include quote data if user wants to create quote during order creation
+      if (createQuoteNow) {
+        payload.quote = {
+          createQuote: true,
+          parts: quoteParts.filter(p => p.name && p.unitPrice > 0),
+          laborCost: Math.round(quoteLaborCost * 100),
+          notes: quoteNotes || null,
+        };
+      }
+
       const res = await apiRequest("POST", "/api/repair-orders", payload);
       return res.json();
     },
@@ -492,7 +512,7 @@ export function RepairIntakeWizard({
       });
       queryClient.invalidateQueries({ queryKey: ["/api/repair-orders"] });
       setCreatedOrder({ id: data.order.id, orderNumber: data.order.orderNumber });
-      setCurrentStep(5);
+      setCurrentStep(6);
       onSuccess?.(data.order);
     },
     onError: (error: any) => {
@@ -520,7 +540,7 @@ export function RepairIntakeWizard({
   };
 
   const handleNext = () => {
-    if (currentStep < 4 && canGoNext()) {
+    if (currentStep < 5 && canGoNext()) {
       setCurrentStep(currentStep + 1);
     }
   };
@@ -1439,8 +1459,145 @@ export function RepairIntakeWizard({
               </div>
             )}
 
-            {/* Step 4: Summary */}
+            {/* Step 4: Preventivo (opzionale) */}
             {currentStep === 4 && (
+              <div className="space-y-4">
+                <div className="text-center mb-4">
+                  <FileText className="h-12 w-12 mx-auto text-primary mb-2" />
+                  <h3 className="text-lg font-semibold">Preventivo Riparazione</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Crea un preventivo ora oppure fallo successivamente
+                  </p>
+                </div>
+
+                <Card>
+                  <CardContent className="pt-4 space-y-4">
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="createQuoteNow"
+                        checked={createQuoteNow}
+                        onCheckedChange={(checked) => setCreateQuoteNow(checked === true)}
+                        data-testid="checkbox-create-quote"
+                      />
+                      <Label htmlFor="createQuoteNow" className="font-medium">
+                        Crea preventivo ora
+                      </Label>
+                    </div>
+
+                    {createQuoteNow && (
+                      <div className="space-y-4 pt-4 border-t">
+                        <div className="space-y-2">
+                          <Label className="flex items-center gap-2">
+                            <Calculator className="h-4 w-4" />
+                            Costo Manodopera (€)
+                          </Label>
+                          <Input
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            value={quoteLaborCost}
+                            onChange={(e) => setQuoteLaborCost(parseFloat(e.target.value) || 0)}
+                            placeholder="0.00"
+                            data-testid="input-labor-cost"
+                          />
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label>Ricambi</Label>
+                          <div className="space-y-2">
+                            {quoteParts.map((part, index) => (
+                              <div key={index} className="flex gap-2 items-center">
+                                <Input
+                                  placeholder="Nome ricambio"
+                                  value={part.name}
+                                  onChange={(e) => {
+                                    const newParts = [...quoteParts];
+                                    newParts[index].name = e.target.value;
+                                    setQuoteParts(newParts);
+                                  }}
+                                  className="flex-1"
+                                  data-testid={`input-part-name-${index}`}
+                                />
+                                <Input
+                                  type="number"
+                                  min="1"
+                                  placeholder="Qty"
+                                  value={part.quantity}
+                                  onChange={(e) => {
+                                    const newParts = [...quoteParts];
+                                    newParts[index].quantity = parseInt(e.target.value) || 1;
+                                    setQuoteParts(newParts);
+                                  }}
+                                  className="w-20"
+                                  data-testid={`input-part-qty-${index}`}
+                                />
+                                <Input
+                                  type="number"
+                                  min="0"
+                                  step="0.01"
+                                  placeholder="€"
+                                  value={part.unitPrice / 100}
+                                  onChange={(e) => {
+                                    const newParts = [...quoteParts];
+                                    newParts[index].unitPrice = Math.round(parseFloat(e.target.value) * 100) || 0;
+                                    setQuoteParts(newParts);
+                                  }}
+                                  className="w-24"
+                                  data-testid={`input-part-price-${index}`}
+                                />
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => {
+                                    setQuoteParts(quoteParts.filter((_, i) => i !== index));
+                                  }}
+                                  data-testid={`button-remove-part-${index}`}
+                                >
+                                  <X className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            ))}
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setQuoteParts([...quoteParts, { name: '', quantity: 1, unitPrice: 0 }])}
+                              data-testid="button-add-part"
+                            >
+                              + Aggiungi Ricambio
+                            </Button>
+                          </div>
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label>Note Preventivo</Label>
+                          <Textarea
+                            value={quoteNotes}
+                            onChange={(e) => setQuoteNotes(e.target.value)}
+                            placeholder="Note aggiuntive..."
+                            rows={2}
+                            data-testid="textarea-quote-notes"
+                          />
+                        </div>
+
+                        <div className="bg-muted p-4 rounded-lg">
+                          <div className="flex justify-between items-center">
+                            <span className="font-medium">Totale Preventivo:</span>
+                            <span className="text-xl font-bold">
+                              € {((quoteParts.reduce((sum, p) => sum + p.quantity * p.unitPrice, 0) / 100) + quoteLaborCost).toFixed(2)}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
+            )}
+
+            {/* Step 5: Summary */}
+            {currentStep === 5 && (
               <div className="space-y-4">
                 <div className="text-center mb-4">
                   <CheckCircle2 className="h-12 w-12 mx-auto text-primary mb-2" />
@@ -1562,7 +1719,7 @@ export function RepairIntakeWizard({
             )}
 
             {/* Step 5: Success - Download Documents */}
-            {currentStep === 5 && createdOrder && (
+            {currentStep === 6 && createdOrder && (
               <div className="space-y-6">
                 <div className="text-center mb-6">
                   <div className="mx-auto w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mb-4">
@@ -1620,7 +1777,7 @@ export function RepairIntakeWizard({
               Indietro
             </Button>
 
-            {currentStep < 4 ? (
+            {currentStep < 5 ? (
               <Button
                 onClick={handleNext}
                 disabled={!canGoNext()}
@@ -1652,7 +1809,7 @@ export function RepairIntakeWizard({
         )}
 
         {/* Close button for Step 5 */}
-        {currentStep === 5 && (
+        {currentStep === 6 && (
           <div className="flex justify-center mt-6 pt-4 border-t">
             <Button
               onClick={() => onOpenChange(false)}

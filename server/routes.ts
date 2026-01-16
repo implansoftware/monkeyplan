@@ -11249,23 +11249,109 @@ export function registerRoutes(app: Express): Server {
         
         const { order, acceptance } = await storage.createRepairWithAcceptance(orderData, acceptanceData);
         
+        // Handle optional quote creation during order creation
+        let createdQuote = null;
+        if (req.body.quote && req.body.quote.createQuote) {
+          try {
+            // Generate quote number
+            const timestamp = Date.now();
+            const quoteCountResult = await db.execute(sql`SELECT COUNT(*) as count FROM repair_quotes`);
+            const qCount = (quoteCountResult.rows[0] as any).count;
+            const quoteNumber = `QUOTE-${timestamp}-${parseInt(qCount) + 1}`;
+            
+            // Parse parts if provided
+            let partsData: Array<{ name: string; quantity: number; unitPrice: number }> = [];
+            if (req.body.quote.parts) {
+              partsData = typeof req.body.quote.parts === 'string' 
+                ? JSON.parse(req.body.quote.parts) 
+                : req.body.quote.parts;
+            }
+            
+            // Calculate totals
+            const partsTotal = partsData.reduce((sum: number, part: any) => sum + (part.quantity * part.unitPrice), 0);
+            const laborCost = req.body.quote.laborCost || 0;
+            const calculatedTotal = partsTotal + laborCost;
+            
+            // Create quote
+            createdQuote = await storage.createRepairQuote({
+              repairOrderId: order.id,
+              quoteNumber,
+              parts: partsData.length > 0 ? JSON.stringify(partsData) : null,
+              laborCost,
+              totalAmount: calculatedTotal,
+              status: 'draft',
+              validUntil: req.body.quote.validUntil ? new Date(req.body.quote.validUntil) : null,
+              notes: req.body.quote.notes || null,
+              createdBy: req.user!.id,
+            });
+            
+            // Update order status to preventivo_emesso
+            await storage.updateRepairOrder(order.id, {
+              status: 'preventivo_emesso' as any,
+            });
+            order.status = 'preventivo_emesso';
+          } catch (quoteError: any) {
+            console.error('Failed to create quote during order creation:', quoteError);
+            // Continue without quote - order was still created successfully
+          }
+        }
         
         // Auto-associate customer with repair center
         if (orderData.customerId && orderData.repairCenterId) {
           await storage.ensureCustomerRepairCenterAssociation(orderData.customerId, orderData.repairCenterId);
         }
         setActivityEntity(res, { type: 'repair_order', id: order.id });
-        res.json({ order, acceptance });
+        res.json({ order, acceptance, quote: createdQuote });
       } else {
         const order = await storage.createRepairOrder(orderData);
         
+        // Handle optional quote creation for simple orders too
+        let createdQuote = null;
+        if (req.body.quote && req.body.quote.createQuote) {
+          try {
+            const timestamp = Date.now();
+            const quoteCountResult = await db.execute(sql`SELECT COUNT(*) as count FROM repair_quotes`);
+            const qCount = (quoteCountResult.rows[0] as any).count;
+            const quoteNumber = `QUOTE-${timestamp}-${parseInt(qCount) + 1}`;
+            
+            let partsData: Array<{ name: string; quantity: number; unitPrice: number }> = [];
+            if (req.body.quote.parts) {
+              partsData = typeof req.body.quote.parts === 'string' 
+                ? JSON.parse(req.body.quote.parts) 
+                : req.body.quote.parts;
+            }
+            
+            const partsTotal = partsData.reduce((sum: number, part: any) => sum + (part.quantity * part.unitPrice), 0);
+            const laborCost = req.body.quote.laborCost || 0;
+            const calculatedTotal = partsTotal + laborCost;
+            
+            createdQuote = await storage.createRepairQuote({
+              repairOrderId: order.id,
+              quoteNumber,
+              parts: partsData.length > 0 ? JSON.stringify(partsData) : null,
+              laborCost,
+              totalAmount: calculatedTotal,
+              status: 'draft',
+              validUntil: req.body.quote.validUntil ? new Date(req.body.quote.validUntil) : null,
+              notes: req.body.quote.notes || null,
+              createdBy: req.user!.id,
+            });
+            
+            await storage.updateRepairOrder(order.id, {
+              status: 'preventivo_emesso' as any,
+            });
+            order.status = 'preventivo_emesso';
+          } catch (quoteError: any) {
+            console.error('Failed to create quote during simple order creation:', quoteError);
+          }
+        }
         
         // Auto-associate customer with repair center
         if (orderData.customerId && orderData.repairCenterId) {
           await storage.ensureCustomerRepairCenterAssociation(orderData.customerId, orderData.repairCenterId);
         }
         setActivityEntity(res, { type: 'repair_order', id: order.id });
-        res.json(order);
+        res.json({ order, quote: createdQuote });
       }
     } catch (error: any) {
       res.status(400).send(error.message);

@@ -30,7 +30,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { 
-  Smartphone, CheckCircle2, ChevronRight, ChevronLeft, AlertCircle, UserPlus, Loader2, Camera, X, ImageIcon,
+  Smartphone, CheckCircle2, ChevronRight, ChevronLeft, AlertCircle, UserPlus, Loader2, Camera, X, ImageIcon, FileText, Calculator, Euro,
   Monitor, Battery, Volume2, Thermometer, Cpu, HardDrive, Usb, Wifi, Power, Zap, Fan, Bug, Settings, MoreHorizontal,
   Headphones, Keyboard, Mouse, Cable, BatteryCharging, Briefcase, Watch, Tablet, Laptop, Gamepad2, Printer,
   MonitorSmartphone, CircleDot, Square, Grid3X3, Link2, PenTool, PackageOpen, Shield, AlertTriangle, CircleSlash,
@@ -54,7 +54,7 @@ interface AcceptanceWizardDialogProps {
   customerId?: string;
 }
 
-type WizardStep = "device-info" | "acceptance-checks" | "review";
+type WizardStep = "device-info" | "acceptance-checks" | "quote" | "review";
 
 const acceptanceWizardSchema = z.object({
   customerId: z.string().min(1, "Seleziona un cliente"),
@@ -198,6 +198,10 @@ export function AcceptanceWizardDialog({
   const [showNewCustomerForm, setShowNewCustomerForm] = useState(false);
   const [acceptancePhotos, setAcceptancePhotos] = useState<Array<{ file: File; preview: string }>>([]);
   const [isUploadingPhotos, setIsUploadingPhotos] = useState(false);
+  const [createQuoteNow, setCreateQuoteNow] = useState(false);
+  const [quoteParts, setQuoteParts] = useState<Array<{ name: string; quantity: number; unitPrice: number }>>([]);
+  const [quoteLaborCost, setQuoteLaborCost] = useState(0);
+  const [quoteNotes, setQuoteNotes] = useState("");
   const [newCustomerData, setNewCustomerData] = useState({
     customerType: "private" as "private" | "company",
     fullName: "",
@@ -447,10 +451,21 @@ export function AcceptanceWizardDialog({
 
   const createOrderMutation = useMutation({
     mutationFn: async (data: AcceptanceWizardData) => {
-      const orderData = {
+      const orderData: any = {
         ...data,
         branchId: data.branchId === "__none__" ? undefined : data.branchId,
       };
+      
+      // Include quote data if user wants to create quote during order creation
+      if (createQuoteNow) {
+        orderData.quote = {
+          createQuote: true,
+          parts: quoteParts.filter(p => p.name && p.unitPrice > 0),
+          laborCost: Math.round(quoteLaborCost * 100),
+          notes: quoteNotes || null,
+        };
+      }
+      
       const response = await apiRequest("POST", "/api/repair-orders", orderData);
       if (!response.ok) {
         const error = await response.json();
@@ -698,6 +713,8 @@ export function AcceptanceWizardDialog({
         setStep("acceptance-checks");
         scrollToTop();
       } else if (step === "acceptance-checks") {
+        setStep("quote");
+      } else if (step === "quote") {
         setStep("review");
         scrollToTop();
       }
@@ -751,6 +768,11 @@ export function AcceptanceWizardDialog({
     setShowOtherDefect(false);
     setSelectedAccessories([]);
     setShowOtherAccessory(false);
+    // Reset quote state
+    setCreateQuoteNow(false);
+    setQuoteParts([]);
+    setQuoteLaborCost(0);
+    setQuoteNotes("");
     // Cleanup photo previews
     acceptancePhotos.forEach(photo => URL.revokeObjectURL(photo.preview));
     setAcceptancePhotos([]);
@@ -2108,6 +2130,150 @@ export function AcceptanceWizardDialog({
     </div>
   );
 
+  
+  const renderQuoteStep = () => (
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <FileText className="h-5 w-5" />
+            Preventivo Riparazione
+          </CardTitle>
+          <CardDescription>
+            Puoi creare un preventivo già durante l'accettazione, oppure farlo successivamente dalla scheda riparazione.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="createQuoteNow"
+              checked={createQuoteNow}
+              onCheckedChange={(checked) => setCreateQuoteNow(checked === true)}
+              data-testid="checkbox-create-quote"
+            />
+            <Label htmlFor="createQuoteNow" className="font-medium">
+              Crea preventivo ora
+            </Label>
+          </div>
+
+          {createQuoteNow && (
+            <div className="space-y-4 pt-4 border-t">
+              {/* Labor Cost */}
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2">
+                  <Calculator className="h-4 w-4" />
+                  Costo Manodopera (€)
+                </Label>
+                <Input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={quoteLaborCost}
+                  onChange={(e) => setQuoteLaborCost(parseFloat(e.target.value) || 0)}
+                  placeholder="0.00"
+                  data-testid="input-labor-cost"
+                />
+              </div>
+
+              {/* Parts Section */}
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2">
+                  Ricambi
+                </Label>
+                <div className="space-y-2">
+                  {quoteParts.map((part, index) => (
+                    <div key={index} className="flex gap-2 items-center">
+                      <Input
+                        placeholder="Nome ricambio"
+                        value={part.name}
+                        onChange={(e) => {
+                          const newParts = [...quoteParts];
+                          newParts[index].name = e.target.value;
+                          setQuoteParts(newParts);
+                        }}
+                        className="flex-1"
+                        data-testid={`input-part-name-${index}`}
+                      />
+                      <Input
+                        type="number"
+                        min="1"
+                        placeholder="Qty"
+                        value={part.quantity}
+                        onChange={(e) => {
+                          const newParts = [...quoteParts];
+                          newParts[index].quantity = parseInt(e.target.value) || 1;
+                          setQuoteParts(newParts);
+                        }}
+                        className="w-20"
+                        data-testid={`input-part-qty-${index}`}
+                      />
+                      <Input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        placeholder="Prezzo €"
+                        value={part.unitPrice / 100}
+                        onChange={(e) => {
+                          const newParts = [...quoteParts];
+                          newParts[index].unitPrice = Math.round(parseFloat(e.target.value) * 100) || 0;
+                          setQuoteParts(newParts);
+                        }}
+                        className="w-28"
+                        data-testid={`input-part-price-${index}`}
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => {
+                          const newParts = quoteParts.filter((_, i) => i !== index);
+                          setQuoteParts(newParts);
+                        }}
+                        data-testid={`button-remove-part-${index}`}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setQuoteParts([...quoteParts, { name: '', quantity: 1, unitPrice: 0 }])}
+                    data-testid="button-add-part"
+                  >
+                    + Aggiungi Ricambio
+                  </Button>
+                </div>
+              </div>
+
+              {/* Notes */}
+              <div className="space-y-2">
+                <Label>Note Preventivo</Label>
+                <Textarea
+                  value={quoteNotes}
+                  onChange={(e) => setQuoteNotes(e.target.value)}
+                  placeholder="Note aggiuntive per il preventivo..."
+                  data-testid="textarea-quote-notes"
+                />
+              </div>
+
+              {/* Total Preview */}
+              <div className="bg-muted p-4 rounded-lg">
+                <div className="flex justify-between items-center">
+                  <span className="font-medium">Totale Preventivo:</span>
+                  <span className="text-xl font-bold">
+                    € {((quoteParts.reduce((sum, p) => sum + p.quantity * p.unitPrice, 0) / 100) + quoteLaborCost).toFixed(2)}
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+
   const renderReviewStep = () => {
     const formData = form.getValues();
     const selectedCustomer = customers.find((c) => c.id === formData.customerId);
@@ -2285,11 +2451,12 @@ export function AcceptanceWizardDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Smartphone className="w-5 h-5" />
-            Accettazione dispositivo - {step === "device-info" ? "Passo 1/3" : step === "acceptance-checks" ? "Passo 2/3" : "Passo 3/3"}
+            Accettazione dispositivo - {step === "device-info" ? "Passo 1/4" : step === "acceptance-checks" ? "Passo 2/4" : step === "quote" ? "Passo 3/4" : "Passo 4/4"}
           </DialogTitle>
           <DialogDescription>
             {step === "device-info" && "Inserisci le informazioni del dispositivo e i codici identificativi"}
             {step === "acceptance-checks" && "Verifica le condizioni del dispositivo e gli accessori"}
+            {step === "quote" && "Crea un preventivo per la riparazione (opzionale)"}
             {step === "review" && "Controlla i dati inseriti prima di confermare"}
           </DialogDescription>
         </DialogHeader>
@@ -2298,6 +2465,7 @@ export function AcceptanceWizardDialog({
           <form onSubmit={handleSubmit} className="space-y-4">
             {step === "device-info" && renderDeviceInfoStep()}
             {step === "acceptance-checks" && renderAcceptanceChecksStep()}
+            {step === "quote" && renderQuoteStep()}
             {step === "review" && renderReviewStep()}
 
             <Separator />
