@@ -152,11 +152,18 @@ The backend is an `Express.js` application with TypeScript, featuring a RESTful 
 - **Wizard Updates**:
   - AcceptanceWizardDialog: Step renamed to "Diagnosi e Preventivo" with combined diagnosis/quote interface
   - RepairIntakeWizard: Same step 4 changes with unified "Diagnosi e Preventivo" interface
-- **Diagnosis Form UI**:
+- **Diagnosis Form UI** (Comprehensive, parity with DiagnosisFormDialog):
   - Toggle to enable diagnosis creation
   - Textarea for technical diagnosis (required when enabled)
-  - Dropdown for diagnosis outcome (riparabile, non_conveniente, irriparabile)
-  - Input for estimated repair time (hours)
-  - Textarea for additional notes
+  - **Risultati Diagnosi**: Multi-select checkboxes organized by category (Hardware, Software, Connettività, Altro) from `diagnostic_findings` table
+  - **Componenti Danneggiati**: Multi-select checkboxes from `damaged_component_types` table, filtered by deviceTypeId
+  - **Tempo Stimato**: Dropdown from `estimated_repair_times` table (computes hoursMax for estimatedRepairTime field)
+  - **Esito Diagnosi**: Dropdown (riparabile, non_conveniente, irriparabile)
+  - **Motivo Irriparabilità**: Conditional section when outcome=irriparabile, from `unrepairable_reasons` table
+  - **Promozioni Suggerite**: Conditional section when outcome=non_conveniente, from `promotions` table
+  - Skip Photos checkbox (DiagnosisPhotoUploader integration deferred)
+  - Additional notes textarea
+- **Payload Fields**: findingIds[], componentIds[], estimatedRepairTimeId, skipPhotos, unrepairableReasonId, suggestedPromotionIds[]
+- **Query Optimization**: Lookup queries conditionally enabled only when diagnosis panel is open
 - **State Management**: Diagnosis state properly reset on dialog close
 - **Database**: Uses existing `repair_diagnostics` table with 1:1 relationship to repair orders
