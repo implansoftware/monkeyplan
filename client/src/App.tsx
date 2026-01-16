@@ -286,6 +286,7 @@ import ResellerRemoteRequests from "@/pages/reseller/remote-requests";
 import SubResellerTransferRequests from "@/pages/reseller/sub-reseller-transfer-requests";
 import IncomingTransferRequests from "@/pages/reseller/incoming-transfer-requests";
 import TransferRequests from "@/pages/reseller/transfer-requests";
+import ResellerWarrantyProducts from "@/pages/reseller/warranty-products";
 
 function Router() {
   return (
@@ -398,6 +399,7 @@ function Router() {
       <ProtectedRoute path="/reseller/utility/reports" component={ResellerUtilityReports} allowedRoles={["reseller", "reseller_staff"]} />
       <ProtectedRoute path="/reseller/invoices" component={ResellerInvoices} allowedRoles={["reseller", "reseller_staff"]} />
       <ProtectedRoute path="/reseller/sales" component={ResellerSales} allowedRoles={["reseller", "reseller_staff"]} />
+      <ProtectedRoute path="/reseller/warranty-products" component={ResellerWarrantyProducts} allowedRoles={["reseller"]} />
       <ProtectedRoute path="/reseller/reports" component={ResellerReports} allowedRoles={["reseller", "reseller_staff"]} />
       <ProtectedRoute path="/reseller/sifar/settings" component={ResellerSifarSettings} allowedRoles={["reseller", "reseller_staff"]} />
       <ProtectedRoute path="/reseller/sifar/catalog" component={ResellerSifarCatalog} allowedRoles={["reseller", "reseller_staff"]} />

@@ -1083,8 +1083,10 @@ export interface IStorage {
   getDashboardPreference(userId: string, role: string): Promise<DashboardPreference | undefined>;
   saveDashboardPreference(userId: string, role: string, layout: DashboardLayout): Promise<DashboardPreference>;
 
-  // Warranty Products (Admin-managed catalog)
+  // Warranty Products (Admin + Reseller catalog)
   listWarrantyProducts(activeOnly?: boolean): Promise<WarrantyProduct[]>;
+  listWarrantyProductsByReseller(resellerId: string, includeGlobal?: boolean): Promise<WarrantyProduct[]>;
+  listOfferableWarrantyProducts(resellerId: string): Promise<WarrantyProduct[]>;
   getWarrantyProduct(id: string): Promise<WarrantyProduct | undefined>;
   createWarrantyProduct(product: InsertWarrantyProduct): Promise<WarrantyProduct>;
   updateWarrantyProduct(id: string, updates: UpdateWarrantyProduct): Promise<WarrantyProduct>;
@@ -11485,6 +11487,35 @@ export class DatabaseStorage implements IStorage {
 
   async deleteWarrantyProduct(id: string): Promise<void> {
     await db.delete(warrantyProducts).where(eq(warrantyProducts.id, id));
+  }
+
+  async listWarrantyProductsByReseller(resellerId: string, includeGlobal: boolean = false): Promise<WarrantyProduct[]> {
+    if (includeGlobal) {
+      return db.select().from(warrantyProducts)
+        .where(and(
+          eq(warrantyProducts.isActive, true),
+          or(
+            eq(warrantyProducts.resellerId, resellerId),
+            isNull(warrantyProducts.resellerId)
+          )
+        ))
+        .orderBy(desc(warrantyProducts.createdAt));
+    }
+    return db.select().from(warrantyProducts)
+      .where(eq(warrantyProducts.resellerId, resellerId))
+      .orderBy(desc(warrantyProducts.createdAt));
+  }
+
+  async listOfferableWarrantyProducts(resellerId: string): Promise<WarrantyProduct[]> {
+    return db.select().from(warrantyProducts)
+      .where(and(
+        eq(warrantyProducts.isActive, true),
+        or(
+          eq(warrantyProducts.resellerId, resellerId),
+          isNull(warrantyProducts.resellerId)
+        )
+      ))
+      .orderBy(desc(warrantyProducts.createdAt));
   }
 
   // ============ Repair Warranties ============

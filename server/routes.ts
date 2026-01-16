@@ -18072,11 +18072,99 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // ============ RESELLER WARRANTY PRODUCTS ============
+
+  // List reseller's warranty products
+  app.get("/api/reseller/warranty-products", requireAuth, requireRole("reseller", "sub_reseller"), async (req, res) => {
+    try {
+      const user = req.user as User;
+      const resellerId = user.role === "sub_reseller" ? user.parentResellerId! : user.id;
+      const products = await storage.listWarrantyProductsByReseller(resellerId, false);
+      res.json(products);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // Get single reseller warranty product
+  app.get("/api/reseller/warranty-products/:id", requireAuth, requireRole("reseller", "sub_reseller"), async (req, res) => {
+    try {
+      const user = req.user as User;
+      const resellerId = user.role === "sub_reseller" ? user.parentResellerId! : user.id;
+      const product = await storage.getWarrantyProduct(req.params.id);
+      if (!product) {
+        return res.status(404).send("Prodotto garanzia non trovato");
+      }
+      if (product.resellerId !== resellerId) {
+        return res.status(403).send("Non autorizzato ad accedere a questo prodotto");
+      }
+      res.json(product);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // Create reseller warranty product
+  app.post("/api/reseller/warranty-products", requireAuth, requireRole("reseller"), async (req, res) => {
+    try {
+      const user = req.user as User;
+      const productData = { ...req.body, resellerId: user.id };
+      const product = await storage.createWarrantyProduct(productData);
+      res.status(201).json(product);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // Update reseller warranty product
+  app.patch("/api/reseller/warranty-products/:id", requireAuth, requireRole("reseller"), async (req, res) => {
+    try {
+      const user = req.user as User;
+      const existing = await storage.getWarrantyProduct(req.params.id);
+      if (!existing) {
+        return res.status(404).send("Prodotto garanzia non trovato");
+      }
+      if (existing.resellerId !== user.id) {
+        return res.status(403).send("Non autorizzato a modificare questo prodotto");
+      }
+      const product = await storage.updateWarrantyProduct(req.params.id, req.body);
+      res.json(product);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // Delete reseller warranty product
+  app.delete("/api/reseller/warranty-products/:id", requireAuth, requireRole("reseller"), async (req, res) => {
+    try {
+      const user = req.user as User;
+      const existing = await storage.getWarrantyProduct(req.params.id);
+      if (!existing) {
+        return res.status(404).send("Prodotto garanzia non trovato");
+      }
+      if (existing.resellerId !== user.id) {
+        return res.status(403).send("Non autorizzato a eliminare questo prodotto");
+      }
+      await storage.deleteWarrantyProduct(req.params.id);
+      res.status(204).send();
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
   // ============ REPAIR WARRANTIES (For repair orders) ============
 
   // Get warranty products available for offering (active ones)
   app.get("/api/warranty-products", requireAuth, async (req, res) => {
     try {
+      const repairOrderId = req.query.repairOrderId as string | undefined;
+      if (repairOrderId) {
+        const repair = await storage.getRepairOrder(repairOrderId);
+        if (repair && repair.resellerId) {
+          const products = await storage.listOfferableWarrantyProducts(repair.resellerId);
+          return res.json(products);
+        }
+      }
       const products = await storage.listWarrantyProducts(true);
       res.json(products);
     } catch (error: any) {

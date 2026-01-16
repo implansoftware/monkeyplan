@@ -378,7 +378,13 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
 
   // Warranty products available for offering
   const { data: warrantyProducts = [], isLoading: warrantyProductsLoading } = useQuery<WarrantyProduct[]>({
-    queryKey: ["/api/warranty-products"],
+    queryKey: ["/api/warranty-products", repairOrderId],
+    queryFn: async () => {
+      const url = repairOrderId ? `/api/warranty-products?repairOrderId=${repairOrderId}` : "/api/warranty-products";
+      const res = await fetch(url, { credentials: "include" });
+      if (!res.ok) throw new Error("Failed to fetch warranty products");
+      return res.json();
+    },
     enabled: !!repairOrderId && repair?.status === 'pronto_ritiro' && user?.role !== 'customer',
   });
 

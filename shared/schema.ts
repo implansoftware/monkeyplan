@@ -3444,9 +3444,10 @@ export const warrantySellerTypeEnum = pgEnum("warranty_seller_type", [
   "repair_center"
 ]);
 
-// Warranty Products - Catalogo prodotti garanzia (gestito da Admin)
+// Warranty Products - Catalogo prodotti garanzia (gestito da Admin o Reseller)
 export const warrantyProducts = pgTable("warranty_products", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  resellerId: varchar("reseller_id"), // null = prodotto globale (admin), altrimenti ID reseller proprietario
   name: text("name").notNull(), // es. "Garanzia Base 6 Mesi"
   description: text("description"), // Descrizione dettagliata copertura
   durationMonths: integer("duration_months").notNull(), // Durata in mesi

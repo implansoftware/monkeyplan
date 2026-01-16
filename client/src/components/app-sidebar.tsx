@@ -202,6 +202,7 @@ const menuItems = {
     { title: "Resi a Fornitori", url: "/reseller/supplier-returns", icon: RotateCcw, group: "Fornitori" },
     { title: "Panoramica Vendite", url: "/reseller/sales", icon: TrendingUp, group: "Fatturazione" },
     { title: "Fatture", url: "/reseller/invoices", icon: FileText, group: "Fatturazione" },
+    { title: "Prodotti Garanzia", url: "/reseller/warranty-products", icon: Shield, group: "Fatturazione" },
     { title: "Report", url: "/reseller/reports", icon: BarChart3, group: "Fatturazione" },
     // E-commerce - Catalogo
     { title: "Catalogo Shop", url: "/reseller/shop-catalog", icon: Store, group: "E-commerce" },
