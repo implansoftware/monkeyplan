@@ -116,6 +116,8 @@ export default function ResellerServiceCatalog() {
   
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
+  const [originFilter, setOriginFilter] = useState<string>("all");
+  const [compatibilityFilter, setCompatibilityFilter] = useState<string>("all");
   const [selectedCenterId, setSelectedCenterId] = useState<string>("reseller");
   
   const [isPriceDialogOpen, setIsPriceDialogOpen] = useState(false);
@@ -416,7 +418,20 @@ export default function ResellerServiceCatalog() {
       item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       item.code.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesCategory = categoryFilter === "all" || item.category === categoryFilter;
-    return matchesSearch && matchesCategory;
+    
+    const ownership = getOwnershipInfo(item, user?.id, (user as any)?.parentResellerId);
+    const matchesOrigin = originFilter === "all" || 
+      (originFilter === "global" && ownership.label === "Globale") ||
+      (originFilter === "mine" && ownership.label === "Mio") ||
+      (originFilter === "reseller" && ownership.label === "Reseller");
+    
+    const itemAny = item as any;
+    const hasDeviceRestriction = itemAny.deviceTypeId || itemAny.brandId || itemAny.modelId;
+    const matchesCompatibility = compatibilityFilter === "all" || 
+      (compatibilityFilter === "universal" && !hasDeviceRestriction) ||
+      (compatibilityFilter === "specific" && hasDeviceRestriction);
+    
+    return matchesSearch && matchesCategory && matchesOrigin && matchesCompatibility;
   }) || [];
 
   const filteredMyItems = myItems?.filter(item => {
@@ -660,19 +675,19 @@ export default function ResellerServiceCatalog() {
                   </Select>
                 </div>
                 
-                <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center flex-wrap">
                   <div className="relative">
                     <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                     <Input
                       placeholder="Cerca intervento..."
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      className="pl-8 w-full sm:w-64"
+                      className="pl-8 w-full sm:w-48"
                       data-testid="input-search"
                     />
                   </div>
                   <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-                    <SelectTrigger className="w-40" data-testid="select-category-filter">
+                    <SelectTrigger className="w-32" data-testid="select-category-filter">
                       <SelectValue placeholder="Categoria" />
                     </SelectTrigger>
                     <SelectContent>
@@ -682,6 +697,42 @@ export default function ResellerServiceCatalog() {
                           {cat.label}
                         </SelectItem>
                       ))}
+                    </SelectContent>
+                  </Select>
+                  <Select value={originFilter} onValueChange={setOriginFilter}>
+                    <SelectTrigger className="w-32" data-testid="select-origin-filter">
+                      <SelectValue placeholder="Origine" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Tutte</SelectItem>
+                      <SelectItem value="global">
+                        <div className="flex items-center gap-1.5">
+                          <Globe className="h-3.5 w-3.5 text-blue-500" />
+                          Globale
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="mine">
+                        <div className="flex items-center gap-1.5">
+                          <User className="h-3.5 w-3.5 text-green-500" />
+                          Mio
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="reseller">
+                        <div className="flex items-center gap-1.5">
+                          <Users className="h-3.5 w-3.5 text-orange-500" />
+                          Reseller
+                        </div>
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Select value={compatibilityFilter} onValueChange={setCompatibilityFilter}>
+                    <SelectTrigger className="w-36" data-testid="select-compatibility-filter">
+                      <SelectValue placeholder="Compatibilità" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Tutte</SelectItem>
+                      <SelectItem value="universal">Universale</SelectItem>
+                      <SelectItem value="specific">Con restrizioni</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
