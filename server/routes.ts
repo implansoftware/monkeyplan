@@ -1337,7 +1337,7 @@ export function registerRoutes(app: Express): Server {
         if (repair.customerId !== req.user.id) {
           return res.status(403).send("Access denied");
         }
-      } else if (req.user.role === 'reseller') {
+      } else if (req.user.role === 'reseller' || req.user.role === 'sub_reseller') {
         const canManage = await canResellerManageOrder(req.user.id, repair);
         if (!canManage) {
           return res.status(403).send("Access denied");
@@ -2473,7 +2473,7 @@ export function registerRoutes(app: Express): Server {
       
       // Filter based on role
       let subResellerIds: string[] = [];
-      if (req.user.role === 'reseller') {
+      if (req.user.role === 'reseller' || req.user.role === 'sub_reseller') {
         // Base: own centers
         let allowedCenterIds = centers
           .filter(c => c.resellerId === req.user!.id && c.isActive)
@@ -10205,7 +10205,7 @@ export function registerRoutes(app: Express): Server {
       if (req.user.role === 'customer') {
         // Customers see only their own tickets
         filters.customerId = req.user.id;
-      } else if (req.user.role === 'reseller') {
+      } else if (req.user.role === 'reseller' || req.user.role === 'sub_reseller') {
         // Resellers see tickets from their customers
         filters.resellerId = req.user.id;
       } else if (req.user.role === 'repair_center') {
@@ -10821,7 +10821,7 @@ export function registerRoutes(app: Express): Server {
       if (req.user.role === 'customer') {
         // Customers see only their own orders
         filters.customerId = req.user.id;
-      } else if (req.user.role === 'reseller') {
+      } else if (req.user.role === 'reseller' || req.user.role === 'sub_reseller') {
         // Use context switching to determine effective reseller/repair center
         const context = getEffectiveContext(req);
         
@@ -11001,7 +11001,7 @@ export function registerRoutes(app: Express): Server {
       if (req.user.role === 'customer') {
         // Customer is creating order for themselves
         customerId = req.user.id;
-      } else if (req.user.role === 'reseller') {
+      } else if (req.user.role === 'reseller' || req.user.role === 'sub_reseller') {
         // Reseller must provide customerId
         if (!req.body.customerId) {
           return res.status(400).send("Customer ID is required for reseller orders");
@@ -11060,9 +11060,13 @@ export function registerRoutes(app: Express): Server {
         status: hasAcceptance ? 'ingressato' : 'pending',
       };
       
-      // Set resellerId based on role
+      // Set resellerId and subResellerId based on role
       if (req.user.role === 'reseller') {
         orderData.resellerId = req.user.id;
+      } else if (req.user.role === 'sub_reseller') {
+        // Sub-reseller: set parent as reseller, self as subReseller
+        orderData.resellerId = req.user.parentResellerId;
+        orderData.subResellerId = req.user.id;
       } else if (req.user.role === 'admin' && req.body.resellerId) {
         // Admin can optionally assign a reseller
         orderData.resellerId = req.body.resellerId;
@@ -11158,7 +11162,7 @@ export function registerRoutes(app: Express): Server {
           }
           updates.repairCenterId = req.body.repairCenterId;
         }
-      } else if (req.user.role === 'reseller') {
+      } else if (req.user.role === 'reseller' || req.user.role === 'sub_reseller') {
         // Reseller can update orders of their customers
         // Check if the order's customer belongs to this reseller
         if (!order.customerId) {
@@ -11837,7 +11841,7 @@ export function registerRoutes(app: Express): Server {
       if (!product) return res.status(404).send("Product not found");
       
       // Resellers can only modify products they created, not assigned products
-      if (req.user.role === 'reseller') {
+      if (req.user.role === 'reseller' || req.user.role === 'sub_reseller') {
         if (product.createdBy !== req.user.id) {
           return res.status(403).send("Puoi modificare solo i prodotti che hai creato. Per i prodotti assegnati usa le impostazioni di vendita.");
         }
@@ -11880,7 +11884,7 @@ export function registerRoutes(app: Express): Server {
       if (!product) return res.status(404).send("Product not found");
       
       // Resellers can only modify specs for products they created
-      if (req.user.role === 'reseller') {
+      if (req.user.role === 'reseller' || req.user.role === 'sub_reseller') {
         if (product.createdBy !== req.user.id) {
           return res.status(403).send("Puoi modificare solo le specifiche dei prodotti che hai creato.");
         }
@@ -11908,7 +11912,7 @@ export function registerRoutes(app: Express): Server {
       if (!product) return res.status(404).send("Product not found");
       
       // Resellers can only delete products they created
-      if (req.user.role === 'reseller') {
+      if (req.user.role === 'reseller' || req.user.role === 'sub_reseller') {
         if (product.createdBy !== req.user.id) {
           return res.status(403).send("Puoi eliminare solo i prodotti che hai creato.");
         }
@@ -12349,7 +12353,7 @@ export function registerRoutes(app: Express): Server {
       } else if (req.user.role === 'customer') {
         // Customer sees only own invoices
         invoices = await storage.listInvoices({ customerId: req.user.id });
-      } else if (req.user.role === 'reseller') {
+      } else if (req.user.role === 'reseller' || req.user.role === 'sub_reseller') {
         // Reseller sees invoices for their customers (respecting context switch)
         const context = getEffectiveContext(req);
         invoices = await storage.listInvoices({ resellerId: context.resellerId });
@@ -12388,7 +12392,7 @@ export function registerRoutes(app: Express): Server {
       if (req.user.role === 'customer' && invoice.customerId !== req.user.id) {
         return res.status(403).send("Access denied");
       }
-      if (req.user.role === 'reseller') {
+      if (req.user.role === 'reseller' || req.user.role === 'sub_reseller') {
         // Check if invoice belongs to reseller's customer
         if (invoice.resellerId !== req.user.id) {
           return res.status(403).send("Access denied");
@@ -12636,7 +12640,7 @@ export function registerRoutes(app: Express): Server {
       if (req.user.role === 'customer' && order.customerId !== req.user.id) {
         return res.status(403).send("Access denied");
       }
-      if (req.user.role === 'reseller') {
+      if (req.user.role === 'reseller' || req.user.role === 'sub_reseller') {
         let hasAccess = order.resellerId === req.user.id;
         if (!hasAccess && order.customerId) {
           const customer = await storage.getUser(order.customerId);
@@ -12678,7 +12682,7 @@ export function registerRoutes(app: Express): Server {
       if (req.user.role === 'customer' && order.customerId !== req.user.id) {
         return res.status(403).send("Access denied");
       }
-      if (req.user.role === 'reseller') {
+      if (req.user.role === 'reseller' || req.user.role === 'sub_reseller') {
         let hasAccess = order.resellerId === req.user.id;
         if (!hasAccess && order.customerId) {
           const customer = await storage.getUser(order.customerId);
@@ -12724,7 +12728,7 @@ export function registerRoutes(app: Express): Server {
         if (!req.user.repairCenterId || order.repairCenterId !== req.user.repairCenterId) {
           return res.status(403).send("Access denied");
         }
-      } else if (req.user.role === 'reseller') {
+      } else if (req.user.role === 'reseller' || req.user.role === 'sub_reseller') {
         // Reseller can diagnose orders of their customers
         const canManage = await canResellerManageOrder(req.user.id, order);
         if (!canManage) {
@@ -12808,7 +12812,7 @@ export function registerRoutes(app: Express): Server {
         if (!req.user.repairCenterId || order.repairCenterId !== req.user.repairCenterId) {
           return res.status(403).send("Access denied");
         }
-      } else if (req.user.role === 'reseller') {
+      } else if (req.user.role === 'reseller' || req.user.role === 'sub_reseller') {
         // Reseller can update diagnostics for orders of their customers
         const canManage = await canResellerManageOrder(req.user.id, order);
         if (!canManage) {
@@ -12900,7 +12904,7 @@ export function registerRoutes(app: Express): Server {
         if (repairOrder.customerId !== req.user.id) {
           return res.status(403).send("Access denied");
         }
-      } else if (req.user.role === 'reseller') {
+      } else if (req.user.role === 'reseller' || req.user.role === 'sub_reseller') {
         let hasAccess = repairOrder.resellerId === req.user.id;
         if (!hasAccess && repairOrder.customerId) {
           const customer = await storage.getUser(repairOrder.customerId);
@@ -12944,7 +12948,7 @@ export function registerRoutes(app: Express): Server {
         if (repairOrder.repairCenterId !== req.user.repairCenterId) {
           return res.status(403).send("Access denied");
         }
-      } else if (req.user.role === 'reseller') {
+      } else if (req.user.role === 'reseller' || req.user.role === 'sub_reseller') {
         // Reseller can create quotes for orders of their customers
         const canManage = await canResellerManageOrder(req.user.id, repairOrder);
         if (!canManage) {
@@ -13067,7 +13071,7 @@ export function registerRoutes(app: Express): Server {
         if (repairOrder.repairCenterId !== req.user.repairCenterId) {
           return res.status(403).send("Access denied");
         }
-      } else if (req.user.role === 'reseller') {
+      } else if (req.user.role === 'reseller' || req.user.role === 'sub_reseller') {
         // Reseller can update quotes for orders of their customers
         const canManage = await canResellerManageOrder(req.user.id, repairOrder);
         if (!canManage) {
@@ -13214,7 +13218,7 @@ export function registerRoutes(app: Express): Server {
         if (repairOrder.repairCenterId !== req.user.repairCenterId) {
           return res.status(403).send("Accesso negato");
         }
-      } else if (req.user.role === 'reseller') {
+      } else if (req.user.role === 'reseller' || req.user.role === 'sub_reseller') {
         const canManage = await canResellerManageOrder(req.user.id, repairOrder);
         if (!canManage) {
           return res.status(403).send("Accesso negato");
@@ -13275,7 +13279,7 @@ export function registerRoutes(app: Express): Server {
       if (req.user.role === 'customer' && repairOrder.customerId !== req.user.id) {
         return res.status(403).send("Access denied");
       }
-      if (req.user.role === 'reseller') {
+      if (req.user.role === 'reseller' || req.user.role === 'sub_reseller') {
         const canManage = await canResellerManageOrder(req.user.id, repairOrder);
         if (!canManage) {
           return res.status(403).send("Access denied");
@@ -13309,7 +13313,7 @@ export function registerRoutes(app: Express): Server {
         if (repairOrder.repairCenterId !== req.user.repairCenterId) {
           return res.status(403).send("Access denied");
         }
-      } else if (req.user.role === 'reseller') {
+      } else if (req.user.role === 'reseller' || req.user.role === 'sub_reseller') {
         const canManage = await canResellerManageOrder(req.user.id, repairOrder);
         if (!canManage) {
           return res.status(403).send("Access denied");
@@ -13443,7 +13447,7 @@ export function registerRoutes(app: Express): Server {
         if (repairOrder.repairCenterId !== req.user.repairCenterId) {
           return res.status(403).send("Access denied");
         }
-      } else if (req.user.role === 'reseller') {
+      } else if (req.user.role === 'reseller' || req.user.role === 'sub_reseller') {
         const canManage = await canResellerManageOrder(req.user.id, repairOrder);
         if (!canManage) {
           return res.status(403).send("Access denied");
@@ -13536,7 +13540,7 @@ export function registerRoutes(app: Express): Server {
         if (repairOrder.repairCenterId !== req.user.repairCenterId) {
           return res.status(403).send("Access denied");
         }
-      } else if (req.user.role === 'reseller') {
+      } else if (req.user.role === 'reseller' || req.user.role === 'sub_reseller') {
         const canManage = await canResellerManageOrder(req.user.id, repairOrder);
         if (!canManage) {
           return res.status(403).send("Access denied");
@@ -13651,7 +13655,7 @@ export function registerRoutes(app: Express): Server {
         if (repairOrder.repairCenterId !== req.user.repairCenterId) {
           return res.status(403).send("Access denied");
         }
-      } else if (req.user.role === 'reseller') {
+      } else if (req.user.role === 'reseller' || req.user.role === 'sub_reseller') {
         const canManage = await canResellerManageOrder(req.user.id, repairOrder);
         if (!canManage) {
           return res.status(403).send("Access denied");
@@ -13710,7 +13714,7 @@ export function registerRoutes(app: Express): Server {
         if (repairOrder.repairCenterId !== req.user.repairCenterId) {
           return res.status(403).send("Access denied");
         }
-      } else if (req.user.role === 'reseller') {
+      } else if (req.user.role === 'reseller' || req.user.role === 'sub_reseller') {
         const canManage = await canResellerManageOrder(req.user.id, repairOrder);
         if (!canManage) {
           return res.status(403).send("Access denied");
@@ -13743,7 +13747,7 @@ export function registerRoutes(app: Express): Server {
         if (repairOrder.repairCenterId !== req.user.repairCenterId) {
           return res.status(403).send("Access denied");
         }
-      } else if (req.user.role === 'reseller') {
+      } else if (req.user.role === 'reseller' || req.user.role === 'sub_reseller') {
         const canManage = await canResellerManageOrder(req.user.id, repairOrder);
         if (!canManage) {
           return res.status(403).send("Access denied");
@@ -13786,7 +13790,7 @@ export function registerRoutes(app: Express): Server {
         if (repairOrder.repairCenterId !== req.user.repairCenterId) {
           return res.status(403).send("Access denied");
         }
-      } else if (req.user.role === 'reseller') {
+      } else if (req.user.role === 'reseller' || req.user.role === 'sub_reseller') {
         const canManage = await canResellerManageOrder(req.user.id, repairOrder);
         if (!canManage) {
           return res.status(403).send("Access denied");
@@ -13842,7 +13846,7 @@ export function registerRoutes(app: Express): Server {
         if (repairOrder.repairCenterId !== req.user.repairCenterId) {
           return res.status(403).send("Access denied");
         }
-      } else if (req.user.role === 'reseller') {
+      } else if (req.user.role === 'reseller' || req.user.role === 'sub_reseller') {
         const canManage = await canResellerManageOrder(req.user.id, repairOrder);
         if (!canManage) {
           return res.status(403).send("Access denied");
@@ -13875,7 +13879,7 @@ export function registerRoutes(app: Express): Server {
         if (repairOrder.repairCenterId !== req.user.repairCenterId) {
           return res.status(403).send("Access denied");
         }
-      } else if (req.user.role === 'reseller') {
+      } else if (req.user.role === 'reseller' || req.user.role === 'sub_reseller') {
         const canManage = await canResellerManageOrder(req.user.id, repairOrder);
         if (!canManage) {
           return res.status(403).send("Access denied");
@@ -13952,7 +13956,7 @@ export function registerRoutes(app: Express): Server {
         if (repairOrder.repairCenterId !== req.user.repairCenterId) {
           return res.status(403).send("Access denied");
         }
-      } else if (req.user.role === 'reseller') {
+      } else if (req.user.role === 'reseller' || req.user.role === 'sub_reseller') {
         const canManage = await canResellerManageOrder(req.user.id, repairOrder);
         if (!canManage) {
           return res.status(403).send("Access denied");
@@ -14002,7 +14006,7 @@ export function registerRoutes(app: Express): Server {
         if (repairOrder.repairCenterId !== req.user.repairCenterId) {
           return res.status(403).send("Access denied");
         }
-      } else if (req.user.role === 'reseller') {
+      } else if (req.user.role === 'reseller' || req.user.role === 'sub_reseller') {
         const canManage = await canResellerManageOrder(req.user.id, repairOrder);
         if (!canManage) {
           return res.status(403).send("Access denied");
@@ -14091,7 +14095,7 @@ export function registerRoutes(app: Express): Server {
       if (req.user.role === 'customer' && repairOrder.customerId !== req.user.id) {
         return res.status(403).send("Access denied");
       }
-      if (req.user.role === 'reseller') {
+      if (req.user.role === 'reseller' || req.user.role === 'sub_reseller') {
         const canManage = await canResellerManageOrder(req.user.id, repairOrder);
         if (!canManage) {
           return res.status(403).send("Access denied");
@@ -14124,7 +14128,7 @@ export function registerRoutes(app: Express): Server {
         if (req.user.repairCenterId !== req.params.id) {
           return res.status(403).send("Access denied");
         }
-      } else if (req.user.role === 'reseller') {
+      } else if (req.user.role === 'reseller' || req.user.role === 'sub_reseller') {
         const center = await storage.getRepairCenter(req.params.id);
         if (!center || center.resellerId !== req.user.id) {
           return res.status(403).send("Access denied - this center does not belong to you");
@@ -14154,7 +14158,7 @@ export function registerRoutes(app: Express): Server {
         if (req.user.repairCenterId !== req.params.id) {
           return res.status(403).send("Access denied");
         }
-      } else if (req.user.role === 'reseller') {
+      } else if (req.user.role === 'reseller' || req.user.role === 'sub_reseller') {
         // Reseller can manage centers that belong to them
         const center = await storage.getRepairCenter(req.params.id);
         if (!center || center.resellerId !== req.user.id) {
@@ -14207,7 +14211,7 @@ export function registerRoutes(app: Express): Server {
         if (req.user.repairCenterId !== req.params.id) {
           return res.status(403).send("Access denied");
         }
-      } else if (req.user.role === 'reseller') {
+      } else if (req.user.role === 'reseller' || req.user.role === 'sub_reseller') {
         const center = await storage.getRepairCenter(req.params.id);
         if (!center || center.resellerId !== req.user.id) {
           return res.status(403).send("Access denied - this center does not belong to you");
@@ -14241,7 +14245,7 @@ export function registerRoutes(app: Express): Server {
         if (req.user.repairCenterId !== req.params.id) {
           return res.status(403).send("Access denied");
         }
-      } else if (req.user.role === 'reseller') {
+      } else if (req.user.role === 'reseller' || req.user.role === 'sub_reseller') {
         // Reseller can manage centers that belong to them
         const center = await storage.getRepairCenter(req.params.id);
         if (!center || center.resellerId !== req.user.id) {
@@ -14282,7 +14286,7 @@ export function registerRoutes(app: Express): Server {
         if (req.user.repairCenterId !== req.params.id) {
           return res.status(403).send("Access denied");
         }
-      } else if (req.user.role === 'reseller') {
+      } else if (req.user.role === 'reseller' || req.user.role === 'sub_reseller') {
         // Reseller can manage centers that belong to them
         const center = await storage.getRepairCenter(req.params.id);
         if (!center || center.resellerId !== req.user.id) {
@@ -14398,7 +14402,7 @@ export function registerRoutes(app: Express): Server {
         if (req.user.repairCenterId !== req.params.id) {
           return res.status(403).send("Access denied");
         }
-      } else if (req.user.role === 'reseller') {
+      } else if (req.user.role === 'reseller' || req.user.role === 'sub_reseller') {
         const center = await storage.getRepairCenter(req.params.id);
         if (!center || center.resellerId !== req.user.id) {
           return res.status(403).send("Access denied - this center does not belong to you");
@@ -14479,7 +14483,7 @@ export function registerRoutes(app: Express): Server {
       if (req.user.role === 'customer' && repairOrder.customerId !== req.user.id) {
         return res.status(403).send("Access denied");
       }
-      if (req.user.role === 'reseller') {
+      if (req.user.role === 'reseller' || req.user.role === 'sub_reseller') {
         const canManage = await canResellerManageOrder(req.user.id, repairOrder);
         if (!canManage) {
           return res.status(403).send("Access denied");
@@ -14514,7 +14518,7 @@ export function registerRoutes(app: Express): Server {
         if (repairOrder.customerId !== req.user.id) {
           return res.status(403).send("Access denied");
         }
-      } else if (req.user.role === 'reseller') {
+      } else if (req.user.role === 'reseller' || req.user.role === 'sub_reseller') {
         const canManage = await canResellerManageOrder(req.user.id, repairOrder);
         if (!canManage) {
           return res.status(403).send("Access denied");
@@ -14615,7 +14619,7 @@ export function registerRoutes(app: Express): Server {
         if (repairOrder.repairCenterId !== req.user.repairCenterId) {
           return res.status(403).send("Access denied");
         }
-      } else if (req.user.role === 'reseller') {
+      } else if (req.user.role === 'reseller' || req.user.role === 'sub_reseller') {
         const canManage = await canResellerManageOrder(req.user.id, repairOrder);
         if (!canManage) {
           return res.status(403).send("Access denied");
@@ -14736,7 +14740,7 @@ export function registerRoutes(app: Express): Server {
       if (req.user.role === 'customer' && repairOrder.customerId !== req.user.id) {
         return res.status(403).send("Access denied");
       }
-      if (req.user.role === 'reseller') {
+      if (req.user.role === 'reseller' || req.user.role === 'sub_reseller') {
         const canManage = await canResellerManageOrder(req.user.id, repairOrder);
         if (!canManage) {
           return res.status(403).send("Access denied");
@@ -14766,7 +14770,7 @@ export function registerRoutes(app: Express): Server {
       if (req.user.role === 'customer' && repairOrder.customerId !== req.user.id) {
         return res.status(403).send("Access denied");
       }
-      if (req.user.role === 'reseller') {
+      if (req.user.role === 'reseller' || req.user.role === 'sub_reseller') {
         let hasAccess = repairOrder.resellerId === req.user.id;
         if (!hasAccess && repairOrder.customerId) {
           const customer = await storage.getUser(repairOrder.customerId);
@@ -14974,7 +14978,7 @@ export function registerRoutes(app: Express): Server {
       if (req.user.role === 'customer' && repairOrder.customerId !== req.user.id) {
         return res.status(403).send("Access denied");
       }
-      if (req.user.role === 'reseller') {
+      if (req.user.role === 'reseller' || req.user.role === 'sub_reseller') {
         let hasAccess = repairOrder.resellerId === req.user.id;
         if (!hasAccess && repairOrder.customerId) {
           const customerForAccess = await storage.getUser(repairOrder.customerId);
@@ -15200,7 +15204,7 @@ export function registerRoutes(app: Express): Server {
       if (req.user.role === 'customer') {
         return res.status(403).send("Access denied");
       }
-      if (req.user.role === 'reseller') {
+      if (req.user.role === 'reseller' || req.user.role === 'sub_reseller') {
         let hasAccess = repairOrder.resellerId === req.user.id;
         if (!hasAccess && repairOrder.customerId) {
           const customerForAccess = await storage.getUser(repairOrder.customerId);
@@ -15405,7 +15409,7 @@ export function registerRoutes(app: Express): Server {
       if (req.user.role === 'customer' && repairOrder.customerId !== req.user.id) {
         return res.status(403).send("Access denied");
       }
-      if (req.user.role === 'reseller') {
+      if (req.user.role === 'reseller' || req.user.role === 'sub_reseller') {
         let hasAccess = repairOrder.resellerId === req.user.id;
         if (!hasAccess && repairOrder.customerId) {
           const customer = await storage.getUser(repairOrder.customerId);
@@ -15606,7 +15610,7 @@ export function registerRoutes(app: Express): Server {
       if (req.user.role === 'customer' && repairOrder.customerId !== req.user.id) {
         return res.status(403).send("Access denied");
       }
-      if (req.user.role === 'reseller') {
+      if (req.user.role === 'reseller' || req.user.role === 'sub_reseller') {
         let hasAccess = repairOrder.resellerId === req.user.id;
         if (!hasAccess && repairOrder.customerId) {
           const customer = await storage.getUser(repairOrder.customerId);
@@ -16274,7 +16278,7 @@ export function registerRoutes(app: Express): Server {
       }
       
       // Check access rights
-      if (req.user.role === 'reseller') {
+      if (req.user.role === 'reseller' || req.user.role === 'sub_reseller') {
         const context = getEffectiveContext(req);
         if (customer.resellerId !== context.resellerId) {
           return res.status(403).send("Access denied");
@@ -16351,7 +16355,7 @@ export function registerRoutes(app: Express): Server {
       
       // Check permissions
       const context = getEffectiveContext(req);
-      if (req.user.role === 'reseller') {
+      if (req.user.role === 'reseller' || req.user.role === 'sub_reseller') {
         if (customer.resellerId !== context.resellerId) {
           return res.status(403).send("Access denied");
         }
@@ -16470,7 +16474,7 @@ export function registerRoutes(app: Express): Server {
       let assignedResellerId: string | null = null;
       let assignedSubResellerId: string | null = null;
       
-      if (req.user.role === 'reseller') {
+      if (req.user.role === 'reseller' || req.user.role === 'sub_reseller') {
         assignedResellerId = req.user.id;
         // If sub-reseller is specified, validate it belongs to this reseller
         if (validatedData.subResellerId) {
@@ -16574,7 +16578,7 @@ export function registerRoutes(app: Express): Server {
       let assignedSubResellerId: string | null = null;
       const subResellerIdFromBody = req.body.subResellerId as string | undefined;
       
-      if (req.user.role === 'reseller') {
+      if (req.user.role === 'reseller' || req.user.role === 'sub_reseller') {
         assignedResellerId = req.user.id;
         // Validate sub-reseller belongs to this reseller
         if (subResellerIdFromBody) {
@@ -16878,7 +16882,7 @@ export function registerRoutes(app: Express): Server {
       }
       
       // Check access
-      if (req.user.role === 'reseller') {
+      if (req.user.role === 'reseller' || req.user.role === 'sub_reseller') {
         const customer = await storage.getUser(branch.parentCustomerId);
         if (!customer || customer.resellerId !== req.user.id) {
           return res.status(403).send("Forbidden");
@@ -17108,7 +17112,7 @@ export function registerRoutes(app: Express): Server {
           } : null;
         }
         
-      } else if (req.user.role === 'reseller') {
+      } else if (req.user.role === 'reseller' || req.user.role === 'sub_reseller') {
         // Reseller sees comprehensive dashboard stats
         const context = getEffectiveContext(req);
         const resellerId = context.resellerId;
@@ -20144,7 +20148,7 @@ export function registerRoutes(app: Express): Server {
         // Repair centers see orders where they are the owner
         filters.ownerType = 'repair_center';
         filters.ownerId = req.user.repairCenterId;
-      } else if (req.user.role === 'reseller') {
+      } else if (req.user.role === 'reseller' || req.user.role === 'sub_reseller') {
         if (!req.user.resellerId) {
           return res.json([]);
         }
@@ -20238,7 +20242,7 @@ export function registerRoutes(app: Express): Server {
         if (order.ownerType !== 'repair_center' || order.ownerId !== req.user.repairCenterId) {
           return res.status(403).send("Accesso negato");
         }
-      } else if (req.user.role === 'reseller') {
+      } else if (req.user.role === 'reseller' || req.user.role === 'sub_reseller') {
         if (order.ownerType !== 'reseller' || order.ownerId !== req.user.resellerId) {
           return res.status(403).send("Accesso negato");
         }
@@ -20296,7 +20300,7 @@ export function registerRoutes(app: Express): Server {
         if (order.ownerType !== 'repair_center' || order.ownerId !== req.user.repairCenterId) {
           return res.status(403).send("Accesso negato");
         }
-      } else if (req.user.role === 'reseller') {
+      } else if (req.user.role === 'reseller' || req.user.role === 'sub_reseller') {
         if (order.ownerType !== 'reseller' || order.ownerId !== req.user.resellerId) {
           return res.status(403).send("Accesso negato");
         }
@@ -20333,7 +20337,7 @@ export function registerRoutes(app: Express): Server {
         ownerType = 'repair_center';
         ownerId = req.user.repairCenterId;
         repairCenterId = req.user.repairCenterId;
-      } else if (req.user.role === 'reseller') {
+      } else if (req.user.role === 'reseller' || req.user.role === 'sub_reseller') {
         if (!req.user.resellerId) {
           return res.status(400).send("Reseller non assegnato");
         }
@@ -20381,7 +20385,7 @@ export function registerRoutes(app: Express): Server {
         if (order.ownerType !== 'repair_center' || order.ownerId !== req.user.repairCenterId) {
           return res.status(403).send("Accesso negato");
         }
-      } else if (req.user.role === 'reseller') {
+      } else if (req.user.role === 'reseller' || req.user.role === 'sub_reseller') {
         if (order.ownerType !== 'reseller' || order.ownerId !== req.user.resellerId) {
           return res.status(403).send("Accesso negato");
         }
@@ -20414,7 +20418,7 @@ export function registerRoutes(app: Express): Server {
         if (order.ownerType !== 'repair_center' || order.ownerId !== req.user.repairCenterId) {
           return res.status(403).send("Accesso negato");
         }
-      } else if (req.user.role === 'reseller') {
+      } else if (req.user.role === 'reseller' || req.user.role === 'sub_reseller') {
         if (order.ownerType !== 'reseller' || order.ownerId !== req.user.resellerId) {
           return res.status(403).send("Accesso negato");
         }
@@ -20479,7 +20483,7 @@ export function registerRoutes(app: Express): Server {
         if (order.ownerType !== 'repair_center' || order.ownerId !== req.user.repairCenterId) {
           return res.status(403).send("Accesso negato");
         }
-      } else if (req.user.role === 'reseller') {
+      } else if (req.user.role === 'reseller' || req.user.role === 'sub_reseller') {
         if (order.ownerType !== 'reseller' || order.ownerId !== req.user.resellerId) {
           return res.status(403).send("Accesso negato");
         }
@@ -21272,7 +21276,7 @@ export function registerRoutes(app: Express): Server {
       if (!req.user) return res.status(401).send("Unauthorized");
       
       let filters: { resellerId?: string } = {};
-      if (req.user.role === 'reseller') {
+      if (req.user.role === 'reseller' || req.user.role === 'sub_reseller') {
         filters.resellerId = req.user.id;
       } else if (req.user.role === 'repair_center') {
         // Repair center vede i fornitori del proprio reseller proprietario
@@ -21326,7 +21330,7 @@ export function registerRoutes(app: Express): Server {
       const validated = insertUtilitySupplierSchema.parse(req.body);
       
       // Se reseller, assegna automaticamente il resellerId
-      if (req.user.role === 'reseller') {
+      if (req.user.role === 'reseller' || req.user.role === 'sub_reseller') {
         (validated as any).resellerId = req.user.id;
       } else if (req.user.role === 'repair_center') {
         // Per repair center, assegna il resellerId del proprietario
@@ -21356,7 +21360,7 @@ export function registerRoutes(app: Express): Server {
       }
       
       // Reseller può modificare solo i propri fornitori (non quelli globali)
-      if (req.user.role === 'reseller') {
+      if (req.user.role === 'reseller' || req.user.role === 'sub_reseller') {
         if (!existingSupplier.resellerId || existingSupplier.resellerId !== req.user.id) {
           return res.status(403).send("Non puoi modificare fornitori globali o di altri reseller");
         }
@@ -21382,7 +21386,7 @@ export function registerRoutes(app: Express): Server {
       }
       
       // Reseller può eliminare solo i propri fornitori (non quelli globali)
-      if (req.user.role === 'reseller') {
+      if (req.user.role === 'reseller' || req.user.role === 'sub_reseller') {
         if (!existingSupplier.resellerId || existingSupplier.resellerId !== req.user.id) {
           return res.status(403).send("Non puoi eliminare fornitori globali o di altri reseller");
         }
@@ -21491,7 +21495,7 @@ export function registerRoutes(app: Express): Server {
           })
         );
         return res.json(enrichedPractices);
-      } else if (req.user.role === 'reseller') {
+      } else if (req.user.role === 'reseller' || req.user.role === 'sub_reseller') {
         // Reseller sees their own practices + practices from their repair centers
         const resellerRepairCenters = await storage.listRepairCenters();
         const myRepairCenterIds = resellerRepairCenters
@@ -21576,7 +21580,7 @@ export function registerRoutes(app: Express): Server {
           return res.status(403).send("Accesso negato");
         }
       }
-      if (req.user.role === 'reseller') {
+      if (req.user.role === 'reseller' || req.user.role === 'sub_reseller') {
         // Reseller can see their own practices OR practices from their repair centers
         const resellerRepairCenters = await storage.listRepairCenters();
         const myRepairCenterIds = resellerRepairCenters
@@ -21684,7 +21688,7 @@ export function registerRoutes(app: Express): Server {
       }
       
       // If reseller, handle resellerId or repairCenterId (can be self, sub-reseller, or repair center)
-      if (req.user.role === 'reseller') {
+      if (req.user.role === 'reseller' || req.user.role === 'sub_reseller') {
         if (practiceData.repairCenterId) {
           // Validate that the specified repairCenterId belongs to the current reseller
           const resellerCenters = await storage.getRepairCentersForReseller(req.user.id);
@@ -21891,7 +21895,7 @@ export function registerRoutes(app: Express): Server {
       }
       
       // For resellers, filter commissions by their practices + their repair centers' practices
-      if (req.user.role === 'reseller') {
+      if (req.user.role === 'reseller' || req.user.role === 'sub_reseller') {
         const resellerRepairCenters = await storage.listRepairCenters();
         const myRepairCenterIds = resellerRepairCenters
           .filter(rc => rc.resellerId === req.user!.id)
@@ -21934,7 +21938,7 @@ export function registerRoutes(app: Express): Server {
       }
       
       // RBAC for resellers - can see their own + their repair centers' commissions
-      if (req.user.role === 'reseller') {
+      if (req.user.role === 'reseller' || req.user.role === 'sub_reseller') {
         const practice = await storage.getUtilityPractice(commission.practiceId);
         if (!practice) {
           return res.status(403).send("Accesso negato");
@@ -22008,7 +22012,7 @@ export function registerRoutes(app: Express): Server {
       if (!practice) return res.status(404).send("Pratica non trovata");
       
       // RBAC: Admin can approve all, Reseller can approve only sub-reseller commissions
-      if (req.user.role === 'reseller') {
+      if (req.user.role === 'reseller' || req.user.role === 'sub_reseller') {
         // Check if practice belongs to a sub-reseller under this reseller (via parentResellerId)
         const allUsers = await storage.getUsers();
         const subResellers = allUsers.filter(u => u.role === 'reseller' && u.parentResellerId === req.user!.id);
@@ -22064,7 +22068,7 @@ export function registerRoutes(app: Express): Server {
       if (!practice) return res.status(404).send("Pratica non trovata");
       
       // RBAC: Admin can reject all, Reseller can reject only sub-reseller commissions
-      if (req.user.role === 'reseller') {
+      if (req.user.role === 'reseller' || req.user.role === 'sub_reseller') {
         // Check if practice belongs to a sub-reseller under this reseller (via parentResellerId)
         const allUsers = await storage.getUsers();
         const subResellers = allUsers.filter(u => u.role === 'reseller' && u.parentResellerId === req.user!.id);
@@ -22127,7 +22131,7 @@ export function registerRoutes(app: Express): Server {
           return res.status(403).send("Accesso negato");
         }
       }
-      if (req.user.role === 'reseller') {
+      if (req.user.role === 'reseller' || req.user.role === 'sub_reseller') {
         const resellerRepairCenters = await storage.listRepairCenters();
         const myRepairCenterIds = resellerRepairCenters
           .filter(rc => rc.resellerId === req.user!.id)
@@ -22161,7 +22165,7 @@ export function registerRoutes(app: Express): Server {
           return res.status(403).send("Accesso negato");
         }
       }
-      if (req.user.role === 'reseller') {
+      if (req.user.role === 'reseller' || req.user.role === 'sub_reseller') {
         const resellerRepairCenters = await storage.listRepairCenters();
         const myRepairCenterIds = resellerRepairCenters
           .filter(rc => rc.resellerId === req.user!.id)
@@ -22284,7 +22288,7 @@ export function registerRoutes(app: Express): Server {
           return res.status(403).send("Accesso negato");
         }
       }
-      if (req.user.role === 'reseller') {
+      if (req.user.role === 'reseller' || req.user.role === 'sub_reseller') {
         const resellerRepairCenters = await storage.listRepairCenters();
         const myRepairCenterIds = resellerRepairCenters
           .filter(rc => rc.resellerId === req.user!.id)
@@ -22331,7 +22335,7 @@ export function registerRoutes(app: Express): Server {
           return res.status(403).send("Accesso negato");
         }
       }
-      if (req.user.role === 'reseller') {
+      if (req.user.role === 'reseller' || req.user.role === 'sub_reseller') {
         const resellerRepairCenters = await storage.listRepairCenters();
         const myRepairCenterIds = resellerRepairCenters
           .filter(rc => rc.resellerId === req.user!.id)
@@ -22364,7 +22368,7 @@ export function registerRoutes(app: Express): Server {
           return res.status(403).send("Accesso negato");
         }
       }
-      if (req.user.role === 'reseller') {
+      if (req.user.role === 'reseller' || req.user.role === 'sub_reseller') {
         const resellerRepairCenters = await storage.listRepairCenters();
         const myRepairCenterIds = resellerRepairCenters
           .filter(rc => rc.resellerId === req.user!.id)
@@ -22414,7 +22418,7 @@ export function registerRoutes(app: Express): Server {
           return res.status(403).send("Accesso negato");
         }
       }
-      if (req.user.role === 'reseller') {
+      if (req.user.role === 'reseller' || req.user.role === 'sub_reseller') {
         const resellerRepairCenters = await storage.listRepairCenters();
         const myRepairCenterIds = resellerRepairCenters
           .filter(rc => rc.resellerId === req.user!.id)
@@ -22466,7 +22470,7 @@ export function registerRoutes(app: Express): Server {
           return res.status(403).send("Accesso negato");
         }
       }
-      if (req.user.role === 'reseller') {
+      if (req.user.role === 'reseller' || req.user.role === 'sub_reseller') {
         const resellerRepairCenters = await storage.listRepairCenters();
         const myRepairCenterIds = resellerRepairCenters
           .filter(rc => rc.resellerId === req.user!.id)
@@ -22504,7 +22508,7 @@ export function registerRoutes(app: Express): Server {
           return res.status(403).send("Accesso negato");
         }
       }
-      if (req.user.role === 'reseller') {
+      if (req.user.role === 'reseller' || req.user.role === 'sub_reseller') {
         const resellerRepairCenters = await storage.listRepairCenters();
         const myRepairCenterIds = resellerRepairCenters
           .filter(rc => rc.resellerId === req.user!.id)
@@ -22543,7 +22547,7 @@ export function registerRoutes(app: Express): Server {
           return res.status(403).send("Accesso negato");
         }
       }
-      if (req.user.role === 'reseller') {
+      if (req.user.role === 'reseller' || req.user.role === 'sub_reseller') {
         const resellerRepairCenters = await storage.listRepairCenters();
         const myRepairCenterIds = resellerRepairCenters
           .filter(rc => rc.resellerId === req.user!.id)
@@ -22595,7 +22599,7 @@ export function registerRoutes(app: Express): Server {
           return res.status(403).send("Accesso negato");
         }
       }
-      if (req.user.role === 'reseller') {
+      if (req.user.role === 'reseller' || req.user.role === 'sub_reseller') {
         const resellerRepairCenters = await storage.listRepairCenters();
         const myRepairCenterIds = resellerRepairCenters
           .filter(rc => rc.resellerId === req.user!.id)
@@ -22633,7 +22637,7 @@ export function registerRoutes(app: Express): Server {
           return res.status(403).send("Accesso negato");
         }
       }
-      if (req.user.role === 'reseller') {
+      if (req.user.role === 'reseller' || req.user.role === 'sub_reseller') {
         const resellerRepairCenters = await storage.listRepairCenters();
         const myRepairCenterIds = resellerRepairCenters
           .filter(rc => rc.resellerId === req.user!.id)
@@ -22666,7 +22670,7 @@ export function registerRoutes(app: Express): Server {
           return res.status(403).send("Accesso negato");
         }
       }
-      if (req.user.role === 'reseller') {
+      if (req.user.role === 'reseller' || req.user.role === 'sub_reseller') {
         const resellerRepairCenters = await storage.listRepairCenters();
         const myRepairCenterIds = resellerRepairCenters
           .filter(rc => rc.resellerId === req.user!.id)
@@ -22712,7 +22716,7 @@ export function registerRoutes(app: Express): Server {
           return res.status(403).send("Accesso negato");
         }
       }
-      if (req.user.role === 'reseller') {
+      if (req.user.role === 'reseller' || req.user.role === 'sub_reseller') {
         const resellerRepairCenters = await storage.listRepairCenters();
         const myRepairCenterIds = resellerRepairCenters
           .filter(rc => rc.resellerId === req.user!.id)
@@ -22747,7 +22751,7 @@ export function registerRoutes(app: Express): Server {
           return res.status(403).send("Accesso negato");
         }
       }
-      if (req.user.role === 'reseller') {
+      if (req.user.role === 'reseller' || req.user.role === 'sub_reseller') {
         const resellerRepairCenters = await storage.listRepairCenters();
         const myRepairCenterIds = resellerRepairCenters
           .filter(rc => rc.resellerId === req.user!.id)
@@ -22900,7 +22904,7 @@ export function registerRoutes(app: Express): Server {
       
       // Get practices based on role
       let practicesFilters: { resellerId?: string; repairCenterId?: string } = {};
-      if (req.user.role === 'reseller') {
+      if (req.user.role === 'reseller' || req.user.role === 'sub_reseller') {
         practicesFilters.resellerId = req.user.id;
       } else if (req.user.role === 'repair_center') {
         practicesFilters.repairCenterId = req.user.repairCenterId || undefined;
@@ -22909,7 +22913,7 @@ export function registerRoutes(app: Express): Server {
       let practices = await storage.listUtilityPractices(practicesFilters);
       
       // For resellers, also include practices from their repair centers
-      if (req.user.role === 'reseller') {
+      if (req.user.role === 'reseller' || req.user.role === 'sub_reseller') {
         const resellerRepairCenters = await storage.listRepairCenters();
         const myRepairCenterIds = resellerRepairCenters
           .filter(rc => rc.resellerId === req.user!.id)
