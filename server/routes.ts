@@ -4980,7 +4980,7 @@ export function registerRoutes(app: Express): Server {
   });
 
   // Export Repairs (Reseller) - Only their own repairs
-  app.get("/api/reseller/export/repairs", requireRole("reseller", "reseller_staff"), async (req, res) => {
+  app.get("/api/reseller/export/repairs", requireRole("reseller", "reseller_staff"), requireModulePermission("repairs", "read"), async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
@@ -5070,7 +5070,7 @@ export function registerRoutes(app: Express): Server {
   });
 
   // Skip diagnosis for reseller - go directly from ingressato to preventivo_emesso
-  app.post("/api/reseller/repairs/:id/skip-diagnosis", requireRole("reseller", "reseller_staff"), async (req, res) => {
+  app.post("/api/reseller/repairs/:id/skip-diagnosis", requireRole("reseller", "reseller_staff"), requireModulePermission("repairs", "update"), async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
@@ -10449,6 +10449,14 @@ export function registerRoutes(app: Express): Server {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
+      // Check staff permission for tickets:update
+      if (req.user.role === 'reseller_staff' || req.user.role === 'reseller_collaborator') {
+        const hasPermission = await storage.checkStaffPermission(req.user.id, 'tickets', 'update');
+        if (!hasPermission) {
+          return res.status(403).send("Non hai il permesso di modificare i ticket");
+        }
+      }
+      
       const ticket = await storage.getTicket(req.params.id);
       if (!ticket) return res.status(404).send("Ticket not found");
       
@@ -10513,6 +10521,14 @@ export function registerRoutes(app: Express): Server {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
+      // Check staff permission for tickets:update
+      if (req.user.role === 'reseller_staff' || req.user.role === 'reseller_collaborator') {
+        const hasPermission = await storage.checkStaffPermission(req.user.id, 'tickets', 'update');
+        if (!hasPermission) {
+          return res.status(403).send("Non hai il permesso di assegnare i ticket");
+        }
+      }
+      
       if (req.user.role !== 'admin') {
         return res.status(403).send("Only admins can assign tickets");
       }
@@ -10570,6 +10586,14 @@ export function registerRoutes(app: Express): Server {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
+      // Check staff permission for tickets:update
+      if (req.user.role === 'reseller_staff' || req.user.role === 'reseller_collaborator') {
+        const hasPermission = await storage.checkStaffPermission(req.user.id, 'tickets', 'update');
+        if (!hasPermission) {
+          return res.status(403).send("Non hai il permesso di modificare i ticket");
+        }
+      }
+      
       if (req.user.role !== 'admin') {
         return res.status(403).send("Only admins can update priority");
       }
@@ -10611,6 +10635,14 @@ export function registerRoutes(app: Express): Server {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
+      // Check staff permission for tickets:read
+      if (req.user.role === 'reseller_staff' || req.user.role === 'reseller_collaborator') {
+        const hasPermission = await storage.checkStaffPermission(req.user.id, 'tickets', 'read');
+        if (!hasPermission) {
+          return res.status(403).send("Non hai il permesso di visualizzare i messaggi dei ticket");
+        }
+      }
+      
       const ticket = await storage.getTicket(req.params.id);
       if (!ticket) return res.status(404).send("Ticket not found");
       
@@ -10648,6 +10680,14 @@ export function registerRoutes(app: Express): Server {
   app.post("/api/tickets/:id/attachments", requireAuth, upload.single('file'), async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
+      
+      // Check staff permission for tickets:update
+      if (req.user.role === 'reseller_staff' || req.user.role === 'reseller_collaborator') {
+        const hasPermission = await storage.checkStaffPermission(req.user.id, 'tickets', 'update');
+        if (!hasPermission) {
+          return res.status(403).send("Non hai il permesso di allegare file ai ticket");
+        }
+      }
       if (!req.file) return res.status(400).send("No file uploaded");
       
       const ticket = await storage.getTicket(req.params.id);
@@ -10729,6 +10769,14 @@ export function registerRoutes(app: Express): Server {
   app.post("/api/tickets/:id/messages", requireAuth, async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
+      
+      // Check staff permission for tickets:update
+      if (req.user.role === 'reseller_staff' || req.user.role === 'reseller_collaborator') {
+        const hasPermission = await storage.checkStaffPermission(req.user.id, 'tickets', 'update');
+        if (!hasPermission) {
+          return res.status(403).send("Non hai il permesso di rispondere ai ticket");
+        }
+      }
       
       const ticket = await storage.getTicket(req.params.id);
       if (!ticket) return res.status(404).send("Ticket not found");
@@ -10944,6 +10992,14 @@ export function registerRoutes(app: Express): Server {
   app.post("/api/repair-orders", requireAuth, async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
+      
+      // Check staff permission for repairs:create
+      if (req.user.role === 'reseller_staff' || req.user.role === 'reseller_collaborator') {
+        const hasPermission = await storage.checkStaffPermission(req.user.id, 'repairs', 'create');
+        if (!hasPermission) {
+          return res.status(403).send("Non hai il permesso di creare lavorazioni");
+        }
+      }
       
       // Check if this is an acceptance wizard submission (has acceptance data)
       const hasAcceptance = req.body.acceptance && Object.keys(req.body.acceptance).length > 0;
@@ -12346,6 +12402,14 @@ export function registerRoutes(app: Express): Server {
   app.get("/api/invoices", requireAuth, async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
+      
+      // Check staff permission for invoices:read
+      if (req.user.role === 'reseller_staff' || req.user.role === 'reseller_collaborator') {
+        const hasPermission = await storage.checkStaffPermission(req.user.id, 'invoices', 'read');
+        if (!hasPermission) {
+          return res.status(403).send("Non hai il permesso di visualizzare le fatture");
+        }
+      }
       
       let invoices;
       
@@ -34074,7 +34138,7 @@ export function registerRoutes(app: Express): Server {
   });
 
   // Lista tutte le fatture del reseller e dei suoi centri
-  app.get("/api/reseller/invoices", requireRole("reseller", "reseller_staff", "sub_reseller"), async (req, res) => {
+  app.get("/api/reseller/invoices", requireRole("reseller", "reseller_staff", "sub_reseller"), requireModulePermission("invoices", "read"), async (req, res) => {
     try {
       const { resellerId } = getEffectiveContext(req);
       const { source, status, repairCenterId } = req.query;
