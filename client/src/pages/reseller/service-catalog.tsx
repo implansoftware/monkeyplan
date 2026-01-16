@@ -1,5 +1,11 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
+import { useAuth } from "@/hooks/use-auth";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,7 +14,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { 
-  Wrench, Pencil, Euro, Clock, Search, Tag, Building2, X, Check, Plus, Trash2
+  Wrench, Pencil, Euro, Clock, Search, Tag, Building2, X, Check, Plus, Trash2,
+  Globe, User, Users, Smartphone
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
@@ -80,6 +87,19 @@ const formatCurrency = (cents: number) => {
   }).format(cents / 100);
 };
 
+const getOwnershipInfo = (item: ServiceItem, currentUserId: string | undefined, parentResellerId: string | undefined) => {
+  if (!item.createdBy) {
+    return { label: "Globale", icon: Globe, color: "text-blue-500" };
+  }
+  if (item.createdBy === currentUserId) {
+    return { label: "Mio", icon: User, color: "text-green-500" };
+  }
+  if (parentResellerId && item.createdBy === parentResellerId) {
+    return { label: "Reseller", icon: Users, color: "text-orange-500" };
+  }
+  return { label: "Altro", icon: Users, color: "text-muted-foreground" };
+};
+
 interface ServiceCatalogItem extends ServiceItem {
   resellerPrice: ServiceItemPrice | null;
   centerPrices: { [centerId: string]: ServiceItemPrice };
@@ -92,6 +112,7 @@ interface ServiceCatalogResponse {
 
 export default function ResellerServiceCatalog() {
   const { toast } = useToast();
+  const { user } = useAuth();
   
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
@@ -511,57 +532,95 @@ export default function ResellerServiceCatalog() {
                     <TableHead>Codice</TableHead>
                     <TableHead>Intervento</TableHead>
                     <TableHead>Categoria</TableHead>
+                    <TableHead>Compatibilità</TableHead>
                     <TableHead className="text-right">Prezzo</TableHead>
                     <TableHead className="text-right">Tempo</TableHead>
                     <TableHead className="w-[100px]">Azioni</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredMyItems.map(item => (
-                    <TableRow key={item.id} data-testid={`row-my-item-${item.id}`}>
-                      <TableCell className="font-mono text-sm">{item.code}</TableCell>
-                      <TableCell>
-                        <div className="font-medium">{item.name}</div>
-                        {item.description && (
-                          <div className="text-sm text-muted-foreground line-clamp-1">
-                            {item.description}
+                  {filteredMyItems.map(item => {
+                    const itemAny = item as any;
+                    const deviceType = deviceTypes.find(t => t.id === itemAny.deviceTypeId);
+                    const brand = deviceBrands.find(b => b.id === itemAny.brandId);
+                    const model = deviceModels.find(m => m.id === itemAny.modelId);
+                    const hasDeviceRestriction = itemAny.deviceTypeId || itemAny.brandId || itemAny.modelId;
+                    
+                    return (
+                      <TableRow key={item.id} data-testid={`row-my-item-${item.id}`}>
+                        <TableCell className="font-mono text-sm">{item.code}</TableCell>
+                        <TableCell>
+                          <div className="font-medium">{item.name}</div>
+                          {item.description && (
+                            <div className="text-sm text-muted-foreground line-clamp-1">
+                              {item.description}
+                            </div>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="secondary" className={getCategoryColor(item.category)}>
+                            {getCategoryLabel(item.category)}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          {hasDeviceRestriction ? (
+                            <div className="flex flex-wrap gap-1">
+                              {deviceType && (
+                                <Tooltip>
+                                  <TooltipTrigger>
+                                    <Badge variant="outline" className="text-xs">
+                                      <Smartphone className="h-3 w-3 mr-1" />
+                                      {deviceType.name}
+                                    </Badge>
+                                  </TooltipTrigger>
+                                  <TooltipContent>Tipo dispositivo</TooltipContent>
+                                </Tooltip>
+                              )}
+                              {brand && (
+                                <Badge variant="outline" className="text-xs">
+                                  {brand.name}
+                                </Badge>
+                              )}
+                              {model && (
+                                <Badge variant="outline" className="text-xs">
+                                  {model.modelName}
+                                </Badge>
+                              )}
+                            </div>
+                          ) : (
+                            <span className="text-xs text-muted-foreground">Universale</span>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-right font-semibold">
+                          {formatCurrency(item.defaultPriceCents)}
+                        </TableCell>
+                        <TableCell className="text-right text-muted-foreground">
+                          {item.defaultLaborMinutes} min
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex gap-1">
+                            <Button 
+                              variant="ghost" 
+                              size="icon"
+                              onClick={() => openItemDialog(item)}
+                              data-testid={`button-edit-item-${item.id}`}
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                            <Button 
+                              variant="ghost" 
+                              size="icon"
+                              onClick={() => { setItemToDelete(item); setIsDeleteItemDialogOpen(true); }}
+                              className="text-destructive hover:text-destructive"
+                              data-testid={`button-delete-item-${item.id}`}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
                           </div>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="secondary" className={getCategoryColor(item.category)}>
-                          {getCategoryLabel(item.category)}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-right font-semibold">
-                        {formatCurrency(item.defaultPriceCents)}
-                      </TableCell>
-                      <TableCell className="text-right text-muted-foreground">
-                        {item.defaultLaborMinutes} min
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex gap-1">
-                          <Button 
-                            variant="ghost" 
-                            size="icon"
-                            onClick={() => openItemDialog(item)}
-                            data-testid={`button-edit-item-${item.id}`}
-                          >
-                            <Pencil className="h-4 w-4" />
-                          </Button>
-                          <Button 
-                            variant="ghost" 
-                            size="icon"
-                            onClick={() => { setItemToDelete(item); setIsDeleteItemDialogOpen(true); }}
-                            className="text-destructive hover:text-destructive"
-                            data-testid={`button-delete-item-${item.id}`}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
                 </TableBody>
               </Table>
             </div>
@@ -642,6 +701,8 @@ export default function ResellerServiceCatalog() {
                         <TableHead>Codice</TableHead>
                         <TableHead>Intervento</TableHead>
                         <TableHead>Categoria</TableHead>
+                        <TableHead>Compatibilità</TableHead>
+                        <TableHead>Origine</TableHead>
                         <TableHead className="text-right">Prezzo Base</TableHead>
                         <TableHead className="text-right">Prezzo Effettivo</TableHead>
                         <TableHead className="text-center">Stato</TableHead>
@@ -653,6 +714,13 @@ export default function ResellerServiceCatalog() {
                         const effectivePrice = getEffectivePrice(item);
                         const priceSource = getPriceSource(item);
                         const isCustom = hasCustomPrice(item);
+                        const itemAny = item as any;
+                        const deviceType = deviceTypes.find(t => t.id === itemAny.deviceTypeId);
+                        const brand = deviceBrands.find(b => b.id === itemAny.brandId);
+                        const model = deviceModels.find(m => m.id === itemAny.modelId);
+                        const hasDeviceRestriction = itemAny.deviceTypeId || itemAny.brandId || itemAny.modelId;
+                        const ownership = getOwnershipInfo(item, user?.id, (user as any)?.parentResellerId);
+                        const OwnerIcon = ownership.icon;
                         
                         return (
                           <TableRow key={item.id} data-testid={`row-service-${item.id}`}>
@@ -673,6 +741,46 @@ export default function ResellerServiceCatalog() {
                               <Badge variant="secondary" className={getCategoryColor(item.category)}>
                                 {getCategoryLabel(item.category)}
                               </Badge>
+                            </TableCell>
+                            <TableCell>
+                              {hasDeviceRestriction ? (
+                                <div className="flex flex-wrap gap-1">
+                                  {deviceType && (
+                                    <Badge variant="outline" className="text-xs">
+                                      <Smartphone className="h-3 w-3 mr-1" />
+                                      {deviceType.name}
+                                    </Badge>
+                                  )}
+                                  {brand && (
+                                    <Badge variant="outline" className="text-xs">
+                                      {brand.name}
+                                    </Badge>
+                                  )}
+                                  {model && (
+                                    <Badge variant="outline" className="text-xs">
+                                      {model.modelName}
+                                    </Badge>
+                                  )}
+                                </div>
+                              ) : (
+                                <span className="text-xs text-muted-foreground">Universale</span>
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              <Tooltip>
+                                <TooltipTrigger>
+                                  <div className="flex items-center gap-1.5">
+                                    <OwnerIcon className={`h-4 w-4 ${ownership.color}`} />
+                                    <span className="text-xs">{ownership.label}</span>
+                                  </div>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  {ownership.label === "Globale" && "Servizio globale disponibile per tutti"}
+                                  {ownership.label === "Mio" && "Servizio creato da te"}
+                                  {ownership.label === "Reseller" && "Servizio del reseller principale"}
+                                  {ownership.label === "Altro" && "Servizio di un altro utente"}
+                                </TooltipContent>
+                              </Tooltip>
                             </TableCell>
                             <TableCell className="text-right text-muted-foreground">
                               {formatCurrency(item.defaultPriceCents)}
