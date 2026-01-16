@@ -114,6 +114,7 @@ const menuItems = {
     { title: "Calendario HR", url: "/admin/hr/calendar", icon: Calendar, group: "Risorse Umane" },
     { title: "Catalogo Dispositivi", url: "/admin/device-catalog", icon: Package, group: "Sistema" },
     { title: "Listino Prezzi", url: "/admin/service-catalog", icon: Receipt, group: "Sistema" },
+    { title: "Prodotti Garanzia", url: "/admin/warranty-products", icon: Shield, group: "Sistema" },
     { title: "Categorie Utility", url: "/admin/utility-categories", icon: FolderOpen, group: "Sistema" },
     { title: "Integrazioni API", url: "/admin/external-integrations", icon: Plug, group: "Sistema" },
     { title: "Activity Logs", url: "/admin/activity-logs", icon: Shield, group: "Sistema" },
