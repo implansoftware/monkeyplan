@@ -164,6 +164,7 @@ type SuggestedAccessory = {
 
 type WarrantyProduct = {
   id: string;
+  resellerId: string | null;
   name: string;
   description: string | null;
   durationMonths: number;
@@ -1432,7 +1433,14 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
                                   <Shield className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                  <p className="font-medium text-sm">{product.name}</p>
+                                  <div className="flex items-center gap-2">
+                                    <p className="font-medium text-sm">{product.name}</p>
+                                    {!product.resellerId && (
+                                      <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950 dark:text-blue-300 dark:border-blue-800">
+                                        Globale
+                                      </Badge>
+                                    )}
+                                  </div>
                                   <div className="flex items-center gap-2 text-xs text-muted-foreground">
                                     <Badge variant="secondary" className="text-xs">
                                       {product.durationMonths} mesi
