@@ -1032,11 +1032,12 @@ export function registerRoutes(app: Express): Server {
       
       // Include prices for the user
       const itemsWithPrices = await Promise.all(filteredItems.map(async (item) => {
-        const price = await storage.getEffectivePrice(item.id, resellerId, repairCenterId);
+        const price = await storage.getEffectiveServicePrice(item.id, resellerId, repairCenterId);
         return {
           ...item,
-          effectivePriceCents: price?.priceCents ?? item.defaultPriceCents,
-          effectiveLaborMinutes: price?.laborMinutes ?? item.defaultLaborMinutes,
+          effectivePriceCents: price.priceCents,
+          effectiveLaborMinutes: price.laborMinutes,
+          priceSource: price.source,
         };
       }));
       
