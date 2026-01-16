@@ -316,11 +316,14 @@ export default function AdminWarrantyProducts() {
                   <Euro className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
                     id="price"
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={(formData.priceInCents / 100).toFixed(2)}
-                    onChange={(e) => setFormData({ ...formData, priceInCents: Math.round(parseFloat(e.target.value) * 100) || 0 })}
+                    type="text"
+                    inputMode="decimal"
+                    defaultValue={(formData.priceInCents / 100).toString()}
+                    key={`price-${editingProduct?.id || 'new'}`}
+                    onBlur={(e) => {
+                      const val = e.target.value.replace(',', '.');
+                      setFormData({ ...formData, priceInCents: Math.round(parseFloat(val) * 100) || 0 });
+                    }}
                     className="pl-9"
                     data-testid="input-warranty-price"
                   />
