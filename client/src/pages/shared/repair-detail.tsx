@@ -162,6 +162,30 @@ type SuggestedAccessory = {
   }>;
 };
 
+type WarrantyProduct = {
+  id: string;
+  name: string;
+  description: string | null;
+  durationMonths: number;
+  priceInCents: number;
+  coverageType: "basic" | "extended" | "full";
+  isActive: boolean;
+};
+
+type RepairWarranty = {
+  id: string;
+  repairOrderId: string;
+  warrantyProductId: string;
+  status: "offered" | "accepted" | "declined" | "expired";
+  priceSnapshot: number;
+  durationMonthsSnapshot: number;
+  coverageTypeSnapshot: string;
+  productNameSnapshot: string;
+  startDate: string | null;
+  endDate: string | null;
+  createdAt: string;
+};
+
 interface RepairDetailPageProps {
   routePattern: string;
   backPath: string;
@@ -350,6 +374,67 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
     },
     enabled: !!repairOrderId && repair?.status === 'pronto_ritiro',
     staleTime: 60000,
+  });
+
+  // Warranty products available for offering
+  const { data: warrantyProducts = [], isLoading: warrantyProductsLoading } = useQuery<WarrantyProduct[]>({
+    queryKey: ["/api/warranty-products"],
+    enabled: !!repairOrderId && repair?.status === 'pronto_ritiro' && user?.role !== 'customer',
+  });
+
+  // Existing warranty for this repair
+  const { data: repairWarranty, isLoading: warrantyLoading } = useQuery<RepairWarranty | null>({
+    queryKey: ["/api/repairs", repairOrderId, "warranty"],
+    queryFn: async () => {
+      const response = await fetch(`/api/repairs/${repairOrderId}/warranty`, {
+        credentials: "include",
+      });
+      if (!response.ok) return null;
+      return response.json();
+    },
+    enabled: !!repairOrderId,
+  });
+
+  // Offer warranty mutation
+  const offerWarrantyMutation = useMutation({
+    mutationFn: async (warrantyProductId: string) => {
+      return await apiRequest("POST", `/api/repairs/${repairOrderId}/warranty`, { warrantyProductId });
+    },
+    onSuccess: () => {
+      toast({ title: "Garanzia offerta", description: "L'offerta di garanzia è stata creata con successo." });
+      queryClient.invalidateQueries({ queryKey: ["/api/repairs", repairOrderId, "warranty"] });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Errore", description: error.message, variant: "destructive" });
+    },
+  });
+
+  // Accept warranty mutation
+  const acceptWarrantyMutation = useMutation({
+    mutationFn: async () => {
+      return await apiRequest("POST", `/api/repairs/${repairOrderId}/warranty/accept`);
+    },
+    onSuccess: () => {
+      toast({ title: "Garanzia accettata", description: "La garanzia è stata attivata con successo." });
+      queryClient.invalidateQueries({ queryKey: ["/api/repairs", repairOrderId, "warranty"] });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Errore", description: error.message, variant: "destructive" });
+    },
+  });
+
+  // Decline warranty mutation
+  const declineWarrantyMutation = useMutation({
+    mutationFn: async () => {
+      return await apiRequest("POST", `/api/repairs/${repairOrderId}/warranty/decline`);
+    },
+    onSuccess: () => {
+      toast({ title: "Garanzia rifiutata", description: "L'offerta di garanzia è stata rifiutata." });
+      queryClient.invalidateQueries({ queryKey: ["/api/repairs", repairOrderId, "warranty"] });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Errore", description: error.message, variant: "destructive" });
+    },
   });
 
   // Suggested devices for replacement (when diagnosis outcome is irriparabile)
@@ -1215,6 +1300,162 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
                           </p>
                         )}
                       </div>
+                    </div>
+                  )}
+
+                  {/* Warranty Offer Section - only for staff, not customers */}
+                  {repair.status === 'pronto_ritiro' && user?.role !== 'customer' && (
+                    <div className="mt-4 pt-4 border-t">
+                      <p className="text-xs text-muted-foreground mb-3 flex items-center gap-2">
+                        <Shield className="h-3 w-3" />
+                        OFFERTA GARANZIA ESTESA
+                      </p>
+                      
+                      {warrantyLoading && (
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground p-3">
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          Caricamento...
+                        </div>
+                      )}
+
+                      {/* Existing warranty offer status */}
+                      {!warrantyLoading && repairWarranty && (
+                        <div className={`rounded-lg p-4 space-y-3 ${
+                          repairWarranty.status === 'accepted' 
+                            ? 'bg-emerald-50 dark:bg-emerald-950 border border-emerald-200 dark:border-emerald-800' 
+                            : repairWarranty.status === 'declined'
+                            ? 'bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800'
+                            : 'bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800'
+                        }`}>
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <Shield className={`h-4 w-4 ${
+                                repairWarranty.status === 'accepted' ? 'text-emerald-600' :
+                                repairWarranty.status === 'declined' ? 'text-red-600' : 'text-blue-600'
+                              }`} />
+                              <span className="font-medium text-sm">{repairWarranty.productNameSnapshot}</span>
+                            </div>
+                            <Badge variant={
+                              repairWarranty.status === 'accepted' ? 'default' :
+                              repairWarranty.status === 'declined' ? 'destructive' : 'secondary'
+                            }>
+                              {repairWarranty.status === 'offered' ? 'In attesa' :
+                               repairWarranty.status === 'accepted' ? 'Accettata' :
+                               repairWarranty.status === 'declined' ? 'Rifiutata' : 'Scaduta'}
+                            </Badge>
+                          </div>
+                          <div className="grid grid-cols-3 gap-2 text-xs">
+                            <div>
+                              <span className="text-muted-foreground">Durata:</span>
+                              <p className="font-medium">{repairWarranty.durationMonthsSnapshot} mesi</p>
+                            </div>
+                            <div>
+                              <span className="text-muted-foreground">Copertura:</span>
+                              <p className="font-medium capitalize">{repairWarranty.coverageTypeSnapshot}</p>
+                            </div>
+                            <div>
+                              <span className="text-muted-foreground">Prezzo:</span>
+                              <p className="font-medium">
+                                {(repairWarranty.priceSnapshot / 100).toLocaleString('it-IT', { style: 'currency', currency: 'EUR' })}
+                              </p>
+                            </div>
+                          </div>
+                          {repairWarranty.status === 'offered' && (
+                            <div className="flex gap-2 pt-2">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => declineWarrantyMutation.mutate()}
+                                disabled={declineWarrantyMutation.isPending}
+                                className="flex-1"
+                                data-testid="button-decline-warranty"
+                              >
+                                {declineWarrantyMutation.isPending ? (
+                                  <Loader2 className="mr-2 h-3 w-3 animate-spin" />
+                                ) : (
+                                  <XCircle className="mr-2 h-3 w-3" />
+                                )}
+                                Rifiuta
+                              </Button>
+                              <Button
+                                size="sm"
+                                onClick={() => acceptWarrantyMutation.mutate()}
+                                disabled={acceptWarrantyMutation.isPending}
+                                className="flex-1"
+                                data-testid="button-accept-warranty"
+                              >
+                                {acceptWarrantyMutation.isPending ? (
+                                  <Loader2 className="mr-2 h-3 w-3 animate-spin" />
+                                ) : (
+                                  <CheckCircle2 className="mr-2 h-3 w-3" />
+                                )}
+                                Accetta
+                              </Button>
+                            </div>
+                          )}
+                          {repairWarranty.status === 'accepted' && repairWarranty.startDate && repairWarranty.endDate && (
+                            <div className="text-xs text-emerald-700 dark:text-emerald-300 pt-2 border-t border-emerald-200 dark:border-emerald-800">
+                              Valida dal {format(new Date(repairWarranty.startDate), 'dd/MM/yyyy', { locale: it })} al {format(new Date(repairWarranty.endDate), 'dd/MM/yyyy', { locale: it })}
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Warranty product selection - only if no warranty exists */}
+                      {!warrantyLoading && !repairWarranty && (
+                        <>
+                          {warrantyProductsLoading && (
+                            <div className="flex items-center gap-2 text-sm text-muted-foreground p-3">
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                              Caricamento prodotti garanzia...
+                            </div>
+                          )}
+                          {!warrantyProductsLoading && warrantyProducts.length === 0 && (
+                            <p className="text-sm text-muted-foreground p-3 text-center">
+                              Nessun prodotto garanzia disponibile.
+                            </p>
+                          )}
+                          <div className="grid gap-2">
+                            {warrantyProducts.map((product) => (
+                              <div
+                                key={product.id}
+                                className="flex items-center gap-3 p-3 rounded-lg border bg-card hover-elevate"
+                                data-testid={`card-warranty-product-${product.id}`}
+                              >
+                                <div className="h-10 w-10 rounded-lg bg-emerald-100 dark:bg-emerald-900 flex items-center justify-center">
+                                  <Shield className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <p className="font-medium text-sm">{product.name}</p>
+                                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                    <Badge variant="secondary" className="text-xs">
+                                      {product.durationMonths} mesi
+                                    </Badge>
+                                    <span className="capitalize">{product.coverageType}</span>
+                                  </div>
+                                </div>
+                                <div className="flex items-center gap-3">
+                                  <p className="font-bold text-sm">
+                                    {(product.priceInCents / 100).toLocaleString('it-IT', { style: 'currency', currency: 'EUR' })}
+                                  </p>
+                                  <Button
+                                    size="sm"
+                                    onClick={() => offerWarrantyMutation.mutate(product.id)}
+                                    disabled={offerWarrantyMutation.isPending}
+                                    data-testid={`button-offer-warranty-${product.id}`}
+                                  >
+                                    {offerWarrantyMutation.isPending ? (
+                                      <Loader2 className="h-4 w-4 animate-spin" />
+                                    ) : (
+                                      'Offri'
+                                    )}
+                                  </Button>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </>
+                      )}
                     </div>
                   )}
 

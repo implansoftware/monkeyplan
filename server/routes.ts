@@ -18016,6 +18016,179 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // ============ WARRANTY PRODUCTS (Admin-managed catalog) ============
+
+  // List all warranty products
+  app.get("/api/admin/warranty-products", requireAuth, requireRole("admin", "admin_staff"), async (req, res) => {
+    try {
+      const activeOnly = req.query.activeOnly === 'true';
+      const products = await storage.listWarrantyProducts(activeOnly);
+      res.json(products);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // Get single warranty product
+  app.get("/api/admin/warranty-products/:id", requireAuth, requireRole("admin", "admin_staff"), async (req, res) => {
+    try {
+      const product = await storage.getWarrantyProduct(req.params.id);
+      if (!product) {
+        return res.status(404).send("Prodotto garanzia non trovato");
+      }
+      res.json(product);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // Create warranty product
+  app.post("/api/admin/warranty-products", requireAuth, requireRole("admin"), async (req, res) => {
+    try {
+      const product = await storage.createWarrantyProduct(req.body);
+      res.status(201).json(product);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // Update warranty product
+  app.patch("/api/admin/warranty-products/:id", requireAuth, requireRole("admin"), async (req, res) => {
+    try {
+      const product = await storage.updateWarrantyProduct(req.params.id, req.body);
+      res.json(product);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // Delete warranty product
+  app.delete("/api/admin/warranty-products/:id", requireAuth, requireRole("admin"), async (req, res) => {
+    try {
+      await storage.deleteWarrantyProduct(req.params.id);
+      res.status(204).send();
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // ============ REPAIR WARRANTIES (For repair orders) ============
+
+  // Get warranty products available for offering (active ones)
+  app.get("/api/warranty-products", requireAuth, async (req, res) => {
+    try {
+      const products = await storage.listWarrantyProducts(true);
+      res.json(products);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // Get warranty for a repair order
+  app.get("/api/repairs/:id/warranty", requireAuth, async (req, res) => {
+    try {
+      const warranty = await storage.getRepairWarrantyByRepairOrder(req.params.id);
+      res.json(warranty || null);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // Offer warranty to customer (create warranty offer)
+  app.post("/api/repairs/:id/warranty", requireAuth, requireRole("admin", "reseller", "sub_reseller", "repair_center"), async (req, res) => {
+    try {
+      const repairOrderId = req.params.id;
+      const user = req.user as User;
+      
+      const repair = await storage.getRepairOrder(repairOrderId);
+      if (!repair) {
+        return res.status(404).send("Riparazione non trovata");
+      }
+      
+      if (repair.status !== "pronto_ritiro") {
+        return res.status(400).send("La garanzia può essere offerta solo quando la riparazione è pronta per il ritiro");
+      }
+      
+      const existingWarranty = await storage.getRepairWarrantyByRepairOrder(repairOrderId);
+      if (existingWarranty) {
+        return res.status(400).send("Esiste già un'offerta di garanzia per questa riparazione");
+      }
+      
+      const { warrantyProductId } = req.body;
+      const warrantyProduct = await storage.getWarrantyProduct(warrantyProductId);
+      if (!warrantyProduct || !warrantyProduct.isActive) {
+        return res.status(400).send("Prodotto garanzia non valido o non attivo");
+      }
+      
+      let sellerType: "admin" | "reseller" | "sub_reseller" | "repair_center" = "admin";
+      if (user.role === "reseller") {
+        sellerType = user.parentResellerId ? "sub_reseller" : "reseller";
+      } else if (user.role === "repair_center") {
+        sellerType = "repair_center";
+      }
+      
+      const warranty = await storage.createRepairWarranty({
+        repairOrderId,
+        customerId: repair.customerId,
+        warrantyProductId,
+        sellerType,
+        sellerId: user.id,
+        status: "offered",
+        priceSnapshot: warrantyProduct.priceInCents,
+        durationMonthsSnapshot: warrantyProduct.durationMonths,
+        coverageTypeSnapshot: warrantyProduct.coverageType,
+        productNameSnapshot: warrantyProduct.name,
+      });
+      
+      res.status(201).json(warranty);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // Accept warranty offer
+  app.post("/api/repairs/:id/warranty/accept", requireAuth, async (req, res) => {
+    try {
+      const repairOrderId = req.params.id;
+      
+      const warranty = await storage.getRepairWarrantyByRepairOrder(repairOrderId);
+      if (!warranty) {
+        return res.status(404).send("Nessuna offerta di garanzia trovata");
+      }
+      
+      if (warranty.status !== "offered") {
+        return res.status(400).send("L'offerta di garanzia non è più valida");
+      }
+      
+      const updatedWarranty = await storage.acceptRepairWarranty(warranty.id);
+      res.json(updatedWarranty);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // Decline warranty offer
+  app.post("/api/repairs/:id/warranty/decline", requireAuth, async (req, res) => {
+    try {
+      const repairOrderId = req.params.id;
+      
+      const warranty = await storage.getRepairWarrantyByRepairOrder(repairOrderId);
+      if (!warranty) {
+        return res.status(404).send("Nessuna offerta di garanzia trovata");
+      }
+      
+      if (warranty.status !== "offered") {
+        return res.status(400).send("L'offerta di garanzia non è più valida");
+      }
+      
+      const updatedWarranty = await storage.declineRepairWarranty(warranty.id);
+      res.json(updatedWarranty);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+
   // ============ UNREPAIRABLE REASONS (for "Irriparabile" diagnosis outcome) ============
 
   // Get unrepairable reasons (filtered by device type)

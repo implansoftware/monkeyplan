@@ -88,6 +88,7 @@ import DiagnosisList from "@/pages/DiagnosisList";
 import QuotesList from "@/pages/QuotesList";
 import AdminWarehouses from "@/pages/admin/warehouses";
 import AdminAllWarehouses from "@/pages/admin/all-warehouses";
+import AdminWarrantyProducts from "@/pages/admin/warranty-products";
 
 // Admin Utility pages
 import AdminUtility from "@/pages/admin/utility/index";
@@ -357,6 +358,7 @@ function Router() {
       <ProtectedRoute path="/admin/hr/attendance" component={AdminHRAttendance} />
       <ProtectedRoute path="/admin/hr/calendar" component={AdminHRCalendar} />
       <ProtectedRoute path="/admin/pos" component={AdminPosOverview} />
+      <ProtectedRoute path="/admin/warranty-products" component={AdminWarrantyProducts} />
       
       {/* Reseller routes - accessible by reseller and reseller_staff */}
       <ProtectedRoute path="/reseller" component={ResellerDashboard} allowedRoles={["reseller", "reseller_staff"]} />

@@ -31,6 +31,9 @@ import {
   SupplierReturnStateHistory, InsertSupplierReturnStateHistory,
   SlaThresholds, slaThresholdsSchema,
   CustomerBranch, InsertCustomerBranch,
+  WarrantyProduct, InsertWarrantyProduct, UpdateWarrantyProduct,
+  RepairWarranty, InsertRepairWarranty, UpdateRepairWarranty,
+  warrantyProducts, repairWarranties,
   UtilityCategory, InsertUtilityCategory,
   UtilitySupplier, InsertUtilitySupplier, UtilityService, InsertUtilityService,
   UtilityPractice, InsertUtilityPractice, UtilityPracticeProduct, InsertUtilityPracticeProduct,
@@ -1079,7 +1082,25 @@ export interface IStorage {
   getDashboardPreference(userId: string, role: string): Promise<DashboardPreference | undefined>;
   saveDashboardPreference(userId: string, role: string, layout: DashboardLayout): Promise<DashboardPreference>;
 
+  // Warranty Products (Admin-managed catalog)
+  listWarrantyProducts(activeOnly?: boolean): Promise<WarrantyProduct[]>;
+  getWarrantyProduct(id: string): Promise<WarrantyProduct | undefined>;
+  createWarrantyProduct(product: InsertWarrantyProduct): Promise<WarrantyProduct>;
+  updateWarrantyProduct(id: string, updates: UpdateWarrantyProduct): Promise<WarrantyProduct>;
+  deleteWarrantyProduct(id: string): Promise<void>;
+
+  // Repair Warranties
+  listRepairWarranties(filters?: { repairOrderId?: string; customerId?: string; sellerId?: string; status?: string }): Promise<RepairWarranty[]>;
+  getRepairWarranty(id: string): Promise<RepairWarranty | undefined>;
+  getRepairWarrantyByRepairOrder(repairOrderId: string): Promise<RepairWarranty | undefined>;
+  createRepairWarranty(warranty: InsertRepairWarranty): Promise<RepairWarranty>;
+  updateRepairWarranty(id: string, updates: UpdateRepairWarranty): Promise<RepairWarranty>;
+  acceptRepairWarranty(id: string): Promise<RepairWarranty>;
+  declineRepairWarranty(id: string): Promise<RepairWarranty>;
+
 }
+
+
 
 export class DatabaseStorage implements IStorage {
   sessionStore: session.Store;
@@ -11379,6 +11400,133 @@ export class DatabaseStorage implements IStorage {
         .returning();
       return created;
     }
+  }
+
+  // ============ Warranty Products ============
+
+  async listWarrantyProducts(activeOnly?: boolean): Promise<WarrantyProduct[]> {
+    if (activeOnly) {
+      return db.select().from(warrantyProducts)
+        .where(eq(warrantyProducts.isActive, true))
+        .orderBy(desc(warrantyProducts.createdAt));
+    }
+    return db.select().from(warrantyProducts).orderBy(desc(warrantyProducts.createdAt));
+  }
+
+  async getWarrantyProduct(id: string): Promise<WarrantyProduct | undefined> {
+    const [product] = await db.select().from(warrantyProducts)
+      .where(eq(warrantyProducts.id, id))
+      .limit(1);
+    return product;
+  }
+
+  async createWarrantyProduct(product: InsertWarrantyProduct): Promise<WarrantyProduct> {
+    const [created] = await db.insert(warrantyProducts).values(product).returning();
+    return created;
+  }
+
+  async updateWarrantyProduct(id: string, updates: UpdateWarrantyProduct): Promise<WarrantyProduct> {
+    const [updated] = await db.update(warrantyProducts)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(warrantyProducts.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteWarrantyProduct(id: string): Promise<void> {
+    await db.delete(warrantyProducts).where(eq(warrantyProducts.id, id));
+  }
+
+  // ============ Repair Warranties ============
+
+  async listRepairWarranties(filters?: { 
+    repairOrderId?: string; 
+    customerId?: string; 
+    sellerId?: string; 
+    status?: string 
+  }): Promise<RepairWarranty[]> {
+    const conditions: SQL[] = [];
+    
+    if (filters?.repairOrderId) {
+      conditions.push(eq(repairWarranties.repairOrderId, filters.repairOrderId));
+    }
+    if (filters?.customerId) {
+      conditions.push(eq(repairWarranties.customerId, filters.customerId));
+    }
+    if (filters?.sellerId) {
+      conditions.push(eq(repairWarranties.sellerId, filters.sellerId));
+    }
+    if (filters?.status) {
+      conditions.push(eq(repairWarranties.status, filters.status as any));
+    }
+
+    if (conditions.length > 0) {
+      return db.select().from(repairWarranties)
+        .where(and(...conditions))
+        .orderBy(desc(repairWarranties.createdAt));
+    }
+    return db.select().from(repairWarranties).orderBy(desc(repairWarranties.createdAt));
+  }
+
+  async getRepairWarranty(id: string): Promise<RepairWarranty | undefined> {
+    const [warranty] = await db.select().from(repairWarranties)
+      .where(eq(repairWarranties.id, id))
+      .limit(1);
+    return warranty;
+  }
+
+  async getRepairWarrantyByRepairOrder(repairOrderId: string): Promise<RepairWarranty | undefined> {
+    const [warranty] = await db.select().from(repairWarranties)
+      .where(eq(repairWarranties.repairOrderId, repairOrderId))
+      .limit(1);
+    return warranty;
+  }
+
+  async createRepairWarranty(warranty: InsertRepairWarranty): Promise<RepairWarranty> {
+    const [created] = await db.insert(repairWarranties).values(warranty).returning();
+    return created;
+  }
+
+  async updateRepairWarranty(id: string, updates: UpdateRepairWarranty): Promise<RepairWarranty> {
+    const [updated] = await db.update(repairWarranties)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(repairWarranties.id, id))
+      .returning();
+    return updated;
+  }
+
+  async acceptRepairWarranty(id: string): Promise<RepairWarranty> {
+    const warranty = await this.getRepairWarranty(id);
+    if (!warranty) throw new Error("Warranty not found");
+    
+    const now = new Date();
+    const endsAt = new Date(now);
+    endsAt.setMonth(endsAt.getMonth() + warranty.durationMonthsSnapshot);
+    
+    const [updated] = await db.update(repairWarranties)
+      .set({ 
+        status: "accepted",
+        acceptedAt: now,
+        startsAt: now,
+        endsAt: endsAt,
+        updatedAt: now
+      })
+      .where(eq(repairWarranties.id, id))
+      .returning();
+    return updated;
+  }
+
+  async declineRepairWarranty(id: string): Promise<RepairWarranty> {
+    const now = new Date();
+    const [updated] = await db.update(repairWarranties)
+      .set({ 
+        status: "declined",
+        declinedAt: now,
+        updatedAt: now
+      })
+      .where(eq(repairWarranties.id, id))
+      .returning();
+    return updated;
   }
 
 }
