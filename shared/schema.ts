@@ -3111,8 +3111,10 @@ export const serviceItems = pgTable("service_items", {
   description: text("description"), // Descrizione dettagliata
   category: text("category").notNull(), // Categoria (display, batteria, software, ecc.)
   
-  // Compatibilità dispositivi (opzionale)
+  // Compatibilità dispositivi (opzionale - filtro a cascata: tipo → marca → modello)
   deviceTypeId: varchar("device_type_id").references(() => deviceTypes.id), // Tipo dispositivo compatibile
+  brandId: varchar("brand_id").references(() => deviceBrands.id), // Marca compatibile (opzionale)
+  modelId: varchar("model_id").references(() => deviceModels.id), // Modello specifico compatibile (opzionale)
   
   // Prezzi e tempi default
   defaultPriceCents: integer("default_price_cents").notNull(), // Prezzo base in centesimi
