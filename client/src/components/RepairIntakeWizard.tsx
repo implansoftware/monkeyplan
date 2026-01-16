@@ -77,7 +77,7 @@ const wizardSchema = z.object({
   imeiNotReadable: z.boolean().default(false),
   imeiNotPresent: z.boolean().default(false),
   serialOnly: z.boolean().default(false),
-  issueDescription: z.string().min(1, "Descrivi il problema"),
+  issueDescription: z.string().optional().default(""),
   
   // Step 2: Customer & Assignment
   customerId: z.string().min(1, "Seleziona un cliente"),
@@ -669,7 +669,7 @@ export function RepairIntakeWizard({
   const canGoNext = () => {
     switch (currentStep) {
       case 1:
-        return !!form.watch("deviceType") && !!form.watch("issueDescription");
+        return !!form.watch("deviceType");
       case 2:
         return !!form.watch("customerId");
       case 3:
@@ -1476,26 +1476,7 @@ export function RepairIntakeWizard({
                   />
                 </div>
 
-                {/* Problem Description */}
-                <FormField
-                  control={form.control}
-                  name="issueDescription"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Descrizione Problema *</FormLabel>
-                      <FormControl>
-                        <Textarea
-                          {...field}
-                          placeholder="Descrivi il problema segnalato dal cliente..."
-                          rows={3}
-                          data-testid="textarea-issue"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
+                </div>
             )}
 
             {/* Step 3: Conditions */}
@@ -2084,14 +2065,16 @@ export function RepairIntakeWizard({
                       </div>
                     </div>
 
-                    {/* Problem */}
-                    <div className="flex items-start gap-3">
-                      <AlertCircle className="h-5 w-5 text-muted-foreground mt-0.5" />
-                      <div>
-                        <p className="text-sm text-muted-foreground">Problema</p>
-                        <p className="font-medium">{form.watch("issueDescription")}</p>
+                    {/* Problem - only show if provided */}
+                    {form.watch("issueDescription") && (
+                      <div className="flex items-start gap-3">
+                        <AlertCircle className="h-5 w-5 text-muted-foreground mt-0.5" />
+                        <div>
+                          <p className="text-sm text-muted-foreground">Problema</p>
+                          <p className="font-medium">{form.watch("issueDescription")}</p>
+                        </div>
                       </div>
-                    </div>
+                    )}
 
                     {/* Condition & Accessories */}
                     {(form.watch("aestheticCondition") || (form.watch("accessories")?.length || 0) > 0) && (

@@ -1354,7 +1354,7 @@ export const repairOrders = pgTable("repair_orders", {
   imeiNotReadable: boolean("imei_not_readable").notNull().default(false), // Flag: IMEI non leggibile
   imeiNotPresent: boolean("imei_not_present").notNull().default(false), // Flag: IMEI non presente
   serialOnly: boolean("serial_only").notNull().default(false), // Flag: Solo seriale presente
-  issueDescription: text("issue_description").notNull(),
+  issueDescription: text("issue_description").default(""), // Opzionale - descrizione problema
   status: repairStatusEnum("status").notNull().default("pending"),
   priority: repairPriorityEnum("priority"), // Auto-calculated from diagnostics
   estimatedCost: integer("estimated_cost"), // in cents
