@@ -279,6 +279,7 @@ export interface IStorage {
   createInvoiceForSalesOrder(order: { id: string; orderNumber: string; customerId: string; resellerId: string; total: number; taxAmount: number }): Promise<Invoice | null>;
   createInvoiceForB2BOrder(order: { id: string; orderNumber: string; resellerId: string; buyerId: string; total: number }): Promise<Invoice | null>;
   createInvoiceForRepairCenterB2BOrder(order: { id: string; orderNumber: string; repairCenterId: string; resellerId: string; total: number }): Promise<Invoice | null>;
+  createInvoiceForWarranty(warranty: { id: string; customerId: string; sellerId: string; sellerType: string; priceSnapshot: number; productNameSnapshot: string; repairOrderId: string }): Promise<Invoice | null>;
   
   // Billing Data
   getBillingDataByUserId(userId: string): Promise<BillingData | undefined>;
@@ -2969,6 +2970,55 @@ export class DatabaseStorage implements IStorage {
       notes: `Fattura B2B per ordine RC ${order.orderNumber}`,
     }).returning();
     
+    return invoice;
+  }
+
+  async createInvoiceForWarranty(warranty: {
+    id: string;
+    customerId: string;
+    sellerId: string;
+    sellerType: string;
+    priceSnapshot: number;
+    productNameSnapshot: string;
+    repairOrderId: string;
+  }): Promise<Invoice | null> {
+    const existingInvoices = await db.select().from(invoices).where(
+      and(
+        eq(invoices.source, 'other'),
+        sql`${invoices.notes} LIKE ${'%WARRANTY:' + warranty.id + '%'}`
+      )
+    );
+    if (existingInvoices.length > 0) {
+      return existingInvoices[0];
+    }
+
+    const totalCents = warranty.priceSnapshot;
+    const taxCents = Math.round(totalCents * 0.22 / 1.22);
+    const amountCents = totalCents - taxCents;
+
+    let invoiceNumber: string;
+    const invoiceData: any = {
+      customerId: warranty.customerId,
+      source: 'other',
+      amount: amountCents,
+      tax: taxCents,
+      total: totalCents,
+      paymentStatus: 'pending',
+      paymentMethod: 'cash',
+      dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+      notes: `[WARRANTY:${warranty.id}] Garanzia estesa "${warranty.productNameSnapshot}" - Riparazione #${warranty.repairOrderId}`,
+    };
+
+    if (warranty.sellerType === 'repair_center') {
+      invoiceNumber = await this.generateInvoiceNumber(warranty.sellerId);
+      invoiceData.repairCenterId = warranty.sellerId;
+    } else {
+      invoiceNumber = await this.generateResellerInvoiceNumber(warranty.sellerId);
+      invoiceData.resellerId = warranty.sellerId;
+    }
+    invoiceData.invoiceNumber = invoiceNumber;
+
+    const [invoice] = await db.insert(invoices).values(invoiceData).returning();
     return invoice;
   }
 

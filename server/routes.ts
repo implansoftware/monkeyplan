@@ -18146,7 +18146,7 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  // Accept warranty offer
+  // Accept warranty offer (with auto-invoice generation)
   app.post("/api/repairs/:id/warranty/accept", requireAuth, async (req, res) => {
     try {
       const repairOrderId = req.params.id;
@@ -18161,7 +18161,22 @@ export function registerRoutes(app: Express): Server {
       }
       
       const updatedWarranty = await storage.acceptRepairWarranty(warranty.id);
-      res.json(updatedWarranty);
+      
+      // Auto-generate invoice for warranty purchase
+      let generatedInvoice = null;
+      if (warranty.customerId && warranty.sellerId && warranty.priceSnapshot) {
+        generatedInvoice = await storage.createInvoiceForWarranty({
+          id: warranty.id,
+          customerId: warranty.customerId,
+          sellerId: warranty.sellerId,
+          sellerType: warranty.sellerType,
+          priceSnapshot: warranty.priceSnapshot,
+          productNameSnapshot: warranty.productNameSnapshot || "Garanzia Estesa",
+          repairOrderId,
+        });
+      }
+      
+      res.json({ ...updatedWarranty, generatedInvoice });
     } catch (error: any) {
       res.status(500).send(error.message);
     }
