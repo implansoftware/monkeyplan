@@ -1047,11 +1047,10 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
                           Accettato
                         </Button>
                       </div>
-                      <div className="pt-2 border-t">
+                      <div className="pt-3 border-t">
                         <Button
-                          variant="ghost"
-                          size="sm"
-                          className="w-full text-muted-foreground"
+                          variant="secondary"
+                          className="w-full"
                           onClick={() => setDiagnosisDialogOpen(true)}
                           data-testid="button-add-diagnosis-later"
                         >
@@ -1103,11 +1102,10 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
                           Avvia Riparazione
                         </Button>
                       </div>
-                      <div className="pt-2 border-t">
+                      <div className="pt-3 border-t">
                         <Button
-                          variant="ghost"
-                          size="sm"
-                          className="w-full text-muted-foreground"
+                          variant="secondary"
+                          className="w-full"
                           onClick={() => setDiagnosisDialogOpen(true)}
                           data-testid="button-add-diagnosis-accepted"
                         >
