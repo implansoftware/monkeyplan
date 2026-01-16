@@ -3418,6 +3418,88 @@ export const notificationPreferences = pgTable("notification_preferences", {
 });
 
 // ==========================================
+// WARRANTY / INSURANCE TABLES
+// ==========================================
+
+// Warranty coverage type enum
+export const warrantyCoverageTypeEnum = pgEnum("warranty_coverage_type", [
+  "basic",      // Copertura base - solo difetti manifattura
+  "extended",   // Estesa - include danni accidentali limitati
+  "full"        // Completa - copertura totale incluso furto/smarrimento
+]);
+
+// Warranty offer status enum
+export const warrantyOfferStatusEnum = pgEnum("warranty_offer_status", [
+  "offered",    // Offerta presentata al cliente
+  "accepted",   // Cliente ha accettato
+  "declined",   // Cliente ha rifiutato
+  "expired"     // Offerta scaduta (non più disponibile)
+]);
+
+// Seller type for warranty (who offered it)
+export const warrantySellerTypeEnum = pgEnum("warranty_seller_type", [
+  "admin",
+  "reseller",
+  "sub_reseller",
+  "repair_center"
+]);
+
+// Warranty Products - Catalogo prodotti garanzia (gestito da Admin)
+export const warrantyProducts = pgTable("warranty_products", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull(), // es. "Garanzia Base 6 Mesi"
+  description: text("description"), // Descrizione dettagliata copertura
+  durationMonths: integer("duration_months").notNull(), // Durata in mesi
+  priceInCents: integer("price_in_cents").notNull(), // Prezzo in centesimi
+  coverageType: warrantyCoverageTypeEnum("coverage_type").notNull().default("basic"),
+  deviceCategories: text("device_categories").array(), // Tipi dispositivo coperti (null = tutti)
+  maxClaimAmount: integer("max_claim_amount"), // Importo massimo rimborso (in centesimi)
+  deductibleAmount: integer("deductible_amount").default(0), // Franchigia (in centesimi)
+  termsAndConditions: text("terms_and_conditions"), // Termini e condizioni
+  isActive: boolean("is_active").notNull().default(true),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+// Repair Warranties - Garanzie associate a riparazioni
+export const repairWarranties = pgTable("repair_warranties", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  repairOrderId: varchar("repair_order_id").notNull(), // FK a repairOrders
+  customerId: varchar("customer_id").notNull(), // FK a users (cliente)
+  warrantyProductId: varchar("warranty_product_id").notNull(), // FK a warrantyProducts
+  
+  // Chi ha offerto la garanzia
+  sellerType: warrantySellerTypeEnum("seller_type").notNull(),
+  sellerId: varchar("seller_id").notNull(), // ID del venditore
+  
+  // Stato dell'offerta
+  status: warrantyOfferStatusEnum("status").notNull().default("offered"),
+  
+  // Snapshot dei dati al momento dell'offerta (per storicizzazione)
+  priceSnapshot: integer("price_snapshot").notNull(), // Prezzo in centesimi
+  durationMonthsSnapshot: integer("duration_months_snapshot").notNull(),
+  coverageTypeSnapshot: text("coverage_type_snapshot").notNull(),
+  productNameSnapshot: text("product_name_snapshot").notNull(),
+  
+  // Date validità garanzia
+  startsAt: timestamp("starts_at"), // Data inizio (impostata quando accettata)
+  endsAt: timestamp("ends_at"), // Data fine (calcolata da startsAt + durationMonths)
+  
+  // Riferimento fattura (se fatturata separatamente)
+  invoiceId: varchar("invoice_id"), // FK a invoices (opzionale)
+  
+  // Note
+  notes: text("notes"),
+  
+  // Timestamps
+  offeredAt: timestamp("offered_at").notNull().defaultNow(),
+  acceptedAt: timestamp("accepted_at"), // Quando il cliente ha accettato
+  declinedAt: timestamp("declined_at"), // Quando il cliente ha rifiutato
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+// ==========================================
 // SALES / E-COMMERCE TABLES
 // ==========================================
 
@@ -3873,6 +3955,32 @@ export const repairOrdersRelations = relations(repairOrders, ({ one, many }) => 
     references: [repairDelivery.repairOrderId],
   }),
   stateHistory: many(repairOrderStateHistory),
+  warranties: many(repairWarranties),
+}));
+
+// Warranty Products Relations
+export const warrantyProductsRelations = relations(warrantyProducts, ({ many }) => ({
+  repairWarranties: many(repairWarranties),
+}));
+
+// Repair Warranties Relations
+export const repairWarrantiesRelations = relations(repairWarranties, ({ one }) => ({
+  repairOrder: one(repairOrders, {
+    fields: [repairWarranties.repairOrderId],
+    references: [repairOrders.id],
+  }),
+  customer: one(users, {
+    fields: [repairWarranties.customerId],
+    references: [users.id],
+  }),
+  warrantyProduct: one(warrantyProducts, {
+    fields: [repairWarranties.warrantyProductId],
+    references: [warrantyProducts.id],
+  }),
+  invoice: one(invoices, {
+    fields: [repairWarranties.invoiceId],
+    references: [invoices.id],
+  }),
 }));
 
 export const repairOrderStateHistoryRelations = relations(repairOrderStateHistory, ({ one }) => ({
@@ -4613,6 +4721,41 @@ export const insertNotificationPreferencesSchema = createInsertSchema(notificati
   updatedAt: true,
 });
 
+// Warranty Products Schema
+export const insertWarrantyProductSchema = createInsertSchema(warrantyProducts).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const updateWarrantyProductSchema = createInsertSchema(warrantyProducts)
+  .omit({
+    id: true,
+    createdAt: true,
+    updatedAt: true,
+  })
+  .partial();
+
+// Repair Warranties Schema
+export const insertRepairWarrantySchema = createInsertSchema(repairWarranties).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  offeredAt: true,
+});
+
+export const updateRepairWarrantySchema = createInsertSchema(repairWarranties)
+  .omit({
+    id: true,
+    createdAt: true,
+    updatedAt: true,
+    offeredAt: true,
+    repairOrderId: true,
+    customerId: true,
+    warrantyProductId: true,
+  })
+  .partial();
+
 export const insertRepairAttachmentSchema = createInsertSchema(repairAttachments).omit({
   id: true,
   uploadedAt: true,
@@ -5287,6 +5430,15 @@ export type InsertTicketMessage = z.infer<typeof insertTicketMessageSchema>;
 
 export type Invoice = typeof invoices.$inferSelect;
 export type InsertInvoice = z.infer<typeof insertInvoiceSchema>;
+
+// Warranty Types
+export type WarrantyProduct = typeof warrantyProducts.$inferSelect;
+export type InsertWarrantyProduct = z.infer<typeof insertWarrantyProductSchema>;
+export type UpdateWarrantyProduct = z.infer<typeof updateWarrantyProductSchema>;
+
+export type RepairWarranty = typeof repairWarranties.$inferSelect;
+export type InsertRepairWarranty = z.infer<typeof insertRepairWarrantySchema>;
+export type UpdateRepairWarranty = z.infer<typeof updateRepairWarrantySchema>;
 
 export type BillingData = typeof billingData.$inferSelect;
 export type InsertBillingData = z.infer<typeof insertBillingDataSchema>;
