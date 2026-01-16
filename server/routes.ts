@@ -1007,11 +1007,16 @@ export function registerRoutes(app: Express): Server {
       
       // Determine user context
       let resellerId: string | undefined;
+      let parentResellerId: string | undefined;
       let repairCenterId: string | undefined;
       const isAdmin = req.user.role === 'admin';
       
       if (req.user.role === 'reseller' || req.user.role === 'sub_reseller') {
         resellerId = req.user.id;
+        // Sub-resellers should also see parent reseller's services
+        if (req.user.role === 'sub_reseller' && req.user.parentResellerId) {
+          parentResellerId = req.user.parentResellerId;
+        }
       } else if (req.user.role === 'reseller_staff' || req.user.role === 'reseller_collaborator') {
         resellerId = (req.user as any).resellerId;
       } else if (req.user.role === 'repair_center') {
@@ -1021,6 +1026,7 @@ export function registerRoutes(app: Express): Server {
       // Use DB-level filtering
       const filteredItems = await storage.getServiceItemsFiltered({
         resellerId,
+        parentResellerId,
         repairCenterId,
         isAdmin,
         deviceTypeId: deviceTypeId as string | undefined,

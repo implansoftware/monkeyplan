@@ -775,6 +775,7 @@ export interface IStorage {
   deleteServiceItem(id: string): Promise<void>;
   getServiceItemsFiltered(params: {
     resellerId?: string;
+    parentResellerId?: string;
     repairCenterId?: string;
     isAdmin?: boolean;
     deviceTypeId?: string;
@@ -7174,6 +7175,7 @@ export class DatabaseStorage implements IStorage {
   // Get service items with DB-level filtering for device compatibility
   async getServiceItemsFiltered(params: {
     resellerId?: string;
+    parentResellerId?: string;
     repairCenterId?: string;
     isAdmin?: boolean;
     deviceTypeId?: string;
@@ -7183,7 +7185,7 @@ export class DatabaseStorage implements IStorage {
     limit?: number;
   }): Promise<ServiceItem[]> {
     const conditions: SQL[] = [];
-    const { resellerId, repairCenterId, isAdmin, deviceTypeId, brandId, modelId, search, limit: limitNum } = params;
+    const { resellerId, parentResellerId, repairCenterId, isAdmin, deviceTypeId, brandId, modelId, search, limit: limitNum } = params;
     
     // Ownership filter: admin sees all, others see global items + their own
     if (!isAdmin) {
@@ -7195,6 +7197,9 @@ export class DatabaseStorage implements IStorage {
       
       if (resellerId) {
         ownershipConditions.push(eq(serviceItems.createdBy, resellerId));
+      }
+      if (parentResellerId) {
+        ownershipConditions.push(eq(serviceItems.createdBy, parentResellerId));
       }
       if (repairCenterId) {
         ownershipConditions.push(eq(serviceItems.repairCenterId, repairCenterId));
