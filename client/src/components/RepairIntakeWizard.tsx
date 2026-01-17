@@ -1641,56 +1641,33 @@ export function RepairIntakeWizard({
                             </p>
                           </div>
                         </div>
-                        <Button
-                          type="button"
-                          variant={collectedDiagnosisData ? "outline" : "default"}
-                          size="sm"
-                          onClick={() => setDiagnosisDialogOpen(true)}
-                          data-testid="button-configure-diagnosis"
-                        >
-                          {collectedDiagnosisData ? "Modifica" : "Configura"}
-                        </Button>
-                      </div>
-                      
-                      {/* Diagnosis Summary */}
-                      {collectedDiagnosisData && (
-                        <div className="bg-violet-50 dark:bg-violet-950/20 rounded-lg p-3 space-y-2">
-                          <div className="flex items-center justify-between">
-                            <span className="text-sm font-medium">Esito:</span>
-                            <Badge variant={
-                              collectedDiagnosisData.outcome === "riparabile" ? "default" :
-                              collectedDiagnosisData.outcome === "non_conveniente" ? "secondary" : "destructive"
-                            }>
-                              {collectedDiagnosisData.outcome === "riparabile" ? "Riparabile" :
-                               collectedDiagnosisData.outcome === "non_conveniente" ? "Non Conveniente" : "Irriparabile"}
-                            </Badge>
-                          </div>
-                          {collectedDiagnosisData.technicalDiagnosis && (
-                            <p className="text-sm text-muted-foreground line-clamp-2">
-                              {collectedDiagnosisData.technicalDiagnosis}
-                            </p>
-                          )}
-                          {collectedDiagnosisData.estimatedTime && (
-                            <p className="text-sm">
-                              <span className="text-muted-foreground">Tempo stimato:</span> {collectedDiagnosisData.estimatedTime}h
-                            </p>
+                        <div className="flex items-center gap-2">
+                          {collectedDiagnosisData && (
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              className="text-destructive hover:text-destructive"
+                              onClick={() => {
+                                setCollectedDiagnosisData(null);
+                                setCreateDiagnosisNow(false);
+                              }}
+                              data-testid="button-remove-diagnosis"
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
                           )}
                           <Button
                             type="button"
-                            variant="ghost"
+                            variant={collectedDiagnosisData ? "outline" : "default"}
                             size="sm"
-                            className="text-destructive hover:text-destructive"
-                            onClick={() => {
-                              setCollectedDiagnosisData(null);
-                              setCreateDiagnosisNow(false);
-                            }}
-                            data-testid="button-remove-diagnosis"
+                            onClick={() => setDiagnosisDialogOpen(true)}
+                            data-testid="button-configure-diagnosis"
                           >
-                            <X className="h-4 w-4 mr-1" />
-                            Rimuovi diagnosi
+                            {collectedDiagnosisData ? "Modifica" : "Configura"}
                           </Button>
                         </div>
-                      )}
+                      </div>
                     </div>
 
                     <Separator />
@@ -1714,55 +1691,33 @@ export function RepairIntakeWizard({
                             </p>
                           </div>
                         </div>
-                        <Button
-                          type="button"
-                          variant={collectedQuoteData ? "outline" : "default"}
-                          size="sm"
-                          onClick={() => setQuoteDialogOpen(true)}
-                          data-testid="button-configure-quote"
-                        >
-                          {collectedQuoteData ? "Modifica" : "Configura"}
-                        </Button>
-                      </div>
-                      
-                      {/* Quote Summary */}
-                      {collectedQuoteData && (
-                        <div className="bg-blue-50 dark:bg-blue-950/20 rounded-lg p-3 space-y-2">
-                          <div className="flex items-center justify-between">
-                            <span className="text-sm font-medium">Totale:</span>
-                            <span className="font-bold text-lg">
-                              € {(
-                                collectedQuoteData.parts.reduce((sum, p) => sum + p.quantity * p.unitPrice, 0) + 
-                                collectedQuoteData.laborCost
-                              ).toFixed(2)}
-                            </span>
-                          </div>
-                          {collectedQuoteData.parts.length > 0 && (
-                            <p className="text-sm text-muted-foreground">
-                              {collectedQuoteData.parts.length} ricambi/servizi
-                            </p>
-                          )}
-                          {collectedQuoteData.laborCost > 0 && (
-                            <p className="text-sm">
-                              <span className="text-muted-foreground">Manodopera:</span> € {collectedQuoteData.laborCost.toFixed(2)}
-                            </p>
+                        <div className="flex items-center gap-2">
+                          {collectedQuoteData && (
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              className="text-destructive hover:text-destructive"
+                              onClick={() => {
+                                setCollectedQuoteData(null);
+                                setCreateQuoteNow(false);
+                              }}
+                              data-testid="button-remove-quote"
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
                           )}
                           <Button
                             type="button"
-                            variant="ghost"
+                            variant={collectedQuoteData ? "outline" : "default"}
                             size="sm"
-                            className="text-destructive hover:text-destructive"
-                            onClick={() => {
-                              setCollectedQuoteData(null);
-                              setCreateQuoteNow(false);
-                            }}
-                            data-testid="button-remove-quote"
+                            onClick={() => setQuoteDialogOpen(true)}
+                            data-testid="button-configure-quote"
                           >
-                            <X className="h-4 w-4 mr-1" />
-                            Rimuovi preventivo
+                            {collectedQuoteData ? "Modifica" : "Configura"}
                           </Button>
                         </div>
-                      )}
+                      </div>
                     </div>
 
                     {/* Info message */}
