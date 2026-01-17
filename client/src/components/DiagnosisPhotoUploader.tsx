@@ -4,7 +4,8 @@ import { Upload, X, Image as ImageIcon, Loader2, Camera } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface DiagnosisPhotoUploaderProps {
-  repairOrderId: string;
+  repairOrderId?: string;
+  uploadSessionId?: string;
   photos: string[];
   onPhotosChange: (photos: string[]) => void;
 }
@@ -18,6 +19,7 @@ type UploadedPhoto = {
 
 export function DiagnosisPhotoUploader({
   repairOrderId,
+  uploadSessionId,
   photos,
   onPhotosChange,
 }: DiagnosisPhotoUploaderProps) {
@@ -31,7 +33,18 @@ export function DiagnosisPhotoUploader({
     const formData = new FormData();
     formData.append("file", file);
 
-    const response = await fetch(`/api/repair-orders/${repairOrderId}/attachments`, {
+    let url: string;
+    
+    if (uploadSessionId) {
+      formData.append("uploadSessionId", uploadSessionId);
+      url = "/api/attachments/temp";
+    } else if (repairOrderId) {
+      url = `/api/repair-orders/${repairOrderId}/attachments`;
+    } else {
+      throw new Error("Either repairOrderId or uploadSessionId is required");
+    }
+
+    const response = await fetch(url, {
       method: "POST",
       credentials: "include",
       body: formData,
@@ -42,6 +55,19 @@ export function DiagnosisPhotoUploader({
     }
 
     return response.json();
+  };
+
+  const deletePhoto = async (photoId: string) => {
+    if (uploadSessionId) {
+      try {
+        await fetch(`/api/attachments/temp/${photoId}`, {
+          method: "DELETE",
+          credentials: "include",
+        });
+      } catch (e) {
+        console.warn("Could not delete temp attachment:", e);
+      }
+    }
   };
 
   const handleFiles = async (files: FileList | File[]) => {
@@ -78,9 +104,9 @@ export function DiagnosisPhotoUploader({
         if (attachment && attachment.id) {
           const newPhoto: UploadedPhoto = {
             id: attachment.id,
-            url: attachment.objectKey,
+            url: attachment.signedUrl || attachment.objectKey,
             fileName: attachment.fileName,
-            previewUrl,
+            previewUrl: attachment.signedUrl || previewUrl,
           };
           
           setUploadedPhotos(prev => {
@@ -131,10 +157,11 @@ export function DiagnosisPhotoUploader({
     }
   };
 
-  const removePhoto = (photoId: string) => {
+  const removePhoto = async (photoId: string) => {
+    await deletePhoto(photoId);
     setUploadedPhotos(prev => {
       const photoToRemove = prev.find(p => p.id === photoId);
-      if (photoToRemove?.previewUrl) {
+      if (photoToRemove?.previewUrl && !photoToRemove.previewUrl.startsWith('http')) {
         URL.revokeObjectURL(photoToRemove.previewUrl);
       }
       const updated = prev.filter(p => p.id !== photoId);
