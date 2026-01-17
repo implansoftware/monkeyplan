@@ -223,14 +223,14 @@ export default function AdminUnrepairableReasons() {
           <div className="flex items-center gap-2">
             <Filter className="h-4 w-4 text-muted-foreground" />
             <Select
-              value={filterDeviceTypeId}
-              onValueChange={setFilterDeviceTypeId}
+              value={filterDeviceTypeId || "_all"}
+              onValueChange={(v) => setFilterDeviceTypeId(v === "_all" ? "" : v)}
             >
               <SelectTrigger className="w-[200px]" data-testid="filter-device-type">
                 <SelectValue placeholder="Tutti i tipi" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Tutti i tipi</SelectItem>
+                <SelectItem value="_all">Tutti i tipi</SelectItem>
                 {deviceTypes.map((dt) => (
                   <SelectItem key={dt.id} value={dt.id}>
                     {dt.name}
@@ -347,14 +347,14 @@ export default function AdminUnrepairableReasons() {
             <div className="space-y-2">
               <Label htmlFor="deviceType">Tipo Dispositivo</Label>
               <Select
-                value={formData.deviceTypeId}
-                onValueChange={(v) => setFormData({ ...formData, deviceTypeId: v })}
+                value={formData.deviceTypeId || "_universal"}
+                onValueChange={(v) => setFormData({ ...formData, deviceTypeId: v === "_universal" ? "" : v })}
               >
                 <SelectTrigger data-testid="select-device-type">
                   <SelectValue placeholder="Universale (tutti i dispositivi)" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Universale (tutti i dispositivi)</SelectItem>
+                  <SelectItem value="_universal">Universale (tutti i dispositivi)</SelectItem>
                   {deviceTypes.map((dt) => (
                     <SelectItem key={dt.id} value={dt.id}>
                       {dt.name}
