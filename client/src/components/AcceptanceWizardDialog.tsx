@@ -231,7 +231,7 @@ export function AcceptanceWizardDialog({
   const [diagnosisSelectedFindingIds, setDiagnosisSelectedFindingIds] = useState<string[]>([]);
   const [diagnosisSelectedComponentIds, setDiagnosisSelectedComponentIds] = useState<string[]>([]);
   const [diagnosisEstimatedTimeId, setDiagnosisEstimatedTimeId] = useState<string>("");
-  const [diagnosisSkipPhotos, setDiagnosisSkipPhotos] = useState(false);
+  const [diagnosisSkipPhotos, setDiagnosisSkipPhotos] = useState(true);
   const [diagnosisPhotoIds, setDiagnosisPhotoIds] = useState<string[]>([]);
   const [uploadSessionId] = useState(() => crypto.randomUUID());
   const [diagnosisUnrepairableReasonId, setDiagnosisUnrepairableReasonId] = useState<string>("");
