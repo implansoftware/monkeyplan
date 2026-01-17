@@ -1518,34 +1518,14 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
                   )}
 
                   {repair.status === 'preventivo_rifiutato' && (
-                    <div className="bg-red-50 dark:bg-red-950 rounded-lg p-4 space-y-3 border border-red-200 dark:border-red-800">
+                    <div className="bg-red-50 dark:bg-red-950 rounded-lg p-4 space-y-2 border border-red-200 dark:border-red-800">
                       <p className="text-sm text-red-700 dark:text-red-300 flex items-center gap-2">
                         <XCircle className="h-4 w-4" />
                         <strong>Il cliente ha rifiutato il preventivo.</strong>
                       </p>
                       <p className="text-sm text-muted-foreground">
-                        Puoi contattare il cliente per negoziare, creare un nuovo preventivo, oppure restituire il dispositivo.
+                        Puoi contattare il cliente per negoziare o creare un nuovo preventivo.
                       </p>
-                      <div className="flex gap-2 flex-wrap">
-                        <Button
-                          variant="outline"
-                          onClick={() => setQuoteDialogOpen(true)}
-                          className="flex-1"
-                          data-testid="button-new-quote-after-reject"
-                        >
-                          <Receipt className="mr-2 h-4 w-4" />
-                          Nuovo Preventivo
-                        </Button>
-                        <Button
-                          variant="outline"
-                          onClick={() => setDeliveryDialogOpen(true)}
-                          className="flex-1"
-                          data-testid="button-return-device"
-                        >
-                          <Truck className="mr-2 h-4 w-4" />
-                          Restituisci Dispositivo
-                        </Button>
-                      </div>
                     </div>
                   )}
 
