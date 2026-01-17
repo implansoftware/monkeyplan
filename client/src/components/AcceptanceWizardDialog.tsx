@@ -611,6 +611,20 @@ export function AcceptanceWizardDialog({
         uploadedCount = await uploadPhotosToOrder(data.order.id);
       }
       
+      // Link diagnosis photos if any were uploaded during wizard
+      if (diagnosisPhotoIds.length > 0) {
+        try {
+          await fetch(`/api/repair-orders/${data.order.id}/attachments/link`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            credentials: "include",
+            body: JSON.stringify({ uploadSessionId }),
+          });
+        } catch (e) {
+          console.warn("Could not link diagnosis photos:", e);
+        }
+      }
+      
       // Save custom model for reuse if requested (only for resellers)
       if (saveForReuse && customModelInput && selectedBrandId && selectedTypeId) {
         try {

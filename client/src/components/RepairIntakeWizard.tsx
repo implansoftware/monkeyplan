@@ -658,7 +658,21 @@ export function RepairIntakeWizard({
       const res = await apiRequest("POST", "/api/repair-orders", payload);
       return res.json();
     },
-    onSuccess: (data: { order: { id: string; orderNumber: string } }) => {
+    onSuccess: async (data: { order: { id: string; orderNumber: string } }) => {
+      // Link temporary photos if any were uploaded
+      if (diagnosisPhotoIds.length > 0) {
+        try {
+          await fetch(`/api/repair-orders/${data.order.id}/attachments/link`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            credentials: "include",
+            body: JSON.stringify({ uploadSessionId }),
+          });
+        } catch (e) {
+          console.warn("Could not link photos:", e);
+        }
+      }
+      
       toast({
         title: "Riparazione creata",
         description: "La nuova riparazione è stata registrata con successo",
