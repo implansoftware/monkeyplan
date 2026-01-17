@@ -10110,6 +10110,7 @@ export function registerRoutes(app: Express): Server {
       console.error('Temp upload error:', error);
       res.status(500).send(error.message);
     }
+  });
   // Link temporary attachments to a repair order
   app.post("/api/repair-orders/:id/attachments/link", requireAuth, async (req, res) => {
     try {
@@ -10176,21 +10177,14 @@ export function registerRoutes(app: Express): Server {
           isNull(repairAttachments.repairOrderId)
         ));
       
-      // Generate signed URLs for previews
-      const attachmentsWithUrls = await Promise.all(tempAttachments.map(async (attachment) => {
-        try {
-          const { bucketName, objectName } = parseObjectPath(attachment.objectKey);
-          const bucket = objectStorageClient.bucket(bucketName);
-          const file = bucket.file(objectName);
-          const [signedUrl] = await file.getSignedUrl({
-            action: 'read',
-            expires: Date.now() + 60 * 60 * 1000,
-          });
-          return { ...attachment, signedUrl };
-        } catch {
-          return { ...attachment, signedUrl: null };
-        }
-      }));
+      // Use proxy URLs instead of signed URLs (Replit object storage limitation)
+      const privateDir = objectStorage.getPrivateObjectDir();
+      const attachmentsWithUrls = tempAttachments.map((attachment) => {
+        // Extract relative path from objectKey
+        const relativePath = attachment.objectKey.replace(privateDir + "/", "");
+        const proxyUrl = `/objects/${relativePath}`;
+        return { ...attachment, signedUrl: proxyUrl };
+      });
       
       res.json(attachmentsWithUrls);
     } catch (error: any) {
