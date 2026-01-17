@@ -10102,19 +10102,14 @@ export function registerRoutes(app: Express): Server {
         uploadedBy: req.user.id,
       });
       
-      // Generate signed URL for preview
-      const [signedUrl] = await file.getSignedUrl({
-        action: 'read',
-        expires: Date.now() + 60 * 60 * 1000, // 1 hour
-      });
+      // Use proxy URL instead of signed URL (Replit object storage limitation)
+      const proxyUrl = `/objects/temp-attachments/${uploadSessionId}/${objectId}`;
       
-      res.json({ ...attachment, signedUrl });
+      res.json({ ...attachment, signedUrl: proxyUrl });
     } catch (error: any) {
       console.error('Temp upload error:', error);
       res.status(500).send(error.message);
     }
-  });
-
   // Link temporary attachments to a repair order
   app.post("/api/repair-orders/:id/attachments/link", requireAuth, async (req, res) => {
     try {
