@@ -37,7 +37,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { 
-  User, Smartphone, ClipboardCheck, CheckCircle2, 
+  User, Smartphone, ClipboardCheck, CheckCircle2, Check,
   ChevronRight, ChevronLeft, Loader2, Plus, Search,
   Monitor, Tablet, Laptop, Tv, Gamepad2, Watch, Headphones, Printer,
   AlertCircle, UserPlus, X, Mail, Phone, Building, Store, Download, Tag, PartyPopper, FileText, Calculator,
@@ -1626,8 +1626,13 @@ export function RepairIntakeWizard({
                     <div className="space-y-3">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
-                          <div className="h-10 w-10 rounded-xl bg-violet-500/10 flex items-center justify-center">
+                          <div className="relative h-10 w-10 rounded-xl bg-violet-500/10 flex items-center justify-center">
                             <Stethoscope className="h-5 w-5 text-violet-600 dark:text-violet-400" />
+                            {collectedDiagnosisData && (
+                              <div className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-green-500 flex items-center justify-center">
+                                <Check className="h-3 w-3 text-white" />
+                              </div>
+                            )}
                           </div>
                           <div>
                             <p className="font-medium">Diagnosi Tecnica</p>
@@ -1694,8 +1699,13 @@ export function RepairIntakeWizard({
                     <div className="space-y-3">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
-                          <div className="h-10 w-10 rounded-xl bg-blue-500/10 flex items-center justify-center">
+                          <div className="relative h-10 w-10 rounded-xl bg-blue-500/10 flex items-center justify-center">
                             <FileText className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                            {collectedQuoteData && (
+                              <div className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-green-500 flex items-center justify-center">
+                                <Check className="h-3 w-3 text-white" />
+                              </div>
+                            )}
                           </div>
                           <div>
                             <p className="font-medium">Preventivo</p>
