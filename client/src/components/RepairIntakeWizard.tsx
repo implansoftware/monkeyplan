@@ -763,31 +763,31 @@ export function RepairIntakeWizard({
 
         {/* Step Indicator - show only first 4 steps (step 5 is success screen) */}
         {currentStep < 6 && currentStep !== 6 && (
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center justify-between mb-6 overflow-x-auto min-w-0">
           {STEPS.slice(0, 4).map((step, index) => {
             const Icon = step.icon;
             const isActive = currentStep === step.id;
             const isCompleted = currentStep > step.id;
             
             return (
-              <div key={step.id} className="flex items-center">
-                <div className="flex flex-col items-center">
+              <div key={step.id} className="flex items-center flex-shrink-0">
+                <div className="flex flex-col items-center min-w-0">
                   <div
                     className={cn(
-                      "w-10 h-10 rounded-full flex items-center justify-center transition-colors",
+                      "w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center transition-colors flex-shrink-0",
                       isActive && "bg-primary text-primary-foreground",
                       isCompleted && "bg-primary/20 text-primary",
                       !isActive && !isCompleted && "bg-muted text-muted-foreground"
                     )}
                   >
                     {isCompleted ? (
-                      <CheckCircle2 className="h-5 w-5" />
+                      <CheckCircle2 className="h-4 w-4 sm:h-5 sm:w-5" />
                     ) : (
-                      <Icon className="h-5 w-5" />
+                      <Icon className="h-4 w-4 sm:h-5 sm:w-5" />
                     )}
                   </div>
                   <span className={cn(
-                    "text-xs mt-1 font-medium",
+                    "text-[10px] sm:text-xs mt-1 font-medium text-center max-w-[60px] sm:max-w-none truncate",
                     isActive && "text-primary",
                     !isActive && "text-muted-foreground"
                   )}>
@@ -796,7 +796,7 @@ export function RepairIntakeWizard({
                 </div>
                 {index < 3 && (
                   <div className={cn(
-                    "w-12 h-0.5 mx-2",
+                    "w-4 sm:w-8 md:w-12 h-0.5 mx-1 sm:mx-2 flex-shrink-0",
                     isCompleted ? "bg-primary/50" : "bg-muted"
                   )} />
                 )}
@@ -1206,7 +1206,7 @@ export function RepairIntakeWizard({
                 {/* Brand & Model */}
                 {selectedTypeId && (
                   <div className="space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                       {/* Brand Select + Create */}
                       <FormField
                         control={form.control}
@@ -1415,7 +1415,7 @@ export function RepairIntakeWizard({
                 )}
 
                 {/* IMEI / Serial */}
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                   <FormField
                     control={form.control}
                     name="imei"
@@ -1524,7 +1524,7 @@ export function RepairIntakeWizard({
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Condizione Estetica</FormLabel>
-                      <div className="grid grid-cols-2 gap-2">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                         {AESTHETIC_CONDITIONS.map((condition) => (
                           <Card
                             key={condition.value}
@@ -1553,7 +1553,7 @@ export function RepairIntakeWizard({
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Accessori Consegnati</FormLabel>
-                      <div className="grid grid-cols-2 gap-2">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                         {accessoryTypes.length > 0 ? (
                           accessoryTypes.map((accessory) => (
                             <div
