@@ -225,7 +225,7 @@ export function RepairIntakeWizard({
       setDiagnosisSelectedFindingIds([]);
       setDiagnosisSelectedComponentIds([]);
       setDiagnosisEstimatedTimeId("");
-      setDiagnosisSkipPhotos(false);
+      setDiagnosisSkipPhotos(true);
       setDiagnosisUnrepairableReasonId("");
       setDiagnosisSuggestedPromotionIds([]);
       form.reset();

@@ -929,7 +929,7 @@ export function AcceptanceWizardDialog({
     setDiagnosisSelectedFindingIds([]);
     setDiagnosisSelectedComponentIds([]);
     setDiagnosisEstimatedTimeId("");
-    setDiagnosisSkipPhotos(false);
+    setDiagnosisSkipPhotos(true);
     setDiagnosisUnrepairableReasonId("");
     setDiagnosisSuggestedPromotionIds([]);
     setSelectedQuoteWarehouseId("");
