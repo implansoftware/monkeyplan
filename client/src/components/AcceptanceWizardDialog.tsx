@@ -219,6 +219,7 @@ export function AcceptanceWizardDialog({
   const [quoteLaborCost, setQuoteLaborCost] = useState(0);
   const [quoteNotes, setQuoteNotes] = useState("");
   const [createDiagnosisNow, setCreateDiagnosisNow] = useState(false);
+  const [showTechnicalDiagnosis, setShowTechnicalDiagnosis] = useState(false);
   const [diagnosisTechnical, setDiagnosisTechnical] = useState("");
   const [diagnosisOutcome, setDiagnosisOutcome] = useState<"riparabile" | "non_conveniente" | "irriparabile">("riparabile");
   const [diagnosisNotes, setDiagnosisNotes] = useState("");
@@ -2361,18 +2362,30 @@ export function AcceptanceWizardDialog({
                 </div>
               )}
 
-              <div className="space-y-2">
-                <Label className="flex items-center gap-2">
-                  <AlertCircle className="h-4 w-4" />
-                  Diagnosi Tecnica
-                </Label>
-                <Textarea
-                  value={diagnosisTechnical}
-                  onChange={(e) => setDiagnosisTechnical(e.target.value)}
-                  placeholder="Descrivi la diagnosi tecnica del dispositivo (opzionale)..."
-                  rows={3}
-                  data-testid="textarea-diagnosis-technical"
-                />
+              <div className="space-y-3">
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="show-technical-diagnosis-acceptance"
+                    checked={showTechnicalDiagnosis}
+                    onCheckedChange={(checked) => {
+                      setShowTechnicalDiagnosis(!!checked);
+                      if (!checked) setDiagnosisTechnical("");
+                    }}
+                    data-testid="checkbox-show-technical-diagnosis"
+                  />
+                  <Label htmlFor="show-technical-diagnosis-acceptance" className="text-sm font-medium cursor-pointer">
+                    Voglio lasciare diagnosi tecnica
+                  </Label>
+                </div>
+                {showTechnicalDiagnosis && (
+                  <Textarea
+                    value={diagnosisTechnical}
+                    onChange={(e) => setDiagnosisTechnical(e.target.value)}
+                    placeholder="Descrivi la diagnosi tecnica del dispositivo..."
+                    rows={3}
+                    data-testid="textarea-diagnosis-technical"
+                  />
+                )}
               </div>
 
               <div className="grid grid-cols-2 gap-4">
