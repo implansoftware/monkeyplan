@@ -6,6 +6,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { z } from "zod";
 import { useToast } from "@/hooks/use-toast";
 import { useUser } from "@/hooks/use-user";
+import { useLocation } from "wouter";
 import {
   Dialog,
   DialogContent,
@@ -167,6 +168,7 @@ export function RepairIntakeWizard({
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { user } = useUser();
+  const [, setLocation] = useLocation();
 
   const form = useForm<WizardData>({
     resolver: zodResolver(wizardSchema),
@@ -679,9 +681,15 @@ export function RepairIntakeWizard({
         description: "La nuova riparazione è stata registrata con successo",
       });
       queryClient.invalidateQueries({ queryKey: ["/api/repair-orders"] });
-      setCreatedOrder({ id: data.order.id, orderNumber: data.order.orderNumber });
-      setCurrentStep(6);
       onSuccess?.(data.order);
+      onOpenChange(false);
+      
+      // Navigate to repair detail page based on user role
+      const rolePrefix = user?.role === "admin" ? "/admin" 
+        : (user?.role === "reseller" || user?.role === "reseller_staff" || user?.role === "sub_reseller") ? "/reseller"
+        : user?.role === "repair_center" ? "/repair-center"
+        : "/customer";
+      setLocation(`${rolePrefix}/repairs/${data.order.id}`);
     },
     onError: (error: any) => {
       toast({
