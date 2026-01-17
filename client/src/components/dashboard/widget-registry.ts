@@ -27,6 +27,14 @@ export interface DashboardLayoutConfig {
 
 export const RESELLER_WIDGETS: WidgetConfig[] = [
   {
+    id: "urgent-actions",
+    name: "Richiede Attenzione",
+    description: "Elementi urgenti che richiedono azione immediata",
+    category: "activity",
+    defaultVisible: true,
+    defaultOrder: 0,
+  },
+  {
     id: "stats-repairs",
     name: "Riparazioni Attive",
     description: "Card KPI riparazioni attive e totali",
