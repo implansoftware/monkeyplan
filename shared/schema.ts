@@ -1560,7 +1560,8 @@ export const repairAcceptance = pgTable("repair_acceptance", {
 // Repair Order Attachments (Photos and documents for repair orders)
 export const repairAttachments = pgTable("repair_attachments", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  repairOrderId: varchar("repair_order_id").notNull(),
+  repairOrderId: varchar("repair_order_id"), // Nullable for temp uploads before order creation
+  uploadSessionId: text("upload_session_id"), // Session ID for temp uploads
   objectKey: text("object_key").notNull(), // Key in object storage
   fileName: text("file_name").notNull(), // Original file name
   fileType: text("file_type").notNull(), // MIME type
