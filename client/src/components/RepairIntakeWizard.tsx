@@ -1155,7 +1155,7 @@ export function RepairIntakeWizard({
 
             {/* Step 1: Device Info */}
             {currentStep === 1 && (
-              <div className="space-y-4 overflow-hidden">
+              <div className="space-y-4 min-w-0">
                 <div className="text-center mb-4">
                   <Smartphone className="h-12 w-12 mx-auto text-primary mb-2" />
                   <h3 className="text-lg font-semibold">Dati Dispositivo</h3>
@@ -1169,16 +1169,16 @@ export function RepairIntakeWizard({
                   control={form.control}
                   name="deviceType"
                   render={({ field }) => (
-                    <FormItem>
+                    <FormItem className="min-w-0">
                       <FormLabel>Tipo Dispositivo *</FormLabel>
-                      <div className="grid grid-cols-2 gap-2 w-full overflow-hidden">
+                      <div className="grid gap-2 w-full min-w-0" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))' }}>
                         {deviceTypes.map((type) => {
                           const Icon = DEVICE_TYPE_ICONS[type.name.toLowerCase()] || Smartphone;
                           return (
                             <Card
                               key={type.id}
                               className={cn(
-                                "cursor-pointer transition-colors min-w-0 overflow-hidden",
+                                "cursor-pointer transition-colors min-w-0 w-full",
                                 field.value === type.id && "ring-2 ring-primary"
                               )}
                               onClick={() => {
@@ -1190,9 +1190,9 @@ export function RepairIntakeWizard({
                               }}
                               data-testid={`card-device-type-${type.id}`}
                             >
-                              <CardContent className="p-2 sm:p-3 text-center overflow-hidden">
-                                <Icon className="h-5 w-5 sm:h-6 sm:w-6 mx-auto mb-1" />
-                                <span className="text-xs sm:text-sm truncate block">{type.name}</span>
+                              <CardContent className="p-3 text-center">
+                                <Icon className="h-6 w-6 mx-auto mb-1" />
+                                <span className="text-sm truncate block">{type.name}</span>
                               </CardContent>
                             </Card>
                           );
