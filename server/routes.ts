@@ -51,7 +51,8 @@ import { generateAndStoreReturnDocuments, getSignedDownloadUrl, generateTransfer
 import { generatePosReceiptPdf } from "./services/posReceipt";
 import { calculateRepairPriority } from "./helpers/priorityCalculation";
 import { db } from "./db";
-import { sql } from "drizzle-orm";
+import { sql, eq, and, inArray, isNull } from "drizzle-orm";
+import { repairAttachments } from "@shared/schema";
 
 const scryptAsync = promisify(scrypt);
 
@@ -10058,6 +10059,188 @@ export function registerRoutes(app: Express): Server {
     }
   });
   
+
+  // Temporary attachment upload (before order creation)
+  app.post("/api/attachments/temp", requireAuth, upload.single('file'), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      if (!req.file) return res.status(400).send("No file uploaded");
+      
+      const uploadSessionId = req.body.uploadSessionId;
+      if (!uploadSessionId) return res.status(400).send("uploadSessionId is required");
+      
+      // Generate unique object key for temp storage
+      const objectId = randomUUID();
+      const privateDir = objectStorage.getPrivateObjectDir();
+      const objectKey = `${privateDir}/temp-attachments/${uploadSessionId}/${objectId}`;
+      
+      // Parse bucket and object name
+      const { bucketName, objectName } = parseObjectPath(objectKey);
+      
+      // Upload to Google Cloud Storage
+      const bucket = objectStorageClient.bucket(bucketName);
+      const file = bucket.file(objectName);
+      
+      await file.save(req.file.buffer, {
+        contentType: req.file.mimetype,
+        metadata: {
+          metadata: {
+            originalName: req.file.originalname,
+            uploadedBy: req.user.id,
+            uploadSessionId: uploadSessionId,
+          }
+        }
+      });
+      
+      // Save metadata to database with uploadSessionId (no repairOrderId yet)
+      const attachment = await storage.addRepairAttachment({
+        uploadSessionId,
+        objectKey,
+        fileName: req.file.originalname,
+        fileType: req.file.mimetype,
+        fileSize: req.file.size,
+        uploadedBy: req.user.id,
+      });
+      
+      // Generate signed URL for preview
+      const [signedUrl] = await file.getSignedUrl({
+        action: 'read',
+        expires: Date.now() + 60 * 60 * 1000, // 1 hour
+      });
+      
+      res.json({ ...attachment, signedUrl });
+    } catch (error: any) {
+      console.error('Temp upload error:', error);
+      res.status(500).send(error.message);
+    }
+  });
+
+  // Link temporary attachments to a repair order
+  app.post("/api/repair-orders/:id/attachments/link", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const repairOrderId = req.params.id;
+      const { uploadSessionId } = req.body;
+      
+      if (!uploadSessionId) return res.status(400).send("uploadSessionId is required");
+      
+      // Check if user has access to this repair order
+      const repairOrder = await storage.getRepairOrder(repairOrderId);
+      if (!repairOrder) return res.status(404).send("Repair order not found");
+      
+      // Check access based on role
+      const hasAccess = 
+        req.user.role === 'admin' ||
+        (req.user.role === 'reseller' && repairOrder.resellerId === req.user.id) ||
+        (req.user.role === 'sub_reseller' && repairOrder.resellerId === req.user.id) ||
+        (req.user.role === 'repair_center' && repairOrder.repairCenterId === req.user.repairCenterId);
+      
+      if (!hasAccess) return res.status(403).send("Forbidden");
+      
+      // Get all temp attachments for this session that belong to this user
+      const tempAttachments = await db.select().from(repairAttachments)
+        .where(and(
+          eq(repairAttachments.uploadSessionId, uploadSessionId),
+          eq(repairAttachments.uploadedBy, req.user.id),
+          isNull(repairAttachments.repairOrderId)
+        ));
+      
+      if (tempAttachments.length === 0) {
+        return res.json({ linked: 0, attachmentIds: [] });
+      }
+      
+      // Update attachments to link to repair order
+      const attachmentIds = tempAttachments.map(a => a.id);
+      await db.update(repairAttachments)
+        .set({ 
+          repairOrderId: repairOrderId,
+          uploadSessionId: null // Clear session ID after linking
+        })
+        .where(inArray(repairAttachments.id, attachmentIds));
+      
+      res.json({ linked: attachmentIds.length, attachmentIds });
+    } catch (error: any) {
+      console.error('Link attachments error:', error);
+      res.status(500).send(error.message);
+    }
+  });
+
+  // Get temporary attachments by session ID
+  app.get("/api/attachments/temp/:sessionId", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const uploadSessionId = req.params.sessionId;
+      
+      // Get all temp attachments for this session that belong to this user
+      const tempAttachments = await db.select().from(repairAttachments)
+        .where(and(
+          eq(repairAttachments.uploadSessionId, uploadSessionId),
+          eq(repairAttachments.uploadedBy, req.user.id),
+          isNull(repairAttachments.repairOrderId)
+        ));
+      
+      // Generate signed URLs for previews
+      const attachmentsWithUrls = await Promise.all(tempAttachments.map(async (attachment) => {
+        try {
+          const { bucketName, objectName } = parseObjectPath(attachment.objectKey);
+          const bucket = objectStorageClient.bucket(bucketName);
+          const file = bucket.file(objectName);
+          const [signedUrl] = await file.getSignedUrl({
+            action: 'read',
+            expires: Date.now() + 60 * 60 * 1000,
+          });
+          return { ...attachment, signedUrl };
+        } catch {
+          return { ...attachment, signedUrl: null };
+        }
+      }));
+      
+      res.json(attachmentsWithUrls);
+    } catch (error: any) {
+      console.error('Get temp attachments error:', error);
+      res.status(500).send(error.message);
+    }
+  });
+
+  // Delete temporary attachment
+  app.delete("/api/attachments/temp/:attachmentId", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const attachmentId = req.params.attachmentId;
+      
+      // Get the attachment
+      const [attachment] = await db.select().from(repairAttachments)
+        .where(eq(repairAttachments.id, attachmentId));
+      
+      if (!attachment) return res.status(404).send("Attachment not found");
+      
+      // Check if it's a temp attachment (no repairOrderId) and belongs to user
+      if (attachment.repairOrderId || attachment.uploadedBy !== req.user.id) {
+        return res.status(403).send("Forbidden");
+      }
+      
+      // Delete from object storage
+      try {
+        const { bucketName, objectName } = parseObjectPath(attachment.objectKey);
+        const bucket = objectStorageClient.bucket(bucketName);
+        await bucket.file(objectName).delete();
+      } catch (e) {
+        console.warn('Could not delete object from storage:', e);
+      }
+      
+      // Delete from database
+      await db.delete(repairAttachments).where(eq(repairAttachments.id, attachmentId));
+      
+      res.json({ deleted: true });
+    } catch (error: any) {
+      console.error('Delete temp attachment error:', error);
+      res.status(500).send(error.message);
+    }
+  });
+
   // List attachments for repair order
   app.get("/api/repair-orders/:id/attachments", requireAuth, async (req, res) => {
     try {
