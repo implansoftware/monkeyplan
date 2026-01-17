@@ -1686,12 +1686,12 @@ export function RepairIntakeWizard({
                         <div className="space-y-2">
                           <Label className="flex items-center gap-2">
                             <AlertCircle className="h-4 w-4" />
-                            Diagnosi Tecnica *
+                            Diagnosi Tecnica
                           </Label>
                           <Textarea
                             value={diagnosisTechnical}
                             onChange={(e) => setDiagnosisTechnical(e.target.value)}
-                            placeholder="Descrivi la diagnosi tecnica del dispositivo..."
+                            placeholder="Descrivi la diagnosi tecnica del dispositivo (opzionale)..."
                             rows={3}
                             data-testid="textarea-diagnosis-technical"
                           />

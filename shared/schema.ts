@@ -1619,7 +1619,7 @@ export const remoteRepairRequests = pgTable("remote_repair_requests", {
 export const repairDiagnostics = pgTable("repair_diagnostics", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   repairOrderId: varchar("repair_order_id").notNull().unique().references(() => repairOrders.id), // One diagnosis per repair
-  technicalDiagnosis: text("technical_diagnosis").notNull(), // Diagnosi tecnica dettagliata
+  technicalDiagnosis: text("technical_diagnosis"), // Diagnosi tecnica dettagliata (opzionale)
   damagedComponents: text("damaged_components").array(), // Componenti danneggiati
   estimatedRepairTime: real("estimated_repair_time"), // Tempo stimato in ore (supporta decimali es. 0.5, 1.5)
   requiresExternalParts: boolean("requires_external_parts").notNull().default(false), // Necessità ricambi esterni

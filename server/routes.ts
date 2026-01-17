@@ -11313,12 +11313,9 @@ export function registerRoutes(app: Express): Server {
         let createdDiagnosis = null;
         if (req.body.diagnosis && req.body.diagnosis.createDiagnosis) {
           try {
-            if (!req.body.diagnosis.technicalDiagnosis || !req.body.diagnosis.technicalDiagnosis.trim()) {
-              console.error('Diagnosis creation skipped: technicalDiagnosis is required');
-            } else {
-              createdDiagnosis = await storage.createRepairDiagnostics({
+            createdDiagnosis = await storage.createRepairDiagnostics({
                 repairOrderId: order.id,
-                technicalDiagnosis: req.body.diagnosis.technicalDiagnosis.trim(),
+                technicalDiagnosis: req.body.diagnosis.technicalDiagnosis?.trim() || null,
                 diagnosisOutcome: req.body.diagnosis.diagnosisOutcome || 'riparabile',
                 estimatedRepairTime: req.body.diagnosis.estimatedRepairTime || null,
                 diagnosisNotes: req.body.diagnosis.diagnosisNotes || null,
@@ -11338,7 +11335,6 @@ export function registerRoutes(app: Express): Server {
                 await storage.updateRepairOrder(order.id, { status: 'in_diagnosi' as any });
                 order.status = 'in_diagnosi';
               }
-            }
           } catch (diagError: any) {
             console.error('Failed to create diagnosis during order creation:', diagError);
           }
@@ -11398,12 +11394,9 @@ export function registerRoutes(app: Express): Server {
         let createdDiagnosis = null;
         if (req.body.diagnosis && req.body.diagnosis.createDiagnosis) {
           try {
-            if (!req.body.diagnosis.technicalDiagnosis || !req.body.diagnosis.technicalDiagnosis.trim()) {
-              console.error('Diagnosis creation skipped: technicalDiagnosis is required');
-            } else {
-              createdDiagnosis = await storage.createRepairDiagnostics({
+            createdDiagnosis = await storage.createRepairDiagnostics({
                 repairOrderId: order.id,
-                technicalDiagnosis: req.body.diagnosis.technicalDiagnosis.trim(),
+                technicalDiagnosis: req.body.diagnosis.technicalDiagnosis?.trim() || null,
                 diagnosisOutcome: req.body.diagnosis.diagnosisOutcome || 'riparabile',
                 estimatedRepairTime: req.body.diagnosis.estimatedRepairTime || null,
                 diagnosisNotes: req.body.diagnosis.diagnosisNotes || null,
@@ -11423,7 +11416,6 @@ export function registerRoutes(app: Express): Server {
                 await storage.updateRepairOrder(order.id, { status: 'in_diagnosi' as any });
                 order.status = 'in_diagnosi';
               }
-            }
           } catch (diagError: any) {
             console.error('Failed to create diagnosis during simple order creation:', diagError);
           }
