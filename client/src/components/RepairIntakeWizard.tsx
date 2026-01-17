@@ -44,6 +44,7 @@ import {
 import { cn } from "@/lib/utils";
 import { SearchableServiceCombobox } from "@/components/SearchableServiceCombobox";
 import { SearchableProductCombobox } from "@/components/SearchableProductCombobox";
+import { DiagnosisPhotoUploader } from "@/components/DiagnosisPhotoUploader";
 import type { 
   Warehouse as WarehouseType, 
   DiagnosticFinding, 
@@ -157,6 +158,8 @@ export function RepairIntakeWizard({
   const [diagnosisSelectedComponentIds, setDiagnosisSelectedComponentIds] = useState<string[]>([]);
   const [diagnosisEstimatedTimeId, setDiagnosisEstimatedTimeId] = useState<string>("");
   const [diagnosisSkipPhotos, setDiagnosisSkipPhotos] = useState(false);
+  const [diagnosisPhotoIds, setDiagnosisPhotoIds] = useState<string[]>([]);
+  const [uploadSessionId] = useState(() => crypto.randomUUID());
   const [diagnosisUnrepairableReasonId, setDiagnosisUnrepairableReasonId] = useState<string>("");
   const [diagnosisSuggestedPromotionIds, setDiagnosisSuggestedPromotionIds] = useState<string[]>([]);
   const dialogContentRef = useRef<HTMLDivElement>(null);
@@ -1850,11 +1853,17 @@ export function RepairIntakeWizard({
                             />
                             <Label htmlFor="diagnosisWantPhotos" className="flex flex-col">
                               <span>Voglio caricare foto</span>
-                              <span className="text-xs text-muted-foreground font-normal">
-                                Le foto potranno essere caricate dopo la creazione dell'ordine
-                              </span>
                             </Label>
                           </div>
+                          {!diagnosisSkipPhotos && (
+                            <div className="mt-4">
+                              <DiagnosisPhotoUploader
+                                uploadSessionId={uploadSessionId}
+                                photos={diagnosisPhotoIds}
+                                onPhotosChange={setDiagnosisPhotoIds}
+                              />
+                            </div>
+                          )}
                         </div>
                       </div>
                     )}

@@ -48,6 +48,7 @@ import { AddressAutocomplete } from "@/components/address-autocomplete";
 import { PatternLock } from "@/components/PatternLock";
 import { SearchableServiceCombobox } from "@/components/SearchableServiceCombobox";
 import { SearchableProductCombobox } from "@/components/SearchableProductCombobox";
+import { DiagnosisPhotoUploader } from "@/components/DiagnosisPhotoUploader";
 import { Warehouse, Plus, Package, Wrench } from "lucide-react";
 import type { 
   Warehouse as WarehouseType, 
@@ -231,6 +232,8 @@ export function AcceptanceWizardDialog({
   const [diagnosisSelectedComponentIds, setDiagnosisSelectedComponentIds] = useState<string[]>([]);
   const [diagnosisEstimatedTimeId, setDiagnosisEstimatedTimeId] = useState<string>("");
   const [diagnosisSkipPhotos, setDiagnosisSkipPhotos] = useState(false);
+  const [diagnosisPhotoIds, setDiagnosisPhotoIds] = useState<string[]>([]);
+  const [uploadSessionId] = useState(() => crypto.randomUUID());
   const [diagnosisUnrepairableReasonId, setDiagnosisUnrepairableReasonId] = useState<string>("");
   const [diagnosisSuggestedPromotionIds, setDiagnosisSuggestedPromotionIds] = useState<string[]>([]);
   const [newCustomerData, setNewCustomerData] = useState({
@@ -2528,17 +2531,22 @@ export function AcceptanceWizardDialog({
                   />
                   <Label htmlFor="diagnosisWantPhotos" className="flex flex-col">
                     <span>Voglio caricare foto</span>
-                    <span className="text-xs text-muted-foreground font-normal">
-                      Le foto potranno essere caricate dopo la creazione dell'ordine
-                    </span>
                   </Label>
                 </div>
+                {!diagnosisSkipPhotos && (
+                  <div className="mt-4">
+                    <DiagnosisPhotoUploader
+                      uploadSessionId={uploadSessionId}
+                      photos={diagnosisPhotoIds}
+                      onPhotosChange={setDiagnosisPhotoIds}
+                    />
+                  </div>
+                )}
               </div>
             </div>
           )}
 
           <div className="border-t pt-4 mt-4"></div>
-
           {/* Quote Toggle */}
           <div className="flex items-center space-x-2">
             <Checkbox
