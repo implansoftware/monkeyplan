@@ -723,7 +723,7 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
   const getCurrentStepIndex = (status: string) => {
     const index = workflowSteps.findIndex(step => step.key === status);
     if (index !== -1) return index;
-    if (status === 'preventivo_rifiutato') return 3;
+    if (status === 'preventivo_rifiutato') return 2; // Stay at Preventivo step (index 2)
     return 0;
   };
 
@@ -888,7 +888,12 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
                     if (isSkipped) {
                       isCompleted = false;
                     }
-                    const isCurrent = index === currentStepIndex + 1;
+                    // Check if quote was rejected - show Preventivo step as rejected
+                    const isRejected = repair.status === 'preventivo_rifiutato' && step.key === 'preventivo_emesso';
+                    if (isRejected) {
+                      isCompleted = false;
+                    }
+                    const isCurrent = index === currentStepIndex + 1 && repair.status !== 'preventivo_rifiutato';
                     const Icon = step.icon;
                     
                     return (
@@ -898,15 +903,19 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
                         data-testid={`workflow-step-${step.key}`}
                       >
                         <div className={`relative z-10 h-12 w-12 rounded-xl flex items-center justify-center transition-all duration-300 ${
-                          isCurrent 
-                            ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/30 scale-110 ring-4 ring-primary/20' 
-                            : isSkipped
-                              ? 'bg-amber-500 text-white shadow-md shadow-amber-500/20 ring-2 ring-amber-400/50'
-                              : isCompleted 
-                                ? 'bg-emerald-500 text-white shadow-md shadow-emerald-500/20' 
-                                : 'bg-muted text-muted-foreground'
+                          isRejected
+                            ? 'bg-red-500 text-white shadow-lg shadow-red-500/30 scale-110 ring-4 ring-red-500/20'
+                            : isCurrent 
+                              ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/30 scale-110 ring-4 ring-primary/20' 
+                              : isSkipped
+                                ? 'bg-amber-500 text-white shadow-md shadow-amber-500/20 ring-2 ring-amber-400/50'
+                                : isCompleted 
+                                  ? 'bg-emerald-500 text-white shadow-md shadow-emerald-500/20' 
+                                  : 'bg-muted text-muted-foreground'
                         }`}>
-                          {isSkipped ? (
+                          {isRejected ? (
+                            <XCircle className="h-5 w-5" />
+                          ) : isSkipped ? (
                             <AlertTriangle className="h-5 w-5" />
                           ) : isCompleted ? (
                             <CheckCircle2 className="h-5 w-5" />
@@ -915,13 +924,15 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
                           )}
                         </div>
                         <span className={`text-xs mt-2 text-center font-medium ${
-                          isCurrent 
-                            ? 'text-primary' 
-                            : isSkipped
-                              ? 'text-amber-600 dark:text-amber-400'
-                              : isCompleted 
-                                ? 'text-emerald-600 dark:text-emerald-400' 
-                                : 'text-muted-foreground'
+                          isRejected
+                            ? 'text-red-600 dark:text-red-400'
+                            : isCurrent 
+                              ? 'text-primary' 
+                              : isSkipped
+                                ? 'text-amber-600 dark:text-amber-400'
+                                : isCompleted 
+                                  ? 'text-emerald-600 dark:text-emerald-400' 
+                                  : 'text-muted-foreground'
                         }`}>
                           {step.label}
                         </span>
@@ -1503,6 +1514,38 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
                           </div>
                         </>
                       )}
+                    </div>
+                  )}
+
+                  {repair.status === 'preventivo_rifiutato' && (
+                    <div className="bg-red-50 dark:bg-red-950 rounded-lg p-4 space-y-3 border border-red-200 dark:border-red-800">
+                      <p className="text-sm text-red-700 dark:text-red-300 flex items-center gap-2">
+                        <XCircle className="h-4 w-4" />
+                        <strong>Il cliente ha rifiutato il preventivo.</strong>
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        Puoi contattare il cliente per negoziare, creare un nuovo preventivo, oppure restituire il dispositivo.
+                      </p>
+                      <div className="flex gap-2 flex-wrap">
+                        <Button
+                          variant="outline"
+                          onClick={() => setQuoteDialogOpen(true)}
+                          className="flex-1"
+                          data-testid="button-new-quote-after-reject"
+                        >
+                          <Receipt className="mr-2 h-4 w-4" />
+                          Nuovo Preventivo
+                        </Button>
+                        <Button
+                          variant="outline"
+                          onClick={() => setDeliveryDialogOpen(true)}
+                          className="flex-1"
+                          data-testid="button-return-device"
+                        >
+                          <Truck className="mr-2 h-4 w-4" />
+                          Restituisci Dispositivo
+                        </Button>
+                      </div>
                     </div>
                   )}
 
