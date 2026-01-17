@@ -90,6 +90,7 @@ import AdminWarehouses from "@/pages/admin/warehouses";
 import AdminAllWarehouses from "@/pages/admin/all-warehouses";
 import AdminWarrantyProducts from "@/pages/admin/warranty-products";
 import AdminWarrantyAnalytics from "@/pages/admin/warranty-analytics";
+import AdminUnrepairableReasons from "@/pages/admin/unrepairable-reasons";
 
 // Admin Utility pages
 import AdminUtility from "@/pages/admin/utility/index";
@@ -347,6 +348,7 @@ function Router() {
       <ProtectedRoute path="/admin/utility/commissions" component={AdminUtilityCommissions} />
       <ProtectedRoute path="/admin/utility/reports" component={AdminUtilityReports} />
       <ProtectedRoute path="/admin/settings" component={AdminSettings} />
+      <ProtectedRoute path="/admin/unrepairable-reasons" component={AdminUnrepairableReasons} />
       <ProtectedRoute path="/admin/service-catalog" component={AdminServiceCatalog} />
       <ProtectedRoute path="/admin/dispositivi" component={AdminSmartphoneCatalog} />
       <ProtectedRoute path="/admin/accessory-catalog" component={AdminAccessoryCatalog} />

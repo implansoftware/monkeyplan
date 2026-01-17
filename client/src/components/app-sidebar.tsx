@@ -46,6 +46,7 @@ import {
   Calendar,
   Stethoscope,
   ReceiptText,
+  AlertTriangle,
 } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useState, Fragment, useMemo } from "react";
@@ -119,6 +120,7 @@ const menuItems = {
     { title: "Categorie Utility", url: "/admin/utility-categories", icon: FolderOpen, group: "Sistema" },
     { title: "Integrazioni API", url: "/admin/external-integrations", icon: Plug, group: "Sistema" },
     { title: "Activity Logs", url: "/admin/activity-logs", icon: Shield, group: "Sistema" },
+    { title: "Motivi Irriparabilità", url: "/admin/unrepairable-reasons", icon: AlertTriangle, group: "Sistema" },
     { title: "Impostazioni", url: "/admin/settings", icon: Settings, group: "Sistema" },
     { title: "Team Admin", url: "/admin/team", icon: UsersRound, group: "Sistema" },
     { title: "Ticket", url: "/admin/tickets", icon: Ticket, group: "Assistenza" },
