@@ -25,6 +25,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import {
@@ -1700,6 +1701,8 @@ export function RepairIntakeWizard({
                             </div>
                           </div>
                         )}
+
+                        <Separator className="my-2" />
 
                         <div className="space-y-3">
                           <div className="flex items-center space-x-2">
