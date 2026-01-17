@@ -1171,14 +1171,14 @@ export function RepairIntakeWizard({
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Tipo Dispositivo *</FormLabel>
-                      <div className="grid grid-cols-3 gap-2">
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 w-full">
                         {deviceTypes.map((type) => {
                           const Icon = DEVICE_TYPE_ICONS[type.name.toLowerCase()] || Smartphone;
                           return (
                             <Card
                               key={type.id}
                               className={cn(
-                                "cursor-pointer transition-colors hover-elevate",
+                                "cursor-pointer transition-colors hover-elevate min-w-0",
                                 field.value === type.id && "ring-2 ring-primary"
                               )}
                               onClick={() => {
@@ -1192,7 +1192,7 @@ export function RepairIntakeWizard({
                             >
                               <CardContent className="p-3 text-center">
                                 <Icon className="h-6 w-6 mx-auto mb-1" />
-                                <span className="text-sm">{type.name}</span>
+                                <span className="text-xs sm:text-sm truncate block">{type.name}</span>
                               </CardContent>
                             </Card>
                           );
