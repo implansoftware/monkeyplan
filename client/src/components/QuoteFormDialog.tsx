@@ -47,11 +47,21 @@ interface HourlyRateResponse {
   hourlyRateCents: number;
 }
 
+// Data structure for standalone mode callback
+export interface QuoteCollectedData {
+  parts: Array<{ name: string; quantity: number; unitPrice: number }>;
+  laborCost: number;
+  notes?: string;
+}
+
 interface QuoteFormDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  repairOrderId: string;
+  repairOrderId?: string;
   onSuccess?: () => void;
+  // Standalone mode props (for use in wizards)
+  standalone?: boolean;
+  onDataCollected?: (data: QuoteCollectedData) => void;
 }
 
 const partSchema = z.object({
@@ -76,6 +86,8 @@ export function QuoteFormDialog({
   onOpenChange,
   repairOrderId,
   onSuccess,
+  standalone = false,
+  onDataCollected,
 }: QuoteFormDialogProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -92,10 +104,10 @@ export function QuoteFormDialog({
     enabled: open,
   });
 
-  // Fetch repair order to get the assigned repair center
+  // Fetch repair order to get the assigned repair center (only in non-standalone mode)
   const { data: repairOrder } = useQuery<RepairOrder>({
     queryKey: ["/api/repair-orders", repairOrderId],
-    enabled: open && !!repairOrderId,
+    enabled: open && !!repairOrderId && !standalone,
     retry: false,
   });
 
@@ -112,7 +124,7 @@ export function QuoteFormDialog({
     error: diagnosisError 
   } = useQuery<RepairDiagnostics>({
     queryKey: ["/api/repair-orders", repairOrderId, "diagnostics"],
-    enabled: open && !!repairOrderId,
+    enabled: open && !!repairOrderId && !standalone,
     retry: false,
   });
 
@@ -244,6 +256,25 @@ export function QuoteFormDialog({
   });
 
   const onSubmit = (data: QuoteFormData) => {
+    // Standalone mode: collect data and return via callback
+    if (standalone && onDataCollected) {
+      const collectedData: QuoteCollectedData = {
+        parts: (data.parts || []).map(p => ({
+          name: p.name,
+          quantity: p.quantity,
+          unitPrice: p.unitPrice,
+        })),
+        laborCost: data.laborCost || 0,
+        notes: data.notes,
+      };
+      onDataCollected(collectedData);
+      form.reset();
+      setSelectedWarehouseId("");
+      onOpenChange(false);
+      return;
+    }
+    
+    // Normal mode: save to database
     createQuoteMutation.mutate(data);
   };
 

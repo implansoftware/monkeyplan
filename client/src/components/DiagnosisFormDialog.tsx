@@ -98,13 +98,34 @@ interface ExistingDiagnosis {
   dataRecoveryRequested?: boolean | null;
 }
 
+// Data structure for standalone mode callback
+export interface DiagnosisCollectedData {
+  technicalDiagnosis: string;
+  outcome: "riparabile" | "non_conveniente" | "irriparabile";
+  notes?: string;
+  estimatedTime?: number;
+  findingIds: string[];
+  componentIds: string[];
+  estimatedRepairTimeId?: string;
+  skipPhotos: boolean;
+  unrepairableReasonId?: string;
+  suggestedPromotionIds?: string[];
+  requiresExternalParts: boolean;
+  customerDataImportant: boolean;
+  dataRecoveryRequested: boolean;
+}
+
 interface DiagnosisFormDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  repairOrderId: string;
+  repairOrderId?: string;
   repairOrder?: { deviceTypeId?: string | null };
   existingDiagnosis?: ExistingDiagnosis | null;
   onSuccess?: (outcome?: string) => void;
+  // Standalone mode props (for use in wizards)
+  standalone?: boolean;
+  deviceTypeId?: string | null;
+  onDataCollected?: (data: DiagnosisCollectedData) => void;
 }
 
 const diagnosisSchema = z.object({
@@ -226,6 +247,9 @@ export function DiagnosisFormDialog({
   repairOrder,
   existingDiagnosis,
   onSuccess,
+  standalone = false,
+  deviceTypeId: standaloneDeviceTypeId,
+  onDataCollected,
 }: DiagnosisFormDialogProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -233,7 +257,8 @@ export function DiagnosisFormDialog({
   
   const isEditMode = !!existingDiagnosis;
 
-  const deviceTypeId = repairOrder?.deviceTypeId;
+  // Use standalone deviceTypeId if provided, otherwise use from repairOrder
+  const deviceTypeId = standaloneDeviceTypeId ?? repairOrder?.deviceTypeId;
 
   const buildQueryUrl = (base: string, params: Record<string, string | undefined>) => {
     const searchParams = new URLSearchParams();
@@ -524,6 +549,31 @@ export function DiagnosisFormDialog({
   });
 
   const onSubmit = (data: DiagnosisFormData) => {
+    // Standalone mode: collect data and return via callback
+    if (standalone && onDataCollected) {
+      const payload = buildPayload(data);
+      const collectedData: DiagnosisCollectedData = {
+        technicalDiagnosis: payload.technicalDiagnosis,
+        outcome: data.diagnosisOutcome,
+        notes: payload.diagnosisNotes,
+        estimatedTime: payload.estimatedRepairTime,
+        findingIds: payload.findingIds,
+        componentIds: payload.componentIds,
+        estimatedRepairTimeId: payload.estimatedRepairTimeId,
+        skipPhotos: payload.skipPhotos,
+        unrepairableReasonId: payload.unrepairableReasonId || undefined,
+        suggestedPromotionIds: payload.suggestedPromotionIds,
+        requiresExternalParts: payload.requiresExternalParts,
+        customerDataImportant: payload.customerDataImportant,
+        dataRecoveryRequested: payload.dataRecoveryRequested,
+      };
+      onDataCollected(collectedData);
+      resetFormState();
+      onOpenChange(false);
+      return;
+    }
+    
+    // Normal mode: save to database
     if (isEditMode) {
       updateDiagnosisMutation.mutate(data);
     } else {

@@ -47,6 +47,9 @@ import { cn } from "@/lib/utils";
 import { SearchableServiceCombobox } from "@/components/SearchableServiceCombobox";
 import { SearchableProductCombobox } from "@/components/SearchableProductCombobox";
 import { DiagnosisPhotoUploader } from "@/components/DiagnosisPhotoUploader";
+import { DiagnosisFormDialog, type DiagnosisCollectedData } from "@/components/DiagnosisFormDialog";
+import { QuoteFormDialog, type QuoteCollectedData } from "@/components/QuoteFormDialog";
+import { Stethoscope } from "lucide-react";
 import type { 
   Warehouse as WarehouseType, 
   DiagnosticFinding, 
@@ -79,7 +82,6 @@ const wizardSchema = z.object({
   // IMEI flags
   imeiNotReadable: z.boolean().default(false),
   imeiNotPresent: z.boolean().default(false),
-  serialOnly: z.boolean().default(false),
   issueDescription: z.string().optional().default(""),
   
   // Step 2: Customer & Assignment
@@ -164,6 +166,13 @@ export function RepairIntakeWizard({
   const [uploadSessionId] = useState(() => crypto.randomUUID());
   const [diagnosisUnrepairableReasonId, setDiagnosisUnrepairableReasonId] = useState<string>("");
   const [diagnosisSuggestedPromotionIds, setDiagnosisSuggestedPromotionIds] = useState<string[]>([]);
+  
+  // Modal dialog states for standalone mode
+  const [diagnosisDialogOpen, setDiagnosisDialogOpen] = useState(false);
+  const [quoteDialogOpen, setQuoteDialogOpen] = useState(false);
+  const [collectedDiagnosisData, setCollectedDiagnosisData] = useState<DiagnosisCollectedData | null>(null);
+  const [collectedQuoteData, setCollectedQuoteData] = useState<QuoteCollectedData | null>(null);
+  
   const dialogContentRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -186,7 +195,6 @@ export function RepairIntakeWizard({
       serial: "",
       imeiNotReadable: false,
       imeiNotPresent: false,
-      serialOnly: false,
       issueDescription: "",
       aestheticCondition: "",
       accessories: [],
@@ -230,6 +238,11 @@ export function RepairIntakeWizard({
       setDiagnosisSkipPhotos(true);
       setDiagnosisUnrepairableReasonId("");
       setDiagnosisSuggestedPromotionIds([]);
+      // Reset modal dialog states
+      setDiagnosisDialogOpen(false);
+      setQuoteDialogOpen(false);
+      setCollectedDiagnosisData(null);
+      setCollectedQuoteData(null);
       form.reset();
     }
   }, [open, form]);
@@ -576,7 +589,6 @@ export function RepairIntakeWizard({
         // IMEI flags - always include for acceptance flow
         imeiNotReadable: data.imeiNotReadable || false,
         imeiNotPresent: data.imeiNotPresent || false,
-        serialOnly: data.serialOnly || false,
       };
 
       // Add optional order fields
@@ -626,35 +638,42 @@ export function RepairIntakeWizard({
       // Include acceptance in payload - this triggers acceptanceOrderSchema on backend
       payload.acceptance = acceptance;
 
-      // Include quote data if user wants to create quote during order creation
-      if (createQuoteNow) {
+      // Include quote data if collected from modal dialog
+      if (createQuoteNow && collectedQuoteData) {
         payload.quote = {
           createQuote: true,
-          parts: quoteParts.filter(p => p.name && p.unitPrice > 0),
-          laborCost: Math.round(quoteLaborCost * 100),
-          notes: quoteNotes || null,
+          parts: collectedQuoteData.parts.map(p => ({
+            name: p.name,
+            quantity: p.quantity,
+            unitPrice: Math.round(p.unitPrice * 100),
+          })),
+          laborCost: Math.round(collectedQuoteData.laborCost * 100),
+          notes: collectedQuoteData.notes || null,
         };
       }
 
-      // Include diagnosis data if user wants to create diagnosis during order creation
-      if (createDiagnosisNow && diagnosisTechnical.trim()) {
-        const selectedTimeData = estimatedRepairTimes.find(t => t.id === diagnosisEstimatedTimeId);
-        const computedEstimatedTime = selectedTimeData?.hoursMax ?? diagnosisEstimatedTime ?? null;
+      // Include diagnosis data if collected from modal dialog
+      if (createDiagnosisNow && collectedDiagnosisData) {
         payload.diagnosis = {
           createDiagnosis: true,
-          technicalDiagnosis: diagnosisTechnical.trim(),
-          diagnosisOutcome: diagnosisOutcome,
-          estimatedRepairTime: computedEstimatedTime,
-          diagnosisNotes: diagnosisNotes || null,
-          requiresExternalParts: diagnosisRequiresExternalParts,
-          customerDataImportant: diagnosisCustomerDataImportant,
-          dataRecoveryRequested: diagnosisDataRecoveryRequested,
-          findingIds: diagnosisSelectedFindingIds.length > 0 ? diagnosisSelectedFindingIds : undefined,
-          componentIds: diagnosisSelectedComponentIds.length > 0 ? diagnosisSelectedComponentIds : undefined,
-          estimatedRepairTimeId: diagnosisEstimatedTimeId || undefined,
-          skipPhotos: diagnosisSkipPhotos,
-          unrepairableReasonId: diagnosisOutcome === "irriparabile" && diagnosisUnrepairableReasonId ? diagnosisUnrepairableReasonId : undefined,
-          suggestedPromotionIds: diagnosisOutcome === "non_conveniente" && diagnosisSuggestedPromotionIds.length > 0 ? diagnosisSuggestedPromotionIds : undefined,
+          technicalDiagnosis: collectedDiagnosisData.technicalDiagnosis,
+          diagnosisOutcome: collectedDiagnosisData.outcome,
+          estimatedRepairTime: collectedDiagnosisData.estimatedTime ?? null,
+          diagnosisNotes: collectedDiagnosisData.notes || null,
+          requiresExternalParts: collectedDiagnosisData.requiresExternalParts || false,
+          customerDataImportant: collectedDiagnosisData.customerDataImportant || false,
+          dataRecoveryRequested: collectedDiagnosisData.dataRecoveryRequested || false,
+          findingIds: collectedDiagnosisData.findingIds && collectedDiagnosisData.findingIds.length > 0 
+            ? collectedDiagnosisData.findingIds : undefined,
+          componentIds: collectedDiagnosisData.componentIds && collectedDiagnosisData.componentIds.length > 0 
+            ? collectedDiagnosisData.componentIds : undefined,
+          estimatedRepairTimeId: collectedDiagnosisData.estimatedRepairTimeId || undefined,
+          skipPhotos: collectedDiagnosisData.skipPhotos ?? true,
+          unrepairableReasonId: collectedDiagnosisData.outcome === "irriparabile" && collectedDiagnosisData.unrepairableReasonId 
+            ? collectedDiagnosisData.unrepairableReasonId : undefined,
+          suggestedPromotionIds: collectedDiagnosisData.outcome === "non_conveniente" && 
+            collectedDiagnosisData.suggestedPromotionIds && collectedDiagnosisData.suggestedPromotionIds.length > 0 
+            ? collectedDiagnosisData.suggestedPromotionIds : undefined,
         };
       }
 
@@ -1482,32 +1501,6 @@ export function RepairIntakeWizard({
                       </FormItem>
                     )}
                   />
-                  <FormField
-                    control={form.control}
-                    name="serialOnly"
-                    render={({ field }) => (
-                      <FormItem className="flex items-center space-x-2 space-y-0">
-                        <FormControl>
-                          <Checkbox
-                            checked={field.value}
-                            onCheckedChange={(checked) => {
-                              field.onChange(checked);
-                              if (checked) {
-                                // Serial only implies IMEI not present
-                                form.setValue("imei", "");
-                                form.setValue("imeiNotPresent", true);
-                                form.setValue("imeiNotReadable", false);
-                              }
-                            }}
-                            data-testid="checkbox-serial-only"
-                          />
-                        </FormControl>
-                        <FormLabel className="text-sm font-normal cursor-pointer">
-                          Solo seriale
-                        </FormLabel>
-                      </FormItem>
-                    )}
-                  />
                 </div>
 
                 </div>
@@ -1629,453 +1622,150 @@ export function RepairIntakeWizard({
 
                 <Card>
                   <CardContent className="pt-4 space-y-4">
-                    {/* Diagnosis Toggle */}
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="createDiagnosisNow"
-                        checked={createDiagnosisNow}
-                        onCheckedChange={(checked) => setCreateDiagnosisNow(checked === true)}
-                        data-testid="checkbox-create-diagnosis"
-                      />
-                      <Label htmlFor="createDiagnosisNow" className="font-medium">
-                        Esegui diagnosi ora
-                      </Label>
-                    </div>
-
-                    {createDiagnosisNow && (
-                      <div className="space-y-4 pt-4 border-t">
-                        {/* Risultati Diagnosi (Findings) */}
-                        {diagnosticFindings.length > 0 && (
-                          <div className="space-y-3">
-                            <Label className="flex items-center gap-2">
-                              <AlertCircle className="h-4 w-4" />
-                              Risultati Diagnosi
-                            </Label>
-                            {Object.entries(findingsByCategory).map(([category, findings]) => {
-                              const CategoryIcon = categoryIcons[category] || AlertCircle;
-                              return (
-                              <div key={category} className="space-y-2">
-                                <p className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                                  <CategoryIcon className="h-4 w-4" />
-                                  {categoryLabels[category] || category}
-                                </p>
-                                <div className="grid grid-cols-2 gap-2">
-                                  {findings.map((finding) => (
-                                    <div key={finding.id} className="flex items-center space-x-2">
-                                      <Checkbox
-                                        id={`finding-${finding.id}`}
-                                        checked={diagnosisSelectedFindingIds.includes(finding.id)}
-                                        onCheckedChange={(checked) => {
-                                          if (checked) {
-                                            setDiagnosisSelectedFindingIds([...diagnosisSelectedFindingIds, finding.id]);
-                                          } else {
-                                            setDiagnosisSelectedFindingIds(diagnosisSelectedFindingIds.filter(id => id !== finding.id));
-                                          }
-                                        }}
-                                        data-testid={`checkbox-finding-${finding.id}`}
-                                      />
-                                      <Label htmlFor={`finding-${finding.id}`} className="text-sm">{finding.name}</Label>
-                                    </div>
-                                  ))}
-                                </div>
-                              </div>
-                              );
-                            })}
+                    {/* Diagnosis Section */}
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="h-10 w-10 rounded-xl bg-violet-500/10 flex items-center justify-center">
+                            <Stethoscope className="h-5 w-5 text-violet-600 dark:text-violet-400" />
                           </div>
-                        )}
-
-                        {/* Componenti Danneggiati */}
-                        {damagedComponentTypes.length > 0 && (
-                          <div className="space-y-2">
-                            <Label>Componenti Danneggiati</Label>
-                            <div className="grid grid-cols-2 gap-2">
-                              {damagedComponentTypes.map((comp) => (
-                                <div key={comp.id} className="flex items-center space-x-2">
-                                  <Checkbox
-                                    id={`component-${comp.id}`}
-                                    checked={diagnosisSelectedComponentIds.includes(comp.id)}
-                                    onCheckedChange={(checked) => {
-                                      if (checked) {
-                                        setDiagnosisSelectedComponentIds([...diagnosisSelectedComponentIds, comp.id]);
-                                      } else {
-                                        setDiagnosisSelectedComponentIds(diagnosisSelectedComponentIds.filter(id => id !== comp.id));
-                                      }
-                                    }}
-                                    data-testid={`checkbox-component-${comp.id}`}
-                                  />
-                                  <Label htmlFor={`component-${comp.id}`} className="text-sm">{comp.name}</Label>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-
-                        <Separator className="my-2" />
-
-                        <div className="space-y-3">
-                          <div className="flex items-center space-x-2">
-                            <Checkbox
-                              id="show-technical-diagnosis"
-                              checked={showTechnicalDiagnosis}
-                              onCheckedChange={(checked) => {
-                                setShowTechnicalDiagnosis(!!checked);
-                                if (!checked) setDiagnosisTechnical("");
-                              }}
-                              data-testid="checkbox-show-technical-diagnosis"
-                            />
-                            <Label htmlFor="show-technical-diagnosis" className="text-sm font-medium cursor-pointer">
-                              Voglio lasciare diagnosi tecnica
-                            </Label>
-                          </div>
-                          {showTechnicalDiagnosis && (
-                            <Textarea
-                              value={diagnosisTechnical}
-                              onChange={(e) => setDiagnosisTechnical(e.target.value)}
-                              placeholder="Descrivi la diagnosi tecnica del dispositivo..."
-                              rows={3}
-                              data-testid="textarea-diagnosis-technical"
-                            />
-                          )}
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-4">
-                          <div className="space-y-2">
-                            <Label>Esito Diagnosi</Label>
-                            <Select value={diagnosisOutcome} onValueChange={(v: any) => {
-                              setDiagnosisOutcome(v);
-                              if (v !== "irriparabile") setDiagnosisUnrepairableReasonId("");
-                              if (v !== "non_conveniente") setDiagnosisSuggestedPromotionIds([]);
-                            }}>
-                              <SelectTrigger data-testid="select-diagnosis-outcome">
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="riparabile">Riparabile</SelectItem>
-                                <SelectItem value="non_conveniente">Non Conveniente</SelectItem>
-                                <SelectItem value="irriparabile">Irriparabile</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </div>
-                          <div className="space-y-2">
-                            <Label>Tempo Stimato</Label>
-                            <Select value={diagnosisEstimatedTimeId} onValueChange={setDiagnosisEstimatedTimeId}>
-                              <SelectTrigger data-testid="select-diagnosis-time">
-                                <SelectValue placeholder="Seleziona durata" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {estimatedRepairTimes.map((time) => (
-                                  <SelectItem key={time.id} value={time.id}>
-                                    {time.name}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
+                          <div>
+                            <p className="font-medium">Diagnosi Tecnica</p>
+                            <p className="text-sm text-muted-foreground">
+                              {collectedDiagnosisData ? "Diagnosi configurata" : "Opzionale - configura diagnosi"}
+                            </p>
                           </div>
                         </div>
-
-                        {/* Motivo Irriparabilità (condizionale) */}
-                        {diagnosisOutcome === "irriparabile" && unrepairableReasons.length > 0 && (
-                          <div className="space-y-2">
-                            <Label>Motivo Irriparabilità</Label>
-                            <Select value={diagnosisUnrepairableReasonId} onValueChange={setDiagnosisUnrepairableReasonId}>
-                              <SelectTrigger data-testid="select-unrepairable-reason">
-                                <SelectValue placeholder="Seleziona motivo" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {unrepairableReasons.map((reason) => (
-                                  <SelectItem key={reason.id} value={reason.id}>
-                                    {reason.name}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </div>
-                        )}
-
-                        {/* Promozioni Suggerite (condizionale) */}
-                        {diagnosisOutcome === "non_conveniente" && promotions.length > 0 && (
-                          <div className="space-y-2">
-                            <Label>Promozioni Suggerite</Label>
-                            <div className="grid grid-cols-2 gap-2">
-                              {promotions.map((promo) => (
-                                <div key={promo.id} className="flex items-center space-x-2">
-                                  <Checkbox
-                                    id={`promo-${promo.id}`}
-                                    checked={diagnosisSuggestedPromotionIds.includes(promo.id)}
-                                    onCheckedChange={(checked) => {
-                                      if (checked) {
-                                        setDiagnosisSuggestedPromotionIds([...diagnosisSuggestedPromotionIds, promo.id]);
-                                      } else {
-                                        setDiagnosisSuggestedPromotionIds(diagnosisSuggestedPromotionIds.filter(id => id !== promo.id));
-                                      }
-                                    }}
-                                    data-testid={`checkbox-promo-${promo.id}`}
-                                  />
-                                  <Label htmlFor={`promo-${promo.id}`} className="text-sm">{promo.name}</Label>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-
-                        <div className="space-y-2">
-                          <Label>Note Diagnosi</Label>
-                          <Textarea
-                            value={diagnosisNotes}
-                            onChange={(e) => setDiagnosisNotes(e.target.value)}
-                            placeholder="Note aggiuntive sulla diagnosi..."
-                            rows={2}
-                            data-testid="textarea-diagnosis-notes"
-                          />
-                        </div>
-
-                        {/* Additional diagnosis options */}
-                        <div className="space-y-3 pt-2">
-                          <div className="flex items-center space-x-2">
-                            <Checkbox
-                              id="diagnosisRequiresExternalParts"
-                              checked={diagnosisRequiresExternalParts}
-                              onCheckedChange={(checked) => setDiagnosisRequiresExternalParts(checked === true)}
-                              data-testid="checkbox-requires-external-parts"
-                            />
-                            <Label htmlFor="diagnosisRequiresExternalParts">
-                              Richiede ricambi esterni
-                            </Label>
-                          </div>
-
-                          <div className="flex items-center space-x-2">
-                            <Checkbox
-                              id="diagnosisCustomerDataImportant"
-                              checked={diagnosisCustomerDataImportant}
-                              onCheckedChange={(checked) => setDiagnosisCustomerDataImportant(checked === true)}
-                              data-testid="checkbox-customer-data-important"
-                            />
-                            <Label htmlFor="diagnosisCustomerDataImportant">
-                              Dati cliente importanti (presenti sul dispositivo)
-                            </Label>
-                          </div>
-
-                          {diagnosisCustomerDataImportant && (
-                            <div className="flex items-center space-x-2 ml-6">
-                              <Checkbox
-                                id="diagnosisDataRecoveryRequested"
-                                checked={diagnosisDataRecoveryRequested}
-                                onCheckedChange={(checked) => setDiagnosisDataRecoveryRequested(checked === true)}
-                                data-testid="checkbox-data-recovery-requested"
-                              />
-                              <Label htmlFor="diagnosisDataRecoveryRequested">
-                                Recupero dati richiesto dal cliente
-                              </Label>
-                            </div>
-                          )}
-
-                          <div className="flex items-center space-x-2">
-                            <Checkbox
-                              id="diagnosisWantPhotos"
-                              checked={!diagnosisSkipPhotos}
-                              onCheckedChange={(checked) => setDiagnosisSkipPhotos(checked !== true)}
-                              data-testid="checkbox-want-photos"
-                            />
-                            <Label htmlFor="diagnosisWantPhotos" className="flex flex-col">
-                              <span>Voglio caricare foto</span>
-                            </Label>
-                          </div>
-                          {!diagnosisSkipPhotos && (
-                            <div className="mt-4">
-                              <DiagnosisPhotoUploader
-                                uploadSessionId={uploadSessionId}
-                                photos={diagnosisPhotoIds}
-                                onPhotosChange={setDiagnosisPhotoIds}
-                              />
-                            </div>
-                          )}
-                        </div>
+                        <Button
+                          type="button"
+                          variant={collectedDiagnosisData ? "outline" : "default"}
+                          size="sm"
+                          onClick={() => setDiagnosisDialogOpen(true)}
+                          data-testid="button-configure-diagnosis"
+                        >
+                          {collectedDiagnosisData ? "Modifica" : "Configura"}
+                        </Button>
                       </div>
-                    )}
-
-                    <div className="border-t pt-4 mt-4"></div>
-
-                    {/* Quote Toggle */}
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="createQuoteNow"
-                        checked={createQuoteNow}
-                        onCheckedChange={(checked) => setCreateQuoteNow(checked === true)}
-                        data-testid="checkbox-create-quote"
-                      />
-                      <Label htmlFor="createQuoteNow" className="font-medium">
-                        Crea preventivo ora
-                      </Label>
+                      
+                      {/* Diagnosis Summary */}
+                      {collectedDiagnosisData && (
+                        <div className="bg-violet-50 dark:bg-violet-950/20 rounded-lg p-3 space-y-2">
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm font-medium">Esito:</span>
+                            <Badge variant={
+                              collectedDiagnosisData.outcome === "riparabile" ? "default" :
+                              collectedDiagnosisData.outcome === "non_conveniente" ? "secondary" : "destructive"
+                            }>
+                              {collectedDiagnosisData.outcome === "riparabile" ? "Riparabile" :
+                               collectedDiagnosisData.outcome === "non_conveniente" ? "Non Conveniente" : "Irriparabile"}
+                            </Badge>
+                          </div>
+                          {collectedDiagnosisData.technicalDiagnosis && (
+                            <p className="text-sm text-muted-foreground line-clamp-2">
+                              {collectedDiagnosisData.technicalDiagnosis}
+                            </p>
+                          )}
+                          {collectedDiagnosisData.estimatedTime && (
+                            <p className="text-sm">
+                              <span className="text-muted-foreground">Tempo stimato:</span> {collectedDiagnosisData.estimatedTime}h
+                            </p>
+                          )}
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="text-destructive hover:text-destructive"
+                            onClick={() => {
+                              setCollectedDiagnosisData(null);
+                              setCreateDiagnosisNow(false);
+                            }}
+                            data-testid="button-remove-diagnosis"
+                          >
+                            <X className="h-4 w-4 mr-1" />
+                            Rimuovi diagnosi
+                          </Button>
+                        </div>
+                      )}
                     </div>
 
-                    {createQuoteNow && (
-                      <div className="space-y-4 pt-4 border-t">
-                        <div className="space-y-2">
-                          <Label className="flex items-center gap-2">
-                            <Calculator className="h-4 w-4" />
-                            Costo Manodopera (€)
-                          </Label>
-                          <Input
-                            type="number"
-                            min="0"
-                            step="0.01"
-                            value={quoteLaborCost}
-                            onChange={(e) => setQuoteLaborCost(parseFloat(e.target.value) || 0)}
-                            placeholder="0.00"
-                            data-testid="input-labor-cost"
-                          />
-                        </div>
+                    <Separator />
 
-                        <div className="space-y-3">
-                          <Label className="flex items-center gap-2">
-                            <Package className="h-4 w-4" />
-                            Ricambi e Servizi
-                          </Label>
-                          
-                          {/* Warehouse selection */}
-                          <div className="flex items-center gap-2">
-                            <Select value={selectedQuoteWarehouseId} onValueChange={setSelectedQuoteWarehouseId}>
-                              <SelectTrigger className="w-[200px]" data-testid="select-quote-warehouse">
-                                <Warehouse className="h-4 w-4 mr-2" />
-                                <SelectValue placeholder="Seleziona magazzino" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {accessibleWarehouses.map((wh) => (
-                                  <SelectItem key={wh.id} value={wh.id}>
-                                    {wh.name}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
+                    {/* Quote Section */}
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="h-10 w-10 rounded-xl bg-blue-500/10 flex items-center justify-center">
+                            <FileText className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                           </div>
-
-                          {/* Action buttons */}
-                          <div className="flex gap-2 flex-wrap">
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="sm"
-                              onClick={() => setQuoteParts([...quoteParts, { name: '', quantity: 1, unitPrice: 0 }])}
-                              data-testid="button-add-part-manual"
-                            >
-                              <Plus className="h-4 w-4 mr-1" />
-                              Manuale
-                            </Button>
-                            <SearchableServiceCombobox
-                              onSelect={(service) => {
-                                setQuoteParts([...quoteParts, {
-                                  name: `[Servizio] ${service.name}`,
-                                  quantity: 1,
-                                  unitPrice: service.effectivePriceCents,
-                                }]);
-                              }}
-                              repairCenterId={form.watch("repairCenterId") || undefined}
-                              deviceTypeId={form.watch("deviceType") || undefined}
-                              brandId={form.watch("deviceBrandId") || undefined}
-                              modelId={form.watch("deviceModelId") || undefined}
-                            />
-                            <SearchableProductCombobox
-                              onSelect={(product) => {
-                                setQuoteParts([...quoteParts, {
-                                  name: product.name,
-                                  quantity: 1,
-                                  unitPrice: product.unitPrice || 0,
-                                }]);
-                              }}
-                              warehouseId={selectedQuoteWarehouseId || undefined}
-                              productType="ricambio"
-                            />
-                          </div>
-
-                          {/* Parts list */}
-                          <div className="space-y-2">
-                            {quoteParts.length === 0 ? (
-                              <p className="text-sm text-muted-foreground text-center py-2">
-                                Nessun elemento aggiunto. Seleziona dal catalogo, magazzino o aggiungi manualmente.
-                              </p>
-                            ) : (
-                              quoteParts.map((part, index) => (
-                                <div key={index} className="flex gap-2 items-center">
-                                  <Input
-                                    placeholder="Nome ricambio/servizio"
-                                    value={part.name}
-                                    onChange={(e) => {
-                                      const newParts = [...quoteParts];
-                                      newParts[index].name = e.target.value;
-                                      setQuoteParts(newParts);
-                                    }}
-                                    className="flex-1"
-                                    data-testid={`input-part-name-${index}`}
-                                  />
-                                  <Input
-                                    type="number"
-                                    min="1"
-                                    placeholder="Qty"
-                                    value={part.quantity}
-                                    onChange={(e) => {
-                                      const newParts = [...quoteParts];
-                                      newParts[index].quantity = parseInt(e.target.value) || 1;
-                                      setQuoteParts(newParts);
-                                    }}
-                                    className="w-20"
-                                    data-testid={`input-part-qty-${index}`}
-                                  />
-                                  <Input
-                                    type="number"
-                                    min="0"
-                                    step="0.01"
-                                    placeholder="€"
-                                    value={part.unitPrice / 100}
-                                    onChange={(e) => {
-                                      const newParts = [...quoteParts];
-                                      newParts[index].unitPrice = Math.round(parseFloat(e.target.value) * 100) || 0;
-                                      setQuoteParts(newParts);
-                                    }}
-                                    className="w-24"
-                                    data-testid={`input-part-price-${index}`}
-                                  />
-                                  <Button
-                                    type="button"
-                                    variant="ghost"
-                                    size="icon"
-                                    onClick={() => {
-                                      setQuoteParts(quoteParts.filter((_, i) => i !== index));
-                                    }}
-                                    data-testid={`button-remove-part-${index}`}
-                                  >
-                                    <X className="h-4 w-4" />
-                                  </Button>
-                                </div>
-                              ))
-                            )}
+                          <div>
+                            <p className="font-medium">Preventivo</p>
+                            <p className="text-sm text-muted-foreground">
+                              {collectedQuoteData ? "Preventivo configurato" : "Opzionale - crea preventivo"}
+                            </p>
                           </div>
                         </div>
-
-                        <div className="space-y-2">
-                          <Label>Note Preventivo</Label>
-                          <Textarea
-                            value={quoteNotes}
-                            onChange={(e) => setQuoteNotes(e.target.value)}
-                            placeholder="Note aggiuntive..."
-                            rows={2}
-                            data-testid="textarea-quote-notes"
-                          />
-                        </div>
-
-                        <div className="bg-muted p-4 rounded-lg">
-                          <div className="flex justify-between items-center">
-                            <span className="font-medium">Totale Preventivo:</span>
-                            <span className="text-xl font-bold">
-                              € {((quoteParts.reduce((sum, p) => sum + p.quantity * p.unitPrice, 0) / 100) + quoteLaborCost).toFixed(2)}
+                        <Button
+                          type="button"
+                          variant={collectedQuoteData ? "outline" : "default"}
+                          size="sm"
+                          onClick={() => setQuoteDialogOpen(true)}
+                          data-testid="button-configure-quote"
+                        >
+                          {collectedQuoteData ? "Modifica" : "Configura"}
+                        </Button>
+                      </div>
+                      
+                      {/* Quote Summary */}
+                      {collectedQuoteData && (
+                        <div className="bg-blue-50 dark:bg-blue-950/20 rounded-lg p-3 space-y-2">
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm font-medium">Totale:</span>
+                            <span className="font-bold text-lg">
+                              € {(
+                                collectedQuoteData.parts.reduce((sum, p) => sum + p.quantity * p.unitPrice, 0) + 
+                                collectedQuoteData.laborCost
+                              ).toFixed(2)}
                             </span>
                           </div>
+                          {collectedQuoteData.parts.length > 0 && (
+                            <p className="text-sm text-muted-foreground">
+                              {collectedQuoteData.parts.length} ricambi/servizi
+                            </p>
+                          )}
+                          {collectedQuoteData.laborCost > 0 && (
+                            <p className="text-sm">
+                              <span className="text-muted-foreground">Manodopera:</span> € {collectedQuoteData.laborCost.toFixed(2)}
+                            </p>
+                          )}
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="text-destructive hover:text-destructive"
+                            onClick={() => {
+                              setCollectedQuoteData(null);
+                              setCreateQuoteNow(false);
+                            }}
+                            data-testid="button-remove-quote"
+                          >
+                            <X className="h-4 w-4 mr-1" />
+                            Rimuovi preventivo
+                          </Button>
                         </div>
+                      )}
+                    </div>
+
+                    {/* Info message */}
+                    {!collectedDiagnosisData && !collectedQuoteData && (
+                      <div className="text-center py-4 text-sm text-muted-foreground">
+                        <p>Puoi saltare questo passaggio e aggiungere diagnosi e preventivo in seguito.</p>
                       </div>
                     )}
                   </CardContent>
                 </Card>
               </div>
             )}
+
 
             {/* Step 5: Summary */}
             {currentStep === 5 && (
@@ -2304,6 +1994,28 @@ export function RepairIntakeWizard({
           </div>
         )}
       </DialogContent>
+      
+      {/* Standalone Modal Dialogs */}
+      <DiagnosisFormDialog
+        open={diagnosisDialogOpen}
+        onOpenChange={setDiagnosisDialogOpen}
+        standalone={true}
+        deviceTypeId={form.watch("deviceType") || undefined}
+        onDataCollected={(data) => {
+          setCollectedDiagnosisData(data);
+          setCreateDiagnosisNow(true);
+        }}
+      />
+      
+      <QuoteFormDialog
+        open={quoteDialogOpen}
+        onOpenChange={setQuoteDialogOpen}
+        standalone={true}
+        onDataCollected={(data) => {
+          setCollectedQuoteData(data);
+          setCreateQuoteNow(true);
+        }}
+      />
     </Dialog>
   );
 }
