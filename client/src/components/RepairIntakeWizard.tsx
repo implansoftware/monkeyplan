@@ -1843,15 +1843,15 @@ export function RepairIntakeWizard({
 
                           <div className="flex items-center space-x-2">
                             <Checkbox
-                              id="diagnosisSkipPhotos"
-                              checked={diagnosisSkipPhotos}
-                              onCheckedChange={(checked) => setDiagnosisSkipPhotos(checked === true)}
-                              data-testid="checkbox-skip-photos"
+                              id="diagnosisWantPhotos"
+                              checked={!diagnosisSkipPhotos}
+                              onCheckedChange={(checked) => setDiagnosisSkipPhotos(checked !== true)}
+                              data-testid="checkbox-want-photos"
                             />
-                            <Label htmlFor="diagnosisSkipPhotos" className="flex flex-col">
-                              <span>Salta foto diagnosi</span>
+                            <Label htmlFor="diagnosisWantPhotos" className="flex flex-col">
+                              <span>Voglio caricare foto</span>
                               <span className="text-xs text-muted-foreground font-normal">
-                                Le foto potranno essere aggiunte dopo la creazione dell'ordine
+                                Le foto potranno essere caricate dopo la creazione dell'ordine
                               </span>
                             </Label>
                           </div>
