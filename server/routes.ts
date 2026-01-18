@@ -9949,11 +9949,12 @@ export function registerRoutes(app: Express): Server {
         }
       }
       
-      // For resellers, check if the order's customer belongs to them FIRST
+      // For resellers and reseller_staff, check if the order's customer belongs to them FIRST
       // This handles the case where order.resellerId is NULL but customer.resellerId matches
-      if (req.user.role === 'reseller' && repairOrder.customerId) {
+      if ((req.user.role === 'reseller' || req.user.role === 'reseller_staff' || req.user.role === 'sub_reseller') && repairOrder.customerId) {
         const customerCheck = await storage.getUser(repairOrder.customerId);
-        if (customerCheck && customerCheck.resellerId === req.user.id) {
+        const effectiveResellerId = req.user.role === 'reseller' || req.user.role === 'sub_reseller' ? req.user.id : req.user.resellerId;
+        if (customerCheck && customerCheck.resellerId === effectiveResellerId) {
           return res.json({ ...repairOrder, customer });
         }
       }
@@ -9961,8 +9962,11 @@ export function registerRoutes(app: Express): Server {
       // Check access based on role
       const hasAccess = 
         req.user.role === 'admin' ||
+        req.user.role === 'admin_staff' ||
         (req.user.role === 'customer' && repairOrder.customerId === req.user.id) ||
         (req.user.role === 'reseller' && repairOrder.resellerId === req.user.id) ||
+        (req.user.role === 'sub_reseller' && repairOrder.resellerId === req.user.id) ||
+        (req.user.role === 'reseller_staff' && repairOrder.resellerId === req.user.resellerId) ||
         (req.user.role === 'repair_center' && repairOrder.repairCenterId === req.user.repairCenterId);
       
       if (!hasAccess) return res.status(403).send("Forbidden");
@@ -9989,7 +9993,7 @@ export function registerRoutes(app: Express): Server {
       
       // For resellers, check if the order's customer belongs to them
       let resellerHasAccess = false;
-      if (req.user.role === 'reseller' && repairOrder.customerId) {
+      if ((req.user.role === 'reseller' || req.user.role === 'reseller_staff' || req.user.role === 'sub_reseller') && repairOrder.customerId) {
         const customer = await storage.getUser(repairOrder.customerId);
         if (customer && customer.resellerId === req.user.id) {
           resellerHasAccess = true;
@@ -10243,7 +10247,7 @@ export function registerRoutes(app: Express): Server {
       
       // For resellers, check if the order's customer belongs to them
       let resellerHasAccess = false;
-      if (req.user.role === 'reseller' && repairOrder.customerId) {
+      if ((req.user.role === 'reseller' || req.user.role === 'reseller_staff' || req.user.role === 'sub_reseller') && repairOrder.customerId) {
         const customer = await storage.getUser(repairOrder.customerId);
         if (customer && customer.resellerId === req.user.id) {
           resellerHasAccess = true;
