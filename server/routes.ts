@@ -1152,7 +1152,7 @@ export function registerRoutes(app: Express): Server {
       // If repairCenterId is provided, verify it belongs to this reseller
       if (repairCenterId) {
         const center = await storage.getRepairCenter(repairCenterId);
-        if (!center || center.resellerId !== req.user.id) {
+        if (!center || center.resellerId !== getEffectiveResellerId(req.user)) {
           return res.status(403).send("This repair center does not belong to you");
         }
       }
@@ -1174,7 +1174,7 @@ export function registerRoutes(app: Express): Server {
             return res.status(403).send("Price record does not match repair center");
           }
         } else {
-          if (existingPrice.resellerId !== req.user.id) {
+          if (existingPrice.resellerId !== getEffectiveResellerId(req.user)) {
             return res.status(403).send("Price record does not belong to you");
           }
         }
@@ -1216,13 +1216,13 @@ export function registerRoutes(app: Express): Server {
       // Check ownership based on whether it's a reseller or center price
       if (priceToDelete.resellerId) {
         // It's a reseller-level price - verify it belongs to this reseller
-        if (priceToDelete.resellerId !== req.user.id) {
+        if (priceToDelete.resellerId !== getEffectiveResellerId(req.user)) {
           return res.status(403).send("This price does not belong to you");
         }
       } else if (priceToDelete.repairCenterId) {
         // It's a center-level price - verify the center belongs to this reseller
         const center = await storage.getRepairCenter(priceToDelete.repairCenterId);
-        if (!center || center.resellerId !== req.user.id) {
+        if (!center || center.resellerId !== getEffectiveResellerId(req.user)) {
           return res.status(403).send("This price does not belong to your repair centers");
         }
       } else {
@@ -5027,7 +5027,7 @@ export function registerRoutes(app: Express): Server {
         }
         
         // Check if center belongs to reseller
-        let isAllowed = center.resellerId === req.user.id;
+        let isAllowed = center.resellerId === getEffectiveResellerId(req.user);
         
         // Franchising/GDO can also use sub-reseller centers
         if (!isAllowed && (req.user.resellerCategory === 'franchising' || req.user.resellerCategory === 'gdo')) {
@@ -5170,7 +5170,7 @@ export function registerRoutes(app: Express): Server {
       if (!repair) return res.status(404).send("Ordine di riparazione non trovato");
       
       // Verify reseller owns this repair
-      if (repair.resellerId !== req.user.id) {
+      if (repair.resellerId !== getEffectiveResellerId(req.user)) {
         return res.status(403).send("Non puoi modificare riparazioni di altri rivenditori");
       }
       
@@ -6832,7 +6832,7 @@ export function registerRoutes(app: Express): Server {
       if (!repairCenter) {
         return res.status(404).send("Centro di riparazione non trovato");
       }
-      if (repairCenter.resellerId !== req.user.id) {
+      if (repairCenter.resellerId !== getEffectiveResellerId(req.user)) {
         return res.status(403).send("Non puoi modificare lo stock in centri che non ti appartengono");
       }
       
@@ -6890,7 +6890,7 @@ export function registerRoutes(app: Express): Server {
       if (!repairCenter) {
         return res.status(404).send("Centro di riparazione non trovato");
       }
-      if (repairCenter.resellerId !== req.user.id) {
+      if (repairCenter.resellerId !== getEffectiveResellerId(req.user)) {
         return res.status(403).send("Non puoi creare movimenti in centri che non ti appartengono");
       }
       
@@ -7014,7 +7014,7 @@ export function registerRoutes(app: Express): Server {
         return res.status(404).send("Centro di riparazione non trovato");
       }
       // Verify this center belongs to the reseller
-      if (center.resellerId !== req.user.id) {
+      if (center.resellerId !== getEffectiveResellerId(req.user)) {
         return res.status(403).send("Non autorizzato ad accedere a questo centro");
       }
       res.json(center);
@@ -7125,7 +7125,7 @@ export function registerRoutes(app: Express): Server {
       if (!existingCenter) {
         return res.status(404).send("Centro di riparazione non trovato");
       }
-      if (existingCenter.resellerId !== req.user.id) {
+      if (existingCenter.resellerId !== getEffectiveResellerId(req.user)) {
         return res.status(403).send("Non autorizzato a modificare questo centro");
       }
 
@@ -7189,7 +7189,7 @@ export function registerRoutes(app: Express): Server {
       if (!existingCenter) {
         return res.status(404).send("Centro di riparazione non trovato");
       }
-      if (existingCenter.resellerId !== req.user.id) {
+      if (existingCenter.resellerId !== getEffectiveResellerId(req.user)) {
         return res.status(403).send("Non autorizzato a eliminare questo centro");
       }
 
@@ -11652,7 +11652,7 @@ export function registerRoutes(app: Express): Server {
           return res.status(403).send("Order has no customer");
         }
         const customer = await storage.getUser(order.customerId);
-        if (!customer || customer.resellerId !== req.user.id) {
+        if (!customer || customer.resellerId !== getEffectiveResellerId(req.user)) {
           return res.status(403).send("Order does not belong to your customers");
         }
         
@@ -11663,7 +11663,7 @@ export function registerRoutes(app: Express): Server {
             // Validate repair center exists and belongs to reseller
             const repairCenter = await storage.getRepairCenter(req.body.repairCenterId);
             if (!repairCenter) return res.status(400).send("Invalid repair center ID");
-            if (repairCenter.resellerId !== req.user.id) {
+            if (repairCenter.resellerId !== getEffectiveResellerId(req.user)) {
               return res.status(403).send("Repair center does not belong to you");
             }
           }
@@ -14621,7 +14621,7 @@ export function registerRoutes(app: Express): Server {
         }
       } else if (req.user.role === 'reseller' || req.user.role === 'sub_reseller' || req.user.role === 'reseller_staff') {
         const center = await storage.getRepairCenter(req.params.id);
-        if (!center || center.resellerId !== req.user.id) {
+        if (!center || center.resellerId !== getEffectiveResellerId(req.user)) {
           return res.status(403).send("Access denied - this center does not belong to you");
         }
       } else if (req.user.role === 'customer') {
@@ -14652,7 +14652,7 @@ export function registerRoutes(app: Express): Server {
       } else if (req.user.role === 'reseller' || req.user.role === 'sub_reseller' || req.user.role === 'reseller_staff') {
         // Reseller can manage centers that belong to them
         const center = await storage.getRepairCenter(req.params.id);
-        if (!center || center.resellerId !== req.user.id) {
+        if (!center || center.resellerId !== getEffectiveResellerId(req.user)) {
           return res.status(403).send("Access denied - this center does not belong to you");
         }
       } else {
@@ -14704,7 +14704,7 @@ export function registerRoutes(app: Express): Server {
         }
       } else if (req.user.role === 'reseller' || req.user.role === 'sub_reseller' || req.user.role === 'reseller_staff') {
         const center = await storage.getRepairCenter(req.params.id);
-        if (!center || center.resellerId !== req.user.id) {
+        if (!center || center.resellerId !== getEffectiveResellerId(req.user)) {
           return res.status(403).send("Access denied - this center does not belong to you");
         }
       } else if (req.user.role === 'customer') {
@@ -14739,7 +14739,7 @@ export function registerRoutes(app: Express): Server {
       } else if (req.user.role === 'reseller' || req.user.role === 'sub_reseller' || req.user.role === 'reseller_staff') {
         // Reseller can manage centers that belong to them
         const center = await storage.getRepairCenter(req.params.id);
-        if (!center || center.resellerId !== req.user.id) {
+        if (!center || center.resellerId !== getEffectiveResellerId(req.user)) {
           return res.status(403).send("Access denied - this center does not belong to you");
         }
       } else {
@@ -14780,7 +14780,7 @@ export function registerRoutes(app: Express): Server {
       } else if (req.user.role === 'reseller' || req.user.role === 'sub_reseller' || req.user.role === 'reseller_staff') {
         // Reseller can manage centers that belong to them
         const center = await storage.getRepairCenter(req.params.id);
-        if (!center || center.resellerId !== req.user.id) {
+        if (!center || center.resellerId !== getEffectiveResellerId(req.user)) {
           return res.status(403).send("Access denied - this center does not belong to you");
         }
       } else {
@@ -14895,7 +14895,7 @@ export function registerRoutes(app: Express): Server {
         }
       } else if (req.user.role === 'reseller' || req.user.role === 'sub_reseller' || req.user.role === 'reseller_staff') {
         const center = await storage.getRepairCenter(req.params.id);
-        if (!center || center.resellerId !== req.user.id) {
+        if (!center || center.resellerId !== getEffectiveResellerId(req.user)) {
           return res.status(403).send("Access denied - this center does not belong to you");
         }
       } else {
