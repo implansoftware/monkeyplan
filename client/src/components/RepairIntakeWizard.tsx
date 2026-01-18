@@ -581,8 +581,10 @@ export function RepairIntakeWizard({
     c.email.toLowerCase().includes(customerSearch.toLowerCase())
   );
 
-  // Show all brands for selected device type (don't filter by existing models)
-  const availableBrands = deviceBrands;
+  // Filter brands to show only those with models for the selected device type
+  const availableBrands = deviceBrands.filter(brand => 
+    deviceModels.some(model => model.brandId === brand.id)
+  );
 
   // Filter models by selected brand
   const filteredModels = selectedBrandId 
