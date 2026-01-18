@@ -35,8 +35,13 @@ import {
   Monitor, Battery, Volume2, Thermometer, Cpu, HardDrive, Usb, Wifi, Power, Zap, Fan, Bug, Settings, MoreHorizontal,
   Headphones, Keyboard, Mouse, Cable, BatteryCharging, Briefcase, Watch, Tablet, Laptop, Gamepad2, Printer,
   MonitorSmartphone, CircleDot, Square, Grid3X3, Link2, PenTool, PackageOpen, Shield, AlertTriangle, CircleSlash,
-  Bluetooth, PowerOff, PlugZap, MemoryStick, Disc, Server, Router, Fingerprint, Eye, Mic, Speaker, Vibrate
+  Bluetooth, PowerOff, PlugZap, MemoryStick, Disc, Server, Router, Fingerprint, Eye, Mic, Speaker, Vibrate, Tag, Tv
 } from "lucide-react";
+import { 
+  SiApple, SiSamsung, SiHuawei, SiXiaomi, SiSony, SiLg, SiLenovo, SiDell, SiHp, SiAsus,
+  SiAcer, SiGoogle, SiOneplus, SiMotorola, SiNokia, SiOppo, SiHonor,
+  SiNintendo, SiPlaystation
+} from "react-icons/si";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -46,6 +51,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { AddressAutocomplete } from "@/components/address-autocomplete";
+import { cn } from "@/lib/utils";
 import { PatternLock } from "@/components/PatternLock";
 import { SearchableServiceCombobox } from "@/components/SearchableServiceCombobox";
 import { SearchableProductCombobox } from "@/components/SearchableProductCombobox";
@@ -194,6 +200,33 @@ const getDeviceTypeIcon = (typeName: string) => {
   
   return Smartphone;
 };
+
+const BRAND_ICONS: Record<string, any> = {
+  apple: SiApple,
+  samsung: SiSamsung,
+  huawei: SiHuawei,
+  xiaomi: SiXiaomi,
+  sony: SiSony,
+  lg: SiLg,
+  lenovo: SiLenovo,
+  dell: SiDell,
+  hp: SiHp,
+  asus: SiAsus,
+  acer: SiAcer,
+  google: SiGoogle,
+  oneplus: SiOneplus,
+  motorola: SiMotorola,
+  nokia: SiNokia,
+  oppo: SiOppo,
+  honor: SiHonor,
+  nintendo: SiNintendo,
+  playstation: SiPlaystation,
+};
+
+function getBrandIcon(brandName: string) {
+  const normalized = brandName.toLowerCase().replace(/\s+/g, '');
+  return BRAND_ICONS[normalized] || null;
+}
 
 export function AcceptanceWizardDialog({ 
   open, 
@@ -1526,51 +1559,60 @@ export function AcceptanceWizardDialog({
         )}
       />
 
-      <FormField
-        control={form.control}
-        name="brand"
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel>Brand</FormLabel>
-            <Select 
-              onValueChange={(name) => {
-                if (name === "__all__") {
-                  field.onChange("");
-                  setSelectedBrandId("");
-                  form.setValue("deviceBrandId", "");
-                } else {
-                  field.onChange(name);
-                  const brand = deviceBrands.find(b => b.name === name);
-                  setSelectedBrandId(brand?.id || "");
-                  form.setValue("deviceBrandId", brand?.id || "");
-                }
-                form.setValue("deviceModel", "");
-                form.setValue("deviceModelId", "");
-              }} 
-              value={field.value || "__all__"}
-              disabled={!selectedTypeId}
-            >
-              <FormControl>
-                <SelectTrigger data-testid="select-brand">
-                  <SelectValue placeholder="Seleziona brand" />
-                </SelectTrigger>
-              </FormControl>
-              <SelectContent>
-                <SelectItem value="__all__">Tutti i brand ({deviceBrands.length})</SelectItem>
-                {deviceBrands.map((brand) => (
-                  <SelectItem key={brand.id} value={brand.name}>
-                    {brand.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <FormDescription>
-              {selectedTypeId ? `${deviceBrands.length} brand disponibili` : "Seleziona prima il tipo dispositivo"}
-            </FormDescription>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
+      {/* Brand Selection as Cards */}
+      {selectedTypeId && deviceBrands.length > 0 && (
+        <FormField
+          control={form.control}
+          name="brand"
+          render={({ field }) => (
+            <FormItem className="min-w-0">
+              <FormLabel>Brand</FormLabel>
+              <div className="grid gap-2 w-full min-w-0" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(80px, 1fr))' }}>
+                {deviceBrands.map((brand) => {
+                  const BrandIcon = getBrandIcon(brand.name);
+                  const isSelected = field.value === brand.name;
+                  return (
+                    <Card
+                      key={brand.id}
+                      className={cn(
+                        "cursor-pointer transition-colors min-w-0 w-full hover-elevate",
+                        isSelected && "ring-2 ring-primary"
+                      )}
+                      onClick={() => {
+                        if (isSelected) {
+                          field.onChange("");
+                          setSelectedBrandId("");
+                          form.setValue("deviceBrandId", "");
+                        } else {
+                          field.onChange(brand.name);
+                          setSelectedBrandId(brand.id);
+                          form.setValue("deviceBrandId", brand.id);
+                        }
+                        form.setValue("deviceModel", "");
+                        form.setValue("deviceModelId", "");
+                      }}
+                      data-testid={`card-brand-${brand.id}`}
+                    >
+                      <CardContent className="p-2 text-center">
+                        {BrandIcon ? (
+                          <BrandIcon className="h-5 w-5 mx-auto mb-1" />
+                        ) : (
+                          <Tag className="h-5 w-5 mx-auto mb-1 text-muted-foreground" />
+                        )}
+                        <span className="text-xs truncate block">{brand.name}</span>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+              <FormDescription className="text-xs">
+                {selectedBrandId ? "Clicca di nuovo per deselezionare" : `${deviceBrands.length} brand disponibili`}
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      )}
 
       <FormField
         control={form.control}
