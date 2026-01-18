@@ -450,7 +450,7 @@ export function RepairIntakeWizard({
     isSubResellerCenter: boolean;
   }>>({
     queryKey: ["/api/repair-centers"],
-    enabled: user?.role === "admin" || user?.role === "reseller",
+    enabled: user?.role === "admin" || user?.role === "reseller" || user?.role === "sub_reseller",
   });
 
   // Query for resellers (admin only)
@@ -591,7 +591,7 @@ export function RepairIntakeWizard({
     ? deviceModels.filter(m => m.brandId === selectedBrandId)
     : deviceModels;
 
-  // Filter repair centers based on selected reseller/sub-reseller (admin only)
+  // Filter repair centers based on selected reseller/sub-reseller
   const filteredRepairCenters = user?.role === "admin" 
     ? repairCenters.filter(rc => {
         if (selectedSubResellerId) {
@@ -604,7 +604,10 @@ export function RepairIntakeWizard({
         }
         return true; // No filter - show all
       })
-    : repairCenters;
+    : user?.role === "sub_reseller"
+      // Sub-reseller: show only their own centers (where resellerId = user.id)
+      ? repairCenters.filter(rc => rc.resellerId === user?.id)
+      : repairCenters;
 
   // Create mutation
   const createMutation = useMutation({
@@ -1117,8 +1120,8 @@ export function RepairIntakeWizard({
                   />
                 )}
 
-                {/* Repair Center Selection - show for admin/reseller with filtered centers */}
-                {(user?.role === "admin" || user?.role === "reseller") && filteredRepairCenters.length > 0 && !showNewCustomerForm && (
+                {/* Repair Center Selection - show for admin/reseller/sub_reseller with filtered centers */}
+                {(user?.role === "admin" || user?.role === "reseller" || user?.role === "sub_reseller") && filteredRepairCenters.length > 0 && !showNewCustomerForm && (
                   <FormField
                     control={form.control}
                     name="repairCenterId"
@@ -1136,6 +1139,12 @@ export function RepairIntakeWizard({
                             {user?.role === "admin" && filteredRepairCenters.map((rc) => (
                               <SelectItem key={rc.id} value={rc.id}>
                                 {rc.name} {rc.ownerName ? `(${rc.ownerName})` : ''}
+                              </SelectItem>
+                            ))}
+                            {/* For sub_reseller: show own centers */}
+                            {user?.role === "sub_reseller" && filteredRepairCenters.map((rc) => (
+                              <SelectItem key={rc.id} value={rc.id}>
+                                {rc.name}
                               </SelectItem>
                             ))}
                             {/* For reseller: show categorized centers */}

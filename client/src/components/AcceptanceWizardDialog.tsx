@@ -544,8 +544,13 @@ export function AcceptanceWizardDialog({
     isSubResellerCenter: boolean;
   }>>({
     queryKey: ["/api/repair-centers"],
-    enabled: user?.role === "admin" || user?.role === "repair_center" || user?.role === "reseller",
+    enabled: user?.role === "admin" || user?.role === "repair_center" || user?.role === "reseller" || user?.role === "sub_reseller",
   });
+  
+  // Filter repair centers for sub_reseller to show only their own centers
+  const filteredRepairCenters = user?.role === "sub_reseller"
+    ? repairCenters.filter(rc => rc.resellerId === user?.id)
+    : repairCenters;
 
   const form = useForm<AcceptanceWizardData>({
     resolver: zodResolver(acceptanceWizardSchema),
@@ -1467,38 +1472,49 @@ export function AcceptanceWizardDialog({
                 </SelectTrigger>
               </FormControl>
               <SelectContent>
-                {/* Own centers first */}
-                {repairCenters.filter(c => c.isOwn).length > 0 && (
+                {/* For sub_reseller: show simple list of their centers */}
+                {user?.role === "sub_reseller" && filteredRepairCenters.map((center) => (
+                  <SelectItem key={center.id} value={center.id}>
+                    {center.name} {center.address ? `- ${center.address}` : ''}
+                  </SelectItem>
+                ))}
+                {/* For reseller/admin: show categorized centers */}
+                {user?.role !== "sub_reseller" && (
                   <>
-                    <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground">
-                      I miei centri
-                    </div>
-                    {repairCenters.filter(c => c.isOwn).map((center) => (
+                    {/* Own centers first */}
+                    {repairCenters.filter(c => c.isOwn).length > 0 && (
+                      <>
+                        <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground">
+                          I miei centri
+                        </div>
+                        {repairCenters.filter(c => c.isOwn).map((center) => (
+                          <SelectItem key={center.id} value={center.id}>
+                            {center.name} {center.address ? `- ${center.address}` : ''}
+                          </SelectItem>
+                        ))}
+                      </>
+                    )}
+                    {/* Sub-reseller centers */}
+                    {repairCenters.filter(c => c.isSubResellerCenter).length > 0 && (
+                      <>
+                        <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground">
+                          Centri della Rete
+                        </div>
+                        {repairCenters.filter(c => c.isSubResellerCenter).map((center) => (
+                          <SelectItem key={center.id} value={center.id}>
+                            {center.name} {center.ownerName ? `(${center.ownerName})` : ''} {center.address ? `- ${center.address}` : ''}
+                          </SelectItem>
+                        ))}
+                      </>
+                    )}
+                    {/* Fallback for non-reseller roles or simple list */}
+                    {repairCenters.filter(c => !c.isOwn && !c.isSubResellerCenter).map((center) => (
                       <SelectItem key={center.id} value={center.id}>
                         {center.name} {center.address ? `- ${center.address}` : ''}
                       </SelectItem>
                     ))}
                   </>
                 )}
-                {/* Sub-reseller centers */}
-                {repairCenters.filter(c => c.isSubResellerCenter).length > 0 && (
-                  <>
-                    <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground">
-                      Centri della Rete
-                    </div>
-                    {repairCenters.filter(c => c.isSubResellerCenter).map((center) => (
-                      <SelectItem key={center.id} value={center.id}>
-                        {center.name} {center.ownerName ? `(${center.ownerName})` : ''} {center.address ? `- ${center.address}` : ''}
-                      </SelectItem>
-                    ))}
-                  </>
-                )}
-                {/* Fallback for non-reseller roles or simple list */}
-                {repairCenters.filter(c => !c.isOwn && !c.isSubResellerCenter).map((center) => (
-                  <SelectItem key={center.id} value={center.id}>
-                    {center.name} {center.address ? `- ${center.address}` : ''}
-                  </SelectItem>
-                ))}
               </SelectContent>
             </Select>
             <FormDescription>
@@ -2827,7 +2843,9 @@ export function AcceptanceWizardDialog({
   const renderReviewStep = () => {
     const formData = form.getValues();
     const selectedCustomer = customers.find((c) => c.id === formData.customerId);
-    const selectedRepairCenter = repairCenters.find((c) => c.id === formData.repairCenterId);
+    // Use filteredRepairCenters for sub_reseller to ensure consistent lookup
+    const centersToSearch = user?.role === "sub_reseller" ? filteredRepairCenters : repairCenters;
+    const selectedRepairCenter = centersToSearch.find((c) => c.id === formData.repairCenterId);
     
     return (
       <div className="space-y-4">

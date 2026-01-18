@@ -5,7 +5,7 @@ type User = {
   username: string;
   email: string;
   fullName: string;
-  role: "admin" | "customer" | "reseller" | "repair_center";
+  role: "admin" | "customer" | "reseller" | "sub_reseller" | "repair_center" | "reseller_staff" | "reseller_collaborator" | "admin_staff" | "repair_center_staff";
   isActive: boolean;
   repairCenterId: string | null;
   resellerId: string | null;
