@@ -30980,7 +30980,7 @@ export function registerRoutes(app: Express): Server {
       try {
         scope = await resolveResellerEntityScope({
           storage,
-          requesterResellerId,
+          requesterResellerId: resellerId,
           entityType: entityType as string | undefined,
           entityId: entityId as string | undefined
         });
@@ -31081,7 +31081,7 @@ export function registerRoutes(app: Express): Server {
       try {
         scope = await resolveResellerEntityScope({
           storage,
-          requesterResellerId,
+          requesterResellerId: resellerId,
           entityType: entityType as string | undefined,
           entityId: entityId as string | undefined
         });
@@ -31202,7 +31202,7 @@ export function registerRoutes(app: Express): Server {
       try {
         scope = await resolveResellerEntityScope({
           storage,
-          requesterResellerId,
+          requesterResellerId: resellerId,
           entityType: entityType as string | undefined,
           entityId: entityId as string | undefined
         });
@@ -31380,7 +31380,7 @@ export function registerRoutes(app: Express): Server {
       try {
         scope = await resolveResellerEntityScope({
           storage,
-          requesterResellerId,
+          requesterResellerId: resellerId,
           entityType: entityType as string | undefined,
           entityId: entityId as string | undefined
         });
@@ -31828,7 +31828,7 @@ export function registerRoutes(app: Express): Server {
       try {
         scope = await resolveResellerEntityScope({
           storage,
-          requesterResellerId,
+          requesterResellerId: resellerId,
           entityType: normalizedEntityType,
           entityId: entityId as string | undefined
         });
